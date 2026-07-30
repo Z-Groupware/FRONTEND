@@ -195,7 +195,11 @@ assertPermission(canOperateMeeting(actor, meeting));
 ✅ <div className="bg-sidebar text-foreground">
 ```
 
-이유: 다크모드 값이 이미 정의돼 있어서, 토큰을 쓰면 **다크모드가 공짜로 따라온다.** 하드코딩하면 나중에 전 화면을 다 고쳐야 한다.
+이유: **다크모드가 이미 전 페이지에 켜져 있다.** 토큰을 쓰면 다크 대응이 공짜로 따라오고, 하드코딩하면 그 화면만 다크에서 깨진다.
+
+> 📌 **`dark:` 클래스를 직접 쓰지 않는다.** `bg-card`처럼 토큰만 쓰면 테마가 알아서 뒤집힌다.
+> `dark:`가 필요하다고 느껴지면 대부분 **토큰을 안 쓴 것**이니 먼저 토큰을 확인하자.
+> 테마 전환 버튼은 [`components/common/theme-toggle.tsx`](src/components/common/theme-toggle.tsx)에 있다.
 
 ### 규칙 3. 📝 상태 문자열을 직접 타이핑하지 않는다
 
