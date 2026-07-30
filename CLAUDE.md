@@ -1,6 +1,6 @@
 # CLAUDE.md — Z (회의 기반 지식관리 그룹웨어) FE · 팀 공용 · 린
 
-> 📌 살아있는 문서. **기술규칙=안정 / 세부 기능·API=요구사항 명세 확정 후 갱신.** 예시·상세는 `docs/CONVENTIONS.md`, 팀이 정한 것·미정은 `DECISIONS.md`.
+> 📌 살아있는 문서. **기술규칙=안정 / API=스펙 확정 후 갱신.** 예시·상세는 `docs/CONVENTIONS.md`, 팀이 정한 것·미정은 `DECISIONS.md`. **화면별 요구사항은 팀 명세·이슈**를 본다.
 > **한 줄:** 회의를 캡처(STT·녹음)하면 AI가 요약·결정·액션을 추출해 담당자에게 하달한다.
 > **스택:** Next.js(App Router) · TS · Tailwind · shadcn/ui. 데이터=**Server-First + Server Action + BFF + httpOnly 쿠키**.
 > **⚠️ 로그인 뒤 사내 도구다.** 공개 페이지가 아니라 SEO·OG는 대상이 아니다(§SEO). **1440 기준 설계 + 반응형 여지 확보**(§디자인 토큰).
@@ -16,27 +16,28 @@
 
 > 역할 가드만 짜면 안 된다. 리소스 소유권을 따로 검사한다.
 
-- **① 역할(Role):** `OWNER`(대표·1명) · `ADMIN`(관리자·1명) · `LEADER`(팀장) · `MEMBER`(사원) · `SYSTEM`(운영자, 확장)
+- **① 역할(Role):** 화면·메뉴 접근. **역할 종류와 범위는 `DECISIONS.md`** 를 따른다(정책이라 바뀐다).
 - **② 리소스 소유권:** 역할과 **무관**하게 그 문서의 담당자만 가능.
-  예) 회의 시작·녹음·파일 제출·종료·AI 검토 = **그 회의 담당자 1명만**(OWNER라도 담당자가 아니면 불가).
+  예) 회의 시작·녹음·파일 제출·종료 = **그 회의 담당자 1명만**(OWNER라도 담당자가 아니면 불가).
 - **검증은 서버에서.** 화면 숨김은 UX일 뿐 보안이 아니다 — Server Action·BFF에서 반드시 재검사.
-- 승인 흐름: `MEMBER 신청 → LEADER 중간승인 → OWNER/ADMIN 최종승인`.
-- 비밀번호 변경·재설정 화면 **없음**(회사 통제, 재발급은 관리자 요청).
+- 권한 판정은 `lib/permission.ts` 한 곳에. 역할 상수를 화면에 하드코딩하지 않는다.
 
-## 라우트 그룹 (제안 — 확정 시 갱신)
+## 라우트 그룹
 
 ```
 app/
 ├─ (public)/     /  /login  /register  /pricing  /invite/[token]
 ├─ (onboarding)/ /onboarding/*                     ← OWNER 초기설정
 ├─ (role)/       /owner  /manage  /team  /my       ← 역할 전용 대시보드·관리
-├─ (app)/        /app/*                            ← 공용 워크벤치(권한 차등)
-└─ (system)/     /system/*                         ← 확장(데모 제외)
+├─ (app)/        /app/*                            ← 공용 워크벤치(권한 차등, ADMIN 제외)
+└─ (system)/     /system/*                         ← 목업(더미), 향후 개선
 ```
 
+- **기업 코드를 URL에 붙이지 않는다.** 기업 식별은 세션(httpOnly 쿠키의 `companyId`)이 한다 — 주소창 값은 사용자가 고칠 수 있어 어차피 서버가 세션과 대조해야 한다. 기업 코드는 **로그인 전 화면**(`/login`·`/register`·`/invite`)에만 등장.
 - `(role)` 하위 4개는 **같은 셸(사이드바 220px)** 을 쓰고 네비 항목만 역할별로 달라진다 → 레이아웃 1개 + 역할별 네비 구성.
 - `/owner`와 `/manage`는 **사원관리 권한이 사실상 동일** → 화면을 복붙하지 말고 **공용 컴포넌트 + 권한 prop**으로.
 - `/app/*`은 공용 화면에서 권한만 다르다 → 라우트를 나누지 말고 **컴포넌트 레벨 가드**.
+- ⛔ **팀 명세에 없는 화면·기능은 만들지 않는다.** 화면 안 항목 배치도 명세 순서를 따른다.
 
 ## 폴더·네이밍
 
@@ -53,25 +54,11 @@ app/
 - 알림=**SSE**(`/app/notification`). BFF가 스트림을 중계하고 토큰을 주입한다.
 - 변경 결과 피드백=**토스트**(shadcn `sonner`, `<Toaster />`는 루트 레이아웃 1개). ❌폼 검증 오류(→필드 인라인)·파괴적 작업 확인(→Dialog)·페이지 전체 실패(→`error.tsx`). 토스트는 사라지므로 **보조**다.
 
-## 도메인 상수 (ERD 명칭과 100% 일치 · `as const` + 라벨맵)
+## 도메인 상수
 
-| 대상          | 코드값                                                           |
-| ------------- | ---------------------------------------------------------------- |
-| 액션          | `TODO → IN_PROGRESS → DONE` (+파생 플래그 `DELAYED`)             |
-| 액션 타입     | `TEAM` / `PERSONAL`(= `parentActionId`로 TEAM 참조)              |
-| 프로젝트      | `IN_PROGRESS → DONE`                                             |
-| 회의          | `SCHEDULED → IN_PROGRESS → DONE`                                 |
-| 캡처 세션     | `IDLE → RECORDING → SUBMITTING → DONE`                           |
-| AI 요약       | `PENDING → SUMMARIZING → REVIEWED → DISTRIBUTED`                 |
-| 인수인계      | `DRAFT → SUBMITTED → MID_APPROVED → FINAL_APPROVED` / `REJECTED` |
-| 인수인계 타입 | `VACATION` / `OFFBOARDING`                                       |
-| 사원 상태     | `ACTIVE` / `ON_LEAVE` / `PENDING`(발급 후 미로그인)              |
-| 회의 초대     | `PENDING` / `ACCEPTED` / `DECLINED`                              |
-| 구독·결제     | `FREE`/`TEAM` · `PAID`/`UNPAID`/`CANCELED`                       |
-| 기업(시스템)  | `ACTIVE` / `SUSPENDED` / `UNPAID`                                |
-
-- **`DELAYED`는 상태가 아니라 파생값**(마감 경과) — 상태 필드에 넣지 말고 계산한다.
-- 화면엔 한글 라벨, 코드엔 영문 상수. 라벨 하드코딩 금지.
+- **`as const` + 라벨맵**으로 정의(`enum` 금지). 코드엔 영문 상수, 화면엔 한글 라벨 — **라벨 하드코딩 금지.**
+- 값 목록은 **ERD 확정 후 `constants/`에 정의**한다. 문서에 옮겨 적지 않는다(바뀌면 두 벌이 어긋난다).
+- 마감 경과 같은 **파생값은 상태 필드에 넣지 말고 계산**한다.
 
 ## Mock → Live 격리막
 
@@ -151,9 +138,10 @@ app/
 
 ## ⚠️[팀확정] (임의로 정하지 말 것)
 
-- [ ] **ERD·API 스펙** (BE 협의 전) · **요구사항 명세 구체화**(역할별 세부 기능)
+- [ ] **ERD·API 스펙** (BE 협의 전)
+- [ ] **디자인 시안** — 화면 목록은 확정됐으나 시안은 미정
 - [ ] 프론트 3인 분업 (A 캡처 / B 실시간 / C 뷰 — 제안 상태)
 - [ ] 배포 = **AWS 확정, 서비스 미정**(Amplify/ECS/EC2). ⚠️ 정적 배포는 불가 — Server Action·BFF·SSE가 Node 서버를 요구한다 · 결제 실연동(Toss) 여부 · AI 실모델
-- [ ] 온라인 회의 반영 시점 · "퇴사" 대체어(오프보딩) · 다크모드 적용 범위
+- [ ] 온라인 회의 반영 시점 · "퇴사" 대체어(오프보딩)
 - [ ] 모바일 대응 화면 선별 (디자인 확정 후)
-- [x] (확정) 스택=**Next.js App Router** · 스타일=Tailwind+shadcn/ui · **1440 기준 + 반응형 여지 확보** · 다크모드 전 페이지
+- [x] (확정) 스택=**Next.js App Router** · 스타일=Tailwind+shadcn/ui · **1440 기준 + 반응형 여지 확보** · 다크모드 전 페이지 · 기업 코드는 URL에 없음(세션)
