@@ -28,7 +28,7 @@
 - **스택:** Next.js(App Router) · React · TypeScript · **Tailwind + shadcn/ui**.
   데이터 = **Server Component 조회 + Server Action 변경 + BFF + httpOnly 쿠키**. 서버상태 라이브러리 미사용(`DECISIONS.md` B-4).
 - **⚠️ 로그인 뒤 사내 도구다.** 공개 페이지가 아니므로 SEO·OG는 대상이 아니다(§14).
-- **데스크톱 1440 전용** — 모바일 미대응. 반응형 분기를 굳이 만들지 않는다.
+- **1440 기준 설계 + 반응형 여지 확보** — 브레이크포인트 작업은 지금 하지 않되, **고정 px·absolute를 쓰지 않는다**(§9). 모바일 대응 화면 선별은 디자인 확정 후.
 
 ```bash
 npm install
@@ -214,6 +214,16 @@ export const isDelayed = (a: { status: ActionStatus; dueDate: string }) =>
 | `form`     | 960 (좌 네비 180px) | 설정·작성            |
 | `centered` | 560 세로 중앙       | 로그인·온보딩        |
 
+**⚠️ 위 폭은 목표 치수이지 고정값이 아니다.** 반응형 여지를 남기려면 아래를 지킨다 — 비용이 거의 없고, 안 지키면 나중에 전 화면을 뜯는다.
+
+```tsx
+❌ w-[1440px]              ✅ mx-auto max-w-[1440px] px-8
+❌ absolute top-[64px]     ✅ flex / grid
+❌ <table> 단독             ✅ overflow-x-auto 컨테이너로 감싸기
+❌ 사이드바를 layout에 직접  ✅ 컴포넌트로 분리 (모바일은 Sheet로 교체)
+```
+
+- Tailwind는 **모바일 퍼스트**다. 접두사 없는 스타일을 유연하게 쓰고, 넓은 화면 전용은 `md:`·`lg:`로 얹는다.
 - 폼은 **2열(`FormRow`)**, 제출 버튼은 **하단 우측**.
 - 로딩은 **스켈레톤**. 모션 100/150/250ms. 숫자는 `tabular-nums`.
 - **카피:** ~해요체 · 날짜 `8월 5일(화)` · 역할 워딩은 영어(`OWNER`).
@@ -282,7 +292,7 @@ export const isDelayed = (a: { status: ActionStatus; dueDate: string }) =>
 
 > 시안에서 뽑은 CSS는 **그대로 붙여넣지 않는다.** 아래 ①②③ 기준으로 정리해서 구현한다.
 
-- **① 구조:** `position:absolute`+고정 px → **flex/grid**. Z는 1440 고정이라 반응형 재구성 부담은 적지만, absolute 남발은 금지.
+- **① 구조:** `position:absolute`+고정 px → **flex/grid**. 1440 기준이라도 고정 px으로 박으면 반응형 여지가 사라진다(§9).
 - **② 스타일:** 생 hex·임의값(`w-[327px]`) → **CSS 변수 토큰(§8)·Tailwind 스케일**.
 - **③ 시맨틱·최적화:** `<div>`→시맨틱 태그 / `<img>`→`next/image` / 반복 블록→컴포넌트 추출.
 - **아이콘:** 표준 UI=`lucide-react` / 브랜드·커스텀=SVGR 컴포넌트(`currentColor`). ❌ 이모지 · ❌ `<img src=".svg">`
@@ -396,4 +406,5 @@ server.ts / actions.ts ── isMock 분기:  mock → mocks/*  |  live → serv
 - [ ] 프론트 3인 분업 경계 · 공유 셸 소유자
 - [ ] zod / plop / shadcn 도입 여부 · CI 필수 체크 범위
 - [ ] 배포 환경 · 결제 실연동(Toss) · AI 실모델 · 온라인 회의 시점 · **화면(디자인) 확정** · "퇴사" 대체어
-- [x] (확정) 스택 = **Next.js App Router** · 스타일 = Tailwind + shadcn/ui · **데스크톱 1440 전용** · **다크모드 전 페이지**
+- [x] (확정) 스택 = **Next.js App Router** · 스타일 = Tailwind + shadcn/ui · **1440 기준 + 반응형 여지 확보** · **다크모드 전 페이지**
+- [ ] 모바일 대응 화면 선별 (디자인 확정 후)
