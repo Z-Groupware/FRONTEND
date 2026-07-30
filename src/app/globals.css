@@ -39,6 +39,12 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+  /* Z 추가 — shadcn 기본에 없는 시맨틱/상태 색. 이걸 등록해야 `bg-success`·`bg-status-todo`가 생긴다. */
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-status-todo: var(--status-todo);
+  --color-status-progress: var(--status-progress);
+  --color-status-done: var(--status-done);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
