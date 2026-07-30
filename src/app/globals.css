@@ -1,26 +1,146 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@custom-variant dark (&:is(.dark *));
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-sans);
   --font-mono: var(--font-geist-mono);
+  --font-heading: var(--font-sans);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  /* Z 추가 — shadcn 기본에 없는 시맨틱/상태 색. 이걸 등록해야 `bg-success`·`bg-status-todo`가 생긴다. */
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-status-todo: var(--status-todo);
+  --color-status-progress: var(--status-progress);
+  --color-status-done: var(--status-done);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+:root {
+  --radius: 0.625rem;
+
+  /* ───────── Z 디자인 토큰 (라이트) — CONVENTIONS §8
+ * 기획 확정값. 컴포넌트에 생 hex 하드코딩 금지, 항상 이 변수로만 쓴다. */
+  --background: #ffffff;
+  --foreground: #1c1917;
+  --card: #ffffff;
+  --card-foreground: #1c1917;
+  --popover: #ffffff;
+  --popover-foreground: #1c1917;
+  --primary: #3b82f6; /* 액센트 */
+  --primary-foreground: #ffffff;
+  --secondary: #fafaf9; /* 섹션 띠 */
+  --secondary-foreground: #1c1917;
+  --muted: #fafaf9;
+  --muted-foreground: #78716c;
+  --accent: #fafaf9;
+  --accent-foreground: #1c1917;
+  --destructive: #ef4444; /* 에러 */
+  --border: #e7e5e4;
+  --input: #e7e5e4;
+  --ring: #3b82f6;
+  --sidebar: #fbfbfa;
+  --sidebar-foreground: #1c1917;
+  --sidebar-primary: #3b82f6;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #f5f5f4;
+  --sidebar-accent-foreground: #1c1917;
+  --sidebar-border: #e7e5e4;
+  --sidebar-ring: #3b82f6;
+  /* 시맨틱 (shadcn 기본에 없음 — Z 추가) */
+  --success: #22c55e;
+  --warning: #f59e0b;
+  /* 상태 점: 대기=회색 · 진행중=초록 · 완료=보라 */
+  --status-todo: #a8a29e;
+  --status-progress: #22c55e;
+  --status-done: #8b5cf6;
+}
+
+.dark {
+  /* ───────── Z 디자인 토큰 (다크) — 전 페이지 적용.
+ * 순검정(#0C0A09)을 쓰지 않는다: 흰 텍스트가 번져 보이고(halation) 카드·사이드바의 층이 사라진다.
+ * 대신 stone 색조를 유지한 채 명도만 한 단씩 띄운다 — 사이드바 < 배경 < 카드 순으로 밝아진다. */
+  --background: #1a1715;
+  --foreground: #fafaf9;
+  --card: #242120;
+  --card-foreground: #fafaf9;
+  --popover: #242120;
+  --popover-foreground: #fafaf9;
+  --primary: #3b82f6;
+  --primary-foreground: #ffffff;
+  --secondary: #2e2a28;
+  --secondary-foreground: #fafaf9;
+  --muted: #2e2a28;
+  --muted-foreground: #a8a29e;
+  --accent: #2e2a28;
+  --accent-foreground: #fafaf9;
+  --destructive: #ef4444;
+  --border: #33302d;
+  --input: #33302d;
+  /* 포커스 링만 한 톤 밝게 — 어두운 배경에서 #3B82F6은 잘 안 보인다 */
+  --ring: #60a5fa;
+  --sidebar: #151211;
+  --sidebar-foreground: #fafaf9;
+  --sidebar-primary: #3b82f6;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #2e2a28;
+  --sidebar-accent-foreground: #fafaf9;
+  --sidebar-border: #33302d;
+  --sidebar-ring: #60a5fa;
+  --success: #22c55e;
+  --warning: #f59e0b;
+  /* 상태 점은 배경이 밝아진 만큼 같이 올린다(대기 점이 배경에 묻히지 않게) */
+  --status-todo: #8a827d;
+  --status-progress: #22c55e;
+  --status-done: #a78bfa;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
   }
-}
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
 }

@@ -1,36 +1,129 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Z
 
-## Getting Started
+**회의를 하면, 조직의 기억이 된다.**
 
-First, run the development server:
+회의를 녹음·자막으로 캡처하면 요약과 결정사항, 해야 할 일을 뽑아 담당자에게 자동으로 전달하는 사내 그룹웨어입니다.
+10~50명 규모 성장기 스타트업을 대상으로 합니다.
+
+<br>
+
+## 이런 문제를 풉니다
+
+회의는 매주 하는데 기록은 남지 않습니다. 정한 내용은 각자 다르게 기억하고, 하기로 한 일은 회의록 어딘가에 묻힙니다.
+Z는 이 흐름을 하나로 잇습니다.
+
+| 단계 | 하는 일                                                                  |
+| ---- | ------------------------------------------------------------------------ |
+| 캡처 | 브라우저에서 녹음 + 실시간 자막. 자막 옆에 메모를 1:1로 붙일 수 있습니다 |
+| 정리 | 3줄 요약 · 결정사항 · 액션 아이템을 추출합니다                           |
+| 검토 | 회의 담당자가 결과를 확인하고 수정합니다                                 |
+| 하달 | 액션이 담당자에게 배분되고, 마감이 지나면 지연으로 표시됩니다            |
+
+인수인계(휴가·오프보딩)와 프로젝트 단위 액션 관리까지 이어집니다.
+
+<br>
+
+## 기술 스택
+
+| 구분       | 사용                                                    |
+| ---------- | ------------------------------------------------------- |
+| 프레임워크 | Next.js (App Router) · React 19                         |
+| 언어       | TypeScript (strict)                                     |
+| 스타일     | Tailwind CSS v4 · shadcn/ui                             |
+| 데이터     | Server Component 조회 · Server Action 변경 · BFF 프록시 |
+| 인증       | httpOnly 쿠키 (토큰을 브라우저에 두지 않습니다)         |
+| 테스트     | Jest · React Testing Library                            |
+
+1440px 데스크톱을 기준으로 설계했습니다. 로그인 뒤에만 쓰는 사내 도구라 SEO는 범위에 넣지 않았고, 반응형은 고정 px과 absolute를 쓰지 않는 방식으로 여지만 남겨뒀습니다.
+
+<br>
+
+## 시작하기
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install     # git 훅도 함께 설치됩니다
+npm run dev     # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+올리기 전에 아래 네 개를 돌려보면 CI에서 막히는 일이 줄어듭니다.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm run typecheck
+npm run lint
+npm run test
+npm run build
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+PR을 열면 이 네 가지가 `verify` 체크 하나로 묶여 실행되고, 하나라도 실패하면 머지할 수 없습니다.
 
-## Learn More
+<br>
 
-To learn more about Next.js, take a look at the following resources:
+## 프로젝트 구조
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```
+src/
+├─ app/
+│  ├─ (public)/          로그인 전 — 랜딩 · 로그인 · 기업등록 · 초대
+│  ├─ (onboarding)/      대표 초기설정
+│  ├─ (role)/            역할별 대시보드 (owner · manage · team · my)
+│  ├─ (app)/             공용 워크벤치 — 회의 · 액션 · 프로젝트 · 인수인계
+│  └─ api/[...path]/     BFF 프록시
+├─ features/<도메인>/     schemas · types · server · actions · components
+├─ components/
+│  ├─ ui/                shadcn 프리미티브
+│  └─ common/            테마 등 공용
+├─ constants/domain.ts   도메인 상수 + 한글 라벨
+└─ lib/
+   ├─ permission.ts      권한 판정 (서버 전용)
+   └─ endpoints.ts       API 경로
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+<br>
 
-## Deploy on Vercel
+## 설계에서 신경 쓴 것
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+**권한을 두 축으로 나눴습니다.** 역할(대표·관리자·팀장·사원)만으로는 부족합니다. 회의를 시작하고 녹음하고 종료하는 건 그 회의 담당자 한 명만 할 수 있어야 하고, 대표라도 담당자가 아니면 못 해야 합니다. 그래서 역할과 리소스 소유권을 따로 검사하고, 화면에서 버튼을 숨기는 것과 별개로 서버에서 다시 확인합니다.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+**백엔드 없이 먼저 시작했습니다.** API 스펙이 확정되기 전이라 목 데이터로 화면을 만들고 있습니다. 대신 컴포넌트가 API 응답 형태에 직접 기대지 않도록 격리 계층을 뒀습니다. 실제 연동 시점에는 조회 함수와 매퍼만 고치면 됩니다.
+
+**색을 코드에 박지 않았습니다.** 모든 색은 CSS 변수로 정의하고 컴포넌트는 토큰만 참조합니다. 덕분에 다크모드가 전 페이지에 한 번에 적용됩니다.
+
+**반응형은 여지만 남겼습니다.** 1440 기준으로 만들지만 고정 px과 absolute를 쓰지 않습니다. 지금 전 화면 반응형을 하지 않는 이유는, 캡처 화면처럼 자막과 메모를 나란히 봐야 하는 구조는 좁은 화면에서 축소가 아니라 재설계가 필요해서입니다. 대상 화면은 디자인이 확정된 뒤에 고릅니다.
+
+**커밋 단계에서 걸러냅니다.** 커밋할 때 포맷과 린트가 자동으로 돌고, 푸시할 때 타입을 검사합니다. `any`와 `console.log`는 통과하지 못합니다.
+
+<br>
+
+## 작업 흐름
+
+```
+이슈 → 브랜치 → 커밋 → PR → 리뷰 → 머지
+```
+
+이슈 번호가 브랜치·커밋·PR을 잇습니다.
+
+```bash
+feature/meeting-capture#12          # 브랜치 (base: develop)
+feat: 회의 캡처 녹음 버튼 #12        # 커밋
+Closes #12                          # PR 본문
+```
+
+`main`은 릴리즈용이라 건드리지 않습니다. 본인 PR을 본인이 머지하지 않고, 리뷰 한 명을 받습니다.
+
+<br>
+
+## 문서
+
+| 문서                                         | 언제 보나                            |
+| -------------------------------------------- | ------------------------------------ |
+| [docs/CONVENTIONS.md](./docs/CONVENTIONS.md) | 코드 쓰다 막힐 때 — 상세 규칙과 예시 |
+| [DECISIONS.md](./DECISIONS.md)               | 팀이 정한 것과 아직 안 정한 것       |
+| [CLAUDE.md](./CLAUDE.md)                     | 규칙 요약                            |
+
+처음 합류했다면 팀에서 공유한 가이드북을 먼저 읽어주세요.
+
+<br>
+
+---
+
+공개 저장소입니다. `.env` 실제 값과 토큰은 커밋하지 마세요.
