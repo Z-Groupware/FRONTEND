@@ -2,6 +2,10 @@
   "name": "z",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=22.0.0",
+    "npm": ">=10.0.0"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -23,7 +27,6 @@
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "server-only": "^0.0.1",
-    "shadcn": "^4.16.0",
     "tailwind-merge": "^3.6.0",
     "tw-animate-css": "^1.4.0",
     "zod": "^4.4.3"
@@ -47,6 +50,7 @@
     "lint-staged": "^17.2.0",
     "prettier": "^3.9.6",
     "prettier-plugin-tailwindcss": "^0.8.1",
+    "shadcn": "^4.16.0",
     "tailwindcss": "^4",
     "ts-node": "^10.9.2",
     "typescript": "^5"

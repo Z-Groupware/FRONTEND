@@ -15,7 +15,7 @@
 | 프레임워크 | **Next.js (App Router)**                                         |
 | 언어       | TypeScript **strict** + `noUncheckedIndexedAccess`               |
 | 스타일     | **Tailwind + shadcn/ui**                                         |
-| 런타임     | Node 20 · npm                                                    |
+| 런타임     | Node 22 · npm                                                    |
 | 뷰포트     | **1440 기준 설계 + 반응형 여지 확보** (아래 참고)                |
 | 데이터     | Server Component 조회 + Server Action 변경 + BFF + httpOnly 쿠키 |
 
