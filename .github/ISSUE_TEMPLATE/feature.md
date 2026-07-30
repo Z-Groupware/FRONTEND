@@ -28,6 +28,7 @@ assignees: ""
 - [ ] ADMIN (관리자)
 - [ ] LEADER (팀장)
 - [ ] MEMBER (사원)
+- [ ] SYSTEM (서비스 운영자 — 확장, 데모 제외)
 - [ ] 공통
 
 ---
