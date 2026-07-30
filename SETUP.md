@@ -1,14 +1,14 @@
 # SETUP.md — Z 레포 세팅 & 개발 인프라 (팀 공용)
 
-> 이 문서 = **CONVENTIONS(규칙)를 실제로 굴러가게 하는 인프라.** 프론트 3인이 47화면을 병렬로 찍고, Claude가 near-100% 맞게 뽑도록 하는 세팅.
+> 이 문서 = **CONVENTIONS(규칙)를 실제로 굴러가게 하는 인프라.** 프론트 3인이 화면을 병렬로 찍어도 구조·품질이 흐트러지지 않게 하는 세팅.
 > 우선순위: 🟢 **레포 만들 때 바로**(나중에 리트로핏 비쌈) → 🔵 **개발 초반** → ⚪ **여유되면** → ⛔ **스킵**.
 > 도입 여부는 `DECISIONS.md`에서 먼저 합의한다.
 
 ## 🎯 가장 큰 레버 3가지 (이것만이라도)
 
 1. **zod 계약 SSOT + 매퍼 `safeParse`** → **Z는 ERD·API가 아직 없다.** 목으로 먼저 가고 나중에 BE를 붙이는 구조라, shape가 어긋나면 가짜 데이터가 화면에 뜬 채 모르고 지나간다. zod가 그걸 **연동 전에 터뜨린다.**
-2. **plop 스캐폴딩 + 골든 레퍼런스 도메인 1개** → Claude가 구조를 발명 안 하고 **정해진 칸만** 채운다. 3명이 각자 다른 구조로 짜는 것도 막는다.
-3. **CI required checks + 엄격 타입** → AI 출력을 '그럴듯함' → **'빌드·타입으로 증명됨'**.
+2. **plop 스캐폴딩 + 골든 레퍼런스 도메인 1개** → 구조를 매번 새로 발명하지 않고 **정해진 칸만** 채운다. 3명이 각자 다른 구조로 짜는 것도 막는다.
+3. **CI required checks + 엄격 타입** → '그럴듯해 보임'이 아니라 **'빌드·타입으로 증명됨'** 을 머지 기준으로.
 
 ---
 
@@ -134,12 +134,12 @@ features/<도메인>/
 ├─ mock/fixtures.ts # faker 팩토리 자리
 ├─ components/
 ├─ <도메인>.test.tsx
-└─ CLAUDE.md        # 중첩 컨텍스트 스텁
+└─ README.md        # 슬라이스 규칙 스텁
 ```
 
 라우트 제너레이터: `(role)`/`(app)` 그룹 + `loading.tsx`·`error.tsx` 동봉.
 
-**골든 레퍼런스 = `액션(actions)` 도메인 추천.** 상태 3개(단순) + `TEAM`/`PERSONAL` 2계층 + 보드·타임라인 + 권한 분기까지 다 걸쳐서 본보기로 좋다. **1개를 끝까지**(서버조회+서버액션+zod매퍼+mock/live+테스트+a11y) 완성한 뒤 `CLAUDE.md`에 _"이걸 그대로 미러링하라"_ 명시.
+**골든 레퍼런스 = `액션(actions)` 도메인 추천.** 상태 3개(단순) + `TEAM`/`PERSONAL` 2계층 + 보드·타임라인 + 권한 분기까지 다 걸쳐서 본보기로 좋다. **1개를 끝까지**(서버조회+서버액션+zod매퍼+mock/live+테스트+a11y) 완성한 뒤 규칙 문서에 _"나머지 도메인은 이걸 그대로 미러링한다"_ 명시.
 
 ## 5. shadcn/ui 프리미티브 + cva + cn `[M]`
 
@@ -186,12 +186,14 @@ npx husky init
 npm i -D @commitlint/cli @commitlint/config-conventional
 ```
 
-commit-msg 훅 연결. 규칙(`feat: 회의 캡처 버튼`) 위반 커밋 거부.
+commit-msg 훅 연결. 규칙(`feat: 회의 캡처 버튼 #12`) 위반 커밋 거부.
+type 9종 허용(`feat/fix/style/refactor/docs/chore/test/design/merge`) + 제목 끝 `#{이슈번호}` 필수 — `config-conventional` 기본값과 다르니 `commitlint.config.js`에서 `type-enum`·커스텀 룰로 덮어쓴다.
+⚠️ DECISIONS.md에서 **commitlint 하드 블록은 채택 안 함**으로 결론난 상태다(마찰). 이 항목은 도입 시에만 적용.
 
 ## 9. `.claude/commands` 슬래시 + 셀프체크 훅 + DoD `[S]`
 
-- `.claude/commands/`에 재사용 프롬프트 커밋: `/new-screen` · `/figma-to-component <frame>` · `/integrate <domain>` · `/dod`
-- **생성 후 셀프체크 훅**(`.claude/settings.json` PostToolUse): Edit/Write 후 `tsc --noEmit` + `eslint --fix` 자동 되먹임 → '완료' 선언 전에 스스로 수정.
+- `.claude/commands/`에 재사용 프롬프트 커밋: `/new-screen` · `/integrate <domain>` · `/dod`
+- **파일 저장 후 자동 검사 훅**: 편집 직후 `tsc --noEmit` + `eslint --fix`를 돌려 '완료' 전에 걸러낸다.
 - **`/dod`** = 부록 A.
 
 ## 10. CODEOWNERS + 오너십 맵 `[S~M]`
@@ -212,7 +214,7 @@ commit-msg 훅 연결. 규칙(`feat: 회의 캡처 버튼`) 위반 커밋 거부
 
 ## 11. 타입드 엔드포인트 레지스트리 `[M]`
 
-**목적:** Claude가 존재하지 않는 경로를 지어내지 못하게. **Z는 API 스펙이 없어서 환각 위험이 특히 크다.**
+**목적:** 존재하지 않는 API 경로가 코드에 박히는 것을 막는다. **Z는 API 스펙이 없어서 경로를 임의로 적기 쉽다.**
 
 ```ts
 // lib/endpoints.ts — 실재(또는 합의된) 경로만 여기에
@@ -246,11 +248,11 @@ npm i -D @faker-js/faker
 - `NODE_ENV!=='production'` 게이트. RSC 네이티브·의존성 0으로 Storybook 효용 90%.
 - **`/preview/roles`가 권한 검증의 핵심 도구**다 — 4역할 화면을 한 자리에서 비교.
 
-## C. 피처별 중첩 CLAUDE.md `[M]`
+## C. 피처별 슬라이스 규칙 문서 `[M]`
 
-- `features/<도메인>/`, `app/api/`(BFF)에 슬라이스별 규칙·소유자·mock/live 패턴을 담은 **중첩 CLAUDE.md**.
-- 루트 `CLAUDE.md`는 린 유지, 중첩본은 **해당 경로 편집 시에만 로드** → 토큰↓ + "남 코드 몰라 막힘" 해소.
-- **권한 규칙(CONVENTIONS §7)은 `features/*/CLAUDE.md`에도 짧게 반복**한다 — 역할 가드만 짜는 실수가 제일 흔하다.
+- `features/<도메인>/`, `app/api/`(BFF)에 슬라이스별 규칙·소유자·mock/live 패턴을 담은 **짧은 규칙 문서**를 둔다.
+- 루트 규칙은 린하게 유지하고, 세부는 해당 폴더에서 본다 → "남 코드 몰라 막힘" 해소.
+- **권한 규칙(CONVENTIONS §7)은 이 슬라이스 문서에도 짧게 반복**한다 — 역할 가드만 짜는 실수가 제일 흔하다.
 
 ## D. Contract-First 선(先)머지 `[S]`
 
@@ -265,7 +267,6 @@ npm i -D @faker-js/faker
 
 # ⚪ 여유되면 / 발표 임박
 
-- **Figma Dev Mode MCP** — Figma Make 파일("Design System and Routing Setup", 47프레임)의 실제 variable을 읽어 추측 오차 제거. 디자인 확정 구간에만.
 - **BE 서브모듈 + `openapi-typescript`** (BE 합류 후) — 목 단계엔 반대로 **zod → OpenAPI export**(FE가 계약 드라이버).
 - **`size-limit` 번들 예산** — STT·녹음·캘린더·DnD가 조용히 번들을 부풀리는 것 차단.
 - **Playwright 스모크(Vercel 프리뷰)** — 핵심 라우트 렌더 성공 + 콘솔 에러 0. **역할별 스모크**를 넣으면 권한 회귀를 잡는다.
@@ -301,7 +302,7 @@ npm i -D @faker-js/faker
 
 ```
 레포/
-├─ CLAUDE.md               # 린 (자동로드)
+├─ CLAUDE.md               # 규칙 린 버전
 ├─ SETUP.md  DECISIONS.md  OWNERSHIP.md
 ├─ docs/CONVENTIONS.md     # 풀 규칙
 ├─ .github/                # ci.yml · CODEOWNERS · PR/이슈 템플릿

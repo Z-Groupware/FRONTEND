@@ -43,16 +43,17 @@ npm run build       # 프로덕션 빌드
 | [docs/CONVENTIONS.md](./docs/CONVENTIONS.md) | 코드 쓰다 막힐 때 (상세 규칙)    |
 | [DECISIONS.md](./DECISIONS.md)               | 팀이 정한 것 / 아직 안 정한 것   |
 | [SETUP.md](./SETUP.md)                       | 인프라를 건드릴 때               |
-| [CLAUDE.md](./CLAUDE.md)                     | Claude가 자동으로 읽는 규칙 요약 |
+| [CLAUDE.md](./CLAUDE.md)                     | 규칙 요약본 (빠르게 훑을 때)     |
 
 ---
 
 ## 작업 흐름
 
 ```
-이슈 → 브랜치(feature/*) → 커밋 → 푸시 → PR(base: develop) → 리뷰 1명 → 머지
+이슈 → 브랜치(feature/meeting-capture#12) → 커밋(feat: 제목 #12) → 푸시 → PR(base: develop, Closes #12) → 리뷰 1명 → 머지
 ```
 
+- **이슈 번호를 브랜치·커밋·PR 세 군데에 전부 박는다.** 규칙은 [ONBOARDING.md](./ONBOARDING.md#4-매일-쓰는-작업-흐름).
 - **모든 코드는 `develop`으로.** `main`은 건드리지 않는다.
 - 이슈·PR은 **템플릿이 자동으로 뜬다.**
 - ⛔ 본인 PR 본인 머지 금지 · `main`/`develop` 직접 push 금지

@@ -4,8 +4,9 @@
 > 이 문서는 **상세 참고용**이다. 매 세션 자동 로드되는 레포 루트 `CLAUDE.md`는 **린 버전**을 쓰고, 예시·설명이 필요할 때 여기를 본다.
 > 인프라 세팅은 `SETUP.md`, 팀이 정할 것은 `DECISIONS.md`.
 >
-> 📌 **살아있는 문서.** 기술 규칙(§0·2~~5·9·10·13·15·16·19~~21)은 안정 — 하드클릭에서 검증된 자산이라 그대로 재사용한다.
+> 📌 **살아있는 문서.** 기술 규칙(§0·2~~5·9·10·15·16·19~~21)은 안정 — 이전 프로젝트에서 검증된 규칙이라 그대로 이어간다.
 > **도메인(§6·11·12)·디자인(§7·8)** 은 기획 확정본 기준이며, 요구사항 명세가 구체화되면 갱신한다.
+> **⚠️ 화면(§13)은 디자인 확정 전 초안이다** — 확정되면 갱신한다.
 > **⚠️ ERD·API 스펙은 아직 없다**(BE 협의 전). 지금은 목 기준이고, 격리막(§19)이 그 교체를 감당한다.
 
 ---
@@ -94,7 +95,7 @@ src/
 
 ---
 
-## 5. API 연동 규칙 (하드클릭 삽질 교훈 — 유지)
+## 5. API 연동 규칙 (이전 프로젝트 시행착오 반영)
 
 - ⛔ **`multipart/form-data`에 `Content-Type` 수동 설정 절대 금지** — boundary 누락으로 요청이 깨진다. `FormData`를 넘기면 런타임이 알아서 붙인다. **회의 녹음 파일 제출**이 여기 해당.
 - **목 데이터는 지어내지 말고 API 스펙 success 예시 그대로** — 목·타입·실응답 3자 일치.
@@ -218,9 +219,14 @@ export const isDelayed = (a: { status: ActionStatus; dueDate: string }) =>
 
 ## 10. Git · PR 규칙
 
-- **커밋:** `type: 제목` — `feat/fix/style/refactor/docs/chore/test`, 한글 50자 이내.
-- **브랜치:** `main` / `develop` / `feature/*` / `fix/*`. base는 `develop`.
-- **PR:** 본문에 **무엇·왜·확인방법**. 리뷰 **1명 승인** 후 머지. 충돌은 올린 사람이 해결.
+> **이슈 번호가 브랜치·커밋·PR을 잇는 고리다.** 작업 전에 이슈부터 만들고, 그 번호를 셋 모두에 박는다.
+
+- **브랜치:** `feature/{도메인}-{기능}#{이슈번호}` · `fix/{도메인}-{내용}#{이슈번호}` · `docs/{내용}#{이슈번호}`
+  예) `feature/meeting-capture#12` · `fix/board-dnd#31` · `docs/conventions-git#40`
+  base는 항상 `develop`. `main`은 릴리즈용이라 직접 안 건드린다.
+- **커밋:** `type: 제목 #{이슈번호}` — 한글 50자 이내. 예) `feat: 회의 캡처 녹음 버튼 #12`
+  type 9종: `feat` · `fix` · `style` · `refactor` · `docs` · `chore` · `test` · `design` · `merge`
+- **PR:** 본문에 **무엇·왜·확인방법** + **`Closes #{이슈번호}`**(머지 시 이슈 자동 종료). 리뷰 **1명 승인** 후 머지. 충돌은 올린 사람이 해결.
 - ⛔ 금지: `console.log`·주석 코드 커밋, `main`/`develop` 직접 push, `any`, 토큰 `localStorage`.
 
 ---
@@ -252,7 +258,10 @@ export const isDelayed = (a: { status: ActionStatus; dueDate: string }) =>
 
 ---
 
-## 13. 화면 맵 (Figma Make "Design System and Routing Setup", 약 47화면 · 프레임=라우트명)
+## 13. 화면 맵 — ⚠️ 미확정 초안
+
+> 아래는 **디자인 확정 전 초안**이다. 화면 이름·개수·라우트가 바뀔 수 있으므로 **이 목록 기준으로 라우트를 미리 만들지 않는다.**
+> 지금 용도는 ①범위 감 잡기 ②이슈 쪼개기 밑그림 ③분업 단위 논의뿐이다. 확정되면 이 절을 통째로 갱신한다.
 
 - **Public(5):** 랜딩 `/` · 로그인 `/login`(워크스페이스 기억 2단계) · 기업등록 `/register` · 요금제 `/pricing` · 초대 `/invite/[token]`
 - **온보딩(5):** `/onboarding/1~3` · `plan` · `done` — OWNER, 부서→직급→초대→플랜
@@ -266,13 +275,15 @@ export const isDelayed = (a: { status: ActionStatus; dueDate: string }) =>
 
 ---
 
-## 14. Figma → 코드 변환 (피그마 = 원자재)
+## 14. 디자인 시안 → 코드 변환 (시안 = 원자재)
+
+> 시안에서 뽑은 CSS는 **그대로 붙여넣지 않는다.** 아래 ①②③ 기준으로 정리해서 구현한다.
 
 - **① 구조:** `position:absolute`+고정 px → **flex/grid**. Z는 1440 고정이라 반응형 재구성 부담은 적지만, absolute 남발은 금지.
 - **② 스타일:** 생 hex·임의값(`w-[327px]`) → **CSS 변수 토큰(§8)·Tailwind 스케일**.
 - **③ 시맨틱·최적화:** `<div>`→시맨틱 태그 / `<img>`→`next/image` / 반복 블록→컴포넌트 추출.
 - **아이콘:** 표준 UI=`lucide-react` / 브랜드·커스텀=SVGR 컴포넌트(`currentColor`). ❌ 이모지 · ❌ `<img src=".svg">`
-- Figma Make 산출물은 **초안**이다. `components/ui`(shadcn)로 치환 가능한 건 치환한다.
+- 피그마의 커스텀 UI는 **초안**이다. `components/ui`(shadcn)로 치환 가능한 건 치환한다.
 
 ---
 
@@ -369,7 +380,7 @@ server.ts / actions.ts ── isMock 분기:  mock → mocks/*  |  live → serv
 ## 23. 연동 시 BE 실코드 검증
 
 - 연동 전 **BE 레포에서 컨트롤러·DTO 직접 확인**: 실제 **경로 · HTTP 메서드 · 요청 바디 · 응답 shape.**
-- ⚠️ **Swagger·계약문서·구두 설명 추측 금지** — 실코드와 다른 경우가 잦다(하드클릭 교훈). 못 하면 "가정 shape·미검증" 주석.
+- ⚠️ **Swagger·계약문서·구두 설명 추측 금지** — 실코드와 다른 경우가 잦다. 못 하면 "가정 shape·미검증" 주석.
 - 실패(4xx/5xx)는 빈 화면으로 숨기지 말고 throw → `error.tsx`.
 
 ---

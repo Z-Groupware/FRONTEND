@@ -60,7 +60,7 @@ assignees: ""
 
 ## 📎 관련 브랜치
 
-`feature/`
+`feature/{도메인}-{기능}#{이 이슈 번호}` — 예) `feature/meeting-capture#12`
 
 ---
 

@@ -48,8 +48,9 @@
 
 **기본**
 
-- [ ] 브랜치 명명 규칙 준수 (`feature/*` · `fix/*`, base `develop`)
-- [ ] 커밋 컨벤션 준수 (`type: 제목`)
+- [ ] 브랜치 명명 규칙 준수 (`feature/meeting-capture#12` 꼴, base `develop`)
+- [ ] 커밋 컨벤션 준수 (`type: 제목 #{이슈번호}`)
+- [ ] 아래 `Closes #` 에 이슈 번호 기입
 - [ ] 불필요한 `console` · 주석 처리된 코드 제거
 - [ ] 민감 정보 없음 (토큰 · 키 · `.env`)
 

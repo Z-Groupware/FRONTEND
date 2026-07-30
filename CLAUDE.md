@@ -84,7 +84,7 @@ app/
 
 ## 디자인 토큰 (하드코딩 금지 · **CSS 변수로 정의**)
 
-> 다크모드는 "확장"이지만 **토큰 구조는 Day-1**. 나중에 붙이면 47화면 전면 수정된다.
+> 다크모드는 "확장"이지만 **토큰 구조는 Day-1**. 나중에 붙이면 전 화면을 다시 고쳐야 한다.
 
 - **라이트:** 배경 `#FFFFFF` · 사이드바 `#FBFBFA` · 카드 `#FFFFFF`+보더 `#E7E5E4` · 섹션띠 `#FAFAF9`
 - **다크:** 배경 `#0C0A09` · 카드 `#1C1917` · 보조 `#292524` · 사이드바 `#171412` · 텍스트 `#FAFAF9` · 보조텍스트 `#A8A29E`
@@ -130,7 +130,10 @@ app/
 
 ## Git·PR
 
-- 커밋 `type: 제목`(feat/fix/style/refactor/docs/chore/test, 한글 50자). 브랜치 `main`/`develop`/`feature/*`/`fix/*`(base develop).
+- 이슈 번호가 브랜치·커밋·PR을 잇는다. 작업 전 이슈부터 만든다.
+- 브랜치 `feature/{도메인}-{기능}#{이슈번호}` · `fix/{도메인}-{내용}#{이슈번호}` · `docs/{내용}#{이슈번호}`. base는 `develop`(`main`은 릴리즈용).
+- 커밋 `type: 제목 #{이슈번호}`(한글 50자). type 9종: feat/fix/style/refactor/docs/chore/test/design/merge.
+- PR 본문에 `Closes #{이슈번호}`.
 - PR: 무엇·왜·확인법 + 리뷰 1명. ⛔ console·주석코드 커밋 · main/develop 직접push · `any` · 토큰 localStorage.
 
 ## AI(Claude)와 일하는 법 ⭐

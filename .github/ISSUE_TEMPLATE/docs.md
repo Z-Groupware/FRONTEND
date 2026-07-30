@@ -45,7 +45,7 @@ assignees: ""
 
 ## 📎 관련 브랜치
 
-`docs/`
+`docs/{내용}#{이 이슈 번호}` — 예) `docs/conventions-git#40`
 
 ---
 
