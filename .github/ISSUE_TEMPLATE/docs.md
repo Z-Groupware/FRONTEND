@@ -15,11 +15,11 @@ assignees: ""
 ## 📂 작업 대상 문서
 
 - [ ] `README.md`
-- [ ] `CLAUDE.md` (레포 루트 · 린 — 매 세션 자동 로드)
+- [ ] `CLAUDE.md` (레포 루트 · 규칙 요약)
 - [ ] `docs/CONVENTIONS.md` (상세 규칙)
 - [ ] `SETUP.md` (인프라 세팅)
 - [ ] `DECISIONS.md` (팀 결정 기록)
-- [ ] `OWNERSHIP.md` (분업·소유권)
+- [ ] `ONBOARDING.md` (팀원 가이드북)
 - [ ] `.github/` 템플릿
 - [ ] 기타:
 

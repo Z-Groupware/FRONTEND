@@ -19,7 +19,7 @@ const eslintConfig = defineConfig([
   {
     plugins: { "simple-import-sort": simpleImportSort },
     rules: {
-      // AI 최빈 결함 차단 — 조용한 any 금지 (CONVENTIONS §3)
+      // 조용한 any 금지 — 타입 구멍이 런타임까지 흘러간다 (CONVENTIONS §3)
       "@typescript-eslint/no-explicit-any": "error",
       // import 순서를 결정론적으로 → diff 노이즈·머지 충돌 감소
       "simple-import-sort/imports": "error",

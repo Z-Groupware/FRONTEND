@@ -95,37 +95,40 @@
 }
 
 .dark {
-  /* ───────── Z 디자인 토큰 (다크) — 구현은 확장이지만 토큰은 Day-1에 깐다.
- * 나중에 붙이면 전 화면을 다시 고쳐야 한다. */
-  --background: #0c0a09;
+  /* ───────── Z 디자인 토큰 (다크) — 전 페이지 적용.
+ * 순검정(#0C0A09)을 쓰지 않는다: 흰 텍스트가 번져 보이고(halation) 카드·사이드바의 층이 사라진다.
+ * 대신 stone 색조를 유지한 채 명도만 한 단씩 띄운다 — 사이드바 < 배경 < 카드 순으로 밝아진다. */
+  --background: #1a1715;
   --foreground: #fafaf9;
-  --card: #1c1917;
+  --card: #242120;
   --card-foreground: #fafaf9;
-  --popover: #1c1917;
+  --popover: #242120;
   --popover-foreground: #fafaf9;
   --primary: #3b82f6;
   --primary-foreground: #ffffff;
-  --secondary: #292524;
+  --secondary: #2e2a28;
   --secondary-foreground: #fafaf9;
-  --muted: #292524;
+  --muted: #2e2a28;
   --muted-foreground: #a8a29e;
-  --accent: #292524;
+  --accent: #2e2a28;
   --accent-foreground: #fafaf9;
   --destructive: #ef4444;
-  --border: #292524;
-  --input: #292524;
-  --ring: #3b82f6;
-  --sidebar: #171412;
+  --border: #33302d;
+  --input: #33302d;
+  /* 포커스 링만 한 톤 밝게 — 어두운 배경에서 #3B82F6은 잘 안 보인다 */
+  --ring: #60a5fa;
+  --sidebar: #151211;
   --sidebar-foreground: #fafaf9;
   --sidebar-primary: #3b82f6;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #292524;
+  --sidebar-accent: #2e2a28;
   --sidebar-accent-foreground: #fafaf9;
-  --sidebar-border: #292524;
-  --sidebar-ring: #3b82f6;
+  --sidebar-border: #33302d;
+  --sidebar-ring: #60a5fa;
   --success: #22c55e;
   --warning: #f59e0b;
-  --status-todo: #78716c;
+  /* 상태 점은 배경이 밝아진 만큼 같이 올린다(대기 점이 배경에 묻히지 않게) */
+  --status-todo: #8a827d;
   --status-progress: #22c55e;
   --status-done: #a78bfa;
 }

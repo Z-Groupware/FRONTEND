@@ -209,7 +209,7 @@ type 9종 허용(`feat/fix/style/refactor/docs/chore/test/design/merge`) + 제�
 /src/**/schemas.ts   /src/types/**                       @devA @devB @devC      # 계약=공동소유
 ```
 
-- `OWNERSHIP.md`에 3분할을 명문화한다.
+- 3분할은 `DECISIONS.md`(분업 — 화면 축 3분할)에 명문화돼 있다. 별도 파일을 만들지 않는다.
 - ⚠️ **캡처(녹음)와 STT(자막)는 한 화면이다** → 반드시 **같은 사람**에게. 나누면 충돌한다.
 
 ## 11. 타입드 엔드포인트 레지스트리 `[M]`
@@ -303,7 +303,7 @@ npm i -D @faker-js/faker
 ```
 레포/
 ├─ CLAUDE.md               # 규칙 린 버전
-├─ SETUP.md  DECISIONS.md  OWNERSHIP.md
+├─ SETUP.md  DECISIONS.md  ONBOARDING.md
 ├─ docs/CONVENTIONS.md     # 풀 규칙
 ├─ .github/                # ci.yml · CODEOWNERS · PR/이슈 템플릿
 ├─ .claude/                # commands/ · settings.json(훅)
