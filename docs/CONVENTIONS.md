@@ -86,6 +86,7 @@ src/
   - 폼: `useActionState(action, initial)` + 제출 버튼은 `useFormStatus()`의 `pending`으로 비활성화.
   - 파일 업로드(multipart): `fetch`에 **`Content-Type` 직접 넣지 말 것**(§5). `body`에 `FormData` 그대로.
   - `redirect()`는 **`try/catch` 밖**에서.
+  - **결과 피드백 = 토스트**(shadcn `sonner`). 단 폼 검증 오류는 **필드 인라인**, 파괴적 작업 확인은 `Dialog`, 페이지 전체 실패는 `error.tsx`다 — 토스트는 사라지므로 **결과는 `revalidatePath` 후 화면에 남아 있어야** 하고 토스트는 보조다. `<Toaster />`는 `app/layout.tsx`에 1개.
 - **`'use client'` 최소화:** 경계는 가장 작은 잎사귀에만. 데이터는 Server에서 받아 **props로** 내려주고, client가 server를 `import`하지 말고 **`children`** 으로 합성.
 - **인증 = httpOnly 쿠키.** `localStorage` 토큰 저장 **금지**. 서버 axios 인터셉터가 `cookies()`로 토큰을 꺼내 헤더 첨부, 401 → refresh 재발급.
   ⚠️ Z는 **비밀번호 변경·재설정 화면이 없다**(회사 계정 통제). 재발급은 관리자 요청 안내로.

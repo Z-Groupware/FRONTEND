@@ -51,6 +51,7 @@ app/
 - `use client` 최소화 · 데이터는 props로 · client가 server import 말고 `children`.
 - 인증=**httpOnly 쿠키**, `localStorage` 토큰 금지. 라우트 보호는 `middleware.ts` + 서버 재검사.
 - 알림=**SSE**(`/app/notification`). BFF가 스트림을 중계하고 토큰을 주입한다.
+- 변경 결과 피드백=**토스트**(shadcn `sonner`, `<Toaster />`는 루트 레이아웃 1개). ❌폼 검증 오류(→필드 인라인)·파괴적 작업 확인(→Dialog)·페이지 전체 실패(→`error.tsx`). 토스트는 사라지므로 **보조**다.
 
 ## 도메인 상수 (ERD 명칭과 100% 일치 · `as const` + 라벨맵)
 
