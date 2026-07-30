@@ -350,7 +350,10 @@ export const isDelayed = (a: { status: ActionStatus; dueDate: string }) =>
 
 - **환경변수:** `NEXT_PUBLIC_` = **빌드 시 번들에 박혀 브라우저 노출** → 시크릿 절대 금지. 값을 바꾸면 **재배포(재빌드)** 해야 반영된다.
 - **배포 전:** 로컬 `npm run build && npm start`로 프로덕션 검증. `package-lock.json` 커밋 필수.
-- **Vercel(추정, 미확정):** Preview Deployment(PR별 임시 URL)·SSL 자동.
+- **배포 = AWS**(서비스 미정 — Amplify / ECS·Fargate / EC2). `DECISIONS.md` 참고.
+  - ⚠️ **정적 배포(S3+CloudFront 단독)는 불가.** Server Action·BFF 프록시·httpOnly 쿠키·SSE가 **Node 서버**를 요구한다. `next export` 전제로 코드를 짜지 않는다.
+  - 컨테이너로 간다면 `next.config.ts`에 `output: 'standalone'`이 필요하다(Amplify는 불필요).
+  - ⚠️ **AWS 고유 값을 코드에 박지 않는다.** 리전·버킷·엔드포인트는 전부 환경변수로.
 - **CI:** GitHub Actions(`.github/workflows/ci.yml`). PR마다 `typecheck·lint·test·build` 4종이 `verify` 체크 하나로 묶여 돌고, 전부 통과해야 머지된다.
 
 ---
