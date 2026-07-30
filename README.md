@@ -15,9 +15,8 @@ npm install     # 훅도 함께 설치된다
 npm run dev     # http://localhost:3000
 ```
 
-### 👉 처음이신가요? **[ONBOARDING.md](./ONBOARDING.md)** 를 먼저 읽어주세요
-
-무엇이 바뀌었는지 · 어떻게 작업하는지 · 처음 만나는 에러 해결법이 다 있습니다. (10분)
+> 👉 **처음이신가요?** 팀에서 공유한 **가이드북**(작업 흐름 · 규칙 · 에러 해결)을 먼저 읽어주세요.
+> 코드 규칙 상세는 [docs/CONVENTIONS.md](./docs/CONVENTIONS.md)에 있습니다.
 
 ---
 
@@ -30,20 +29,18 @@ npm run test        # 테스트
 npm run build       # 프로덕션 빌드
 ```
 
-> PR을 올리면 이 4개가 **자동으로 돈다.** 하나라도 실패하면 머지할 수 없다.
+> PR을 올리면 이 4개가 **`verify` 체크 하나로 묶여 자동으로 돈다.** 하나라도 실패하면 머지할 수 없다.
 > 올리기 전에 로컬에서 먼저 돌려보면 시간을 아낄 수 있다.
 
 ---
 
 ## 문서
 
-| 문서                                         | 언제 읽나                        |
-| -------------------------------------------- | -------------------------------- |
-| **[ONBOARDING.md](./ONBOARDING.md)**         | **처음 · 작업 흐름 · 에러 해결** |
-| [docs/CONVENTIONS.md](./docs/CONVENTIONS.md) | 코드 쓰다 막힐 때 (상세 규칙)    |
-| [DECISIONS.md](./DECISIONS.md)               | 팀이 정한 것 / 아직 안 정한 것   |
-| [SETUP.md](./SETUP.md)                       | 인프라를 건드릴 때               |
-| [CLAUDE.md](./CLAUDE.md)                     | 규칙 요약본 (빠르게 훑을 때)     |
+| 문서                                             | 언제 읽나                      |
+| ------------------------------------------------ | ------------------------------ |
+| **[docs/CONVENTIONS.md](./docs/CONVENTIONS.md)** | **코드 쓰다 막힐 때 (상세)**   |
+| [DECISIONS.md](./DECISIONS.md)                   | 팀이 정한 것 / 아직 안 정한 것 |
+| [CLAUDE.md](./CLAUDE.md)                         | 규칙 요약본 (빠르게 훑을 때)   |
 
 ---
 
@@ -53,7 +50,7 @@ npm run build       # 프로덕션 빌드
 이슈 → 브랜치(feature/meeting-capture#12) → 커밋(feat: 제목 #12) → 푸시 → PR(base: develop, Closes #12) → 리뷰 1명 → 머지
 ```
 
-- **이슈 번호를 브랜치·커밋·PR 세 군데에 전부 박는다.** 규칙은 [ONBOARDING.md](./ONBOARDING.md#4-매일-쓰는-작업-흐름).
+- **이슈 번호를 브랜치·커밋·PR 세 군데에 전부 박는다.** 형식은 [DECISIONS.md](./DECISIONS.md)의 git 컨벤션 항목 참고.
 - **모든 코드는 `develop`으로.** `main`은 건드리지 않는다.
 - 이슈·PR은 **템플릿이 자동으로 뜬다.**
 - ⛔ 본인 PR 본인 머지 금지 · `main`/`develop` 직접 push 금지

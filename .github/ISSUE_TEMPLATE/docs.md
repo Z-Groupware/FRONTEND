@@ -17,9 +17,7 @@ assignees: ""
 - [ ] `README.md`
 - [ ] `CLAUDE.md` (레포 루트 · 규칙 요약)
 - [ ] `docs/CONVENTIONS.md` (상세 규칙)
-- [ ] `SETUP.md` (인프라 세팅)
 - [ ] `DECISIONS.md` (팀 결정 기록)
-- [ ] `ONBOARDING.md` (팀원 가이드북)
 - [ ] `.github/` 템플릿
 - [ ] 기타:
 

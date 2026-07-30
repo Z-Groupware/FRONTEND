@@ -1,6 +1,6 @@
 # CLAUDE.md — Z (회의 기반 지식관리 그룹웨어) FE · 팀 공용 · 린
 
-> 📌 살아있는 문서. **기술규칙=안정 / 세부 기능·API=요구사항 명세 확정 후 갱신.** 예시·상세는 `docs/CONVENTIONS.md`, 인프라 세팅은 `SETUP.md`.
+> 📌 살아있는 문서. **기술규칙=안정 / 세부 기능·API=요구사항 명세 확정 후 갱신.** 예시·상세는 `docs/CONVENTIONS.md`, 팀이 정한 것·미정은 `DECISIONS.md`.
 > **한 줄:** 회의를 캡처(STT·녹음)하면 AI가 요약·결정·액션을 추출해 담당자에게 하달한다.
 > **스택:** Next.js(App Router) · TS · Tailwind · shadcn/ui. 데이터=**Server-First + Server Action + BFF + httpOnly 쿠키**.
 > **⚠️ 로그인 뒤 사내 도구다.** 공개 페이지가 아니라 SEO·OG는 대상이 아니다(§SEO). 데스크톱 1440 전용(모바일 미대응).

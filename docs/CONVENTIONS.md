@@ -2,7 +2,7 @@
 
 > **Z = 회의 기반 지식관리 그룹웨어.** 회의를 캡처(STT·녹음)하면 AI가 요약·결정·액션을 추출해 담당자에게 하달한다.
 > 이 문서는 **상세 참고용**이다. 매 세션 자동 로드되는 레포 루트 `CLAUDE.md`는 **린 버전**을 쓰고, 예시·설명이 필요할 때 여기를 본다.
-> 인프라 세팅은 `SETUP.md`, 팀이 정할 것은 `DECISIONS.md`.
+> 팀이 확정한 것·아직 못 정한 것은 `DECISIONS.md`.
 >
 > 📌 **살아있는 문서.** 기술 규칙(§0·2~~5·9·10·15·16·19~~21)은 안정 — 이전 프로젝트에서 검증된 규칙이라 그대로 이어간다.
 > **도메인(§6·11·12)·디자인(§7·8)** 은 기획 확정본 기준이며, 요구사항 명세가 구체화되면 갱신한다.
@@ -341,7 +341,7 @@ export const isDelayed = (a: { status: ActionStatus; dueDate: string }) =>
 - **환경변수:** `NEXT_PUBLIC_` = **빌드 시 번들에 박혀 브라우저 노출** → 시크릿 절대 금지. 값을 바꾸면 **재배포(재빌드)** 해야 반영된다.
 - **배포 전:** 로컬 `npm run build && npm start`로 프로덕션 검증. `package-lock.json` 커밋 필수.
 - **Vercel(추정, 미확정):** Preview Deployment(PR별 임시 URL)·SSL 자동.
-- **CI:** GitHub Actions. PR마다 `typecheck·lint·test·build` 4개 필수 통과(`SETUP.md` §1).
+- **CI:** GitHub Actions(`.github/workflows/ci.yml`). PR마다 `typecheck·lint·test·build` 4종이 `verify` 체크 하나로 묶여 돌고, 전부 통과해야 머지된다.
 
 ---
 

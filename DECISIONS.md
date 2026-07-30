@@ -1,7 +1,7 @@
 # DECISIONS.md — Z 프론트엔드 결정 기록
 
 > 팀이 확정한 것과 아직 못 정한 것. **여기가 단일 기준**이다.
-> 규칙 문서(`CLAUDE.md` · `docs/CONVENTIONS.md` · `SETUP.md`)는 이 결정을 반영한 결과물이다.
+> 규칙 문서(`CLAUDE.md` · `docs/CONVENTIONS.md`)는 이 결정을 반영한 결과물이다.
 > 결정이 바뀌면 **여기를 먼저 고치고** 규칙 문서를 따라 고친다.
 
 ---
@@ -99,7 +99,17 @@ app/
 
 - [ ] **화면(디자인) 확정** — 확정 전까지 `CONVENTIONS §13` 화면 맵은 **초안**이고, 이 목록 기준으로 라우트를 미리 만들지 않는다
 - [ ] **①②③ 담당자 배정** — 분할 기준은 확정, 누가 어디를 맡을지 미정
-- [ ] **CODEOWNERS** — 팀원 GitHub 아이디 필요
+- [ ] **CODEOWNERS** — 담당자 배정 + 팀원 GitHub 아이디가 정해지면 `.github/CODEOWNERS`로 만든다. 초안:
+
+  ```
+  /src/app/(app)/meeting/**  /src/features/meeting/**                    @devA   # ① 워크벤치
+  /src/app/(app)/board/**    /src/features/{action,project,handover}/**  @devB   # ② 업무
+  /src/app/(role)/**         /src/features/{member,room,billing}/**      @devC   # ③ 조직
+  /src/app/layout.tsx  /src/app/globals.css  /src/components/ui/**       @devC   # 공유 셸 단독
+  /src/**/schemas.ts   /src/types/**                    @devA @devB @devC        # 계약 = 공동 소유
+  ```
+
+  ⚠️ 강제력은 GitHub Settings → Branches에서 `develop`에 **"Require review from Code Owners"** 를 켜야 생긴다.
 
 ### 기획·BE 대기
 
