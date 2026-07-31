@@ -54,6 +54,11 @@
   --color-guide-foreground: var(--guide-foreground);
   --color-guide-muted: var(--guide-muted);
   --color-guide-border: var(--guide-border);
+  --color-landing-dark: var(--landing-dark);
+  --color-landing-dark-foreground: var(--landing-dark-foreground);
+  --color-landing-dark-muted: var(--landing-dark-muted);
+  --color-landing-dark-border: var(--landing-dark-border);
+  --color-landing-dark-surface: var(--landing-dark-surface);
   --color-status-todo: var(--status-todo);
   --color-status-progress: var(--status-progress);
   --color-status-done: var(--status-done);
@@ -120,6 +125,12 @@
   --status-todo: #a8a29e;
   --status-progress: #22c55e;
   --status-done: #8b5cf6;
+  /* 랜딩 검정 섹션 — 로그인 전 화면이라 **테마와 무관하게 어둡다**(도움말 패널과 같은 규칙) */
+  --landing-dark: #0a0a0a;
+  --landing-dark-foreground: #ffffff;
+  --landing-dark-muted: #a1a1aa;
+  --landing-dark-border: rgba(255, 255, 255, 0.12);
+  --landing-dark-surface: rgba(255, 255, 255, 0.05);
 }
 
 .dark {
@@ -173,6 +184,12 @@
   --status-todo: #8a827d;
   --status-progress: #22c55e;
   --status-done: #a78bfa;
+  /* 랜딩 검정 섹션은 다크에서도 같은 값이다 — 라이트/다크가 갈리면 랜딩 톤이 흔들린다 */
+  --landing-dark: #0a0a0a;
+  --landing-dark-foreground: #ffffff;
+  --landing-dark-muted: #a1a1aa;
+  --landing-dark-border: rgba(255, 255, 255, 0.12);
+  --landing-dark-surface: rgba(255, 255, 255, 0.05);
 }
 
 @layer base {
@@ -184,5 +201,32 @@
   }
   html {
     @apply font-sans;
+  }
+}
+
+/*
+ * 랜딩 애니메이션 — **`@layer utilities` 밖에 둔다.**
+ * ⚠️ Tailwind v4는 레이어 안의 커스텀 클래스를 걸러낼 수 있다(실제로 CSS에 안 실렸다).
+ *    평범한 최상위 규칙으로 두면 항상 살아남는다.
+ */
+/* 화면 미리보기 띠가 옆으로 흐른다. 두 벌을 이어 붙여 -50%에서 끊김 없이 이어진다 */
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-marquee {
+  animation: marquee 40s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-marquee {
+    animation: none;
+    opacity: 1;
+    transform: none;
   }
 }
