@@ -1,8 +1,11 @@
 import { ROLE } from "@/constants/domain";
 
 import {
+  blockedRoles,
   changePositionRole,
   createPosition,
+  enforceSingleLeader,
+  isLeaderTaken,
   movePosition,
   nextAvailablePositionName,
   removePosition,
@@ -104,5 +107,58 @@ describe("movePosition", () => {
 
   it("옮겨도 개수는 그대로다", () => {
     expect(movePosition(makeList(), "staff", "lead", "before")).toHaveLength(4);
+  });
+});
+
+describe("isLeaderTaken / blockedRoles — 리더는 하나뿐", () => {
+  const withLeader = (): Position[] => [
+    { id: "lead", name: "팀장", role: ROLE.LEADER },
+    { id: "staff", name: "사원", role: ROLE.MEMBER },
+  ];
+
+  it("이미 리더가 있으면 다른 줄에서는 못 고른다", () => {
+    expect(isLeaderTaken(withLeader(), "staff")).toBe(true);
+    expect(blockedRoles(withLeader(), "staff")).toEqual([ROLE.LEADER]);
+  });
+
+  it("자기 자신이 리더인 줄은 막지 않는다 — 다시 고를 수 있어야 한다", () => {
+    expect(isLeaderTaken(withLeader(), "lead")).toBe(false);
+    expect(blockedRoles(withLeader(), "lead")).toEqual([]);
+  });
+
+  it("리더가 없으면 아무것도 막지 않는다", () => {
+    const allMembers: Position[] = [
+      { id: "staff", name: "사원", role: ROLE.MEMBER },
+      { id: "daeri", name: "대리", role: ROLE.MEMBER },
+    ];
+    expect(blockedRoles(allMembers, "staff")).toEqual([]);
+  });
+
+  it("리더를 지우면 다시 고를 수 있다", () => {
+    expect(isLeaderTaken(removePosition(withLeader(), "lead"))).toBe(false);
+  });
+});
+
+describe("리더는 한 직급뿐이다 — 보관함 복원", () => {
+  it("리더가 둘이면 뒤엣것을 멤버로 낮춘다", () => {
+    const restored = enforceSingleLeader([
+      { id: "p1", name: "팀장", role: ROLE.LEADER },
+      { id: "p2", name: "실장", role: ROLE.LEADER },
+      { id: "p3", name: "사원", role: ROLE.MEMBER },
+    ]);
+
+    expect(restored.map((position) => position.role)).toEqual([
+      ROLE.LEADER,
+      ROLE.MEMBER,
+      ROLE.MEMBER,
+    ]);
+  });
+
+  it("리더가 하나뿐이면 그대로 둔다", () => {
+    const list = [
+      { id: "p1", name: "팀장", role: ROLE.LEADER },
+      { id: "p2", name: "사원", role: ROLE.MEMBER },
+    ];
+    expect(enforceSingleLeader(list)).toEqual(list);
   });
 });

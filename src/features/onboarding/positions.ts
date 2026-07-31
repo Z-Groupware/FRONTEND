@@ -1,3 +1,5 @@
+import { ROLE } from "@/constants/domain";
+
 import type { AssignableRole, Position } from "./types";
 
 /** 직급 목록 조작 — 전부 순수 함수다(원본을 바꾸지 않는다). */
@@ -67,4 +69,35 @@ export function shiftPosition(positions: Position[], id: string, offset: 1 | -1)
   if (!moved) return positions;
   next.splice(to, 0, moved);
   return next;
+}
+
+/**
+ * 리더 직급이 이미 있는지.
+ * **리더는 기업에 하나뿐**이다 — 팀장 같은 직급 하나에만 붙이고 나머지는 멤버로 둔다.
+ */
+/**
+ * 리더는 한 직급뿐이다 — 첫 번째만 남기고 나머지는 멤버로 낮춘다.
+ *
+ * ⚠️ `add`·`changeRole`은 들어오는 값을 하나씩 막지만, **임시 보관함에서 통째로 되돌릴 때는
+ *    그 문을 지나지 않는다.** 옛 보관함에 리더가 둘 있으면 그대로 살아난다 — 여기서 정리한다.
+ */
+export function enforceSingleLeader(positions: Position[]): Position[] {
+  let hasLeader = false;
+
+  return positions.map((position) => {
+    if (position.role !== ROLE.LEADER) return position;
+    if (hasLeader) return { ...position, role: ROLE.MEMBER as AssignableRole };
+
+    hasLeader = true;
+    return position;
+  });
+}
+
+export function isLeaderTaken(positions: Position[], exceptId?: string): boolean {
+  return positions.some((position) => position.role === ROLE.LEADER && position.id !== exceptId);
+}
+
+/** 이 줄에서 고를 수 없는 권한 — 화면에서 잠근다. */
+export function blockedRoles(positions: Position[], exceptId?: string): AssignableRole[] {
+  return isLeaderTaken(positions, exceptId) ? [ROLE.LEADER] : [];
 }

@@ -5,19 +5,17 @@ import { useState } from "react";
 import {
   appendChild,
   createDepartment,
-  demoteNode,
   findNode,
   findSiblings,
   moveNodeTo,
   nextAvailableName,
-  promoteNode,
   removeDepartment,
   renameDepartment,
-  shiftNode,
 } from "./tree";
+import { demoteNode, promoteNode, shiftNode } from "./tree-keyboard";
 import type { DepartmentNode } from "./types";
 
-const NEW_CHILD_NAME = "새 하위 부서";
+const NEW_CHILD_NAME = "새 역할";
 
 /**
  * 부서 트리 편집 상태.
@@ -27,7 +25,7 @@ export function useDepartmentTree(initial: DepartmentNode[]) {
   const [departments, setDepartments] = useState(initial);
   /** 이름을 편집 중인 부서 — 새로 만든 부서는 바로 편집 상태로 연다 */
   const [editingId, setEditingId] = useState<string | null>(null);
-  /** 하위까지 사라지는 삭제는 확인을 받는다 */
+  /** 안에 든 역할까지 사라지는 삭제는 확인을 받는다 */
   const [pendingDelete, setPendingDelete] = useState<DepartmentNode | null>(null);
 
   const addRoot = (name: string) => {
@@ -58,6 +56,8 @@ export function useDepartmentTree(initial: DepartmentNode[]) {
 
   return {
     departments,
+    /** 임시 보관함에서 되돌릴 때만 쓴다(draft.ts) */
+    reset: (next: DepartmentNode[]) => setDepartments(next),
     editingId,
     setEditingId,
     pendingDelete,
