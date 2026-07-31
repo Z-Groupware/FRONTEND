@@ -6,7 +6,7 @@ import { getDepartments, getPositions } from "@/features/onboarding/server";
 import { ONBOARDING_STEP } from "@/features/onboarding/types";
 
 export const metadata: Metadata = {
-  title: "사원 초대 — Z",
+  title: "사원 초대",
 };
 
 export default async function OnboardingInvitePage() {

@@ -17,7 +17,11 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Z — 회의 기반 지식관리",
+  // 각 화면은 자기 이름만 쓴다 — 탭 제목에 브랜드를 뒤에 붙이지 않는다
+  title: {
+    default: "Z — 회의 기반 지식관리",
+    template: "%s",
+  },
   description: "회의를 캡처하면 요약·결정·액션이 담당자에게 전달됩니다.",
 };
 

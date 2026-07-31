@@ -5,7 +5,7 @@ import { OnboardingShell } from "@/features/onboarding/components/onboarding-she
 import { ONBOARDING_STEP } from "@/features/onboarding/types";
 
 export const metadata: Metadata = {
-  title: "플랜 선택 — Z",
+  title: "플랜 선택",
 };
 
 /**
