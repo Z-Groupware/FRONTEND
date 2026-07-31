@@ -96,7 +96,7 @@ export function DepartmentSetup({
           href="/onboarding/2"
           className={cn(
             buttonVariants(),
-            "bg-foreground text-background hover:bg-foreground/90 h-[34px] gap-[5.25px] rounded-md px-[12.25px] text-[13px] leading-5",
+            "bg-foreground text-background hover:bg-foreground/90 h-[34px] gap-[5.25px] rounded-md px-[12.25px] text-[13px] leading-none",
           )}
         >
           다음

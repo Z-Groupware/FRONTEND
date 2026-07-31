@@ -1,7 +1,7 @@
 "use client";
 
 import { ChevronRight, Folder, GripVertical } from "lucide-react";
-import { useRef, useState } from "react";
+import { useState } from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -40,7 +40,6 @@ export function DepartmentNode({ node, depth, parentId, ...handlers }: Departmen
   const { onRename, onAddChild, onRemove, onShift, onPromote, onDemote } = handlers;
   const { editingId, onEditingChange } = handlers;
 
-  const rowRef = useRef<HTMLDivElement>(null);
   const [isExpanded, setIsExpanded] = useState(true);
 
   const hasChildren = node.children.length > 0;
@@ -51,7 +50,7 @@ export function DepartmentNode({ node, depth, parentId, ...handlers }: Departmen
     parentId,
     depth,
     hasChildren,
-    rowRef,
+    nodeName: node.name,
     dragging: handlers.dragging,
     onDraggingChange: handlers.onDraggingChange,
     onMove: handlers.onMove,
@@ -80,7 +79,6 @@ export function DepartmentNode({ node, depth, parentId, ...handlers }: Departmen
   return (
     <>
       <div
-        ref={rowRef}
         {...rowProps}
         className={cn(
           "group relative flex h-[38px] items-center gap-2 rounded-md px-2 transition-[background-color,opacity]",

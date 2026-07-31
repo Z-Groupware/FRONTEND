@@ -5,6 +5,7 @@ import { ZLogo } from "@/components/icons/z-logo";
 import { cn } from "@/lib/utils";
 
 import { ONBOARDING_STEP_LABEL, ONBOARDING_TOTAL_STEPS, type OnboardingStep } from "../types";
+import { StepCircle } from "./step-circle";
 
 const STEPS = Object.keys(ONBOARDING_STEP_LABEL).map(Number) as OnboardingStep[];
 
@@ -34,16 +35,19 @@ export function OnboardingShell({ step, children }: OnboardingShellProps) {
         <ol className="flex flex-wrap items-center">
           {STEPS.map((value) => (
             <li key={value} className="flex items-center">
-              <StepBadge
-                label={ONBOARDING_STEP_LABEL[value]}
-                value={String(value)}
-                isActive={value === step}
+              <StepperItem label={ONBOARDING_STEP_LABEL[value]} step={value} current={step} />
+              {/* 지나온 구간은 선도 완료 색으로 이어진다 */}
+              <span
+                className={cn("mx-[14px] h-px w-[35px]", value < step ? "bg-success" : "bg-border")}
+                aria-hidden
               />
-              <span className="bg-border mx-[14px] h-px w-[35px]" aria-hidden />
             </li>
           ))}
-          <li className="pl-[14px]">
-            <StepBadge label="완료" value={<Check className="size-3" />} isActive={false} isDone />
+          <li className="flex items-center gap-[7px] pl-[14px]">
+            <StepCircle tone="idle" size={28}>
+              <Check className="size-3" />
+            </StepCircle>
+            <span className="text-muted-foreground/70 text-xs leading-[18px]">완료</span>
           </li>
         </ol>
       </footer>
@@ -51,34 +55,38 @@ export function OnboardingShell({ step, children }: OnboardingShellProps) {
   );
 }
 
-function StepBadge({
+function StepperItem({
   label,
-  value,
-  isActive,
-  isDone = false,
+  step,
+  current,
 }: {
   label: string;
-  value: ReactNode;
-  isActive: boolean;
-  isDone?: boolean;
+  step: OnboardingStep;
+  current: OnboardingStep;
 }) {
+  const isDone = step < current;
+  const isCurrent = step === current;
+
   return (
     <span
       className={cn(
         "flex items-center gap-[7px] text-xs leading-[18px]",
-        isActive ? "text-foreground" : "text-muted-foreground/70",
+        isDone && "text-success",
+        isCurrent && "text-foreground",
+        !isDone && !isCurrent && "text-muted-foreground/70",
       )}
-      aria-current={isActive ? "step" : undefined}
+      aria-current={isCurrent ? "step" : undefined}
     >
-      <span
-        className={cn(
-          "flex items-center justify-center rounded-full text-[11px] leading-4 tabular-nums",
-          isDone ? "size-7" : "size-[21px]",
-          isActive ? "bg-foreground text-background" : "bg-secondary",
+      <StepCircle tone={isDone ? "done" : isCurrent ? "current" : "idle"} size={21}>
+        {isDone ? (
+          <>
+            <Check className="size-[11px]" />
+            <span className="sr-only">완료됨</span>
+          </>
+        ) : (
+          <span className="text-[11px]">{step}</span>
         )}
-      >
-        {value}
-      </span>
+      </StepCircle>
       {label}
     </span>
   );

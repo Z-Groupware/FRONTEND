@@ -42,6 +42,14 @@
   /* Z 추가 — shadcn 기본에 없는 시맨틱/상태 색. 이걸 등록해야 `bg-success`·`bg-status-todo`가 생긴다. */
   --color-success: var(--success);
   --color-warning: var(--warning);
+  --color-role-owner: var(--role-owner);
+  --color-role-owner-surface: var(--role-owner-surface);
+  --color-role-admin: var(--role-admin);
+  --color-role-admin-surface: var(--role-admin-surface);
+  --color-role-leader: var(--role-leader);
+  --color-role-leader-surface: var(--role-leader-surface);
+  --color-role-member: var(--role-member);
+  --color-role-member-surface: var(--role-member-surface);
   --color-status-todo: var(--status-todo);
   --color-status-progress: var(--status-progress);
   --color-status-done: var(--status-done);
@@ -89,6 +97,15 @@
   --success: #22c55e;
   --warning: #f59e0b;
   /* 상태 점: 대기=회색 · 진행중=초록 · 완료=보라 */
+  /* 역할 배지 — 권한 수준을 색으로 구분한다(직급·권한 매핑) */
+  --role-owner: #ea580c;
+  --role-owner-surface: #fff7ed;
+  --role-admin: #9333ea;
+  --role-admin-surface: #f3e8ff;
+  --role-leader: #0284c7;
+  --role-leader-surface: #e0f2fe;
+  --role-member: #78716c;
+  --role-member-surface: #f5f5f4;
   --status-todo: #a8a29e;
   --status-progress: #22c55e;
   --status-done: #8b5cf6;
@@ -128,6 +145,15 @@
   --success: #22c55e;
   --warning: #f59e0b;
   /* 상태 점은 배경이 밝아진 만큼 같이 올린다(대기 점이 배경에 묻히지 않게) */
+  /* 역할 배지 — 어두운 배경에서 읽히도록 글자는 밝게, 바탕은 낮은 채도로 */
+  --role-owner: #fb923c;
+  --role-owner-surface: #3a2010;
+  --role-admin: #c084fc;
+  --role-admin-surface: #2e1b3f;
+  --role-leader: #38bdf8;
+  --role-leader-surface: #10283a;
+  --role-member: #a8a29e;
+  --role-member-surface: #2e2a28;
   --status-todo: #8a827d;
   --status-progress: #22c55e;
   --status-done: #a78bfa;
