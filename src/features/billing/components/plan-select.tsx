@@ -60,11 +60,6 @@ export function PlanSelect() {
         <span className="leading-none">{planActionLabel(plan)}</span>
         <ArrowRight className="size-4" />
       </Link>
-
-      {/* ⚠️ 실제 청구는 아직 안 된다. 무엇이 안 되는지 숨기지 않는다(§정직성) */}
-      <p className="text-muted-foreground/60 text-center text-[11px] leading-4 break-keep">
-        베타 기간에는 실제로 청구되지 않아요.
-      </p>
     </div>
   );
 }

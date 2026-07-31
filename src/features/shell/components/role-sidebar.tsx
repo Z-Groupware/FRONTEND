@@ -61,12 +61,18 @@ export function RoleSidebar({ sections, user }: RoleSidebarProps) {
   const pathname = usePathname();
 
   return (
-    <aside className="border-border bg-sidebar flex w-[220px] shrink-0 flex-col border-r">
+    /*
+      ⚠️ 배경은 `--background`다 — 라이트에서 **흰색**, 다크에서 **검정**에 가깝다.
+         상단바도 같은 토큰을 쓴다. 껍데기끼리 색이 갈리면 화면이 조각나 보인다.
+         본문은 같은 색이지만 **점 그리드**가 깔려 구분된다.
+    */
+    <aside className="border-border bg-background flex w-[220px] shrink-0 flex-col border-r">
       {/*
         로고만 둔다 — 옆에 "Z" 글자를 또 쓰면 같은 말이 두 번이다.
         상단바(64px)와 높이를 맞춰 사이드바와 본문의 첫 줄이 한 선에 놓이게 한다.
       */}
-      <div className="border-border flex h-[64px] shrink-0 items-center border-b px-[18px]">
+      {/* 로고 아래 선을 두지 않는다 — 사이드바 안에서 또 나누면 조각나 보인다 */}
+      <div className="flex h-[64px] shrink-0 items-center px-[18px]">
         <Link
           href="/owner"
           aria-label="Z 홈으로"

@@ -17,14 +17,11 @@ export default function ShellLayout({ children }: { children: ReactNode }) {
   return (
     <div className="bg-background flex h-dvh overflow-hidden">
       <RoleSidebar sections={OWNER_NAV} user={{ name: "김서준", role: ROLE.OWNER }} />
+
       {/*
         상단바는 여기서 그리지 않는다 — 제목·액션이 도메인마다 달라서
         각 도메인의 `layout.tsx`가 `PageHeader`를 그린다.
-      */}
-      {/*
-        본문에만 점 그리드를 깐다 — 온보딩과 같은 결이다.
-        ⚠️ 상단바·사이드바에는 안 깔린다: 둘 다 불투명한 배경(`bg-card`·`bg-sidebar`)이라 그 위를 덮는다.
-           점은 토큰(`--border`)으로 그려서 다크에서도 따라온다.
+        ⚠️ 점 그리드는 본문에만 깐다. 사이드바·상단바는 불투명 배경이라 그 위를 덮는다.
       */}
       <div className="bg-dot-grid flex min-w-0 flex-1 flex-col overflow-hidden">{children}</div>
     </div>

@@ -26,13 +26,15 @@ interface PageHeaderProps {
  * **제목 왼쪽, 상태 오른쪽 끝.** 아이콘 상자·두 줄 설명·구분선은 두지 않는다 —
  * 머리가 본문보다 무거워지거나 시끄러워진다.
  *
+ * ⚠️ 배경은 **사이드바와 같은 색**(`bg-background` — 라이트 흰색·다크 검정)이다. 껍데기끼리 색이 갈리면 화면이 조각나 보인다.
+ *    본문(`bg-background` + 점 그리드)만 다르게 둬서 경계를 하나로 줄인다.
  * ⚠️ **화면에서 부르지 않는다.** 도메인의 `layout.tsx`가 그린다 —
  *    화면마다 머리를 새로 그리면 높이·여백이 갈린다(사이드바와 같은 이유).
  * ⚠️ 탭은 여기에 넣지 않는다. 탭이 필요한 화면은 이 아래에 따로 둔다.
  */
 export function PageHeader({ title, icon: Icon, meta, backTo, action }: PageHeaderProps) {
   return (
-    <header className="border-border bg-card flex h-[64px] shrink-0 items-center gap-3 border-b px-8">
+    <header className="border-border bg-background flex h-[64px] shrink-0 items-center gap-3 border-b px-8">
       {/* 화살표는 제목 왼쪽에 나란히 둔다 — 제목 위에 경로를 한 줄 더 쓰지 않는다 */}
       {backTo && (
         <Link
