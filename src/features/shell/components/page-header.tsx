@@ -44,7 +44,8 @@ export function PageHeader({ title, icon: Icon, meta, backTo, action }: PageHead
         </Link>
       )}
 
-      {Icon && <Icon className="text-muted-foreground size-5 shrink-0" aria-hidden />}
+      {/* 제목과 같은 색이다 — 흐리게 두면 제목 옆에 붙은 게 아니라 떨어진 장식처럼 보인다 */}
+      {Icon && <Icon className="text-foreground size-5 shrink-0" aria-hidden />}
 
       {/* ⚠️ 한글 글리프가 줄 상자 안에서 위쪽에 앉는다 — 아이콘과 맞추려면 내려야 한다(팀 규칙) */}
       <h1 className="shrink-0 translate-y-[1.5px] truncate text-[22px] leading-[30px] font-semibold tracking-[-0.4px]">

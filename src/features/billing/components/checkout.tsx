@@ -184,7 +184,8 @@ export function Checkout() {
             </p>
             <p className="text-muted-foreground/70 flex items-center gap-1.5 pt-3 text-[11px] leading-4">
               <RefreshCw className="size-3.5 shrink-0" aria-hidden />
-              VAT 포함 · 언제든 해지할 수 있어요
+              {/* 한글 글자가 상자 안에서 위쪽에 앉아 아이콘보다 떠 보인다 — 1px 내려 맞춘다 */}
+              <span className="translate-y-px">VAT 포함 · 언제든 해지할 수 있어요</span>
             </p>
 
             {/* 얼마나 아꼈는지는 금액으로 알린다 — %만 보면 감이 안 온다 */}
@@ -225,7 +226,8 @@ export function Checkout() {
 
             <p className="text-muted-foreground/70 flex items-center justify-center gap-1.5 pt-4 text-[11px] leading-4">
               <ShieldCheck className="size-3.5 shrink-0" aria-hidden />
-              Toss Payments로 안전하게 결제돼요
+              {/* 한글 글자가 상자 안에서 위쪽에 앉아 아이콘보다 떠 보인다 — 1px 내려 맞춘다 */}
+              <span className="translate-y-px">Toss Payments로 안전하게 결제돼요</span>
             </p>
           </aside>
         </div>
