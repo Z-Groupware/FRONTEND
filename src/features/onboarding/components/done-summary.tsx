@@ -11,8 +11,6 @@ export interface SummaryRow {
   label: string;
   /** 오른쪽에 붙는 결과. 숫자가 들어가므로 `tabular-nums`로 자리를 맞춘다. */
   value: string;
-  /** 아직 안 끝난 일이면 이유를 적는다(발송 대기 등) */
-  note?: string;
 }
 
 interface DoneSummaryProps {
@@ -42,13 +40,9 @@ export function DoneSummary({
         roleCount > 0 ? `부서 ${departmentCount} · 역할 ${roleCount}` : `부서 ${departmentCount}`,
     },
     { icon: Users, label: "직급 체계", value: `직급 ${positionCount}` },
-    {
-      icon: Mail,
-      label: "사원 초대",
-      value: inviteCount > 0 ? `${inviteCount}명` : "없음",
-      // ⚠️ 실제 발송은 미구현이다 — 보냈다고 적지 않는다(CLAUDE.md §정직성)
-      note: inviteCount > 0 ? "발송 대기" : undefined,
-    },
+    // ⚠️ 여기서 "발송"이라고 적지 않는다 — 실제 메일은 아직 안 나간다(CLAUDE.md §정직성).
+    //    이 화면은 "정한 것"을 요약할 뿐이고, 발송 안내는 3단계 화면이 이미 한다.
+    { icon: Mail, label: "사원 초대", value: inviteCount > 0 ? `${inviteCount}명` : "없음" },
   ];
 
   return (
@@ -75,11 +69,6 @@ export function DoneSummary({
           <span className="flex-1" aria-hidden />
 
           <dd className="flex items-center gap-2">
-            {row.note && (
-              <span className="text-muted-foreground/60 border-border rounded border border-dashed px-1.5 py-0.5 text-[11px] leading-4">
-                {row.note}
-              </span>
-            )}
             <span className="text-muted-foreground text-[13px] leading-5 tabular-nums">
               {row.value}
             </span>
