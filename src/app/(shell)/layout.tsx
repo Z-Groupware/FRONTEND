@@ -21,7 +21,14 @@ export default function ShellLayout({ children }: { children: ReactNode }) {
         상단바는 여기서 그리지 않는다 — 제목·액션이 도메인마다 달라서
         각 도메인의 `layout.tsx`가 `PageHeader`를 그린다.
       */}
-      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">{children}</div>
+      {/*
+        본문에만 점 그리드를 깐다 — 온보딩과 같은 결이다.
+        ⚠️ 상단바·사이드바에는 안 깔린다: 둘 다 불투명한 배경(`bg-card`·`bg-sidebar`)이라 그 위를 덮는다.
+           점은 토큰(`--border`)으로 그려서 다크에서도 따라온다.
+      */}
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden bg-[radial-gradient(var(--border)_1px,transparent_1px)] [background-size:18px_18px]">
+        {children}
+      </div>
     </div>
   );
 }
