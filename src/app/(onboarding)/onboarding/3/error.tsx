@@ -1,16 +1,16 @@
 "use client";
 
 import { RotateCw } from "lucide-react";
-import { useEffect } from "react";
 
 import { Button } from "@/components/ui/button";
 
-/** 부서·직급을 불러오지 못했을 때. 조용히 빈 화면을 보여주지 않는다(CLAUDE.md: 정직성). */
-export default function Error({ error, reset }: { error: Error; reset: () => void }) {
-  useEffect(() => {
-    console.error(error);
-  }, [error]);
-
+/**
+ * 부서·직급을 불러오지 못했을 때. 조용히 빈 화면을 보여주지 않는다(CLAUDE.md: 정직성).
+ *
+ * ⚠️ 여기서 `error`를 로그로 남기지 않는다 — `console`은 커밋 금지다.
+ *    오류 수집 경로(Sentry 등)가 정해지면 그때 붙인다.
+ */
+export default function Error({ reset }: { reset: () => void }) {
   return (
     <div className="bg-background flex min-h-dvh flex-col items-center justify-center gap-4 px-6 text-center">
       <div className="flex flex-col gap-2">

@@ -33,12 +33,23 @@ export function isValidEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
 }
 
+/**
+ * 값 바꾸기는 전부 이 문을 지난다.
+ * ⚠️ **이미 나간 초대장은 고칠 수 없다**(`isSent`). 화면에서 잠그는 것만으로는 부족하다 —
+ *    키보드·프로그램 경로로도 들어올 수 있어서 여기서 막는다.
+ */
+function updateInvite(invites: Invite[], id: string, patch: Partial<Invite>): Invite[] {
+  return invites.map((invite) =>
+    invite.id === id && !invite.isSent ? { ...invite, ...patch } : invite,
+  );
+}
+
 export function changeInviteEmail(invites: Invite[], id: string, email: string): Invite[] {
-  return invites.map((invite) => (invite.id === id ? { ...invite, email } : invite));
+  return updateInvite(invites, id, { email });
 }
 
 export function changeInviteRole(invites: Invite[], id: string, roleId: string): Invite[] {
-  return invites.map((invite) => (invite.id === id ? { ...invite, roleId } : invite));
+  return updateInvite(invites, id, { roleId });
 }
 
 export function changeInviteDepartment(
@@ -47,13 +58,11 @@ export function changeInviteDepartment(
   departmentId: string,
 ): Invite[] {
   // 부서가 바뀌면 역할은 비운다 — 다른 부서의 역할이 남아 있으면 안 된다
-  return invites.map((invite) =>
-    invite.id === id ? { ...invite, departmentId, roleId: "" } : invite,
-  );
+  return updateInvite(invites, id, { departmentId, roleId: "" });
 }
 
 export function changeInvitePosition(invites: Invite[], id: string, positionId: string): Invite[] {
-  return invites.map((invite) => (invite.id === id ? { ...invite, positionId } : invite));
+  return updateInvite(invites, id, { positionId });
 }
 
 export function removeInvite(invites: Invite[], id: string): Invite[] {

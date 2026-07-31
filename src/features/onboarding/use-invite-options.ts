@@ -16,16 +16,30 @@ import type { DepartmentNode, Position } from "./types";
  */
 export function useInviteOptions(departments: DepartmentNode[], positions: Position[]) {
   const [source, setSource] = useState({ departments, positions });
+  /**
+   * 보관함을 아직 읽지 않았다는 표시.
+   *
+   * ⚠️ 첫 렌더의 선택지는 **props**라서, 보관함에만 있는 부서를 가리키는 초대 줄이
+   *    "없는 부서"로 판정돼 기본값으로 밀려난다. 한 번 밀려나면 되돌릴 수 없다.
+   *    그래서 출처가 확정되기 전에는 재매핑을 시작하지 않는다.
+   */
+  const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
     const draft = loadDraft();
-    if (!draft.departments && !draft.positions) return;
+    if (!draft.departments && !draft.positions) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setIsReady(true);
+      return;
+    }
     // sessionStorage는 첫 렌더 뒤에야 읽을 수 있다
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+
     setSource({
       departments: draft.departments ?? departments,
       positions: draft.positions ?? positions,
     });
+
+    setIsReady(true);
     // 첫 렌더에서 한 번만 읽는다
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -63,6 +77,8 @@ export function useInviteOptions(departments: DepartmentNode[], positions: Posit
   }, [source, positionOptions]);
 
   return {
+    /** 보관함까지 읽어 선택지가 확정됐는가 */
+    isReady,
     departmentOptions,
     rolesOf,
     positionOptions,

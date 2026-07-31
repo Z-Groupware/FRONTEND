@@ -27,7 +27,8 @@ export default function OnboardingDonePage() {
           초기 설정을 마쳤어요
         </h1>
         <p className="text-muted-foreground max-w-[420px] text-[13px] leading-[21px]">
-          부서와 직급 체계가 준비됐습니다. 초대장을 보냈다면 사원이 링크로 계정을 만들 수 있어요.
+          부서·직급 체계와 초대 목록을 담아 뒀어요. ⚠️ 초대 메일은 아직 나가지 않습니다 — 서버 연동
+          후에 실제로 발송됩니다.
         </p>
       </div>
 

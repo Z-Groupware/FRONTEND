@@ -32,6 +32,7 @@ interface InviteSetupProps {
  */
 export function InviteSetup({ departments, positions }: InviteSetupProps) {
   const {
+    isReady,
     departmentOptions,
     rolesOf,
     positionOptions,
@@ -61,15 +62,18 @@ export function InviteSetup({ departments, positions }: InviteSetupProps) {
     restore: list.reset,
   });
 
-  // 1단계에서 부서를 지웠다면, 그 부서를 가리키던 줄을 기본값으로 되돌린다
+  // 1단계에서 부서를 지웠다면, 그 부서를 가리키던 줄을 기본값으로 되돌린다.
+  // 선택지가 확정된 뒤에만 돈다 — 그전에 돌면 보관함에 있던 선택이 지워진다.
   useEffect(() => {
+    if (!isReady) return;
+
     list.remapToOptions(
       new Set(departmentOptions.map((option) => option.id)),
       new Set(positionOptions.map((option) => option.id)),
       (departmentId) => new Set(rolesOf(departmentId).map((option) => option.id)),
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [departmentOptions, positionOptions]);
+  }, [isReady, departmentOptions, positionOptions]);
 
   /**
    * ⚠️ 실제 메일 발송은 서버가 한다 — 지금은 목이라 목록만 확정된다.

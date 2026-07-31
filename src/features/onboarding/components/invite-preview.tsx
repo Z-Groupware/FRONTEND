@@ -36,9 +36,12 @@ export function InvitePreview({ invites, departments, rolesOf, positions }: Invi
 
   return (
     // 남는 세로 공간을 채운다. 초대가 많아지면 안에서만 스크롤한다(스크롤바 숨김)
+    // 스크롤바를 숨겼으므로 키보드로도 훑을 수 있어야 한다 — 포커스를 받고 방향키로 움직인다
     <ul
       ref={listRef}
-      className="border-border bg-background/50 flex min-h-20 flex-1 [scrollbar-width:none] flex-col gap-2 overflow-auto overscroll-contain rounded-lg border p-3 [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+      tabIndex={0}
+      aria-label="초대 목록 미리보기"
+      className="focus-visible:ring-ring border-border bg-background/50 flex min-h-20 flex-1 [scrollbar-width:none] flex-col gap-2 overflow-auto overscroll-contain rounded-lg border p-3 [-ms-overflow-style:none] focus-visible:ring-2 focus-visible:outline-none [&::-webkit-scrollbar]:hidden"
     >
       {invites.map((invite) => {
         const department = nameOf(departments, invite.departmentId);

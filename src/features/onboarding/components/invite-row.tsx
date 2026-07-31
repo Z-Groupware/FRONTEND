@@ -98,7 +98,8 @@ export function InviteRow({
           문구 자리는 **항상 비워둔다** — 에러가 떠도 입력칸 폭이 변하지 않게.
           자리를 안 잡아두면 글자가 들어오는 순간 입력칸이 줄어든다.
         */}
-        <span className="hidden w-[208px] shrink-0 md:block">
+        {/* md 미만에서는 자리가 없어 눈에서만 감춘다 — 스크린리더는 계속 읽어야 한다 */}
+        <span className="sr-only md:not-sr-only md:block md:w-[208px] md:shrink-0">
           {errorText && (
             <span
               id={errorId}
@@ -117,8 +118,9 @@ export function InviteRow({
         </span>
       </span>
 
-      <span className={cn("w-[104px] shrink-0", isSent && "pointer-events-none opacity-60")}>
+      <span className={cn("w-[104px] shrink-0", isSent && "opacity-60")}>
         <OptionSelect
+          disabled={isSent}
           value={invite.departmentId}
           onChange={(departmentId) => onChangeDepartment(invite.id, departmentId)}
           options={handlers.departments}
@@ -130,7 +132,7 @@ export function InviteRow({
         />
       </span>
 
-      <span className={cn("w-[104px] shrink-0", isSent && "pointer-events-none opacity-60")}>
+      <span className={cn("w-[104px] shrink-0", isSent && "opacity-60")}>
         <OptionSelect
           value={invite.roleId}
           onChange={(roleId) => onChangeRole(invite.id, roleId)}
@@ -138,16 +140,19 @@ export function InviteRow({
           label={`${email || "새 초대"} 역할`}
           emptyText="없음"
           width={104}
-          disabled={!invite.departmentId}
-          disabledText="부서 먼저"
+          // 이미 나간 줄은 잠근다. 부서를 아직 안 고른 줄도 마찬가지다.
+          // 발송된 줄은 `disabledText`를 주지 않는다 — 보낸 역할을 그대로 보여줘야 한다.
+          disabled={isSent || !invite.departmentId}
+          disabledText={isSent ? undefined : "부서 먼저"}
           allowNone
           noneText="없음"
           className="justify-center gap-1"
         />
       </span>
 
-      <span className={cn("w-[76px] shrink-0", isSent && "pointer-events-none opacity-60")}>
+      <span className={cn("w-[76px] shrink-0", isSent && "opacity-60")}>
         <OptionSelect
+          disabled={isSent}
           value={invite.positionId}
           onChange={(positionId) => onChangePosition(invite.id, positionId)}
           options={handlers.positionsFor(invite)}

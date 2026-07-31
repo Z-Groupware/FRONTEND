@@ -1,13 +1,13 @@
 import { ASSIGNABLE_ROLES, ROLE } from "@/constants/domain";
 
-/** 부서 트리 노드. 부서는 2계층(상위 > 하위)까지 쓴다(DECISIONS · CONVENTIONS §6). */
+/** 조직 트리 노드. 2계층(부서 > 역할)까지 쓴다(DECISIONS · CONVENTIONS §6). */
 export interface DepartmentNode {
   id: string;
   name: string;
   children: DepartmentNode[];
 }
 
-/** 부서 트리 최대 깊이 — **2계층**(상위 > 하위). DECISIONS 참고. */
+/** 조직 트리 최대 깊이 — **2계층**(부서 > 역할). DECISIONS 참고. */
 export const MAX_DEPARTMENT_DEPTH = 2;
 
 /**

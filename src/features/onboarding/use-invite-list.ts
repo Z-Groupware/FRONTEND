@@ -62,6 +62,8 @@ export function useInviteList(defaultDepartmentId: string, defaultPositionId: st
     /**
      * 부서·직급 목록이 바뀌었을 때 — 사라진 부서를 가리키던 줄을 기본값으로 되돌린다.
      * (1단계에서 부서를 지우고 3단계로 온 경우)
+     *
+     * ⚠️ **이미 나간 줄은 건드리지 않는다.** 보낸 내용과 화면이 달라지면 안 된다.
      */
     remapToOptions: (
       departmentIds: Set<string>,
@@ -70,6 +72,8 @@ export function useInviteList(defaultDepartmentId: string, defaultPositionId: st
     ) =>
       setInvites((prev) =>
         prev.map((invite) => {
+          if (invite.isSent) return invite;
+
           const departmentId = departmentIds.has(invite.departmentId)
             ? invite.departmentId
             : defaultDepartmentId;

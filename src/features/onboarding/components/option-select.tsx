@@ -61,16 +61,25 @@ export function OptionSelect({
   const nameOf = (id: string) => options.find((option) => option.id === id)?.name;
 
   if (disabled) {
+    /**
+     * 잠긴 칸에는 두 가지가 있다.
+     * - `disabledText`가 있으면 **아직 고를 수 없는 것**이다(부서를 안 골랐다) → 이유를 보여준다.
+     * - 없으면 **이미 정해져 못 바꾸는 것**이다(발송 완료) → ⚠️ 고른 값을 그대로 둔다.
+     *   여기서 값을 문구로 갈아치우면 보낸 내용과 화면이 달라 보인다.
+     */
+    const settled =
+      value === "" ? (allowNone ? noneText : emptyText) : (nameOf(value) ?? emptyText);
+
     return (
       <span
         style={{ width }}
-        aria-label={`${label} — ${disabledText ?? "아직 고를 수 없어요"}`}
+        aria-label={`${label} — ${disabledText ?? `${settled}, 고칠 수 없어요`}`}
         className={cn(
           "text-muted-foreground/50 border-border/60 flex h-7 items-center justify-center rounded-md border border-dashed px-2 text-xs",
           className,
         )}
       >
-        {disabledText ?? emptyText}
+        {disabledText ?? settled}
       </span>
     );
   }

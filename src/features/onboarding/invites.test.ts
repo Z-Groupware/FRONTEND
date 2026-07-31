@@ -240,3 +240,31 @@ describe("departmentsWithLeader / duplicatedLeaderIds — 부서마다 리더 �
     expect(duplicatedLeaderIds(invites, isLeader)).toEqual(new Set(["b"]));
   });
 });
+
+describe("이미 발송한 줄은 고칠 수 없다", () => {
+  const sent: Invite[] = [
+    {
+      id: "a",
+      email: "dev1@company.com",
+      departmentId: "dev",
+      roleId: "fe",
+      positionId: "staff",
+      isSent: true,
+    },
+  ];
+
+  it("메일 주소를 바꾸려 해도 그대로다", () => {
+    expect(changeInviteEmail(sent, "a", "other@company.com")[0]?.email).toBe("dev1@company.com");
+  });
+
+  it("부서를 바꾸려 해도 그대로다 — 역할도 지워지지 않는다", () => {
+    const next = changeInviteDepartment(sent, "a", "design")[0];
+    expect(next?.departmentId).toBe("dev");
+    expect(next?.roleId).toBe("fe");
+  });
+
+  it("역할·직급도 그대로다", () => {
+    expect(changeInviteRole(sent, "a", "be")[0]?.roleId).toBe("fe");
+    expect(changeInvitePosition(sent, "a", "lead")[0]?.positionId).toBe("staff");
+  });
+});

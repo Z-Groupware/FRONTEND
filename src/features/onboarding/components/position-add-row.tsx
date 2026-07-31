@@ -51,7 +51,7 @@ export function PositionAddRow({
         onChange={onRoleChange}
         label="새 직급 권한"
         blocked={blocked}
-        className="h-8"
+        size="default"
       />
       <button
         type="button"
