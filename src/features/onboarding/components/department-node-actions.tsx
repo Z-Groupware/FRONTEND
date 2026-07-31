@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, X } from "lucide-react";
 import type { ReactNode } from "react";
 
 interface DepartmentNodeActionsProps {
@@ -25,7 +25,7 @@ export function DepartmentNodeActions({
         </IconButton>
       )}
       <IconButton label={`${name} 삭제`} onClick={onRemove}>
-        <Trash2 className="size-3.5" />
+        <X className="size-3.5" />
       </IconButton>
     </span>
   );

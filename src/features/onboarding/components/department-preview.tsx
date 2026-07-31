@@ -26,15 +26,15 @@ export function DepartmentPreview({ departments }: { departments: DepartmentNode
             className={
               depth === 0
                 ? "bg-foreground size-[7px] shrink-0 rounded-full"
-                : "bg-muted-foreground/60 size-[5px] shrink-0 rounded-full"
+                : "bg-muted-foreground size-[5px] shrink-0 rounded-full"
             }
             aria-hidden
           />
           <span
             className={
               depth === 0
-                ? "text-muted-foreground truncate text-[10px]"
-                : "text-muted-foreground/70 truncate text-[9px]"
+                ? "text-foreground truncate text-[10px]"
+                : "text-muted-foreground truncate text-[10px]"
             }
           >
             {name}

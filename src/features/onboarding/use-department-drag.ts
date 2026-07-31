@@ -1,7 +1,8 @@
 "use client";
 
-import { type RefObject, useState } from "react";
+import { useState } from "react";
 
+import { setCompactDragImage } from "./drag-ghost";
 import { MAX_DEPARTMENT_DEPTH } from "./types";
 
 /** 지금 끌고 있는 부서. 계층 제한을 판정하려면 하위 보유 여부가 필요하다. */
@@ -19,7 +20,8 @@ interface UseDepartmentDragParams {
   parentId: string | null;
   depth: number;
   hasChildren: boolean;
-  rowRef: RefObject<HTMLDivElement | null>;
+  /** 드래그 미리보기에 쓸 이름 */
+  nodeName: string;
   dragging: DraggingInfo | null;
   onDraggingChange: (info: DraggingInfo | null) => void;
   onMove: (draggedId: string, targetId: string, position: DropZone) => void;
@@ -34,7 +36,7 @@ export function useDepartmentDrag({
   parentId,
   depth,
   hasChildren,
-  rowRef,
+  nodeName,
   dragging,
   onDraggingChange,
   onMove,
@@ -71,8 +73,7 @@ export function useDepartmentDrag({
       onDragStart: (event: React.DragEvent) => {
         event.dataTransfer.setData("text/plain", nodeId);
         event.dataTransfer.effectAllowed = "move";
-        // 기본 미리보기는 손잡이 아이콘뿐이라 뭘 옮기는지 안 보인다 → 행 전체를 쓴다
-        if (rowRef.current) event.dataTransfer.setDragImage(rowRef.current, 12, 19);
+        setCompactDragImage(event, nodeName);
         onDraggingChange({ id: nodeId, parentId, hasChildren });
       },
       onDragEnd: () => {
