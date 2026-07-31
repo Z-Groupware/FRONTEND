@@ -71,10 +71,25 @@ export function removeInvite(invites: Invite[], id: string): Invite[] {
 
 /**
  * 이번에 발송될 줄 — 주소가 유효하고 **아직 안 보낸** 줄만.
- * 이미 보낸 줄은 다시 보내지 않는다(같은 사람에게 초대장이 두 번 가지 않게).
+ *
+ * 이미 보낸 줄은 다시 보내지 않는다. 같은 주소가 여러 줄에 적혀 있으면 **첫 줄만** 나간다
+ * — 화면에 중복 경고를 띄워도 그대로 누를 수 있어서, 같은 사람이 초대장을 두 번 받는다.
  */
 export function sendableInvites(invites: Invite[]): Invite[] {
-  return invites.filter((invite) => !invite.isSent && isValidEmail(invite.email));
+  // 이미 나간 주소로 시작한다 — 같은 주소를 새 줄에 다시 적어도 두 번 가지 않게
+  const seen = new Set(
+    invites.filter((invite) => invite.isSent).map((invite) => normalizeEmail(invite.email)),
+  );
+
+  return invites.filter((invite) => {
+    if (invite.isSent || !isValidEmail(invite.email)) return false;
+
+    const address = normalizeEmail(invite.email);
+    if (seen.has(address)) return false;
+
+    seen.add(address);
+    return true;
+  });
 }
 
 /** 이미 보낸 줄. 화면에서 잠그고 미리보기에 남긴다. */
@@ -82,11 +97,10 @@ export function sentInvites(invites: Invite[]): Invite[] {
   return invites.filter((invite) => invite.isSent);
 }
 
-/** 발송 처리 — 이번에 나간 줄에 도장을 찍는다. 나머지는 그대로 둔다. */
+/** 발송 처리 — 이번에 나간 줄에만 도장을 찍는다. 나머지는 그대로 둔다. */
 export function markInvitesSent(invites: Invite[]): Invite[] {
-  return invites.map((invite) =>
-    !invite.isSent && isValidEmail(invite.email) ? { ...invite, isSent: true } : invite,
-  );
+  const going = new Set(sendableInvites(invites).map((invite) => invite.id));
+  return invites.map((invite) => (going.has(invite.id) ? { ...invite, isSent: true } : invite));
 }
 
 /**

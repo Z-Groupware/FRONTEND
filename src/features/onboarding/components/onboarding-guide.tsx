@@ -57,7 +57,7 @@ export function OnboardingGuide({ step, isOpen, onToggle }: OnboardingGuideProps
         // 닫혀 있을 땐 클릭도 포커스도 받지 않게 한다
         aria-hidden={!isOpen}
         className={cn(
-          "bg-guide-surface text-guide-foreground border-guide-border fixed right-6 bottom-[136px] z-50 flex max-h-[min(560px,calc(100dvh-200px))] w-[400px] flex-col overflow-hidden rounded-2xl border shadow-2xl transition-[opacity,transform] duration-200",
+          "bg-guide-surface text-guide-foreground border-guide-border fixed right-6 bottom-[136px] z-50 flex max-h-[min(560px,calc(100dvh-200px))] w-[400px] max-w-[calc(100vw-3rem)] flex-col overflow-hidden rounded-2xl border shadow-2xl transition-[opacity,transform] duration-200",
           isOpen ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-2 opacity-0",
         )}
       >

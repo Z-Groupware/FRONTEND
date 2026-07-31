@@ -7,6 +7,7 @@ import { ROLE } from "@/constants/domain";
 import {
   changePositionRole,
   createPosition,
+  enforceSingleLeader,
   isLeaderTaken,
   movePosition,
   nextAvailablePositionName,
@@ -38,8 +39,11 @@ export function usePositionList(initial: Position[]) {
 
   return {
     positions,
-    /** 임시 보관함에서 되돌릴 때만 쓴다(draft.ts) */
-    reset: (next: Position[]) => setPositions(next),
+    /**
+     * 임시 보관함에서 되돌릴 때만 쓴다(draft.ts).
+     * ⚠️ 보관함 값은 `add`·`changeRole`의 검사를 지나지 않는다 — 리더가 둘이면 여기서 정리한다.
+     */
+    reset: (next: Position[]) => setPositions(enforceSingleLeader(next)),
     editingId,
     setEditingId,
     add,

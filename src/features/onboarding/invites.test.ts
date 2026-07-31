@@ -268,3 +268,42 @@ describe("이미 발송한 줄은 고칠 수 없다", () => {
     expect(changeInvitePosition(sent, "a", "lead")[0]?.positionId).toBe("staff");
   });
 });
+
+describe("같은 주소는 한 번만 나간다", () => {
+  const twice: Invite[] = [
+    {
+      id: "a",
+      email: "dev1@company.com",
+      departmentId: "dev",
+      roleId: "",
+      positionId: "staff",
+      isSent: false,
+    },
+    {
+      id: "b",
+      email: "DEV1@company.com",
+      departmentId: "design",
+      roleId: "",
+      positionId: "staff",
+      isSent: false,
+    },
+  ];
+
+  it("중복 주소는 첫 줄만 발송 대상이다", () => {
+    expect(sendableInvites(twice).map((invite) => invite.id)).toEqual(["a"]);
+  });
+
+  it("발송해도 둘째 줄은 잠기지 않는다 — 아직 안 나갔으니까", () => {
+    const next = markInvitesSent(twice);
+    expect(next[0]?.isSent).toBe(true);
+    expect(next[1]?.isSent).toBe(false);
+  });
+
+  it("이미 나간 주소를 새 줄에 다시 적어도 나가지 않는다", () => {
+    const again: Invite[] = [
+      { ...twice[0]!, isSent: true },
+      { ...twice[1]!, id: "c" },
+    ];
+    expect(sendableInvites(again)).toHaveLength(0);
+  });
+});

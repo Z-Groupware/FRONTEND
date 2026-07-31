@@ -31,10 +31,10 @@ export function Toaster(props: ToasterProps) {
         },
         classNames: {
           toast: "justify-center rounded-[18px] text-center text-[13px] shadow-md gap-2",
-          title: "!font-normal",
-          icon: "!text-background !m-0 !size-4",
-          actionButton: "!bg-background !text-foreground",
-          cancelButton: "!bg-background/20 !text-background",
+          title: "font-normal!",
+          icon: "text-background! m-0! size-4!",
+          actionButton: "bg-background! text-foreground!",
+          cancelButton: "bg-background/20! text-background!",
         },
       }}
       {...props}
