@@ -1,3 +1,5 @@
+import { ASSIGNABLE_ROLES, ROLE } from "@/constants/domain";
+
 /** 부서 트리 노드. 부서는 3계층까지 쓴다(CONVENTIONS §6). */
 export interface DepartmentNode {
   id: string;
@@ -33,3 +35,27 @@ export const ONBOARDING_STEP_LABEL: Record<OnboardingStep, string> = {
 };
 
 export const ONBOARDING_TOTAL_STEPS = 3;
+
+/* ───────── 2단계 · 직급 체계 ───────── */
+
+/**
+ * 직급 한 줄. **직급명과 권한은 분리된다** — 이름은 회사마다 다르게 쓰고,
+ * 권한은 이름과 무관하게 직접 고른다(Owner·Admin·Leader·Member).
+ */
+export interface Position {
+  id: string;
+  name: string;
+  role: AssignableRole;
+}
+
+/** 기업이 고를 수 있는 역할. `SYSTEM`은 서비스 운영자라 제외된다. */
+export type AssignableRole = (typeof ASSIGNABLE_ROLES)[number];
+
+/**
+ * 기업 승인 때 **시스템이 발급하는 계정.**
+ * 직급 매핑 대상이 아니라, 전체 권한 구조를 보여주려고 미리보기에 고정으로 띄운다.
+ */
+export const SYSTEM_ISSUED_POSITIONS = [
+  { name: "대표", role: ROLE.OWNER },
+  { name: "관리자", role: ROLE.ADMIN },
+] as const satisfies readonly { name: string; role: AssignableRole }[];

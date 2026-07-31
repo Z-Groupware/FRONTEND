@@ -3,7 +3,8 @@ import "server-only";
 import { isMock } from "@/mocks/config";
 
 import { INITIAL_DEPARTMENTS } from "./mock/departments";
-import type { DepartmentNode } from "./types";
+import { INITIAL_POSITIONS } from "./mock/positions";
+import type { DepartmentNode, Position } from "./types";
 
 /**
  * 부서 트리 조회 — **격리막**(CLAUDE.md).
@@ -15,4 +16,12 @@ export async function getDepartments(): Promise<DepartmentNode[]> {
 
   // ⚠️ 미구현 — API 스펙 확정 후 BFF 경로(`ep.departments()`)로 fetch하고 매퍼로 UI 계약에 맞춘다.
   throw new Error("부서 조회 API가 아직 연결되지 않았습니다.");
+}
+
+/** 직급 목록 조회 — 격리막. 연동 시 이 함수와 매퍼만 고친다. */
+export async function getPositions(): Promise<Position[]> {
+  if (isMock) return INITIAL_POSITIONS;
+
+  // ⚠️ 미구현 — API 스펙 확정 후 BFF 경로로 fetch하고 매퍼로 UI 계약에 맞춘다.
+  throw new Error("직급 조회 API가 아직 연결되지 않았습니다.");
 }
