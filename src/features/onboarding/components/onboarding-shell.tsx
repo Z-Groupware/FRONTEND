@@ -44,13 +44,14 @@ export function OnboardingShell({ step, isDone = false, children }: OnboardingSh
         )}
       </header>
 
-      {/* 세로 가운데 정렬 — 콘텐츠가 화면 위쪽에만 몰리지 않게 한다 */}
       {/*
         ⚠️ `overflow-hidden`이 아니라 `overflow-y-auto`다. 화면이 낮으면 내용이 안 들어가는데,
            숨겨버리면 [다음] 버튼에 아예 닿을 수 없다. 평소에는 넘치지 않아 스크롤바가 안 보인다.
+        ⚠️ 가운데 정렬을 `justify-center`로 하지 않는다 — 내용이 넘치면 **위쪽이 스크롤 시작점 밖으로**
+           밀려나 아예 닿을 수 없다. `m-auto`는 자리가 남을 때만 가운데로 밀고, 넘치면 0이 된다.
       */}
-      <main className="flex min-h-0 flex-1 flex-col justify-center overflow-y-auto px-[21px] py-6 lg:py-10">
-        <div className="mx-auto w-full max-w-[1160px]">{children}</div>
+      <main className="flex min-h-0 flex-1 flex-col overflow-y-auto px-[21px] py-6 lg:py-10">
+        <div className="m-auto w-full max-w-[1160px]">{children}</div>
       </main>
 
       <footer className="border-border bg-background/90 flex h-16 shrink-0 items-center justify-center border-t px-[21px]">

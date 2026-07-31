@@ -9,6 +9,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 import { loadDraft } from "../draft";
+import { isValidEmail } from "../invites";
 import { type DepartmentNode, type Invite, ONBOARDING_STEP, type Position } from "../types";
 import { CheckMark } from "./check-mark";
 import { DoneSummary } from "./done-summary";
@@ -36,7 +37,13 @@ function countOf(
      */
     roleCount: departments.reduce((sum, department) => sum + department.children.length, 0),
     positionCount: positions.length,
-    inviteCount: invites.filter((invite) => invite.isSent).length,
+    /**
+     * 초대 = **주소를 제대로 적어둔 줄** 전부.
+     * ⚠️ `isSent`로 거르지 않는다 — [완료]는 발송을 부르지 않아서, 3단계에서 주소만 적고
+     *    바로 넘어오면 전부 `isSent=false`다. 그걸 거르면 적어둔 게 있는데도 "없음"이 뜬다.
+     *    어차피 실제 발송은 미구현이라 이 줄들은 다 "발송 대기"다.
+     */
+    inviteCount: invites.filter((invite) => isValidEmail(invite.email)).length,
   };
 }
 
