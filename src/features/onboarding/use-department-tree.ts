@@ -5,16 +5,14 @@ import { useState } from "react";
 import {
   appendChild,
   createDepartment,
-  demoteNode,
   findNode,
   findSiblings,
   moveNodeTo,
   nextAvailableName,
-  promoteNode,
   removeDepartment,
   renameDepartment,
-  shiftNode,
 } from "./tree";
+import { demoteNode, promoteNode, shiftNode } from "./tree-keyboard";
 import type { DepartmentNode } from "./types";
 
 const NEW_CHILD_NAME = "새 하위 부서";
@@ -58,6 +56,8 @@ export function useDepartmentTree(initial: DepartmentNode[]) {
 
   return {
     departments,
+    /** 임시 보관함에서 되돌릴 때만 쓴다(draft.ts) */
+    reset: (next: DepartmentNode[]) => setDepartments(next),
     editingId,
     setEditingId,
     pendingDelete,

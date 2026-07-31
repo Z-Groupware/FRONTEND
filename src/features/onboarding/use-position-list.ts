@@ -7,6 +7,7 @@ import { ROLE } from "@/constants/domain";
 import {
   changePositionRole,
   createPosition,
+  isLeaderTaken,
   movePosition,
   nextAvailablePositionName,
   removePosition,
@@ -27,21 +28,27 @@ export function usePositionList(initial: Position[]) {
   const add = (name: string, role: AssignableRole) => {
     const trimmed = name.trim();
     if (!trimmed) return false;
-    setPositions((prev) => [
-      ...prev,
-      createPosition(nextAvailablePositionName(prev, trimmed), role),
-    ]);
+    setPositions((prev) => {
+      // 리더가 이미 있으면 멤버로 낮춰 들어간다 — 조용히 둘이 되게 두지 않는다
+      const safeRole = role === ROLE.LEADER && isLeaderTaken(prev) ? ROLE.MEMBER : role;
+      return [...prev, createPosition(nextAvailablePositionName(prev, trimmed), safeRole)];
+    });
     return true;
   };
 
   return {
     positions,
+    /** 임시 보관함에서 되돌릴 때만 쓴다(draft.ts) */
+    reset: (next: Position[]) => setPositions(next),
     editingId,
     setEditingId,
     add,
     rename: (id: string, name: string) => setPositions((prev) => renamePosition(prev, id, name)),
+    /** 리더가 이미 있으면 바꾸지 않는다 — 화면에서도 그 항목을 잠근다 */
     changeRole: (id: string, role: AssignableRole) =>
-      setPositions((prev) => changePositionRole(prev, id, role)),
+      setPositions((prev) =>
+        role === ROLE.LEADER && isLeaderTaken(prev, id) ? prev : changePositionRole(prev, id, role),
+      ),
     remove: (id: string) => setPositions((prev) => removePosition(prev, id)),
     move: (draggedId: string, targetId: string, position: "before" | "after") =>
       setPositions((prev) => movePosition(prev, draggedId, targetId, position)),

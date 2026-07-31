@@ -7,7 +7,10 @@ import { useState } from "react";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
+import { loadDraft, saveDraftPositions } from "../draft";
+import { blockedRoles } from "../positions";
 import type { AssignableRole, Position } from "../types";
+import { useDraftSync } from "../use-draft-sync";
 import type { DraggingPositionId } from "../use-position-drag";
 import { usePositionList } from "../use-position-list";
 import { PositionAddRow } from "./position-add-row";
@@ -16,14 +19,21 @@ import { PositionRow, type PositionRowHandlers } from "./position-row";
 
 /**
  * 온보딩 2단계 — 직급 체계.
- * ⚠️ 저장은 미구현이다. 편집 내용은 브라우저 메모리에만 있고 새로고침하면 사라진다.
- *    BE 연동 후 Server Action으로 붙인다.
+ * ⚠️ 서버 저장은 미구현이다. 단계를 오갈 때 입력이 사라지지 않게
+ *    임시 보관함(`draft.ts` · sessionStorage)에만 담아둔다. BE 연동 후 [완료]에서 한 번에 커밋한다.
  */
 export function PositionSetup({ initialPositions }: { initialPositions: Position[] }) {
   const list = usePositionList(initialPositions);
   const [draftName, setDraftName] = useState("");
   const [draftRole, setDraftRole] = useState<AssignableRole>(list.defaultRole);
   const [draggingId, setDraggingId] = useState<DraggingPositionId>(null);
+
+  useDraftSync({
+    value: list.positions,
+    load: () => loadDraft().positions,
+    save: saveDraftPositions,
+    restore: list.reset,
+  });
 
   const handleAdd = () => {
     if (list.add(draftName, draftRole)) {
@@ -38,6 +48,7 @@ export function PositionSetup({ initialPositions }: { initialPositions: Position
     onRemove: list.remove,
     onMove: list.move,
     onShift: list.shift,
+    blockedRolesOf: (id: string) => blockedRoles(list.positions, id),
     editingId: list.editingId,
     onEditingChange: list.setEditingId,
     draggingId,
@@ -52,14 +63,11 @@ export function PositionSetup({ initialPositions }: { initialPositions: Position
 
         {/* 높이 고정 — 직급을 아무리 추가해도 카드 크기는 그대로고 안에서만 스크롤된다 */}
         <section className="border-border bg-card flex h-[440px] flex-1 flex-col overflow-hidden rounded-xl border shadow-sm lg:h-full">
-          <header className="border-border bg-muted flex h-12 shrink-0 items-center justify-between border-b px-4">
+          <header className="border-border bg-muted flex h-12 shrink-0 items-center border-b px-4">
             <h2 className="flex items-center gap-2 text-[13px] leading-5">
               <span className="bg-foreground size-2 rounded-full" aria-hidden />
               직급·권한 매핑
             </h2>
-            <span className="text-muted-foreground/70 text-xs leading-4 tabular-nums">
-              직급 {list.positions.length}개
-            </span>
           </header>
 
           {/* 행(PositionRow)과 같은 padding·gap·칸 너비를 써야 열이 맞는다 */}
@@ -72,7 +80,7 @@ export function PositionSetup({ initialPositions }: { initialPositions: Position
           </div>
 
           {/* 스크롤바는 숨긴다(스크롤 자체는 된다) */}
-          <div className="flex-1 [scrollbar-width:none] overflow-auto [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+          <div className="flex-1 [scrollbar-width:none] overflow-auto overscroll-contain [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
             {list.positions.length === 0 ? (
               <p className="text-muted-foreground/70 py-12 text-center text-[13px]">
                 아래에서 첫 직급을 추가해 주세요
@@ -87,6 +95,7 @@ export function PositionSetup({ initialPositions }: { initialPositions: Position
           <PositionAddRow
             name={draftName}
             role={draftRole}
+            blocked={blockedRoles(list.positions)}
             onNameChange={setDraftName}
             onRoleChange={setDraftRole}
             onSubmit={handleAdd}
@@ -103,7 +112,7 @@ export function PositionSetup({ initialPositions }: { initialPositions: Position
           )}
         >
           <ChevronLeft className="size-3.5" />
-          이전
+          <span className="leading-none">이전</span>
         </Link>
         {/* ⚠️ 저장은 미구현 — BE 연동 후 Server Action으로 붙인다.
             시안의 주 버튼은 액센트(파랑)가 아니라 먹색이다(토큰 충돌 — 팀 확인 필요). */}
@@ -114,7 +123,7 @@ export function PositionSetup({ initialPositions }: { initialPositions: Position
             "bg-foreground text-background hover:bg-foreground/90 h-[34px] gap-[5.25px] rounded-md px-[12.25px] text-[13px] leading-none",
           )}
         >
-          다음
+          <span className="leading-none">다음</span>
           <ChevronRight className="size-3.5" />
         </Link>
       </div>

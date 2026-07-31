@@ -1,6 +1,6 @@
 import { ASSIGNABLE_ROLES, ROLE } from "@/constants/domain";
 
-/** 부서 트리 노드. 부서는 3계층까지 쓴다(CONVENTIONS §6). */
+/** 부서 트리 노드. 부서는 2계층(상위 > 하위)까지 쓴다(DECISIONS · CONVENTIONS §6). */
 export interface DepartmentNode {
   id: string;
   name: string;
@@ -11,13 +11,14 @@ export interface DepartmentNode {
 export const MAX_DEPARTMENT_DEPTH = 2;
 
 /**
- * 계층 표기는 **상위/하위 관계로만** 말한다.
- * ⚠️ 본부·팀·파트 같은 조직 용어는 기업마다 달라서 기획 확정 전까지 쓰지 않는다.
+ * 트리 두 계층의 이름.
+ * 윗단은 **부서**(개발팀), 아랫단은 그 안에서 맡는 **역할**(프론트엔드·백엔드)이다.
+ * 역할 없이 부서에 바로 속할 수도 있다 — 팀장이 그런 경우다.
  */
-const DEPTH_LABEL = ["상위", "하위"] as const;
+const DEPTH_LABEL = ["부서", "역할"] as const;
 
 export function getDepthLabel(depth: number): string {
-  return DEPTH_LABEL[depth] ?? "하위";
+  return DEPTH_LABEL[depth] ?? "역할";
 }
 
 /** 온보딩 단계 — 화면 하단 스텝퍼와 헤더 `단계 n / 3`에 함께 쓴다. */
@@ -59,3 +60,24 @@ export const SYSTEM_ISSUED_POSITIONS = [
   { name: "대표", role: ROLE.OWNER },
   { name: "관리자", role: ROLE.ADMIN },
 ] as const satisfies readonly { name: string; role: AssignableRole }[];
+
+/* ───────── 3단계 · 사원 초대 ───────── */
+
+/**
+ * 초대 한 줄. 계정이 만들어지면 여기 지정한 부서·직급으로 자동 배정된다.
+ * 부서는 **말단 부서만** 고를 수 있다(DECISIONS: 사원은 말단에만 소속).
+ */
+export interface Invite {
+  id: string;
+  email: string;
+  /** 소속 부서(트리 윗단) */
+  departmentId: string;
+  /** 부서 안에서 맡는 역할(트리 아랫단). 빈 문자열이면 "없음" — 부서에 바로 속한다. */
+  roleId: string;
+  positionId: string;
+  /** 이미 초대장이 나간 줄 — 다시 보내거나 고칠 수 없다 */
+  isSent: boolean;
+}
+
+/** 초대 링크 유효 기간(일). BE 스펙 확정 시 서버 값으로 바꾼다. */
+export const INVITE_LINK_VALID_DAYS = 7;

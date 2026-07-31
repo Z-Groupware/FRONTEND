@@ -50,6 +50,10 @@
   --color-role-leader-surface: var(--role-leader-surface);
   --color-role-member: var(--role-member);
   --color-role-member-surface: var(--role-member-surface);
+  --color-guide-surface: var(--guide-surface);
+  --color-guide-foreground: var(--guide-foreground);
+  --color-guide-muted: var(--guide-muted);
+  --color-guide-border: var(--guide-border);
   --color-status-todo: var(--status-todo);
   --color-status-progress: var(--status-progress);
   --color-status-done: var(--status-done);
@@ -84,7 +88,8 @@
   --destructive: #ef4444; /* 에러 */
   --border: #e7e5e4;
   --input: #e7e5e4;
-  --ring: #3b82f6;
+  /* 포커스 링 = 먹색. 파랑(액센트)은 강조가 과했다 — 빨강(에러)만 색으로 알린다 */
+  --ring: #1c1917;
   --sidebar: #fbfbfa;
   --sidebar-foreground: #1c1917;
   --sidebar-primary: #3b82f6;
@@ -92,20 +97,26 @@
   --sidebar-accent: #f5f5f4;
   --sidebar-accent-foreground: #1c1917;
   --sidebar-border: #e7e5e4;
-  --sidebar-ring: #3b82f6;
+  --sidebar-ring: #1c1917;
   /* 시맨틱 (shadcn 기본에 없음 — Z 추가) */
   --success: #22c55e;
   --warning: #f59e0b;
   /* 상태 점: 대기=회색 · 진행중=초록 · 완료=보라 */
-  /* 역할 배지 — 권한 수준을 색으로 구분한다(직급·권한 매핑) */
-  --role-owner: #ea580c;
+  /* 역할 배지 — 권한 수준을 색으로 구분한다(직급·권한 매핑).
+     글자색은 각 surface 위에서 4.5:1을 넘도록 잡았다(배지 글씨가 작다). */
+  --role-owner: #c2410c;
   --role-owner-surface: #fff7ed;
   --role-admin: #9333ea;
   --role-admin-surface: #f3e8ff;
-  --role-leader: #0284c7;
+  --role-leader: #0369a1;
   --role-leader-surface: #e0f2fe;
-  --role-member: #78716c;
+  --role-member: #57534e;
   --role-member-surface: #f5f5f4;
+  /* 도움말 패널 — 화면 위에 뜨는 조각이라 **테마와 무관하게 어둡다**(챗봇 톤) */
+  --guide-surface: #1c1917;
+  --guide-foreground: #fafaf9;
+  --guide-muted: #a8a29e;
+  --guide-border: #3a3532;
   --status-todo: #a8a29e;
   --status-progress: #22c55e;
   --status-done: #8b5cf6;
@@ -132,8 +143,8 @@
   --destructive: #ef4444;
   --border: #33302d;
   --input: #33302d;
-  /* 포커스 링만 한 톤 밝게 — 어두운 배경에서 #3B82F6은 잘 안 보인다 */
-  --ring: #60a5fa;
+  /* 다크에서는 먹색이 안 보인다 — 밝은 회백색으로 뒤집는다 */
+  --ring: #d6d3d1;
   --sidebar: #151211;
   --sidebar-foreground: #fafaf9;
   --sidebar-primary: #3b82f6;
@@ -141,7 +152,7 @@
   --sidebar-accent: #2e2a28;
   --sidebar-accent-foreground: #fafaf9;
   --sidebar-border: #33302d;
-  --sidebar-ring: #60a5fa;
+  --sidebar-ring: #d6d3d1;
   --success: #22c55e;
   --warning: #f59e0b;
   /* 상태 점은 배경이 밝아진 만큼 같이 올린다(대기 점이 배경에 묻히지 않게) */
@@ -154,6 +165,11 @@
   --role-leader-surface: #10283a;
   --role-member: #a8a29e;
   --role-member-surface: #2e2a28;
+  /* 도움말 패널 — 다크에서는 배경보다 한 톤 밝게 띄운다 */
+  --guide-surface: #2a2624;
+  --guide-foreground: #fafaf9;
+  --guide-muted: #a8a29e;
+  --guide-border: #423c38;
   --status-todo: #8a827d;
   --status-progress: #22c55e;
   --status-done: #a78bfa;

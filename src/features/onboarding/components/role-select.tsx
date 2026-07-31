@@ -17,16 +17,22 @@ interface RoleSelectProps {
   onChange: (role: AssignableRole) => void;
   /** 스크린리더용 이름 — 어느 직급의 권한인지 알려준다 */
   label: string;
+  /** 고를 수 없는 권한 — 이미 다른 직급이 가져갔다 */
+  blocked?: readonly AssignableRole[];
   className?: string;
 }
 
 /** 직급 한 줄의 권한 선택. 폭을 고정해 어떤 권한이든 크기가 같다. */
-export function RoleSelect({ value, onChange, label, className }: RoleSelectProps) {
+export function RoleSelect({ value, onChange, label, blocked = [], className }: RoleSelectProps) {
   return (
     <Select value={value} onValueChange={(next) => onChange(next as AssignableRole)}>
       <SelectTrigger
         aria-label={label}
-        className={cn("h-7 w-[92px] justify-between px-2 text-xs leading-none", className)}
+        // data-[size=default]:h-8 이 기본으로 걸려 있어 h-7만으로는 안 먹는다
+        className={cn(
+          "h-7 w-[92px] justify-between px-2 text-xs leading-none data-[size=default]:h-7",
+          className,
+        )}
       >
         {/* 원본 값(LEADER)이 아니라 표기용 라벨(Leader)을 보여준다 */}
         <SelectValue>{(role) => ROLE_LABEL[role as AssignableRole]}</SelectValue>
@@ -45,7 +51,12 @@ export function RoleSelect({ value, onChange, label, className }: RoleSelectProp
         className="w-[92px] min-w-0"
       >
         {POSITION_ROLES.map((role) => (
-          <SelectItem key={role} value={role} className="text-xs">
+          <SelectItem
+            key={role}
+            value={role}
+            disabled={blocked.includes(role) && role !== value}
+            className="text-xs"
+          >
             {ROLE_LABEL[role]}
           </SelectItem>
         ))}

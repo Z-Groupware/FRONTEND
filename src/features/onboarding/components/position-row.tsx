@@ -19,6 +19,8 @@ export interface PositionRowHandlers {
   onMove: (draggedId: string, targetId: string, edge: PositionDropEdge) => void;
   /** 키보드 대체 경로 — Alt + ↑/↓ */
   onShift: (id: string, offset: 1 | -1) => void;
+  /** 이미 다른 직급이 가져간 권한 — 리더는 하나뿐이다 */
+  blockedRolesOf: (id: string) => readonly AssignableRole[];
   editingId: string | null;
   onEditingChange: (id: string | null) => void;
   draggingId: DraggingPositionId;
@@ -68,10 +70,9 @@ export function PositionRow({ position, index, ...handlers }: PositionRowProps) 
         <span className="text-muted-foreground/40 text-[11px] leading-none tabular-nums transition-opacity group-focus-within:opacity-0 group-hover:opacity-0">
           {index + 1}
         </span>
-        <span
+        <button
           {...handleProps}
-          role="button"
-          tabIndex={0}
+          type="button"
           aria-label={`${position.name} 순서 이동 — Alt와 위아래 방향키로도 옮길 수 있어요`}
           onKeyDown={(event) => {
             if (!event.altKey) return;
@@ -87,7 +88,7 @@ export function PositionRow({ position, index, ...handlers }: PositionRowProps) 
           className="text-muted-foreground/50 hover:text-muted-foreground focus-visible:ring-ring absolute inset-0 flex cursor-grab items-center justify-center rounded opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:outline-none active:cursor-grabbing"
         >
           <GripVertical className="size-3.5" />
-        </span>
+        </button>
       </span>
 
       {isEditing ? (
@@ -98,6 +99,8 @@ export function PositionRow({ position, index, ...handlers }: PositionRowProps) 
           onFocus={(event) => event.currentTarget.select()}
           onBlur={(event) => submitName(event.target.value)}
           onKeyDown={(event) => {
+            // 한글 조합 중의 Enter는 글자 확정용이다 — 편집을 끝내면 안 된다
+            if (event.nativeEvent.isComposing) return;
             if (event.key === "Enter") submitName(event.currentTarget.value);
             if (event.key === "Escape") onEditingChange(null);
           }}
@@ -127,6 +130,7 @@ export function PositionRow({ position, index, ...handlers }: PositionRowProps) 
           value={position.role}
           onChange={(role) => onChangeRole(position.id, role)}
           label={`${position.name} 권한`}
+          blocked={handlers.blockedRolesOf(position.id)}
         />
       </span>
 

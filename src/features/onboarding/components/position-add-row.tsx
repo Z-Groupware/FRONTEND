@@ -10,6 +10,8 @@ import { RoleSelect } from "./role-select";
 interface PositionAddRowProps {
   name: string;
   role: AssignableRole;
+  /** 이미 다른 직급이 가져간 권한 — 리더는 하나뿐이다 */
+  blocked: readonly AssignableRole[];
   onNameChange: (name: string) => void;
   onRoleChange: (role: AssignableRole) => void;
   onSubmit: () => void;
@@ -19,6 +21,7 @@ interface PositionAddRowProps {
 export function PositionAddRow({
   name,
   role,
+  blocked,
   onNameChange,
   onRoleChange,
   onSubmit,
@@ -34,6 +37,8 @@ export function PositionAddRow({
         placeholder="직급명 입력 (Enter)"
         onChange={(event) => onNameChange(event.target.value)}
         onKeyDown={(event) => {
+          // 한글 입력 중(조합 중)의 Enter는 글자를 확정하는 키다 — 여기서 처리하면 두 번 등록된다
+          if (event.nativeEvent.isComposing) return;
           if (event.key === "Enter") {
             event.preventDefault();
             onSubmit();
@@ -41,14 +46,20 @@ export function PositionAddRow({
         }}
         className="h-8 flex-1 rounded-md border border-dashed bg-transparent px-2.5 text-[13px]"
       />
-      <RoleSelect value={role} onChange={onRoleChange} label="새 직급 권한" className="h-8" />
+      <RoleSelect
+        value={role}
+        onChange={onRoleChange}
+        label="새 직급 권한"
+        blocked={blocked}
+        className="h-8"
+      />
       <button
         type="button"
         onClick={onSubmit}
         className="text-muted-foreground bg-foreground/5 hover:bg-foreground/10 focus-visible:ring-ring flex h-8 shrink-0 items-center gap-1 rounded-md px-2.5 text-[13px] transition-colors focus-visible:ring-2 focus-visible:outline-none"
       >
         <Plus className="size-3.5" />
-        추가
+        <span className="leading-none">추가</span>
       </button>
     </div>
   );

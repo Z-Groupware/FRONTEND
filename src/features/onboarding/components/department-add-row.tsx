@@ -10,19 +10,21 @@ interface DepartmentAddRowProps {
   onSubmit: () => void;
 }
 
-/** 카드 하단 — 최상위(상위) 부서 추가 줄. */
+/** 카드 하단 — 부서 추가 줄. 역할은 부서를 만든 뒤 그 안에 넣는다. */
 export function DepartmentAddRow({ value, onChange, onSubmit }: DepartmentAddRowProps) {
   return (
     <div className="border-border bg-muted flex h-[54px] shrink-0 items-center gap-2 border-t px-4">
       <label htmlFor="root-department" className="sr-only">
-        상위 부서 이름
+        부서 이름
       </label>
       <Input
         id="root-department"
         value={value}
-        placeholder="상위 부서 추가 (Enter)"
+        placeholder="부서 추가 (Enter)"
         onChange={(event) => onChange(event.target.value)}
         onKeyDown={(event) => {
+          // 한글 입력 중(조합 중)의 Enter는 글자를 확정하는 키다 — 여기서 처리하면 두 번 등록된다
+          if (event.nativeEvent.isComposing) return;
           if (event.key === "Enter") {
             event.preventDefault();
             onSubmit();
@@ -36,7 +38,7 @@ export function DepartmentAddRow({ value, onChange, onSubmit }: DepartmentAddRow
         className="text-muted-foreground bg-foreground/5 hover:bg-foreground/10 focus-visible:ring-ring flex h-8 shrink-0 items-center gap-1 rounded-md px-2.5 text-[13px] transition-colors focus-visible:ring-2 focus-visible:outline-none"
       >
         <Plus className="size-3.5" />
-        추가
+        <span className="leading-none">추가</span>
       </button>
     </div>
   );
