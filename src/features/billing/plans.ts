@@ -46,8 +46,11 @@ export const PLANS: readonly Plan[] = [
   },
 ];
 
-/** 처음 골라져 있는 플랜 — 돈이 안 드는 쪽에서 시작한다. */
-export const DEFAULT_PLAN = PLAN.FREE;
+/**
+ * 처음 골라져 있는 플랜.
+ * 밀어주는 플랜(Team)을 기본으로 둔다 — 배지까지 붙여 놓고 무료를 골라두면 앞뒤가 안 맞는다.
+ */
+export const DEFAULT_PLAN = PLAN.TEAM;
 
 /** 주 버튼 문구 — 고른 플랜에 따라 달라진다. */
 export function planActionLabel(plan: Plan): string {

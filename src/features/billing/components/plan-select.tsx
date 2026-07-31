@@ -3,7 +3,6 @@
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
-import { toast } from "sonner";
 
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -13,10 +12,10 @@ import { PLAN, type PlanCode } from "../types";
 import { PlanCard } from "./plan-card";
 
 /**
- * 요금제 선택.
+ * 요금제 선택 — 고를 수 있는 건 **Free / Team 둘뿐**이다.
  *
- * ⚠️ **결제는 미구현이다.** 결제 실연동(Toss) 여부가 아직 정해지지 않았다(DECISIONS §미결정).
- *    주 버튼은 고른 플랜을 알리기만 하고 결제로 넘어가지 않는다 — 되는 척하지 않는다(§정직성).
+ * ⚠️ **실제 청구는 미구현이다.** 결제 실연동(Toss) 여부가 정해지지 않았다(DECISIONS §미결정).
+ *    화면은 결제까지 이어지되, 청구가 나가지 않는다는 걸 화면에 적는다(§정직성).
  */
 export function PlanSelect() {
   const [selected, setSelected] = useState<PlanCode>(DEFAULT_PLAN);
@@ -47,48 +46,24 @@ export function PlanSelect() {
         ))}
       </div>
 
-      <div className="flex w-full flex-col items-center gap-[10.5px]">
-        {/* 유료 플랜은 결제로 넘어간다. 무료는 넘어갈 곳이 없어 알리기만 한다 */}
-        {plan.code === PLAN.FREE ? (
-          <button
-            type="button"
-            onClick={() =>
-              toast.success(`${plan.name} 플랜으로 시작해요`, {
-                description: "베타 기간에는 모든 플랜을 무료로 쓰실 수 있어요.",
-              })
-            }
-            className={cn(
-              buttonVariants(),
-              "bg-foreground text-background hover:bg-foreground/90 h-[46px] w-full gap-1.5 rounded-lg text-[14px] leading-none",
-            )}
-          >
-            <span className="leading-none">{planActionLabel(plan)}</span>
-            <ArrowRight className="size-4" />
-          </button>
-        ) : (
-          <Link
-            href="/owner/billing/checkout"
-            className={cn(
-              buttonVariants(),
-              "bg-foreground text-background hover:bg-foreground/90 h-[46px] w-full gap-1.5 rounded-lg text-[14px] leading-none",
-            )}
-          >
-            <span className="leading-none">{planActionLabel(plan)}</span>
-            <ArrowRight className="size-4" />
-          </Link>
+      {/*
+        고를 수 있는 건 Free / Team 둘뿐이고 둘 다 갈 곳이 있다 —
+        Free는 바로 대시보드로, Team은 결제로 간다. "나중에 결정하기"는 두지 않는다.
+      */}
+      <Link
+        href={plan.code === PLAN.FREE ? "/owner" : "/owner/billing/checkout"}
+        className={cn(
+          buttonVariants(),
+          "bg-foreground text-background hover:bg-foreground/90 h-[46px] w-full gap-1.5 rounded-lg text-[14px] leading-none",
         )}
+      >
+        <span className="leading-none">{planActionLabel(plan)}</span>
+        <ArrowRight className="size-4" />
+      </Link>
 
-        <Link
-          href="/owner"
-          className="text-muted-foreground/70 hover:text-foreground focus-visible:ring-ring rounded px-2 py-1 text-xs leading-[18px] transition-colors focus-visible:ring-2 focus-visible:outline-none"
-        >
-          나중에 결정하기
-        </Link>
-      </div>
-
-      {/* ⚠️ 결제 화면이 아직 없다. 무엇이 안 되는지 숨기지 않는다(§정직성) */}
+      {/* ⚠️ 실제 청구는 아직 안 된다. 무엇이 안 되는지 숨기지 않는다(§정직성) */}
       <p className="text-muted-foreground/60 text-center text-[11px] leading-4 break-keep">
-        결제는 아직 붙지 않았어요 — 플랜을 고르는 것까지만 됩니다.
+        베타 기간에는 실제로 청구되지 않아요.
       </p>
     </div>
   );
