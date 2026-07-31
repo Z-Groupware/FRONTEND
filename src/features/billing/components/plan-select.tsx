@@ -9,7 +9,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 import { DEFAULT_PLAN, planActionLabel, PLANS } from "../plans";
-import type { PlanCode } from "../types";
+import { PLAN, type PlanCode } from "../types";
 import { PlanCard } from "./plan-card";
 
 /**
@@ -48,21 +48,35 @@ export function PlanSelect() {
       </div>
 
       <div className="flex w-full flex-col items-center gap-[10.5px]">
-        <button
-          type="button"
-          onClick={() =>
-            toast.success(`${plan.name} 플랜을 골랐어요`, {
-              description: "결제는 아직 붙지 않았어요 — 베타 기간에는 그대로 쓰실 수 있습니다.",
-            })
-          }
-          className={cn(
-            buttonVariants(),
-            "bg-foreground text-background hover:bg-foreground/90 h-[46px] w-full gap-1.5 rounded-lg text-[14px] leading-none",
-          )}
-        >
-          <span className="leading-none">{planActionLabel(plan)}</span>
-          <ArrowRight className="size-4" />
-        </button>
+        {/* 유료 플랜은 결제로 넘어간다. 무료는 넘어갈 곳이 없어 알리기만 한다 */}
+        {plan.code === PLAN.FREE ? (
+          <button
+            type="button"
+            onClick={() =>
+              toast.success(`${plan.name} 플랜으로 시작해요`, {
+                description: "베타 기간에는 모든 플랜을 무료로 쓰실 수 있어요.",
+              })
+            }
+            className={cn(
+              buttonVariants(),
+              "bg-foreground text-background hover:bg-foreground/90 h-[46px] w-full gap-1.5 rounded-lg text-[14px] leading-none",
+            )}
+          >
+            <span className="leading-none">{planActionLabel(plan)}</span>
+            <ArrowRight className="size-4" />
+          </button>
+        ) : (
+          <Link
+            href="/owner/billing/checkout"
+            className={cn(
+              buttonVariants(),
+              "bg-foreground text-background hover:bg-foreground/90 h-[46px] w-full gap-1.5 rounded-lg text-[14px] leading-none",
+            )}
+          >
+            <span className="leading-none">{planActionLabel(plan)}</span>
+            <ArrowRight className="size-4" />
+          </Link>
+        )}
 
         <Link
           href="/owner"
