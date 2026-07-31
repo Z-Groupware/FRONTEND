@@ -133,7 +133,10 @@ export const isDelayed = (a: { status: ActionStatus; dueDate: string }) =>
   a.status !== "DONE" && new Date(a.dueDate) < new Date();
 ```
 
-- **부서는 3계층**, 조직도는 트리 구조로 처음부터 설계한다.
+- **부서는 2계층**(상위 > 하위), 조직도는 트리 구조로 처음부터 설계한다. ⚠️ 3계층에서 줄인 것이다(DECISIONS 2026-07-31).
+  - **사원은 말단(잎) 부서에만 소속된다.** 하위가 있는 부서는 **묶음**이라 사람이 직접 붙지 않는다.
+  - **LEADER는 자기 부서 + 모든 하위**를 관리한다(조회·초대·통계·중간승인 전부 하위 포함).
+  - ⚠️ 그래서 **BE 응답에 부서 경로**(루트→자기, `[1,5,12]`)가 필요하다. `departmentId` 하나로는 하위 판정이 불가능하다. 판정은 `lib/permission.ts`의 `isWithinDepartmentScope`.
 - 코드 문자열은 **ERD 명칭과 100% 일치**(BE와 계약). 값 목록은 ERD 확정 후 `constants/`에 정의한다 — 문서에 옮겨 적지 않는다.
 
 ---

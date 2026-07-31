@@ -18,7 +18,26 @@ import { ROLE, type Role } from "@/constants/domain";
 export interface Actor {
   id: number;
   role: Role;
+  /** 소속 부서. **말단(잎) 부서만 온다** — 묶음 부서엔 사원이 붙지 않는다(DECISIONS). */
   departmentId?: number;
+}
+
+/**
+ * 부서 위치. `path`는 루트부터 자기 자신까지의 id 배열이다(예: `[1, 5, 12]`).
+ * ⚠️ **BE가 이 경로를 내려줘야 한다.** `departmentId` 하나로는 상·하위 관계를 알 수 없다.
+ */
+export interface DepartmentRef {
+  id: number;
+  path: number[];
+}
+
+/**
+ * 대상 부서가 actor의 관리 범위(자기 부서 + 모든 하위)에 있는지.
+ * 대상의 조상 경로에 actor의 부서가 들어 있으면 하위다.
+ */
+export function isWithinDepartmentScope(actor: Actor, target: DepartmentRef): boolean {
+  if (actor.departmentId === undefined) return false;
+  return target.path.includes(actor.departmentId);
 }
 
 /* ───────── ① 역할 축 ───────── */
@@ -48,9 +67,13 @@ export function canManageRooms(actor: Actor): boolean {
   return actor.role === ROLE.ADMIN;
 }
 
-/** 휴가 중간 승인 — LEADER (최종 승인은 OWNER/ADMIN) */
-export function canApproveMid(actor: Actor): boolean {
-  return actor.role === ROLE.LEADER;
+/**
+ * 휴가 중간 승인 — LEADER. **자기 부서 + 하위**의 사원만 대상이다(DECISIONS: 팀장 범위).
+ * 대상 부서를 넘기지 않으면 역할만 본다(화면 노출 판단용). **서버 검증에서는 반드시 넘긴다.**
+ */
+export function canApproveMid(actor: Actor, targetDepartment?: DepartmentRef): boolean {
+  if (actor.role !== ROLE.LEADER) return false;
+  return targetDepartment ? isWithinDepartmentScope(actor, targetDepartment) : true;
 }
 
 /** 인수인계서 작성 — OWNER 제외 전원 */
