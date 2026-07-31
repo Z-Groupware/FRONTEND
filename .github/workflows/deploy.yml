@@ -1,0 +1,38 @@
+name: Deploy to EC2
+
+on:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: production-ec2-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy via SSH (pull → build → restart)
+        uses: appleboy/ssh-action@029f5b4aeeeb58fdfe1410a5d17f967dacf36262 # v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          fingerprint: ${{ secrets.EC2_SSH_FINGERPRINT }}
+          port: 22
+          script: |
+            set -e
+
+            cd /home/ubuntu/zebra
+
+            git fetch origin main
+            git reset --hard origin/main
+
+            npm ci
+
+            npm run build
+
+            pm2 reload zebra-fe --update-env || pm2 start npm --name "zebra-fe" -- run start
+            pm2 save
