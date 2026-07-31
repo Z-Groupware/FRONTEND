@@ -26,9 +26,7 @@ export default function ShellLayout({ children }: { children: ReactNode }) {
         ⚠️ 상단바·사이드바에는 안 깔린다: 둘 다 불투명한 배경(`bg-card`·`bg-sidebar`)이라 그 위를 덮는다.
            점은 토큰(`--border`)으로 그려서 다크에서도 따라온다.
       */}
-      <div className="flex min-w-0 flex-1 flex-col overflow-hidden bg-[radial-gradient(var(--border)_1px,transparent_1px)] [background-size:18px_18px]">
-        {children}
-      </div>
+      <div className="bg-dot-grid flex min-w-0 flex-1 flex-col overflow-hidden">{children}</div>
     </div>
   );
 }
