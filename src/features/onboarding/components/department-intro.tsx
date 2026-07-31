@@ -23,16 +23,16 @@ export function DepartmentIntro({ departments }: { departments: DepartmentNode[]
       <div className="border-border bg-background/80 text-muted-foreground/70 flex flex-col gap-1.5 rounded-md border p-[10.5px] text-[11px] leading-[18px]">
         <p>이름을 더블클릭하면 바꿀 수 있어요. 나중에 설정에서 언제든 수정할 수 있습니다.</p>
         <p>
-          부서는 <span className="text-muted-foreground">상위 · 하위 2단계</span>까지 만들 수
-          있어요.
+          <span className="text-muted-foreground">역할</span>은 부서 안에서 맡는 일이에요 — 개발팀
+          안의 프론트엔드·백엔드처럼요.
         </p>
         <p>
           손잡이를 끌면 순서를 바꾸거나{" "}
-          <span className="text-muted-foreground">다른 상위 부서로 옮길</span> 수 있어요.
+          <span className="text-muted-foreground">다른 부서로 옮길</span> 수 있어요.
         </p>
         <p>
-          <span className="text-muted-foreground">하위 부서가 있는 곳은 묶음</span>이라 사원이 직접
-          소속되지 않아요. 사원은 가장 아래 부서에 배정됩니다.
+          <span className="text-muted-foreground">역할 없이 부서에만</span> 속할 수도 있어요. 팀장이
+          그런 경우입니다.
         </p>
       </div>
 

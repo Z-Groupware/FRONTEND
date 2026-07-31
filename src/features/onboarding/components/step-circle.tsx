@@ -14,7 +14,8 @@ interface StepCircleProps {
 
 const TONE_CLASS: Record<StepCircleTone, string> = {
   current: "bg-foreground text-background",
-  done: "bg-success text-background",
+  // 완료도 먹색이다 — 초록은 "발송됨"처럼 상태를 알릴 때만 쓴다
+  done: "bg-foreground text-background",
   idle: "bg-secondary text-muted-foreground/70",
 };
 

@@ -2,17 +2,17 @@ import {
   appendChild,
   countDepartments,
   createDepartment,
-  demoteNode,
+  departmentRoles,
   findNode,
   findSiblings,
   flattenDepartments,
   moveNodeTo,
   nextAvailableName,
-  promoteNode,
   removeDepartment,
   renameDepartment,
-  shiftNode,
+  rootDepartments,
 } from "./tree";
+import { demoteNode, promoteNode, shiftNode } from "./tree-keyboard";
 import type { DepartmentNode } from "./types";
 
 /**
@@ -213,5 +213,30 @@ describe("flattenDepartments", () => {
       { id: "ops", name: "경영지원", depth: 0 },
       { id: "hr", name: "인사", depth: 1 },
     ]);
+  });
+});
+
+describe("rootDepartments / departmentRoles", () => {
+  it("부서는 트리 윗단만 준다", () => {
+    expect(rootDepartments(makeTree()).map((option) => option.name)).toEqual([
+      "개발팀",
+      "디자인팀",
+      "경영지원",
+    ]);
+  });
+
+  it("그 부서 안의 역할을 준다", () => {
+    expect(departmentRoles(makeTree(), "dev").map((option) => option.name)).toEqual([
+      "프론트엔드",
+      "백엔드",
+    ]);
+  });
+
+  it("역할이 없는 부서는 빈 목록이다 — 화면에서 '없음'만 고를 수 있다", () => {
+    expect(departmentRoles(makeTree(), "design")).toEqual([]);
+  });
+
+  it("없는 부서를 물으면 빈 목록이다", () => {
+    expect(departmentRoles(makeTree(), "없는id")).toEqual([]);
   });
 });

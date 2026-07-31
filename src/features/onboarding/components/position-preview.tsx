@@ -1,5 +1,8 @@
+"use client";
+
 import type { AssignableRole, Position } from "../types";
 import { SYSTEM_ISSUED_POSITIONS } from "../types";
+import { useScrollToLatest } from "../use-scroll-to-latest";
 import { RoleBadge } from "./role-badge";
 
 /**
@@ -8,9 +11,14 @@ import { RoleBadge } from "./role-badge";
  * 아래는 이 화면에서 매핑한 직급이 그대로 따라온다.
  */
 export function PositionPreview({ positions }: { positions: Position[] }) {
+  // 직급이 늘면 새로 생긴 쪽으로 따라 내려간다
+  const listRef = useScrollToLatest<HTMLUListElement>(positions.length);
   return (
     // 남는 세로 공간을 채운다. 직급이 많아지면 안에서만 스크롤한다(스크롤바 숨김)
-    <ul className="border-border bg-background/50 flex min-h-20 flex-1 [scrollbar-width:none] flex-col gap-2 overflow-auto rounded-lg border p-3 [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+    <ul
+      ref={listRef}
+      className="border-border bg-background/50 flex min-h-20 flex-1 [scrollbar-width:none] flex-col gap-2 overflow-auto overscroll-contain rounded-lg border p-3 [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+    >
       {SYSTEM_ISSUED_POSITIONS.map((issued) => (
         <PreviewRow key={issued.name} name={issued.name} role={issued.role} />
       ))}
@@ -28,7 +36,7 @@ export function PositionPreview({ positions }: { positions: Position[] }) {
 
 function PreviewRow({ name, role }: { name: string; role: AssignableRole }) {
   return (
-    <li className="flex h-[18px] items-center justify-between gap-2">
+    <li className="animate-in fade-in slide-in-from-bottom-1 flex h-[18px] items-center justify-between gap-2 duration-200">
       <span className="text-muted-foreground truncate text-[10px]">{name}</span>
       <RoleBadge role={role} className="text-[9px]" />
     </li>

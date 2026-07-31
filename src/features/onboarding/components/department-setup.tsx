@@ -7,10 +7,12 @@ import { useState } from "react";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
+import { loadDraft, saveDraftDepartments } from "../draft";
 import { countDepartments } from "../tree";
 import type { DepartmentNode as DepartmentNodeType } from "../types";
 import type { DraggingInfo } from "../use-department-drag";
 import { useDepartmentTree } from "../use-department-tree";
+import { useDraftSync } from "../use-draft-sync";
 import { DepartmentAddRow } from "./department-add-row";
 import { DepartmentDeleteDialog } from "./department-delete-dialog";
 import { DepartmentIntro } from "./department-intro";
@@ -18,8 +20,8 @@ import { DepartmentNode, type DepartmentNodeHandlers } from "./department-node";
 
 /**
  * 온보딩 1단계 — 부서 체계.
- * ⚠️ 저장은 미구현이다. 지금 편집 내용은 브라우저 메모리에만 있고 새로고침하면 사라진다.
- *    BE 연동 후 Server Action으로 붙인다.
+ * ⚠️ 서버 저장은 미구현이다. 단계를 오갈 때 입력이 사라지지 않게
+ *    임시 보관함(`draft.ts` · sessionStorage)에만 담아둔다. BE 연동 후 [완료]에서 한 번에 커밋한다.
  */
 export function DepartmentSetup({
   initialDepartments,
@@ -29,6 +31,13 @@ export function DepartmentSetup({
   const tree = useDepartmentTree(initialDepartments);
   const [draftName, setDraftName] = useState("");
   const [dragging, setDragging] = useState<DraggingInfo | null>(null);
+
+  useDraftSync({
+    value: tree.departments,
+    load: () => loadDraft().departments,
+    save: saveDraftDepartments,
+    restore: tree.reset,
+  });
 
   const total = countDepartments(tree.departments);
 
@@ -70,7 +79,7 @@ export function DepartmentSetup({
           </header>
 
           {/* 스크롤바는 숨긴다(스크롤 자체는 된다) */}
-          <div className="flex-1 [scrollbar-width:none] overflow-auto px-4 pt-4 pb-3 [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+          <div className="flex-1 [scrollbar-width:none] overflow-auto overscroll-contain px-4 pt-4 pb-3 [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
             {tree.departments.length === 0 ? (
               <p className="text-muted-foreground/70 py-12 text-center text-[13px]">
                 아래에서 첫 부서를 추가해 주세요
@@ -99,7 +108,7 @@ export function DepartmentSetup({
             "bg-foreground text-background hover:bg-foreground/90 h-[34px] gap-[5.25px] rounded-md px-[12.25px] text-[13px] leading-none",
           )}
         >
-          다음
+          <span className="leading-none">다음</span>
           <ChevronRight className="size-3.5" />
         </Link>
       </div>

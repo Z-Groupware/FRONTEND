@@ -20,7 +20,7 @@ interface DepartmentDeleteDialogProps {
   onConfirm: (id: string) => void;
 }
 
-/** 하위까지 함께 사라지므로 확인을 받는다(CLAUDE.md: 파괴적 작업은 토스트가 아니라 Dialog). */
+/** 안에 든 역할까지 함께 사라지므로 확인을 받는다(CLAUDE.md: 파괴적 작업은 토스트가 아니라 Dialog). */
 export function DepartmentDeleteDialog({
   target,
   onCancel,
@@ -34,7 +34,7 @@ export function DepartmentDeleteDialog({
         <DialogHeader>
           <DialogTitle>&lsquo;{target?.name}&rsquo; 부서를 지울까요?</DialogTitle>
           <DialogDescription>
-            하위 부서 {childCount}개도 함께 사라져요. 되돌릴 수 없습니다.
+            역할 {childCount}개도 함께 사라져요. 되돌릴 수 없습니다.
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>

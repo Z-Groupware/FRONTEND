@@ -17,16 +17,33 @@ interface RoleSelectProps {
   onChange: (role: AssignableRole) => void;
   /** 스크린리더용 이름 — 어느 직급의 권한인지 알려준다 */
   label: string;
+  /** 고를 수 없는 권한 — 이미 다른 직급이 가져갔다 */
+  blocked?: readonly AssignableRole[];
+  /** 목록 줄은 28px(`sm`), 추가 줄은 옆 입력칸에 맞춰 32px(`default`) */
+  size?: "sm" | "default";
   className?: string;
 }
 
 /** 직급 한 줄의 권한 선택. 폭을 고정해 어떤 권한이든 크기가 같다. */
-export function RoleSelect({ value, onChange, label, className }: RoleSelectProps) {
+export function RoleSelect({
+  value,
+  onChange,
+  label,
+  blocked = [],
+  size = "sm",
+  className,
+}: RoleSelectProps) {
   return (
     <Select value={value} onValueChange={(next) => onChange(next as AssignableRole)}>
       <SelectTrigger
         aria-label={label}
-        className={cn("h-7 w-[92px] justify-between px-2 text-xs leading-none", className)}
+        // ⚠️ 기본 `data-[size=default]:h-8`이 특이도가 높아 `h-7`만으로는 안 먹는다.
+        //    그래서 높이를 className으로 넘겨받지 않고 여기서 정한다 — 밖에서 덮으려 하면 조용히 무시된다.
+        className={cn(
+          "w-[92px] justify-between px-2 text-xs leading-none",
+          size === "sm" ? "h-7 data-[size=default]:h-7" : "h-8 data-[size=default]:h-8",
+          className,
+        )}
       >
         {/* 원본 값(LEADER)이 아니라 표기용 라벨(Leader)을 보여준다 */}
         <SelectValue>{(role) => ROLE_LABEL[role as AssignableRole]}</SelectValue>
@@ -45,7 +62,12 @@ export function RoleSelect({ value, onChange, label, className }: RoleSelectProp
         className="w-[92px] min-w-0"
       >
         {POSITION_ROLES.map((role) => (
-          <SelectItem key={role} value={role} className="text-xs">
+          <SelectItem
+            key={role}
+            value={role}
+            disabled={blocked.includes(role) && role !== value}
+            className="text-xs"
+          >
             {ROLE_LABEL[role]}
           </SelectItem>
         ))}

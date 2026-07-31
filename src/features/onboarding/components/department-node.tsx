@@ -91,16 +91,15 @@ export function DepartmentNode({ node, depth, parentId, ...handlers }: Departmen
           dropZone === "inside" && "bg-secondary outline-ring outline-2 outline-dashed",
         )}
       >
-        <span
+        <button
           {...handleProps}
-          role="button"
-          tabIndex={0}
-          aria-label={`${node.name} 위치 이동 — Alt와 방향키로도 옮길 수 있어요(위아래: 순서, 왼쪽: 상위로 빼기, 오른쪽: 바로 위 부서의 하위로)`}
+          type="button"
+          aria-label={`${node.name} 위치 이동 — Alt와 방향키로도 옮길 수 있어요(위아래: 순서, 왼쪽: 부서로 빼기, 오른쪽: 바로 위 부서의 역할로)`}
           onKeyDown={handleKeyMove}
           className="text-muted-foreground/40 hover:text-muted-foreground focus-visible:ring-ring shrink-0 cursor-grab rounded opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:outline-none active:cursor-grabbing"
         >
           <GripVertical className="size-3.5" />
-        </span>
+        </button>
 
         {hasChildren ? (
           <button
@@ -128,6 +127,8 @@ export function DepartmentNode({ node, depth, parentId, ...handlers }: Departmen
             onFocus={(event) => event.currentTarget.select()}
             onBlur={(event) => submitName(event.target.value)}
             onKeyDown={(event) => {
+              // 한글 조합 중의 Enter는 글자 확정용이다 — 편집을 끝내면 안 된다
+              if (event.nativeEvent.isComposing) return;
               if (event.key === "Enter") submitName(event.currentTarget.value);
               if (event.key === "Escape") onEditingChange(null);
             }}
@@ -150,9 +151,9 @@ export function DepartmentNode({ node, depth, parentId, ...handlers }: Departmen
           </button>
         )}
 
-        {/* 하위가 있으면 묶음이라 사원이 직접 소속되지 않는다(DECISIONS: 부서 계층·사원 소속) */}
+        {/* 윗단은 부서, 아랫단은 그 안의 역할이다 */}
         <span className="text-muted-foreground/50 shrink-0 text-[11px] transition-opacity group-focus-within:opacity-0 group-hover:opacity-0">
-          {hasChildren ? "묶음" : getDepthLabel(depth)}
+          {getDepthLabel(depth)}
         </span>
 
         <DepartmentNodeActions
