@@ -3,7 +3,7 @@
 import type { LucideIcon } from "lucide-react";
 import { FolderOpen, Mail, Users } from "lucide-react";
 
-import { CheckMark } from "./check-mark";
+import { CheckMark } from "@/components/common/check-mark";
 
 /** 요약 한 줄 — 무엇을, 얼마나 정했는지. */
 export interface SummaryRow {

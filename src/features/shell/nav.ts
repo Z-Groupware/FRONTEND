@@ -71,7 +71,7 @@ export const OWNER_NAV: NavSection[] = [
   {
     title: "회사 운영",
     items: [
-      { href: "/owner/members", label: "사원 관리", icon: "members", badge: 3 },
+      { href: "/owner/members", label: "사원 관리", icon: "members" },
       { href: "/owner/billing", label: "구독·결제", icon: "billing", isReady: true },
       { href: "/owner/storage", label: "녹음 용량", icon: "storage" },
       { href: "/owner/setting", label: "기업 설정", icon: "setting" },

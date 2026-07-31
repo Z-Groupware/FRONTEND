@@ -32,6 +32,11 @@ export interface PriceBreakdown {
   subtotal: number;
   vat: number;
   total: number;
+  /**
+   * 연간을 골라서 아낀 금액. 월간이면 0이다.
+   * 할인율(20%)만 보여주면 얼마를 아끼는지 감이 안 온다 — 금액으로 같이 보여준다.
+   */
+  yearlySaving: number;
 }
 
 /**
@@ -61,7 +66,10 @@ export function calculatePrice(plan: Plan, seats: number, cycle: BillingCycle): 
   const subtotal = unitPrice * safeSeats;
   const vat = Math.round(subtotal * VAT_RATE);
 
-  return { unitPrice, seats: safeSeats, subtotal, vat, total: subtotal + vat };
+  // 연간 할인은 "1년치 정가 − 할인가"다. 부가세 전 금액으로 잡는다(할인 뒤에 세금이 붙는다)
+  const yearlySaving = cycle === BILLING_CYCLE.YEARLY ? monthly * 12 * safeSeats - subtotal : 0;
+
+  return { unitPrice, seats: safeSeats, subtotal, vat, total: subtotal + vat, yearlySaving };
 }
 
 /** 금액 표기 — `₩118,800`. 자릿점은 로케일에 맡기지 않는다(서버·클라이언트가 갈릴 수 있다). */

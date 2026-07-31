@@ -2,23 +2,24 @@
 
 import {
   Bell,
-  Building2,
-  Calendar,
+  CalendarDays,
+  CalendarRange,
+  Columns3,
   CreditCard,
-  DoorOpen,
-  FolderOpen,
+  Folder,
   HardDrive,
-  Kanban,
-  LayoutGrid,
+  LayoutDashboard,
   type LucideIcon,
   Search,
-  User,
+  Settings,
+  UserRound,
+  UserRoundCheck,
   Users,
-  UsersRound,
   Video,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { toast } from "sonner";
 
 import { ZLogo } from "@/components/icons/z-logo";
 import { ROLE_LABEL } from "@/constants/domain";
@@ -29,20 +30,20 @@ import type { NavIconName, NavItem, NavSection } from "../nav";
 
 /** 이름 → 아이콘. 구성 파일은 서버에서 읽히므로 실제 컴포넌트는 여기서 붙인다. */
 const NAV_ICON: Record<NavIconName, LucideIcon> = {
-  dashboard: LayoutGrid,
-  project: FolderOpen,
+  dashboard: LayoutDashboard,
+  project: Folder,
   search: Search,
-  calendar: Calendar,
+  calendar: CalendarDays,
   notice: Bell,
   meeting: Video,
-  room: DoorOpen,
-  board: Kanban,
-  people: UsersRound,
-  me: User,
-  members: Users,
+  room: CalendarRange,
+  board: Columns3,
+  people: Users,
+  me: UserRound,
+  members: UserRoundCheck,
   billing: CreditCard,
   storage: HardDrive,
-  setting: Building2,
+  setting: Settings,
 };
 
 interface RoleSidebarProps {
@@ -61,9 +62,18 @@ export function RoleSidebar({ sections, user }: RoleSidebarProps) {
 
   return (
     <aside className="border-border bg-sidebar flex w-[220px] shrink-0 flex-col border-r">
-      <div className="border-border flex h-[52px] shrink-0 items-center gap-[7px] border-b px-[14px]">
-        <ZLogo className="text-foreground size-[18px]" title="Z" />
-        <span className="text-[15px] leading-[22px] tracking-[-0.3px]">Z</span>
+      {/*
+        로고만 둔다 — 옆에 "Z" 글자를 또 쓰면 같은 말이 두 번이다.
+        상단바(64px)와 높이를 맞춰 사이드바와 본문의 첫 줄이 한 선에 놓이게 한다.
+      */}
+      <div className="border-border flex h-[64px] shrink-0 items-center border-b px-[18px]">
+        <Link
+          href="/owner"
+          aria-label="Z 홈으로"
+          className="focus-visible:ring-ring rounded transition-opacity hover:opacity-70 focus-visible:ring-2 focus-visible:outline-none"
+        >
+          <ZLogo className="text-foreground size-[22px]" title="Z" />
+        </Link>
       </div>
 
       <nav className="flex-1 overflow-y-auto p-[7px]">
@@ -107,7 +117,10 @@ function SidebarItem({ item, isCurrent }: { item: NavItem; isCurrent: boolean })
   const inner = (
     <>
       <Icon className="size-[14px] shrink-0" aria-hidden />
-      <span className="min-w-0 flex-1 truncate text-[13px] leading-5">{item.label}</span>
+      {/* 한글 글자가 상자 안에서 위쪽에 앉아 아이콘보다 떠 보인다 — 1px 내려 맞춘다 */}
+      <span className="min-w-0 flex-1 translate-y-px truncate text-[13px] leading-5">
+        {item.label}
+      </span>
       {item.badge !== undefined && (
         <span className="bg-foreground text-background flex h-[17px] min-w-[17px] shrink-0 items-center justify-center rounded-full px-[3.5px] text-[10px] leading-none font-semibold tabular-nums">
           {item.badge}
@@ -118,16 +131,26 @@ function SidebarItem({ item, isCurrent }: { item: NavItem; isCurrent: boolean })
 
   const shape = "flex h-[34px] items-center gap-[8.75px] rounded-md px-[10.5px] transition-colors";
 
-  // ⚠️ 아직 없는 화면은 링크로 두지 않는다 — 누르면 404가 뜬다(§정직성)
+  /*
+    ⚠️ 아직 없는 화면은 링크로 두지 않는다 — 누르면 404가 뜬다.
+       대신 **색은 다른 메뉴와 똑같이** 둔다. 흐리게 처리하면 완성된 화면을 볼 때
+       사이드바가 절반쯤 죽은 것처럼 보인다.
+       누르면 조용히 아무 일도 안 일어나는 대신 준비 중이라고 알린다(§정직성).
+  */
   if (!item.isReady) {
     return (
-      <span
+      <button
+        type="button"
         aria-disabled
-        title="아직 만드는 중이에요"
-        className={cn(shape, "text-muted-foreground/45 cursor-not-allowed")}
+        onClick={() => toast(`${item.label} 화면은 아직 만드는 중이에요`)}
+        // 색은 준비된 메뉴와 똑같이 — 평소 회색, 호버하면 글자가 진해진다
+        className={cn(
+          shape,
+          "text-muted-foreground hover:bg-foreground/5 hover:text-foreground focus-visible:ring-ring w-full text-left focus-visible:ring-2 focus-visible:outline-none",
+        )}
       >
         {inner}
-      </span>
+      </button>
     );
   }
 

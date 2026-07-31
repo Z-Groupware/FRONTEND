@@ -30,6 +30,8 @@ describe("월간 결제", () => {
       subtotal: 118800,
       vat: 11880,
       total: 130680,
+      // 월간은 아낀 금액이 없다
+      yearlySaving: 0,
     });
   });
 
@@ -78,5 +80,19 @@ describe("금액 표기", () => {
 
   it("0원도 그대로 보여준다", () => {
     expect(formatWon(0)).toBe("₩0");
+  });
+});
+
+describe("연간 할인 금액", () => {
+  it("1년치 정가에서 20%를 아낀 금액을 담는다 — 12명이면 285,120원", () => {
+    const price = calculatePrice(team, 12, BILLING_CYCLE.YEARLY);
+
+    // 정가 9,900 × 12개월 × 12명 = 1,425,600 · 할인가 = 그 80%
+    expect(price.yearlySaving).toBe(1_425_600 - price.subtotal);
+    expect(price.yearlySaving).toBe(285_120);
+  });
+
+  it("월간이면 0이다", () => {
+    expect(calculatePrice(team, 12, BILLING_CYCLE.MONTHLY).yearlySaving).toBe(0);
   });
 });

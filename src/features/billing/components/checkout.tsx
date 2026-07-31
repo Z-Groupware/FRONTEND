@@ -1,9 +1,7 @@
 "use client";
 
-import { ArrowLeft, Info } from "lucide-react";
-import Link from "next/link";
+import { BadgePercent, Check, RefreshCw, ShieldCheck } from "lucide-react";
 import { useState } from "react";
-import { toast } from "sonner";
 
 import { cn } from "@/lib/utils";
 
@@ -19,6 +17,7 @@ import {
 } from "../pricing";
 import { PLAN } from "../types";
 import { OrderSummary } from "./order-summary";
+import { PaymentDoneDialog } from "./payment-done-dialog";
 
 /** 처음 잡아둘 구성원 수 — 온보딩에서 초대한 수가 오면 그걸 쓴다. */
 const DEFAULT_SEATS = 12;
@@ -27,9 +26,10 @@ const DEFAULT_SEATS = 12;
  * 구독 결제.
  *
  * ⚠️ **결제는 미구현이다.** 실연동(Toss) 여부가 미정이고 클라이언트 키도 없다(DECISIONS §미결정).
- * ⚠️ **카드 입력칸을 직접 만들지 않는다.** 우리 폼으로 카드 원번호를 받으면 PCI-DSS 대상이 되고,
- *    Toss 결제위젯은 자체 iframe으로 카드 입력을 그린다 — 직접 만든 input은 연동 때 버려진다.
- *    아래 자리에 위젯을 마운트한다.
+ *    지금은 [결제하기]를 누르면 완료 창만 뜬다 — 연동되면 이 자리에서 Toss 결제창을 띄우고
+ *    **성공 응답을 받은 뒤에** 그 창을 연다.
+ * ⚠️ **카드 입력칸을 직접 만들지 않는다.** 우리 폼으로 카드 원번호를 받으면 PCI-DSS 대상이 된다.
+ *    카드·계좌이체·간편결제 선택은 Toss 결제창이 통째로 그리므로 이 화면에 결제 수단 칸을 두지 않는다.
  */
 export function Checkout() {
   const plan = PLANS.find((item) => item.code === PLAN.TEAM);
@@ -37,6 +37,7 @@ export function Checkout() {
   const [seats, setSeats] = useState(DEFAULT_SEATS);
   const [agreedTerms, setAgreedTerms] = useState(false);
   const [agreedRecurring, setAgreedRecurring] = useState(false);
+  const [isDone, setIsDone] = useState(false);
 
   if (!plan) return null;
 
@@ -45,159 +46,199 @@ export function Checkout() {
   const canPay = agreedTerms && agreedRecurring;
 
   return (
-    <>
-      <header className="border-border bg-card flex h-[52px] shrink-0 items-center border-b px-[21px]">
-        <Link
-          href="/owner/billing"
-          className="text-muted-foreground hover:text-foreground focus-visible:ring-ring flex items-center gap-[3.5px] rounded text-xs leading-[18px] transition-colors focus-visible:ring-2 focus-visible:outline-none"
-        >
-          <ArrowLeft className="size-3.5" />
-          구독 관리로
-        </Link>
-        <h1 className="flex-1 text-center text-[14px] leading-[21px]">결제</h1>
-        {/* 좌측 링크와 같은 폭을 오른쪽에도 둬서 제목이 진짜 가운데 오게 한다 */}
-        <span className="w-[74px]" aria-hidden />
-      </header>
-
-      <div className="flex-1 overflow-y-auto px-[21px] py-[35px]">
-        <div className="mx-auto grid w-full max-w-[900px] gap-[21px] lg:grid-cols-[minmax(0,470px)_minmax(0,360px)] lg:justify-center">
-          <div className="flex flex-col gap-[21px]">
-            <section className="border-border bg-card rounded-[10px] border p-[17.5px]">
-              <h2 className="text-[14px] leading-[18px] font-semibold tracking-[-0.28px]">
-                플랜 선택
-              </h2>
-
-              <div className="flex items-center gap-[10.5px] pt-3.5">
-                <span
-                  className={cn(
-                    "text-xs leading-[18px]",
-                    cycle === BILLING_CYCLE.MONTHLY
-                      ? "text-foreground"
-                      : "text-muted-foreground/70",
-                  )}
-                >
-                  {BILLING_CYCLE_LABEL[BILLING_CYCLE.MONTHLY]}
-                </span>
-
-                <button
-                  type="button"
-                  role="switch"
-                  aria-checked={cycle === BILLING_CYCLE.YEARLY}
-                  aria-label="연간 결제로 바꾸기"
-                  onClick={() =>
-                    setCycle((prev) =>
-                      prev === BILLING_CYCLE.MONTHLY ? BILLING_CYCLE.YEARLY : BILLING_CYCLE.MONTHLY,
-                    )
-                  }
-                  className={cn(
-                    "focus-visible:ring-ring relative h-[22px] w-10 shrink-0 rounded-full transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none",
-                    cycle === BILLING_CYCLE.YEARLY ? "bg-foreground" : "bg-border",
-                  )}
-                >
-                  <span
-                    className={cn(
-                      "absolute top-[3px] size-4 rounded-full bg-white shadow transition-[left]",
-                      cycle === BILLING_CYCLE.YEARLY ? "left-[21px]" : "left-[3px]",
-                    )}
-                  />
-                </button>
-
-                <span
-                  className={cn(
-                    "text-xs leading-[18px]",
-                    cycle === BILLING_CYCLE.YEARLY ? "text-foreground" : "text-muted-foreground/70",
-                  )}
-                >
-                  {BILLING_CYCLE_LABEL[BILLING_CYCLE.YEARLY]}
-                </span>
-
-                <span className="text-muted-foreground/70 ml-auto text-[11px] leading-4 tabular-nums">
-                  연간 {Math.round(YEARLY_DISCOUNT_RATE * 100)}% 할인
-                </span>
+    <div className="flex-1 overflow-y-auto px-8 py-10">
+      <div className="mx-auto flex w-full max-w-[1080px] flex-col gap-8 lg:flex-row lg:items-start">
+        {/* 왼쪽 — 무엇을 얼마에 사는지 고르고 확인한다 */}
+        <div className="flex min-w-0 flex-1 flex-col gap-6">
+          <section className="border-border bg-card rounded-xl border p-6">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-[16px] leading-6 font-semibold tracking-[-0.3px]">
+                  {plan.name} 플랜
+                </h2>
+                <p className="text-muted-foreground pt-1 text-[13px] leading-5">
+                  {plan.price} {plan.unit}
+                </p>
               </div>
+              <span className="bg-foreground text-background shrink-0 rounded-full px-2.5 py-1 text-[11px] leading-4">
+                가장 많이 선택해요
+              </span>
+            </div>
 
-              <div className="pt-3.5">
-                <div className="flex items-center justify-between pb-[7px]">
-                  <label htmlFor="seats" className="text-xs leading-[18px]">
-                    구성원 수
-                  </label>
-                  <output htmlFor="seats" className="text-[14px] leading-[21px] tabular-nums">
-                    {seats}명
-                  </output>
-                </div>
+            <ul className="grid gap-2 pt-5 sm:grid-cols-2">
+              {plan.features.map((feature) => (
+                <li key={feature} className="flex items-center gap-2 text-[13px] leading-5">
+                  <Check className="text-muted-foreground size-4 shrink-0" aria-hidden />
+                  {feature}
+                </li>
+              ))}
+            </ul>
 
-                <input
-                  id="seats"
-                  type="range"
-                  min={SEAT_RANGE.min}
-                  max={SEAT_RANGE.max}
-                  value={seats}
-                  onChange={(event) => setSeats(Number(event.target.value))}
-                  className="accent-foreground h-4 w-full"
-                />
+            <div className="border-border mt-6 border-t pt-6">
+              <h3 className="text-[13px] leading-5 font-semibold">결제 주기</h3>
+            </div>
 
-                <div className="text-muted-foreground/70 flex justify-between pt-[3.5px] text-[10px] leading-[15px] tabular-nums">
-                  <span>{SEAT_RANGE.min}명</span>
-                  <span>{SEAT_RANGE.max}명</span>
-                </div>
-              </div>
-            </section>
-
-            <section className="border-border bg-card rounded-[10px] border p-[17.5px]">
-              <h2 className="text-[14px] leading-[18px] font-semibold tracking-[-0.28px]">
-                결제 수단
-              </h2>
-
-              {/*
-                ⚠️ 카드번호·CVC 입력칸을 직접 만들지 않는다.
-                   여기에 Toss 결제위젯을 마운트한다 — 위젯이 카드·계좌이체·간편결제를 통째로 그린다.
-                   지금은 클라이언트 키가 없어 자리만 잡아 두고 무엇이 없는지 적는다(§정직성).
-              */}
-              <div
-                id="toss-payment-widget"
-                className="border-border text-muted-foreground/70 mt-3.5 flex min-h-[140px] flex-col items-center justify-center gap-1.5 rounded-md border border-dashed px-4 text-center"
+            <div className="flex items-center gap-3 pt-3">
+              <span
+                className={cn(
+                  "text-[13px] leading-5",
+                  cycle === BILLING_CYCLE.MONTHLY ? "text-foreground" : "text-muted-foreground/70",
+                )}
               >
-                <Info className="size-4" aria-hidden />
-                <p className="text-xs leading-[18px] break-keep">
-                  Toss Payments 결제위젯이 들어갈 자리예요
-                </p>
-                <p className="text-[10px] leading-[15px] break-keep">
-                  카드·계좌이체·간편결제를 위젯이 직접 그립니다. 아직 연동 전이에요.
-                </p>
+                {BILLING_CYCLE_LABEL[BILLING_CYCLE.MONTHLY]}
+              </span>
+
+              <button
+                type="button"
+                role="switch"
+                aria-checked={cycle === BILLING_CYCLE.YEARLY}
+                aria-label="연간 결제로 바꾸기"
+                onClick={() =>
+                  setCycle((prev) =>
+                    prev === BILLING_CYCLE.MONTHLY ? BILLING_CYCLE.YEARLY : BILLING_CYCLE.MONTHLY,
+                  )
+                }
+                className={cn(
+                  "focus-visible:ring-ring relative h-6 w-11 shrink-0 rounded-full transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none",
+                  cycle === BILLING_CYCLE.YEARLY ? "bg-foreground" : "bg-border",
+                )}
+              >
+                <span
+                  className={cn(
+                    "absolute top-[3px] size-[18px] rounded-full bg-white shadow transition-[left]",
+                    cycle === BILLING_CYCLE.YEARLY ? "left-[23px]" : "left-[3px]",
+                  )}
+                />
+              </button>
+
+              <span
+                className={cn(
+                  "text-[13px] leading-5",
+                  cycle === BILLING_CYCLE.YEARLY ? "text-foreground" : "text-muted-foreground/70",
+                )}
+              >
+                {BILLING_CYCLE_LABEL[BILLING_CYCLE.YEARLY]}
+              </span>
+
+              <span className="bg-secondary text-muted-foreground ml-auto rounded-full px-2.5 py-1 text-[11px] leading-4 tabular-nums">
+                연간 {Math.round(YEARLY_DISCOUNT_RATE * 100)}% 할인
+              </span>
+            </div>
+
+            <div className="border-border mt-6 border-t pt-6">
+              <div className="flex items-end justify-between pb-3">
+                <label htmlFor="seats" className="text-[13px] leading-5 font-semibold">
+                  구성원 수
+                </label>
+                <output
+                  htmlFor="seats"
+                  className="text-[18px] leading-6 font-semibold tabular-nums"
+                >
+                  {seats}명
+                </output>
               </div>
 
-              <p className="text-muted-foreground/70 pt-3.5 text-[10px] leading-[15px] break-keep">
-                카드 정보는 Toss Payments가 받고 우리 서버에는 저장되지 않아요.
-              </p>
-            </section>
+              <input
+                id="seats"
+                type="range"
+                min={SEAT_RANGE.min}
+                max={SEAT_RANGE.max}
+                value={seats}
+                onChange={(event) => setSeats(Number(event.target.value))}
+                className="accent-foreground h-5 w-full"
+              />
 
-            <div className="flex flex-col gap-[7px]">
+              <div className="text-muted-foreground/70 flex justify-between pt-1 text-[11px] leading-4 tabular-nums">
+                <span>{SEAT_RANGE.min}명</span>
+                <span>{SEAT_RANGE.max}명</span>
+              </div>
+            </div>
+          </section>
+
+          <OrderSummary plan={plan} cycle={cycle} price={price} />
+        </div>
+
+        {/* 오른쪽 — 확인하고 결제한다. 스크롤해도 따라온다 */}
+        {/*
+          스티키는 **감싼 칸 안에서** 건다 — flex 자식에 바로 걸면 처음부터 top만큼 내려가
+          왼쪽 카드와 윗줄이 어긋난다. 감싸두면 시작은 같은 줄, 스크롤하면 따라붙는다.
+        */}
+        <div className="w-full shrink-0 lg:w-[380px]">
+          <aside className="border-border bg-card flex flex-col rounded-2xl border p-7 shadow-sm lg:sticky lg:top-0">
+            {/* 무엇을 사는지 — 제목을 또 쓰지 않는다(화면 제목이 이미 "결제"다) */}
+            <div className="flex items-center gap-2">
+              <span className="bg-secondary text-foreground border-border rounded-md border px-2 py-1 text-[11px] leading-4 font-semibold">
+                {plan.name}
+              </span>
+              <span className="text-muted-foreground text-[13px] leading-5 tabular-nums">
+                {BILLING_CYCLE_LABEL[cycle]} · {price.seats}명
+              </span>
+            </div>
+
+            {/* 라벨을 위로 빼고 금액을 왼쪽에 크게 — 숫자가 카드의 주인공이 된다 */}
+            <p className="text-muted-foreground pt-6 text-[13px] leading-5">
+              {cycle === BILLING_CYCLE.YEARLY ? "매년" : "매월"} 청구
+            </p>
+            <p className="pt-1.5 text-[34px] leading-none font-bold tracking-[-1px] tabular-nums">
+              {formatWon(price.total)}
+            </p>
+            <p className="text-muted-foreground/70 flex items-center gap-1.5 pt-3 text-[11px] leading-4">
+              <RefreshCw className="size-3.5 shrink-0" aria-hidden />
+              VAT 포함 · 언제든 해지할 수 있어요
+            </p>
+
+            {/* 얼마나 아꼈는지는 금액으로 알린다 — %만 보면 감이 안 온다 */}
+            {price.yearlySaving > 0 && (
+              <p className="border-border bg-secondary mt-5 flex items-center gap-2 rounded-xl border px-3.5 py-3 text-[12px] leading-[18px]">
+                <BadgePercent className="size-4 shrink-0" aria-hidden />
+                <span>
+                  <span className="font-semibold tabular-nums">
+                    {Math.round(YEARLY_DISCOUNT_RATE * 100)}% 할인
+                  </span>
+                  <span className="text-muted-foreground tabular-nums">
+                    {" "}
+                    · {formatWon(price.yearlySaving)} 아꼈어요
+                  </span>
+                </span>
+              </p>
+            )}
+
+            {/* 동의는 한 덩어리로 묶는다 — 낱개로 흩어 두면 버튼 앞이 산만하다 */}
+            <div className="bg-secondary/50 mt-6 flex flex-col gap-3 rounded-xl p-4">
               <Agreement checked={agreedTerms} onChange={setAgreedTerms}>
-                서비스 이용약관 및 개인정보처리방침에 동의합니다
+                이용약관 · 개인정보처리방침에 동의합니다
               </Agreement>
               <Agreement checked={agreedRecurring} onChange={setAgreedRecurring}>
-                정기 결제 자동 청구에 동의합니다 (매월 또는 매년 자동 갱신)
+                정기 결제 자동 청구에 동의합니다
               </Agreement>
             </div>
 
             <button
               type="button"
               disabled={!canPay}
-              onClick={() =>
-                toast.success("결제는 아직 붙지 않았어요", {
-                  description: `${plan.name} · ${BILLING_CYCLE_LABEL[cycle]} · ${price.seats}명 — 베타 기간에는 그대로 쓰실 수 있습니다.`,
-                })
-              }
-              className="bg-foreground text-background hover:bg-foreground/90 focus-visible:ring-ring h-11 w-full rounded-lg text-[14px] leading-none transition-opacity focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-40"
+              onClick={() => setIsDone(true)}
+              className="bg-foreground text-background hover:bg-foreground/90 focus-visible:ring-ring disabled:bg-secondary disabled:text-muted-foreground/60 mt-4 flex h-[60px] w-full items-center justify-center gap-2.5 rounded-xl text-[18px] leading-none font-semibold transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:pointer-events-none"
             >
-              결제하기 {formatWon(price.total)} (VAT 포함)
+              <span className="tabular-nums">{formatWon(price.total)}</span>
+              결제하기
             </button>
-          </div>
 
-          <OrderSummary plan={plan} cycle={cycle} price={price} />
+            <p className="text-muted-foreground/70 flex items-center justify-center gap-1.5 pt-4 text-[11px] leading-4">
+              <ShieldCheck className="size-3.5 shrink-0" aria-hidden />
+              Toss Payments로 안전하게 결제돼요
+            </p>
+          </aside>
         </div>
       </div>
-    </>
+
+      <PaymentDoneDialog
+        isOpen={isDone}
+        onOpenChange={setIsDone}
+        plan={plan}
+        cycle={cycle}
+        price={price}
+      />
+    </div>
   );
 }
 
@@ -211,14 +252,16 @@ function Agreement({
   children: React.ReactNode;
 }) {
   return (
-    <label className="flex cursor-pointer items-start gap-[8.75px]">
+    <label className="flex cursor-pointer items-start gap-2.5">
       <input
         type="checkbox"
         checked={checked}
         onChange={(event) => onChange(event.target.checked)}
-        className="accent-foreground mt-[1.75px] size-3.5 shrink-0"
+        className="accent-foreground mt-[3px] size-[15px] shrink-0"
       />
-      <span className="text-muted-foreground text-xs leading-[18px] break-keep">{children}</span>
+      <span className="text-muted-foreground text-[12px] leading-[18px] break-keep">
+        {children}
+      </span>
     </label>
   );
 }

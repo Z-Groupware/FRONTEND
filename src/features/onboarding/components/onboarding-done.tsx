@@ -4,6 +4,7 @@ import { ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+import { CheckMark } from "@/components/common/check-mark";
 import { ZLogo } from "@/components/icons/z-logo";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -11,7 +12,6 @@ import { cn } from "@/lib/utils";
 import { loadDraft } from "../draft";
 import { isValidEmail } from "../invites";
 import { type DepartmentNode, type Invite, ONBOARDING_STEP, type Position } from "../types";
-import { CheckMark } from "./check-mark";
 import { DoneSummary } from "./done-summary";
 import { OnboardingShell } from "./onboarding-shell";
 

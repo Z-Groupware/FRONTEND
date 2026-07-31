@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckMark } from "@/features/onboarding/components/check-mark";
+import { CheckMark } from "@/components/common/check-mark";
 import { cn } from "@/lib/utils";
 
 import type { Plan } from "../types";
