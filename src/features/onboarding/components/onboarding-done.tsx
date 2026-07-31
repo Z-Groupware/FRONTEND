@@ -9,7 +9,6 @@ import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 import { loadDraft } from "../draft";
-import { countDepartments } from "../tree";
 import { type DepartmentNode, type Invite, ONBOARDING_STEP, type Position } from "../types";
 import { CheckMark } from "./check-mark";
 import { DoneSummary } from "./done-summary";
@@ -30,8 +29,12 @@ function countOf(
 ): DoneCounts {
   return {
     departmentCount: departments.length,
-    // 역할은 부서 아래 한 겹뿐이다 — 전체에서 부서를 빼면 역할 수다
-    roleCount: countDepartments(departments) - departments.length,
+    /**
+     * 역할 = 부서의 **직속 자식**만.
+     * ⚠️ `전체 - 부서`로 빼지 않는다 — 어쩌다 3계층이 들어오면 손자까지 역할로 세어 숫자가 부풀어 오른다.
+     *    타입(`DepartmentNode.children`)은 재귀라 깊이를 막아주지 않는다.
+     */
+    roleCount: departments.reduce((sum, department) => sum + department.children.length, 0),
     positionCount: positions.length,
     inviteCount: invites.filter((invite) => invite.isSent).length,
   };

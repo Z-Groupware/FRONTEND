@@ -67,3 +67,46 @@ describe("임시 보관함 복원", () => {
     expect(loadDraft().departments).toBeUndefined();
   });
 });
+
+describe("2계층을 넘는 부서 트리는 되살리지 않는다", () => {
+  beforeEach(() => window.sessionStorage.clear());
+
+  it("부서 > 역할 두 겹은 통과한다", () => {
+    put({
+      departments: [
+        { id: "d1", name: "개발팀", children: [{ id: "r1", name: "프론트엔드", children: [] }] },
+      ],
+    });
+    expect(loadDraft().departments).toHaveLength(1);
+  });
+
+  // ⚠️ 화면은 2계층만 만들지만 sessionStorage는 손으로 고칠 수 있다.
+  //    3계층이 들어오면 트리도, 완료 화면의 역할 수도 어긋난다.
+  // ⚠️ 부서가 **여러 개**여야 잡히는 버그가 있었다 — 배열 인덱스가 깊이로 새어
+  //    두 번째 부서부터 3계층 취급을 받았다. 한 개짜리 테스트로는 안 잡힌다.
+  it("부서가 여러 개여도 전부 되살린다", () => {
+    put({
+      departments: [
+        { id: "d1", name: "개발팀", children: [{ id: "r1", name: "프론트엔드", children: [] }] },
+        { id: "d2", name: "디자인팀", children: [] },
+        { id: "d3", name: "경영지원", children: [{ id: "r2", name: "인사", children: [] }] },
+      ],
+    });
+    expect(loadDraft().departments).toHaveLength(3);
+  });
+
+  it("역할 밑에 또 하위가 있으면 버린다", () => {
+    put({
+      departments: [
+        {
+          id: "d1",
+          name: "개발팀",
+          children: [
+            { id: "r1", name: "프론트엔드", children: [{ id: "x", name: "더깊이", children: [] }] },
+          ],
+        },
+      ],
+    });
+    expect(loadDraft().departments).toBeUndefined();
+  });
+});
