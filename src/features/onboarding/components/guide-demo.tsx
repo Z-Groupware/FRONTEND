@@ -95,9 +95,14 @@ export function GuideDemo({ step }: { step: OnboardingStep }) {
   const frame = frames[index];
   if (!frame) return null;
 
+  // 프레임마다 줄 수가 달라 그림틀이 커졌다 작아진다 — 패널이 들썩인다.
+  // 가장 긴 프레임 기준으로 자리를 미리 잡아두고, 모자란 줄은 빈칸으로 채운다.
+  const maxRows = Math.max(...frames.map((item) => item.rows.length));
+  const fillers = maxRows - frame.rows.length;
+
   return (
     <div className="flex flex-col gap-2">
-      <div className="border-guide-border bg-guide-foreground/5 flex min-h-[104px] flex-col gap-1.5 rounded-lg border p-3">
+      <div className="border-guide-border bg-guide-foreground/5 flex flex-col gap-1.5 rounded-lg border p-3">
         {frame.rows.map((row) => (
           <div
             key={`${index}-${row.label}`}
@@ -115,12 +120,20 @@ export function GuideDemo({ step }: { step: OnboardingStep }) {
             {row.sub && <span className="text-guide-muted shrink-0">{row.sub}</span>}
           </div>
         ))}
+
+        {/* 자리만 잡는 빈 줄 — 줄 하나와 같은 높이다 */}
+        {Array.from({ length: fillers }, (_, filler) => (
+          <div key={`filler-${filler}`} className="px-2 py-1.5 text-[11px]" aria-hidden>
+            &nbsp;
+          </div>
+        ))}
       </div>
 
       <div className="flex items-center gap-2">
         {/* 오른쪽 점과 같은 폭을 왼쪽에도 둬서 캡션이 진짜 가운데 오게 한다 */}
         <span className="w-8 shrink-0" aria-hidden />
-        <p className="text-guide-muted flex-1 text-center text-[11px] leading-4 break-keep">
+        {/* 문구 길이가 프레임마다 달라 줄이 늘면 또 들썩인다 — 두 줄 자리를 미리 잡는다 */}
+        <p className="text-guide-muted flex min-h-8 flex-1 items-center justify-center text-center text-[11px] leading-4 break-keep">
           {frame.caption}
         </p>
         <span className="flex w-8 shrink-0 justify-end gap-1" aria-hidden>

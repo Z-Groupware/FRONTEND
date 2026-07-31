@@ -20,7 +20,7 @@ export function DepartmentNodeActions({
   return (
     <span className="absolute right-2 flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100">
       {canAddChild && (
-        <IconButton label={`${name}의 하위 부서 추가`} onClick={onAddChild}>
+        <IconButton label={`${name}에 역할 추가`} onClick={onAddChild}>
           <Plus className="size-3.5" />
         </IconButton>
       )}
