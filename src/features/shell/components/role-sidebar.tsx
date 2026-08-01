@@ -28,8 +28,11 @@ import { cn } from "@/lib/utils";
 
 import type { NavIconName, NavItem, NavSection } from "../nav";
 
-/** 이름 → 아이콘. 구성 파일은 서버에서 읽히므로 실제 컴포넌트는 여기서 붙인다. */
-const NAV_ICON: Record<NavIconName, LucideIcon> = {
+/**
+ * 이름 → 아이콘. 구성 파일은 서버에서 읽히므로 실제 컴포넌트는 여기서 붙인다.
+ * OWNER_NAV가 쓰는 이름만 채운다 — `Partial`이라 나머지(SYSTEM 전용 등)는 없어도 된다.
+ */
+const NAV_ICON: Partial<Record<NavIconName, LucideIcon>> = {
   dashboard: LayoutDashboard,
   project: Folder,
   search: Search,
@@ -119,7 +122,7 @@ export function RoleSidebar({ sections, user }: RoleSidebarProps) {
 }
 
 function SidebarItem({ item, isCurrent }: { item: NavItem; isCurrent: boolean }) {
-  const Icon = NAV_ICON[item.icon];
+  const Icon = NAV_ICON[item.icon] ?? LayoutDashboard;
   const inner = (
     <>
       <Icon className="size-[14px] shrink-0" aria-hidden />

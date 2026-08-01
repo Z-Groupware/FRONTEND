@@ -191,6 +191,12 @@ export const POSITION_ROLES = [ROLE.LEADER, ROLE.MEMBER] as const;
 export const PLAN = { FREE: "FREE", TEAM: "TEAM" } as const;
 export type Plan = (typeof PLAN)[keyof typeof PLAN];
 
+/** 요금제명은 영문을 그대로 쓴다(역할 워딩과 같은 이유). */
+export const PLAN_LABEL: Record<Plan, string> = {
+  FREE: "Free",
+  TEAM: "Team",
+};
+
 export const PAYMENT_STATUS = {
   PAID: "PAID",
   UNPAID: "UNPAID",
