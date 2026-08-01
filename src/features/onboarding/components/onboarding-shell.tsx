@@ -14,60 +14,88 @@ const STEPS = Object.keys(ONBOARDING_STEP_LABEL).map(Number) as OnboardingStep[]
 
 interface OnboardingShellProps {
   step: OnboardingStep;
+  /**
+   * 마지막 완료 화면인가.
+   * 헤더의 단계 표기가 "완료"로 바뀌고, 스텝퍼는 전부 지나온 모양이 된다.
+   * 도움말은 숨긴다 — 더 할 일이 없는 화면이라 알려줄 것도 없다.
+   */
+  isDone?: boolean;
   children: ReactNode;
 }
 
-/** 온보딩 3단계가 공유하는 헤더·스텝퍼 프레임. */
-export function OnboardingShell({ step, children }: OnboardingShellProps) {
+/** 온보딩 3단계와 완료 화면이 공유하는 헤더·스텝퍼 프레임. */
+export function OnboardingShell({ step, isDone = false, children }: OnboardingShellProps) {
   // 도움말은 화면 위에 떠 있는 패널이다 — 본문 레이아웃은 건드리지 않는다
   const [isGuideOpen, setIsGuideOpen] = useState(false);
 
   return (
     // 배경 점 그리드 — 토큰(--border)을 그대로 써서 다크에서도 따라온다.
-    // ⚠️ 화면 높이에 딱 맞춰 고정한다(h-dvh + overflow-hidden) — 페이지가 스크롤되거나
+    // ⚠️ 화면 높이에 맞춘다 — 평소엔 페이지가 스크롤되거나
     //    끝에서 튕기지 않는다. 움직임은 카드 안쪽 목록에서만 일어난다.
     <div className="bg-background flex h-dvh flex-col overflow-hidden overscroll-none bg-[radial-gradient(var(--border)_1px,transparent_1px)] [background-size:18px_18px]">
       <header className="border-border bg-background/90 flex h-[52px] shrink-0 items-center gap-[7px] border-b px-[21px] backdrop-blur">
         <ZLogo className="text-foreground size-[18px]" title="Z" />
-        <span className="text-muted-foreground/70 ml-auto text-xs leading-[18px] tabular-nums">
-          단계 <span className="text-foreground">{step}</span> / {ONBOARDING_TOTAL_STEPS}
-        </span>
+        {isDone ? (
+          <span className="text-foreground ml-auto text-xs leading-[18px]">완료</span>
+        ) : (
+          <span className="text-muted-foreground/70 ml-auto text-xs leading-[18px] tabular-nums">
+            단계 <span className="text-foreground">{step}</span> / {ONBOARDING_TOTAL_STEPS}
+          </span>
+        )}
       </header>
 
-      {/* 세로 가운데 정렬 — 콘텐츠가 화면 위쪽에만 몰리지 않게 한다 */}
-      {/* 세로 가운데 정렬 — 콘텐츠가 화면 위쪽에만 몰리지 않게 한다 */}
-      <main className="flex min-h-0 flex-1 flex-col justify-center overflow-hidden px-[21px] py-10">
-        <div className="mx-auto w-full max-w-[1160px]">{children}</div>
+      {/*
+        ⚠️ `overflow-hidden`이 아니라 `overflow-y-auto`다. 화면이 낮으면 내용이 안 들어가는데,
+           숨겨버리면 [다음] 버튼에 아예 닿을 수 없다. 평소에는 넘치지 않아 스크롤바가 안 보인다.
+        ⚠️ 가운데 정렬을 `justify-center`로 하지 않는다 — 내용이 넘치면 **위쪽이 스크롤 시작점 밖으로**
+           밀려나 아예 닿을 수 없다. `m-auto`는 자리가 남을 때만 가운데로 밀고, 넘치면 0이 된다.
+      */}
+      <main className="flex min-h-0 flex-1 flex-col overflow-y-auto px-[21px] py-6 lg:py-10">
+        <div className="m-auto w-full max-w-[1160px]">{children}</div>
       </main>
 
       <footer className="border-border bg-background/90 flex h-16 shrink-0 items-center justify-center border-t px-[21px]">
         <ol className="flex flex-wrap items-center">
           {STEPS.map((value) => (
             <li key={value} className="flex items-center">
-              <StepperItem label={ONBOARDING_STEP_LABEL[value]} step={value} current={step} />
+              <StepperItem
+                label={ONBOARDING_STEP_LABEL[value]}
+                step={value}
+                // 완료 화면에서는 마지막 단계까지 전부 지나온 것으로 본다
+                current={isDone ? ONBOARDING_TOTAL_STEPS + 1 : step}
+              />
               {/* 지나온 구간은 선도 진하게 이어진다 */}
               <span
                 className={cn(
                   "mx-[14px] h-px w-[35px]",
-                  value < step ? "bg-foreground" : "bg-border",
+                  isDone || value < step ? "bg-foreground" : "bg-border",
                 )}
                 aria-hidden
               />
             </li>
           ))}
           <li className="flex items-center gap-[7px] pl-[14px]">
-            <StepCircle tone="idle" size={28}>
+            <StepCircle tone={isDone ? "current" : "idle"} size={28}>
               <Check className="size-3" />
             </StepCircle>
-            <span className="text-muted-foreground/70 text-xs leading-[18px]">완료</span>
+            <span
+              className={cn(
+                "text-xs leading-[18px]",
+                isDone ? "text-foreground" : "text-muted-foreground/70",
+              )}
+            >
+              완료
+            </span>
           </li>
         </ol>
       </footer>
-      <OnboardingGuide
-        step={step}
-        isOpen={isGuideOpen}
-        onToggle={() => setIsGuideOpen((prev) => !prev)}
-      />
+      {!isDone && (
+        <OnboardingGuide
+          step={step}
+          isOpen={isGuideOpen}
+          onToggle={() => setIsGuideOpen((prev) => !prev)}
+        />
+      )}
     </div>
   );
 }
@@ -79,7 +107,8 @@ function StepperItem({
 }: {
   label: string;
   step: OnboardingStep;
-  current: OnboardingStep;
+  /** 완료 화면에서는 마지막 단계보다 큰 값이 들어온다 */
+  current: number;
 }) {
   const isDone = step < current;
   const isCurrent = step === current;
