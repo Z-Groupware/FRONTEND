@@ -17,6 +17,19 @@ export function LandingHeader() {
         </Link>
 
         <nav className="flex items-center gap-[7px]">
+          {/* 요금제·역할은 각자 화면이 있다 — 랜딩 안에서 스크롤로 보여주지 않는다 */}
+          <Link
+            href="/pricing"
+            className="text-muted-foreground hover:text-foreground focus-visible:ring-ring hidden rounded px-2.5 py-1.5 text-[13px] leading-5 transition-colors focus-visible:ring-2 focus-visible:outline-none sm:block"
+          >
+            요금제
+          </Link>
+          <Link
+            href="/roles"
+            className="text-muted-foreground hover:text-foreground focus-visible:ring-ring mr-1 hidden rounded px-2.5 py-1.5 text-[13px] leading-5 transition-colors focus-visible:ring-2 focus-visible:outline-none sm:block"
+          >
+            역할별 권한
+          </Link>
           {/* ⚠️ 로그인·회원가입 화면은 아직 없다. 붙으면 이 링크가 그대로 살아난다 */}
           <Link
             href="/login"
