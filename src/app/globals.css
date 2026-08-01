@@ -222,6 +222,20 @@
     animation: float 3s ease-in-out infinite;
   }
 
+  /* 화면 미리보기 띠가 옆으로 흐른다. 두 벌을 이어 붙여 -50%에서 끊김 없이 이어진다 */
+  @keyframes marquee {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(-50%);
+    }
+  }
+
+  .animate-marquee {
+    animation: marquee 40s linear infinite;
+  }
+
   /* 빈 원이 먹색으로 차오른다 — 완료 화면에 들어온 순간 한 번만 */
   @keyframes fill-in {
     from {
@@ -259,7 +273,8 @@
   @media (prefers-reduced-motion: reduce) {
     .animate-float,
     .animate-fill-in,
-    .animate-mark-in {
+    .animate-mark-in,
+    .animate-marquee {
       animation: none;
       opacity: 1;
       transform: none;
@@ -276,32 +291,5 @@
   }
   html {
     @apply font-sans;
-  }
-}
-
-/*
- * 랜딩 애니메이션 — **`@layer utilities` 밖에 둔다.**
- * ⚠️ Tailwind v4는 레이어 안의 커스텀 클래스를 걸러낼 수 있다(실제로 CSS에 안 실렸다).
- *    평범한 최상위 규칙으로 두면 항상 살아남는다.
- */
-/* 화면 미리보기 띠가 옆으로 흐른다. 두 벌을 이어 붙여 -50%에서 끊김 없이 이어진다 */
-@keyframes marquee {
-  from {
-    transform: translateX(0);
-  }
-  to {
-    transform: translateX(-50%);
-  }
-}
-
-.animate-marquee {
-  animation: marquee 40s linear infinite;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .animate-marquee {
-    animation: none;
-    opacity: 1;
-    transform: none;
   }
 }
