@@ -58,11 +58,15 @@ export function PositionSetup({ initialPositions }: { initialPositions: Position
   return (
     <div className="flex flex-col gap-[21px]">
       {/* 높이를 여기서 한 번만 정한다 — 좌우 두 칸이 같은 높이를 나눠 쓴다 */}
-      <div className="flex flex-col gap-7 lg:h-[560px] lg:flex-row">
+      {/*
+        ⚠️ 높이를 560px로 못박으면 낮은 화면(노트북 150% 배율 등)에서 아래가 잘린다.
+           **세로가 충분할 때만** 고정한다 — 좁으면 내용 높이 그대로 두고 페이지가 스크롤되게 한다.
+      */}
+      <div className="flex flex-col gap-7 lg:flex-row [@media(min-height:820px)]:lg:h-[560px]">
         <PositionIntro positions={list.positions} />
 
         {/* 높이 고정 — 직급을 아무리 추가해도 카드 크기는 그대로고 안에서만 스크롤된다 */}
-        <section className="border-border bg-card flex h-[440px] flex-1 flex-col overflow-hidden rounded-xl border shadow-sm lg:h-full">
+        <section className="border-border bg-card flex h-[440px] flex-1 flex-col overflow-hidden rounded-xl border shadow-sm [@media(min-height:820px)]:lg:h-full">
           <header className="border-border bg-muted flex h-12 shrink-0 items-center border-b px-4">
             <h2 className="flex items-center gap-2 text-[13px] leading-5">
               <span className="bg-foreground size-2 rounded-full" aria-hidden />

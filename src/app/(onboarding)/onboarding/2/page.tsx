@@ -6,7 +6,7 @@ import { getPositions } from "@/features/onboarding/server";
 import { ONBOARDING_STEP } from "@/features/onboarding/types";
 
 export const metadata: Metadata = {
-  title: "직급 체계 설정 — Z",
+  title: "직급 체계 설정",
 };
 
 export default async function OnboardingPositionPage() {

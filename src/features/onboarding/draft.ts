@@ -1,6 +1,7 @@
 "use client";
 
 import type { DepartmentNode, Invite, Position } from "./types";
+import { MAX_DEPARTMENT_DEPTH } from "./types";
 
 /**
  * 온보딩 임시 보관함 — **BE 연동 전까지만 쓰는 코드다.**
@@ -31,15 +32,17 @@ export interface OnboardingDraft {
  * ⚠️ `JSON.parse` 결과를 그냥 단언하면 **깨진 값이 그대로 화면까지 간다.** 스키마가 바뀐 뒤
  *    남아 있던 값이나 손으로 고친 값이 들어오면 `.map()`에서 터진다. 통과 못 한 항목은 버린다.
  */
-function isDepartmentNode(value: unknown): value is DepartmentNode {
+function isDepartmentNode(value: unknown, depth = 0): value is DepartmentNode {
   if (typeof value !== "object" || value === null) return false;
   const node = value as Record<string, unknown>;
-  return (
-    typeof node.id === "string" &&
-    typeof node.name === "string" &&
-    Array.isArray(node.children) &&
-    node.children.every(isDepartmentNode)
-  );
+  if (typeof node.id !== "string" || typeof node.name !== "string") return false;
+  if (!Array.isArray(node.children)) return false;
+
+  // ⚠️ 깊이도 본다 — 화면은 2계층(부서 > 역할)만 만들지만 타입은 재귀라 막아주지 않는다.
+  //    3계층이 들어오면 트리도 요약 숫자도 어긋난다.
+  if (node.children.length > 0 && depth + 1 >= MAX_DEPARTMENT_DEPTH) return false;
+
+  return node.children.every((child) => isDepartmentNode(child, depth + 1));
 }
 
 function isPosition(value: unknown): value is Position {
@@ -65,10 +68,16 @@ function isInvite(value: unknown): value is Invite {
   );
 }
 
-/** 배열이고 모든 항목이 통과할 때만 되살린다. 하나라도 깨졌으면 그 항목만 없는 셈 친다. */
+/**
+ * 배열이고 모든 항목이 통과할 때만 되살린다. 하나라도 깨졌으면 그 목록은 없는 셈 친다.
+ *
+ * ⚠️ `value.every(guard)`로 넘기지 않는다 — `every`는 콜백에 **(항목, 인덱스, 배열)** 을 준다.
+ *    `isDepartmentNode(node, depth)`처럼 둘째 인자를 받는 가드에 인덱스가 깊이로 새어 들어가,
+ *    두 번째 항목부터 엉뚱하게 걸러진다. 항목 하나만 넘긴다.
+ */
 function pick<T>(value: unknown, guard: (item: unknown) => item is T): T[] | undefined {
   if (!Array.isArray(value)) return undefined;
-  return value.every(guard) ? value : undefined;
+  return value.every((item) => guard(item)) ? value : undefined;
 }
 
 function parseDraft(value: unknown): OnboardingDraft {
