@@ -4,6 +4,7 @@ import { ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+import { CheckMark } from "@/components/common/check-mark";
 import { ZLogo } from "@/components/icons/z-logo";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -11,7 +12,6 @@ import { cn } from "@/lib/utils";
 import { loadDraft } from "../draft";
 import { isValidEmail } from "../invites";
 import { type DepartmentNode, type Invite, ONBOARDING_STEP, type Position } from "../types";
-import { CheckMark } from "./check-mark";
 import { DoneSummary } from "./done-summary";
 import { OnboardingShell } from "./onboarding-shell";
 
@@ -102,31 +102,17 @@ export function OnboardingDone() {
           <div className="border-border bg-card h-[141px] w-full animate-pulse rounded-lg border" />
         )}
 
-        <div className="flex w-full flex-col items-center gap-2.5">
-          <Link
-            href="/pricing"
-            className={cn(
-              buttonVariants(),
-              "bg-foreground text-background hover:bg-foreground/90 h-[38px] w-full gap-1.5 rounded-md text-[13px] leading-none",
-            )}
-          >
-            <span className="leading-none">플랜 선택하기</span>
-            <ChevronRight className="size-3.5" />
-          </Link>
-
-          {/* 결제를 강요하지 않는다 — 그냥 시작해도 되는 길을 같이 보여준다 */}
-          <Link
-            href="/owner"
-            className="text-muted-foreground hover:text-foreground focus-visible:ring-ring rounded px-2 py-1 text-xs leading-[18px] transition-colors focus-visible:ring-2 focus-visible:outline-none"
-          >
-            건너뛰기 — 기본 Free 플랜으로 시작
-          </Link>
-        </div>
-
-        {/* ⚠️ 두 화면 다 아직 없다. 눌리게는 두되 뭐가 없는지 숨기지 않는다(§정직성) */}
-        <p className="text-muted-foreground/60 text-center text-[11px] leading-4 break-keep">
-          요금제·대시보드 화면은 다음 작업이에요 — 지금 누르면 빈 화면입니다.
-        </p>
+        {/* 갈 곳은 하나다 — Free/Team 중 무엇을 쓸지는 요금제 화면에서 고른다 */}
+        <Link
+          href="/pricing"
+          className={cn(
+            buttonVariants(),
+            "bg-foreground text-background hover:bg-foreground/90 h-[38px] w-full gap-1.5 rounded-md text-[13px] leading-none",
+          )}
+        >
+          <span className="leading-none">플랜 선택하기</span>
+          <ChevronRight className="size-3.5" />
+        </Link>
       </div>
     </OnboardingShell>
   );

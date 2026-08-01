@@ -7,9 +7,9 @@ describe("요금제 목록", () => {
     expect(new Set(codes).size).toBe(codes.length);
   });
 
-  it("기본 선택은 돈이 안 드는 쪽이다", () => {
-    expect(DEFAULT_PLAN).toBe(PLAN.FREE);
-    expect(PLANS.some((plan) => plan.code === DEFAULT_PLAN)).toBe(true);
+  it("기본 선택은 밀어주는 플랜이다 — 배지와 어긋나지 않게", () => {
+    expect(DEFAULT_PLAN).toBe(PLAN.TEAM);
+    expect(PLANS.find((plan) => plan.code === DEFAULT_PLAN)?.isRecommended).toBe(true);
   });
 
   it("밀어주는 플랜은 하나뿐이다 — 배지가 둘이면 고르는 데 도움이 안 된다", () => {

@@ -1,4 +1,4 @@
-import { CheckMark } from "./check-mark";
+import { CheckMark } from "@/components/common/check-mark";
 
 /**
  * 좌측 설명 목록. 온보딩 각 단계가 같은 형태로 쓴다.
