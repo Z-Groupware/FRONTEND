@@ -2,38 +2,34 @@
 
 import { AlertCircle, ArrowRight, Building2 } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useActionState } from "react";
 
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-import { saveCompanyCode } from "../company-code";
-import { findCompany } from "../mock";
+import { type CompanyCodeState, findCompanyAction } from "../actions";
+import { saveCompany } from "../company-code";
 import { AuthCard } from "./auth-card";
+import { SubmitButton } from "./submit-button";
 
 /**
  * 로그인 1단계 — 어느 회사로 들어가는지 먼저 정한다(카카오워크 문법).
  *
- * ⚠️ 코드 확인은 지금 **목**이다(`findCompany`). 실제로는 서버가 판정한다 —
- *    화면이 통과시켜도 서버가 다시 본다(CLAUDE.md §권한: 화면 숨김은 보안이 아니다).
+ * ⚠️ 코드 확인은 **Server Action**이 한다(`findCompanyAction`). 화면은 목인지 실서버인지
+ *    모르고, 통과시키는 것도 서버다(§권한: 화면 숨김은 보안이 아니다).
+ * ⚠️ 기억은 **서버가 답을 준 뒤** 클라이언트에서 한다. `useActionState`에 넘긴 함수는
+ *    클라이언트에서 돌기 때문에 `useEffect` 없이 여기서 바로 저장할 수 있다.
  * ⚠️ 브라우저 기본 검증(`required` + 말풍선)을 쓰지 않는다. 회색 말풍선이 우리 화면 위에
  *    떠서 디자인이 깨지고 문구도 못 고친다 — `noValidate` + 필드 인라인으로 직접 알린다.
  */
-export function CompanyCodeStep() {
-  const [code, setCode] = useState("");
-  const [codeError, setCodeError] = useState<string | null>(null);
+const INITIAL: CompanyCodeState = { company: null };
 
-  const handleSubmit = (event: React.FormEvent) => {
-    event.preventDefault();
-    const found = findCompany(code);
-    if (!found) {
-      setCodeError("기업 코드를 찾을 수 없어요. 관리자에게 다시 확인해 주세요.");
-      return;
-    }
-    setCodeError(null);
-    saveCompanyCode(found.code);
-  };
+export function CompanyCodeStep() {
+  const [state, formAction] = useActionState(async (prev: CompanyCodeState, formData: FormData) => {
+    const next = await findCompanyAction(prev, formData);
+    if (next.company) saveCompany(next.company);
+    return next;
+  }, INITIAL);
 
   return (
     <AuthCard
@@ -50,7 +46,7 @@ export function CompanyCodeStep() {
         </>
       }
     >
-      <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-5">
+      <form action={formAction} noValidate className="flex flex-col gap-5">
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="company-code" className="flex items-center gap-1.5">
             <Building2 className="text-muted-foreground size-3.5" aria-hidden />
@@ -58,14 +54,10 @@ export function CompanyCodeStep() {
           </Label>
           <Input
             id="company-code"
-            value={code}
-            onChange={(event) => {
-              setCode(event.target.value);
-              setCodeError(null);
-            }}
+            name="companyCode"
             placeholder="예: NOVA-7K3D"
             autoComplete="organization"
-            aria-invalid={codeError !== null}
+            aria-invalid={state.error !== undefined}
             aria-describedby="company-code-help"
           />
           {/*
@@ -78,19 +70,15 @@ export function CompanyCodeStep() {
             id="company-code-help"
             className="text-destructive flex min-h-4 items-center gap-1.5 text-[12px] leading-4 break-keep"
           >
-            {codeError && <AlertCircle className="size-3.5 shrink-0" aria-hidden />}
-            <span className="translate-y-px">{codeError}</span>
+            {state.error && <AlertCircle className="size-3.5 shrink-0" aria-hidden />}
+            <span className="translate-y-px">{state.error}</span>
           </p>
         </div>
 
-        {/* 랜딩과 같은 먹색 버튼 — 기본 variant는 파랑(액센트)이라 여기만 튄다 */}
-        <Button
-          type="submit"
-          className="bg-foreground text-background hover:bg-foreground/90 h-12 gap-1.5 text-[15px]"
-        >
+        <SubmitButton>
           다음
           <ArrowRight className="size-4" />
-        </Button>
+        </SubmitButton>
       </form>
     </AuthCard>
   );

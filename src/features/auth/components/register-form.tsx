@@ -2,33 +2,25 @@
 
 import { ArrowRight, Building2, Mail, MapPin, Phone, ReceiptText, User } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useActionState, useState } from "react";
 
-import { Button } from "@/components/ui/button";
-
-import { type RegisterDraft, type RegisterErrors, validateRegister } from "../register-draft";
+import { type RegisterState, submitRegistrationAction } from "../actions";
+import type { PickedPlace } from "../register-draft";
 import { AddressPicker } from "./address-picker";
 import { AuthCard } from "./auth-card";
 import { AuthField } from "./auth-field";
+import { SubmitButton } from "./submit-button";
 
 /**
  * 기업 등록 신청 — 아직 워크스페이스가 없는 회사가 처음 문을 두드리는 화면.
  *
  * ⚠️ 여기서 계정이 만들어지지 않는다. **신청**이고, 승인 뒤 기업 코드가 메일로 간다.
  *    그래서 비밀번호를 받지 않는다 — 받으면 바로 쓸 수 있다고 오해한다.
- * ⚠️ 지금은 **목**이다. 등록 신청 API가 없다(BE 미개발) — 검증만 하고 완료 화면으로 넘긴다.
- *    연동되면 `submit`을 Server Action 호출로 바꾸고 컴포넌트는 그대로 둔다(§격리막).
+ * ⚠️ 검증·전송은 **Server Action**이 한다(`submitRegistrationAction`). 목/실서버 분기는
+ *    거기서 끝나고 이 파일은 어느 쪽인지 모른다(§Mock 격리막).
  * ⚠️ 브라우저 기본 검증(`required` 말풍선)을 쓰지 않는다 — `noValidate` + 필드 인라인.
  */
-const EMPTY: RegisterDraft = {
-  companyName: "",
-  businessNumber: "",
-  managerName: "",
-  email: "",
-  phone: "",
-  place: null,
-};
+const INITIAL: RegisterState = { errors: {} };
 
 /** 사업자등록번호는 `000-00-00000` 모양으로 굳혀 준다 — 사람마다 다르게 적으면 서버가 고생한다 */
 function formatBusinessNumber(input: string) {
@@ -38,17 +30,17 @@ function formatBusinessNumber(input: string) {
   return `${digits.slice(0, 3)}-${digits.slice(3, 5)}-${digits.slice(5)}`;
 }
 
+interface SectionLabelProps {
+  title: string;
+  hint: string;
+}
+
 /**
  * 폼을 두 구역으로 나누는 소제목 — 회사 정보 · 관리자 정보.
  *
  * ⚠️ 칸이 여섯이라 한 덩어리로 두면 어디까지가 회사 얘기인지 알 수 없다.
  * ⚠️ 줄이나 상자를 두르지 않는다. 이미 카드 안이라 선을 더하면 층이 하나 더 생긴다.
  */
-interface SectionLabelProps {
-  title: string;
-  hint: string;
-}
-
 function SectionLabel({ title, hint }: SectionLabelProps) {
   return (
     <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 pt-1">
@@ -59,25 +51,23 @@ function SectionLabel({ title, hint }: SectionLabelProps) {
 }
 
 export function RegisterForm() {
-  const router = useRouter();
-  const [draft, setDraft] = useState<RegisterDraft>(EMPTY);
-  const [errors, setErrors] = useState<RegisterErrors>({});
+  const [businessNumber, setBusinessNumber] = useState("");
+  const [place, setPlace] = useState<PickedPlace | null>(null);
+  /*
+    ⚠️ 서버가 돌려준 오류를 **로컬 상태로 복사하지 않는다**(그러려면 효과가 필요하고 렌더가
+       한 번 더 돈다). 대신 "고친 칸"만 따로 기억해 두고 그 칸의 오류를 가린다.
+  */
+  const [fixed, setFixed] = useState<ReadonlySet<string>>(new Set());
 
-  /** 고치는 순간 그 칸의 오류는 지운다 — 다 고칠 때까지 빨간 글씨를 남겨 둘 이유가 없다 */
-  const handleChange = <K extends keyof RegisterDraft>(key: K, value: RegisterDraft[K]) => {
-    setDraft((prev) => ({ ...prev, [key]: value }));
-    setErrors((prev) => ({ ...prev, [key]: undefined }));
-  };
+  const [state, formAction] = useActionState(async (prev: RegisterState, formData: FormData) => {
+    setFixed(new Set()); // 다시 제출했으니 가려 뒀던 오류를 되살린다
+    return submitRegistrationAction(prev, formData);
+  }, INITIAL);
 
-  const handleSubmit = (event: React.FormEvent) => {
-    event.preventDefault();
-    const found = validateRegister(draft);
-    setErrors(found);
-    if (Object.keys(found).length > 0) return;
-
-    // ⚠️ 목이다 — 서버에 보내지 않는다. 실제로는 Server Action이 BFF를 거쳐 BE로 보낸다.
-    router.push("/register/done");
-  };
+  /** 고치는 순간 그 칸의 오류는 감춘다 — 다 고칠 때까지 빨간 글씨를 남겨 둘 이유가 없다 */
+  const markFixed = (field: string) => setFixed((prev) => new Set(prev).add(field));
+  const errorOf = (field: keyof RegisterState["errors"]) =>
+    fixed.has(field) ? undefined : state.errors[field];
 
   return (
     <AuthCard
@@ -99,45 +89,53 @@ export function RegisterForm() {
         ⚠️ 여기서 늘어나는 건 **지도뿐**이다. 위치를 고르면 지도가 붙으면서 카드가 길어지는데,
            그건 사용자가 방금 한 행동의 결과라 갑작스럽지 않다.
       */}
-      <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
+      <form action={formAction} noValidate className="flex flex-col gap-4">
         <SectionLabel title="회사 정보" hint="사업자등록증에 적힌 대로" />
 
         <AuthField
           id="company-name"
+          name="companyName"
           label="기업명"
           icon={Building2}
-          value={draft.companyName}
-          onValueChange={(value) => handleChange("companyName", value)}
+          onValueChange={() => markFixed("companyName")}
           placeholder="사업자등록증에 적힌 이름"
           autoComplete="organization"
-          error={errors.companyName}
+          error={errorOf("companyName")}
         />
 
         <AuthField
           id="business-number"
+          name="businessNumber"
           label="사업자등록번호"
           icon={ReceiptText}
-          value={draft.businessNumber}
-          onValueChange={(value) => handleChange("businessNumber", formatBusinessNumber(value))}
+          value={businessNumber}
+          onValueChange={(input) => {
+            setBusinessNumber(formatBusinessNumber(input));
+            markFixed("businessNumber");
+          }}
           placeholder="000-00-00000"
-          error={errors.businessNumber}
+          error={errorOf("businessNumber")}
         />
 
         {/* 위치는 입력이 아니라 **고르는** 일이다 — 칸 대신 지도를 넣는다 */}
-        <AuthField
-          id="company-address"
-          label="회사 위치"
-          icon={MapPin}
-          value={draft.place?.address ?? ""}
-          onValueChange={() => undefined}
-          error={errors.place}
-        >
+        <AuthField id="company-address" label="회사 위치" icon={MapPin} error={errorOf("place")}>
           <AddressPicker
-            picked={draft.place}
-            onPick={(place) => handleChange("place", place)}
-            hasError={errors.place !== undefined}
+            picked={place}
+            onPick={(picked) => {
+              setPlace(picked);
+              markFixed("place");
+            }}
+            hasError={errorOf("place") !== undefined}
           />
         </AuthField>
+
+        {/*
+          ⚠️ 지도가 고른 값은 눈에 보이는 칸이 없다 — `FormData`에 실으려면 숨은 칸이 필요하다.
+             좌표를 사람이 고칠 일은 없으니 `hidden`이 맞다.
+        */}
+        <input type="hidden" name="placeAddress" value={place?.address ?? ""} />
+        <input type="hidden" name="placeLat" value={place?.lat ?? ""} />
+        <input type="hidden" name="placeLng" value={place?.lng ?? ""} />
 
         {/*
           ⚠️ 아래 셋은 **첫 관리자(OWNER) 계정이 될 사람**이다. 회사 대표 정보가 아니다 —
@@ -149,47 +147,45 @@ export function RegisterForm() {
 
         <AuthField
           id="manager-name"
+          name="managerName"
           label="담당자 이름"
           icon={User}
-          value={draft.managerName}
-          onValueChange={(value) => handleChange("managerName", value)}
+          onValueChange={() => markFixed("managerName")}
           placeholder="홍길동"
           autoComplete="name"
-          error={errors.managerName}
+          error={errorOf("managerName")}
         />
 
         <AuthField
           id="manager-email"
+          name="email"
           label="담당자 이메일"
           icon={Mail}
           type="email"
-          value={draft.email}
-          onValueChange={(value) => handleChange("email", value)}
+          onValueChange={() => markFixed("email")}
           placeholder="name@company.com"
           autoComplete="email"
-          error={errors.email}
+          error={errorOf("email")}
         />
 
         <AuthField
           id="manager-phone"
+          name="phone"
           label="연락처"
           icon={Phone}
           type="tel"
-          value={draft.phone}
-          onValueChange={(value) => handleChange("phone", value)}
+          onValueChange={() => markFixed("phone")}
           placeholder="010-0000-0000"
           autoComplete="tel"
-          error={errors.phone}
+          error={errorOf("phone")}
         />
 
-        {/* 랜딩과 같은 먹색 버튼 — 기본 variant는 파랑(액센트)이라 여기만 튄다 */}
-        <Button
-          type="submit"
-          className="bg-foreground text-background hover:bg-foreground/90 mt-2 h-12 gap-1.5 text-[15px]"
-        >
-          신청하기
-          <ArrowRight className="size-4" />
-        </Button>
+        <div className="flex flex-col pt-2">
+          <SubmitButton>
+            신청하기
+            <ArrowRight className="size-4" />
+          </SubmitButton>
+        </div>
       </form>
     </AuthCard>
   );

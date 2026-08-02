@@ -7,8 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-import { clearCompanyCode, useSavedCompanyCode } from "../company-code";
-import { type Company, findCompany } from "../mock";
+import { clearCompany, useSavedCompany } from "../company-code";
 import { AuthCard } from "./auth-card";
 import { CompanyCodeStep } from "./company-code-step";
 
@@ -22,9 +21,8 @@ import { CompanyCodeStep } from "./company-code-step";
  * ⚠️ 비밀번호 재발급 화면은 만들지 않는다(팀 결정) — 링크가 아니라 안내 문구로 둔다.
  */
 export function LoginForm() {
-  // 기억해 둔 코드가 있으면 1단계를 건너뛴다
-  const savedCode = useSavedCompanyCode();
-  const company: Company | null = savedCode ? findCompany(savedCode) : null;
+  // 기억해 둔 회사가 있으면 1단계를 건너뛴다
+  const company = useSavedCompany();
 
   const [isPasswordShown, setIsPasswordShown] = useState(false);
   const [email, setEmail] = useState("");
@@ -46,7 +44,7 @@ export function LoginForm() {
     setLoginErrors(next);
   };
 
-  const handleChangeCompany = () => clearCompanyCode();
+  const handleChangeCompany = () => clearCompany();
 
   if (!company) return <CompanyCodeStep />;
 

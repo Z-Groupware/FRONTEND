@@ -16,10 +16,16 @@ import { Label } from "@/components/ui/label";
  */
 interface AuthFieldProps {
   id: string;
+  /** `FormData` 키 — Server Action이 이 이름으로 값을 읽는다 */
+  name?: string;
   label: string;
   icon: LucideIcon;
-  value: string;
-  onValueChange: (value: string) => void;
+  /**
+   * 값을 화면이 쥐고 있어야 할 때만 넘긴다(입력하면서 모양을 다듬는 칸 등).
+   * ⚠️ 대부분은 **넘기지 않는다.** 값은 `FormData`가 실어 나르므로 굳이 리렌더를 만들 이유가 없다.
+   */
+  value?: string;
+  onValueChange?: (value: string) => void;
   placeholder?: string;
   /** 브라우저 자동완성 힌트 — 사내 도구라도 이름·메일은 채워 주는 편이 낫다 */
   autoComplete?: string;
@@ -31,6 +37,7 @@ interface AuthFieldProps {
 
 export function AuthField({
   id,
+  name,
   label,
   icon: Icon,
   value,
@@ -53,9 +60,10 @@ export function AuthField({
       {children ?? (
         <Input
           id={id}
+          name={name}
           type={type}
-          value={value}
-          onChange={(event) => onValueChange(event.target.value)}
+          {...(value === undefined ? {} : { value })}
+          onChange={(event) => onValueChange?.(event.target.value)}
           placeholder={placeholder}
           autoComplete={autoComplete}
           aria-invalid={error !== undefined}
