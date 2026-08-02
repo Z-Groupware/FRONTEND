@@ -213,6 +213,19 @@
 
 @layer utilities {
   /*
+   * 스크롤바를 감춘다 — 모달 안처럼 **틀이 이미 경계를 말해 주는** 자리에서만 쓴다.
+   * ⚠️ 스크롤 자체는 살아 있다. 막대만 지우는 것이라 휠·트랙패드·키보드 모두 그대로 동작한다.
+   */
+  .scrollbar-hidden {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .scrollbar-hidden::-webkit-scrollbar {
+    display: none;
+  }
+
+  /*
    * 랜딩 밝은 스킨 — 띠·흐름 섹션이 쓰는 `--landing-dark-*`는 이름과 달리
    * **밴드(띠) 표면 토큰**이다. 검정 무대 기준값(흰 글자·흰 5% 바탕)을 그대로 두면
    * 밝은 바탕에서 글자와 알약이 통째로 사라진다 — 여기서 밝은 값으로 뒤집는다.
