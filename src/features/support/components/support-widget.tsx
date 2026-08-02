@@ -99,8 +99,12 @@ export function SupportWidget() {
           className="bg-guide-surface border-guide-border animate-in fade-in slide-in-from-bottom-2 fixed right-5 bottom-20 z-50 flex max-h-[min(70dvh,560px)] w-[min(calc(100vw-2.5rem),368px)] flex-col overflow-hidden rounded-2xl border shadow-2xl duration-200"
         >
           <div className="border-guide-border flex items-center gap-2.5 border-b px-4 py-3.5">
-            {/* 말풍선 옆 표식과 **같은 Z**를 쓴다 — 누가 말하는 창인지 머리에서 한 번 알려 준다 */}
-            <span className="bg-guide-foreground text-guide-surface flex size-8 shrink-0 items-center justify-center rounded-full">
+            {/*
+              누가 말하는 창인지 **머리에서 한 번만** 알려 준다.
+              ⚠️ 원 색은 **밝기를 따라간다** — 밝을 땐 흰 원에 먹색 Z, 어두울 땐 검은 원에 흰 Z.
+                 패널 자체는 늘 어둡지만, 이 표식만은 사이트 로고와 같은 결로 읽히는 게 낫다.
+            */}
+            <span className="bg-landing-stage text-landing-dark-foreground flex size-8 shrink-0 items-center justify-center rounded-full">
               <ZLogo className="size-3.5" aria-hidden />
             </span>
 

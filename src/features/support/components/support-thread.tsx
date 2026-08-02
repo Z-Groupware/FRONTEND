@@ -3,8 +3,6 @@
 import { ArrowUpRight, Mail, MessageCircleQuestion } from "lucide-react";
 import Link from "next/link";
 
-import { ZLogo } from "@/components/icons/z-logo";
-
 import {
   FAQ_CATEGORY,
   FAQ_CATEGORY_ICON,
@@ -59,81 +57,81 @@ export function SupportThread({ turns, onPickCategory, onPickEntry }: SupportThr
         }
 
         return (
-          /* 말하는 쪽이 누구인지 표식으로 알린다 — 사람 말은 오른쪽, Z는 왼쪽에 표식과 함께 */
-          <div key={index} className="flex max-w-[95%] items-start gap-2">
-            <span className="bg-guide-foreground text-guide-surface mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full">
-              <ZLogo className="size-2.5" aria-hidden />
-            </span>
+          /*
+            ⚠️ 말풍선마다 Z 표식을 붙이지 않는다. 한 줄 걸러 같은 그림이 반복되면 시끄럽고,
+               누가 말하는지는 **좌우 위치와 모양**으로 이미 구분된다 — 표식은 머리에 하나면 된다.
+          */
+          <div
+            key={index}
+            className="border-guide-border max-w-[92%] rounded-2xl rounded-bl-sm border bg-white/[0.04] px-3.5 py-3"
+          >
+            {/* ⚠️ `whitespace-pre-line` — 답에 넣어 둔 빈 줄이 그대로 문단이 된다 */}
+            <p className="text-guide-foreground text-[12px] leading-[20px] break-keep whitespace-pre-line">
+              {turn.kind === "answer" ? turn.entry.answer : turn.text}
+            </p>
 
-            <div className="border-guide-border min-w-0 flex-1 rounded-2xl rounded-bl-sm border bg-white/[0.04] px-3.5 py-3">
-              {/* ⚠️ `whitespace-pre-line` — 답에 넣어 둔 빈 줄이 그대로 문단이 된다 */}
-              <p className="text-guide-foreground text-[12px] leading-[20px] break-keep whitespace-pre-line">
-                {turn.kind === "answer" ? turn.entry.answer : turn.text}
-              </p>
-
-              {turn.kind === "categories" && (
-                <ul className="flex flex-col gap-1.5 pt-3">
-                  {Object.values(FAQ_CATEGORY).map((category) => {
-                    const Icon = FAQ_CATEGORY_ICON[category];
-                    return (
-                      <li key={category}>
-                        <button
-                          type="button"
-                          onClick={() => onPickCategory(category)}
-                          className={CHIP}
-                        >
-                          <Icon className="text-guide-muted size-3.5 shrink-0" aria-hidden />
-                          {/* 한글이 아이콘보다 떠 보인다 — 1px 내려 맞춘다 */}
-                          <span className="translate-y-px">{FAQ_CATEGORY_LABEL[category]}</span>
-                        </button>
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
-
-              {turn.kind === "choices" && (
-                <ul className="flex flex-col gap-1.5 pt-3">
-                  {turn.entries.map((entry) => (
-                    <li key={entry.id}>
-                      <button type="button" onClick={() => onPickEntry(entry)} className={CHIP}>
-                        <MessageCircleQuestion
-                          className="text-guide-muted size-3.5 shrink-0"
-                          aria-hidden
-                        />
-                        <span className="translate-y-px">{entry.question}</span>
+            {turn.kind === "categories" && (
+              <ul className="flex flex-col gap-1.5 pt-3">
+                {Object.values(FAQ_CATEGORY).map((category) => {
+                  const Icon = FAQ_CATEGORY_ICON[category];
+                  return (
+                    <li key={category}>
+                      <button
+                        type="button"
+                        onClick={() => onPickCategory(category)}
+                        className={CHIP}
+                      >
+                        <Icon className="text-guide-muted size-3.5 shrink-0" aria-hidden />
+                        {/* 한글이 아이콘보다 떠 보인다 — 1px 내려 맞춘다 */}
+                        <span className="translate-y-px">{FAQ_CATEGORY_LABEL[category]}</span>
                       </button>
                     </li>
-                  ))}
-                </ul>
-              )}
+                  );
+                })}
+              </ul>
+            )}
 
-              {turn.kind === "answer" && turn.entry.links && (
-                <div className="flex flex-wrap gap-1.5 pt-3">
-                  {turn.entry.links.map((link) => (
-                    <Link
-                      key={link.href}
-                      href={link.href}
-                      className="text-guide-foreground border-guide-border focus-visible:ring-guide-muted/40 inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[11px] leading-4 transition-colors hover:bg-white/[0.08] focus-visible:ring-2 focus-visible:outline-hidden"
-                    >
-                      {link.label}
-                      <ArrowUpRight className="size-3" aria-hidden />
-                    </Link>
-                  ))}
-                </div>
-              )}
+            {turn.kind === "choices" && (
+              <ul className="flex flex-col gap-1.5 pt-3">
+                {turn.entries.map((entry) => (
+                  <li key={entry.id}>
+                    <button type="button" onClick={() => onPickEntry(entry)} className={CHIP}>
+                      <MessageCircleQuestion
+                        className="text-guide-muted size-3.5 shrink-0"
+                        aria-hidden
+                      />
+                      <span className="translate-y-px">{entry.question}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
 
-              {/* 못 찾았을 때만 문의처를 붙인다 — 답을 준 자리에 또 물어보라고 하면 어수선하다 */}
-              {turn.kind === "categories" && index > 0 && (
-                <a
-                  href={`mailto:${SUPPORT_EMAIL}`}
-                  className="text-guide-muted border-guide-border focus-visible:ring-guide-muted/40 hover:text-guide-foreground mt-2.5 inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-[11px] leading-4 transition-colors hover:bg-white/[0.08] focus-visible:ring-2 focus-visible:outline-hidden"
-                >
-                  <Mail className="size-3" aria-hidden />
-                  <span className="translate-y-px">{SUPPORT_EMAIL}</span>
-                </a>
-              )}
-            </div>
+            {turn.kind === "answer" && turn.entry.links && (
+              <div className="flex flex-wrap gap-1.5 pt-3">
+                {turn.entry.links.map((link) => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className="text-guide-foreground border-guide-border focus-visible:ring-guide-muted/40 inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[11px] leading-4 transition-colors hover:bg-white/[0.08] focus-visible:ring-2 focus-visible:outline-hidden"
+                  >
+                    {link.label}
+                    <ArrowUpRight className="size-3" aria-hidden />
+                  </Link>
+                ))}
+              </div>
+            )}
+
+            {/* 못 찾았을 때만 문의처를 붙인다 — 답을 준 자리에 또 물어보라고 하면 어수선하다 */}
+            {turn.kind === "categories" && index > 0 && (
+              <a
+                href={`mailto:${SUPPORT_EMAIL}`}
+                className="text-guide-muted border-guide-border focus-visible:ring-guide-muted/40 hover:text-guide-foreground mt-2.5 inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-[11px] leading-4 transition-colors hover:bg-white/[0.08] focus-visible:ring-2 focus-visible:outline-hidden"
+              >
+                <Mail className="size-3" aria-hidden />
+                <span className="translate-y-px">{SUPPORT_EMAIL}</span>
+              </a>
+            )}
           </div>
         );
       })}
