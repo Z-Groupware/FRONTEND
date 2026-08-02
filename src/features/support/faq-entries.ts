@@ -9,7 +9,9 @@ import { FAQ_CATEGORY, type FaqCategory, type FaqEntry } from "./faq";
  *    환불 규정·데이터 보관 기간처럼 팀이 안 정한 건 "모른다"로 흘린다(§정직성).
  * ⚠️ 금액·플랜 이름을 **문자열로 박지 않는다.** `plans.ts`에서 읽어 온다 — 박아 두면
  *    가격이 바뀔 때 `/plans`와 도움말이 서로 다른 말을 한다.
- * ⚠️ 키워드는 **넉넉히** 넣는다. 사람은 "요금제"라고 안 치고 "얼마"라고 친다.
+ * ⚠️ 키워드는 **넉넉히** 넣되 **범용어는 넣지 않는다.** "무엇"·"코드"·"어디" 같은 말은
+ *    아무 문장에나 들어가서 엉뚱한 항목이 걸린다("할인 코드 있나요?" → 기업 코드).
+ *    못 찾으면 갈래를 다시 보여 주면 그만이지만, **틀린 답을 내놓으면 되돌릴 수 없다.**
  * ⚠️ 답은 **빈 줄로 문단을 나눈다.** 한 덩어리로 쓰면 말풍선 안이 글 벽이 된다.
  */
 
@@ -26,7 +28,7 @@ export const FAQ_ENTRIES: readonly FaqEntry[] = [
     id: "product",
     category: FAQ_CATEGORY.SERVICE,
     question: "Z는 어떤 서비스인가요?",
-    keywords: ["무엇", "서비스", "제품", "소개", "뭐하는", "어떤 서비스", "뭐 하는"],
+    keywords: ["서비스", "제품", "소개", "뭐하는", "뭐 하는", "무슨 서비스", "어떤 서비스"],
     answer:
       "회의를 캡처하면 그게 조직의 기억이 되는 그룹웨어예요.\n\n회의 중 자막이 쌓이고, 끝나면 결정과 할 일이 정리돼 담당자에게 배정됩니다.\n\n10~50명 규모 팀을 염두에 두고 만들었어요.",
   },
@@ -85,7 +87,7 @@ export const FAQ_ENTRIES: readonly FaqEntry[] = [
     id: "company-code",
     category: FAQ_CATEGORY.START,
     question: "기업 코드가 뭔가요?",
-    keywords: ["기업코드", "기업 코드", "회사코드", "코드", "초대장"],
+    keywords: ["기업코드", "기업 코드", "회사코드", "코드는 어디", "코드가 뭐"],
     answer:
       "회사를 가리키는 식별자예요. 직접 지어 넣는 값이 아니라 등록이 승인되면 메일로 받습니다.\n\n한 번 입력하면 브라우저가 기억해서, 다음부터는 이메일과 비밀번호만 넣으면 돼요.",
     links: [{ label: "로그인", href: "/login" }],
@@ -111,7 +113,7 @@ export const FAQ_ENTRIES: readonly FaqEntry[] = [
     id: "password",
     category: FAQ_CATEGORY.ACCOUNT,
     question: "비밀번호를 잊었어요",
-    keywords: ["비밀번호", "패스워드", "잊", "까먹", "찾기", "재발급", "로그인 안"],
+    keywords: ["비밀번호", "패스워드", "까먹", "재발급", "로그인 안", "잊어", "잊었"],
     answer:
       "직접 재설정하는 화면은 없어요. 회사 관리자에게 재발급을 요청하시면 됩니다.\n\n사내 도구라 계정을 회사가 관리하는 구조예요.",
   },
@@ -128,7 +130,7 @@ export const FAQ_ENTRIES: readonly FaqEntry[] = [
     id: "browser",
     category: FAQ_CATEGORY.ENV,
     question: "어떤 브라우저에서 쓸 수 있나요?",
-    keywords: ["브라우저", "크롬", "사파리", "chrome", "safari", "엣지", "지원", "환경"],
+    keywords: ["브라우저", "크롬", "사파리", "chrome", "safari", "엣지", "지원 브라우저"],
     answer:
       "회의 자막(음성 인식)은 크롬 계열 브라우저에서만 동작해요.\n\n사파리나 파이어폭스에서는 자막을 못 쓰고, 대신 화면에서 미리 안내해 드립니다.",
   },
@@ -154,8 +156,9 @@ export const FAQ_ENTRIES: readonly FaqEntry[] = [
   {
     id: "location",
     category: FAQ_CATEGORY.ENV,
-    question: "회사가 어디에 있나요?",
-    keywords: ["위치", "주소", "어디", "찾아", "오시는", "지도", "사무실"],
+    // ⚠️ 질문을 "위치"가 들어가게 적는다 — "어디"만으로 잡으면 "화장실이 어디"까지 걸린다
+    question: "회사 위치가 어디인가요?",
+    keywords: ["위치", "주소", "오시는", "찾아가", "지도", "사무실"],
     answer:
       "을지대학교 박애관 421호에 있어요.\n\n지도와 대중교통 안내는 오시는 길에서 볼 수 있어요.",
     links: [{ label: "오시는 길", href: "/location" }],
