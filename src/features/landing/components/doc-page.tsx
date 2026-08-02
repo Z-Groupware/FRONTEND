@@ -116,16 +116,20 @@ export function DocSection({
       {/* 왼쪽 모서리에서 번지는 빛 — 링만 돌면 안쪽이 비어 보인다 */}
       <span
         aria-hidden
-        className="from-landing-accent/[0.09] via-landing-violet/[0.05] pointer-events-none absolute inset-0 bg-gradient-to-r to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+        className="from-landing-accent/[0.05] pointer-events-none absolute inset-0 bg-gradient-to-r via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100"
       />
 
+      {/*
+        ⚠️ 아이콘을 2.5px 끌어올려 맞춘다. `items-center`는 **글자 상자**를 맞추는데,
+           16px 한글은 그 상자 안에서 위쪽에 앉아 아이콘이 상대적으로 내려가 보인다.
+      */}
       <h2 className="relative flex items-center gap-2.5 text-[16px] leading-6 font-semibold tracking-[-0.2px] break-keep">
         {/* 절 표시 — 아이콘이 있으면 아이콘, 없으면 점 */}
         {Icon ? (
           /* ⚠️ 상자를 두르지 않는다 — "1. 용어"처럼 번호가 붙은 제목 옆에 사각 배지까지 오면
              표식이 둘이라 어수선하다. 아이콘 하나로 충분하다 */
           <Icon
-            className="text-foreground/70 size-[18px] shrink-0 transition-transform duration-300 group-hover:scale-110"
+            className="text-foreground/70 mt-[-2.5px] size-[18px] shrink-0 transition-transform duration-300 group-hover:scale-110"
             aria-hidden
           />
         ) : (
@@ -134,8 +138,7 @@ export function DocSection({
             className="bg-foreground ring-foreground/15 size-[6px] shrink-0 rounded-full ring-0 transition-all duration-300 group-hover:ring-4"
           />
         )}
-        {/* 한글 글자가 상자 안에서 위쪽에 앉아 아이콘보다 떠 보인다 — 1px 내려 맞춘다 */}
-        <span className="translate-y-px">{title}</span>
+        <span>{title}</span>
       </h2>
       <div className="text-muted-foreground relative flex flex-col gap-3 pt-3 pl-[15px] text-[14px] leading-[24px] break-keep">
         {children}
