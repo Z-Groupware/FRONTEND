@@ -101,7 +101,13 @@ export function InviteSetup({ departments, positions }: InviteSetupProps) {
   return (
     <div className="flex flex-col gap-[21px]">
       {/* 적어 둔 게 있으면 탭을 닫기 전에 브라우저가 한 번 물어본다 — 저장은 이 탭 안에만 있다 */}
-      <LeaveGuard hasUnsaved={list.sent.length + list.sendable.length > 0} />
+      {/*
+        ⚠️ `sendable`은 **주소가 유효한 줄**만 센다. 적다 만 줄도 잃을 것이라
+           여기서는 뭐라도 적힌 줄을 기준으로 본다.
+      */}
+      <LeaveGuard
+        hasUnsaved={list.invites.some((invite) => invite.isSent || invite.email.trim().length > 0)}
+      />
 
       {/* 높이를 여기서 한 번만 정한다 — 좌우 두 칸이 같은 높이를 나눠 쓴다(2단계와 동일) */}
       {/*

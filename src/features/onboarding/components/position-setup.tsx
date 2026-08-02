@@ -59,7 +59,8 @@ export function PositionSetup({ initialPositions }: { initialPositions: Position
   return (
     <div className="flex flex-col gap-[21px]">
       {/* 적어 둔 게 있으면 탭을 닫기 전에 브라우저가 한 번 물어본다 — 저장은 이 탭 안에만 있다 */}
-      <LeaveGuard hasUnsaved={list.positions.length > 0} />
+      {/* ⚠️ 목록뿐 아니라 **아직 안 누른 입력칸**도 센다 — 적다가 닫으면 그것도 사라진다 */}
+      <LeaveGuard hasUnsaved={list.positions.length > 0 || draftName.trim().length > 0} />
 
       {/* 높이를 여기서 한 번만 정한다 — 좌우 두 칸이 같은 높이를 나눠 쓴다 */}
       {/*
