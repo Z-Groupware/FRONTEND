@@ -17,6 +17,7 @@ import { DepartmentAddRow } from "./department-add-row";
 import { DepartmentDeleteDialog } from "./department-delete-dialog";
 import { DepartmentIntro } from "./department-intro";
 import { DepartmentNode, type DepartmentNodeHandlers } from "./department-node";
+import { LeaveGuard } from "./leave-guard";
 
 /**
  * 온보딩 1단계 — 부서 체계.
@@ -61,6 +62,9 @@ export function DepartmentSetup({
 
   return (
     <div className="flex flex-col gap-[21px]">
+      {/* 적어 둔 게 있으면 탭을 닫기 전에 브라우저가 한 번 물어본다 — 저장은 이 탭 안에만 있다 */}
+      <LeaveGuard hasUnsaved={tree.departments.length > 0} />
+
       {/* 높이를 여기서 한 번만 정한다 — 좌우 두 칸이 같은 높이를 나눠 쓴다 */}
       {/*
         ⚠️ 높이를 560px로 못박으면 낮은 화면(노트북 150% 배율 등)에서 아래가 잘린다.
