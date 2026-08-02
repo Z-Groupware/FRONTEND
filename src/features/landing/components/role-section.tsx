@@ -49,6 +49,8 @@ export function RoleSection() {
                   type="button"
                   role="tab"
                   aria-selected={index === selected}
+                  id={`role-tab-${item.name}`}
+                  aria-controls="role-preview-panel"
                   onClick={() => setSelected(index)}
                   className={cn(
                     "focus-visible:ring-ring h-9 rounded-full px-4 text-[13px] leading-5 transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none",
@@ -77,7 +79,13 @@ export function RoleSection() {
           </div>
 
           {/* 역할을 바꾸면 화면 통째로 갈아끼워진다 — 실제 셸(사이드바+본문) 축소판 */}
-          <div className="tilt-scene reveal-on-scroll">
+          {/* 탭과 패널을 id로 잇는다 — 없으면 스크린 리더가 탭 선택과 화면 변경을 연결하지 못한다 */}
+          <div
+            className="tilt-scene reveal-on-scroll"
+            role="tabpanel"
+            id="role-preview-panel"
+            aria-labelledby={`role-tab-${role.name}`}
+          >
             <div
               key={role.name}
               className="border-border bg-popover animate-in fade-in-0 slide-in-from-bottom-2 tilt-left overflow-hidden rounded-2xl border shadow-lg duration-300"

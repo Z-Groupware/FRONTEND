@@ -61,6 +61,7 @@
   --color-landing-dark-surface: var(--landing-dark-surface);
   /* 랜딩 액센트 — 밝은 바탕과 검정 무대에서 **값이 뒤집힌다**(§랜딩 밝기 전환).
      생 hex로 박으면 한쪽에서 반드시 안 보인다. */
+  --color-landing-stage: var(--landing-stage);
   --color-landing-accent: var(--landing-accent);
   --color-landing-violet: var(--landing-violet);
   --color-landing-green: var(--landing-green);
@@ -219,6 +220,7 @@
    *    랜딩이 밝게 선택돼 있으면 이 값이 이겨야 한다.
    */
   .landing-day {
+    --landing-stage: #ffffff;
     --landing-dark: #fafaf9;
     --landing-dark-foreground: #1c1917;
     --landing-dark-muted: #78716c;
@@ -237,6 +239,8 @@
    * ⚠️ 배경 토큰이 반투명이다 — 뒤에 고정된 3D Z가 섹션 사이로 비쳐야 한다.
    */
   .landing-night {
+    /* 무대 바탕 — 컴포넌트가 생 hex를 쓰지 않도록 토큰으로 낸다 */
+    --landing-stage: #0a0a0a;
     --background: #0a0a0a;
     --foreground: #fafafa;
     --card: rgba(255, 255, 255, 0.04);
@@ -1231,35 +1235,6 @@
   }
 
   /* 완성 카드 테두리에 도는 초록 후광 — 다 찬 뒤에만 켜진다 */
-  @keyframes complete-glow {
-    0%,
-    45% {
-      box-shadow: 0 0 0 0 rgba(124, 58, 237, 0);
-    }
-    /* 첫 박 — 흰빛이 터진다 */
-    50% {
-      box-shadow:
-        0 0 0 3px rgba(255, 255, 255, 0.6),
-        0 0 60px 16px rgba(255, 255, 255, 0.6),
-        0 0 110px 34px rgba(124, 58, 237, 0.55);
-    }
-    56% {
-      box-shadow:
-        0 0 0 0 rgba(255, 255, 255, 0),
-        0 0 30px 5px rgba(124, 58, 237, 0.35);
-    }
-    /* 둘째 박 — 조금 작게 한 번 더 */
-    61% {
-      box-shadow:
-        0 0 0 2px rgba(255, 255, 255, 0.4),
-        0 0 44px 10px rgba(255, 255, 255, 0.35),
-        0 0 80px 22px rgba(59, 130, 246, 0.4);
-    }
-    75%,
-    100% {
-      box-shadow: 0 0 22px 3px rgba(124, 58, 237, 0.2);
-    }
-  }
 
   .animate-complete-glow {
     animation: complete-glow 6s ease-out infinite;

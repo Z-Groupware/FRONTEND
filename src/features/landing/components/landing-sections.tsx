@@ -75,9 +75,27 @@ export function ProblemSection() {
 }
 
 /**
- * ①: 적다 만 회의록 — 두 줄까지 쓰다가 손이 멈추고, 마지막 줄엔 커서만 깜빡인다.
+ * `**굵게**` 표기를 실제 굵은 글씨로 바꾼다.
  *
- * 줄이 **하나씩** 들어와야 "쓰다 말았다"가 읽힌다 — 지연을 넉넉히(1.5s) 벌린다.
+ * ⚠️ 예전엔 별표만 지웠다 — 강조하려고 적어둔 표기가 화면에서는 **아무 일도 하지 않았다.**
+ *    마크다운 렌더러를 들이기엔 문장 하나라 과하다. 별표 기준으로 잘라 번갈아 굵게 칠한다.
+ */
+function EmphasizedText({ text }: { text: string }) {
+  return (
+    <>
+      {text.split("**").map((part, index) =>
+        index % 2 === 1 ? (
+          <strong key={part} className="text-foreground font-semibold">
+            {part}
+          </strong>
+        ) : (
+          part
+        ),
+      )}
+    </>
+  );
+}
+
 /** 기능 셋 — 좌우로 번갈아 놓아 스크롤이 단조롭지 않게 한다. */
 export function FeatureSection() {
   return (
@@ -105,7 +123,7 @@ export function FeatureSection() {
                   {feature.title}
                 </h3>
                 <p className="text-muted-foreground max-w-[520px] pt-3.5 text-[15px] leading-[26px] break-keep">
-                  {feature.body.replaceAll("**", "")}
+                  <EmphasizedText text={feature.body} />
                 </p>
               </Reveal>
 

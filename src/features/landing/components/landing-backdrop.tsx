@@ -28,13 +28,7 @@ export function LandingBackdrop() {
          (테마 토큰이 아직 안 붙은 첫 페인트 등) 이 층이 통째로 가려진다.
          이 위에 오는 콘텐츠는 `relative z-10`을 갖는다.
     */
-    <div
-      aria-hidden
-      className={cn(
-        "pointer-events-none fixed inset-0 z-0",
-        isDark ? "bg-[#0a0a0a]" : "bg-background",
-      )}
-    >
+    <div aria-hidden className={cn("pointer-events-none fixed inset-0 z-0", "bg-landing-stage")}>
       {/* 화면 전체를 덮는 한 장의 그라데이션 — 위는 푸르게, 아래는 보랏빛으로 아주 천천히 넘어간다 */}
       <span
         className={cn(

@@ -1,14 +1,17 @@
-import { Check, FileText, Loader2 } from "lucide-react";
+import { Check, FileText } from "lucide-react";
 
 /**
- * 인수인계 축소판 — 흩어진 기록이 문서 한 장으로 조립된다.
+ * 기능 섹션의 인수인계 축소판 — 흩어진 기록이 문서 한 장으로 조립된다.
+ *
+ * ⚠️ 흐름 섹션의 `HandoverMock`(flow-mocks-deliver)과 **다른 화면이다.** 이름이 같으면
+ *    IDE 탐색에서 헷갈리고 잘못된 import가 난다 — 여기는 `Feature` 접두를 붙인다.
  *
  * ⚠️ 사람 이름 대신 자리(직무)로 적는다 — 목이라도 특정 인물처럼 읽히면 안 된다.
  */
 /** 흩어진 기록이 문서 한 장으로 조립된다 — 항목이 차례로 체크되고 마지막에 문서가 뜬다 */
 const ASSEMBLED = ["회의 기록 24건", "미완료 액션 4건", "참여 결정 12건"] as const;
 
-export function HandoverMock() {
+export function FeatureHandoverMock() {
   return (
     <>
       {/* 오른쪽 위를 비워두면 카드가 기울어 보인다 — 다른 축소판처럼 상태 한 줄을 세운다 */}
@@ -18,7 +21,7 @@ export function HandoverMock() {
           인수인계서 자동 구성
         </p>
         <span className="border-border text-muted-foreground/70 flex shrink-0 items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] leading-4">
-          <Loader2 className="size-3 animate-spin" aria-hidden />
+          <Check className="size-3" aria-hidden />
           <span className="tabular-nums">3 / 3</span>
         </span>
       </div>

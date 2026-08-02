@@ -10,7 +10,9 @@ import * as THREE from "three";
  * ⚠️ GLB 같은 모델 자산을 쓰지 않는다 — 수십 MB 모델은 로딩·배포(LFS)만 힘들어진다.
  *    좌표는 `ZLogo` SVG(viewBox 0 0 100 100)와 같은 값이라 로고가 바뀌면 같이 바꾼다.
  * ⚠️ 이 파일은 반드시 `next/dynamic(ssr:false)`로만 불러온다(§성능 — three는 무겁다).
- * 조작: 드래그하면 돌고, 놓으면 관성으로 감속(velocity × friction 패턴). 평소엔 천천히 자전.
+ * ⚠️ **드래그로 돌릴 수 없다.** 이 캔버스는 배경(`LandingBackdrop`)에 있고 그 층이
+ *    `pointer-events-none`이라 포인터 이벤트가 닿지 않는다 — 아래 핸들러는 그래서 죽어 있다.
+ *    배경이 스크롤을 뺏지 않는 편이 더 중요해서 그대로 둔다. 지금 도는 건 **자전뿐**이다.
  */
 const PIECES: [number, number][][] = [
   // SVG 좌표(y 아래로) → three 좌표(y 위로): x/100-0.5, 0.5-y/100

@@ -19,7 +19,8 @@ const AFTER_ACTIONS = [
 
 export function AfterScreen() {
   return (
-    <div className="tilt-scene relative">
+    /* 목업 문장은 가짜다 — 스크린 리더가 읽지 않게 화면 전체를 숨긴다 */
+    <div className="tilt-scene relative" aria-hidden>
       {/* 카드 뒤 번진 광원 — 어두운 무대에서 화면이 떠 보이게 한다 */}
       <span
         aria-hidden

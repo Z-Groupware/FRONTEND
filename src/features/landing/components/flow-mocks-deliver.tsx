@@ -31,7 +31,7 @@ export function AssignMock() {
             <span className="text-landing-accent">액션 하달</span>
           </>
         }
-        right="3건"
+        right="4건"
       />
 
       <div className="flex flex-col gap-2 pt-3">

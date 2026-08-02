@@ -96,7 +96,11 @@ export function FlowSection() {
         key={active.step}
         className="border-landing-dark-border bg-landing-dark-surface animate-in fade-in-0 slide-in-from-bottom-2 mx-auto mt-6 flex h-[372px] max-w-[560px] flex-col rounded-xl border p-5 backdrop-blur duration-300"
       >
-        <FlowMockView mock={active.mock} />
+        {/* ⚠️ 목업 문장("API 문서 최신화" 등)은 **가짜다.** 스크린 리더가 실제 정보처럼
+            읽으면 안 된다 — 화면 전체를 한 번에 숨긴다(§정직성·a11y) */}
+        <div aria-hidden>
+          <FlowMockView mock={active.mock} />
+        </div>
       </div>
     </DarkSection>
   );

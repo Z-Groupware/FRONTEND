@@ -32,7 +32,17 @@ function subscribe(onChange: () => void) {
 }
 
 function getSnapshot() {
-  currentIsDark ??= window.localStorage.getItem(STORAGE_KEY) !== "light";
+  /*
+    ⚠️ `localStorage` 접근은 던질 수 있다 — 사파리 프라이빗 모드나 저장소를 막은 브라우저에서
+       그렇다. 여기서 터지면 **랜딩 전체가 렌더 중 죽는다.** 읽기 실패는 기본값(어두움)으로 넘긴다.
+  */
+  if (currentIsDark === null) {
+    try {
+      currentIsDark = window.localStorage.getItem(STORAGE_KEY) !== "light";
+    } catch {
+      currentIsDark = true;
+    }
+  }
   return currentIsDark;
 }
 
@@ -43,7 +53,12 @@ function getServerSnapshot() {
 
 function setIsDark(next: boolean) {
   currentIsDark = next;
-  window.localStorage.setItem(STORAGE_KEY, next ? "dark" : "light");
+  /* 저장에 실패해도 화면은 바뀌어야 한다 — 기억만 못 할 뿐이다 */
+  try {
+    window.localStorage.setItem(STORAGE_KEY, next ? "dark" : "light");
+  } catch {
+    /* 저장소를 막은 브라우저 — 이번 방문에만 적용된다 */
+  }
   listeners.forEach((listener) => listener());
 }
 
@@ -67,7 +82,7 @@ export function LandingShell({ children }: { children: ReactNode }) {
           // 상단바가 `fixed`라 문서 흐름에서 빠진다 — 그 높이(56px)를 여기서 메운다
           "text-foreground relative flex min-h-dvh flex-col pt-14",
           // 어두울 때만 토큰을 뒤집는다 — 밝을 때는 기본 토큰이 그대로 산다
-          isDark ? "landing-night bg-[#0a0a0a]" : "landing-day bg-background",
+          isDark ? "landing-night bg-landing-stage" : "landing-day bg-landing-stage",
         )}
       >
         <LandingBackdrop />

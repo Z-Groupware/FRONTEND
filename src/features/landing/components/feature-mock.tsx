@@ -1,6 +1,6 @@
 import { Sparkles } from "lucide-react";
 
-import { HandoverMock } from "./handover-mock";
+import { FeatureHandoverMock } from "./handover-mock";
 
 /**
  * 기능 설명 옆에 붙는 화면 축소판.
@@ -22,7 +22,8 @@ const GLOW: Record<FeatureKind, string> = {
 export function FeatureMock({ kind }: { kind: FeatureKind }) {
   return (
     /* 글이 왼쪽이면 오른쪽으로, 오른쪽이면 왼쪽으로 — 본문 쪽을 향해 기울인다 */
-    <div className="tilt-scene relative">
+    /* 목업 문장은 가짜다 — 스크린 리더가 읽지 않게 화면 전체를 숨긴다 */
+    <div className="tilt-scene relative" aria-hidden>
       {/* 카드 뒤 번진 광원 — 흰 바탕에서 카드가 떠 보이게 한다 */}
       <span
         aria-hidden
@@ -36,7 +37,7 @@ export function FeatureMock({ kind }: { kind: FeatureKind }) {
       >
         {kind === "CAPTURE" && <CaptureMock />}
         {kind === "AI ACTION" && <ActionMock />}
-        {kind === "HANDOVER" && <HandoverMock />}
+        {kind === "HANDOVER" && <FeatureHandoverMock />}
       </div>
     </div>
   );

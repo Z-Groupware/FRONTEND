@@ -5,8 +5,15 @@
  * ⚠️ 역할 이름은 영어로 쓴다(CLAUDE.md §카피).
  * ⚠️ 여기 적힌 건 **화면 접근**이고, 실제 권한 판정은 서버가 한다 — 화면 숨김은 보안이 아니다.
  */
+/**
+ * ⚠️ 도메인 상수(`AssignableRole`)는 `OWNER`처럼 **전부 대문자**다. 랜딩은 사람이 읽는
+ *    화면이라 `Owner` 표기를 쓰므로 그 타입을 그대로 붙일 수 없다. 대신 네 이름을
+ *    **여기서 union으로 좁혀** 오타나 빠진 역할이 타입에서 걸리게 한다.
+ */
+export type RoleLabel = "Owner" | "Admin" | "Leader" | "Member";
+
 export interface RoleAccess {
-  name: string;
+  name: RoleLabel;
   korean: string;
   summary: string;
   /** 이 역할이 할 수 있는 일 */
