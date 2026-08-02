@@ -92,7 +92,7 @@ function ZModel({ tone, isFeature }: { tone: Tone; isFeature: boolean }) {
 export default function ThreeZ({
   size = 420,
   tone = "dark",
-  /** 배경이 아니라 **보여주는** 자리라면 켠다 — 몸체가 밝아지고 조명이 세진다 */
+  /** 배경이 아니라 **보여주는** 자리라면 켠다 — 몸체가 밝아지고 금속기를 낮춰 형태가 또렷해진다 */
   isFeature = false,
 }: {
   size?: number;

@@ -68,6 +68,7 @@ export function CompanyCodeStep() {
           */}
           <p
             id="company-code-help"
+            role="alert"
             className="text-destructive flex min-h-4 items-center gap-1.5 text-[12px] leading-4 break-keep"
           >
             {state.error && <AlertCircle className="size-3.5 shrink-0" aria-hidden />}

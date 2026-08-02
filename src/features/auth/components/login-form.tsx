@@ -97,6 +97,7 @@ export function LoginForm() {
           */}
           <p
             id="email-error"
+            role="alert"
             className="text-destructive flex min-h-4 items-center gap-1.5 text-[12px] leading-4"
           >
             {loginErrors.email && <AlertCircle className="size-3.5 shrink-0" aria-hidden />}
@@ -139,6 +140,7 @@ export function LoginForm() {
           </div>
           <p
             id="password-error"
+            role="alert"
             className="text-destructive flex min-h-4 items-center gap-1.5 text-[12px] leading-4"
           >
             {loginErrors.password && <AlertCircle className="size-3.5 shrink-0" aria-hidden />}

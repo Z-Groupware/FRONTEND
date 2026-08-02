@@ -1,9 +1,12 @@
+"use client";
+
 import { FileText, ListChecks, Sparkles } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { ZLogo } from "@/components/icons/z-logo";
 import { LegalDialog } from "@/features/legal/legal-dialog";
+import { useMediaQuery } from "@/hooks/use-media-query";
 
 import { AuthBackdrop } from "./auth-backdrop";
 import { AuthPreview } from "./auth-preview";
@@ -34,6 +37,13 @@ interface AuthShellProps {
 }
 
 export function AuthShell({ children, hasLegalNotice = true }: AuthShellProps) {
+  /*
+    ⚠️ 왼쪽 패널은 좁은 화면에서 `hidden`이지만, **숨긴다고 안 만들어지는 게 아니다.**
+       three.js Canvas는 WebGL 컨텍스트를 잡고 매 프레임 도는데, 모바일에서 보이지도 않는 걸
+       돌리면 배터리만 먹는다 — 아예 렌더 트리에서 뺀다.
+  */
+  const isWide = useMediaQuery("(min-width: 48rem)");
+
   return (
     /*
       ⚠️ 온보딩 셸과 같은 구조다 — **껍데기는 화면 높이에 고정**하고 스크롤은 안쪽에서만 일어난다.
@@ -108,9 +118,11 @@ export function AuthShell({ children, hasLegalNotice = true }: AuthShellProps) {
           </div>
 
           {/* 아래 왼쪽 — 도는 3D Z */}
-          <div className="absolute bottom-6 left-4 z-0">
-            <AuthBackdrop />
-          </div>
+          {isWide && (
+            <div className="absolute bottom-6 left-4 z-0">
+              <AuthBackdrop />
+            </div>
+          )}
         </div>
       </SpotlightPanel>
 

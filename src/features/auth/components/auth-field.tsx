@@ -12,6 +12,8 @@ import { Label } from "@/components/ui/label";
  * ⚠️ 오류 줄은 **자리를 미리 비워 둔다**(`min-h-4`). 뜰 때만 넣으면 카드 높이가 늘었다 줄어
  *    화면이 출렁인다 — 검증 하나에 레이아웃이 흔들리면 안 된다.
  * ⚠️ 검증 오류는 토스트가 아니라 **필드 아래 인라인**이다(CLAUDE.md §토스트).
+ * ⚠️ 오류 줄에 `role="alert"`를 준다. 제출하면 포커스가 버튼에 남아서, 이게 없으면
+ *    스크린 리더는 오류가 떴다는 걸 아예 말해 주지 않는다.
  * ⚠️ 한글은 아이콘보다 떠 보인다 — 라벨 글자만 1px 내려 맞춘다.
  */
 interface AuthFieldProps {
@@ -73,6 +75,7 @@ export function AuthField({
 
       <p
         id={errorId}
+        role="alert"
         className="text-destructive flex min-h-4 items-center gap-1.5 text-[12px] leading-4 break-keep"
       >
         {error && <AlertCircle className="size-3.5 shrink-0" aria-hidden />}
