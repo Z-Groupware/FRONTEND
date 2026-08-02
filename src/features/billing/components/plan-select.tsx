@@ -30,7 +30,7 @@ export function PlanSelect() {
           플랜을 선택하세요
         </h1>
         <p className="text-muted-foreground text-[13px] leading-5 break-keep">
-          베타 기간 중에는 모든 플랜을 무료로 사용할 수 있어요
+          나중에 언제든지 바꿀 수 있어요
         </p>
       </div>
 
