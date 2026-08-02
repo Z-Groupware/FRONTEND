@@ -2,6 +2,7 @@
 
 import { createContext, type ReactNode, useContext, useSyncExternalStore } from "react";
 
+import { SupportWidget } from "@/features/support/components/support-widget";
 import { cn } from "@/lib/utils";
 
 import { LandingBackdrop } from "./landing-backdrop";
@@ -102,6 +103,13 @@ export function LandingShell({ children }: { children: ReactNode }) {
         <main className="relative z-10 flex-1">{children}</main>
 
         <LandingFooter />
+
+        {/*
+          도움말은 **셸에 둔다** — 랜딩·요금제·약관 어디서든 같은 자리에 있어야 한다.
+          ⚠️ 로그인 뒤 화면에는 아직 붙이지 않는다. 답변이 로그인 전 질문(요금제·가입)이라
+             앱 안에서 열면 쓸 말이 없다 — 쓸 내용이 생기면 그때 앱 셸에 한 줄 더한다.
+        */}
+        <SupportWidget />
       </div>
     </LandingThemeContext>
   );

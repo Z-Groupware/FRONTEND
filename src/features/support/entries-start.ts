@@ -1,0 +1,74 @@
+import { FAQ_CATEGORY, type FaqEntry } from "./faq";
+
+/**
+ * 시작하기에 대한 답.
+ *
+ * ⚠️ 근거는 `docs/CONVENTIONS.md`와 **코드의 실제 값**이다. 둘 다에 없는 것은 적지 않는다 —
+ *    환불 규정·결제 수단처럼 팀이 안 정한 건 "모른다"로 흘린다(§정직성).
+ * ⚠️ 키워드에 **범용어를 넣지 않는다.** "무엇"·"코드"·"어디" 같은 말은 아무 문장에나 들어가
+ *    엉뚱한 항목이 걸린다. 못 찾는 건 갈래를 다시 보여 주면 되지만, 틀린 답은 못 되돌린다.
+ * ⚠️ 답은 **빈 줄로 문단을 나눈다.** 한 덩어리로 쓰면 말풍선 안이 글 벽이 된다.
+ */
+
+export const START_ENTRIES: readonly FaqEntry[] = [
+  {
+    id: "signup",
+    category: FAQ_CATEGORY.START,
+    question: "어떻게 시작하나요?",
+    keywords: ["시작", "가입", "신청", "등록", "회원", "도입", "어떻게 쓰"],
+    answer:
+      "기업 등록 신청을 남겨 주세요.\n\n검토 후 담당자 메일로 기업 코드를 보내 드려요. 그 코드로 로그인하면 워크스페이스가 열립니다.",
+    links: [{ label: "기업 등록 신청", href: "/register" }],
+  },
+  {
+    id: "company-code",
+    category: FAQ_CATEGORY.START,
+    question: "기업 코드가 뭔가요?",
+    keywords: ["기업코드", "기업 코드", "회사코드", "코드는 어디", "코드가 뭐"],
+    answer:
+      "회사를 가리키는 식별자예요. 직접 지어 넣는 값이 아니라 등록이 승인되면 메일로 받습니다.\n\n한 번 입력하면 브라우저가 기억해서, 다음부터는 이메일과 비밀번호만 넣으면 돼요.",
+    links: [{ label: "로그인", href: "/login" }],
+  },
+  {
+    id: "review-time",
+    category: FAQ_CATEGORY.START,
+    question: "신청하면 얼마나 걸리나요?",
+    keywords: ["얼마나 걸", "며칠", "언제", "승인", "검토", "기다"],
+    answer:
+      "영업일 기준 1~2일 안에 담당자 메일로 결과를 보내 드려요.\n\n승인되면 그 메일에 기업 코드가 함께 옵니다.",
+  },
+  {
+    id: "onboarding",
+    category: FAQ_CATEGORY.START,
+    question: "처음 들어가면 뭘 하나요?",
+    keywords: ["온보딩", "초기 설정", "처음", "세팅", "설정부터"],
+    answer:
+      "관리자가 초기 설정을 세 단계로 마칩니다.\n\n1. 부서 체계 만들기\n2. 직급 체계와 권한 정하기\n3. 사원 초대하기\n\n다 하면 바로 회의를 시작할 수 있어요.",
+  },
+  {
+    id: "lost-code",
+    category: FAQ_CATEGORY.START,
+    question: "기업 코드를 잃어버렸어요",
+    keywords: ["코드를 잃", "코드 분실", "코드 까먹", "메일을 못", "코드가 없"],
+    answer:
+      "회사 관리자에게 문의해 주세요. 관리자가 코드를 다시 알려드릴 수 있어요.\n\n승인 메일에도 같은 코드가 적혀 있습니다.",
+  },
+  {
+    id: "trial",
+    category: FAQ_CATEGORY.START,
+    question: "먼저 체험해 볼 수 있나요?",
+    keywords: ["체험", "데모", "테스트", "둘러보", "미리 보"],
+    answer:
+      "Free 플랜이 영원히 무료라 그대로 써 보시면 돼요.\n\n다만 워크스페이스를 열려면 기업 등록 신청은 거쳐야 합니다.",
+    links: [{ label: "요금제 보기", href: "/plans" }],
+  },
+  {
+    id: "who-registers",
+    category: FAQ_CATEGORY.START,
+    question: "등록 신청은 누가 하나요?",
+    keywords: ["누가 신청", "누가 등록", "등록 신청은 누가", "대표가", "담당자가 해야"],
+    answer:
+      "회사에서 워크스페이스를 맡을 분이 하시면 돼요. 신청서에 적은 담당자가 첫 관리자가 됩니다.\n\n부서·직급 설정과 사원 초대를 맡게 되니, 그 일을 책임질 분으로 정해 주세요.",
+    links: [{ label: "기업 등록 신청", href: "/register" }],
+  },
+];
