@@ -17,6 +17,7 @@ import { useInviteOptions } from "../use-invite-options";
 import { InviteIntro } from "./invite-intro";
 import { InviteRow, type InviteRowHandlers } from "./invite-row";
 import { InviteSendBar } from "./invite-send-bar";
+import { LeaveGuard } from "./leave-guard";
 
 interface InviteSetupProps {
   departments: DepartmentNode[];
@@ -99,6 +100,15 @@ export function InviteSetup({ departments, positions }: InviteSetupProps) {
 
   return (
     <div className="flex flex-col gap-[21px]">
+      {/* 적어 둔 게 있으면 탭을 닫기 전에 브라우저가 한 번 물어본다 — 저장은 이 탭 안에만 있다 */}
+      {/*
+        ⚠️ `sendable`은 **주소가 유효한 줄**만 센다. 적다 만 줄도 잃을 것이라
+           여기서는 뭐라도 적힌 줄을 기준으로 본다.
+      */}
+      <LeaveGuard
+        hasUnsaved={list.invites.some((invite) => invite.isSent || invite.email.trim().length > 0)}
+      />
+
       {/* 높이를 여기서 한 번만 정한다 — 좌우 두 칸이 같은 높이를 나눠 쓴다(2단계와 동일) */}
       {/*
         ⚠️ 높이를 560px로 못박으면 낮은 화면(노트북 150% 배율 등)에서 아래가 잘린다.

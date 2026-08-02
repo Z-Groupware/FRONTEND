@@ -13,6 +13,7 @@ import type { AssignableRole, Position } from "../types";
 import { useDraftSync } from "../use-draft-sync";
 import type { DraggingPositionId } from "../use-position-drag";
 import { usePositionList } from "../use-position-list";
+import { LeaveGuard } from "./leave-guard";
 import { PositionAddRow } from "./position-add-row";
 import { PositionIntro } from "./position-intro";
 import { PositionRow, type PositionRowHandlers } from "./position-row";
@@ -57,6 +58,10 @@ export function PositionSetup({ initialPositions }: { initialPositions: Position
 
   return (
     <div className="flex flex-col gap-[21px]">
+      {/* 적어 둔 게 있으면 탭을 닫기 전에 브라우저가 한 번 물어본다 — 저장은 이 탭 안에만 있다 */}
+      {/* ⚠️ 목록뿐 아니라 **아직 안 누른 입력칸**도 센다 — 적다가 닫으면 그것도 사라진다 */}
+      <LeaveGuard hasUnsaved={list.positions.length > 0 || draftName.trim().length > 0} />
+
       {/* 높이를 여기서 한 번만 정한다 — 좌우 두 칸이 같은 높이를 나눠 쓴다 */}
       {/*
         ⚠️ 높이를 560px로 못박으면 낮은 화면(노트북 150% 배율 등)에서 아래가 잘린다.
