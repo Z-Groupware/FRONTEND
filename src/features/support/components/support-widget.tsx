@@ -1,6 +1,6 @@
 "use client";
 
-import { HelpCircle, X } from "lucide-react";
+import { HelpCircle, RotateCcw, X } from "lucide-react";
 import { useState } from "react";
 
 import { FAQ_ENTRIES, type FaqEntry } from "../faq";
@@ -66,6 +66,21 @@ export function SupportWidget() {
             <p className="text-guide-foreground text-[14px] leading-5 font-medium">도움말</p>
             {/* ⚠️ 무엇인지 정확히 말한다 — "AI 상담원"이 아니다 */}
             <p className="text-guide-muted text-[11px] leading-4">자주 묻는 질문에서 찾아드려요</p>
+
+            {/*
+              ⚠️ 한 번 물어보면 질문 목록이 사라져 **돌아갈 길이 없었다.** 주고받은 걸 지우고
+                 처음 화면으로 되돌린다 — 목록이 곧 "무엇을 물어볼 수 있는지"라서 필요하다.
+            */}
+            {turns.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setTurns([])}
+                className="text-guide-muted hover:text-guide-foreground focus-visible:ring-guide-muted/40 ml-auto flex shrink-0 items-center gap-1 self-center rounded-md px-1.5 py-1 text-[11px] leading-4 transition-colors focus-visible:ring-2 focus-visible:outline-hidden"
+              >
+                <RotateCcw className="size-3" aria-hidden />
+                <span className="translate-y-px">처음으로</span>
+              </button>
+            )}
           </div>
 
           <SupportThread turns={turns} entries={FAQ_ENTRIES} onPick={handlePick} />

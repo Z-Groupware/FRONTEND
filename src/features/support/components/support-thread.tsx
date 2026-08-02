@@ -74,7 +74,26 @@ export function SupportThread({ turns, entries, onPick }: SupportThreadProps) {
               </div>
             )}
 
-            {/* 못 찾았을 때만 문의처를 붙인다 — 답을 준 자리에 또 물어보라고 하면 어수선하다 */}
+            {/*
+              ⚠️ 못 찾았을 때는 **여기에 목록을 붙인다.** 답변 문구가 "아래에서 비슷한 걸
+                 찾아보시거나"라고 말하는데 아래에 아무것도 없으면 그건 거짓말이다(§정직성).
+            */}
+            {!turn.entry && (
+              <ul className="flex flex-wrap gap-1.5 pt-2.5">
+                {entries.slice(0, 5).map((entry) => (
+                  <li key={entry.id}>
+                    <button
+                      type="button"
+                      onClick={() => onPick(entry)}
+                      className="text-guide-muted border-guide-border focus-visible:ring-guide-muted/40 hover:text-guide-foreground rounded-md border px-2 py-1 text-[11px] leading-4 transition-colors hover:bg-white/[0.08] focus-visible:ring-2 focus-visible:outline-hidden"
+                    >
+                      {entry.question}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+
             {!turn.entry && (
               <a
                 href={`mailto:${SUPPORT_EMAIL}`}

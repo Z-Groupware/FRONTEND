@@ -18,6 +18,9 @@ describe("findFaqAnswer", () => {
     ["다크모드 있나요", "dark-mode"],
     ["회사 어디에 있어요", "location"],
     ["약관 보고 싶어요", "legal"],
+    ["안녕하세요", "greeting"],
+    // 인사가 섞여도 **진짜 질문**이 이겨야 한다
+    ["안녕하세요 요금제 얼마예요?", "pricing"],
   ])("'%s' → %s", (input, expected) => {
     expect(findFaqAnswer(input)?.id).toBe(expected);
   });
