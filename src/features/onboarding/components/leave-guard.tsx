@@ -12,7 +12,12 @@ import { useEffect } from "react";
  * ⚠️ 적어 둔 게 없으면 걸지 않는다. 아무것도 안 한 사람까지 붙잡으면 그냥 성가신 창이다.
  * ⚠️ 서버 저장이 붙으면 이 컴포넌트는 지운다 — 잃을 게 없어지기 때문이다.
  */
-export function LeaveGuard({ hasUnsaved }: { hasUnsaved: boolean }) {
+interface LeaveGuardProps {
+  /** 잃을 게 있는지 — 아무것도 안 적었으면 붙잡지 않는다 */
+  hasUnsaved: boolean;
+}
+
+export function LeaveGuard({ hasUnsaved }: LeaveGuardProps) {
   useEffect(() => {
     if (!hasUnsaved) return;
 

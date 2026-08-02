@@ -8,7 +8,12 @@ import { LandingShell } from "./landing-shell";
  * ⚠️ 껍데기(`LandingShell`)는 그대로 그린다. 상단바까지 껌뻑이면 로딩이 더 길어 보인다 —
  *    바뀌는 건 본문뿐이다.
  */
-export function DocSkeleton({ rowCount = 4 }: { rowCount?: number }) {
+interface DocSkeletonProps {
+  /** 본문 자리 몇 칸을 잡아 둘지 — 문서마다 길이가 다르다 */
+  rowCount?: number;
+}
+
+export function DocSkeleton({ rowCount = 4 }: DocSkeletonProps) {
   return (
     <LandingShell>
       <div className="mx-auto w-full max-w-[820px] px-7 py-16 lg:py-20">
