@@ -4,8 +4,7 @@ import { ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
-import { CheckMark } from "@/components/common/check-mark";
-import { ZLogo } from "@/components/icons/z-logo";
+import { ZDoneMark } from "@/components/common/z-done-mark";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -66,27 +65,7 @@ export function OnboardingDone() {
   return (
     <OnboardingShell step={ONBOARDING_STEP.INVITE} isDone>
       <div className="mx-auto flex w-full max-w-[420px] flex-col items-center gap-6">
-        {/*
-          빈 원에서 시작해 먹색이 차오르고, 그 위에 **Z 로고**가 얹힌다.
-          체크는 작은 배지로 옆에 붙어 살랑인다.
-          ⚠️ 배지는 초록이 아니라 카드색 바탕에 먹색이다 — 색으로 알리는 건 에러뿐(CLAUDE.md §디자인 토큰).
-        */}
-        <span className="relative" aria-hidden>
-          <span className="border-border relative flex size-[68px] items-center justify-center rounded-full border">
-            <span className="bg-foreground animate-fill-in absolute inset-0 rounded-full" />
-            <ZLogo className="text-background animate-mark-in relative size-7" />
-          </span>
-
-          {/*
-            배지는 **테두리 있는 원**이다. 검은 원 위에 걸쳐 있어서, 테두리가 없으면
-            흰 바탕만 남아 원이 파먹힌 것처럼 보인다.
-          */}
-          <span className="animate-mark-in absolute -top-0.5 -right-0.5">
-            <span className="bg-card border-foreground animate-float flex size-5 items-center justify-center rounded-full border">
-              <CheckMark size={11} strokeWidth={3} />
-            </span>
-          </span>
-        </span>
+        <ZDoneMark />
 
         <div className="flex flex-col items-center gap-2 text-center">
           <h1 className="text-xl leading-[26px] font-semibold tracking-[-0.4px]">준비됐어요</h1>
