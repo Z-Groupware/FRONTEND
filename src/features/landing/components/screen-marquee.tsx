@@ -36,9 +36,15 @@ export function ScreenMarquee() {
 
       {/* 양 끝을 흐리게 지워 띠가 화면 밖으로 이어지는 것처럼 보이게 한다 */}
       <div className="relative [mask-image:linear-gradient(90deg,transparent,black_3%,black_97%,transparent)]">
-        <div className="animate-marquee flex w-max gap-3 hover:[animation-play-state:paused]">
+        {/*
+          ⚠️ 바깥 컨테이너에 `gap`을 주면 안 된다. 애니메이션이 `-50%`만큼 미는데
+             전체 폭이 `A + gap + A`라서 절반은 `A + gap/2`가 된다 — 한 바퀴마다
+             `gap/2`씩 어긋나 이음매에 빈 틈이 보인다.
+             간격은 **각 벌 안쪽**(`gap-3 pr-3`)에서만 준다. 그래야 절반이 정확히 한 벌이다.
+        */}
+        <div className="animate-marquee flex w-max hover:[animation-play-state:paused]">
           {[0, 1].map((copy) => (
-            <div key={copy} className="flex shrink-0 gap-3" aria-hidden={copy === 1}>
+            <div key={copy} className="flex shrink-0 gap-3 pr-3" aria-hidden={copy === 1}>
               {CAPABILITIES.map((capability, index) => (
                 <span
                   key={capability}

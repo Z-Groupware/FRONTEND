@@ -17,36 +17,40 @@ import { ThemeToggle } from "./theme-toggle";
 export function LandingHeader() {
   return (
     <header className="border-border bg-background/80 fixed top-0 right-0 left-0 z-50 [transform:translateZ(0)] border-b backdrop-blur">
+      {/*
+        ⚠️ 상단바에는 **계정 동선만** 둔다 — 로그인 · 시작하기, 그리고 선 뒤에 밝기 스위치.
+           요금제·권한 매트릭스·오시는 길은 올리지 않는다. 가입 전 필수 동선이 아니라
+           필요할 때 찾아가는 문서이고, 푸터와 마지막 CTA가 이미 이어준다.
+      */}
       <div className="mx-auto flex h-14 w-full max-w-[1144px] items-center justify-between px-7">
         {/* 로고만 둔다 — 옆에 "Z" 글자를 또 쓰면 같은 말이 두 번이다 */}
         {/* 로고 이스터에그 — 홈에서 누르면 조각이 다시 맞춰진다 */}
         <PlayfulLogo />
 
-        <nav className="flex items-center gap-[7px]">
+        <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-[7px]">
+            {/* ⚠️ 로그인·회원가입 화면은 아직 없다. 붙으면 이 링크가 그대로 살아난다 */}
+            <Link
+              href="/login"
+              className={cn(buttonVariants({ variant: "outline" }), "h-8 px-3.5 text-[13px]")}
+            >
+              로그인
+            </Link>
+            <Link
+              href="/register"
+              className={cn(
+                buttonVariants(),
+                "bg-foreground text-background hover:bg-foreground/90 h-8 px-3.5 text-[13px]",
+              )}
+            >
+              시작하기
+            </Link>
+          </div>
+
+          {/* 밝기 스위치는 **맨 끝**이다 — 계정 동선과 성격이 달라 얇은 선으로 갈라 둔다 */}
+          <span className="bg-border h-4 w-px" aria-hidden />
           <ThemeToggle />
-          <Link
-            href="/plans"
-            className="text-muted-foreground hover:text-foreground focus-visible:ring-ring hidden rounded px-2.5 py-1.5 text-[13px] leading-5 transition-colors focus-visible:ring-2 focus-visible:outline-hidden sm:block"
-          >
-            요금제
-          </Link>
-          {/* ⚠️ 로그인·회원가입 화면은 아직 없다. 붙으면 이 링크가 그대로 살아난다 */}
-          <Link
-            href="/login"
-            className={cn(buttonVariants({ variant: "outline" }), "h-[34px] text-[13px]")}
-          >
-            로그인
-          </Link>
-          <Link
-            href="/register"
-            className={cn(
-              buttonVariants(),
-              "bg-foreground text-background hover:bg-foreground/90 h-[34px] text-[13px]",
-            )}
-          >
-            무료로 시작하기
-          </Link>
-        </nav>
+        </div>
       </div>
     </header>
   );

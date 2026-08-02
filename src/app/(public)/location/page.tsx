@@ -24,11 +24,18 @@ const LNG = 127.0435;
 export default function LocationPage() {
   return (
     <DocPage title="오시는 길" description="미리 연락 주시면 1층에서 맞이할게요.">
-      <KakaoMap lat={LAT} lng={LNG} label={ADDRESS} address={ADDRESS} mapUrl={KAKAO_MAP_URL} />
+      <KakaoMap
+        lat={LAT}
+        lng={LNG}
+        label={ADDRESS}
+        address={ADDRESS}
+        mapUrl={KAKAO_MAP_URL}
+        searchKeyword="을지대학교 성남캠퍼스 박애관"
+      />
 
       <div className="pt-6">
         <DocSection title="대중교통" icon={TrainFront}>
-          <p>수인분당선 을지대역에서 캠퍼스까지 걸어서 올 수 있어요.</p>
+          <p>8호선 남한산성입구역에서 캠퍼스까지 걸어서 올 수 있어요.</p>
           <p>정문에서 박애관을 찾아 4층으로 올라오면 됩니다.</p>
         </DocSection>
 
