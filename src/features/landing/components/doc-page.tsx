@@ -36,12 +36,6 @@ export function DocPage({
   return (
     /* 랜딩과 같은 껍데기·무대 — 문서로 넘어와도 같은 사이트로 읽힌다(밝기 선택도 따라온다) */
     <LandingShell>
-      {/* 읽은 만큼 차오르는 막대 — 긴 문서에서 남은 양이 보이지 않으면 중간에 닫는다 */}
-      <span
-        aria-hidden
-        className="bg-landing-accent read-progress fixed top-14 right-0 left-0 z-40 h-[2px] origin-left"
-      />
-
       <div
         className={cn(
           "mx-auto w-full px-7 py-16 lg:py-20",
@@ -83,7 +77,7 @@ export function DocPage({
             </div>
             <Link
               href="/plans"
-              className="border-border bg-secondary hover:bg-accent focus-visible:ring-ring flex h-11 shrink-0 items-center gap-1.5 rounded-lg border px-5 text-[14px] leading-5 font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none"
+              className="border-border bg-secondary hover:bg-accent focus-visible:ring-ring flex h-11 shrink-0 items-center gap-1.5 rounded-lg border px-5 text-[14px] leading-5 font-medium transition-colors focus-visible:ring-2 focus-visible:outline-hidden"
             >
               요금제 보기
               <ArrowRight className="size-4" aria-hidden />

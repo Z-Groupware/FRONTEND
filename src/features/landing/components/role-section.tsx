@@ -53,7 +53,7 @@ export function RoleSection() {
                   aria-controls="role-preview-panel"
                   onClick={() => setSelected(index)}
                   className={cn(
-                    "focus-visible:ring-ring h-9 rounded-full px-4 text-[13px] leading-5 transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none",
+                    "focus-visible:ring-ring h-9 rounded-full px-4 text-[13px] leading-5 transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-hidden",
                     index === selected
                       ? item.activeTab
                       : "border-border text-muted-foreground hover:text-foreground bg-card border",

@@ -25,7 +25,7 @@ export function PlayfulLogo() {
         event.preventDefault();
         setRound((value) => value + 1);
       }}
-      className="focus-visible:ring-ring rounded transition-opacity hover:opacity-70 focus-visible:ring-2 focus-visible:outline-none"
+      className="focus-visible:ring-ring rounded transition-opacity hover:opacity-70 focus-visible:ring-2 focus-visible:outline-hidden"
     >
       <svg
         key={round}

@@ -26,7 +26,7 @@ export function LandingHeader() {
           <ThemeToggle />
           <Link
             href="/plans"
-            className="text-muted-foreground hover:text-foreground focus-visible:ring-ring hidden rounded px-2.5 py-1.5 text-[13px] leading-5 transition-colors focus-visible:ring-2 focus-visible:outline-none sm:block"
+            className="text-muted-foreground hover:text-foreground focus-visible:ring-ring hidden rounded px-2.5 py-1.5 text-[13px] leading-5 transition-colors focus-visible:ring-2 focus-visible:outline-hidden sm:block"
           >
             요금제
           </Link>

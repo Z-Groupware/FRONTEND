@@ -107,7 +107,7 @@ export function KakaoMap({ lat, lng, label, address, mapUrl }: KakaoMapProps) {
             href={mapUrl}
             target="_blank"
             rel="noreferrer"
-            className="border-border bg-card text-foreground focus-visible:ring-ring absolute right-3 bottom-3 flex items-center gap-1.5 rounded-lg border px-3 py-2 text-[12px] leading-4 font-medium shadow-md focus-visible:ring-2 focus-visible:outline-none"
+            className="border-border bg-card text-foreground focus-visible:ring-ring absolute right-3 bottom-3 flex items-center gap-1.5 rounded-lg border px-3 py-2 text-[12px] leading-4 font-medium shadow-md focus-visible:ring-2 focus-visible:outline-hidden"
           >
             카카오맵에서 열기
             <ExternalLink className="size-3.5" aria-hidden />

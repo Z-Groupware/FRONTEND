@@ -85,7 +85,7 @@ export function PositionRow({ position, index, ...handlers }: PositionRowProps) 
               onShift(position.id, 1);
             }
           }}
-          className="text-muted-foreground/50 hover:text-muted-foreground focus-visible:ring-ring absolute inset-0 flex cursor-grab items-center justify-center rounded opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:outline-none active:cursor-grabbing"
+          className="text-muted-foreground/50 hover:text-muted-foreground focus-visible:ring-ring absolute inset-0 flex cursor-grab items-center justify-center rounded opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:outline-hidden active:cursor-grabbing"
         >
           <GripVertical className="size-3.5" />
         </button>
@@ -138,7 +138,7 @@ export function PositionRow({ position, index, ...handlers }: PositionRowProps) 
         type="button"
         aria-label={`${position.name} 삭제`}
         onClick={() => onRemove(position.id)}
-        className="text-muted-foreground hover:text-foreground hover:bg-foreground/10 focus-visible:ring-ring flex size-6 shrink-0 items-center justify-center rounded opacity-0 transition-[color,background-color,opacity] group-focus-within:opacity-100 group-hover:opacity-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:outline-none"
+        className="text-muted-foreground hover:text-foreground hover:bg-foreground/10 focus-visible:ring-ring flex size-6 shrink-0 items-center justify-center rounded opacity-0 transition-[color,background-color,opacity] group-focus-within:opacity-100 group-hover:opacity-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:outline-hidden"
       >
         <X className="size-3.5" />
       </button>

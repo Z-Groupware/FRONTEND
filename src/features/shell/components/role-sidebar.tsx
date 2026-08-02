@@ -79,7 +79,7 @@ export function RoleSidebar({ sections, user }: RoleSidebarProps) {
         <Link
           href="/owner"
           aria-label="Z 홈으로"
-          className="focus-visible:ring-ring rounded transition-opacity hover:opacity-70 focus-visible:ring-2 focus-visible:outline-none"
+          className="focus-visible:ring-ring rounded transition-opacity hover:opacity-70 focus-visible:ring-2 focus-visible:outline-hidden"
         >
           <ZLogo className="text-foreground size-[22px]" title="Z" />
         </Link>
@@ -155,7 +155,7 @@ function SidebarItem({ item, isCurrent }: { item: NavItem; isCurrent: boolean })
         // 색은 준비된 메뉴와 똑같이 — 평소 회색, 호버하면 글자가 진해진다
         className={cn(
           shape,
-          "text-muted-foreground hover:bg-foreground/5 hover:text-foreground focus-visible:ring-ring w-full text-left focus-visible:ring-2 focus-visible:outline-none",
+          "text-muted-foreground hover:bg-foreground/5 hover:text-foreground focus-visible:ring-ring w-full text-left focus-visible:ring-2 focus-visible:outline-hidden",
         )}
       >
         {inner}
@@ -169,7 +169,7 @@ function SidebarItem({ item, isCurrent }: { item: NavItem; isCurrent: boolean })
       aria-current={isCurrent ? "page" : undefined}
       className={cn(
         shape,
-        "focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none",
+        "focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-hidden",
         isCurrent
           ? "bg-foreground text-background"
           : "text-muted-foreground hover:bg-foreground/5 hover:text-foreground",

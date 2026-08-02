@@ -16,7 +16,7 @@ export function ThemeToggle() {
       type="button"
       onClick={toggle}
       aria-label={isDark ? "밝은 화면으로 바꾸기" : "어두운 화면으로 바꾸기"}
-      className="border-border text-muted-foreground hover:text-foreground hover:bg-secondary focus-visible:ring-ring flex size-[34px] items-center justify-center rounded-md border transition-colors focus-visible:ring-2 focus-visible:outline-none"
+      className="border-border text-muted-foreground hover:text-foreground hover:bg-secondary focus-visible:ring-ring flex size-[34px] items-center justify-center rounded-md border transition-colors focus-visible:ring-2 focus-visible:outline-hidden"
     >
       {isDark ? <Sun className="size-4" aria-hidden /> : <Moon className="size-4" aria-hidden />}
     </button>

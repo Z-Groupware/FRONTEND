@@ -40,11 +40,10 @@ type Tone = "dark" | "light";
 
 function ZModel({ tone }: { tone: Tone }) {
   const group = useRef<THREE.Group>(null!);
-  const velocity = useRef(0.003); // 처음부터 천천히 돈다
+  /** 자전 속도 — 배경이라 아주 느리게 돈다 */
+  const velocity = useRef(0.003);
   // 정면 정자세는 간판처럼 밋밋하다 — 처음부터 비스듬히
   const initialRotation: [number, number, number] = [-0.15, 0.4, 0];
-  const isDragging = useRef(false);
-  const lastX = useRef(0);
 
   const geometries = useMemo(
     () =>
@@ -64,33 +63,11 @@ function ZModel({ tone }: { tone: Tone }) {
 
   useFrame(() => {
     if (!group.current) return;
-    if (!isDragging.current) {
-      group.current.rotation.y += velocity.current;
-      // 관성 감속 — 자전 속도(0.003) 아래로는 내려가지 않는다
-      if (Math.abs(velocity.current) > 0.003) velocity.current *= 0.95;
-    }
+    group.current.rotation.y += velocity.current;
   });
 
   return (
-    <group
-      ref={group}
-      rotation={initialRotation}
-      onPointerDown={(event) => {
-        isDragging.current = true;
-        lastX.current = event.clientX;
-        (event.target as Element).setPointerCapture?.(event.pointerId);
-      }}
-      onPointerMove={(event) => {
-        if (!isDragging.current || !group.current) return;
-        const delta = (event.clientX - lastX.current) * 0.01;
-        group.current.rotation.y += delta;
-        velocity.current = delta;
-        lastX.current = event.clientX;
-      }}
-      onPointerUp={() => {
-        isDragging.current = false;
-      }}
-    >
+    <group ref={group} rotation={initialRotation}>
       {geometries.map((geometry, index) => (
         <mesh key={index} geometry={geometry} position={[0, 0, -0.07]}>
           {/*

@@ -86,6 +86,14 @@ export function LandingShell({ children }: { children: ReactNode }) {
         )}
       >
         <LandingBackdrop />
+        {/*
+          읽은 만큼 차오르는 막대 — 랜딩과 문서가 **같은 껍데기**를 쓰므로 여기 한 곳에 둔다.
+          긴 화면에서 남은 양이 보이지 않으면 사람은 중간에 닫는다.
+        */}
+        <span
+          aria-hidden
+          className="read-progress fixed top-14 right-0 left-0 z-40 h-[2px] origin-left bg-[linear-gradient(90deg,#3b82f6,#7c3aed,#8b5cf6,#60a5fa)]"
+        />
         {/* 화면 전체에 옅은 필름 그레인 — 질감 */}
         <span className="film-grain" aria-hidden />
         <LandingHeader />

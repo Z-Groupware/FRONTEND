@@ -21,7 +21,7 @@ export function InviteSendBar({ sendableCount, onAddRow, onSend }: InviteSendBar
       <button
         type="button"
         onClick={onAddRow}
-        className="text-muted-foreground hover:bg-foreground/10 focus-visible:ring-ring flex h-7 shrink-0 items-center gap-1.5 rounded-md px-2.5 text-xs leading-none transition-colors focus-visible:ring-2 focus-visible:outline-none"
+        className="text-muted-foreground hover:bg-foreground/10 focus-visible:ring-ring flex h-7 shrink-0 items-center gap-1.5 rounded-md px-2.5 text-xs leading-none transition-colors focus-visible:ring-2 focus-visible:outline-hidden"
       >
         <Plus className="size-3.5" />
         <span className="leading-none">행 추가</span>
@@ -41,7 +41,7 @@ export function InviteSendBar({ sendableCount, onAddRow, onSend }: InviteSendBar
         type="button"
         disabled={sendableCount === 0}
         onClick={onSend}
-        className="bg-foreground text-background hover:bg-foreground/90 focus-visible:ring-ring flex h-7 shrink-0 items-center gap-1.5 rounded-md px-2.5 text-xs leading-none transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-40"
+        className="bg-foreground text-background hover:bg-foreground/90 focus-visible:ring-ring flex h-7 shrink-0 items-center gap-1.5 rounded-md px-2.5 text-xs leading-none transition-colors focus-visible:ring-2 focus-visible:outline-hidden disabled:pointer-events-none disabled:opacity-40"
       >
         <Mail className="size-3.5" />
         <span className="leading-none">초대 발송</span>

@@ -119,7 +119,7 @@ export function Checkout() {
               type="button"
               disabled={!canPay}
               onClick={() => setIsDone(true)}
-              className="bg-foreground text-background hover:bg-foreground/90 focus-visible:ring-ring disabled:bg-secondary disabled:text-muted-foreground/60 mt-4 flex h-[60px] w-full items-center justify-center gap-2.5 rounded-xl text-[18px] leading-none font-semibold transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:pointer-events-none"
+              className="bg-foreground text-background hover:bg-foreground/90 focus-visible:ring-ring disabled:bg-secondary disabled:text-muted-foreground/60 mt-4 flex h-[60px] w-full items-center justify-center gap-2.5 rounded-xl text-[18px] leading-none font-semibold transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-hidden disabled:pointer-events-none"
             >
               <span className="tabular-nums">{formatWon(price.total)}</span>
               결제하기

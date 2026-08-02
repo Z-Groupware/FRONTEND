@@ -60,7 +60,7 @@ export function FlowSection() {
               aria-pressed={index === selected}
               onClick={() => setSelected(index)}
               className={cn(
-                "focus-visible:ring-ring h-full w-full rounded-xl border p-6 text-left transition-all duration-300 focus-visible:ring-2 focus-visible:outline-none",
+                "focus-visible:ring-ring h-full w-full rounded-xl border p-6 text-left transition-all duration-300 focus-visible:ring-2 focus-visible:outline-hidden",
                 index === selected
                   ? "glow-ring-rgb bg-landing-dark-surface -translate-y-1 border-transparent shadow-[0_0_40px_-8px_rgba(124,58,237,0.45)]"
                   : "border-landing-dark-border bg-landing-dark-surface hover:-translate-y-0.5",
@@ -98,7 +98,9 @@ export function FlowSection() {
       >
         {/* ⚠️ 목업 문장("API 문서 최신화" 등)은 **가짜다.** 스크린 리더가 실제 정보처럼
             읽으면 안 된다 — 화면 전체를 한 번에 숨긴다(§정직성·a11y) */}
-        <div aria-hidden>
+        {/* ⚠️ 이 래퍼도 `flex flex-col flex-1`이어야 한다 — 안 그러면 축소판의 `mt-auto`가
+            죽어 내용이 카드 위쪽에 몰리고 아래가 텅 빈다 */}
+        <div aria-hidden className="flex flex-1 flex-col">
           <FlowMockView mock={active.mock} />
         </div>
       </div>

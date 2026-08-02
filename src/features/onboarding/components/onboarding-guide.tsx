@@ -47,7 +47,7 @@ export function OnboardingGuide({ step, isOpen, onToggle }: OnboardingGuideProps
         aria-expanded={isOpen}
         aria-controls="onboarding-guide"
         aria-label={isOpen ? "도움말 닫기" : "도움말 열기"}
-        className="bg-guide-surface text-guide-foreground focus-visible:ring-ring fixed right-6 bottom-20 z-50 flex size-11 items-center justify-center rounded-full shadow-lg transition-transform hover:scale-105 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+        className="bg-guide-surface text-guide-foreground focus-visible:ring-ring fixed right-6 bottom-20 z-50 flex size-11 items-center justify-center rounded-full shadow-lg transition-transform hover:scale-105 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-hidden"
       >
         {isOpen ? <X className="size-[18px]" /> : <HelpCircle className="size-[18px]" />}
       </button>
