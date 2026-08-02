@@ -74,6 +74,54 @@ export const PRODUCT_ENTRIES: readonly FaqEntry[] = [
       "네, 나에게 배정된 액션이 생기면 실시간으로 알림이 옵니다.\n\n새로고침하지 않아도 화면에 바로 떠요.",
   },
   {
+    id: "action-status",
+    category: FAQ_CATEGORY.SERVICE,
+    question: "액션은 어떤 상태로 관리되나요?",
+    keywords: ["액션 상태", "액션은 어떤", "진행중", "완료 처리", "할 일 상태", "todo"],
+    answer:
+      "대기 · 진행중 · 완료 세 가지예요.\n\n마감이 지났는데 완료가 아니면 지연으로 표시되는데, 이건 따로 두는 상태가 아니라 날짜로 계산되는 값이에요.",
+  },
+  {
+    id: "action-split",
+    category: FAQ_CATEGORY.SERVICE,
+    question: "팀 액션과 개인 액션은 뭐가 다른가요?",
+    keywords: ["팀 액션", "개인 액션", "쪼개", "하위 액션", "나눠서"],
+    answer:
+      "팀 액션은 팀장이 받아서 개인에게 쪼개는 단위예요.\n\n쪼개진 개인 액션은 원래 팀 액션을 부모로 물고 있어서, 어디서 나온 일인지 따라갈 수 있습니다.",
+  },
+  {
+    id: "project",
+    category: FAQ_CATEGORY.SERVICE,
+    question: "프로젝트 단위로도 볼 수 있나요?",
+    keywords: ["프로젝트", "묶어", "진행 상황", "현황"],
+    answer:
+      "네, 회의와 액션을 프로젝트로 묶어 봅니다. 진행중·완료로 상태를 관리해요.\n\n어떤 프로젝트에 속하는지는 AI가 자동으로 골라 주기도 합니다.",
+  },
+  {
+    id: "meeting-status",
+    category: FAQ_CATEGORY.SERVICE,
+    question: "회의 참석 여부도 관리되나요?",
+    keywords: ["참석", "불참", "초대 응답", "예정된 회의", "일정"],
+    answer:
+      "회의는 예정 · 진행중 · 완료로 나뉘고, 초대받은 사람은 참석 · 불참 · 미응답으로 표시돼요.",
+  },
+  {
+    id: "board",
+    category: FAQ_CATEGORY.SERVICE,
+    question: "보드나 조직도도 있나요?",
+    keywords: ["보드", "칸반", "조직도", "한눈에"],
+    answer: "네, 보드와 조직도가 있어요.\n\n둘 다 Team 플랜 기능입니다.",
+    links: [{ label: "요금제 보기", href: "/plans" }],
+  },
+  {
+    id: "meeting-room",
+    category: FAQ_CATEGORY.SERVICE,
+    question: "회의실 예약도 되나요?",
+    keywords: ["회의실", "예약", "룸"],
+    answer: "네, 회의실 예약이 있어요. Team 플랜 기능입니다.",
+    links: [{ label: "요금제 보기", href: "/plans" }],
+  },
+  {
     id: "pricing",
     category: FAQ_CATEGORY.PRICING,
     question: "요금제가 어떻게 되나요?",
@@ -98,6 +146,24 @@ export const PRODUCT_ENTRIES: readonly FaqEntry[] = [
     answer:
       "네, Free로 시작해서 나중에 올리셔도 돼요.\n\n플랜은 **기능 접근**으로 갈립니다 — 개수나 용량 한도로 막지 않아요.",
     links: [{ label: "요금제 비교", href: "/plans" }],
+  },
+  {
+    id: "payment",
+    category: FAQ_CATEGORY.PRICING,
+    question: "결제 수단은 뭐가 되나요?",
+    keywords: ["결제 수단", "카드 결제", "계좌", "세금계산서", "현금영수증", "청구", "카드로"],
+    // ⚠️ 결제 실연동 여부가 팀 미확정이다 — 아는 척하지 않는다(§정직성)
+    answer:
+      "아직 확정되지 않았어요. 정해지면 요금제 화면에 안내해 드릴게요.\n\n급하시면 아래 주소로 문의해 주세요.",
+  },
+  {
+    id: "refund",
+    category: FAQ_CATEGORY.PRICING,
+    question: "환불은 어떻게 되나요?",
+    keywords: ["환불", "취소", "해지", "돌려받"],
+    // ⚠️ 환불 규정은 팀이 정하지 않았다 — 지어내면 그대로 분쟁이 된다
+    answer:
+      "환불 규정은 아직 정리 중이에요. 제가 함부로 말씀드릴 수 있는 부분이 아니라서요.\n\n아래 주소로 문의해 주시면 담당자가 답해 드릴게요.",
   },
   {
     id: "seats",

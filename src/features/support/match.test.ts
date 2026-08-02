@@ -23,21 +23,30 @@ describe("findFaqCandidates", () => {
 
   it("모르는 질문은 후보가 없다 — 억지로 답하지 않는다", () => {
     expect(findFaqCandidates("오늘 점심 뭐 먹지")).toHaveLength(0);
-    expect(findFaqCandidates("환불 규정 알려줘")).toHaveLength(0);
+    expect(findFaqCandidates("주차장 있나요")).toHaveLength(0);
+  });
+
+  /*
+    ⚠️ 팀이 안 정한 것도 **항목으로 받는다.** 그냥 못 찾은 척 넘기면 사람이 같은 걸 또 묻는다 —
+       "아직 정해지지 않았다"고 말해 주는 게 답이다(§정직성).
+  */
+  it.each([
+    ["환불 규정 알려줘", "refund"],
+    ["카드 결제 되나요", "payment"],
+  ])("'%s' → %s (정해지지 않았다고 답한다)", (input, expected) => {
+    expect(findFaqCandidates(input)[0]?.id).toBe(expected);
   });
 
   /*
     ⚠️ **오탐 회귀 방지.** 범용어("무엇"·"코드"·"어디")를 키워드에 넣으면 아래가 전부
        엉뚱한 항목으로 걸린다 — 못 찾는 것보다 틀린 답이 나쁘다.
   */
-  it.each([
-    "환불 규정이 무엇인가요?",
-    "할인 코드 있나요?",
-    "쿠폰 코드 어디에 넣어요?",
-    "화장실이 어디에 있나요",
-  ])("'%s'는 아무 것도 안 걸린다", (input) => {
-    expect(findFaqCandidates(input)).toHaveLength(0);
-  });
+  it.each(["할인 코드 있나요?", "쿠폰 코드 어디에 넣어요?", "화장실이 어디에 있나요"])(
+    "'%s'는 아무 것도 안 걸린다",
+    (input) => {
+      expect(findFaqCandidates(input)).toHaveLength(0);
+    },
+  );
 
   it("빈 입력은 후보가 없다", () => {
     expect(findFaqCandidates("")).toHaveLength(0);
