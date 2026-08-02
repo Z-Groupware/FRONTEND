@@ -54,7 +54,14 @@ export function LegalDialog({ doc, children }: LegalDialogProps) {
            `flex-1`이 먹지 않아 내용이 잘린 채 스크롤도 안 됐다.
            스크롤 상자에 **직접 `max-h`** 를 준다 — 짧은 글은 그만큼만, 긴 글은 스크롤된다.
       */}
-      <DialogContent className="gap-0 p-8 sm:max-w-[640px]">
+      {/*
+        ⚠️ **모달 자체**를 화면보다 작게 묶는다. 본문에만 `max-h`를 주면 머리·안쪽 여백 높이가
+           그 위에 더해져, 세로가 짧은 화면에서 팝업이 화면 밖으로 삐져나간다 —
+           가운데 고정이라 닫기 버튼에도 못 닿는다.
+        ⚠️ 행을 `auto`(머리) + `minmax(0,1fr)`(본문)로 나눈다. `minmax(0,…)`이 있어야
+           본문이 내용 높이 밑으로 줄어들 수 있다(그래야 스크롤이 생긴다).
+      */}
+      <DialogContent className="grid max-h-[min(calc(100dvh-2rem),620px)] grid-rows-[auto_minmax(0,1fr)] gap-0 p-8 sm:max-w-[640px]">
         <DialogHeader className="items-center gap-2 text-center">
           <DialogTitle className="text-xl leading-[26px] font-semibold tracking-[-0.4px]">
             {meta.title}
@@ -73,17 +80,29 @@ export function LegalDialog({ doc, children }: LegalDialogProps) {
           ⚠️ 아래에 `pb-9`를 둔다. 흐림 띠(32px)가 마지막 줄을 덮어 **글이 잘린 것처럼** 보였다 —
              띠 높이만큼 여백을 둬야 끝까지 읽힌다.
         */}
-        <div className="relative -mx-1 mt-5">
+        <div className="relative -mx-1 mt-5 min-h-0">
           <div
             /*
+              ⚠️ 스크롤 상자에 **포커스가 가야 한다**(`tabIndex={0}`). 본문에 링크·버튼이 없어서,
+                 이게 없으면 키보드만 쓰는 사람은 긴 약관을 아예 내릴 수 없다.
               ⚠️ 넘칠 때만 흐림 띠를 켠다 — 개인정보처리방침처럼 짧은 글에서는 스크롤이 없는데도
                  위아래가 흐려져 잘린 것처럼 보인다. 실제 높이를 재서 판단한다.
               ⚠️ `useEffect` 대신 **ref 콜백**에서 잰다. 효과에서 상태를 바꾸면 렌더가 한 번 더 돈다.
+              ⚠️ 창 크기가 바뀌면 담기는 높이도 바뀐다 — `ResizeObserver`로 다시 잰다.
+                 한 번만 재면 넓혔을 때 띠가 남거나, 줄였을 때 안 뜬다.
             */
+            role="region"
+            aria-label={`${meta.title} 본문`}
+            tabIndex={0}
             ref={(node) => {
-              if (node) setHasOverflow(node.scrollHeight > node.clientHeight + 1);
+              if (!node) return;
+              const measure = () => setHasOverflow(node.scrollHeight > node.clientHeight + 1);
+              measure();
+              const observer = new ResizeObserver(measure);
+              observer.observe(node);
+              return () => observer.disconnect();
             }}
-            className="scrollbar-hidden max-h-[min(60dvh,520px)] overflow-y-auto px-1 pt-4 pb-9"
+            className="scrollbar-hidden focus-visible:ring-ring h-full overflow-y-auto px-1 pt-4 pb-9 focus-visible:ring-2 focus-visible:outline-hidden"
           >
             {doc === "terms" ? <TermsContent /> : <PrivacyContent />}
           </div>
