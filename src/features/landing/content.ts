@@ -8,7 +8,7 @@
  */
 
 /** 히어로 아래 한 줄 — 진입 장벽이 낮다는 걸 먼저 말한다 */
-export const HERO_NOTE = "결제 없이 바로 시작 · 신용카드 필요 없어요";
+export const HERO_NOTE = "결제 없이 바로 시작할 수 있어요";
 
 /** 회의 뒤에 남는 게 없다 — 겪어본 사람이 알아볼 문장으로 */
 export const PROBLEMS = [
@@ -59,12 +59,4 @@ export const COMPARISONS = [
   { before: "결정 사항 채팅방 스크롤", after: "프로젝트별로 모아서 확인" },
   { before: "액션 아이템 흩어짐", after: "담당자별로 한 화면에" },
   { before: "인수인계 준비 며칠", after: "회의 기록으로 자동 구성" },
-] as const;
-
-/** 역할마다 무엇이 다른지 */
-export const ROLES = [
-  { name: "Owner", body: "조직 전체 현황을 한눈에 보고, 인수인계를 최종 승인해요." },
-  { name: "Admin", body: "계정을 발급하고 사원·회의실을 관리해요." },
-  { name: "Leader", body: "팀원의 액션을 보고, 인수인계를 넘겨받아 나눠줘요." },
-  { name: "Member", body: "내게 배정된 액션만 보면 됩니다. 회의도 직접 열 수 있어요." },
 ] as const;
