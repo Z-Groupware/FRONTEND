@@ -41,7 +41,7 @@ export function InvitePreview({ invites, departments, rolesOf, positions }: Invi
       ref={listRef}
       tabIndex={0}
       aria-label="초대 목록 미리보기"
-      className="focus-visible:ring-ring border-border bg-background/50 flex min-h-20 flex-1 [scrollbar-width:none] flex-col gap-2 overflow-auto overscroll-contain rounded-lg border p-3 [-ms-overflow-style:none] focus-visible:ring-2 focus-visible:outline-none [&::-webkit-scrollbar]:hidden"
+      className="focus-visible:ring-ring border-border bg-background/50 flex min-h-20 flex-1 [scrollbar-width:none] flex-col gap-2 overflow-auto overscroll-contain rounded-lg border p-3 [-ms-overflow-style:none] focus-visible:ring-2 focus-visible:outline-hidden [&::-webkit-scrollbar]:hidden"
     >
       {invites.map((invite) => {
         const department = nameOf(departments, invite.departmentId);

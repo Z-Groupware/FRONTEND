@@ -52,7 +52,7 @@ export function SystemSidebar({ sections, account }: SystemSidebarProps) {
         <Link
           href="/system"
           aria-label="Z 운영자 홈으로"
-          className="focus-visible:ring-ring flex items-center gap-2 rounded transition-opacity hover:opacity-70 focus-visible:ring-2 focus-visible:outline-none"
+          className="focus-visible:ring-ring flex items-center gap-2 rounded transition-opacity hover:opacity-70 focus-visible:ring-2 focus-visible:outline-hidden"
         >
           <ZLogo className="text-foreground size-[22px]" title="Z" />
           <span className="text-foreground text-sm leading-none font-semibold">운영자</span>
@@ -116,7 +116,7 @@ function SidebarItem({ item, isCurrent }: { item: NavItem; isCurrent: boolean })
         onClick={() => toast(`${item.label} 화면은 아직 만드는 중이에요`)}
         className={cn(
           shape,
-          "text-muted-foreground hover:bg-foreground/5 hover:text-foreground focus-visible:ring-ring w-full text-left focus-visible:ring-2 focus-visible:outline-none",
+          "text-muted-foreground hover:bg-foreground/5 hover:text-foreground focus-visible:ring-ring w-full text-left focus-visible:ring-2 focus-visible:outline-hidden",
         )}
       >
         {inner}
@@ -130,7 +130,7 @@ function SidebarItem({ item, isCurrent }: { item: NavItem; isCurrent: boolean })
       aria-current={isCurrent ? "page" : undefined}
       className={cn(
         shape,
-        "focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none",
+        "focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-hidden",
         isCurrent
           ? "bg-foreground text-background"
           : "text-muted-foreground hover:bg-foreground/5 hover:text-foreground",

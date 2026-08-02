@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 
+import { PlanCompare } from "@/features/billing/components/plan-compare";
 import { PlanSelect } from "@/features/billing/components/plan-select";
 import { OnboardingShell } from "@/features/onboarding/components/onboarding-shell";
 import { ONBOARDING_STEP } from "@/features/onboarding/types";
@@ -17,6 +18,7 @@ export default function PricingPage() {
   return (
     <OnboardingShell step={ONBOARDING_STEP.INVITE} isDone>
       <PlanSelect />
+      <PlanCompare />
     </OnboardingShell>
   );
 }

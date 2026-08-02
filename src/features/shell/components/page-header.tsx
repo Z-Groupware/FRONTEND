@@ -40,7 +40,7 @@ export function PageHeader({ title, icon: Icon, meta, backTo, action }: PageHead
         <Link
           href={backTo.href}
           aria-label={`${backTo.label}(으)로 돌아가기`}
-          className="text-muted-foreground hover:text-foreground hover:bg-foreground/5 focus-visible:ring-ring -ml-1.5 flex size-8 shrink-0 items-center justify-center rounded-md transition-colors focus-visible:ring-2 focus-visible:outline-none"
+          className="text-muted-foreground hover:text-foreground hover:bg-foreground/5 focus-visible:ring-ring -ml-1.5 flex size-8 shrink-0 items-center justify-center rounded-md transition-colors focus-visible:ring-2 focus-visible:outline-hidden"
         >
           <ArrowLeft className="size-[18px]" />
         </Link>

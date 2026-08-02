@@ -171,7 +171,7 @@ export function InviteRow({
           type="button"
           aria-label={`${email || "빈 줄"} 초대 목록에서 빼기`}
           onClick={() => onRemove(invite.id)}
-          className="text-muted-foreground hover:text-foreground hover:bg-foreground/10 focus-visible:ring-ring flex size-6 shrink-0 items-center justify-center rounded opacity-0 transition-[color,background-color,opacity] group-focus-within:opacity-100 group-hover:opacity-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:outline-none"
+          className="text-muted-foreground hover:text-foreground hover:bg-foreground/10 focus-visible:ring-ring flex size-6 shrink-0 items-center justify-center rounded opacity-0 transition-[color,background-color,opacity] group-focus-within:opacity-100 group-hover:opacity-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:outline-hidden"
         >
           <X className="size-3.5" />
         </button>

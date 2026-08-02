@@ -45,3 +45,26 @@ export const DEFAULT_PLAN = PLAN.TEAM;
 export function planActionLabel(plan: Plan): string {
   return plan.code === PLAN.FREE ? `${plan.name} 플랜으로 시작하기` : `${plan.name} 플랜 결제하기`;
 }
+
+/**
+ * 플랜별 기능 비교.
+ *
+ * ⚠️ 위 `PLANS[].features`와 **같은 사실을 다른 모양으로** 보여준다.
+ *    카드는 고를 때 쓰고, 이 표는 "무엇이 다른가"를 확인할 때 쓴다.
+ *    한쪽만 고치면 두 벌이 어긋난다 — 기능을 바꿀 땐 둘 다 본다.
+ */
+export interface PlanCompareRow {
+  feature: string;
+  free: boolean;
+  team: boolean;
+}
+
+export const PLAN_COMPARE: readonly PlanCompareRow[] = [
+  { feature: "회의 캡처 · 실시간 자막", free: true, team: true },
+  { feature: "AI 액션 분배", free: true, team: true },
+  { feature: "프로젝트 · 액션 관리", free: true, team: true },
+  { feature: "통합 검색", free: true, team: true },
+  { feature: "인수인계 자동 취합", free: false, team: true },
+  { feature: "회의실 예약", free: false, team: true },
+  { feature: "보드 · 조직도", free: false, team: true },
+];

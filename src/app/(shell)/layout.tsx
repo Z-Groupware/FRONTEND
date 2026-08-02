@@ -16,7 +16,7 @@ import { OWNER_NAV } from "@/features/shell/nav";
 export default function ShellLayout({ children }: { children: ReactNode }) {
   return (
     <div className="bg-background flex h-dvh overflow-hidden">
-      <RoleSidebar sections={OWNER_NAV} user={{ name: "김서준", role: ROLE.OWNER }} />
+      <RoleSidebar sections={OWNER_NAV} user={{ name: "대표 계정", role: ROLE.OWNER }} />
 
       {/*
         상단바는 여기서 그리지 않는다 — 제목·액션이 도메인마다 달라서

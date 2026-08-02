@@ -73,7 +73,7 @@ export function PlanConfig({ plan, cycle, onCycleChange, seats, onSeatsChange }:
             )
           }
           className={cn(
-            "focus-visible:ring-ring relative h-6 w-11 shrink-0 rounded-full transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none",
+            "focus-visible:ring-ring relative h-6 w-11 shrink-0 rounded-full transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-hidden",
             cycle === BILLING_CYCLE.YEARLY ? "bg-foreground" : "bg-border",
           )}
         >

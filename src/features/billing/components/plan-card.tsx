@@ -25,7 +25,7 @@ export function PlanCard({ plan, isSelected, onSelect }: PlanCardProps) {
       aria-checked={isSelected}
       onClick={onSelect}
       className={cn(
-        "bg-card focus-visible:ring-ring relative flex flex-1 flex-col gap-2.5 rounded-[10px] border-2 p-[17.5px] text-left transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none",
+        "bg-card focus-visible:ring-ring relative flex flex-1 flex-col gap-2.5 rounded-[10px] border-2 p-[17.5px] text-left transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-hidden",
         // 고른 카드는 테두리가 진해진다. 색이 아니라 **명도**로 구분한다(§디자인 토큰)
         isSelected ? "border-foreground" : "border-border hover:border-foreground/30",
       )}

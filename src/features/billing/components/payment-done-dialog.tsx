@@ -44,7 +44,7 @@ export function PaymentDoneDialog({
       action={
         <Link
           href="/owner"
-          className="bg-foreground text-background hover:bg-foreground/90 focus-visible:ring-ring flex h-[38px] w-full items-center justify-center rounded-md text-[13px] leading-none transition-colors focus-visible:ring-2 focus-visible:outline-none"
+          className="bg-foreground text-background hover:bg-foreground/90 focus-visible:ring-ring flex h-[38px] w-full items-center justify-center rounded-md text-[13px] leading-none transition-colors focus-visible:ring-2 focus-visible:outline-hidden"
         >
           대시보드로 가기
         </Link>
