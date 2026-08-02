@@ -96,6 +96,13 @@ export function SupportWidget() {
         <div
           role="dialog"
           aria-label="도움말"
+          /*
+            ⚠️ Esc로 닫힌다. 열어 놓고 나갈 길이 키보드에 없으면 갇힌다(§a11y).
+               전역 리스너를 걸지 않는다 — 열면 입력칸으로 포커스가 들어오므로 여기서 다 받는다.
+          */
+          onKeyDown={(event) => {
+            if (event.key === "Escape") setIsOpen(false);
+          }}
           className="bg-guide-surface border-guide-border animate-in fade-in slide-in-from-bottom-2 fixed right-5 bottom-20 z-50 flex max-h-[min(70dvh,560px)] w-[min(calc(100vw-2.5rem),368px)] flex-col overflow-hidden rounded-2xl border shadow-2xl duration-200"
         >
           <div className="border-guide-border flex items-center gap-2.5 border-b px-4 py-3.5">
@@ -139,6 +146,8 @@ export function SupportWidget() {
             </label>
             <input
               id="support-input"
+              /* 열면 바로 칠 수 있게 — 키보드로 여기까지 탭으로 걸어오게 두지 않는다 */
+              autoFocus
               value={input}
               onChange={(event) => setInput(event.target.value)}
               placeholder="직접 입력해도 돼요"
