@@ -3,7 +3,6 @@
 import { type LucideIcon } from "lucide-react";
 import { useState } from "react";
 
-import { ZLogo } from "@/components/icons/z-logo";
 import { cn } from "@/lib/utils";
 
 import { DarkSection } from "./dark-section";
@@ -35,12 +34,13 @@ export function FlowSection() {
   const active = FLOW_STEPS[selected] ?? FLOW_STEPS[0]!;
 
   return (
-    <DarkSection
-      // 뒤에 명암 든 Z를 옅게 깔아 빈 검정이 되지 않게 한다 — 읽을 내용이 아니라 배경이다
-      backdrop={
-        <ZLogo className="text-landing-dark-foreground animate-breathe size-[380px] opacity-[0.05] blur-[5px]" />
-      }
-    >
+    /*
+      ⚠️ 여기에 배경 Z를 따로 깔지 않는다. 랜딩 전체 배경(`LandingBackdrop`)의 **도는 3D Z**가
+         이미 이 자리에 비친다 — 평면 Z를 덧대면 기울기가 다른 Z 둘이 포개져 정체불명의
+         흰 조각으로 보인다.
+      ⚠️ 색은 배경 한 장에서만 나온다는 규칙이기도 하다(§섹션마다 배경을 따로 칠하지 않는다).
+    */
+    <DarkSection>
       {/* 밝은 섹션과 같은 헤더 문법 — eyebrow + 중앙 제목 */}
       <div className="flex flex-col items-center gap-2.5 text-center">
         <p className="text-landing-accent text-[11px] leading-4 font-semibold tracking-[1.1px] uppercase">
