@@ -19,7 +19,10 @@ export type NavIconName =
   | "members"
   | "billing"
   | "storage"
-  | "setting";
+  | "setting"
+  | "approval"
+  | "company"
+  | "monitor";
 
 export interface NavItem {
   href: string;

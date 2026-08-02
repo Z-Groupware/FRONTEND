@@ -43,4 +43,7 @@ export const ep = {
   notificationStream: () => "/api/notifications/stream",
   notices: () => "/api/notices",
   subscription: () => "/api/subscription",
+
+  /* 시스템 운영자 */
+  systemDashboard: () => "/api/system/dashboard",
 } as const;

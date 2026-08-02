@@ -120,6 +120,10 @@
   --status-todo: #a8a29e;
   --status-progress: #22c55e;
   --status-done: #8b5cf6;
+  /* 차트 카테고리 색 — UI 시맨틱(액센트 블루)과 분리된 별도 채널.
+     data-viz 접근성 검증(CVD ΔE·명도·대비) 통과한 조합이다. */
+  --chart-1: #eb6834;
+  --chart-2: #2a78d6;
 }
 
 .dark {
@@ -173,6 +177,8 @@
   --status-todo: #8a827d;
   --status-progress: #22c55e;
   --status-done: #a78bfa;
+  --chart-1: #d95926;
+  --chart-2: #3987e5;
 }
 
 @layer utilities {
