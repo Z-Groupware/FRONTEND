@@ -1,48 +1,40 @@
 "use client";
 
-import { AlertCircle, Building2, Eye, EyeOff, KeyRound, Mail } from "lucide-react";
-import { useState } from "react";
+import { AlertCircle, Building2, Eye, EyeOff, Info, KeyRound, Mail } from "lucide-react";
+import { useActionState, useState } from "react";
 
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
+import { loginAction, type LoginState } from "../actions";
 import { clearCompany, useSavedCompany } from "../company-code";
 import { AuthCard } from "./auth-card";
 import { CompanyCodeStep } from "./company-code-step";
+import { SubmitButton } from "./submit-button";
 
 /**
  * 로그인 — 기업 코드를 먼저 확인하고 그 다음 계정을 받는다(카카오워크 문법).
  *
  * ⚠️ 두 단계를 **한 화면 안에서** 바꾼다. 주소를 나누면 뒤로가기가 어색해지고,
  *    기억된 코드로 들어온 사람은 1단계를 볼 일이 없다.
- * ⚠️ 코드 확인은 지금 **목**이다(`findCompany`). 실제로는 서버가 판정한다 —
- *    화면이 통과시켜도 서버가 다시 본다(CLAUDE.md §권한: 화면 숨김은 보안이 아니다).
+ * ⚠️ 검증도 로그인도 **Server Action**이 한다(`loginAction`). 화면은 목인지 실서버인지 모른다.
+ * ⚠️ **로그인 API가 아직 없다.** 검증을 통과해도 갈 데가 없는데, 그때 조용히 아무것도 안 하면
+ *    사용자는 비밀번호가 틀린 줄 안다 — 액션이 안내를 돌려주고 여기서 보여 준다(§정직성).
  * ⚠️ 비밀번호 재발급 화면은 만들지 않는다(팀 결정) — 링크가 아니라 안내 문구로 둔다.
  */
+const INITIAL: LoginState = { errors: {} };
 export function LoginForm() {
   // 기억해 둔 회사가 있으면 1단계를 건너뛴다
   const company = useSavedCompany();
 
   const [isPasswordShown, setIsPasswordShown] = useState(false);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loginErrors, setLoginErrors] = useState<{ email?: string; password?: string }>({});
-
   /*
     ⚠️ 브라우저 기본 검증(`required` + 말풍선)을 쓰지 않는다. 회색 말풍선이 우리 화면 위에
        떠서 디자인이 깨지고, 문구도 우리가 못 고친다. `noValidate`로 끄고 **필드 아래 인라인**으로
        직접 알린다(CLAUDE.md §토스트: 폼 검증 오류는 필드 인라인).
   */
-  const handleSubmit = (event: React.FormEvent) => {
-    event.preventDefault();
-    const next: { email?: string; password?: string } = {};
-    if (!email.trim()) next.email = "이메일을 입력해 주세요";
-    else if (!email.includes("@")) next.email = "이메일 주소를 다시 확인해 주세요";
-    if (!password) next.password = "비밀번호를 입력해 주세요";
-
-    setLoginErrors(next);
-  };
+  const [state, formAction] = useActionState(loginAction, INITIAL);
+  const loginErrors = state.errors;
 
   const handleChangeCompany = () => clearCompany();
 
@@ -51,7 +43,7 @@ export function LoginForm() {
   return (
     <AuthCard icon={KeyRound} step="2 / 2" title="로그인">
       {/* ⚠️ 필드마다 오류 자리(min-h-4)를 비워 두므로 간격을 좁게 잡는다 — 안 그러면 두 배로 벌어진다 */}
-      <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-1.5">
+      <form action={formAction} noValidate className="flex flex-col gap-1.5">
         {/* 어느 회사로 들어가는지 — 코드를 다시 보여주는 대신 회사를 보여준다 */}
         {/* ⚠️ 아래 필드들은 오류 자리(min-h-4)만큼 이미 벌어져 있다 — 이 카드에만 여백을 더해 맞춘다 */}
         <div className="border-border bg-secondary mb-5 flex items-center gap-3 rounded-lg border px-3.5 py-3">
@@ -80,12 +72,8 @@ export function LoginForm() {
           </Label>
           <Input
             id="email"
+            name="email"
             type="email"
-            value={email}
-            onChange={(event) => {
-              setEmail(event.target.value);
-              setLoginErrors((errors) => ({ ...errors, email: undefined }));
-            }}
             placeholder="name@company.com"
             autoComplete="email"
             aria-invalid={loginErrors.email !== undefined}
@@ -113,12 +101,8 @@ export function LoginForm() {
           <div className="relative">
             <Input
               id="password"
+              name="password"
               type={isPasswordShown ? "text" : "password"}
-              value={password}
-              onChange={(event) => {
-                setPassword(event.target.value);
-                setLoginErrors((errors) => ({ ...errors, password: undefined }));
-              }}
               placeholder="비밀번호를 입력하세요"
               autoComplete="current-password"
               className="pr-10"
@@ -154,8 +138,10 @@ export function LoginForm() {
         */}
         <div className="mt-2 flex items-center justify-between gap-3">
           <label className="flex items-center gap-2 text-[12px] leading-4">
+            {/* 체크값은 서버가 쿠키 수명(`maxAge`)을 정할 때 쓴다 — 연동되면 액션이 읽는다 */}
             <input
               type="checkbox"
+              name="keepSignedIn"
               className="border-border accent-foreground size-3.5 rounded border"
               defaultChecked
             />
@@ -166,12 +152,21 @@ export function LoginForm() {
           </p>
         </div>
 
-        <Button
-          type="submit"
-          className="bg-foreground text-background hover:bg-foreground/90 h-12 text-[15px]"
-        >
-          로그인
-        </Button>
+        <SubmitButton>로그인</SubmitButton>
+
+        {/*
+          ⚠️ 여기까지가 지금 갈 수 있는 끝이다. **말해 주지 않으면 사용자는 실패로 오해한다** —
+             빨강(오류)이 아니라 안내 색으로, 버튼 아래에 둔다(§정직성).
+        */}
+        {state.notice && (
+          <p
+            role="status"
+            className="border-border bg-secondary text-muted-foreground mt-3 flex items-start gap-2 rounded-lg border px-3.5 py-3 text-[12px] leading-[18px] break-keep"
+          >
+            <Info className="mt-px size-3.5 shrink-0" aria-hidden />
+            {state.notice}
+          </p>
+        )}
       </form>
     </AuthCard>
   );

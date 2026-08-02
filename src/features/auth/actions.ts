@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 
 import { isMock } from "@/mocks/config";
 
+import { type CredentialErrors, validateCredentials } from "./credentials";
 import { findMockCompany } from "./mock/companies";
 import { type RegisterDraft, type RegisterErrors, validateRegister } from "./register-draft";
 import type { Company } from "./types";
@@ -82,4 +83,31 @@ export async function submitRegistrationAction(
 /** ⚠️ 미구현 — API 스펙 확정 후 BFF 경로로 POST한다. 지금은 목이라 보내지 않는다. */
 async function sendRegistrationToApi(): Promise<void> {
   throw new Error("기업 등록 신청 API가 아직 연결되지 않았습니다.");
+}
+
+/** 로그인 결과 — 칸별 오류, 또는 지금은 여기까지라는 안내 */
+export interface LoginState {
+  errors: CredentialErrors;
+  /** 검증은 통과했지만 더 갈 수 없을 때 보여 줄 말 */
+  notice?: string;
+}
+
+export async function loginAction(_prevState: LoginState, formData: FormData): Promise<LoginState> {
+  const errors = validateCredentials({
+    email: String(formData.get("email") ?? ""),
+    password: String(formData.get("password") ?? ""),
+  });
+  if (Object.keys(errors).length > 0) return { errors };
+
+  /*
+    ⚠️ **로그인 API가 아직 없다**(BE 미개발). 여기서 조용히 아무것도 안 하면 사용자는
+       비밀번호가 틀린 줄 안다 — 안 되는 건 안 된다고 말한다(§정직성).
+    ⚠️ 연동되면 이 자리에서 BE에 붙고, 받은 토큰을 **httpOnly 쿠키로** 굽는다.
+       "로그인 상태 유지" 체크값이 그 쿠키의 수명(`maxAge`)이 된다.
+  */
+  if (isMock) {
+    return { errors: {}, notice: "로그인 API가 아직 연결되지 않았어요. 화면만 준비된 상태예요." };
+  }
+
+  throw new Error("로그인 API가 아직 연결되지 않았습니다.");
 }
