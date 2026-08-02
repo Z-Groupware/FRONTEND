@@ -226,6 +226,23 @@
   }
 
   /*
+   * 로그인 단계 전환 — 카드가 사라졌다 나타나는 대신 **같은 자리에서 갈아끼워진다**.
+   * ⚠️ View Transitions는 이름이 같은 요소끼리 이어 붙인다. 카드에만 이름을 준다.
+   * ⚠️ 미지원 브라우저는 이 규칙 자체가 무시된다 — 연출만 빠지고 동작은 같다.
+   */
+  .vt-auth-card {
+    view-transition-name: auth-card;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    ::view-transition-group(*),
+    ::view-transition-old(*),
+    ::view-transition-new(*) {
+      animation: none !important;
+    }
+  }
+
+  /*
    * 랜딩 밝은 스킨 — 띠·흐름 섹션이 쓰는 `--landing-dark-*`는 이름과 달리
    * **밴드(띠) 표면 토큰**이다. 검정 무대 기준값(흰 글자·흰 5% 바탕)을 그대로 두면
    * 밝은 바탕에서 글자와 알약이 통째로 사라진다 — 여기서 밝은 값으로 뒤집는다.
@@ -1308,5 +1325,24 @@
   }
   html {
     @apply font-sans;
+  }
+
+  /*
+    브라우저가 채워 준 칸(자동완성)의 파란 바탕을 지운다.
+    ⚠️ 크롬은 `-webkit-autofill`에 자기 배경색을 **`!important`보다 센 방식으로** 칠해서
+       `background-color`로는 못 덮는다. 배경을 **글자 모양으로 잘라내(`background-clip: text`)**
+       안 보이게 만드는 게 유일하게 통하는 방법이다.
+    ⚠️ 입력칸은 `bg-transparent`라 색을 덮어씌우면 안 된다 — 카드 위에 흰 판이 하나 더 생긴다.
+       이 방법은 원래 투명함을 그대로 둔다.
+    ⚠️ 글자색은 따로 지정한다. 배경을 지워도 크롬이 칠한 글자색은 남는다.
+  */
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus,
+  input:-webkit-autofill:active {
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: var(--foreground);
+    caret-color: var(--foreground);
   }
 }

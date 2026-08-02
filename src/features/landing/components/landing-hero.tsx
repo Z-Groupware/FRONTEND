@@ -73,7 +73,7 @@ export function LandingHero() {
                 "group bg-foreground text-background hover:bg-foreground/90 h-12 gap-1.5 rounded-lg px-6 text-[15px] shadow-lg transition-shadow hover:shadow-xl",
               )}
             >
-              무료로 시작하기
+              시작하기
               {/* 호버하면 화살표가 앞서 나간다 */}
               <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
             </Link>

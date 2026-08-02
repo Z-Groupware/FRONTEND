@@ -38,7 +38,7 @@ const PIECES: [number, number][][] = [
 
 type Tone = "dark" | "light";
 
-function ZModel({ tone }: { tone: Tone }) {
+function ZModel({ tone, isFeature }: { tone: Tone; isFeature: boolean }) {
   const group = useRef<THREE.Group>(null!);
   /** 자전 속도 — 배경이라 아주 느리게 돈다 */
   const velocity = useRef(0.003);
@@ -75,9 +75,9 @@ function ZModel({ tone }: { tone: Tone }) {
             파랑·보라 림라이트만 모서리에 감돌게 한다(어두운 금속 느낌).
           */}
           <meshStandardMaterial
-            color={tone === "dark" ? "#232326" : "#d6d3d1"}
-            metalness={0.85}
-            roughness={0.28}
+            color={isFeature ? "#78716c" : tone === "dark" ? "#232326" : "#d6d3d1"}
+            metalness={isFeature ? 0.55 : 0.85}
+            roughness={isFeature ? 0.35 : 0.28}
           />
         </mesh>
       ))}
@@ -89,7 +89,16 @@ function ZModel({ tone }: { tone: Tone }) {
  * tone: 어두운 섹션(dark)은 검정 금속에 림라이트, 밝은 섹션(light)은 밝은 금속에 같은 색 조명.
  * 같은 모델·같은 빛 축이라 어디에 두어도 한 몸으로 읽힌다.
  */
-export default function ThreeZ({ size = 420, tone = "dark" }: { size?: number; tone?: Tone }) {
+export default function ThreeZ({
+  size = 420,
+  tone = "dark",
+  /** 배경이 아니라 **보여주는** 자리라면 켠다 — 몸체가 밝아지고 금속기를 낮춰 형태가 또렷해진다 */
+  isFeature = false,
+}: {
+  size?: number;
+  tone?: Tone;
+  isFeature?: boolean;
+}) {
   return (
     <Canvas
       // 성능: 픽셀 밀도 상한 1.5, 카메라는 정면 고정
@@ -98,16 +107,16 @@ export default function ThreeZ({ size = 420, tone = "dark" }: { size?: number; t
       className="cursor-grab active:cursor-grabbing"
       style={{ width: size, height: size, touchAction: "none" }}
     >
-      <ambientLight intensity={tone === "dark" ? 0.5 : 0.6} />
+      <ambientLight intensity={isFeature ? 0.5 : tone === "dark" ? 0.5 : 0.6} />
       <directionalLight
         position={[2, 3, 4]}
-        intensity={tone === "dark" ? 1 : 1.2}
+        intensity={isFeature ? 1.1 : tone === "dark" ? 1 : 1.2}
         color="#ffffff"
       />
       {/* 액센트 축 그대로 — 파랑·보라 림라이트가 모서리만 물들인다 */}
-      <pointLight position={[-3, 1, 3]} intensity={34} color="#3b82f6" />
-      <pointLight position={[3, -1, 3]} intensity={34} color="#8b5cf6" />
-      <ZModel tone={tone} />
+      <pointLight position={[-3, 1, 3]} intensity={isFeature ? 32 : 34} color="#60a5fa" />
+      <pointLight position={[3, -1, 3]} intensity={isFeature ? 32 : 34} color="#a78bfa" />
+      <ZModel tone={tone} isFeature={isFeature} />
     </Canvas>
   );
 }
