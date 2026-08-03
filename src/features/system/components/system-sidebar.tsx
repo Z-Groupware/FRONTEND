@@ -37,6 +37,26 @@ interface SystemSidebarProps {
 }
 
 /**
+ * 지금 경로와 **가장 길게 일치하는 href 하나**를 고른다.
+ *
+ * ⚠️ 단순 `pathname.startsWith(item.href)`는 안 된다 — `/system`(대시보드)이
+ *    `/system/approval`(기업 승인)의 접두사라서 승인 화면에서 대시보드까지
+ *    같이 켜진다. 후보 중 가장 구체적인(긴) href만 켜지게 골라야 한 곳만 켜진다.
+ */
+function findActiveHref(sections: NavSection[], pathname: string): string | undefined {
+  let best: string | undefined;
+
+  for (const section of sections) {
+    for (const item of section.items) {
+      const matches = pathname === item.href || pathname.startsWith(`${item.href}/`);
+      if (matches && (!best || item.href.length > best.length)) best = item.href;
+    }
+  }
+
+  return best;
+}
+
+/**
  * SYSTEM(서비스 운영자) 전용 사이드바.
  *
  * ⚠️ `RoleSidebar`와 구조는 비슷하지만 별도 컴포넌트다 — 헤더 표기("Z 운영자")와
@@ -45,6 +65,7 @@ interface SystemSidebarProps {
  */
 export function SystemSidebar({ sections, account }: SystemSidebarProps) {
   const pathname = usePathname();
+  const activeHref = findActiveHref(sections, pathname);
 
   return (
     <aside className="border-border bg-background flex w-[220px] shrink-0 flex-col border-r">
@@ -71,7 +92,7 @@ export function SystemSidebar({ sections, account }: SystemSidebarProps) {
             <ul className="flex flex-col gap-[1.75px]">
               {section.items.map((item) => (
                 <li key={item.href}>
-                  <SidebarItem item={item} isCurrent={pathname.startsWith(item.href)} />
+                  <SidebarItem item={item} isCurrent={item.href === activeHref} />
                 </li>
               ))}
             </ul>
