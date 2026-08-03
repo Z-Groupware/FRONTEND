@@ -132,14 +132,25 @@ export function InviteSetup({ departments, positions }: InviteSetupProps) {
             </h2>
           </header>
 
-          {/* 행(InviteRow)과 같은 padding·gap·칸 너비를 써야 열이 맞는다 */}
+          {/*
+            행(InviteRow)과 **같은 padding·gap·칸 너비**를 써야 열이 맞는다.
+            ⚠️ 이메일 칸을 `flex-1` 하나로 두지 않는다. 행 쪽은 입력칸(196)과 오류 자리(208)가
+               `shrink-0`이라 그 아래로 줄어들지 못하는데, 헤더만 `flex-1`로 두면 폭이 좁아질 때
+               헤더가 먼저 줄어 **모든 열이 왼쪽으로 밀린다.** 같은 고정폭을 여기서도 잡는다.
+          */}
           <div className="text-muted-foreground/60 border-border bg-card flex h-7 shrink-0 items-center gap-2 border-b px-4 text-[11px] leading-4">
             <span className="w-5 shrink-0" aria-hidden />
-            <span className="flex-1 pl-2">이메일</span>
+            <span className="flex flex-1 items-center gap-2">
+              <span className="w-[196px] shrink-0 pl-2">이메일</span>
+              <span
+                className="sr-only md:not-sr-only md:block md:w-[208px] md:shrink-0"
+                aria-hidden
+              />
+            </span>
             <span className="w-[104px] shrink-0 text-center">부서</span>
             <span className="w-[104px] shrink-0 text-center">역할</span>
-            <span className="w-[76px] shrink-0 text-center">직급</span>
-            <span className="w-[56px] shrink-0 text-center">Admin</span>
+            <span className="w-[44px] shrink-0 text-center">직급</span>
+            <span className="w-[44px] shrink-0 text-center">Admin</span>
             <span className="size-6 shrink-0" aria-hidden />
           </div>
 

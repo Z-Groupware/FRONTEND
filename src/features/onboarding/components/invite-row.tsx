@@ -153,7 +153,7 @@ export function InviteRow({
         />
       </span>
 
-      <span className={cn("w-[76px] shrink-0", isSent && "opacity-60")}>
+      <span className={cn("w-[44px] shrink-0", isSent && "opacity-60")}>
         <OptionSelect
           disabled={isSent}
           value={invite.positionId}
@@ -170,7 +170,7 @@ export function InviteRow({
         ⚠️ Admin은 **직급 옆 별도 칸**이다. 직급 드롭다운에 넣으면 "Leader 대신 Admin"으로 읽히는데,
            실제로는 Leader **이면서** Admin이다.
       */}
-      <span className="flex w-[56px] shrink-0 justify-center">
+      <span className="flex w-[44px] shrink-0 justify-center">
         <InviteAdminToggle
           isOn={invite.isAdmin}
           isLocked={isSent}
