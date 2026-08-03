@@ -101,7 +101,7 @@ export function LostContextArt() {
           <span className="animate-dash-march absolute top-1/2 right-0 left-0 h-[2px] opacity-80 [background:repeating-linear-gradient(90deg,currentColor_0_6px,transparent_6px_12px)]" />
           {/* ⚠️ 이동은 `left`(부모 폭 기준)로 한다 — `translateX(%)`는 **아이콘 자신의 폭** 기준이라
               70%를 줘도 11px밖에 못 간다. 예전에 비행기가 코앞에서 멈춘 게 그것 때문이었다 */}
-          <Send className="animate-plane absolute top-1/2 size-4 text-[#3b82f6]" />
+          <Send className="animate-plane text-landing-accent absolute top-1/2 size-4" />
         </span>
 
         <span className="flex w-16 flex-col items-center gap-1.5">

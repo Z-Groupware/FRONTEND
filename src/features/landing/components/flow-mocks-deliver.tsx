@@ -1,5 +1,6 @@
 import { Bell, Check, FileText, Send, User } from "lucide-react";
 
+import { AssignAside, HandoverAside } from "./flow-mock-aside";
 import { MockHead } from "./flow-mock-head";
 
 /**
@@ -34,33 +35,36 @@ export function AssignMock() {
         right="4건"
       />
 
-      <div className="flex flex-col gap-2 pt-3">
-        {ASSIGNED.map((action, index) => (
-          <div
-            key={action.what}
-            style={{ animationDelay: `${index * 0.45}s` }}
-            className="border-landing-dark-border animate-cycle-in flex items-center gap-2.5 rounded-md border px-3 py-1.5"
-          >
-            <span className="bg-landing-dark-surface border-landing-dark-border text-landing-dark-muted flex size-7 shrink-0 items-center justify-center rounded-full border">
-              <User className="size-3.5" aria-hidden />
-            </span>
-            <span className="min-w-0 flex-1">
-              <span className="block truncate text-[13px] leading-5">{action.what}</span>
-              <span className="text-landing-dark-muted block text-[11px] leading-4">
-                {action.role} · {action.due}
+      <div className="grid gap-3 pt-3 md:grid-cols-2">
+        <div className="flex min-w-0 flex-col gap-2">
+          {ASSIGNED.map((action, index) => (
+            <div
+              key={action.what}
+              style={{ animationDelay: `${index * 0.45}s` }}
+              className="border-landing-dark-border animate-cycle-in flex items-center gap-2.5 rounded-md border px-3 py-1.5"
+            >
+              <span className="bg-landing-dark-surface landing-light:bg-gradient-to-b landing-light:from-white landing-light:to-[#fbfbfa] border-landing-dark-border text-landing-dark-muted flex size-7 shrink-0 items-center justify-center rounded-full border">
+                <User className="size-3.5" aria-hidden />
               </span>
-            </span>
-            {/* 상태점 대기=회색·진행중=초록(§디자인 토큰) */}
-            <span className="text-landing-dark-muted flex shrink-0 items-center gap-1.5 text-[11px] leading-4">
-              <span
-                aria-hidden
-                className="size-[6px] rounded-full"
-                style={{ backgroundColor: action.state === "진행중" ? "#22c55e" : "#71717a" }}
-              />
-              {action.state}
-            </span>
-          </div>
-        ))}
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-[13px] leading-5">{action.what}</span>
+                <span className="text-landing-dark-muted block text-[11px] leading-4">
+                  {action.role} · {action.due}
+                </span>
+              </span>
+              {/* 상태점 대기=회색·진행중=초록(§디자인 토큰) */}
+              <span className="text-landing-dark-muted flex shrink-0 items-center gap-1.5 text-[11px] leading-4">
+                <span
+                  aria-hidden
+                  className="size-[6px] rounded-full"
+                  style={{ backgroundColor: action.state === "진행중" ? "#22c55e" : "#71717a" }}
+                />
+                {action.state}
+              </span>
+            </div>
+          ))}
+        </div>
+        <AssignAside />
       </div>
 
       <p className="text-landing-dark-muted border-landing-dark-border mt-auto flex items-center gap-1.5 border-t pt-3 text-[11px] leading-4">
@@ -89,32 +93,39 @@ export function HandoverMock() {
       />
 
       {/* 카드를 키워 숫자를 앞세운다 — 작은 목록이면 "모였다"는 실감이 안 난다 */}
-      <div className="grid grid-cols-2 gap-2 pt-2.5">
-        {HANDOVER_ITEMS.map((item, index) => (
-          <div
-            key={item.label}
-            style={{ animationDelay: `${index * 0.35}s` }}
-            className="border-landing-dark-border animate-cycle-in rounded-lg border px-3 py-2"
-          >
-            <p className="text-landing-dark-muted flex items-center gap-1.5 text-[11px] leading-4">
-              <Check className="text-landing-accent size-3 shrink-0" strokeWidth={3} aria-hidden />
-              {item.label}
-            </p>
-            <p className="text-[18px] leading-6 font-semibold tabular-nums">
-              {item.count}
-              <span className="text-landing-dark-muted pl-0.5 text-[12px] font-normal">
-                {item.unit}
-              </span>
-            </p>
-          </div>
-        ))}
+      <div className="grid gap-3 pt-2.5 md:grid-cols-2">
+        <div className="grid min-w-0 grid-cols-2 gap-2">
+          {HANDOVER_ITEMS.map((item, index) => (
+            <div
+              key={item.label}
+              style={{ animationDelay: `${index * 0.35}s` }}
+              className="border-landing-dark-border animate-cycle-in rounded-lg border px-3 py-2"
+            >
+              <p className="text-landing-dark-muted flex items-center gap-1.5 text-[11px] leading-4">
+                <Check
+                  className="text-landing-accent size-3 shrink-0"
+                  strokeWidth={3}
+                  aria-hidden
+                />
+                {item.label}
+              </p>
+              <p className="text-[18px] leading-6 font-semibold tabular-nums">
+                {item.count}
+                <span className="text-landing-dark-muted pl-0.5 text-[12px] font-normal">
+                  {item.unit}
+                </span>
+              </p>
+            </div>
+          ))}
+        </div>
+        <HandoverAside />
       </div>
 
       <div className="text-landing-dark-muted mt-auto flex items-center justify-between pt-3 text-[12px] leading-[18px]">
         <span>완성도</span>
         <span className="text-landing-accent font-semibold tabular-nums">100%</span>
       </div>
-      <div className="bg-landing-dark-surface mt-2 h-[5px] overflow-hidden rounded-full">
+      <div className="bg-landing-dark-surface landing-light:bg-gradient-to-b landing-light:from-white landing-light:to-[#fbfbfa] mt-2 h-[5px] overflow-hidden rounded-full">
         <div
           className="animate-fill-bar bg-landing-accent h-full w-full rounded-full"
           aria-hidden

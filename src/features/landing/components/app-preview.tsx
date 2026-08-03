@@ -11,15 +11,15 @@ import { ZLogo } from "@/components/icons/z-logo";
  * 좌상단·우하단에 알림 카드가 **떠 있고 살랑인다**(`float`) — 시안의 디테일이다.
  */
 const MEETINGS = [
-  { title: "스프린트 킥오프", team: "제품팀", when: "오늘 14:00", color: "#22c55e" },
-  { title: "Q3 전략 회의", team: "경영진", when: "어제 10:00", color: "#3b82f6" },
-  { title: "디자인 리뷰", team: "UX팀", when: "월요일", color: "#8b5cf6" },
+  { title: "스프린트 킥오프", team: "제품팀", when: "오늘 14:00", color: "var(--landing-green)" },
+  { title: "Q3 전략 회의", team: "경영진", when: "어제 10:00", color: "var(--landing-accent)" },
+  { title: "디자인 리뷰", team: "UX팀", when: "월요일", color: "var(--landing-violet)" },
 ] as const;
 
 const STATS = [
-  { label: "이번 달 회의", value: "24건", color: "#3b82f6" },
-  { label: "완료 액션", value: "87%", color: "#22c55e" },
-  { label: "대기 인수인계", value: "2건", color: "#f59e0b" },
+  { label: "이번 달 회의", value: "24건", color: "var(--landing-accent)" },
+  { label: "완료 액션", value: "87%", color: "var(--landing-green)" },
+  { label: "대기 인수인계", value: "2건", color: "var(--landing-warning)" },
 ] as const;
 
 export function AppPreview() {
@@ -38,7 +38,7 @@ export function AppPreview() {
 
       {/* 우하단 — 배정된 액션 카드. 반대 박자로 살랑이게 지연을 준다 */}
       <div className="border-border bg-card animate-float absolute -right-4 -bottom-6 z-10 rounded-xl border px-4 py-3 shadow-lg [animation-delay:-2s] lg:-right-8">
-        <p className="text-[11px] leading-4 font-semibold text-[#3b82f6]">액션</p>
+        <p className="text-landing-accent text-[11px] leading-4 font-semibold">액션</p>
         <p className="pt-0.5 text-[12px] leading-[18px] font-medium">와이어프레임 작성</p>
         <p className="text-muted-foreground pt-0.5 text-[11px] leading-4">디자인 담당 · 8/5</p>
       </div>

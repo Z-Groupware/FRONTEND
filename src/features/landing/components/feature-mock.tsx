@@ -59,7 +59,7 @@ function CaptureMock() {
   return (
     <>
       <div className="flex items-center justify-between">
-        <span className="flex items-center gap-1.5 text-[11px] leading-4 text-[#3b82f6]">
+        <span className="text-landing-accent flex items-center gap-1.5 text-[11px] leading-4">
           <span className="size-[6px] animate-pulse rounded-full bg-[#3b82f6]" aria-hidden />
           녹음 중
         </span>
@@ -122,7 +122,7 @@ const JUDGED_ACTIONS = [
 function ActionMock() {
   return (
     <>
-      <p className="text-primary flex items-center gap-1.5 text-[11px] leading-4 font-semibold">
+      <p className="text-landing-accent flex items-center gap-1.5 text-[11px] leading-4 font-semibold">
         <Sparkles className="size-3.5" aria-hidden />
         AI가 가려낸 액션
       </p>
@@ -158,8 +158,8 @@ function ActionMock() {
                 style={{ animationDelay: `${index * 0.45}s` }}
                 className={
                   action.isSure
-                    ? "animate-stamp relative block rounded-full bg-[#8b5cf6]/12 px-2 py-0.5 text-[10px] leading-4 font-medium text-[#8b5cf6]"
-                    : "bg-warning/12 text-warning animate-stamp relative block rounded-full px-2 py-0.5 text-[10px] leading-4 font-medium"
+                    ? "animate-stamp text-landing-violet relative block rounded-full bg-[#8b5cf6]/12 px-2 py-0.5 text-[10px] leading-4 font-medium"
+                    : "bg-warning/12 text-landing-warning animate-stamp relative block rounded-full px-2 py-0.5 text-[10px] leading-4 font-medium"
                 }
               >
                 {action.confidence}

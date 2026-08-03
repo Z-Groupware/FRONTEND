@@ -60,10 +60,18 @@ export function FlowSection() {
               aria-pressed={index === selected}
               onClick={() => setSelected(index)}
               className={cn(
+                /* ⚠️ 밝은 무대에서는 흰 카드가 흰 바탕 위에 뜬다 — 선만으로는 층이 안 생기므로
+                 **그림자로 들어 올린다.** 어두운 무대는 지금 그대로 둔다(§landing-light 변형) */
                 "focus-visible:ring-ring h-full w-full rounded-xl border p-6 text-left transition-all duration-300 focus-visible:ring-2 focus-visible:outline-hidden",
+                "landing-light:shadow-[0_1px_2px_rgba(37,99,235,0.05),0_12px_30px_-14px_rgba(37,99,235,0.18)] landing-light:hover:shadow-[0_2px_5px_rgba(37,99,235,0.07),0_20px_42px_-16px_rgba(37,99,235,0.26)]",
+                /*
+                  ⚠️ 고른 카드의 보라 글로우는 **검정 위에서만 통한다.** 흰 바탕에서는
+                     번진 자국처럼 보인다 — 밝은 쪽은 글로우를 끄고 **더 깊은 그림자와
+                     액센트 테두리**로 고른 것을 알린다.
+                */
                 index === selected
-                  ? "glow-ring-rgb bg-landing-dark-surface -translate-y-1 border-transparent shadow-[0_0_40px_-8px_rgba(124,58,237,0.45)]"
-                  : "border-landing-dark-border bg-landing-dark-surface hover:-translate-y-0.5",
+                  ? "glow-ring-rgb bg-landing-dark-surface landing-light:bg-gradient-to-b landing-light:from-white landing-light:to-[#fbfbfa] landing-light:border-landing-accent/35 landing-light:shadow-[0_2px_6px_rgba(28,25,23,0.06),0_20px_44px_-18px_rgba(37,99,235,0.35)] -translate-y-1 border-transparent shadow-[0_0_40px_-8px_rgba(124,58,237,0.45)]"
+                  : "border-landing-dark-border bg-landing-dark-surface landing-light:bg-gradient-to-b landing-light:from-white landing-light:to-[#fbfbfa] hover:-translate-y-0.5",
               )}
             >
               <div className="flex items-center justify-between">
@@ -88,13 +96,19 @@ export function FlowSection() {
 
       {/*
         고른 단계의 화면 축소판 — 단계가 바뀌면 아래에서 다시 떠오른다.
-        ⚠️ 높이를 **가장 큰 단계에 맞춰 고정**한다(`h-[372px]`, `min-h`가 아니다).
+        ⚠️ 폭은 **위 카드 줄과 같다.** 카드 넉 장이 화면을 가로지르는데 아래 패널만 좁으면
+           아래가 빈 것처럼 보인다 — 대신 축소판이 헐거워지지 않게 안을 두 칸으로 채웠다
+           (`flow-mock-aside.tsx`).
+        ⚠️ 높이를 **가장 큰 단계에 맞춰 고정**한다(`h-[352px]`, `min-h`가 아니다).
            누를 때마다 패널이 커졌다 작아졌다 하면 그 출렁임이 내용보다 먼저 보인다.
            내용이 짧은 단계는 각 축소판이 `mt-auto`로 아래를 채운다.
       */}
       <div
         key={active.step}
-        className="border-landing-dark-border bg-landing-dark-surface animate-in fade-in-0 slide-in-from-bottom-2 mx-auto mt-6 flex h-[372px] max-w-[560px] flex-col rounded-xl border p-5 backdrop-blur duration-300"
+        className={cn(
+          "border-landing-dark-border bg-landing-dark-surface landing-light:bg-gradient-to-b landing-light:from-white landing-light:to-[#fbfbfa] animate-in fade-in-0 slide-in-from-bottom-2 mt-6 flex h-[352px] flex-col rounded-xl border p-5 backdrop-blur duration-300",
+          "landing-light:shadow-[0_1px_2px_rgba(37,99,235,0.05),0_12px_30px_-14px_rgba(37,99,235,0.18)]",
+        )}
       >
         {/* ⚠️ 목업 문장("API 문서 최신화" 등)은 **가짜다.** 스크린 리더가 실제 정보처럼
             읽으면 안 된다 — 화면 전체를 한 번에 숨긴다(§정직성·a11y) */}

@@ -16,7 +16,7 @@ export function FeatureHandoverMock() {
     <>
       {/* 오른쪽 위를 비워두면 카드가 기울어 보인다 — 다른 축소판처럼 상태 한 줄을 세운다 */}
       <div className="flex items-center justify-between">
-        <p className="text-primary flex items-center gap-1.5 text-[11px] leading-4 font-semibold">
+        <p className="text-landing-accent flex items-center gap-1.5 text-[11px] leading-4 font-semibold">
           <FileText className="size-3.5" aria-hidden />
           인수인계서 자동 구성
         </p>

@@ -71,13 +71,17 @@ function ZModel({ tone, isFeature }: { tone: Tone; isFeature: boolean }) {
       {geometries.map((geometry, index) => (
         <mesh key={index} geometry={geometry} position={[0, 0, -0.07]}>
           {/*
-            ⚠️ 배경이다 — 글보다 밝으면 안 된다. 몸체는 검정에 가깝게 두고
-            파랑·보라 림라이트만 모서리에 감돌게 한다(어두운 금속 느낌).
+            ⚠️ 배경이다 — 글보다 밝으면 안 된다.
+            **어두운 무대(dark):** 몸체는 검정에 가깝게 두고 파랑·보라 림라이트만 모서리에
+            감돌게 한다(어두운 금속).
+            **밝은 무대(light):** 회색으로 칠하지 않는다 — 흰 바탕 위 회색 덩어리는 얼룩처럼
+            보인다. 몸체를 **흰 종이처럼** 두고(무광·낮은 금속기) 형태는 **음영으로만** 읽히게
+            한다. 눌러 찍은 자국에 가깝다.
           */}
           <meshStandardMaterial
-            color={isFeature ? "#78716c" : tone === "dark" ? "#232326" : "#d6d3d1"}
-            metalness={isFeature ? 0.55 : 0.85}
-            roughness={isFeature ? 0.35 : 0.28}
+            color={isFeature ? "#78716c" : tone === "dark" ? "#232326" : "#ffffff"}
+            metalness={isFeature ? 0.55 : tone === "dark" ? 0.85 : 0.4}
+            roughness={isFeature ? 0.35 : tone === "dark" ? 0.28 : 0.3}
           />
         </mesh>
       ))}
@@ -107,10 +111,14 @@ export default function ThreeZ({
       className="cursor-grab active:cursor-grabbing"
       style={{ width: size, height: size, touchAction: "none" }}
     >
-      <ambientLight intensity={isFeature ? 0.5 : tone === "dark" ? 0.5 : 0.6} />
+      {/*
+        ⚠️ 밝은 무대에서는 주변광을 **크게 낮춘다.** 높이면 흰 몸체가 평평해져 형태가 사라진다 —
+           흰 바탕 위 흰 물체는 **면끼리 밝기 차**로만 읽힌다. 그늘이 있어야 모서리가 보인다.
+      */}
+      <ambientLight intensity={isFeature ? 0.5 : tone === "dark" ? 0.5 : 0.55} />
       <directionalLight
         position={[2, 3, 4]}
-        intensity={isFeature ? 1.1 : tone === "dark" ? 1 : 1.2}
+        intensity={isFeature ? 1.1 : tone === "dark" ? 1 : 1.05}
         color="#ffffff"
       />
       {/* 액센트 축 그대로 — 파랑·보라 림라이트가 모서리만 물들인다 */}
