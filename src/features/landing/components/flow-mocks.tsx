@@ -1,5 +1,6 @@
 import { Mic, Sparkles } from "lucide-react";
 
+import { AnalyzeAside, CaptureAside } from "./flow-mock-aside";
 import { MockHead } from "./flow-mock-head";
 
 /*
@@ -16,10 +17,30 @@ const CAPTURE_CHUNKS = [
 ] as const;
 
 const ANALYZED = [
-  { tag: "결정", color: "#3b82f6", text: "스프린트 블로커 우선 처리", meta: "회의 07:58 구간" },
-  { tag: "액션", color: "#8b5cf6", text: "API 문서 최신화", meta: "담당 후보 · 개발 담당" },
-  { tag: "액션", color: "#8b5cf6", text: "디자인 기준 문서 작성", meta: "담당 후보 · 디자인 담당" },
-  { tag: "요약", color: "#22c55e", text: "3줄 요약 · 결정 2건 · 액션 3건", meta: "회의 종료 즉시" },
+  {
+    tag: "결정",
+    color: "var(--landing-accent)",
+    text: "스프린트 블로커 우선 처리",
+    meta: "회의 07:58 구간",
+  },
+  {
+    tag: "액션",
+    color: "var(--landing-violet)",
+    text: "API 문서 최신화",
+    meta: "담당 후보 · 개발 담당",
+  },
+  {
+    tag: "액션",
+    color: "var(--landing-violet)",
+    text: "디자인 기준 문서 작성",
+    meta: "담당 후보 · 디자인 담당",
+  },
+  {
+    tag: "요약",
+    color: "var(--landing-green)",
+    text: "3줄 요약 · 결정 2건 · 액션 3건",
+    meta: "회의 종료 즉시",
+  },
 ] as const;
 
 export function CaptureMock() {
@@ -36,17 +57,21 @@ export function CaptureMock() {
         right="00:08:23"
       />
 
-      <div className="flex flex-col gap-1.5 pt-3">
-        {CAPTURE_CHUNKS.map((chunk, index) => (
-          <p
-            key={chunk.at}
-            style={{ animationDelay: `${index * 0.45}s` }}
-            className="border-landing-dark-border animate-cycle-in flex items-start gap-2.5 rounded-md border px-3 py-1.5 text-[12px] leading-[18px] break-keep"
-          >
-            <span className="text-landing-dark-muted shrink-0 tabular-nums">{chunk.at}</span>
-            {chunk.text}
-          </p>
-        ))}
+      {/* ⚠️ 좁은 화면에서는 한 줄로 떨어진다 — 두 칸을 억지로 유지하면 글자가 뭉갠다 */}
+      <div className="grid gap-3 pt-3 md:grid-cols-2">
+        <div className="flex min-w-0 flex-col gap-1.5">
+          {CAPTURE_CHUNKS.map((chunk, index) => (
+            <p
+              key={chunk.at}
+              style={{ animationDelay: `${index * 0.45}s` }}
+              className="border-landing-dark-border animate-cycle-in flex items-start gap-2.5 rounded-md border px-3 py-1.5 text-[12px] leading-[18px] break-keep"
+            >
+              <span className="text-landing-dark-muted shrink-0 tabular-nums">{chunk.at}</span>
+              {chunk.text}
+            </p>
+          ))}
+        </div>
+        <CaptureAside />
       </div>
 
       {/* 아래는 `mt-auto`로 바닥에 붙인다 — 패널 높이가 고정이라 짧은 단계도 비지 않는다 */}
@@ -83,28 +108,31 @@ export function AnalyzeMock() {
         right="2.4초"
       />
 
-      <div className="flex flex-col gap-2 pt-3">
-        {ANALYZED.map((row, index) => (
-          <div
-            // 태그("액션")는 두 번 나온다 — 목록에서 유일한 건 문장 쪽이다
-            key={row.text}
-            style={{ animationDelay: `${index * 0.45}s` }}
-            className="border-landing-dark-border animate-cycle-in flex items-center gap-2.5 rounded-md border px-3 py-1.5"
-          >
-            <span
-              className="shrink-0 rounded px-2 py-0.5 text-[11px] leading-4 font-semibold text-white"
-              style={{ backgroundColor: row.color }}
+      <div className="grid gap-3 pt-3 md:grid-cols-2">
+        <div className="flex min-w-0 flex-col gap-2">
+          {ANALYZED.map((row, index) => (
+            <div
+              // 태그("액션")는 두 번 나온다 — 목록에서 유일한 건 문장 쪽이다
+              key={row.text}
+              style={{ animationDelay: `${index * 0.45}s` }}
+              className="border-landing-dark-border animate-cycle-in flex items-center gap-2.5 rounded-md border px-3 py-1.5"
             >
-              {row.tag}
-            </span>
-            <span className="min-w-0 flex-1">
-              <span className="block truncate text-[13px] leading-5">{row.text}</span>
-              <span className="text-landing-dark-muted block text-[11px] leading-4">
-                {row.meta}
+              <span
+                className="shrink-0 rounded px-2 py-0.5 text-[11px] leading-4 font-semibold text-white"
+                style={{ backgroundColor: row.color }}
+              >
+                {row.tag}
               </span>
-            </span>
-          </div>
-        ))}
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-[13px] leading-5">{row.text}</span>
+                <span className="text-landing-dark-muted block text-[11px] leading-4">
+                  {row.meta}
+                </span>
+              </span>
+            </div>
+          ))}
+        </div>
+        <AnalyzeAside />
       </div>
 
       <p className="text-landing-dark-muted border-landing-dark-border mt-auto border-t pt-3 text-[11px] leading-4">

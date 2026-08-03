@@ -21,9 +21,9 @@ export function RoleScreen({ name }: { name: RoleName }) {
 
 /** Owner — 조직 현황 수치와 승인 대기가 먼저 보인다 */
 const OWNER_STATS = [
-  { label: "이번 달 회의", value: "24건", color: "#3b82f6" },
-  { label: "대기 승인", value: "2건", color: "#f59e0b" },
-  { label: "팀 수", value: "6개", color: "#22c55e" },
+  { label: "이번 달 회의", value: "24건", color: "var(--landing-accent)" },
+  { label: "대기 승인", value: "2건", color: "var(--landing-warning)" },
+  { label: "팀 수", value: "6개", color: "var(--landing-green)" },
 ] as const;
 
 function OwnerScreen() {
@@ -101,8 +101,8 @@ function AdminScreen() {
 /** Leader — 팀 액션이 상태별로 나뉜 보드. 점 색은 상태 토큰(대기=회색·진행중=초록·완료=보라) */
 const BOARD = [
   { label: "대기", count: "3", color: "#a8a29e" },
-  { label: "진행중", count: "4", color: "#22c55e" },
-  { label: "완료", count: "9", color: "#8b5cf6" },
+  { label: "진행중", count: "4", color: "var(--landing-green)" },
+  { label: "완료", count: "9", color: "var(--landing-violet)" },
 ] as const;
 
 function LeaderScreen() {

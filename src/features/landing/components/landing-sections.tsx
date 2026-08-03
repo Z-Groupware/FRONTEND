@@ -4,27 +4,14 @@ import { Check, Clock, MessagesSquare, UserMinus, X } from "lucide-react";
   ⚠️ 공용 `CheckMark`는 아직 develop에 없다(#22·#26 브랜치에만 있음).
      그게 머지되면 여기도 그걸로 바꾼다 — 지금 만들면 같은 파일이 두 벌이 된다.
 */
+import { cn } from "@/lib/utils";
+
 import { COMPARISONS, FEATURES, PROBLEMS } from "../content";
 import { AfterScreen } from "./after-screen";
 import { FeatureMock } from "./feature-mock";
 import { BuriedChatArt, EmptyNotesArt, LostContextArt } from "./problem-art";
 import { Reveal } from "./reveal";
-
-/** 섹션 제목 — 랜딩 전체가 같은 크기·간격을 쓴다. */
-function SectionHeading({ label, title }: { label?: string; title: string }) {
-  return (
-    <div className="reveal-on-scroll flex flex-col items-center gap-2.5 text-center">
-      {label && (
-        <p className="text-primary text-[11px] leading-4 font-semibold tracking-[1.1px] uppercase">
-          {label}
-        </p>
-      )}
-      <h2 className="text-[32px] leading-[40px] font-semibold tracking-[-0.7px] break-keep lg:text-[36px] lg:leading-[44px]">
-        {title}
-      </h2>
-    </div>
-  );
-}
+import { SectionHeading } from "./section-heading";
 
 /**
  * 겪어본 사람이 알아볼 문제 세 가지.
@@ -43,7 +30,13 @@ export function ProblemSection() {
         <div className="grid gap-4 pt-12 md:grid-cols-3">
           {PROBLEMS.map((problem, index) => (
             <Reveal key={problem.title}>
-              <div className="border-border bg-card hover-lift h-full overflow-hidden rounded-xl border">
+              <div
+                className={cn(
+                  "border-border bg-card hover-lift h-full overflow-hidden rounded-xl border",
+                  /* ⚠️ 이 섹션만 그림자가 없어서 밝은 무대에서 카드가 바닥에 붙어 보였다 */
+                  "landing-light:shadow-[0_1px_2px_rgba(37,99,235,0.05),0_12px_30px_-14px_rgba(37,99,235,0.18)] landing-light:bg-gradient-to-b landing-light:from-white landing-light:to-[#fbfbfa]",
+                )}
+              >
                 {/* 그림은 카드 폭을 꽉 채운다 — 가운데 작게 놓으면 카드가 비어 보인다 */}
                 <div className="border-border flex h-[168px] items-center justify-center border-b px-5">
                   {index === 0 && <EmptyNotesArt />}
@@ -116,7 +109,7 @@ export function FeatureSection() {
               {/* 글과 축소판이 **서로 자기 자리 쪽에서** 밀려 들어온다 — 좌우가 번갈아 열린다 */}
               <Reveal from={index % 2 === 1 ? "right" : "left"} className="flex-1">
                 {/* 라벨은 전부 액센트 파랑 — 색이 흩어지면 섹션끼리 따로 논다 */}
-                <p className="text-primary text-[11px] leading-4 font-semibold tracking-[1.1px] uppercase">
+                <p className="text-landing-accent text-[11px] leading-4 font-semibold tracking-[1.1px] uppercase">
                   {feature.label}
                 </p>
                 <h3 className="pt-2 text-[28px] leading-[36px] font-semibold tracking-[-0.6px] break-keep">

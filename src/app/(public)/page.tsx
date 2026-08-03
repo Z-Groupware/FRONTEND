@@ -10,7 +10,6 @@ import {
 import { LandingShell } from "@/features/landing/components/landing-shell";
 import { ClosingSection } from "@/features/landing/components/pricing-section";
 import { RoleSection } from "@/features/landing/components/role-section";
-import { ScreenMarquee } from "@/features/landing/components/screen-marquee";
 
 export const metadata: Metadata = {
   title: "Z — 회의를 하면, 조직의 기억이 된다",
@@ -30,7 +29,6 @@ export default function LandingPage() {
     /* 무대·상단바·푸터는 셸이 그린다 — 밝기 스위치도 거기 있다 */
     <LandingShell>
       <LandingHero />
-      <ScreenMarquee />
       <ProblemSection />
       <FlowSection />
       <FeatureSection />

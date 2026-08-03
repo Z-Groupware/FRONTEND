@@ -32,7 +32,7 @@ export function RoleSection() {
       <div className="mx-auto w-full max-w-[1144px] px-7">
         {/* 다른 섹션과 같은 헤더 문법 — eyebrow + 중앙 제목 */}
         <div className="flex flex-col items-center gap-2.5 text-center">
-          <p className="text-primary text-[11px] leading-4 font-semibold tracking-[1.1px] uppercase">
+          <p className="text-landing-accent text-[11px] leading-4 font-semibold tracking-[1.1px] uppercase">
             Roles
           </p>
           <h2 className="text-[32px] leading-[40px] font-semibold tracking-[-0.7px] break-keep lg:text-[36px] lg:leading-[44px]">
@@ -71,7 +71,7 @@ export function RoleSection() {
 
             <Link
               href="/roles"
-              className="text-primary flex w-fit items-center gap-1 pt-1 text-[14px] leading-5 hover:underline"
+              className="text-landing-accent flex w-fit items-center gap-1 pt-1 text-[14px] leading-5 hover:underline"
             >
               권한 매트릭스 전체 보기
               <ArrowRight className="size-3.5" aria-hidden />
