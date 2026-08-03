@@ -35,7 +35,11 @@ export default async function SystemApprovalPage({ searchParams }: SystemApprova
   return (
     <main className="min-h-0 flex-1 overflow-y-auto p-8">
       <div className="mx-auto flex max-w-[1440px] flex-col gap-4">
-        <ApprovalTable companies={items} buildDetailHref={(id) => buildHref(page, id)} />
+        <ApprovalTable
+          companies={items}
+          buildDetailHref={(id) => buildHref(page, id)}
+          pageSize={PAGE_SIZE}
+        />
         <Pagination page={page} totalPages={totalPages} buildHref={(target) => buildHref(target)} />
       </div>
 
