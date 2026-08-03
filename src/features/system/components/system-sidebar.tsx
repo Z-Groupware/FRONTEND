@@ -76,7 +76,6 @@ export function SystemSidebar({ sections, account }: SystemSidebarProps) {
           className="focus-visible:ring-ring flex items-center gap-2 rounded transition-opacity hover:opacity-70 focus-visible:ring-2 focus-visible:outline-hidden"
         >
           <ZLogo className="text-foreground size-[22px]" title="Z" />
-          <span className="text-foreground text-sm leading-none font-semibold">운영자</span>
         </Link>
       </div>
 
