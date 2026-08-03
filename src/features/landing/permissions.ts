@@ -58,7 +58,7 @@ export const PERMISSION_GROUPS: readonly PermissionGroup[] = [
         leader: "partial",
         member: "partial",
         admin: "no",
-        note: "역할과 무관하게 그 회의를 연 사람만 할 수 있어요",
+        note: "역할과 무관하게 해당 회의 담당자만 가능해요",
       },
     ],
   },

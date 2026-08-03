@@ -21,10 +21,11 @@ export function InviteSendBar({ sendableCount, onAddRow, onSend }: InviteSendBar
       <button
         type="button"
         onClick={onAddRow}
-        className="text-muted-foreground hover:bg-foreground/10 focus-visible:ring-ring flex h-7 shrink-0 items-center gap-1.5 rounded-md px-2.5 text-xs leading-none transition-colors focus-visible:ring-2 focus-visible:outline-hidden"
+        className="text-foreground/80 hover:text-foreground hover:bg-foreground/10 focus-visible:ring-ring flex h-7 shrink-0 items-center gap-1.5 rounded-md px-2.5 text-xs leading-none transition-colors focus-visible:ring-2 focus-visible:outline-hidden"
       >
         <Plus className="size-3.5" />
-        <span className="leading-none">행 추가</span>
+        {/* 한글 글자가 상자 안에서 위쪽에 앉아 아이콘보다 떠 보인다 — 1px 내려 맞춘다 */}
+        <span className="translate-y-px leading-none">행 추가</span>
       </button>
 
       <span className="flex-1" aria-hidden />

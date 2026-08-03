@@ -9,6 +9,7 @@ import {
   type DepartmentNode as DepartmentNodeType,
   getDepthLabel,
   MAX_DEPARTMENT_DEPTH,
+  MAX_ORG_NAME_LENGTH,
 } from "../types";
 import { type DraggingInfo, type DropZone, useDepartmentDrag } from "../use-department-drag";
 import { DepartmentNodeActions } from "./department-node-actions";
@@ -121,6 +122,7 @@ export function DepartmentNode({ node, depth, parentId, ...handlers }: Departmen
 
         {isEditing ? (
           <input
+            maxLength={MAX_ORG_NAME_LENGTH}
             autoFocus
             defaultValue={node.name}
             aria-label="부서 이름"

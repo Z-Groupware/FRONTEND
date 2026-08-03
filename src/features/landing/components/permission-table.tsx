@@ -5,7 +5,6 @@ import {
   LayoutDashboard,
   ListTodo,
   type LucideIcon,
-  Minus,
   Settings,
   Video,
   X,
@@ -44,16 +43,25 @@ function AccessMark({ value }: { value: Access }) {
   }
 
   if (value === "partial") {
+    /*
+      ⚠️ 빼기(−)를 쓰지 않는다. "해당 없음"이나 "불가"로 읽혀서 뜻이 정반대로 전달된다.
+         **되긴 된다**가 먼저 와야 하므로 체크를 쓰고, 조건이 붙었다는 건 **점선 테두리**와
+         칸을 채우지 않은 것으로 알린다(가능=채운 원, 조건부=빈 원).
+    */
     return (
       <span className="border-foreground text-foreground inline-flex size-6 items-center justify-center rounded-full border border-dashed">
-        <Minus className="size-3.5" strokeWidth={3} aria-hidden />
+        <Check className="size-3.5" strokeWidth={3} aria-hidden />
         <span className="sr-only">조건부 가능</span>
       </span>
     );
   }
 
+  /*
+    ⚠️ 불가 표식에도 **테두리를 준다.** 채움(`secondary`)만으로는 흰 카드 위에서 원이 거의 안 보여
+       X만 떠 있는 것처럼 읽힌다. 가능(채운 원)·조건부(점선 원)와 나란히 놓이려면 원이 보여야 한다.
+  */
   return (
-    <span className="bg-secondary text-muted-foreground inline-flex size-6 items-center justify-center rounded-full">
+    <span className="bg-secondary border-border text-muted-foreground inline-flex size-6 items-center justify-center rounded-full border">
       <X className="size-3.5" strokeWidth={3} aria-hidden />
       <span className="sr-only">불가</span>
     </span>
@@ -63,7 +71,7 @@ function AccessMark({ value }: { value: Access }) {
 function GroupIcon({ title }: { title: string }) {
   const Icon = GROUP_ICON[title];
   if (!Icon) return null;
-  return <Icon className="text-foreground/70 size-3.5 shrink-0" aria-hidden />;
+  return <Icon className="text-foreground size-4 shrink-0" aria-hidden />;
 }
 
 export function PermissionTable() {
@@ -73,11 +81,34 @@ export function PermissionTable() {
 
   return (
     <>
+      {/*
+        표식 범례. ⚠️ **표보다 위**에 둔다 — 표가 길어서 아래에 두면 표식을 다 보고 난 뒤에야
+        뜻을 만나게 된다. 읽는 순서대로 놓는다.
+        ⚠️ 범례는 **문장이 아니라 라벨**이다. "할 수 있어요"처럼 풀어 쓰면 표 옆에서 장황해진다 —
+           본문은 해요체를 쓰되 여기만 명사형으로 짧게 둔다(§카피).
+        ⚠️ 색은 `muted`가 아니라 `foreground/75`다. 범례·각주는 **카드 밖 무대 위**에 있어서
+           밝은 무대에서 muted를 쓰면 바탕에 묻힌다.
+      */}
+      <ul className="text-foreground/75 flex flex-wrap items-center gap-x-5 gap-y-2 pb-4 text-[12px] leading-5">
+        <li className="flex items-center gap-2">
+          <AccessMark value="yes" />
+          <span className="translate-y-px">가능</span>
+        </li>
+        <li className="flex items-center gap-2">
+          <AccessMark value="partial" />
+          <span className="translate-y-px">조건부 — 표 아래 설명 참고</span>
+        </li>
+        <li className="flex items-center gap-2">
+          <AccessMark value="no" />
+          <span className="translate-y-px">불가</span>
+        </li>
+      </ul>
+
       <div className="border-border bg-card overflow-x-auto rounded-xl border">
         <table className="w-full min-w-[560px] border-collapse">
           <thead>
             <tr className="border-border border-b">
-              <th className="text-muted-foreground w-[38%] px-5 py-3.5 text-left text-[12px] leading-4 font-medium">
+              <th className="text-muted-foreground w-[38%] py-3.5 pr-5 pl-[48px] text-left text-[12px] leading-4 font-medium">
                 기능
               </th>
               {ROLE_COLUMNS.map((role) => (
@@ -91,13 +122,17 @@ export function PermissionTable() {
           <tbody>
             {PERMISSION_GROUPS.map((group) => (
               <Fragment key={group.title}>
-                <tr className="bg-secondary/70">
+                {/*
+                  ⚠️ 구역 머리는 **표를 끊어 읽게 하는 이정표**다. 11px 회색으로 두면
+                     본문보다 흐려서 오히려 안 읽힌다 — 글자를 키우고 먹색으로 올린다.
+                */}
+                <tr className="bg-secondary">
                   <th
                     colSpan={5}
                     scope="colgroup"
-                    className="text-muted-foreground px-5 py-2 text-left text-[11px] leading-4 font-medium tracking-[0.5px]"
+                    className="text-foreground px-5 py-2.5 text-left text-[13px] leading-5 font-semibold"
                   >
-                    <span className="flex items-center gap-1.5">
+                    <span className="flex items-center gap-3">
                       <GroupIcon title={group.title} />
                       {/* 한글 글자가 상자 안에서 위쪽에 앉아 아이콘보다 떠 보인다 — 1px 내려 맞춘다 */}
                       <span className="translate-y-px">{group.title}</span>
@@ -110,9 +145,15 @@ export function PermissionTable() {
                     key={`${group.title}-${row.feature}`}
                     className="border-border/60 hover:bg-secondary/40 border-t transition-colors"
                   >
+                    {/*
+                      ⚠️ 왼쪽 여백이 **구역 머리의 아이콘 자리만큼** 더 들어간다.
+                         `20(px-5) + 16(아이콘) + 12(gap-3) = 48`. 이걸 안 맞추면 구역 머리 글자만
+                         오른쪽으로 밀려 열이 두 줄로 어긋나 보인다.
+                      ⚠️ gap을 바꾸면 이 값도 같이 바꾼다 — 둘은 같은 숫자를 보고 있다.
+                    */}
                     <th
                       scope="row"
-                      className="px-5 py-3 text-left text-[13px] leading-5 font-normal break-keep"
+                      className="py-3 pr-5 pl-[48px] text-left text-[13px] leading-5 font-normal break-keep"
                     >
                       {row.feature}
                       {row.note && <sup className="text-muted-foreground/70 pl-0.5">*</sup>}
@@ -132,13 +173,13 @@ export function PermissionTable() {
         </table>
       </div>
 
-      {/* 세모가 무슨 뜻인지 밝힌다 — 표만 보고는 조건을 알 수 없다 */}
+      {/* 조건이 무엇인지 밝힌다 — 표만 보고는 알 수 없다 */}
       {notes.length > 0 && (
         <ul className="flex flex-col gap-1.5 pt-4">
           {notes.map((item) => (
             <li
               key={item.feature}
-              className="text-muted-foreground/80 text-[12px] leading-[19px] break-keep"
+              className="text-foreground/75 text-[12px] leading-[19px] break-keep"
             >
               <span className="pr-1">*</span>
               <strong className="text-foreground font-normal">{item.feature}</strong> — {item.note}

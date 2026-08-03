@@ -4,7 +4,7 @@ import { GripVertical, X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
-import type { AssignableRole, Position } from "../types";
+import { type AssignableRole, MAX_ORG_NAME_LENGTH, type Position } from "../types";
 import {
   type DraggingPositionId,
   type PositionDropEdge,
@@ -93,6 +93,7 @@ export function PositionRow({ position, index, ...handlers }: PositionRowProps) 
 
       {isEditing ? (
         <input
+          maxLength={MAX_ORG_NAME_LENGTH}
           autoFocus
           defaultValue={position.name}
           aria-label="직급명"

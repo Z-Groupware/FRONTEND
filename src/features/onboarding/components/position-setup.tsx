@@ -23,7 +23,11 @@ import { PositionRow, type PositionRowHandlers } from "./position-row";
  * ⚠️ 서버 저장은 미구현이다. 단계를 오갈 때 입력이 사라지지 않게
  *    임시 보관함(`draft.ts` · sessionStorage)에만 담아둔다. BE 연동 후 [완료]에서 한 번에 커밋한다.
  */
-export function PositionSetup({ initialPositions }: { initialPositions: Position[] }) {
+interface PositionSetupProps {
+  initialPositions: Position[];
+}
+
+export function PositionSetup({ initialPositions }: PositionSetupProps) {
   const list = usePositionList(initialPositions);
   const [draftName, setDraftName] = useState("");
   const [draftRole, setDraftRole] = useState<AssignableRole>(list.defaultRole);
@@ -75,7 +79,7 @@ export function PositionSetup({ initialPositions }: { initialPositions: Position
           <header className="border-border bg-muted flex h-12 shrink-0 items-center border-b px-4">
             <h2 className="flex items-center gap-2 text-[13px] leading-5">
               <span className="bg-foreground size-2 rounded-full" aria-hidden />
-              직급·권한 매핑
+              직급과 권한
             </h2>
           </header>
 

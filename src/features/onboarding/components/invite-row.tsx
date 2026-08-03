@@ -75,7 +75,7 @@ export function InviteRow({
         {index + 1}
       </span>
 
-      <span className="flex flex-1 items-center gap-2">
+      <span className="flex min-w-0 flex-1 items-center gap-2">
         <label htmlFor={`invite-email-${invite.id}`} className="sr-only">
           초대할 메일 주소
         </label>
@@ -92,7 +92,7 @@ export function InviteRow({
           onChange={(event) => onChangeEmail(invite.id, event.target.value)}
           className={cn(
             // 폭 고정 — 메일 주소 길이에 맞춘 크기다. 남는 자리는 비워 둔다
-            "h-7 w-[196px] shrink-0 border-transparent bg-transparent px-2 text-[13px] shadow-none",
+            "h-7 w-[196px] min-w-0 shrink border-transparent bg-transparent px-2 text-[13px] shadow-none",
             errorText && "border-destructive/60",
             isSent && "text-muted-foreground pointer-events-none",
           )}
@@ -102,7 +102,7 @@ export function InviteRow({
           자리를 안 잡아두면 글자가 들어오는 순간 입력칸이 줄어든다.
         */}
         {/* md 미만에서는 자리가 없어 눈에서만 감춘다 — 스크린리더는 계속 읽어야 한다 */}
-        <span className="sr-only md:not-sr-only md:block md:w-[208px] md:shrink-0">
+        <span className="sr-only md:not-sr-only md:block md:w-[208px] md:min-w-0 md:shrink">
           {errorText && (
             <span
               id={errorId}
@@ -121,7 +121,7 @@ export function InviteRow({
         </span>
       </span>
 
-      <span className={cn("w-[104px] shrink-0", isSent && "opacity-60")}>
+      <span className={cn("w-[92px] shrink-0", isSent && "opacity-80")}>
         <OptionSelect
           disabled={isSent}
           value={invite.departmentId}
@@ -129,20 +129,20 @@ export function InviteRow({
           options={handlers.departments}
           label={`${email || "새 초대"} 부서`}
           emptyText="부서 없음"
-          width={104}
+          width={92}
           // 값이 열 헤더(부서) 바로 아래 가운데로 오게 한다 — 2단계 직급명과 같은 정렬
           className="justify-center gap-1"
         />
       </span>
 
-      <span className={cn("w-[104px] shrink-0", isSent && "opacity-60")}>
+      <span className={cn("w-[92px] shrink-0", isSent && "opacity-80")}>
         <OptionSelect
           value={invite.roleId}
           onChange={(roleId) => onChangeRole(invite.id, roleId)}
           options={roleOptions}
           label={`${email || "새 초대"} 역할`}
           emptyText="없음"
-          width={104}
+          width={92}
           // 이미 나간 줄은 잠근다. 부서를 아직 안 고른 줄도 마찬가지다.
           // 발송된 줄은 `disabledText`를 주지 않는다 — 보낸 역할을 그대로 보여줘야 한다.
           disabled={isSent || !invite.departmentId}
@@ -153,7 +153,7 @@ export function InviteRow({
         />
       </span>
 
-      <span className={cn("w-[44px] shrink-0", isSent && "opacity-60")}>
+      <span className={cn("w-[92px] shrink-0", isSent && "opacity-80")}>
         <OptionSelect
           disabled={isSent}
           value={invite.positionId}
@@ -161,7 +161,7 @@ export function InviteRow({
           options={handlers.positionsFor(invite)}
           label={`${email || "새 초대"} 직급`}
           emptyText="직급 없음"
-          width={76}
+          width={92}
           className="justify-center gap-1"
         />
       </span>

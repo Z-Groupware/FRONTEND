@@ -13,9 +13,11 @@ import { cn } from "@/lib/utils";
  * ⚠️ `aria-pressed`로 상태를 읽힌다. 체크박스가 아니라 토글 버튼이라 `checked`가 아니다(§a11y).
  * ⚠️ **이미 나간 줄은 버튼을 그리지 않는다.** 같은 자리에 먹색 버튼이 그대로 남으면
  *    흐려진 줄에서 그것만 도드라져 아직 누를 수 있는 것처럼 보인다.
- * ⚠️ 잠긴 줄도 **같은 네모**를 그린다 — 여기만 글자 배지로 바꾸면 두 줄이 다른 물건처럼 보인다.
- *    대신 채움과 테두리로 갈라 놓는다: 준 줄은 **채워진 네모**, 안 준 줄은 **점선 빈 네모**다.
- *    점선은 이 줄의 다른 칸(부서·역할·직급)이 이미 쓰는 표현이라 "잠겼다"가 같이 읽힌다.
+ * ⚠️ 잠긴 줄도 **모양을 바꾸지 않는다.** 점선으로 바꾸거나 아이콘을 지우면 "왜 사라졌지"가 되고,
+ *    켜져 있었는지 아닌지도 같이 흐려진다. 네모와 방패는 그대로 두고 **밝기만 한 단 낮춘다** —
+ *    잠겼다는 건 그 줄 전체(회색 바탕·"발송 완료")가 이미 말하고 있다.
+ * ⚠️ 잠긴 칸은 `button`이 아니라 `span`이다. 눌리지 않는 버튼을 남겨 두면 마우스가 올라갔을 때
+ *    아직 고칠 수 있는 것처럼 보인다.
  */
 interface InviteAdminToggleProps {
   isOn: boolean;
@@ -31,13 +33,13 @@ export function InviteAdminToggle({ isOn, isLocked, label, onToggle }: InviteAdm
     return (
       <span
         className={cn(
-          "flex size-6 items-center justify-center rounded-md border",
+          "flex size-6 items-center justify-center rounded-md border opacity-70",
           isOn
-            ? "bg-foreground/75 text-background border-transparent"
-            : "border-border/80 border-dashed",
+            ? "bg-foreground text-background border-foreground"
+            : "border-border text-muted-foreground/40",
         )}
       >
-        {isOn && <ShieldCheck className="size-3.5" aria-hidden />}
+        <ShieldCheck className="size-3.5" aria-hidden />
         <span className="sr-only">{isOn ? "Admin 겸직" : "Admin 아님"}</span>
       </span>
     );
