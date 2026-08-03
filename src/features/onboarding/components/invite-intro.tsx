@@ -43,6 +43,14 @@ export function InviteIntro({ invites, departments, rolesOf, positions }: Invite
           직급은 <span className="text-muted-foreground">2단계에서 만든 것</span>만 고를 수 있어요.
           더 필요하면 이전 단계에서 추가해 주세요.
         </p>
+        {/*
+          ⚠️ 이 자리에서 Admin을 켜야 회사에 관리자가 **처음부터** 있다. 안 켜고 넘어가면
+             계정 발급·회의실 관리를 할 사람이 없어 대표 혼자 막힌다.
+        */}
+        <p>
+          <span className="text-muted-foreground">Admin은 역할 위에 얹는 권한</span>이라 직급과 따로
+          켭니다. Leader이면서 Admin일 수 있고, 대표는 겸할 수 없어요.
+        </p>
         <p>
           <span className="text-muted-foreground">보낸 초대장은 고치거나 취소할 수 없어요.</span>{" "}
           주소를 한 번 더 확인하고 보내주세요.

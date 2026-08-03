@@ -78,6 +78,13 @@ export interface Invite {
   /** 부서 안에서 맡는 역할(트리 아랫단). 빈 문자열이면 "없음" — 부서에 바로 속한다. */
   roleId: string;
   positionId: string;
+  /**
+   * Admin 겸직 여부.
+   * ⚠️ Admin은 **직급이 아니라 사람에게** 붙는 권한이라 2단계(직급 체계)에서 정할 수 없다.
+   *    초대하는 이 자리에서 켜야 회사에 관리자가 처음부터 있다.
+   * ⚠️ 역할을 대체하지 않는다 — 이 사람은 여전히 Leader 또는 Member이고 그 위에 Admin이 얹힌다.
+   */
+  isAdmin: boolean;
   /** 이미 초대장이 나간 줄 — 다시 보내거나 고칠 수 없다 */
   isSent: boolean;
 }

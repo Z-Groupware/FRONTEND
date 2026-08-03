@@ -92,6 +92,7 @@ export function InviteSetup({ departments, positions }: InviteSetupProps) {
     onChangeDepartment: list.changeDepartment,
     onChangeRole: list.changeRole,
     onChangePosition: list.changePosition,
+    onToggleAdmin: list.toggleAdmin,
     onRemove: list.remove,
     departments: departmentOptions,
     rolesOf,
@@ -138,6 +139,7 @@ export function InviteSetup({ departments, positions }: InviteSetupProps) {
             <span className="w-[104px] shrink-0 text-center">부서</span>
             <span className="w-[104px] shrink-0 text-center">역할</span>
             <span className="w-[76px] shrink-0 text-center">직급</span>
+            <span className="w-[56px] shrink-0 text-center">Admin</span>
             <span className="size-6 shrink-0" aria-hidden />
           </div>
 

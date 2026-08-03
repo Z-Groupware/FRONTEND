@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 
 import { isValidEmail } from "../invites";
 import type { Invite } from "../types";
+import { InviteAdminToggle } from "./invite-admin-toggle";
 import { OptionSelect, type SelectOption } from "./option-select";
 
 export interface InviteRowHandlers {
@@ -14,6 +15,7 @@ export interface InviteRowHandlers {
   onChangeDepartment: (id: string, departmentId: string) => void;
   onChangeRole: (id: string, roleId: string) => void;
   onChangePosition: (id: string, positionId: string) => void;
+  onToggleAdmin: (id: string) => void;
   onRemove: (id: string) => void;
   departments: SelectOption[];
   /** 지금 고른 부서의 역할 목록을 준다 — 부서마다 다르다 */
@@ -40,6 +42,7 @@ export function InviteRow({
   ...handlers
 }: InviteRowProps) {
   const { onChangeEmail, onChangeDepartment, onChangeRole, onChangePosition, onRemove } = handlers;
+  const { onToggleAdmin } = handlers;
 
   // 부서를 골라야 그 안의 역할이 정해진다
   const roleOptions = handlers.rolesOf(invite.departmentId);
@@ -160,6 +163,19 @@ export function InviteRow({
           emptyText="직급 없음"
           width={76}
           className="justify-center gap-1"
+        />
+      </span>
+
+      {/*
+        ⚠️ Admin은 **직급 옆 별도 칸**이다. 직급 드롭다운에 넣으면 "Leader 대신 Admin"으로 읽히는데,
+           실제로는 Leader **이면서** Admin이다.
+      */}
+      <span className="flex w-[56px] shrink-0 justify-center">
+        <InviteAdminToggle
+          isOn={invite.isAdmin}
+          isLocked={isSent}
+          label={email || "새 초대"}
+          onToggle={() => onToggleAdmin(invite.id)}
         />
       </span>
 

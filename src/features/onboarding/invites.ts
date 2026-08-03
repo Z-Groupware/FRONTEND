@@ -8,7 +8,7 @@ import type { Invite } from "./types";
  *    호출할 때마다 달라지는 값을 쓰면 서버·클라이언트 결과가 어긋난다(hydration 오류).
  */
 export function createInvite(id: string, departmentId: string, positionId: string): Invite {
-  return { id, email: "", departmentId, roleId: "", positionId, isSent: false };
+  return { id, email: "", departmentId, roleId: "", positionId, isAdmin: false, isSent: false };
 }
 
 /**
@@ -63,6 +63,18 @@ export function changeInviteDepartment(
 
 export function changeInvitePosition(invites: Invite[], id: string, positionId: string): Invite[] {
   return updateInvite(invites, id, { positionId });
+}
+
+/**
+ * Admin 겸직을 켜고 끈다.
+ * ⚠️ 이미 나간 초대장은 못 고친다 — `updateInvite`가 `isSent`를 걸러 준다.
+ * ⚠️ **몇 명까지인지 제한을 두지 않는다.** 예전엔 시스템이 계정을 발급해 기업당 1명이었지만,
+ *    이제는 사람에게 붙는 권한이라 그 근거가 사라졌다(팀 확인 필요 시 여기서 막는다).
+ */
+export function toggleInviteAdmin(invites: Invite[], id: string): Invite[] {
+  const target = invites.find((invite) => invite.id === id);
+  if (!target) return invites;
+  return updateInvite(invites, id, { isAdmin: !target.isAdmin });
 }
 
 export function removeInvite(invites: Invite[], id: string): Invite[] {

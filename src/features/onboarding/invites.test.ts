@@ -12,6 +12,7 @@ import {
   removeInvite,
   sendableInvites,
   sentInvites,
+  toggleInviteAdmin,
 } from "./invites";
 import type { Invite } from "./types";
 
@@ -22,6 +23,7 @@ const makeList = (): Invite[] => [
     departmentId: "dev",
     roleId: "",
     positionId: "staff",
+    isAdmin: false,
     isSent: false,
   },
   {
@@ -30,9 +32,18 @@ const makeList = (): Invite[] => [
     departmentId: "design",
     roleId: "",
     positionId: "staff",
+    isAdmin: false,
     isSent: false,
   },
-  { id: "c", email: "", departmentId: "dev", roleId: "", positionId: "staff", isSent: false },
+  {
+    id: "c",
+    email: "",
+    departmentId: "dev",
+    roleId: "",
+    positionId: "staff",
+    isAdmin: false,
+    isSent: false,
+  },
 ];
 
 const emails = (invites: Invite[]) => invites.map((invite) => invite.email);
@@ -45,6 +56,7 @@ describe("createInvite", () => {
       departmentId: "dev",
       roleId: "",
       positionId: "staff",
+      isAdmin: false,
       isSent: false,
     });
   });
@@ -127,6 +139,7 @@ describe("sentInvites · markInvitesSent", () => {
         departmentId: "dev",
         roleId: "",
         positionId: "staff",
+        isAdmin: false,
         isSent: false,
       },
     ];
@@ -143,6 +156,7 @@ describe("duplicateEmails", () => {
         departmentId: "dev",
         roleId: "",
         positionId: "staff",
+        isAdmin: false,
         isSent: false,
       },
       {
@@ -151,6 +165,7 @@ describe("duplicateEmails", () => {
         departmentId: "design",
         roleId: "",
         positionId: "staff",
+        isAdmin: false,
         isSent: false,
       },
       {
@@ -159,6 +174,7 @@ describe("duplicateEmails", () => {
         departmentId: "biz",
         roleId: "",
         positionId: "staff",
+        isAdmin: false,
         isSent: false,
       },
     ];
@@ -167,8 +183,24 @@ describe("duplicateEmails", () => {
 
   it("빈 줄은 중복으로 세지 않는다", () => {
     const invites: Invite[] = [
-      { id: "a", email: "", departmentId: "dev", roleId: "", positionId: "staff", isSent: false },
-      { id: "b", email: "  ", departmentId: "dev", roleId: "", positionId: "staff", isSent: false },
+      {
+        id: "a",
+        email: "",
+        departmentId: "dev",
+        roleId: "",
+        positionId: "staff",
+        isAdmin: false,
+        isSent: false,
+      },
+      {
+        id: "b",
+        email: "  ",
+        departmentId: "dev",
+        roleId: "",
+        positionId: "staff",
+        isAdmin: false,
+        isSent: false,
+      },
     ];
     expect(duplicateEmails(invites).size).toBe(0);
   });
@@ -204,6 +236,7 @@ describe("departmentsWithLeader / duplicatedLeaderIds — 부서마다 리더 �
     departmentId,
     roleId: "",
     positionId,
+    isAdmin: false,
     isSent: false,
   });
 
@@ -214,6 +247,7 @@ describe("departmentsWithLeader / duplicatedLeaderIds — 부서마다 리더 �
       departmentId: "dev",
       roleId: "",
       positionId: "lead",
+      isAdmin: false,
       isSent: false,
     };
     expect(departmentsWithLeader([empty], isLeader).size).toBe(0);
@@ -249,6 +283,7 @@ describe("이미 발송한 줄은 고칠 수 없다", () => {
       departmentId: "dev",
       roleId: "fe",
       positionId: "staff",
+      isAdmin: false,
       isSent: true,
     },
   ];
@@ -277,6 +312,7 @@ describe("같은 주소는 한 번만 나간다", () => {
       departmentId: "dev",
       roleId: "",
       positionId: "staff",
+      isAdmin: false,
       isSent: false,
     },
     {
@@ -285,6 +321,7 @@ describe("같은 주소는 한 번만 나간다", () => {
       departmentId: "design",
       roleId: "",
       positionId: "staff",
+      isAdmin: false,
       isSent: false,
     },
   ];
@@ -305,5 +342,35 @@ describe("같은 주소는 한 번만 나간다", () => {
       { ...twice[1]!, id: "c" },
     ];
     expect(sendableInvites(again)).toHaveLength(0);
+  });
+});
+
+describe("Admin 겸직 토글", () => {
+  const make = (isAdmin: boolean, isSent: boolean): Invite[] => [
+    {
+      id: "a",
+      email: "a@company.com",
+      departmentId: "dev",
+      roleId: "",
+      positionId: "staff",
+      isAdmin,
+      isSent,
+    },
+  ];
+
+  it("켜고 끌 수 있다", () => {
+    expect(toggleInviteAdmin(make(false, false), "a")[0]?.isAdmin).toBe(true);
+    expect(toggleInviteAdmin(make(true, false), "a")[0]?.isAdmin).toBe(false);
+  });
+
+  it("이미 나간 초대장은 못 바꾼다", () => {
+    expect(toggleInviteAdmin(make(false, true), "a")[0]?.isAdmin).toBe(false);
+  });
+
+  it("역할·직급은 건드리지 않는다 — 겸직은 그 위에 얹히는 것이다", () => {
+    const [next] = toggleInviteAdmin(make(false, false), "a");
+
+    expect(next?.positionId).toBe("staff");
+    expect(next?.roleId).toBe("");
   });
 });

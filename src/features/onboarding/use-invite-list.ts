@@ -15,6 +15,7 @@ import {
   removeInvite,
   sendableInvites,
   sentInvites,
+  toggleInviteAdmin,
 } from "./invites";
 import type { Invite } from "./types";
 
@@ -52,6 +53,8 @@ export function useInviteList(defaultDepartmentId: string, defaultPositionId: st
       setInvites((prev) => changeInviteRole(prev, id, roleId)),
     changePosition: (id: string, positionId: string) =>
       setInvites((prev) => changeInvitePosition(prev, id, positionId)),
+    /** Admin 겸직 — 역할을 바꾸지 않고 그 위에 얹거나 뗀다 */
+    toggleAdmin: (id: string) => setInvites((prev) => toggleInviteAdmin(prev, id)),
     /** 마지막 한 줄은 남긴다 — 줄이 0개면 다시 추가할 곳이 사라진다 */
     remove: (id: string) =>
       setInvites((prev) => (prev.length === 1 ? [newInvite(prev)] : removeInvite(prev, id))),
