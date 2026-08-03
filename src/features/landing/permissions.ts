@@ -82,7 +82,14 @@ export const PERMISSION_GROUPS: readonly PermissionGroup[] = [
     title: "관리",
     rows: [
       { feature: "계정 발급", owner: "no", leader: "no", member: "no", admin: "yes" },
-      { feature: "직급 · 권한 변경", owner: "yes", leader: "no", member: "no", admin: "yes" },
+      {
+        feature: "직급 · 권한 변경",
+        owner: "yes",
+        leader: "no",
+        member: "no",
+        admin: "yes",
+        note: "Admin 겸직은 Leader · Member에게만 줄 수 있어요 — Owner는 겸할 수 없습니다",
+      },
       { feature: "회의실 관리", owner: "no", leader: "no", member: "no", admin: "yes" },
       { feature: "구독 결제 보기", owner: "yes", leader: "no", member: "no", admin: "yes" },
     ],

@@ -92,21 +92,28 @@ export function PositionRow({ position, index, ...handlers }: PositionRowProps) 
       </span>
 
       {isEditing ? (
-        <input
-          maxLength={MAX_ORG_NAME_LENGTH}
-          autoFocus
-          defaultValue={position.name}
-          aria-label="직급명"
-          onFocus={(event) => event.currentTarget.select()}
-          onBlur={(event) => submitName(event.target.value)}
-          onKeyDown={(event) => {
-            // 한글 조합 중의 Enter는 글자 확정용이다 — 편집을 끝내면 안 된다
-            if (event.nativeEvent.isComposing) return;
-            if (event.key === "Enter") submitName(event.currentTarget.value);
-            if (event.key === "Escape") onEditingChange(null);
-          }}
-          className="border-ring bg-background w-[80px] shrink-0 rounded border px-1.5 text-center text-[13px] leading-5 outline-none"
-        />
+        <>
+          {/* ⚠️ `aria-label`만으로는 부족하다 — 입력은 `label htmlFor`로 잇는다(§a11y).
+              줄마다 있는 입력이라 id에 직급 id를 섞어 겹치지 않게 한다 */}
+          <label htmlFor={`position-name-${position.id}`} className="sr-only">
+            직급 이름
+          </label>
+          <input
+            id={`position-name-${position.id}`}
+            maxLength={MAX_ORG_NAME_LENGTH}
+            autoFocus
+            defaultValue={position.name}
+            onFocus={(event) => event.currentTarget.select()}
+            onBlur={(event) => submitName(event.target.value)}
+            onKeyDown={(event) => {
+              // 한글 조합 중의 Enter는 글자 확정용이다 — 편집을 끝내면 안 된다
+              if (event.nativeEvent.isComposing) return;
+              if (event.key === "Enter") submitName(event.currentTarget.value);
+              if (event.key === "Escape") onEditingChange(null);
+            }}
+            className="border-ring bg-background w-[80px] shrink-0 rounded border px-1.5 text-center text-[13px] leading-5 outline-none"
+          />
+        </>
       ) : (
         <button
           type="button"

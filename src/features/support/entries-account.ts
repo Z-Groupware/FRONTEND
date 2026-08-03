@@ -77,7 +77,8 @@ export const ACCOUNT_ENTRIES: readonly FaqEntry[] = [
     category: FAQ_CATEGORY.ACCOUNT,
     question: "팀장은 어디까지 볼 수 있나요?",
     keywords: ["팀장은", "leader는", "부서 전체", "팀원 현황"],
-    answer: "자기 부서 전체를 봅니다. 조회·초대·통계·중간 승인까지 그 부서의 모든 역할이 포함돼요.",
+    answer:
+      "자기 부서 전체를 봅니다. 조회·통계·중간 승인까지 그 부서의 모든 역할이 포함돼요.\n\n다만 계정 발급과 초대는 Admin을 가진 사람이 합니다 — Leader라도 Admin을 겸하지 않으면 초대할 수 없어요.",
     links: [{ label: "권한 매트릭스 보기", href: "/roles" }],
   },
   {

@@ -7,7 +7,8 @@ import { ROLE_ACCESS } from "@/features/landing/roles";
 
 export const metadata: Metadata = {
   title: "권한 매트릭스 — Z",
-  description: "Owner · Admin · Leader · Member가 각각 무엇에 닿을 수 있는지 정리했어요.",
+  description:
+    "Owner · Leader · Member 세 역할과 겸직 권한 Admin이 각각 무엇에 닿을 수 있는지 정리했어요.",
 };
 
 /**

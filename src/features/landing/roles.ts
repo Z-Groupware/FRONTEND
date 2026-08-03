@@ -36,7 +36,12 @@ export const ROLE_ACCESS: readonly RoleAccess[] = [
       "휴직 · 오프보딩 최종 승인",
       "구독 결제 보기",
     ],
-    cannot: ["계정 발급 · 회의실 관리(Admin이 하는 일)", "인수인계 신청", "팀 관리 화면"],
+    cannot: [
+      "계정 발급 · 회의실 관리(Admin이 하는 일)",
+      "Admin 겸직",
+      "인수인계 신청",
+      "팀 관리 화면",
+    ],
   },
   {
     name: "Leader",
