@@ -56,12 +56,33 @@ interface RoleSidebarProps {
 }
 
 /**
+ * 지금 경로와 **가장 길게 일치하는 href 하나**를 고른다.
+ *
+ * ⚠️ 단순 `pathname.startsWith(item.href)`는 안 된다 — `/owner`(대시보드)가
+ *    `/owner/billing/checkout`(결제)의 접두사라서 결제 화면에서 대시보드까지
+ *    같이 켜진다. 후보 중 가장 구체적인(긴) href만 켜지게 골라야 한 곳만 켜진다.
+ */
+function findActiveHref(sections: NavSection[], pathname: string): string | undefined {
+  let best: string | undefined;
+
+  for (const section of sections) {
+    for (const item of section.items) {
+      const matches = pathname === item.href || pathname.startsWith(`${item.href}/`);
+      if (matches && (!best || item.href.length > best.length)) best = item.href;
+    }
+  }
+
+  return best;
+}
+
+/**
  * 역할별 대시보드가 공유하는 사이드바.
  *
  * ⚠️ 레이아웃은 하나다 — 역할마다 `sections`만 갈아 끼운다(CLAUDE.md §라우트 그룹).
  */
 export function RoleSidebar({ sections, user }: RoleSidebarProps) {
   const pathname = usePathname();
+  const activeHref = findActiveHref(sections, pathname);
 
   return (
     /*
@@ -100,7 +121,7 @@ export function RoleSidebar({ sections, user }: RoleSidebarProps) {
             <ul className="flex flex-col gap-[1.75px]">
               {section.items.map((item) => (
                 <li key={item.href}>
-                  <SidebarItem item={item} isCurrent={pathname.startsWith(item.href)} />
+                  <SidebarItem item={item} isCurrent={item.href === activeHref} />
                 </li>
               ))}
             </ul>
