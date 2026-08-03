@@ -1,6 +1,6 @@
 "use client";
 
-import { toast } from "sonner";
+import { useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,7 @@ import { cn } from "@/lib/utils";
 
 import { formatWon } from "../format";
 import type { SubscriptionRecord } from "../types";
+import { NoticeMailDialog } from "./notice-mail-dialog";
 
 interface SubscriptionTableProps {
   subscriptions: SubscriptionRecord[];
@@ -50,10 +51,16 @@ const COLUMN_WIDTH = {
  * 구독·매출 목록 — 항상 5건(미납 우선 + 최신 가입순)만 보여준다(서버에서 이미 잘라 넘겨준다).
  *
  * ⚠️ "안내 발송" 버튼은 **미납 상태에서만** 뜬다 — 완료·해지 건에는 보낼 안내가 없다.
- * ⚠️ 지금은 버튼만 있고 실제 발송(확인 모달 · Server Action · 완료 토스트)은 다음 단계에서 붙는다.
- *    안 되는 걸 되는 척하지 않는다(CLAUDE.md §정직성) — 눌러도 준비 중 안내만 뜬다.
+ * ⚠️ 버튼을 누르면 바로 보내지 않고 **확인 Dialog**를 먼저 띄운다 — 메일 발송은 되돌릴 수
+ *    없는 조작이라 토스트만으로 확인받지 않는다(CLAUDE.md §토스트: 파괴적 작업은 Dialog).
  */
 export function SubscriptionTable({ subscriptions }: SubscriptionTableProps) {
+  const [noticeTarget, setNoticeTarget] = useState<{
+    companyId: string;
+    companyName: string;
+    ownerEmail: string;
+  } | null>(null);
+
   if (subscriptions.length === 0) {
     return (
       <div className="border-border bg-card flex items-center justify-center rounded-xl border p-10 text-center">
@@ -117,7 +124,13 @@ export function SubscriptionTable({ subscriptions }: SubscriptionTableProps) {
                     type="button"
                     variant="secondary"
                     size="sm"
-                    onClick={() => toast("안내 발송 기능은 아직 준비 중이에요")}
+                    onClick={() =>
+                      setNoticeTarget({
+                        companyId: subscription.companyId,
+                        companyName: subscription.companyName,
+                        ownerEmail: subscription.ownerEmail,
+                      })
+                    }
                   >
                     안내 발송
                   </Button>
@@ -127,6 +140,8 @@ export function SubscriptionTable({ subscriptions }: SubscriptionTableProps) {
           ))}
         </TableBody>
       </Table>
+
+      <NoticeMailDialog target={noticeTarget} onClose={() => setNoticeTarget(null)} />
     </div>
   );
 }
