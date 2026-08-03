@@ -3,13 +3,14 @@
 import { createContext, type ReactNode, useContext, useSyncExternalStore } from "react";
 
 import { SupportWidget } from "@/features/support/components/support-widget";
-import { cn } from "@/lib/utils";
 
 import { LandingBackdrop } from "./landing-backdrop";
 import { LandingFooter } from "./landing-footer";
 import { LandingHeader } from "./landing-header";
 
 const STORAGE_KEY = "z:landing-theme";
+/** 스킨 토큰이 걸리는 자리 — globals.css가 이 id로 값을 내린다 */
+const STAGE_ID = "landing-stage";
 
 /**
  * 랜딩 껍데기 — 무대·상단바·푸터를 한자리에서 그린다.
@@ -18,9 +19,12 @@ const STORAGE_KEY = "z:landing-theme";
  *    랜딩은 방문자가 직접 고르고 그 선택만 기억한다. 두 곳이 같은 스위치를 쓰면
  *    "사내 도구는 밝게, 소개 페이지는 어둡게" 같은 조합이 불가능해진다.
  * ⚠️ 기본값은 **어두움**이다 — 3D Z가 도는 검정 무대가 이 페이지의 첫인상이다.
- * ⚠️ 저장값은 `useSyncExternalStore`로 읽는다. 서버는 방문자의 선택을 모르므로 서버 스냅숏은
- *    항상 "어두움"이고, 클라이언트에서 저장값으로 이어 붙는다 — 효과 안에서 setState를 부르는
- *    방식(하이드레이션 직후 한 번 더 렌더)보다 이 편이 정석이다.
+ * ⚠️ **스킨 클래스(`landing-day`/`landing-night`)는 이 컴포넌트가 붙이지 않는다.**
+ *    `<html>`이 들고, 첫 페인트 전에 `PublicLayout`의 부트 스크립트가 정한다 —
+ *    React가 붙이면 하이드레이션까지 기다려야 해서 새로고침마다 밝기가 번쩍인다.
+ *    여기서는 토큰을 받을 자리(`id`)만 내주고, 토글할 때 html 클래스를 갈아 끼운다.
+ * ⚠️ 저장값은 `useSyncExternalStore`로 읽는다. 서버 스냅숏은 기본값(어두움)이고
+ *    클라이언트에서 저장값으로 이어 붙는다 — 색은 이미 스크립트가 맞춰 둔 상태다.
  */
 
 /** 모듈 수준 저장소 — 스냅숏 하나를 셸과 배경이 함께 읽는다 */
@@ -47,13 +51,21 @@ function getSnapshot() {
   return currentIsDark;
 }
 
-/** 서버는 방문자의 선택을 알 수 없다 — 기본값(어두움)으로 그린다 */
+/** 서버는 방문자의 선택을 알 수 없다 — 스킨은 `PublicLayout`의 부트 스크립트가 첫 페인트 전에 붙인다 */
 function getServerSnapshot() {
   return true;
 }
 
+/** 스킨 클래스는 `<html>`이 든다 — 부트 스크립트와 같은 규약을 토글에서도 지킨다 */
+function applyStageSkin(isDark: boolean) {
+  const root = document.documentElement.classList;
+  root.toggle("landing-night", isDark);
+  root.toggle("landing-day", !isDark);
+}
+
 function setIsDark(next: boolean) {
   currentIsDark = next;
+  applyStageSkin(next);
   /* 저장에 실패해도 화면은 바뀌어야 한다 — 기억만 못 할 뿐이다 */
   try {
     window.localStorage.setItem(STORAGE_KEY, next ? "dark" : "light");
@@ -79,12 +91,9 @@ export function LandingShell({ children }: { children: ReactNode }) {
   return (
     <LandingThemeContext value={{ isDark, toggle }}>
       <div
-        className={cn(
-          // 상단바가 `fixed`라 문서 흐름에서 빠진다 — 그 높이(56px)를 여기서 메운다
-          "text-foreground relative flex min-h-dvh flex-col pt-14",
-          // 어두울 때만 토큰을 뒤집는다 — 밝을 때는 기본 토큰이 그대로 산다
-          isDark ? "landing-night bg-landing-stage" : "landing-day bg-landing-stage",
-        )}
+        id={STAGE_ID}
+        // 상단바가 `fixed`라 문서 흐름에서 빠진다 — 그 높이(56px)를 여기서 메운다
+        className="text-foreground bg-landing-stage relative flex min-h-dvh flex-col pt-14"
       >
         <LandingBackdrop />
         {/*

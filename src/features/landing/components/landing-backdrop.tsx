@@ -35,29 +35,60 @@ export function LandingBackdrop() {
           "absolute inset-0",
           isDark
             ? "bg-[radial-gradient(120%_80%_at_15%_0%,rgba(37,99,235,0.22)_0%,transparent_55%),radial-gradient(110%_75%_at_85%_100%,rgba(124,58,237,0.2)_0%,transparent_55%)]"
-            : "bg-[radial-gradient(120%_80%_at_15%_0%,rgba(37,99,235,0.09)_0%,transparent_55%),radial-gradient(110%_75%_at_85%_100%,rgba(124,58,237,0.08)_0%,transparent_55%)]",
+            : /*
+                ⚠️ 밝은 무대에서는 색을 **모서리로 밀어낸다.** 화면 전체에 옅게 깔면
+                   흰 바탕도 아니고 색도 아닌 뿌연 라벤더 한 겹이 된다 —
+                   가운데는 흰 종이로 비워 두고 위·아래 끝에만 색기를 남긴다.
+                ⚠️ 다만 **너무 걷어내면 색이 사라진다.** 모서리에서는 확실히 읽히는 세기로
+                   두고, 가운데로 오면서 빠르게 끊는다(62%).
+              */
+              "bg-[radial-gradient(85%_55%_at_8%_-8%,rgba(37,99,235,0.16)_0%,transparent_62%),radial-gradient(80%_55%_at_94%_108%,rgba(124,58,237,0.15)_0%,transparent_62%)]",
         )}
       />
+
+      {/*
+        밝은 무대에만 까는 **종이 결**.
+        ⚠️ 흰 화면은 그냥 두면 "비어 있다"로 읽힌다. 아주 옅은 점 격자를 깔면 같은 흰색이
+           **여백**으로 읽힌다 — 온보딩이 이미 쓰는 결이라 같은 손에서 나온 화면이 된다.
+        ⚠️ 위아래 끝은 지운다. 화면 끝까지 격자가 닿으면 표처럼 보인다.
+      */}
+      {!isDark && (
+        <span
+          aria-hidden
+          className="bg-dot-grid absolute inset-0 [mask-image:linear-gradient(to_bottom,transparent,#000_18%,#000_82%,transparent)] opacity-[0.55]"
+        />
+      )}
 
       {/* 번진 광원 둘 — 검정이 평평해 보이지 않게 */}
       <span
         className={cn(
           "animate-drift absolute -top-24 -left-32 size-[480px] rounded-full bg-[#2563eb] blur-[130px]",
-          isDark ? "opacity-20" : "opacity-[0.09]",
+          isDark ? "opacity-20" : "opacity-[0.13]",
         )}
       />
       <span
         className={cn(
           "animate-drift absolute -right-32 -bottom-24 size-[480px] rounded-full bg-[#7c3aed] blur-[130px] [animation-delay:-7s]",
-          isDark ? "opacity-20" : "opacity-[0.09]",
+          isDark ? "opacity-20" : "opacity-[0.13]",
         )}
       />
 
-      {/* 정중앙 — 사선만 밝으면 막대처럼 읽히므로 조명을 키워 글자 전체가 보이게 한다 */}
+      {/*
+        정중앙 — 사선만 밝으면 막대처럼 읽히므로 조명을 키워 글자 전체가 보이게 한다.
+        ⚠️ **자리와 크기는 두 무대가 같다.** 밝다고 옮기거나 줄이면 같은 사이트로 안 읽힌다 —
+           밝은 쪽은 **재질과 빛**으로 읽히게 만든다(§three-z).
+        ⚠️ 밝은 무대에서는 투명도를 거의 낮추지 않는다. 몸체가 흰색이라 남는 건 음영뿐인데
+           거기서 더 흐리면 아무것도 안 보인다.
+      */}
       <div
         className={cn(
           "absolute inset-0 flex items-center justify-center",
-          isDark ? "opacity-50" : "opacity-[0.13]",
+          /*
+            ⚠️ 밝은 쪽은 **은은해야 한다.** 형태가 또렷하면 글보다 먼저 눈에 걸린다.
+            ⚠️ 가장자리는 `landing-z-fade`가 지운다 — 그만큼 지워지므로 본체 투명도는
+               조금 올려 둔다. 중심은 보이고 바깥은 없는 상태가 된다.
+          */
+          isDark ? "opacity-50" : "landing-z-fade opacity-[0.22]",
         )}
       >
         <ThreeZ size={760} tone={isDark ? "dark" : "light"} />

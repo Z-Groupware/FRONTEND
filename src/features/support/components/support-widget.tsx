@@ -1,9 +1,9 @@
 "use client";
 
-import { HelpCircle, RotateCcw, X } from "lucide-react";
+import { RotateCcw, X } from "lucide-react";
 import { useState } from "react";
 
-import { ZLogo } from "@/components/icons/z-logo";
+import { QuestionMark } from "@/components/icons/question-mark";
 
 import {
   FAQ_CATEGORY_LABEL,
@@ -25,8 +25,9 @@ import { SupportThread, type Turn } from "./support-thread";
  * ⚠️ **한 번에 답하지 않고 좁혀 간다.** 갈래를 고르고 → 질문을 고르면 → 답이 나온다.
  *    자유롭게 친 말도 여럿이 걸리면 되묻는다 — 잘못 짚는 것보다 낫다.
  * ⚠️ 서버를 부르지 않는다 — 답이 전부 번들 안에 있다. 그래서 즉시 뜨고 오프라인에서도 된다.
- * ⚠️ 색은 온보딩 도움말과 같은 `--guide-*` 토큰이다. 화면 위에 뜨는 조각이라
- *    **밝기 테마와 무관하게 어둡다** — 두 곳이 다른 톤이면 다른 제품처럼 보인다.
+ * ⚠️ 색은 **랜딩 밝기를 따라간다.** 앱 토큰(`--popover`·`--border`·`--foreground`)을 쓰면
+ *    `.landing-night`이 어두운 값으로 덮고, 밝은 무대에서는 기본값이 그대로 산다.
+ *    온보딩 도움말은 앱 안이라 여전히 `--guide-*`(항상 어두움)를 쓴다 — 무대가 다르다.
  */
 
 /** 처음 화면 — 인사와 갈래 고르기 */
@@ -83,13 +84,18 @@ export function SupportWidget() {
         onClick={() => setIsOpen((open) => !open)}
         aria-expanded={isOpen}
         aria-label={isOpen ? "도움말 닫기" : "도움말 열기"}
-        className="bg-guide-surface text-guide-foreground focus-visible:ring-ring fixed right-5 bottom-5 z-50 flex size-12 items-center justify-center rounded-full shadow-lg transition-transform hover:scale-105 focus-visible:ring-2 focus-visible:outline-hidden"
+        /*
+          ⚠️ 버튼도 **패널과 같은 톤**이다. 밝기를 뒤집어 놓으면(밝은 화면에 검은 원)
+             열기 전과 후의 색이 달라져 다른 물건처럼 보인다.
+          ⚠️ 같은 톤이라 밝은 무대에서는 흰 원이 흰 바탕에 묻힌다 — 선과 그림자로 띄운다.
+          ⚠️ 글자색은 **버튼이 한 번만** 정한다. 아이콘마다 따로 주면 열기(?)와 닫기(X)의
+             색이 어긋나 같은 버튼이 아닌 것처럼 보인다.
+          ⚠️ **밝을 때만 먹색을 꽉 채운다.** 흰 원 위 흐린 회색은 눈에 안 걸린다.
+             어두울 때는 검정 무대에 흰 원이 이미 또렷해서 한 단 눌러 둔 채로 둔다.
+        */
+        className="bg-popover text-popover-foreground/70 landing-light:text-popover-foreground border-border focus-visible:ring-ring fixed right-5 bottom-5 z-50 flex size-12 items-center justify-center rounded-full border shadow-lg transition-transform hover:scale-105 focus-visible:ring-2 focus-visible:outline-hidden"
       >
-        {isOpen ? (
-          <X className="size-5" aria-hidden />
-        ) : (
-          <HelpCircle className="size-5" aria-hidden />
-        )}
+        {isOpen ? <X className="size-5" aria-hidden /> : <QuestionMark className="size-6" />}
       </button>
 
       {isOpen && (
@@ -97,30 +103,43 @@ export function SupportWidget() {
           role="dialog"
           aria-label="도움말"
           /*
+            ⚠️ 높이를 **처음부터 고정**한다(`max-h`가 아니라 `h`). 내용에 따라 자라면 답이 붙을
+               때마다 창이 커졌다 작아졌다 해서 화면이 출렁인다 — 틀은 가만히 있고 안에서만
+               굴러가는 편이 읽기에도 낫다.
+            ⚠️ 다만 **화면 최대치로 잡지 않는다.** 열자마자 아래가 텅 비어 보인다.
+               첫 화면(인사 + 갈래 다섯)이 거의 꽉 차는 높이로 맞추고, 그보다 긴 답은 굴린다.
+          */
+          /*
             ⚠️ Esc로 닫힌다. 열어 놓고 나갈 길이 키보드에 없으면 갇힌다(§a11y).
                전역 리스너를 걸지 않는다 — 열면 입력칸으로 포커스가 들어오므로 여기서 다 받는다.
           */
           onKeyDown={(event) => {
             if (event.key === "Escape") setIsOpen(false);
           }}
-          className="bg-guide-surface border-guide-border animate-in fade-in slide-in-from-bottom-2 fixed right-5 bottom-20 z-50 flex max-h-[min(70dvh,560px)] w-[min(calc(100vw-2.5rem),368px)] flex-col overflow-hidden rounded-2xl border shadow-2xl duration-200"
+          className="bg-popover border-border animate-in fade-in slide-in-from-bottom-2 fixed right-5 bottom-20 z-50 flex h-[min(78dvh,580px)] max-h-[calc(100dvh-6rem)] w-[min(calc(100vw-2.5rem),380px)] flex-col overflow-hidden rounded-2xl border shadow-2xl duration-200"
         >
-          <div className="border-guide-border flex items-center gap-2.5 border-b px-4 py-3.5">
+          <div className="border-border flex items-center gap-2.5 border-b px-4 py-3.5">
             {/*
-              누가 말하는 창인지 **머리에서 한 번만** 알려 준다.
-              ⚠️ 원 색은 **밝기를 따라간다** — 밝을 땐 흰 원에 먹색 Z, 어두울 땐 검은 원에 흰 Z.
-                 패널 자체는 늘 어둡지만, 이 표식만은 사이트 로고와 같은 결로 읽히는 게 낫다.
+              ⚠️ 여기는 **물음표**다. Z 표식은 첫 화면 안내 블록에 이미 있어 한 창에 두 번
+                 나오고, 머리가 말해야 하는 건 브랜드가 아니라 **이 창이 도움말이라는 것**이다.
+              ⚠️ 우하단 버튼과 같은 아이콘이라 눌러서 열린 그 물건이라는 게 이어진다.
             */}
-            <span className="bg-landing-stage text-landing-dark-foreground flex size-8 shrink-0 items-center justify-center rounded-full">
-              <ZLogo className="size-3.5" aria-hidden />
+            {/*
+              ⚠️ lucide `HelpCircle`이 아니라 원을 걷어낸 `QuestionMark`다 — 배지 원 안에 넣으면
+                 원이 두 겹으로 겹친다. 원은 배지가, 물음표는 아이콘이 맡는다.
+              ⚠️ 어두울 땐 회색, 밝을 땐 먹색을 한 단 눌러서. 밝은 바탕의 회색은 흐리멍덩하고,
+                 진한 먹색은 머리글보다 먼저 튄다.
+            */}
+            <span className="bg-secondary text-muted-foreground landing-light:text-foreground/70 border-border flex size-8 shrink-0 items-center justify-center rounded-full border">
+              <QuestionMark className="size-[18px]" />
             </span>
 
             <span>
-              <span className="text-guide-foreground block text-[14px] leading-5 font-medium">
+              <span className="text-popover-foreground block text-[14px] leading-5 font-medium">
                 도움말
               </span>
               {/* ⚠️ 무엇인지 정확히 말한다 — "AI 상담원"이 아니다 */}
-              <span className="text-guide-muted block text-[11px] leading-4">
+              <span className="text-muted-foreground block text-[11px] leading-4">
                 자주 묻는 질문에서 찾아드려요
               </span>
             </span>
@@ -130,7 +149,7 @@ export function SupportWidget() {
               <button
                 type="button"
                 onClick={() => setTurns([OPENING])}
-                className="text-guide-muted hover:text-guide-foreground focus-visible:ring-guide-muted/40 ml-auto flex shrink-0 items-center gap-1 rounded-md px-1.5 py-1 text-[11px] leading-4 transition-colors focus-visible:ring-2 focus-visible:outline-hidden"
+                className="text-muted-foreground hover:text-popover-foreground focus-visible:ring-ring/40 ml-auto flex shrink-0 items-center gap-1 rounded-md px-1.5 py-1 text-[11px] leading-4 transition-colors focus-visible:ring-2 focus-visible:outline-hidden"
               >
                 <RotateCcw className="size-3" aria-hidden />
                 <span className="translate-y-px">처음으로</span>
@@ -140,7 +159,7 @@ export function SupportWidget() {
 
           <SupportThread turns={turns} onPickCategory={handleCategory} onPickEntry={handlePick} />
 
-          <form onSubmit={handleSubmit} className="border-guide-border border-t p-3">
+          <form onSubmit={handleSubmit} className="border-border border-t p-3">
             <label htmlFor="support-input" className="sr-only">
               궁금한 것을 입력하세요
             </label>
@@ -152,7 +171,7 @@ export function SupportWidget() {
               onChange={(event) => setInput(event.target.value)}
               placeholder="직접 입력해도 돼요"
               autoComplete="off"
-              className="text-guide-foreground placeholder:text-guide-muted/70 focus-visible:ring-guide-muted/40 border-guide-border h-10 w-full rounded-lg border bg-white/[0.04] px-3 text-[13px] focus-visible:ring-2 focus-visible:outline-hidden"
+              className="text-popover-foreground placeholder:text-muted-foreground/70 focus-visible:ring-ring/40 border-border bg-secondary h-10 w-full rounded-lg border px-3 text-[13px] focus-visible:ring-2 focus-visible:outline-hidden"
             />
           </form>
         </div>

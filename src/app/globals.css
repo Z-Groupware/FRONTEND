@@ -3,6 +3,13 @@
 @import "shadcn/tailwind.css";
 
 @custom-variant dark (&:is(.dark *));
+/*
+ * 랜딩 **밝은 무대에서만** 걸리는 변형.
+ * ⚠️ 다크는 이미 완성돼 있다 — 밝은 쪽만 손보려면 조건부 클래스가 필요한데,
+ *    부모 클래스로 가르는 건 기본 variant로 안 된다. 그래서 하나 만든다.
+ *    예) `landing-light:shadow-sm` — 어두운 무대에서는 아무 일도 없다.
+ */
+@custom-variant landing-light (&:is(.landing-day *));
 
 @theme inline {
   --color-background: var(--background);
@@ -65,6 +72,7 @@
   --color-landing-accent: var(--landing-accent);
   --color-landing-violet: var(--landing-violet);
   --color-landing-green: var(--landing-green);
+  --color-landing-warning: var(--landing-warning);
   --color-status-todo: var(--status-todo);
   --color-status-progress: var(--status-progress);
   --color-status-done: var(--status-done);
@@ -141,6 +149,8 @@
   --landing-accent: #2563eb;
   --landing-violet: #7c3aed;
   --landing-green: #15803d;
+  /* 목업 안의 숫자·상태에 쓰는 경고색. 원색(#f59e0b)은 흰 바탕에서 2.15:1이라 못 읽는다 */
+  --landing-warning: #b45309;
   /* 차트 카테고리 색 — UI 시맨틱(액센트 블루)과 분리된 별도 채널.
      data-viz 접근성 검증(CVD ΔE·명도·대비) 통과한 조합이다. */
   --chart-1: #eb6834;
@@ -207,11 +217,23 @@
   --landing-accent: #2563eb;
   --landing-violet: #7c3aed;
   --landing-green: #15803d;
+  --landing-warning: #b45309;
   --chart-1: #d95926;
   --chart-2: #3987e5;
 }
 
 @layer utilities {
+  /*
+   * 밝은 무대의 3D Z — **가장자리를 지운다.**
+   * ⚠️ 흰 바탕에서는 물체의 경계선이 그대로 보여 "떠 있는 덩어리"가 된다.
+   *    가운데만 남기고 밖으로 갈수록 없애면 종이에 눌러 찍힌 자국처럼 배경에 녹는다.
+   * ⚠️ 어두운 무대에는 걸지 않는다 — 거기서는 검정에 이미 자연스럽게 묻힌다.
+   */
+  .landing-day .landing-z-fade {
+    -webkit-mask-image: radial-gradient(closest-side, #000 14%, transparent 62%);
+    mask-image: radial-gradient(closest-side, #000 14%, transparent 62%);
+  }
+
   /*
    * 스크롤바를 감춘다 — 모달 안처럼 **틀이 이미 경계를 말해 주는** 자리에서만 쓴다.
    * ⚠️ 스크롤 자체는 살아 있다. 막대만 지우는 것이라 휠·트랙패드·키보드 모두 그대로 동작한다.
@@ -249,12 +271,23 @@
    * ⚠️ `:root`가 아니라 **전용 클래스**에 둔다. html에 `.dark`(앱 다크모드)가 붙어 있어도
    *    랜딩이 밝게 선택돼 있으면 이 값이 이겨야 한다.
    */
-  .landing-day {
-    --landing-stage: #ffffff;
-    --landing-dark: #fafaf9;
+  html.landing-day #landing-stage {
+    /*
+      ⚠️ 무대를 **순백으로 두지 않는다.** 카드도 흰색이라 순백 위에 올리면 둘이 같은 색이 되고,
+         1px 선 하나로만 카드가 구분돼 내용이 안 읽힌다.
+         무대를 한 단 눌러(#fafaf9) 흰 카드가 떠오르게 한다 — 섹션마다 띠를 덧칠하는 대신
+         **무대 한 장**만 바꾼다(§섹션마다 배경을 따로 칠하지 않는다).
+    */
+    --landing-stage: #fafaf9;
+    --landing-dark: #f5f5f4;
     --landing-dark-foreground: #1c1917;
-    --landing-dark-muted: #78716c;
-    --landing-dark-border: rgba(28, 25, 23, 0.12);
+    /* #78716c는 흰 바탕에서 4.37:1 — 11~12px 글자에는 모자란다 */
+    --landing-dark-muted: #6b645e;
+    /*
+      ⚠️ 선은 오히려 **눌러 둔다.** 그림자가 카드를 들어 올리는데 선까지 진하면
+         테두리가 먼저 보여 답답해진다 — 층은 그림자가, 경계는 선이 아주 얇게 맡는다.
+    */
+    --landing-dark-border: rgba(28, 25, 23, 0.1);
     /* ⚠️ 카드 표면은 **불투명**이다. 반투명이면 배경의 3D Z가 카드를 뚫고 올라와
        글 위에 회색 덩어리가 얹힌다 — 어두운 쪽에서는 은은하던 게 흰 바탕에서 지저분해진다. */
     --landing-dark-surface: #ffffff;
@@ -268,7 +301,7 @@
    * 컴포넌트는 전부 시맨틱 토큰을 쓰므로, 여기서 토큰만 뒤집으면 전 섹션이 따라온다.
    * ⚠️ 배경 토큰이 반투명이다 — 뒤에 고정된 3D Z가 섹션 사이로 비쳐야 한다.
    */
-  .landing-night {
+  html.landing-night #landing-stage {
     /* 무대 바탕 — 컴포넌트가 생 hex를 쓰지 않도록 토큰으로 낸다 */
     --landing-stage: #0a0a0a;
     --background: #0a0a0a;
@@ -304,6 +337,8 @@
     --landing-accent: #60a5fa;
     --landing-violet: #a78bfa;
     --landing-green: #4ade80;
+    /* ⚠️ 흰 바탕용 경고색(#b45309)은 검정 무대에서 3.9:1이라 못 읽는다 — 여기서만 원색으로 되돌린다 */
+    --landing-warning: #f59e0b;
   }
 
   /*
@@ -336,18 +371,6 @@
   }
 
   /* 화면 미리보기 띠가 옆으로 흐른다. 두 벌을 이어 붙여 -50%에서 끊김 없이 이어진다 */
-  @keyframes marquee {
-    from {
-      transform: translateX(0);
-    }
-    to {
-      transform: translateX(-50%);
-    }
-  }
-
-  .animate-marquee {
-    animation: marquee 40s linear infinite;
-  }
 
   /*
    * 랜딩 장식 — **배경 요소에만 쓴다.** 글이 든 요소에 걸면 안 보이는 사고가 난다.
@@ -477,8 +500,8 @@
     @keyframes rise-view {
       from {
         opacity: 0;
-        transform: translateY(72px) scale(0.96);
-        filter: blur(6px);
+        transform: translateY(120px) scale(0.92);
+        filter: blur(10px);
       }
       to {
         opacity: 1;
@@ -488,23 +511,24 @@
     }
 
     /*
-     * 이동량 72px + 흐림 — 살짝 스미는 게 아니라 아래에서 "쓕" 올라오는 게 보여야 한다.
+     * 이동량 120px + 흐림 10px — 살짝 스미는 게 아니라 아래에서 "쓕" 올라오는 게 보여야 한다.
+     * ⚠️ 값을 키운 만큼 **구간도 조금 늘린다**(0~60%). 너무 짧으면 큰 이동이 순간이동처럼 튄다.
      * ⚠️ 구간을 짧게(entry 0~50%) 잡는다 — 길게 잡으면 화면 한가운데 올 때까지 계속 어정쩡하게
      *    떠 있어서 오히려 움직임이 안 보인다. 짧아야 딱 끊기며 자리를 잡는다.
      */
     .reveal-on-scroll {
       animation: rise-view linear both;
       animation-timeline: view();
-      animation-range: entry 0% entry 50%;
+      animation-range: entry 0% entry 60%;
     }
 
     /* 나란히 놓인 카드가 한꺼번에 뜨지 않게 — 구간 자체를 밀어 차례로 올라오게 한다 */
     .reveal-step-1 {
-      animation-range: entry 8% entry 58%;
+      animation-range: entry 10% entry 70%;
     }
 
     .reveal-step-2 {
-      animation-range: entry 16% entry 66%;
+      animation-range: entry 20% entry 80%;
     }
 
     /*
@@ -514,8 +538,8 @@
     @keyframes slide-in-left {
       from {
         opacity: 0;
-        transform: translateX(-64px);
-        filter: blur(6px);
+        transform: translateX(-110px) scale(0.94);
+        filter: blur(10px);
       }
       to {
         opacity: 1;
@@ -527,8 +551,8 @@
     @keyframes slide-in-right {
       from {
         opacity: 0;
-        transform: translateX(64px);
-        filter: blur(6px);
+        transform: translateX(110px) scale(0.94);
+        filter: blur(10px);
       }
       to {
         opacity: 1;
@@ -1278,7 +1302,6 @@
     .animate-float,
     .animate-fill-in,
     .animate-mark-in,
-    .animate-marquee,
     .animate-cycle-in,
     .animate-dash-march,
     .animate-eq,

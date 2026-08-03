@@ -125,7 +125,7 @@ export function KakaoMap({ lat, lng, label, address, mapUrl, searchKeyword }: Ka
               href={mapUrl}
               target="_blank"
               rel="noreferrer"
-              className="text-primary flex items-center gap-1 text-[13px] leading-5 hover:underline"
+              className="text-landing-accent flex items-center gap-1 text-[13px] leading-5 hover:underline"
             >
               {/* 한글 글자가 상자 안에서 위쪽에 앉아 아이콘보다 떠 보인다 — 1px 내려 맞춘다 */}
               <span className="translate-y-px">카카오맵에서 열기</span>

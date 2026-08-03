@@ -23,7 +23,7 @@ export function ClosingSection() {
             href="/plans"
             className={cn(
               buttonVariants({ variant: "outline" }),
-              "border-landing-dark-border text-landing-dark-foreground hover:bg-landing-dark-surface h-11 rounded-lg bg-transparent px-5 text-[14px]",
+              "border-landing-dark-border text-landing-dark-foreground hover:bg-landing-dark-surface landing-light:bg-gradient-to-b landing-light:from-white landing-light:to-[#fbfbfa] h-11 rounded-lg bg-transparent px-5 text-[14px]",
             )}
           >
             요금제 보기

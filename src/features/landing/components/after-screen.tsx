@@ -7,8 +7,8 @@ import { Check } from "lucide-react";
  * ⚠️ 여기 담긴 건 전부 목이고, 사람 이름 대신 자리(직무)로 적는다.
  */
 const AFTER_DECISIONS = [
-  { tag: "결정", color: "#3b82f6", text: "API 문서 최신화 우선" },
-  { tag: "결정", color: "#3b82f6", text: "디자인 기준 이번 주 확정" },
+  { tag: "결정", color: "var(--landing-accent)", text: "API 문서 최신화 우선" },
+  { tag: "결정", color: "var(--landing-accent)", text: "디자인 기준 이번 주 확정" },
 ] as const;
 
 const AFTER_ACTIONS = [

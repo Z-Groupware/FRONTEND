@@ -91,7 +91,7 @@ export function LandingHero() {
           <p className="text-muted-foreground/70 flex flex-wrap items-center gap-x-3.5 gap-y-1 text-[12px] leading-[18px]">
             {HERO_NOTE.split(" · ").map((note) => (
               <span key={note} className="flex items-center gap-1">
-                <Check className="size-3 text-[#22c55e]" strokeWidth={3} aria-hidden />
+                <Check className="text-landing-green size-3" strokeWidth={3} aria-hidden />
                 {note}
               </span>
             ))}
