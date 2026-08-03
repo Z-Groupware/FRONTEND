@@ -5,9 +5,15 @@ import { paginate, type PaginatedResult } from "@/lib/paginate";
 import { isMock } from "@/mocks/config";
 
 import { findMockPendingApproval, listMockPendingApprovals } from "./mock/approvals";
+import { MOCK_BILLING_OVERVIEW } from "./mock/billing";
 import { findMockCompany, listMockCompanies, setMockCompanyStatus } from "./mock/companies";
 import { MOCK_DASHBOARD_OVERVIEW } from "./mock/dashboard";
-import type { DashboardOverview, ManagedCompany, PendingCompanyApproval } from "./types";
+import type {
+  BillingOverview,
+  DashboardOverview,
+  ManagedCompany,
+  PendingCompanyApproval,
+} from "./types";
 
 /**
  * SYSTEM 대시보드 조회 — **격리막**(CLAUDE.md).
@@ -97,4 +103,15 @@ export async function setCompanyStatus(
   if (isMock) return setMockCompanyStatus(id, status);
 
   throw new Error("기업 상태 변경 API가 아직 연결되지 않았습니다.");
+}
+
+/**
+ * SYSTEM 구독·매출 조회 — **격리막**(CLAUDE.md).
+ * ⚠️ 이 화면은 프로젝트 기간 내내 목으로 남을 가능성이 크다(팀 합의) — 그래도 격리막은 유지한다.
+ */
+export async function getBillingOverview(): Promise<BillingOverview> {
+  if (isMock) return MOCK_BILLING_OVERVIEW;
+
+  // ⚠️ 미구현 — API 스펙 확정 후 `ep.systemDashboard()`류 경로로 fetch하고 매퍼로 UI 계약에 맞춘다.
+  throw new Error("구독·매출 조회 API가 아직 연결되지 않았습니다.");
 }
