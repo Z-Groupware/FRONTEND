@@ -1,4 +1,4 @@
-import type { CompanySize, CompanyStatus, Plan } from "@/constants/domain";
+import type { CompanySize, CompanyStatus, PaymentStatus, Plan } from "@/constants/domain";
 
 /** 대시보드 상단 통계 4종. */
 export interface DashboardSummary {
@@ -72,4 +72,51 @@ export interface ManagedCompany {
   /** "YYYY-MM-DD" */
   joinedAt: string;
   ownerEmail: string;
+}
+
+/** 구독·매출 상단 통계 4종. */
+export interface BillingSummary {
+  /** 이번 달 월 반복 매출(원) */
+  mrr: number;
+  /** 전월 대비 증감률(%) */
+  mrrDeltaPercent: number;
+  /** 결제 완료 건수 */
+  paidCount: number;
+  /** 결제 완료 건 합계(원) — 통계 카드의 보조 문구용 */
+  paidAmount: number;
+  unpaidCount: number;
+  /** 이번 달 해지 건수 */
+  canceledCountThisMonth: number;
+}
+
+/** 월별 MRR 추이 — 막대그래프 한 칸. */
+export interface MonthlyMrr {
+  /** 화면에 그대로 나가는 월 라벨("2월" 등) */
+  month: string;
+  amount: number;
+}
+
+/** 구독·매출 목록 한 행. */
+export interface SubscriptionRecord {
+  companyId: string;
+  companyName: string;
+  plan: Plan;
+  memberCount: number;
+  /** 이번 결제 금액(원) — Free 플랜은 0 */
+  amount: number;
+  /** "YYYY-MM-DD" | null — Free 플랜은 결제일이 없다 */
+  billingDate: string | null;
+  paymentStatus: PaymentStatus;
+  /** 미납 기업에 안내 메일을 보낼 대상 — 승인 시 발급된 오너 이메일과 같다 */
+  ownerEmail: string;
+  /** 정렬 기준(최신 가입순 보충 표시용) — 화면에는 안 나간다 */
+  joinedAt: string;
+}
+
+/** 구독·매출 화면 하나가 필요로 하는 데이터 전부 — 격리막의 UI 계약. */
+export interface BillingOverview {
+  summary: BillingSummary;
+  monthlyMrr: MonthlyMrr[];
+  /** 항상 5건 — 미납 우선, 모자라면 최신 가입순으로 채운다(화면 명세) */
+  subscriptions: SubscriptionRecord[];
 }
