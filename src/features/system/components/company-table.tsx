@@ -1,6 +1,5 @@
 import Link from "next/link";
 
-import { Badge } from "@/components/ui/badge";
 import {
   Table,
   TableBody,
@@ -13,6 +12,7 @@ import { COMPANY_SIZE_LABEL, COMPANY_STATUS_LABEL, PLAN } from "@/constants/doma
 import { cn } from "@/lib/utils";
 
 import type { ManagedCompany } from "../types";
+import { StatusBadge, type StatusTone } from "./status-badge";
 
 interface CompanyTableProps {
   companies: ManagedCompany[];
@@ -22,18 +22,15 @@ interface CompanyTableProps {
 }
 
 /** 행 하나의 높이 — `py-4`가 아니라 고정 클래스로 못박아 내용에 따라 늘어나지 않게 한다. */
-const ROW_HEIGHT_CLASS = "h-13"; // 52px
-const ROW_HEIGHT_PX = 52;
-const HEADER_HEIGHT_CLASS = "h-[41px]";
-const HEADER_HEIGHT_PX = 41;
+const ROW_HEIGHT_CLASS = "h-[42px]";
+const ROW_HEIGHT_PX = 42;
+const HEADER_HEIGHT_CLASS = "h-[34px]";
+const HEADER_HEIGHT_PX = 34;
 
-const STATUS_BADGE_VARIANT: Record<
-  ManagedCompany["status"],
-  "default" | "secondary" | "destructive"
-> = {
-  ACTIVE: "default",
-  SUSPENDED: "destructive",
-  UNPAID: "secondary",
+const STATUS_TONE: Record<ManagedCompany["status"], StatusTone> = {
+  ACTIVE: "positive",
+  SUSPENDED: "negative",
+  UNPAID: "warning",
 };
 
 /**
@@ -76,7 +73,7 @@ export function CompanyTable({ companies, buildDetailHref, pageSize }: CompanyTa
 
   return (
     <div className="border-border bg-card overflow-hidden rounded-xl border">
-      <Table className="table-fixed">
+      <Table className="table-fixed text-xs">
         {/* 각 컬럼 폭을 %로 고정 — 기업명이 길어져도 다른 컬럼이 밀리지 않는다(위 COLUMN_WIDTH 참고) */}
         <colgroup>
           <col style={{ width: COLUMN_WIDTH.name }} />
@@ -89,20 +86,20 @@ export function CompanyTable({ companies, buildDetailHref, pageSize }: CompanyTa
         </colgroup>
         <TableHeader>
           <TableRow className={cn(HEADER_HEIGHT_CLASS, "hover:bg-transparent")}>
-            <TableHead className="pl-6">기업명</TableHead>
-            <TableHead>기업 코드</TableHead>
-            <TableHead>규모</TableHead>
-            <TableHead>플랜</TableHead>
-            <TableHead>구성원</TableHead>
-            <TableHead>이번달 회의</TableHead>
-            <TableHead className="pr-6">상태</TableHead>
+            <TableHead className="pl-4 text-xs">기업명</TableHead>
+            <TableHead className="text-center text-xs">기업 코드</TableHead>
+            <TableHead className="text-center text-xs">규모</TableHead>
+            <TableHead className="text-center text-xs">플랜</TableHead>
+            <TableHead className="text-center text-xs">구성원</TableHead>
+            <TableHead className="text-center text-xs">이번달 회의</TableHead>
+            <TableHead className="pr-4 text-center text-xs">상태</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {companies.map((company) => (
             // relative — stretched link(아래 after:absolute)가 이 행 기준으로 덮인다
             <TableRow key={company.id} className={cn(ROW_HEIGHT_CLASS, "relative")}>
-              <TableCell className="max-w-0 pl-6">
+              <TableCell className="max-w-0 pl-4">
                 <Link
                   href={buildDetailHref(company.id)}
                   className="text-foreground focus-visible:ring-ring block truncate rounded after:absolute after:inset-0 hover:underline focus-visible:ring-2 focus-visible:outline-none"
@@ -111,27 +108,28 @@ export function CompanyTable({ companies, buildDetailHref, pageSize }: CompanyTa
                   {company.name}
                 </Link>
               </TableCell>
-              <TableCell className="text-muted-foreground max-w-0 truncate" title={company.code}>
+              <TableCell
+                className="text-muted-foreground max-w-0 truncate text-center"
+                title={company.code}
+              >
                 {company.code}
               </TableCell>
-              <TableCell className="text-muted-foreground">
+              <TableCell className="text-muted-foreground text-center">
                 {COMPANY_SIZE_LABEL[company.size]}
               </TableCell>
-              <TableCell>
-                <Badge variant={company.plan === PLAN.TEAM ? "default" : "secondary"}>
-                  {company.plan === PLAN.TEAM ? "Team" : "Free"}
-                </Badge>
+              <TableCell className="text-foreground text-center">
+                {company.plan === PLAN.TEAM ? "Team" : "Free"}
               </TableCell>
-              <TableCell className="text-muted-foreground tabular-nums">
+              <TableCell className="text-muted-foreground text-center tabular-nums">
                 {company.memberCount}명
               </TableCell>
-              <TableCell className="text-muted-foreground tabular-nums">
+              <TableCell className="text-muted-foreground text-center tabular-nums">
                 {company.meetingCountThisMonth}회
               </TableCell>
-              <TableCell className="pr-6">
-                <Badge variant={STATUS_BADGE_VARIANT[company.status]}>
+              <TableCell className="pr-4 text-center">
+                <StatusBadge tone={STATUS_TONE[company.status]}>
                   {COMPANY_STATUS_LABEL[company.status]}
-                </Badge>
+                </StatusBadge>
               </TableCell>
             </TableRow>
           ))}
@@ -142,7 +140,7 @@ export function CompanyTable({ companies, buildDetailHref, pageSize }: CompanyTa
               aria-hidden
               className={cn(ROW_HEIGHT_CLASS, "border-transparent hover:bg-transparent")}
             >
-              <TableCell className="pl-6" colSpan={7} />
+              <TableCell className="pl-4" colSpan={7} />
             </TableRow>
           ))}
         </TableBody>
