@@ -218,6 +218,12 @@ export const COMPANY_STATUS = {
 } as const;
 export type CompanyStatus = (typeof COMPANY_STATUS)[keyof typeof COMPANY_STATUS];
 
+export const COMPANY_STATUS_LABEL: Record<CompanyStatus, string> = {
+  ACTIVE: "활성",
+  SUSPENDED: "정지",
+  UNPAID: "미납",
+};
+
 /** 기업 가입 신청서의 직원 규모 구간. */
 export const COMPANY_SIZE = {
   MICRO: "MICRO",
