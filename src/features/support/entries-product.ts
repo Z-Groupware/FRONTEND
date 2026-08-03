@@ -144,7 +144,7 @@ export const PRODUCT_ENTRIES: readonly FaqEntry[] = [
     question: "플랜을 나중에 바꿀 수 있나요?",
     keywords: ["플랜 변경", "업그레이드", "바꿀 수", "옮길 수", "downgrade", "전환"],
     answer:
-      "네, Free로 시작해서 나중에 올리셔도 돼요.\n\n플랜은 **기능 접근**으로 갈립니다 — 개수나 용량 한도로 막지 않아요.",
+      "네, Free로 시작해서 나중에 올리셔도 돼요.\n\n플랜은 기능 접근으로 갈립니다 — 개수나 용량 한도로 막지 않아요.",
     links: [{ label: "요금제 비교", href: "/plans" }],
   },
   {
