@@ -337,6 +337,8 @@
     --landing-accent: #60a5fa;
     --landing-violet: #a78bfa;
     --landing-green: #4ade80;
+    /* ⚠️ 흰 바탕용 경고색(#b45309)은 검정 무대에서 3.9:1이라 못 읽는다 — 여기서만 원색으로 되돌린다 */
+    --landing-warning: #f59e0b;
   }
 
   /*

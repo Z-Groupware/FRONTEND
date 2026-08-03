@@ -65,6 +65,9 @@ export function SupportThread({ turns, onPickCategory, onPickEntry }: SupportThr
   return (
     <div
       role="log"
+      /* ⚠️ `role="log"`인 div는 기본적으로 포커스를 못 받는다. 스크롤바까지 숨겨 놨으므로
+         `tabIndex`가 없으면 키보드만 쓰는 사람은 위로 올라간 답을 아예 못 읽는다(§a11y) */
+      tabIndex={0}
       ref={boxRef}
       className="scrollbar-hidden flex flex-1 flex-col overflow-y-auto p-4"
     >

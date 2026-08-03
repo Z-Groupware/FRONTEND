@@ -116,7 +116,7 @@ export function SupportWidget() {
           onKeyDown={(event) => {
             if (event.key === "Escape") setIsOpen(false);
           }}
-          className="bg-popover border-border animate-in fade-in slide-in-from-bottom-2 fixed right-5 bottom-20 z-50 flex h-[min(78dvh,580px)] w-[min(calc(100vw-2.5rem),380px)] flex-col overflow-hidden rounded-2xl border shadow-2xl duration-200"
+          className="bg-popover border-border animate-in fade-in slide-in-from-bottom-2 fixed right-5 bottom-20 z-50 flex h-[min(78dvh,580px)] max-h-[calc(100dvh-6rem)] w-[min(calc(100vw-2.5rem),380px)] flex-col overflow-hidden rounded-2xl border shadow-2xl duration-200"
         >
           <div className="border-border flex items-center gap-2.5 border-b px-4 py-3.5">
             {/*
