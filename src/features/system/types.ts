@@ -1,4 +1,4 @@
-import type { Plan } from "@/constants/domain";
+import type { CompanySize, Plan } from "@/constants/domain";
 
 /** 대시보드 상단 통계 4종. */
 export interface DashboardSummary {
@@ -43,4 +43,16 @@ export interface DashboardOverview {
   monthlySignups: MonthlySignup[];
   planDistribution: PlanDistributionSlice[];
   recentCompanies: RecentCompany[];
+}
+
+/** 기업 가입 승인 대기 신청서 한 건. */
+export interface PendingCompanyApproval {
+  id: string;
+  companyName: string;
+  businessRegistrationNumber: string;
+  representativeName: string;
+  contactEmail: string;
+  size: CompanySize;
+  /** "YYYY-MM-DD" */
+  appliedAt: string;
 }

@@ -217,3 +217,19 @@ export const COMPANY_STATUS = {
   UNPAID: "UNPAID",
 } as const;
 export type CompanyStatus = (typeof COMPANY_STATUS)[keyof typeof COMPANY_STATUS];
+
+/** 기업 가입 신청서의 직원 규모 구간. */
+export const COMPANY_SIZE = {
+  MICRO: "MICRO",
+  SMALL: "SMALL",
+  MEDIUM: "MEDIUM",
+  LARGE: "LARGE",
+} as const;
+export type CompanySize = (typeof COMPANY_SIZE)[keyof typeof COMPANY_SIZE];
+
+export const COMPANY_SIZE_LABEL: Record<CompanySize, string> = {
+  MICRO: "5명 이하",
+  SMALL: "6~20명",
+  MEDIUM: "21~100명",
+  LARGE: "101명 이상",
+};
