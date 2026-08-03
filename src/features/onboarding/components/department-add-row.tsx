@@ -4,6 +4,8 @@ import { Plus } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
 
+import { MAX_ORG_NAME_LENGTH } from "../types";
+
 interface DepartmentAddRowProps {
   value: string;
   onChange: (value: string) => void;
@@ -18,9 +20,10 @@ export function DepartmentAddRow({ value, onChange, onSubmit }: DepartmentAddRow
         부서 이름
       </label>
       <Input
+        maxLength={MAX_ORG_NAME_LENGTH}
         id="root-department"
         value={value}
-        placeholder="부서 추가 (Enter)"
+        placeholder="새 부서 이름 (Enter)"
         onChange={(event) => onChange(event.target.value)}
         onKeyDown={(event) => {
           // 한글 입력 중(조합 중)의 Enter는 글자를 확정하는 키다 — 여기서 처리하면 두 번 등록된다
@@ -30,12 +33,12 @@ export function DepartmentAddRow({ value, onChange, onSubmit }: DepartmentAddRow
             onSubmit();
           }
         }}
-        className="h-8 flex-1 rounded-md border border-dashed bg-transparent px-2.5 text-[13px]"
+        className="h-8 flex-1 rounded-md border bg-transparent px-2.5 text-xs"
       />
       <button
         type="button"
         onClick={onSubmit}
-        className="text-muted-foreground bg-foreground/5 hover:bg-foreground/10 focus-visible:ring-ring flex h-8 shrink-0 items-center gap-1 rounded-md px-2.5 text-[13px] transition-colors focus-visible:ring-2 focus-visible:outline-hidden"
+        className="text-muted-foreground bg-foreground/5 hover:bg-foreground/10 focus-visible:ring-ring flex h-8 shrink-0 items-center gap-1 rounded-md px-2.5 text-xs transition-colors focus-visible:ring-2 focus-visible:outline-hidden"
       >
         <Plus className="size-3.5" />
         <span className="leading-none">추가</span>

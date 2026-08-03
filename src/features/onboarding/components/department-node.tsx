@@ -9,6 +9,7 @@ import {
   type DepartmentNode as DepartmentNodeType,
   getDepthLabel,
   MAX_DEPARTMENT_DEPTH,
+  MAX_ORG_NAME_LENGTH,
 } from "../types";
 import { type DraggingInfo, type DropZone, useDepartmentDrag } from "../use-department-drag";
 import { DepartmentNodeActions } from "./department-node-actions";
@@ -120,20 +121,28 @@ export function DepartmentNode({ node, depth, parentId, ...handlers }: Departmen
         <Folder className="text-muted-foreground/60 size-3.5 shrink-0" aria-hidden />
 
         {isEditing ? (
-          <input
-            autoFocus
-            defaultValue={node.name}
-            aria-label="부서 이름"
-            onFocus={(event) => event.currentTarget.select()}
-            onBlur={(event) => submitName(event.target.value)}
-            onKeyDown={(event) => {
-              // 한글 조합 중의 Enter는 글자 확정용이다 — 편집을 끝내면 안 된다
-              if (event.nativeEvent.isComposing) return;
-              if (event.key === "Enter") submitName(event.currentTarget.value);
-              if (event.key === "Escape") onEditingChange(null);
-            }}
-            className="border-ring bg-background min-w-0 flex-1 rounded border px-1.5 text-[13px] leading-5 outline-none"
-          />
+          <>
+            {/* ⚠️ `aria-label`만으로는 부족하다 — 입력은 `label htmlFor`로 잇는다(§a11y).
+                줄마다 있는 입력이라 id에 노드 id를 섞어 겹치지 않게 한다 */}
+            <label htmlFor={`department-name-${node.id}`} className="sr-only">
+              {getDepthLabel(depth)} 이름
+            </label>
+            <input
+              id={`department-name-${node.id}`}
+              maxLength={MAX_ORG_NAME_LENGTH}
+              autoFocus
+              defaultValue={node.name}
+              onFocus={(event) => event.currentTarget.select()}
+              onBlur={(event) => submitName(event.target.value)}
+              onKeyDown={(event) => {
+                // 한글 조합 중의 Enter는 글자 확정용이다 — 편집을 끝내면 안 된다
+                if (event.nativeEvent.isComposing) return;
+                if (event.key === "Enter") submitName(event.currentTarget.value);
+                if (event.key === "Escape") onEditingChange(null);
+              }}
+              className="border-ring bg-background min-w-0 flex-1 rounded border px-1.5 text-[13px] leading-5 outline-none"
+            />
+          </>
         ) : (
           <button
             type="button"

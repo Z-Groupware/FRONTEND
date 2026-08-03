@@ -9,10 +9,12 @@ import type { AssignableRole } from "../types";
  */
 export const ROLE_TONE: Record<AssignableRole, string> = {
   OWNER: "bg-role-owner-surface text-role-owner",
-  ADMIN: "bg-role-admin-surface text-role-admin",
   LEADER: "bg-role-leader-surface text-role-leader",
   MEMBER: "bg-role-member-surface text-role-member",
 };
+
+/** 겸직 배지 — 역할 배지 **옆에** 하나 더 붙는다. 역할을 대체하지 않는다. */
+export const ADMIN_TONE = "bg-role-admin-surface text-role-admin";
 
 interface RoleBadgeProps {
   role: AssignableRole;

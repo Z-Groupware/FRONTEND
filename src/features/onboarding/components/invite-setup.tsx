@@ -14,6 +14,7 @@ import type { DepartmentNode, Invite, Position } from "../types";
 import { useDraftSync } from "../use-draft-sync";
 import { useInviteList } from "../use-invite-list";
 import { useInviteOptions } from "../use-invite-options";
+import { InviteColumnHead } from "./invite-column-head";
 import { InviteIntro } from "./invite-intro";
 import { InviteRow, type InviteRowHandlers } from "./invite-row";
 import { InviteSendBar } from "./invite-send-bar";
@@ -92,6 +93,7 @@ export function InviteSetup({ departments, positions }: InviteSetupProps) {
     onChangeDepartment: list.changeDepartment,
     onChangeRole: list.changeRole,
     onChangePosition: list.changePosition,
+    onToggleAdmin: list.toggleAdmin,
     onRemove: list.remove,
     departments: departmentOptions,
     rolesOf,
@@ -131,15 +133,7 @@ export function InviteSetup({ departments, positions }: InviteSetupProps) {
             </h2>
           </header>
 
-          {/* 행(InviteRow)과 같은 padding·gap·칸 너비를 써야 열이 맞는다 */}
-          <div className="text-muted-foreground/60 border-border bg-card flex h-7 shrink-0 items-center gap-2 border-b px-4 text-[11px] leading-4">
-            <span className="w-5 shrink-0" aria-hidden />
-            <span className="flex-1 pl-2">이메일</span>
-            <span className="w-[104px] shrink-0 text-center">부서</span>
-            <span className="w-[104px] shrink-0 text-center">역할</span>
-            <span className="w-[76px] shrink-0 text-center">직급</span>
-            <span className="size-6 shrink-0" aria-hidden />
-          </div>
+          <InviteColumnHead />
 
           {/* 스크롤바는 숨긴다(스크롤 자체는 된다) */}
           <div className="flex-1 [scrollbar-width:none] overflow-auto overscroll-contain [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">

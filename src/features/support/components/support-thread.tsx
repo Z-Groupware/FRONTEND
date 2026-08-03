@@ -121,7 +121,11 @@ export function SupportThread({ turns, onPickCategory, onPickEntry }: SupportThr
               key={index}
               className="border-border bg-secondary max-w-[92%] rounded-2xl rounded-bl-sm border px-3.5 py-3"
             >
-              {/* ⚠️ `whitespace-pre-line` — 답에 넣어 둔 빈 줄이 그대로 문단이 된다 */}
+              {/*
+                ⚠️ `whitespace-pre-line` — 답에 넣어 둔 빈 줄이 그대로 문단이 된다.
+                ⚠️ **평문이다.** 마크다운을 렌더하지 않으므로 답변에 별표를 쓰면 그대로 보인다 —
+                   강조가 필요하면 문장 구조로 푼다(§정직성).
+              */}
               <p className="text-popover-foreground text-[12px] leading-[20px] break-keep whitespace-pre-line">
                 {turn.kind === "answer" ? turn.entry.answer : turn.text}
               </p>

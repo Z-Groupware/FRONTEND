@@ -4,7 +4,7 @@ import { Plus } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
 
-import type { AssignableRole } from "../types";
+import { type AssignableRole, MAX_ORG_NAME_LENGTH } from "../types";
 import { RoleSelect } from "./role-select";
 
 interface PositionAddRowProps {
@@ -32,9 +32,10 @@ export function PositionAddRow({
         직급명
       </label>
       <Input
+        maxLength={MAX_ORG_NAME_LENGTH}
         id="new-position"
         value={name}
-        placeholder="직급명 입력 (Enter)"
+        placeholder="새 직급 이름 (Enter)"
         onChange={(event) => onNameChange(event.target.value)}
         onKeyDown={(event) => {
           // 한글 입력 중(조합 중)의 Enter는 글자를 확정하는 키다 — 여기서 처리하면 두 번 등록된다
@@ -44,7 +45,7 @@ export function PositionAddRow({
             onSubmit();
           }
         }}
-        className="h-8 flex-1 rounded-md border border-dashed bg-transparent px-2.5 text-[13px]"
+        className="h-8 flex-1 rounded-md border bg-transparent px-2.5 text-xs"
       />
       <RoleSelect
         value={role}
@@ -56,7 +57,7 @@ export function PositionAddRow({
       <button
         type="button"
         onClick={onSubmit}
-        className="text-muted-foreground bg-foreground/5 hover:bg-foreground/10 focus-visible:ring-ring flex h-8 shrink-0 items-center gap-1 rounded-md px-2.5 text-[13px] transition-colors focus-visible:ring-2 focus-visible:outline-hidden"
+        className="text-muted-foreground bg-foreground/5 hover:bg-foreground/10 focus-visible:ring-ring flex h-8 shrink-0 items-center gap-1 rounded-md px-2.5 text-xs transition-colors focus-visible:ring-2 focus-visible:outline-hidden"
       >
         <Plus className="size-3.5" />
         <span className="leading-none">추가</span>

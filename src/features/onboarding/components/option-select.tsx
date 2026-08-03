@@ -71,11 +71,18 @@ export function OptionSelect({
       value === "" ? (allowNone ? noneText : emptyText) : (nameOf(value) ?? emptyText);
 
     return (
+      /*
+        ⚠️ 고를 수 있는 칸과 **폭·높이·반지름·테두리를 똑같이** 맞춘다
+           (`width` · `h-7` · `rounded-lg` · `border-input`). 하나라도 다르면 같은 줄에서
+           두 칸이 다른 물건처럼 보인다 — 특히 반지름 차이가 제일 먼저 눈에 걸린다.
+        ⚠️ 화살표는 넣지 않는다 — 누를 수 없는 칸에 열리는 표시를 두면 눌러 보게 된다.
+           잠겼다는 건 흐린 글자와 그 줄 전체가 말한다.
+      */
       <span
         style={{ width }}
         aria-label={`${label} — ${disabledText ?? `${settled}, 고칠 수 없어요`}`}
         className={cn(
-          "text-muted-foreground/50 border-border/60 flex h-7 items-center justify-center rounded-md border border-dashed px-2 text-xs",
+          "text-muted-foreground border-input flex h-7 items-center justify-center rounded-lg border px-2 text-[11px]",
           className,
         )}
       >
@@ -90,7 +97,7 @@ export function OptionSelect({
       <span
         style={{ width }}
         className={cn(
-          "text-muted-foreground/60 border-border flex h-7 items-center justify-center rounded-md border border-dashed px-2 text-xs",
+          "text-muted-foreground border-input flex h-7 items-center justify-center rounded-lg border px-2 text-[11px]",
           className,
         )}
       >
@@ -113,10 +120,10 @@ export function OptionSelect({
         style={{ width }}
         // data-[size=default]:h-8 이 기본으로 걸려 있어 h-7만으로는 안 먹는다 —
         // 옆 입력칸(28px)과 높이를 맞춰야 한 줄로 보인다
-        className={cn(
-          "h-7 justify-between px-2 text-xs leading-none data-[size=default]:h-7",
-          className,
-        )}
+        // ⚠️ 정렬은 기본(`justify-between`)을 그대로 둔다. 대신 **칸을 내용에 맞게 좁혔다** —
+        //    칸이 넓으면 글자와 화살표가 양 끝으로 벌어져 사이가 텅 비고, 칸 자체도 커 보인다.
+        //    가운데로 모으는 것보다 이 편이 긴 이름이 들어와도 잘리며 버틴다.
+        className={cn("h-7 px-2 text-[11px] leading-none data-[size=default]:h-7", className)}
       >
         <SelectValue>
           {(id) => (id === NONE ? noneText : (nameOf(id as string) ?? emptyText))}

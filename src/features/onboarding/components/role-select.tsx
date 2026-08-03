@@ -40,7 +40,7 @@ export function RoleSelect({
         // ⚠️ 기본 `data-[size=default]:h-8`이 특이도가 높아 `h-7`만으로는 안 먹는다.
         //    그래서 높이를 className으로 넘겨받지 않고 여기서 정한다 — 밖에서 덮으려 하면 조용히 무시된다.
         className={cn(
-          "w-[92px] justify-between px-2 text-xs leading-none",
+          "w-[92px] px-2 text-[11px] leading-none",
           size === "sm" ? "h-7 data-[size=default]:h-7" : "h-8 data-[size=default]:h-8",
           className,
         )}

@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 
 import { isValidEmail } from "../invites";
 import type { Invite } from "../types";
+import { InviteAdminToggle } from "./invite-admin-toggle";
 import { OptionSelect, type SelectOption } from "./option-select";
 
 export interface InviteRowHandlers {
@@ -14,6 +15,7 @@ export interface InviteRowHandlers {
   onChangeDepartment: (id: string, departmentId: string) => void;
   onChangeRole: (id: string, roleId: string) => void;
   onChangePosition: (id: string, positionId: string) => void;
+  onToggleAdmin: (id: string) => void;
   onRemove: (id: string) => void;
   departments: SelectOption[];
   /** 지금 고른 부서의 역할 목록을 준다 — 부서마다 다르다 */
@@ -40,6 +42,7 @@ export function InviteRow({
   ...handlers
 }: InviteRowProps) {
   const { onChangeEmail, onChangeDepartment, onChangeRole, onChangePosition, onRemove } = handlers;
+  const { onToggleAdmin } = handlers;
 
   // 부서를 골라야 그 안의 역할이 정해진다
   const roleOptions = handlers.rolesOf(invite.departmentId);
@@ -72,7 +75,7 @@ export function InviteRow({
         {index + 1}
       </span>
 
-      <span className="flex flex-1 items-center gap-2">
+      <span className="flex min-w-0 flex-1 items-center gap-2">
         <label htmlFor={`invite-email-${invite.id}`} className="sr-only">
           초대할 메일 주소
         </label>
@@ -89,7 +92,7 @@ export function InviteRow({
           onChange={(event) => onChangeEmail(invite.id, event.target.value)}
           className={cn(
             // 폭 고정 — 메일 주소 길이에 맞춘 크기다. 남는 자리는 비워 둔다
-            "h-7 w-[196px] shrink-0 border-transparent bg-transparent px-2 text-[13px] shadow-none",
+            "h-7 w-[196px] min-w-0 shrink border-transparent bg-transparent px-2 text-[13px] shadow-none",
             errorText && "border-destructive/60",
             isSent && "text-muted-foreground pointer-events-none",
           )}
@@ -99,7 +102,7 @@ export function InviteRow({
           자리를 안 잡아두면 글자가 들어오는 순간 입력칸이 줄어든다.
         */}
         {/* md 미만에서는 자리가 없어 눈에서만 감춘다 — 스크린리더는 계속 읽어야 한다 */}
-        <span className="sr-only md:not-sr-only md:block md:w-[208px] md:shrink-0">
+        <span className="sr-only md:not-sr-only md:block md:w-[208px] md:min-w-0 md:shrink">
           {errorText && (
             <span
               id={errorId}
@@ -118,7 +121,7 @@ export function InviteRow({
         </span>
       </span>
 
-      <span className={cn("w-[104px] shrink-0", isSent && "opacity-60")}>
+      <span className={cn("w-[92px] shrink-0", isSent && "opacity-80")}>
         <OptionSelect
           disabled={isSent}
           value={invite.departmentId}
@@ -126,20 +129,20 @@ export function InviteRow({
           options={handlers.departments}
           label={`${email || "새 초대"} 부서`}
           emptyText="부서 없음"
-          width={104}
+          width={92}
           // 값이 열 헤더(부서) 바로 아래 가운데로 오게 한다 — 2단계 직급명과 같은 정렬
           className="justify-center gap-1"
         />
       </span>
 
-      <span className={cn("w-[104px] shrink-0", isSent && "opacity-60")}>
+      <span className={cn("w-[92px] shrink-0", isSent && "opacity-80")}>
         <OptionSelect
           value={invite.roleId}
           onChange={(roleId) => onChangeRole(invite.id, roleId)}
           options={roleOptions}
           label={`${email || "새 초대"} 역할`}
           emptyText="없음"
-          width={104}
+          width={92}
           // 이미 나간 줄은 잠근다. 부서를 아직 안 고른 줄도 마찬가지다.
           // 발송된 줄은 `disabledText`를 주지 않는다 — 보낸 역할을 그대로 보여줘야 한다.
           disabled={isSent || !invite.departmentId}
@@ -150,7 +153,7 @@ export function InviteRow({
         />
       </span>
 
-      <span className={cn("w-[76px] shrink-0", isSent && "opacity-60")}>
+      <span className={cn("w-[92px] shrink-0", isSent && "opacity-80")}>
         <OptionSelect
           disabled={isSent}
           value={invite.positionId}
@@ -158,8 +161,21 @@ export function InviteRow({
           options={handlers.positionsFor(invite)}
           label={`${email || "새 초대"} 직급`}
           emptyText="직급 없음"
-          width={76}
+          width={92}
           className="justify-center gap-1"
+        />
+      </span>
+
+      {/*
+        ⚠️ Admin은 **직급 옆 별도 칸**이다. 직급 드롭다운에 넣으면 "Leader 대신 Admin"으로 읽히는데,
+           실제로는 Leader **이면서** Admin이다.
+      */}
+      <span className="flex w-[44px] shrink-0 justify-center">
+        <InviteAdminToggle
+          isOn={invite.isAdmin}
+          isLocked={isSent}
+          label={email || "새 초대"}
+          onToggle={() => onToggleAdmin(invite.id)}
         />
       </span>
 

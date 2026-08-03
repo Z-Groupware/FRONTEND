@@ -11,6 +11,18 @@ export interface DepartmentNode {
 export const MAX_DEPARTMENT_DEPTH = 2;
 
 /**
+ * 부서·역할·직급 이름의 최대 글자 수.
+ *
+ * ⚠️ **3단계(사원 초대) 칸에서 역산한 값이다.** 거기서 이 이름들이 좁은 셀렉트에 들어가는데,
+ *    길면 잘려서 무엇을 고른 건지 알 수 없어진다. 자르는 대신 **적을 때 막는다** —
+ *    다 적고 나서 잘린 걸 발견하는 것보다 낫다.
+ * ⚠️ 계산: 12px 한글 5자 = 60px, 좌우 여백 16 + 화살표 16을 더해 **칸 92px**이다.
+ *    이 값을 올리려면 3단계 칸도 같이 넓혀야 한다 — 한쪽만 고치면 다시 잘린다.
+ * ⚠️ "개발팀"·"경영지원"·"프론트엔드"처럼 실제로 쓰는 이름은 대부분 5자 안에 들어간다.
+ */
+export const MAX_ORG_NAME_LENGTH = 5;
+
+/**
  * 트리 두 계층의 이름.
  * 윗단은 **부서**(개발팀), 아랫단은 그 안에서 맡는 **역할**(프론트엔드·백엔드)이다.
  * 역할 없이 부서에 바로 속할 수도 있다 — 팀장이 그런 경우다.
@@ -41,7 +53,8 @@ export const ONBOARDING_TOTAL_STEPS = 3;
 
 /**
  * 직급 한 줄. **직급명과 권한은 분리된다** — 이름은 회사마다 다르게 쓰고,
- * 권한은 이름과 무관하게 직접 고른다(Owner·Admin·Leader·Member).
+ * 권한은 이름과 무관하게 직접 고른다(Owner·Leader·Member).
+ * ⚠️ Admin은 여기 없다. 직급이 아니라 **사람에게** 붙는 겸직 권한이다.
  */
 export interface Position {
   id: string;
@@ -55,10 +68,12 @@ export type AssignableRole = (typeof ASSIGNABLE_ROLES)[number];
 /**
  * 기업 승인 때 **시스템이 발급하는 계정.**
  * 직급 매핑 대상이 아니라, 전체 권한 구조를 보여주려고 미리보기에 고정으로 띄운다.
+ *
+ * ⚠️ **대표 하나뿐이다.** Admin은 역할이 아니라 사람에게 붙는 겸직 권한이라,
+ *    가입 시점엔 붙일 사람이 없다 — 사원이 들어온 뒤 대표가 지정한다.
  */
 export const SYSTEM_ISSUED_POSITIONS = [
   { name: "대표", role: ROLE.OWNER },
-  { name: "관리자", role: ROLE.ADMIN },
 ] as const satisfies readonly { name: string; role: AssignableRole }[];
 
 /* ───────── 3단계 · 사원 초대 ───────── */
@@ -75,6 +90,13 @@ export interface Invite {
   /** 부서 안에서 맡는 역할(트리 아랫단). 빈 문자열이면 "없음" — 부서에 바로 속한다. */
   roleId: string;
   positionId: string;
+  /**
+   * Admin 겸직 여부.
+   * ⚠️ Admin은 **직급이 아니라 사람에게** 붙는 권한이라 2단계(직급 체계)에서 정할 수 없다.
+   *    초대하는 이 자리에서 켜야 회사에 관리자가 처음부터 있다.
+   * ⚠️ 역할을 대체하지 않는다 — 이 사람은 여전히 Leader 또는 Member이고 그 위에 Admin이 얹힌다.
+   */
+  isAdmin: boolean;
   /** 이미 초대장이 나간 줄 — 다시 보내거나 고칠 수 없다 */
   isSent: boolean;
 }

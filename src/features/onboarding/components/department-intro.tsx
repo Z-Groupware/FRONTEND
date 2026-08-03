@@ -1,4 +1,4 @@
-import { type DepartmentNode, ONBOARDING_STEP } from "../types";
+import { type DepartmentNode, MAX_ORG_NAME_LENGTH, ONBOARDING_STEP } from "../types";
 import { DepartmentPreview } from "./department-preview";
 import { StepHeading } from "./step-heading";
 import { StepHintList } from "./step-hint-list";
@@ -10,7 +10,11 @@ const BENEFITS = [
 ] as const;
 
 /** 온보딩 1단계 좌측 — 설명과 축약 미리보기. */
-export function DepartmentIntro({ departments }: { departments: DepartmentNode[] }) {
+interface DepartmentIntroProps {
+  departments: DepartmentNode[];
+}
+
+export function DepartmentIntro({ departments }: DepartmentIntroProps) {
   return (
     <section className="flex w-full flex-col gap-[17.5px] lg:h-full lg:w-[300px] lg:shrink-0">
       <StepHeading step={ONBOARDING_STEP.DEPARTMENT} title="부서 체계를 만들어 주세요">
@@ -21,7 +25,15 @@ export function DepartmentIntro({ departments }: { departments: DepartmentNode[]
       <StepHintList items={BENEFITS} />
 
       <div className="border-border bg-background/80 text-muted-foreground/70 flex flex-col gap-1.5 rounded-md border p-[10.5px] text-[11px] leading-[18px]">
-        <p>이름을 더블클릭하면 바꿀 수 있어요. 나중에 설정에서 언제든 수정할 수 있습니다.</p>
+        <p>이름을 더블클릭하면 바꿀 수 있어요. 나중에 설정에서 언제든 수정할 수 있어요.</p>
+        {/*
+          ⚠️ 글자 수 제한은 **여기 적어 둔다.** 3단계 초대 목록의 좁은 칸에서 역산한 값이라
+             모르고 길게 적으면 거기서 잘린다 — 조용히 막지 않는다(§정직성).
+        */}
+        <p>
+          이름은 <span className="text-muted-foreground">{MAX_ORG_NAME_LENGTH}자까지</span> 적을 수
+          있어요. 사원 초대 화면에서 이 이름을 골라야 해서예요.
+        </p>
         <p>
           <span className="text-muted-foreground">역할</span>은 부서 안에서 맡는 일이에요 — 개발팀
           안의 프론트엔드·백엔드처럼요.
