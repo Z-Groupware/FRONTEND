@@ -1,8 +1,7 @@
 "use client";
 
-import { X } from "lucide-react";
+import { Lightbulb, X } from "lucide-react";
 
-import { QuestionMark } from "@/components/icons/question-mark";
 import { cn } from "@/lib/utils";
 
 import { ONBOARDING_STEP, ONBOARDING_STEP_LABEL, type OnboardingStep } from "../types";
@@ -48,10 +47,13 @@ export function OnboardingGuide({ step, isOpen, onToggle }: OnboardingGuideProps
         aria-expanded={isOpen}
         aria-controls="onboarding-guide"
         aria-label={isOpen ? "도움말 닫기" : "도움말 열기"}
-        className="bg-guide-surface text-guide-foreground focus-visible:ring-ring fixed right-6 bottom-20 z-50 flex size-11 items-center justify-center rounded-full shadow-lg transition-transform hover:scale-105 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-hidden"
+        className="bg-guide-surface text-guide-foreground border-guide-border focus-visible:ring-ring fixed right-6 bottom-20 z-50 flex size-11 items-center justify-center rounded-full border shadow-lg transition-transform hover:scale-105 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-hidden"
       >
-        {/* ⚠️ 원을 두른 `HelpCircle`이 아니다 — 버튼이 이미 원이라 원이 두 겹으로 겹친다 */}
-        {isOpen ? <X className="size-[18px]" /> : <QuestionMark className="size-5" />}
+        {/*
+          ⚠️ **전구**다. 여기는 찾아보는 곳이 아니라 지금 단계에서 알아둘 것을 짚어 주는
+             곳이라, 랜딩 도움말(돋보기)과 표식을 일부러 다르게 쓴다.
+        */}
+        {isOpen ? <X className="size-[18px]" /> : <Lightbulb className="size-[18px]" aria-hidden />}
       </button>
 
       <aside

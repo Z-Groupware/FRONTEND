@@ -1,9 +1,7 @@
 "use client";
 
-import { RotateCcw, X } from "lucide-react";
+import { RotateCcw, Search, X } from "lucide-react";
 import { useState } from "react";
-
-import { QuestionMark } from "@/components/icons/question-mark";
 
 import {
   FAQ_CATEGORY_LABEL,
@@ -93,9 +91,13 @@ export function SupportWidget() {
           ⚠️ **밝을 때만 먹색을 꽉 채운다.** 흰 원 위 흐린 회색은 눈에 안 걸린다.
              어두울 때는 검정 무대에 흰 원이 이미 또렷해서 한 단 눌러 둔 채로 둔다.
         */
-        className="bg-popover text-popover-foreground/70 landing-light:text-popover-foreground border-border focus-visible:ring-ring fixed right-5 bottom-5 z-50 flex size-12 items-center justify-center rounded-full border shadow-lg transition-transform hover:scale-105 focus-visible:ring-2 focus-visible:outline-hidden"
+        className="bg-popover text-popover-foreground/70 landing-light:text-popover-foreground border-foreground/20 focus-visible:ring-ring fixed right-5 bottom-5 z-50 flex size-12 items-center justify-center rounded-full border shadow-lg transition-transform hover:scale-105 focus-visible:ring-2 focus-visible:outline-hidden"
       >
-        {isOpen ? <X className="size-5" aria-hidden /> : <QuestionMark className="size-6" />}
+        {isOpen ? (
+          <X className="size-5" aria-hidden />
+        ) : (
+          <Search className="size-[22px]" aria-hidden />
+        )}
       </button>
 
       {isOpen && (
@@ -125,13 +127,17 @@ export function SupportWidget() {
               ⚠️ 우하단 버튼과 같은 아이콘이라 눌러서 열린 그 물건이라는 게 이어진다.
             */}
             {/*
-              ⚠️ lucide `HelpCircle`이 아니라 원을 걷어낸 `QuestionMark`다 — 배지 원 안에 넣으면
-                 원이 두 겹으로 겹친다. 원은 배지가, 물음표는 아이콘이 맡는다.
+              ⚠️ **돋보기**다. 이 위젯이 실제로 하는 일은 정해진 답을 **찾아 주는 것**이라
+                 표식도 그렇게 읽혀야 한다.
+              ⚠️ 말풍선·헤드셋은 쓰지 않는다 — 사람이나 AI가 답해 주는 것처럼 읽히는데
+                 여기엔 사람도 AI도 없다(§정직성). 반짝이는 AI 표식이라 더 안 된다.
+              ⚠️ 온보딩 가이드는 전구를 쓴다. 둘은 성격이 다르다 —
+                 여기는 찾아보는 곳이고, 거기는 지금 단계에서 알아둘 것을 짚어 주는 곳이다.
               ⚠️ 어두울 땐 회색, 밝을 땐 먹색을 한 단 눌러서. 밝은 바탕의 회색은 흐리멍덩하고,
                  진한 먹색은 머리글보다 먼저 튄다.
             */}
             <span className="bg-secondary text-muted-foreground landing-light:text-foreground/70 border-border flex size-8 shrink-0 items-center justify-center rounded-full border">
-              <QuestionMark className="size-[18px]" />
+              <Search className="size-[18px]" aria-hidden />
             </span>
 
             <span>

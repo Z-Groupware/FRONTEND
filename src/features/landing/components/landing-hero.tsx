@@ -29,9 +29,11 @@ export function LandingHero() {
           <span className="border-border bg-card text-muted-foreground flex items-center gap-2 rounded-full border py-1.5 pr-4 pl-1.5 text-[12px] leading-4 shadow-sm">
             <span className="bg-landing-violet/12 text-landing-violet flex items-center gap-1 rounded-full px-2 py-1 font-semibold">
               <Sparkles className="size-3" aria-hidden />
-              AI 회의 정리
+              {/* 한글 글자가 상자 안에서 위쪽에 앉아 아이콘보다 떠 보인다 — 1px 내려 맞춘다 */}
+              <span className="translate-y-px">AI 회의 정리</span>
             </span>
-            <span className="text-foreground/80">
+            {/* 알약 안 글자를 1px 내렸으니 옆 문구도 같이 내려야 두 글줄이 한 선에 선다 */}
+            <span className="text-foreground/80 translate-y-px">
               말하면 기록되고, 끝나면 <strong className="font-semibold">할 일</strong>이 됩니다
             </span>
           </span>
