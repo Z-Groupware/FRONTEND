@@ -7,7 +7,7 @@ import { COMPANY_STATUS } from "@/constants/domain";
 import { isMock } from "@/mocks/config";
 
 import { removeMockPendingApproval } from "./mock/approvals";
-import { setMockCompanyStatus } from "./mock/companies";
+import { findMockCompany, setMockCompanyStatus } from "./mock/companies";
 
 /**
  * 기업 승인 화면의 **변경 창구** — 격리막(CLAUDE.md §Mock 격리막).
@@ -72,4 +72,26 @@ export async function unsuspendCompanyAction(formData: FormData): Promise<void> 
   }
 
   revalidatePath(path);
+}
+
+/**
+ * "구독·매출" 미납 안내 발송 — 격리막(CLAUDE.md §Mock 격리막).
+ *
+ * ⚠️ **폼이 아니라 직접 호출한다.** 확인 Dialog에서 "예"를 누른 뒤 그 자리에서 toast로
+ *    결과를 보여줘야 해서(CLAUDE.md §토스트: 변경 결과 피드백) `redirect`도 `revalidatePath`도
+ *    필요 없다 — 화면·데이터 어느 것도 안 바뀌고 그냥 메일 한 통을 보내는 조작이다.
+ * ⚠️ 지금은 목이라 **실제로 메일이 나가지 않는다** — 성공만 흉내 낸다(§정직성).
+ */
+export async function sendUnpaidNoticeAction(
+  companyId: string,
+): Promise<{ success: boolean; ownerEmail?: string }> {
+  if (!isMock) {
+    // ⚠️ 미구현 — API 스펙 확정 후 BFF 경로로 메일 발송 요청을 보낸다.
+    throw new Error("안내 발송 API가 아직 연결되지 않았습니다.");
+  }
+
+  const company = findMockCompany(companyId);
+  if (!company) return { success: false };
+
+  return { success: true, ownerEmail: company.ownerEmail };
 }
