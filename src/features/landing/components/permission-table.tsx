@@ -117,7 +117,7 @@ export function PermissionTable() {
                       {row.feature}
                       {row.note && <sup className="text-muted-foreground/70 pl-0.5">*</sup>}
                     </th>
-                    {([row.owner, row.admin, row.leader, row.member] as const).map(
+                    {([row.owner, row.leader, row.member, row.admin] as const).map(
                       (value, index) => (
                         <td key={ROLE_COLUMNS[index]} className={cn("px-3 py-3 text-center")}>
                           <AccessMark value={value} />

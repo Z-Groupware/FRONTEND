@@ -41,7 +41,8 @@ export const ONBOARDING_TOTAL_STEPS = 3;
 
 /**
  * 직급 한 줄. **직급명과 권한은 분리된다** — 이름은 회사마다 다르게 쓰고,
- * 권한은 이름과 무관하게 직접 고른다(Owner·Admin·Leader·Member).
+ * 권한은 이름과 무관하게 직접 고른다(Owner·Leader·Member).
+ * ⚠️ Admin은 여기 없다. 직급이 아니라 **사람에게** 붙는 겸직 권한이다.
  */
 export interface Position {
   id: string;
@@ -55,10 +56,12 @@ export type AssignableRole = (typeof ASSIGNABLE_ROLES)[number];
 /**
  * 기업 승인 때 **시스템이 발급하는 계정.**
  * 직급 매핑 대상이 아니라, 전체 권한 구조를 보여주려고 미리보기에 고정으로 띄운다.
+ *
+ * ⚠️ **대표 하나뿐이다.** Admin은 역할이 아니라 사람에게 붙는 겸직 권한이라,
+ *    가입 시점엔 붙일 사람이 없다 — 사원이 들어온 뒤 대표가 지정한다.
  */
 export const SYSTEM_ISSUED_POSITIONS = [
   { name: "대표", role: ROLE.OWNER },
-  { name: "관리자", role: ROLE.ADMIN },
 ] as const satisfies readonly { name: string; role: AssignableRole }[];
 
 /* ───────── 3단계 · 사원 초대 ───────── */

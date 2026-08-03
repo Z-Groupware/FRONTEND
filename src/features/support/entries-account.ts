@@ -17,7 +17,7 @@ export const ACCOUNT_ENTRIES: readonly FaqEntry[] = [
     question: "권한은 어떻게 나뉘나요?",
     keywords: ["권한", "역할", "role", "owner", "admin", "leader", "member", "관리자", "팀장"],
     answer:
-      "Owner · Admin · Leader · Member 네 역할이 있어요.\n\n다만 역할만으로 다 정해지진 않습니다 — 회의 시작이나 녹음처럼 그 회의 담당자만 할 수 있는 일이 따로 있어요.",
+      "Owner · Leader · Member 세 역할이 있고, 그 위에 **Admin을 겸할 수 있어요.**\n\nAdmin은 따로 떨어진 역할이 아니라 덧붙는 권한이에요 — 예를 들어 한 사람이 Leader이면서 Admin일 수 있습니다. 계정을 나눠 쓰지 않아요.\n\n다만 역할만으로 다 정해지진 않습니다 — 회의 시작이나 녹음처럼 그 회의 담당자만 할 수 있는 일이 따로 있어요.",
     links: [{ label: "권한 매트릭스 보기", href: "/roles" }],
   },
   {
@@ -34,7 +34,7 @@ export const ACCOUNT_ENTRIES: readonly FaqEntry[] = [
     question: "팀원은 어떻게 초대하나요?",
     keywords: ["초대", "팀원", "사원", "직원", "부서", "조직도"],
     answer:
-      "관리자가 부서와 직급을 정한 뒤 메일 주소로 초대해요.\n\n부서마다 리더는 한 명이고, 사원은 부서에 소속됩니다.",
+      "Admin을 가진 사람이 부서와 직급을 정한 뒤 메일 주소로 초대해요.\n\n부서마다 리더는 한 명이고, 사원은 부서에 소속됩니다.",
     links: [{ label: "권한 매트릭스 보기", href: "/roles" }],
   },
   {
@@ -58,10 +58,10 @@ export const ACCOUNT_ENTRIES: readonly FaqEntry[] = [
   {
     id: "owner-admin",
     category: FAQ_CATEGORY.ACCOUNT,
-    question: "Owner와 Admin 계정은 어떻게 받나요?",
-    keywords: ["owner 계정", "admin 계정", "관리자 계정", "대표 계정", "두 계정"],
+    question: "Owner 계정과 Admin 권한은 어떻게 받나요?",
+    keywords: ["owner 계정", "admin 계정", "관리자 계정", "대표 계정", "겸직", "관리자 지정"],
     answer:
-      "기업 등록이 승인되면 시스템이 Owner·Admin 두 계정을 만들어 대표 메일로 보내 드려요.\n\n둘 다 기업당 한 명이라 직급에 붙이지 않습니다.",
+      "기업 등록이 승인되면 시스템이 **Owner 계정 하나**를 만들어 대표 메일로 보내 드려요.\n\nAdmin은 계정이 아니라 권한이에요. 사원이 들어온 뒤 대표가 그 사람에게 켜 줍니다 — 직급이 아니라 사람에게 붙어요.\n\n대표 본인은 Admin을 겸할 수 없습니다.",
   },
   {
     id: "role-scope",
@@ -69,7 +69,7 @@ export const ACCOUNT_ENTRIES: readonly FaqEntry[] = [
     question: "역할마다 뭘 할 수 있나요?",
     keywords: ["뭘 할 수", "무엇을 할", "할 수 있는 일", "권한 범위"],
     answer:
-      "· Owner — 기업 전체 관리\n· Admin — 구성원·조직·회의실 관리\n· Leader — 팀 현황·액션 관리\n· Member — 일반 사용\n\n표로 정리한 화면이 따로 있어요.",
+      "· Owner — 기업 전체 관리\n· Leader — 팀 현황·액션 관리\n· Member — 일반 사용\n\n여기에 **+Admin(겸직)** — 계정·회의실·직급 권한 관리가 얹혀요. 회의 개설이나 액션 조회 같은 건 Admin을 켠다고 늘지 않고, 그 사람의 역할이 정합니다.\n\n표로 정리한 화면이 따로 있어요.",
     links: [{ label: "권한 매트릭스 보기", href: "/roles" }],
   },
   {

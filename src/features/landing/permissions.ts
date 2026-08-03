@@ -1,18 +1,22 @@
 /**
  * 역할 × 기능 표.
  *
- * ⚠️ **명세(§1~4)에 있는 것만 적는다.** 없는 기능을 표에 넣으면 그게 거짓말이 된다.
+ * ⚠️ **명세에 있는 것만 적는다.** 없는 기능을 표에 넣으면 그게 거짓말이 된다.
  * ⚠️ `"partial"`은 "되긴 되는데 범위가 좁다"는 뜻이다 — 조건을 `note`에 반드시 적는다.
  *    조건 없이 세모만 두면 읽는 사람이 무엇이 다른지 알 수 없다.
+ * ⚠️ **`admin` 열은 겸직 권한이다.** Owner·Leader·Member와 나란한 역할이 아니라 그 위에
+ *    덧붙는 것이라, 여기 `yes`가 오는 건 **Admin 자체가 주는 운영 기능**뿐이다.
+ *    회의 참여·액션 조회처럼 역할이 정하는 일은 `no`다 — Admin을 켠다고 늘지 않는다.
  */
 export type Access = "yes" | "no" | "partial";
 
 export interface PermissionRow {
   feature: string;
   owner: Access;
-  admin: Access;
   leader: Access;
   member: Access;
+  /** 겸직 권한이 주는 것인지 — 역할이 정하는 일은 여기 `yes`가 오지 않는다 */
+  admin: Access;
   /** `partial`이 있으면 무엇이 다른지 적는다 */
   note?: string;
 }
@@ -22,44 +26,38 @@ export interface PermissionGroup {
   rows: readonly PermissionRow[];
 }
 
-export const ROLE_COLUMNS = ["Owner", "Admin", "Leader", "Member"] as const;
+/** 표의 열 순서. 겸직이라 Admin이 맨 뒤에 온다. */
+export const ROLE_COLUMNS = ["Owner", "Leader", "Member", "+Admin"] as const;
 
 export const PERMISSION_GROUPS: readonly PermissionGroup[] = [
   {
     title: "화면 접근",
     rows: [
-      { feature: "내 업무", owner: "yes", admin: "yes", leader: "yes", member: "yes" },
-      { feature: "팀 관리", owner: "yes", admin: "no", leader: "yes", member: "no" },
-      { feature: "회사 운영", owner: "yes", admin: "yes", leader: "no", member: "no" },
+      { feature: "내 업무 보기", owner: "yes", leader: "yes", member: "yes", admin: "no" },
+      { feature: "팀 관리", owner: "no", leader: "yes", member: "no", admin: "no" },
+      { feature: "회사 운영", owner: "yes", leader: "no", member: "no", admin: "no" },
     ],
   },
   {
     title: "프로젝트",
     rows: [
-      { feature: "생성", owner: "yes", admin: "no", leader: "no", member: "no" },
-      {
-        feature: "기획 열람",
-        owner: "yes",
-        admin: "no",
-        leader: "no",
-        member: "no",
-        note: "Leader·Member는 타임라인만 봅니다",
-      },
-      { feature: "타임라인 조회", owner: "yes", admin: "no", leader: "yes", member: "yes" },
+      { feature: "프로젝트 생성", owner: "yes", leader: "no", member: "no", admin: "no" },
+      { feature: "기획 열람", owner: "yes", leader: "yes", member: "yes", admin: "no" },
+      { feature: "타임라인 조회", owner: "yes", leader: "yes", member: "yes", admin: "no" },
     ],
   },
   {
     title: "회의",
     rows: [
-      { feature: "프로젝트 회의 개설", owner: "yes", admin: "no", leader: "no", member: "no" },
-      { feature: "부서 회의 개설", owner: "yes", admin: "no", leader: "yes", member: "yes" },
-      { feature: "회의 참여", owner: "yes", admin: "no", leader: "yes", member: "yes" },
+      { feature: "프로젝트 회의 개설", owner: "yes", leader: "no", member: "no", admin: "no" },
+      { feature: "부서 회의 개설", owner: "yes", leader: "yes", member: "yes", admin: "no" },
+      { feature: "회의 참여", owner: "yes", leader: "yes", member: "yes", admin: "no" },
       {
         feature: "회의 캡처 · 종료",
         owner: "partial",
-        admin: "no",
         leader: "partial",
         member: "partial",
+        admin: "no",
         note: "역할과 무관하게 그 회의를 연 사람만 할 수 있어요",
       },
     ],
@@ -67,33 +65,26 @@ export const PERMISSION_GROUPS: readonly PermissionGroup[] = [
   {
     title: "액션",
     rows: [
-      { feature: "팀 액션 보기", owner: "yes", admin: "no", leader: "yes", member: "no" },
-      { feature: "내 액션 보기", owner: "yes", admin: "no", leader: "yes", member: "yes" },
-      { feature: "인수인계로 재배정", owner: "no", admin: "no", leader: "yes", member: "no" },
+      { feature: "팀 액션 보기", owner: "yes", leader: "yes", member: "yes", admin: "no" },
+      { feature: "내 액션 보기", owner: "yes", leader: "yes", member: "yes", admin: "no" },
+      { feature: "인수인계로 재배정", owner: "no", leader: "yes", member: "no", admin: "no" },
     ],
   },
   {
     title: "인수인계",
     rows: [
-      {
-        feature: "신청",
-        owner: "no",
-        admin: "yes",
-        leader: "partial",
-        member: "yes",
-        note: "Leader는 휴직만 됩니다 — 오프보딩은 신청할 수 없어요",
-      },
-      { feature: "중간 승인", owner: "no", admin: "no", leader: "yes", member: "no" },
-      { feature: "최종 승인", owner: "yes", admin: "yes", leader: "no", member: "no" },
+      { feature: "신청", owner: "no", leader: "yes", member: "yes", admin: "no" },
+      { feature: "중간 승인", owner: "no", leader: "yes", member: "no", admin: "no" },
+      { feature: "최종 승인", owner: "yes", leader: "no", member: "no", admin: "yes" },
     ],
   },
   {
     title: "관리",
     rows: [
-      { feature: "계정 발급", owner: "no", admin: "yes", leader: "no", member: "no" },
-      { feature: "직급 · 권한 변경", owner: "yes", admin: "yes", leader: "no", member: "no" },
-      { feature: "회의실 관리", owner: "no", admin: "yes", leader: "no", member: "no" },
-      { feature: "구독 · 결제", owner: "yes", admin: "no", leader: "no", member: "no" },
+      { feature: "계정 발급", owner: "no", leader: "no", member: "no", admin: "yes" },
+      { feature: "직급 · 권한 변경", owner: "yes", leader: "no", member: "no", admin: "yes" },
+      { feature: "회의실 관리", owner: "no", leader: "no", member: "no", admin: "yes" },
+      { feature: "구독 결제 보기", owner: "yes", leader: "no", member: "no", admin: "yes" },
     ],
   },
 ];

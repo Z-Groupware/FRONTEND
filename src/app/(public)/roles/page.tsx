@@ -18,9 +18,9 @@ export const metadata: Metadata = {
  */
 const ROLE_STYLE = {
   Owner: { icon: Crown, chip: "bg-role-owner-surface text-role-owner" },
-  Admin: { icon: ShieldCheck, chip: "bg-role-admin-surface text-role-admin" },
   Leader: { icon: UsersRound, chip: "bg-role-leader-surface text-role-leader" },
   Member: { icon: UserRound, chip: "bg-role-member-surface text-role-member" },
+  "+Admin": { icon: ShieldCheck, chip: "bg-role-admin-surface text-role-admin" },
 } as const;
 
 export default function RolesPage() {

@@ -146,46 +146,21 @@ export const MEMBER_STATUS_LABEL: Record<MemberStatus, string> = {
   PENDING: "대기",
 };
 
-/** 역할 워딩은 화면에서도 영어로 노출한다(기획 확정). */
-export const ROLE = {
-  OWNER: "OWNER",
-  ADMIN: "ADMIN",
-  LEADER: "LEADER",
-  MEMBER: "MEMBER",
-  /** Z 서비스 자체 운영 — 확장(데모 제외) */
-  SYSTEM: "SYSTEM",
-} as const;
-export type Role = (typeof ROLE)[keyof typeof ROLE];
-
-/** 화면 표기 — 역할은 한글로 번역하지 않는다. */
-export const ROLE_LABEL: Record<Role, string> = {
-  OWNER: "Owner",
-  ADMIN: "Admin",
-  LEADER: "Leader",
-  MEMBER: "Member",
-  SYSTEM: "System",
-};
-
-/** 권한 범위를 한 줄로 설명한 것. 직급·권한 매핑 화면의 범례에 쓴다. */
-export const ROLE_SCOPE_LABEL: Record<Role, string> = {
-  OWNER: "기업 전체 관리",
-  ADMIN: "구성원·조직·회의실 관리",
-  LEADER: "팀 현황·액션 관리",
-  MEMBER: "일반 사용",
-  SYSTEM: "Z 서비스 운영",
-};
-
-/** 사원에게 부여할 수 있는 역할. `SYSTEM`은 서비스 운영자라 기업이 고를 수 없다. */
-export const ASSIGNABLE_ROLES = [ROLE.OWNER, ROLE.ADMIN, ROLE.LEADER, ROLE.MEMBER] as const;
-
-/**
- * **직급에 매핑할 수 있는 역할.**
- *
- * `OWNER`·`ADMIN`은 기업당 1명이고, **기업 승인 시 시스템이 두 계정을 발급해 대표에게 메일로 보낸다.**
- * 여러 사원이 같은 직급을 쓰므로 직급에 매핑하면 인원이 늘어난다 — 그래서 직급 매핑 대상이 아니다.
- * 한 사람에게 두 권한이 필요하면 계정을 따로 쓴다(예: 인사팀장 = Admin 계정 + Leader 계정).
- */
-export const POSITION_ROLES = [ROLE.LEADER, ROLE.MEMBER] as const;
+/*
+  역할·겸직 권한 상수는 `role.ts`로 옮겼다. 쓰던 곳이 많아 여기서 그대로 다시 내보낸다.
+  새로 쓰는 코드는 `@/constants/role`에서 직접 가져와도 된다.
+*/
+export {
+  ADMIN_ELIGIBLE_ROLES,
+  ADMIN_LABEL,
+  ADMIN_SCOPE_LABEL,
+  ASSIGNABLE_ROLES,
+  POSITION_ROLES,
+  ROLE,
+  type Role,
+  ROLE_LABEL,
+  ROLE_SCOPE_LABEL,
+} from "./role";
 
 /* ───────── 구독 · 기업 ───────── */
 export const PLAN = { FREE: "FREE", TEAM: "TEAM" } as const;

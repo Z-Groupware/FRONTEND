@@ -1,6 +1,6 @@
 import "server-only";
 
-import { ROLE, type Role } from "@/constants/domain";
+import { ADMIN_ELIGIBLE_ROLES, ROLE, type Role } from "@/constants/domain";
 
 /**
  * 권한 판정 — **Z는 권한 축이 2개다** (CONVENTIONS §7).
@@ -18,6 +18,12 @@ import { ROLE, type Role } from "@/constants/domain";
 export interface Actor {
   id: number;
   role: Role;
+  /**
+   * Admin 겸직 여부. **역할이 아니라 위에 덧붙는 권한이다** — 운영에 해당하는 일만 여기서 나온다.
+   * ⚠️ **BE가 세션에 이 값을 내려줘야 한다.** `role` 하나로는 겸직을 알 수 없다.
+   * ⚠️ Owner에게는 켜지지 않는다(`canGrantAdmin` 참고).
+   */
+  isAdmin?: boolean;
   /** 소속 부서. **말단(잎) 부서만 온다** — 묶음 부서엔 사원이 붙지 않는다(DECISIONS). */
   departmentId?: number;
 }
@@ -42,19 +48,60 @@ export function isWithinDepartmentScope(actor: Actor, target: DepartmentRef): bo
 
 /* ───────── ① 역할 축 ───────── */
 
-/** 사원 최종 승인·직급/권한 변경 — OWNER와 ADMIN 공통 */
+/**
+ * Admin 겸직 여부.
+ * ⚠️ `isAdmin`을 직접 읽지 말고 이 함수를 쓴다 — Owner에게 잘못 켜진 값이 내려와도
+ *    여기서 한 번 걸러진다. 권한은 조용히 새면 안 된다.
+ */
+function isAdmin(actor: Actor): boolean {
+  return actor.isAdmin === true && canGrantAdmin(actor);
+}
+
+/** 사원 최종 승인·직급/권한 변경 — OWNER이거나 Admin을 겸한 사람 */
 export function canManageMembers(actor: Actor): boolean {
-  return actor.role === ROLE.OWNER || actor.role === ROLE.ADMIN;
+  return actor.role === ROLE.OWNER || isAdmin(actor);
 }
 
-/** 계정 발급 — ADMIN만. OWNER는 발급 대상도 발급자도 아니다. */
+/** 계정 발급 — Admin 겸직자만. OWNER는 발급 대상도 발급자도 아니다. */
 export function canIssueAccount(actor: Actor): boolean {
-  return actor.role === ROLE.ADMIN;
+  return isAdmin(actor);
 }
 
-/** 구독·결제·용량·기업 설정 — OWNER 전용 */
+/**
+ * Admin을 켤 수 있는 대상인가 — **Owner는 겸할 수 없다**(팀 확정).
+ * 사원 관리 화면의 겸직 토글과 서버 검증이 같이 쓴다.
+ */
+export function canGrantAdmin(target: { role: Role }): boolean {
+  return ADMIN_ELIGIBLE_ROLES.some((role) => role === target.role);
+}
+
+/**
+ * 구독·결제 **실행**(플랜 변경·카드 등록) — OWNER 전용.
+ * ⚠️ 보기와 나눠 둔다. 표의 행 이름이 "구독 결제 **보기**"라 Admin은 열람까지만이다.
+ */
 export function canManageBilling(actor: Actor): boolean {
   return actor.role === ROLE.OWNER;
+}
+
+/** 구독·결제 **열람** — OWNER이거나 Admin을 겸한 사람 */
+export function canViewBilling(actor: Actor): boolean {
+  return actor.role === ROLE.OWNER || isAdmin(actor);
+}
+
+/**
+ * 인수인계 **최종** 승인 — OWNER이거나 Admin을 겸한 사람.
+ * ⚠️ 중간 승인(`canApproveMid`)은 LEADER다. 둘을 한 함수로 합치지 않는다 — 단계가 다르다.
+ */
+export function canApproveFinal(actor: Actor): boolean {
+  return actor.role === ROLE.OWNER || isAdmin(actor);
+}
+
+/**
+ * 팀 관리 화면 — LEADER 전용.
+ * ⚠️ **OWNER는 못 들어간다**(팀 표 확정). 회사 전체는 "회사 운영" 화면에서 본다.
+ */
+export function canAccessTeamScope(actor: Actor): boolean {
+  return actor.role === ROLE.LEADER;
 }
 
 /** 프로젝트 생성 — OWNER 전용 */
@@ -62,9 +109,9 @@ export function canCreateProject(actor: Actor): boolean {
   return actor.role === ROLE.OWNER;
 }
 
-/** 회의실 관리 — ADMIN 전용 */
+/** 회의실 관리 — Admin 겸직자 전용 */
 export function canManageRooms(actor: Actor): boolean {
-  return actor.role === ROLE.ADMIN;
+  return isAdmin(actor);
 }
 
 /**
