@@ -12,7 +12,8 @@ jest.mock("../actions", () => ({
 }));
 
 function setup() {
-  return { user: userEvent.setup(), ...render(<NoticeComposeCard />) };
+  // 기본 대상은 "전체 기업"이라 companies는 쓰이지 않는다(특정 기업 검색용) — 빈 목록으로 충분하다.
+  return { user: userEvent.setup(), ...render(<NoticeComposeCard companies={[]} />) };
 }
 
 beforeEach(() => publishNoticeAction.mockReset());

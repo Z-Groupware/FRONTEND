@@ -124,7 +124,7 @@ describe("공지 발행", () => {
     const result = await publishNoticeAction({
       title: "제목",
       content: "",
-      target: NOTICE_TARGET.TEAM,
+      target: NOTICE_TARGET.UNPAID,
     });
 
     expect(result).toEqual({ success: false });
