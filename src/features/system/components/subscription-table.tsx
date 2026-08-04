@@ -89,68 +89,70 @@ export function SubscriptionTable({ subscriptions }: SubscriptionTableProps) {
 
   return (
     <div className="border-border bg-card overflow-hidden rounded-xl border">
-      <Table className="table-fixed text-xs">
-        {/* 각 컬럼 폭을 %로 고정 — 기업명 길이가 달라져도 다른 컬럼이 밀리지 않는다(위 COLUMN_WIDTH 참고) */}
-        <colgroup>
-          <col style={{ width: COLUMN_WIDTH.company }} />
-          <col style={{ width: COLUMN_WIDTH.members }} />
-          <col style={{ width: COLUMN_WIDTH.amount }} />
-          <col style={{ width: COLUMN_WIDTH.billingDate }} />
-          <col style={{ width: COLUMN_WIDTH.status }} />
-          <col style={{ width: COLUMN_WIDTH.action }} />
-        </colgroup>
-        <TableHeader>
-          <TableRow className={cn(HEADER_HEIGHT_CLASS, "hover:bg-transparent")}>
-            <TableHead className="pl-4 text-xs">기업명</TableHead>
-            <TableHead className="text-center text-xs">인원</TableHead>
-            <TableHead className="text-center text-xs">금액</TableHead>
-            <TableHead className="text-center text-xs">결제일</TableHead>
-            <TableHead className="text-center text-xs">상태</TableHead>
-            <TableHead className="pr-4 text-center text-xs">액션</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {subscriptions.map((subscription) => (
-            <TableRow key={subscription.companyId} className={ROW_HEIGHT_CLASS}>
-              <TableCell className="max-w-0 truncate pl-4" title={subscription.companyName}>
-                {subscription.companyName}
-              </TableCell>
-              <TableCell className="text-muted-foreground text-center tabular-nums">
-                {subscription.memberCount}명
-              </TableCell>
-              <TableCell className="text-muted-foreground text-center tabular-nums">
-                {formatWon(subscription.amount)}
-              </TableCell>
-              <TableCell className="text-muted-foreground text-center tabular-nums">
-                {subscription.billingDate ?? "–"}
-              </TableCell>
-              <TableCell className="text-center">
-                <StatusBadge tone={STATUS_TONE[subscription.paymentStatus]}>
-                  {PAYMENT_STATUS_LABEL[subscription.paymentStatus]}
-                </StatusBadge>
-              </TableCell>
-              <TableCell className="pr-4 text-center">
-                {subscription.paymentStatus === PAYMENT_STATUS.UNPAID && (
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    size="xs"
-                    onClick={() =>
-                      setNoticeTarget({
-                        companyId: subscription.companyId,
-                        companyName: subscription.companyName,
-                        ownerEmail: subscription.ownerEmail,
-                      })
-                    }
-                  >
-                    안내 발송
-                  </Button>
-                )}
-              </TableCell>
+      <div className="overflow-x-auto">
+        <Table className="min-w-[680px] table-fixed text-xs">
+          {/* 각 컬럼 폭을 %로 고정 — 기업명 길이가 달라져도 다른 컬럼이 밀리지 않는다(위 COLUMN_WIDTH 참고) */}
+          <colgroup>
+            <col style={{ width: COLUMN_WIDTH.company }} />
+            <col style={{ width: COLUMN_WIDTH.members }} />
+            <col style={{ width: COLUMN_WIDTH.amount }} />
+            <col style={{ width: COLUMN_WIDTH.billingDate }} />
+            <col style={{ width: COLUMN_WIDTH.status }} />
+            <col style={{ width: COLUMN_WIDTH.action }} />
+          </colgroup>
+          <TableHeader>
+            <TableRow className={cn(HEADER_HEIGHT_CLASS, "hover:bg-transparent")}>
+              <TableHead className="pl-4 text-xs">기업명</TableHead>
+              <TableHead className="text-center text-xs">인원</TableHead>
+              <TableHead className="text-center text-xs">금액</TableHead>
+              <TableHead className="text-center text-xs">결제일</TableHead>
+              <TableHead className="text-center text-xs">상태</TableHead>
+              <TableHead className="pr-4 text-center text-xs">액션</TableHead>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {subscriptions.map((subscription) => (
+              <TableRow key={subscription.companyId} className={ROW_HEIGHT_CLASS}>
+                <TableCell className="max-w-0 truncate pl-4" title={subscription.companyName}>
+                  {subscription.companyName}
+                </TableCell>
+                <TableCell className="text-muted-foreground text-center tabular-nums">
+                  {subscription.memberCount}명
+                </TableCell>
+                <TableCell className="text-muted-foreground text-center tabular-nums">
+                  {formatWon(subscription.amount)}
+                </TableCell>
+                <TableCell className="text-muted-foreground text-center tabular-nums">
+                  {subscription.billingDate ?? "–"}
+                </TableCell>
+                <TableCell className="text-center">
+                  <StatusBadge tone={STATUS_TONE[subscription.paymentStatus]}>
+                    {PAYMENT_STATUS_LABEL[subscription.paymentStatus]}
+                  </StatusBadge>
+                </TableCell>
+                <TableCell className="pr-4 text-center">
+                  {subscription.paymentStatus === PAYMENT_STATUS.UNPAID && (
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="xs"
+                      onClick={() =>
+                        setNoticeTarget({
+                          companyId: subscription.companyId,
+                          companyName: subscription.companyName,
+                          ownerEmail: subscription.ownerEmail,
+                        })
+                      }
+                    >
+                      안내 발송
+                    </Button>
+                  )}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
 
       <NoticeMailDialog
         target={noticeTarget}

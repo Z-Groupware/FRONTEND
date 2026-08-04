@@ -72,73 +72,75 @@ export function CompanyTable({ companies, buildDetailHref, pageSize }: CompanyTa
 
   return (
     <div className="border-border bg-card overflow-hidden rounded-xl border">
-      <Table className="table-fixed text-xs">
-        {/* 각 컬럼 폭을 %로 고정 — 기업명이 길어져도 다른 컬럼이 밀리지 않는다(위 COLUMN_WIDTH 참고) */}
-        <colgroup>
-          <col style={{ width: COLUMN_WIDTH.name }} />
-          <col style={{ width: COLUMN_WIDTH.code }} />
-          <col style={{ width: COLUMN_WIDTH.members }} />
-          <col style={{ width: COLUMN_WIDTH.meetings }} />
-          <col style={{ width: COLUMN_WIDTH.joinedAt }} />
-          <col style={{ width: COLUMN_WIDTH.status }} />
-        </colgroup>
-        <TableHeader>
-          <TableRow className={cn(HEADER_HEIGHT_CLASS, "hover:bg-transparent")}>
-            <TableHead className="pl-4 text-xs">기업명</TableHead>
-            <TableHead className="text-center text-xs">기업 코드</TableHead>
-            <TableHead className="text-center text-xs">구성원</TableHead>
-            <TableHead className="text-center text-xs">이번달 회의</TableHead>
-            <TableHead className="text-center text-xs">가입일</TableHead>
-            <TableHead className="pr-4 text-center text-xs">상태</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {companies.map((company) => (
-            // relative — stretched link(아래 after:absolute)가 이 행 기준으로 덮인다
-            <TableRow key={company.id} className={cn(ROW_HEIGHT_CLASS, "relative")}>
-              <TableCell className="max-w-0 pl-4">
-                <Link
-                  href={buildDetailHref(company.id)}
-                  className="text-foreground focus-visible:ring-ring block truncate rounded after:absolute after:inset-0 hover:underline focus-visible:ring-2 focus-visible:outline-none"
-                  title={company.name}
+      <div className="overflow-x-auto">
+        <Table className="min-w-[760px] table-fixed text-xs">
+          {/* 각 컬럼 폭을 %로 고정 — 기업명이 길어져도 다른 컬럼이 밀리지 않는다(위 COLUMN_WIDTH 참고) */}
+          <colgroup>
+            <col style={{ width: COLUMN_WIDTH.name }} />
+            <col style={{ width: COLUMN_WIDTH.code }} />
+            <col style={{ width: COLUMN_WIDTH.members }} />
+            <col style={{ width: COLUMN_WIDTH.meetings }} />
+            <col style={{ width: COLUMN_WIDTH.joinedAt }} />
+            <col style={{ width: COLUMN_WIDTH.status }} />
+          </colgroup>
+          <TableHeader>
+            <TableRow className={cn(HEADER_HEIGHT_CLASS, "hover:bg-transparent")}>
+              <TableHead className="pl-4 text-xs">기업명</TableHead>
+              <TableHead className="text-center text-xs">기업 코드</TableHead>
+              <TableHead className="text-center text-xs">구성원</TableHead>
+              <TableHead className="text-center text-xs">이번달 회의</TableHead>
+              <TableHead className="text-center text-xs">가입일</TableHead>
+              <TableHead className="pr-4 text-center text-xs">상태</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {companies.map((company) => (
+              // relative — stretched link(아래 after:absolute)가 이 행 기준으로 덮인다
+              <TableRow key={company.id} className={cn(ROW_HEIGHT_CLASS, "relative")}>
+                <TableCell className="max-w-0 pl-4">
+                  <Link
+                    href={buildDetailHref(company.id)}
+                    className="text-foreground focus-visible:ring-ring block truncate rounded after:absolute after:inset-0 hover:underline focus-visible:ring-2 focus-visible:outline-none"
+                    title={company.name}
+                  >
+                    {company.name}
+                  </Link>
+                </TableCell>
+                <TableCell
+                  className="text-muted-foreground max-w-0 truncate text-center"
+                  title={company.code}
                 >
-                  {company.name}
-                </Link>
-              </TableCell>
-              <TableCell
-                className="text-muted-foreground max-w-0 truncate text-center"
-                title={company.code}
+                  {company.code}
+                </TableCell>
+                <TableCell className="text-muted-foreground text-center tabular-nums">
+                  {company.memberCount}명
+                </TableCell>
+                <TableCell className="text-muted-foreground text-center tabular-nums">
+                  {company.meetingCountThisMonth}회
+                </TableCell>
+                <TableCell className="text-muted-foreground text-center tabular-nums">
+                  {company.joinedAt}
+                </TableCell>
+                <TableCell className="pr-4 text-center">
+                  <StatusBadge tone={STATUS_TONE[company.status]}>
+                    {COMPANY_STATUS_LABEL[company.status]}
+                  </StatusBadge>
+                </TableCell>
+              </TableRow>
+            ))}
+            {/* 채움 행 — 보더 없이, 스크린리더에서도 안 읽힌다. 목적은 오직 <tr> 개수를 맞추는 것뿐 */}
+            {Array.from({ length: fillerCount }, (_, index) => (
+              <TableRow
+                key={`filler-${index}`}
+                aria-hidden
+                className={cn(ROW_HEIGHT_CLASS, "border-transparent hover:bg-transparent")}
               >
-                {company.code}
-              </TableCell>
-              <TableCell className="text-muted-foreground text-center tabular-nums">
-                {company.memberCount}명
-              </TableCell>
-              <TableCell className="text-muted-foreground text-center tabular-nums">
-                {company.meetingCountThisMonth}회
-              </TableCell>
-              <TableCell className="text-muted-foreground text-center tabular-nums">
-                {company.joinedAt}
-              </TableCell>
-              <TableCell className="pr-4 text-center">
-                <StatusBadge tone={STATUS_TONE[company.status]}>
-                  {COMPANY_STATUS_LABEL[company.status]}
-                </StatusBadge>
-              </TableCell>
-            </TableRow>
-          ))}
-          {/* 채움 행 — 보더 없이, 스크린리더에서도 안 읽힌다. 목적은 오직 <tr> 개수를 맞추는 것뿐 */}
-          {Array.from({ length: fillerCount }, (_, index) => (
-            <TableRow
-              key={`filler-${index}`}
-              aria-hidden
-              className={cn(ROW_HEIGHT_CLASS, "border-transparent hover:bg-transparent")}
-            >
-              <TableCell className="pl-4" colSpan={6} />
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+                <TableCell className="pl-4" colSpan={6} />
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   );
 }

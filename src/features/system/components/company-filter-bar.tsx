@@ -74,7 +74,9 @@ export function CompanyFilterBar() {
       <Select
         items={COMPANY_SORT_LABEL}
         value={searchParams.get("sort") ?? DEFAULT_SORT}
-        onValueChange={(value) => pushWith({ sort: value === DEFAULT_SORT ? "" : (value ?? "") })}
+        onValueChange={(value) =>
+          pushWith({ q: keyword, sort: value === DEFAULT_SORT ? "" : (value ?? "") })
+        }
       >
         <SelectTrigger aria-label="정렬 기준" className="w-36">
           <SelectValue />
@@ -90,7 +92,7 @@ export function CompanyFilterBar() {
 
       <Select
         value={searchParams.get("status") ?? ALL}
-        onValueChange={(value) => pushWith({ status: value ?? ALL })}
+        onValueChange={(value) => pushWith({ q: keyword, status: value ?? ALL })}
       >
         <SelectTrigger aria-label="상태 필터" className="w-36">
           <SelectValue />
