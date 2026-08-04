@@ -12,7 +12,7 @@ import type { MonthlyMrr } from "../types";
  */
 const MrrChart = dynamic(() => import("./mrr-chart").then((m) => m.MrrChart), {
   ssr: false,
-  loading: () => <Skeleton className="h-[280px] w-full" />,
+  loading: () => <Skeleton className="h-56 w-full" />,
 });
 
 export function MrrChartLoader({ data }: { data: MonthlyMrr[] }) {

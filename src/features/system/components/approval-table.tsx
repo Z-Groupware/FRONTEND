@@ -22,10 +22,10 @@ interface ApprovalTableProps {
 }
 
 /** 행 하나의 높이 — `py-4`가 아니라 고정 클래스로 못박아 내용에 따라 늘어나지 않게 한다. */
-const ROW_HEIGHT_CLASS = "h-13"; // 52px
-const ROW_HEIGHT_PX = 52;
-const HEADER_HEIGHT_CLASS = "h-[41px]";
-const HEADER_HEIGHT_PX = 41;
+const ROW_HEIGHT_CLASS = "h-[42px]";
+const ROW_HEIGHT_PX = 42;
+const HEADER_HEIGHT_CLASS = "h-[34px]";
+const HEADER_HEIGHT_PX = 34;
 
 /**
  * 컬럼 폭 — **%로 고정**한다(합 100). 픽셀 고정이면 화면 폭이 다른 환경에서 비율이 깨진다.
@@ -69,7 +69,7 @@ export function ApprovalTable({ companies, buildDetailHref, pageSize }: Approval
 
   return (
     <div className="border-border bg-card overflow-hidden rounded-xl border">
-      <Table className="table-fixed">
+      <Table className="table-fixed text-xs">
         {/* 각 컬럼 폭을 %로 고정 — 회사명 길이가 페이지마다 달라져도 다른 컬럼이 밀리지 않는다(위 COLUMN_WIDTH 참고) */}
         <colgroup>
           <col style={{ width: COLUMN_WIDTH.name }} />
@@ -80,18 +80,18 @@ export function ApprovalTable({ companies, buildDetailHref, pageSize }: Approval
         </colgroup>
         <TableHeader>
           <TableRow className={cn(HEADER_HEIGHT_CLASS, "hover:bg-transparent")}>
-            <TableHead className="pl-6">회사명</TableHead>
-            <TableHead>대표자</TableHead>
-            <TableHead>담당자 이메일</TableHead>
-            <TableHead>규모</TableHead>
-            <TableHead className="pr-6">신청일</TableHead>
+            <TableHead className="pl-4 text-xs">회사명</TableHead>
+            <TableHead className="text-center text-xs">대표자</TableHead>
+            <TableHead className="text-center text-xs">담당자 이메일</TableHead>
+            <TableHead className="text-center text-xs">규모</TableHead>
+            <TableHead className="pr-4 text-center text-xs">신청일</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {companies.map((company) => (
             // relative — stretched link(아래 after:absolute)가 이 행 기준으로 덮인다
             <TableRow key={company.id} className={cn(ROW_HEIGHT_CLASS, "relative")}>
-              <TableCell className="max-w-0 pl-6">
+              <TableCell className="max-w-0 pl-4">
                 <Link
                   href={buildDetailHref(company.id)}
                   className="text-foreground focus-visible:ring-ring flex items-center gap-2 rounded after:absolute after:inset-0 hover:underline focus-visible:ring-2 focus-visible:outline-none"
@@ -104,19 +104,19 @@ export function ApprovalTable({ companies, buildDetailHref, pageSize }: Approval
                   </Badge>
                 </Link>
               </TableCell>
-              <TableCell className="text-muted-foreground max-w-0 truncate">
+              <TableCell className="text-muted-foreground max-w-0 truncate text-center">
                 {company.representativeName}
               </TableCell>
               <TableCell
-                className="text-muted-foreground max-w-0 truncate"
+                className="text-muted-foreground max-w-0 truncate text-center"
                 title={company.contactEmail}
               >
                 {company.contactEmail}
               </TableCell>
-              <TableCell className="text-muted-foreground">
+              <TableCell className="text-muted-foreground text-center">
                 {COMPANY_SIZE_LABEL[company.size]}
               </TableCell>
-              <TableCell className="text-muted-foreground pr-6 tabular-nums">
+              <TableCell className="text-muted-foreground pr-4 text-center tabular-nums">
                 {company.appliedAt}
               </TableCell>
             </TableRow>
@@ -128,7 +128,7 @@ export function ApprovalTable({ companies, buildDetailHref, pageSize }: Approval
               aria-hidden
               className={cn(ROW_HEIGHT_CLASS, "border-transparent hover:bg-transparent")}
             >
-              <TableCell className="pl-6" colSpan={5} />
+              <TableCell className="pl-4" colSpan={5} />
             </TableRow>
           ))}
         </TableBody>

@@ -77,9 +77,10 @@ export async function unsuspendCompanyAction(formData: FormData): Promise<void> 
 /**
  * "구독·매출" 미납 안내 발송 — 격리막(CLAUDE.md §Mock 격리막).
  *
- * ⚠️ **폼이 아니라 직접 호출한다.** 확인 Dialog에서 "예"를 누른 뒤 그 자리에서 toast로
- *    결과를 보여줘야 해서(CLAUDE.md §토스트: 변경 결과 피드백) `redirect`도 `revalidatePath`도
- *    필요 없다 — 화면·데이터 어느 것도 안 바뀌고 그냥 메일 한 통을 보내는 조작이다.
+ * ⚠️ **폼이 아니라 직접 호출한다.** "안내 발송" 버튼을 누르면 바로 이 액션을 실행하고,
+ *    끝나면 결과를 `SuccessDialog`로 보여준다(`owner/billing/checkout`의 결제 흐름과 같은
+ *    패턴 — 확인 Dialog 없이 액션 → 완료 안내). `redirect`도 `revalidatePath`도 필요 없다 —
+ *    화면·데이터 어느 것도 안 바뀌고 그냥 메일 한 통을 보내는 조작이다.
  * ⚠️ 지금은 목이라 **실제로 메일이 나가지 않는다** — 성공만 흉내 낸다(§정직성).
  */
 export async function sendUnpaidNoticeAction(

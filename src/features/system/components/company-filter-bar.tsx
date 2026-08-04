@@ -50,7 +50,7 @@ export function CompanyFilterBar() {
 
   return (
     <div className="flex items-center gap-2">
-      <div className="relative w-full max-w-[280px]">
+      <div className="relative ml-auto w-full max-w-56">
         <Search
           className="text-muted-foreground pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2"
           aria-hidden
