@@ -36,9 +36,19 @@ const FORBIDDEN: ActionResult = {
   message: "구독·결제를 변경할 권한이 없습니다",
 };
 
-/** 권한 문지기 — 모든 액션이 첫 줄에서 통과해야 한다 */
+/**
+ * 권한 문지기 — 모든 액션이 첫 줄에서 통과해야 한다.
+ *
+ * ⚠️ **던지지 않는다.** 세션을 못 읽으면 `getViewer`가 예외를 내는데, 그대로 두면 액션이
+ *    거절되어 화면은 결과 대신 아무것도 못 받는다 — 부르는 쪽에 `try/catch`가 없는 곳은
+ *    조용히 아무 일도 안 일어난다(§정직성). 못 읽으면 **권한 없음으로 본다.**
+ */
 async function assertCanManage(): Promise<boolean> {
-  return canManageBilling(await getViewer());
+  try {
+    return canManageBilling(await getViewer());
+  } catch {
+    return false;
+  }
 }
 
 /**
@@ -55,7 +65,13 @@ export async function confirmSubscriptionAction(): Promise<ActionResult> {
       ⚠️ 목은 항상 성공한다. **실패 화면을 보려면 여기를 잠깐 뒤집는다** —
          `return { isSuccess: false, message: toFailureMessage("EXCEED_MAX_CARD_LIMIT") }`
     */
+    /*
+      ⚠️ **구독 상태를 읽는 화면을 전부 갱신한다.** `/billing`만 갱신하면, 결제로 상태가
+         바뀌었는데 구독 재개 화면(`/subscription`)은 여전히 끊긴 화면을 보여준다 —
+         둘이 같은 값을 읽는다.
+    */
     revalidatePath("/billing");
+    revalidatePath("/subscription");
     return { isSuccess: true };
   }
 
@@ -136,7 +152,9 @@ export async function toggleCancelAction(isCanceling: boolean): Promise<ActionRe
   if (!(await assertCanManage())) return FORBIDDEN;
 
   if (isMock) {
+    // 해지·재개도 구독 상태를 바꾼다 — 재개 화면이 같은 값을 읽는다
     revalidatePath("/billing");
+    revalidatePath("/subscription");
     return { isSuccess: true };
   }
 
