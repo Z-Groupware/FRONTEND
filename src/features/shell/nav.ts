@@ -74,8 +74,13 @@ export const OWNER_NAV: NavSection[] = [
   {
     title: "회사 운영",
     items: [
-      { href: "/owner/members", label: "사원 관리", icon: "members" },
-      { href: "/owner/billing", label: "구독·결제", icon: "billing", isReady: true },
+      /*
+        ⚠️ `/owner/members`가 아니라 **`/members`**다. OWNER와 Admin 겸직자가 같이 쓰는 화면이라
+           역할 경로에 두면 겸직자에게 주소가 거짓말을 한다 — `/billing`과 같은 이유다
+           (CLAUDE.md §라우트 그룹 · DECISIONS §(shared)).
+      */
+      { href: "/members", label: "사원 관리", icon: "members" },
+      { href: "/billing", label: "구독·결제", icon: "billing", isReady: true },
       { href: "/owner/storage", label: "녹음 용량", icon: "storage" },
       { href: "/owner/setting", label: "기업 설정", icon: "setting" },
     ],
