@@ -6,7 +6,7 @@ import { KakaoMap } from "@/features/landing/components/kakao-map";
 
 export const metadata: Metadata = {
   title: "오시는 길 — Z",
-  description: "Z 팀이 일하는 곳과 찾아오는 방법을 안내해요.",
+  description: "Z 팀이 일하는 곳과 찾아오는 방법을 안내합니다.",
 };
 
 /**
@@ -23,7 +23,7 @@ const LNG = 127.0435;
 
 export default function LocationPage() {
   return (
-    <DocPage title="오시는 길" description="미리 연락 주시면 1층에서 맞이할게요.">
+    <DocPage title="오시는 길" description="미리 연락 주시면 1층에서 맞이하겠습니다.">
       <KakaoMap
         lat={LAT}
         lng={LNG}
@@ -35,12 +35,12 @@ export default function LocationPage() {
 
       <div className="pt-6">
         <DocSection title="대중교통" icon={TrainFront}>
-          <p>8호선 남한산성입구역에서 캠퍼스까지 걸어서 올 수 있어요.</p>
+          <p>8호선 남한산성입구역에서 캠퍼스까지 걸어서 올 수 있습니다.</p>
           <p>정문에서 박애관을 찾아 4층으로 올라오면 됩니다.</p>
         </DocSection>
 
         <DocSection title="주차" icon={Car}>
-          <p>교내 주차장을 이용할 수 있어요. 방문 전에 미리 알려주시면 안내할게요.</p>
+          <p>교내 주차장을 이용할 수 있습니다. 방문 전에 미리 알려주시면 안내할게요.</p>
         </DocSection>
 
         <DocSection title="문의" icon={Mail}>

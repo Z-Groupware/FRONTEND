@@ -36,7 +36,7 @@ export function RoleSection() {
             Roles
           </p>
           <h2 className="text-[32px] leading-[40px] font-semibold tracking-[-0.7px] break-keep lg:text-[36px] lg:leading-[44px]">
-            어느 자리에서도 Z는 이어져요
+            어느 자리에서도 Z는 이어집니다
           </h2>
         </div>
 
@@ -86,43 +86,69 @@ export function RoleSection() {
             id="role-preview-panel"
             aria-labelledby={`role-tab-${role.name}`}
           >
+            {/*
+              ⚠️ **진짜 셸의 축소판이다.** 사이드바 + 상단바 + 본문 + 카드, 실제 화면과 같은
+                 뼈대를 쓴다. 전에는 사이드바를 `bg-secondary`로 칠하고 상단바를 아예 빼서,
+                 우리 서비스가 아니라 아무 대시보드 그림처럼 보였다 —
+                 여기서 본 화면이 로그인 뒤에 그대로 나와야 미리보기가 값을 한다.
+              ⚠️ 셸 껍데기(사이드바·상단바)는 **`--background` 한 색**이다
+                 (CLAUDE.md §디자인 토큰 — 색으로 층을 3단 나누지 않는다).
+              ⚠️ 다만 **그대로 베끼지는 않는다.** 실제 본문의 점 격자는 이 크기에서 점이
+                 글자만큼 굵게 보여 지저분해진다 — 축소판의 목적은 흉내가 아니라 **읽히는 것**이다.
+            */}
             <div
               key={role.name}
-              className="border-border bg-popover animate-in fade-in-0 slide-in-from-bottom-2 tilt-left overflow-hidden rounded-2xl border shadow-lg duration-300"
+              className="border-border bg-background animate-in fade-in-0 slide-in-from-bottom-2 tilt-left overflow-hidden rounded-2xl border shadow-lg duration-300"
             >
               <div className="flex min-h-[280px]">
                 {/* 미니 사이드바 — 역할마다 메뉴가 다르다(실제 셸과 같은 문법) */}
-                <div className="border-border bg-secondary/60 hidden w-[104px] shrink-0 flex-col gap-1 border-r p-2.5 sm:flex">
-                  <span className="flex items-center px-1.5 pb-2">
-                    <ZLogo className="text-foreground size-3" />
+                <div className="border-border hidden w-[116px] shrink-0 flex-col border-r px-2 pb-2 sm:flex">
+                  {/* 실제 셸도 로고 줄이 상단바와 같은 높이다 — 첫 줄이 한 선에 놓인다 */}
+                  <span className="flex h-[34px] shrink-0 items-center px-2">
+                    <ZLogo className="text-foreground size-3.5" />
                   </span>
                   {role.nav.map((item, index) => (
                     <span
                       key={item}
                       className={cn(
-                        "rounded px-2 py-1 text-[10px] leading-4 whitespace-nowrap",
+                        "flex h-[22px] items-center rounded-md px-2 text-[10px] leading-4 whitespace-nowrap",
                         index === 0 ? "bg-foreground text-background" : "text-muted-foreground",
                       )}
                     >
                       {item}
                     </span>
                   ))}
-                  <span
-                    className={cn(
-                      "mt-auto self-start rounded-full px-2 py-0.5 text-[9px] leading-[14px]",
-                      role.chip,
-                    )}
-                  >
-                    {role.name}
+                  {/* 실제 셸은 맨 아래가 계정 줄이다 — 역할 배지가 거기 붙는다 */}
+                  <span className="border-border/60 mt-auto flex items-center gap-1.5 border-t px-1 pt-2">
+                    <span
+                      className={cn(
+                        "flex size-[15px] shrink-0 items-center justify-center rounded-full text-[8px] leading-none",
+                        role.chip,
+                      )}
+                      aria-hidden
+                    >
+                      Z
+                    </span>
+                    <span className="text-muted-foreground/80 min-w-0 truncate text-[9px] leading-[13px]">
+                      {role.name}
+                    </span>
                   </span>
                 </div>
 
-                <div className="min-w-0 flex-1 p-4">
-                  <p className="pb-3 text-[13px] leading-5 font-semibold">{role.screen}</p>
-                  <RoleScreen name={role.name} />
-                  <p className="text-muted-foreground pt-3 text-[10px] leading-4">
-                    화면 구성 예시 — 숫자는 실제 데이터가 아니에요
-                  </p>
+                <div className="flex min-w-0 flex-1 flex-col">
+                  {/* 상단바 — 실제 화면은 아이콘 + 제목이다. 없으면 본문만 떠 있는 그림이 된다 */}
+                  <div className="border-border flex h-[34px] shrink-0 items-center gap-2 border-b px-3.5">
+                    <span className="bg-foreground/15 size-2.5 rounded-[3px]" aria-hidden />
+                    <p className="text-[11px] leading-4 font-semibold">{role.screen}</p>
+                  </div>
+
+                  {/* 본문 — 카드가 뜨도록 아주 옅게만 눌러 둔다(점 격자는 위 주석 참고) */}
+                  <div className="bg-secondary/30 min-w-0 flex-1 p-3.5">
+                    <RoleScreen name={role.name} />
+                    <p className="text-muted-foreground/70 pt-3 text-[10px] leading-4">
+                      화면 구성 예시 — 숫자는 실제 데이터가 아닙니다
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>

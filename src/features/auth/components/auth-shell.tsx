@@ -140,7 +140,14 @@ export function AuthShell({ children, hasLegalNotice = true }: AuthShellProps) {
            아니라 **보이는 만큼**만 덮어서, 폼이 길어지면 덮개가 끝나는 자리에 가로줄이 생기고
            그 아래는 맨 흰 바탕이 된다. 바깥에 두면 기둥 전체를 덮은 채 가만히 있는다.
       */}
-      <div className="bg-background relative flex min-h-0 flex-1 flex-col">
+      {/*
+        ⚠️ 오른쪽 폼 칸은 **앱 테마와 무관하게 항상 밝다**(팀 결정). 왼쪽이 늘 검정이라
+           오른쪽까지 어두워지면 화면 전체가 까매져 입력칸이 어디인지 안 보인다.
+           밝기 스위치도 없는 화면이라 사용자가 되돌릴 방법도 없다.
+        ⚠️ `bg-white`로 바르지 않고 **토큰째 덮는다**(`globals.css`의 `.surface-light`) —
+           색만 칠하면 안쪽 입력칸·보더·글자색은 여전히 다크 토큰이라 흰 바탕에 흰 글씨가 된다.
+      */}
+      <div className="surface-light bg-background relative flex min-h-0 flex-1 flex-col">
         <span
           aria-hidden
           className="absolute inset-0 bg-[radial-gradient(90%_70%_at_15%_0%,rgba(37,99,235,0.07)_0%,transparent_58%),radial-gradient(85%_65%_at_90%_100%,rgba(124,58,237,0.07)_0%,transparent_58%)]"

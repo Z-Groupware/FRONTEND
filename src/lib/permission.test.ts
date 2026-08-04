@@ -8,7 +8,6 @@ import {
   canManageBilling,
   canManageMembers,
   canManageRooms,
-  canViewBilling,
 } from "./permission";
 
 /**
@@ -55,12 +54,12 @@ describe("Owner와 Admin이 갈리는 지점", () => {
     expect(canIssueAccount(owner)).toBe(false);
   });
 
-  it("구독 결제는 Owner만 실행하고, Admin은 보기까지다", () => {
+  it("구독 결제는 Owner와 Admin 겸직자가 함께 맡는다", () => {
     const concurrent: Actor = { ...member, isAdmin: true };
 
     expect(canManageBilling(owner)).toBe(true);
-    expect(canManageBilling(concurrent)).toBe(false);
-    expect(canViewBilling(concurrent)).toBe(true);
+    expect(canManageBilling(concurrent)).toBe(true);
+    expect(canManageBilling(member)).toBe(false);
   });
 
   it("인수인계 최종 승인은 Owner와 Admin 둘 다 된다", () => {

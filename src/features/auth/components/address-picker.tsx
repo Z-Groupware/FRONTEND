@@ -186,7 +186,7 @@ export function AddressPicker({ picked, onPick, hasError }: AddressPickerProps) 
       {!picked && (
         <p className="text-muted-foreground/70 flex items-center gap-1.5 text-[12px] leading-4">
           <MapPin className="size-3.5 shrink-0" aria-hidden />
-          <span className="translate-y-px">찾은 곳을 고르면 지도에 표시돼요</span>
+          <span className="translate-y-px">찾은 곳을 고르면 지도에 표시됩니다</span>
         </p>
       )}
     </div>

@@ -24,8 +24,8 @@ import { TermsContent } from "./terms-content";
  * ⚠️ 본문이 길다 — 모달 안에서만 스크롤한다(`overflow-y-auto`). 페이지가 같이 밀리면 안 된다.
  */
 const DOCS = {
-  terms: { title: "이용약관", description: "Z를 쓰실 때 적용되는 약속이에요." },
-  privacy: { title: "개인정보처리방침", description: "어떤 정보를 왜 다루는지 적어 뒀어요." },
+  terms: { title: "이용약관", description: "Z를 쓰실 때 적용되는 약속입니다." },
+  privacy: { title: "개인정보처리방침", description: "어떤 정보를 왜 다루는지 적어 두었습니다." },
 } as const;
 
 interface LegalDialogProps {
@@ -48,7 +48,7 @@ export function LegalDialog({ doc, children }: LegalDialogProps) {
 
       {/*
         ⚠️ `gap-0` — DialogContent가 자체 `gap-4`를 갖고 있어 아래 `mt-*`와 겹쳐 두 배가 된다.
-           여백은 여기서 한 곳으로만 준다(공용 `SuccessDialog`와 같은 규칙).
+           여백은 여기서 한 곳으로만 준다(공용 `ResultDialog`와 같은 규칙).
         ⚠️ 본문이 길다 — 머리는 고정하고 **본문만** 스크롤한다.
         ⚠️ 높이를 `flex-1`로 잡지 않는다. 이 Dialog의 기본 레이아웃이 `grid`라
            `flex-1`이 먹지 않아 내용이 잘린 채 스크롤도 안 됐다.
@@ -61,7 +61,11 @@ export function LegalDialog({ doc, children }: LegalDialogProps) {
         ⚠️ 행을 `auto`(머리) + `minmax(0,1fr)`(본문)로 나눈다. `minmax(0,…)`이 있어야
            본문이 내용 높이 밑으로 줄어들 수 있다(그래야 스크롤이 생긴다).
       */}
-      <DialogContent className="grid max-h-[min(calc(100dvh-2rem),620px)] grid-rows-[auto_minmax(0,1fr)] gap-0 p-8 sm:max-w-[640px]">
+      {/*
+        ⚠️ `surface-light` — 이 창은 **로그인 전 화면에서만** 뜨는데, 포털로 `<body>` 밑에
+           붙어 폼 칸 바깥에 렌더된다. 조상 토큰이 닿지 않아 앱이 다크면 창만 까매졌다.
+      */}
+      <DialogContent className="surface-light grid max-h-[min(calc(100dvh-2rem),620px)] grid-rows-[auto_minmax(0,1fr)] gap-0 p-8 sm:max-w-[640px]">
         <DialogHeader className="items-center gap-2 text-center">
           <DialogTitle className="text-xl leading-[26px] font-semibold tracking-[-0.4px]">
             {meta.title}

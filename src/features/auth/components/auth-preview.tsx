@@ -14,7 +14,7 @@ import { ZLogo } from "@/components/icons/z-logo";
  */
 const SPEAKERS = [
   { initial: "김", color: "#0284c7", line: "이번 스프린트 블로커부터 정리해볼게요" },
-  { initial: "이", color: "#16a34a", line: "디자인 시스템 업데이트 공유가 안 됐어요" },
+  { initial: "이", color: "#16a34a", line: "디자인 시스템 업데이트 공유가 안 됐습니다" },
   { initial: "박", color: "#ea580c", line: "API 문서 최신화가 계속 밀리고 있습니다" },
 ] as const;
 

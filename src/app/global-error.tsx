@@ -30,7 +30,7 @@ export default function GlobalError({ reset }: { reset: () => void }) {
           fontFamily: "system-ui, -apple-system, sans-serif",
         }}
       >
-        <h1 style={{ fontSize: 20, fontWeight: 600, margin: 0 }}>화면을 열지 못했어요</h1>
+        <h1 style={{ fontSize: 20, fontWeight: 600, margin: 0 }}>화면을 열지 못했습니다</h1>
         <p style={{ fontSize: 14, lineHeight: 1.7, color: "#78716c", margin: 0, maxWidth: 360 }}>
           잠시 후 다시 시도해 주세요. 계속 안 되면 담당자에게 알려주세요.
         </p>

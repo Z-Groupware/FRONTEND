@@ -44,7 +44,7 @@ export function FeatureHandoverMock() {
         <span className="min-w-0 flex-1">
           <span className="block text-[11px] leading-4 font-medium">전임 → 후임 인수인계서</span>
           <span className="text-muted-foreground/70 block text-[10px] leading-[14px]">
-            후임자에게 전달할 준비가 끝났어요
+            후임자에게 전달할 준비가 끝났습니다
           </span>
         </span>
       </div>

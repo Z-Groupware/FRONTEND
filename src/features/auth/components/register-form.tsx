@@ -73,7 +73,7 @@ export function RegisterForm() {
     <AuthCard
       icon={Building2}
       title="기업 등록 신청"
-      description="회사 정보를 남겨 주시면 검토 후 기업 코드를 메일로 보내 드려요"
+      description="회사 정보를 남겨 주시면 검토 후 기업 코드를 메일로 보내 드립니다"
       footer={
         <>
           이미 기업 코드가 있나요?{" "}

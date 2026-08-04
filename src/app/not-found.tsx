@@ -29,10 +29,10 @@ export default function NotFound() {
           404
         </p>
         <h1 className="text-[24px] leading-8 font-semibold tracking-[-0.5px] break-keep">
-          찾으시는 화면이 없어요
+          찾으시는 화면이 없습니다
         </h1>
         <p className="text-muted-foreground max-w-[380px] text-[14px] leading-6 break-keep">
-          주소가 바뀌었거나 지워진 화면일 수 있어요. 홈에서 다시 찾아보시겠어요?
+          주소가 바뀌었거나 지워진 화면일 수 있습니다. 홈에서 다시 찾아보시겠습니까?
         </p>
       </div>
 

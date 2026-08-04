@@ -21,8 +21,8 @@ export type FaqCategory = (typeof FAQ_CATEGORY)[keyof typeof FAQ_CATEGORY];
 
 /** 처음에 보여줄 갈래 — 여기서 좁혀 들어간다 */
 export const FAQ_CATEGORY_LABEL: Record<FaqCategory, string> = {
-  SERVICE: "서비스가 궁금해요",
-  PRICING: "요금이 궁금해요",
+  SERVICE: "서비스가 궁금합니다",
+  PRICING: "요금이 궁금합니다",
   START: "시작하는 방법",
   ACCOUNT: "계정과 권한",
   ENV: "이용 환경 · 정책",
@@ -64,10 +64,10 @@ export interface FaqEntry {
  * 첫 화면에서 갈래를 고르라고 물을 때.
  * ⚠️ 인사는 **위쪽 안내 블록**이 한다 — 여기서 또 인사하면 같은 말이 두 번이다.
  */
-export const FAQ_GREETING = "어떤 게 궁금하신가요?";
+export const FAQ_GREETING = "어떤 게 궁금하신갑니다?";
 
 /** 여러 개가 걸렸을 때 — 바로 답하지 않고 되묻는다 */
-export const FAQ_NARROW = "이 중에 어떤 게 궁금하신가요?";
+export const FAQ_NARROW = "이 중에 어떤 게 궁금하신갑니다?";
 
 /**
  * 답을 못 찾았을 때.
@@ -78,10 +78,10 @@ export const FAQ_NARROW = "이 중에 어떤 게 궁금하신가요?";
  */
 export const FAQ_FALLBACK =
   /*
-    ⚠️ 줄을 **직접 나눈다.** 한 문장으로 흘리면 창 폭에 따라 "있어요."만 셋째 줄에 남아
+    ⚠️ 줄을 **직접 나눈다.** 한 문장으로 흘리면 창 폭에 따라 "있습니다."만 셋째 줄에 남아
        토막처럼 보인다 — 의미 단위로 끊어 두면 어디서 접혀도 읽힌다.
   */
-  "그건 제가 아직 모르겠어요.\n\n아래 갈래에서 찾아보시거나,\n담당자에게 직접 물어보세요.";
+  "그건 제가 아직 모릅니다.\n\n아래 갈래에서 찾아보시거나,\n담당자에게 직접 문의해 주세요.";
 
 /**
  * 문의 받는 곳.
