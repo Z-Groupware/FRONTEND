@@ -5,12 +5,13 @@ import { cn } from "@/lib/utils";
  * "MRR"(잘 되고 있다는 핵심 수치)과 "미납"(조치가 필요하다는 경고)이 똑같이 읽혀
  * 어느 쪽에 먼저 시선을 둬야 할지 알 수 없다.
  */
-export type StatCardTone = "neutral" | "accent" | "warning";
+export type StatCardTone = "neutral" | "accent" | "warning" | "danger";
 
 const VALUE_TONE: Record<StatCardTone, string> = {
   neutral: "text-foreground",
   accent: "text-chart-1",
   warning: "text-warning",
+  danger: "text-destructive",
 };
 
 interface StatCardProps {

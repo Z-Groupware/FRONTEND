@@ -8,6 +8,7 @@ import { isMock } from "@/mocks/config";
 
 import { removeMockPendingApproval } from "./mock/approvals";
 import { findMockCompany, setMockCompanyStatus } from "./mock/companies";
+import { findMockFailedItem } from "./mock/monitoring";
 
 /**
  * 기업 승인 화면의 **변경 창구** — 격리막(CLAUDE.md §Mock 격리막).
@@ -95,4 +96,21 @@ export async function sendUnpaidNoticeAction(
   if (!company) return { success: false };
 
   return { success: true, ownerEmail: company.ownerEmail };
+}
+
+/**
+ * "시스템 모니터링" 실패 건 재처리 — 격리막(CLAUDE.md §Mock 격리막).
+ *
+ * ⚠️ **폼이 아니라 직접 호출한다.** 실패 행의 "재처리" 버튼을 누르면 이 액션을 실행하고
+ *    결과를 그 자리에서 "완료"로 바꿔 보여준다(구독·매출 "안내 발송"과 같은 패턴).
+ *    `redirect`도 `revalidatePath`도 필요 없다 — 잡 하나를 큐에 다시 넣을 뿐이다.
+ * ⚠️ 지금은 목이라 **실제로 재처리가 돌지 않는다** — 성공만 흉내 낸다(§정직성).
+ */
+export async function retryPipelineAction(meetingId: string): Promise<{ success: boolean }> {
+  if (!isMock) {
+    // ⚠️ 미구현 — API 스펙 확정 후 BFF 경로로 파이프라인 재처리 요청을 보낸다.
+    throw new Error("파이프라인 재처리 API가 아직 연결되지 않았습니다.");
+  }
+
+  return { success: findMockFailedItem(meetingId) !== null };
 }

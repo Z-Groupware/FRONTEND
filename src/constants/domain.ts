@@ -162,6 +162,27 @@ export {
   ROLE_SCOPE_LABEL,
 } from "./role";
 
+/* ───────── AI 파이프라인 (시스템 모니터링) ───────── */
+/**
+ * 회의 캡처 → 액션 하달까지의 처리 단계. SYSTEM 운영자가 큐·실패를 이 단계 기준으로 본다.
+ * ⚠️ STT(자막 변환)는 브라우저 기능이지만, 여기 단계는 **서버 파이프라인의 재처리 단위**라
+ *    별개다 — 운영자가 실패를 재처리하는 대상은 서버 잡이다(CLAUDE.md §AI: STT 표기 주의).
+ */
+export const PIPELINE_STAGE = {
+  UPLOAD: "UPLOAD",
+  TRANSCRIBE: "TRANSCRIBE",
+  SUMMARIZE: "SUMMARIZE",
+  EXTRACT_ACTION: "EXTRACT_ACTION",
+} as const;
+export type PipelineStage = (typeof PIPELINE_STAGE)[keyof typeof PIPELINE_STAGE];
+
+export const PIPELINE_STAGE_LABEL: Record<PipelineStage, string> = {
+  UPLOAD: "업로드",
+  TRANSCRIBE: "자막 변환",
+  SUMMARIZE: "요약 생성",
+  EXTRACT_ACTION: "액션 추출",
+};
+
 /* ───────── 구독 · 기업 ───────── */
 export const PLAN = { FREE: "FREE", TEAM: "TEAM" } as const;
 export type Plan = (typeof PLAN)[keyof typeof PLAN];

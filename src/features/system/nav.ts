@@ -14,7 +14,7 @@ export const SYSTEM_NAV: NavSection[] = [
       { href: "/system/approval", label: "기업 승인", icon: "approval", isReady: true },
       { href: "/system/companies", label: "기업 관리", icon: "company", isReady: true },
       { href: "/system/billing", label: "구독·매출", icon: "billing", isReady: true },
-      { href: "/system/monitoring", label: "시스템 모니터링", icon: "monitor" },
+      { href: "/system/monitor", label: "시스템 모니터링", icon: "monitor", isReady: true },
       { href: "/system/notice", label: "공지", icon: "notice" },
     ],
   },

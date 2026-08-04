@@ -1,4 +1,10 @@
-import type { CompanySize, CompanyStatus, PaymentStatus, Plan } from "@/constants/domain";
+import type {
+  CompanySize,
+  CompanyStatus,
+  PaymentStatus,
+  PipelineStage,
+  Plan,
+} from "@/constants/domain";
 
 /** 대시보드 상단 통계 4종. */
 export interface DashboardSummary {
@@ -119,4 +125,44 @@ export interface BillingOverview {
   monthlyMrr: MonthlyMrr[];
   /** 항상 5건 — 미납 우선, 모자라면 최신 가입순으로 채운다(화면 명세) */
   subscriptions: SubscriptionRecord[];
+}
+
+/** AI 파이프라인 처리 큐 요약 — 시스템 모니터링 상단 3종. */
+export interface PipelineQueueSummary {
+  /** 처리 예정(대기) 건수 */
+  waitingCount: number;
+  /** 처리 중 건수 */
+  processingCount: number;
+  /** 처리 중 건들의 평균 소요(초) — 카드 보조 문구용 */
+  processingAvgSeconds: number;
+  /** 재처리가 필요한 실패 건수 */
+  failedCount: number;
+}
+
+/** 단계별 평균 소요 시간 — 가로 막대 한 칸. */
+export interface StageTiming {
+  stage: PipelineStage;
+  /** 평균 소요(초) */
+  avgSeconds: number;
+}
+
+/** 처리에 실패해 재처리가 필요한 회의 한 건. */
+export interface FailedPipelineItem {
+  /** 화면에 그대로 나가는 회의 ID("MTG-2025-0721-03") — 재처리 요청 식별자이기도 하다 */
+  meetingId: string;
+  companyName: string;
+  /** 실패한 단계 */
+  stage: PipelineStage;
+  /** "YYYY-MM-DD HH:mm" — 운영자 화면 표기 */
+  failedAt: string;
+  /** 실패 원인 한 줄("타임아웃 (30s)") */
+  errorMessage: string;
+}
+
+/** 시스템 모니터링 화면 하나가 필요로 하는 데이터 전부 — 격리막의 UI 계약. */
+export interface MonitoringOverview {
+  queue: PipelineQueueSummary;
+  stageTimings: StageTiming[];
+  /** 실패 목록 — 재처리 필요분(화면 명세: 최신 실패순) */
+  failedItems: FailedPipelineItem[];
 }

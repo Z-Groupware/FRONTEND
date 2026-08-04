@@ -8,10 +8,12 @@ import { findMockPendingApproval, listMockPendingApprovals } from "./mock/approv
 import { MOCK_BILLING_OVERVIEW } from "./mock/billing";
 import { findMockCompany, listMockCompanies, setMockCompanyStatus } from "./mock/companies";
 import { MOCK_DASHBOARD_OVERVIEW } from "./mock/dashboard";
+import { MOCK_MONITORING_OVERVIEW } from "./mock/monitoring";
 import type {
   BillingOverview,
   DashboardOverview,
   ManagedCompany,
+  MonitoringOverview,
   PendingCompanyApproval,
 } from "./types";
 
@@ -114,4 +116,16 @@ export async function getBillingOverview(): Promise<BillingOverview> {
 
   // ⚠️ 미구현 — API 스펙 확정 후 `ep.systemDashboard()`류 경로로 fetch하고 매퍼로 UI 계약에 맞춘다.
   throw new Error("구독·매출 조회 API가 아직 연결되지 않았습니다.");
+}
+
+/**
+ * SYSTEM 시스템 모니터링 조회 — **격리막**(CLAUDE.md).
+ * 큐 상태·단계 소요·실패 목록은 실서버에선 파이프라인 메트릭/잡 큐에서 온다.
+ * ⚠️ 이 화면은 프로젝트 기간 내내 목으로 남을 가능성이 크다(팀 합의) — 그래도 격리막은 유지한다.
+ */
+export async function getMonitoringOverview(): Promise<MonitoringOverview> {
+  if (isMock) return MOCK_MONITORING_OVERVIEW;
+
+  // ⚠️ 미구현 — API 스펙 확정 후 파이프라인 메트릭 경로로 fetch하고 매퍼로 UI 계약에 맞춘다.
+  throw new Error("시스템 모니터링 조회 API가 아직 연결되지 않았습니다.");
 }
