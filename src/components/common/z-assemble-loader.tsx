@@ -4,7 +4,7 @@
  * ⚠️ 스피너 대신 이걸 쓴다. 로고 자체가 세 조각이라 조립이 곧 브랜드가 된다.
  * ⚠️ `prefers-reduced-motion`이면 조각이 움직이지 않고 완성된 로고로 보인다(globals 처리).
  */
-export function ZAssembleLoader({ label = "불러오는 중이에요" }: { label?: string }) {
+export function ZAssembleLoader({ label = "불러오는 중입니다" }: { label?: string }) {
   return (
     <div role="status" className="flex flex-col items-center gap-4">
       <svg

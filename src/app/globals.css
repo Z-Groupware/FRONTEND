@@ -14,9 +14,15 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
+  /*
+    ⚠️ **자기 자신을 참조하면 안 된다.** 전에 `--font-sans: var(--font-sans)`로 적혀 있었는데,
+       그러면 값이 비어 `font-family: ""`가 된다. 빈 font-family는 유효하지 않아서
+       **굵은 글자(제목·라벨)가 아예 안 그려졌다** — 로그인 화면의 제목이 사라진 원인이다.
+       주입하는 쪽은 `layout.tsx`의 `next/font`이고 변수 이름은 `--font-geist-sans`다.
+  */
+  --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-sans);
+  --font-heading: var(--font-geist-sans);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -294,6 +300,113 @@
     --landing-accent: #2563eb;
     --landing-violet: #7c3aed;
     --landing-green: #15803d;
+
+    /*
+     * ⚠️ **앱 토큰도 같이 뒤집는다.** 랜딩 상단바(`bg-background/80`)와 버튼
+     *    (`bg-foreground text-background`)은 `--landing-*`이 아니라 **앱 토큰**을 쓴다.
+     *    야간 스킨은 이 값들을 재정의하는데 주간 스킨에만 빠져 있어서,
+     *    **앱이 다크(시스템 설정)이면 랜딩을 밝게 골라도 상단바만 검게** 떴다.
+     *    랜딩은 앱 테마와 무관해야 하므로(§랜딩 밝기는 별개) 여기서 밝은 값으로 못박는다.
+     */
+    --background: #fafaf9;
+    --foreground: #1c1917;
+    --card: #ffffff;
+    --card-foreground: #1c1917;
+    --popover: #ffffff;
+    --popover-foreground: #1c1917;
+    --secondary: #f5f5f4;
+    --secondary-foreground: #1c1917;
+    --muted: #f5f5f4;
+    --muted-foreground: #6b645e;
+    --accent: #f5f5f4;
+    --accent-foreground: #1c1917;
+    --border: rgba(28, 25, 23, 0.1);
+    --input: rgba(28, 25, 23, 0.12);
+    --ring: #1c1917;
+
+    /*
+     * ⚠️ **역할 배지도 같이 되돌린다.** 야간 스킨은 이 값들을 재정의하는데 주간에만 빠져 있어서,
+     *    앱이 다크면 밝은 무대 위에 어두운 갈색·자주 덩어리(`#3a2010`)가 그대로 얹혔다.
+     *    `:root`(밝은 테마)와 같은 값으로 못박는다.
+     */
+    --role-owner: #c2410c;
+    --role-owner-surface: #fff7ed;
+    --role-admin: #9333ea;
+    --role-admin-surface: #f3e8ff;
+    --role-leader: #0369a1;
+    --role-leader-surface: #e0f2fe;
+    --role-member: #57534e;
+    --role-member-surface: #f5f5f4;
+    --success: #22c55e;
+    --warning: #f59e0b;
+    --destructive: #dc2626;
+    --primary: #3b82f6;
+    --primary-foreground: #fafaf9;
+    --status-todo: #a8a29e;
+    --status-progress: #22c55e;
+    --status-done: #8b5cf6;
+
+    /*
+     * ⚠️ 여기까지가 **`.dark`가 덮는 토큰 전부**다. 하나라도 빠지면 앱이 다크로 저장돼 있을 때
+     *    그 토큰만 어두운 값으로 새어 들어와, 밝은 무대 위에 검은 덩어리가 얹힌다
+     *    (상단바·역할 배지가 실제로 그렇게 깨졌다). **두 블록은 항상 같은 키를 갖는다.**
+     */
+    --sidebar: #fbfbfa;
+    --sidebar-foreground: #1c1917;
+    --sidebar-primary: #3b82f6;
+    --sidebar-primary-foreground: #ffffff;
+    --sidebar-accent: #f5f5f4;
+    --sidebar-accent-foreground: #1c1917;
+    --sidebar-border: #e7e5e4;
+    --sidebar-ring: #1c1917;
+    /* 도움말 패널은 테마와 무관하게 어둡다 — 밝은 쪽 값을 그대로 쓴다 */
+    --guide-surface: #1c1917;
+    --guide-foreground: #fafaf9;
+    --guide-muted: #a8a29e;
+    --guide-border: #3a3532;
+    --landing-warning: #b45309;
+    --chart-1: #eb6834;
+    --chart-2: #2a78d6;
+  }
+
+  /*
+   * **항상 밝은 표면** — 로그인·회원가입의 오른쪽 폼 칸과 그 위에 뜨는 모달이 쓴다.
+   * 앱 테마와 무관하게 밝다(팀 결정 2026-08-04). 왼쪽 패널이 늘 검정이라 오른쪽까지
+   * 어두우면 화면이 통째로 까매지고, 이 화면에는 밝기 스위치가 없어 되돌릴 수도 없다.
+   *
+   * ⚠️ **id가 아니라 클래스다.** 모달은 포털로 `<body>` 바로 밑에 붙어 폼 칸 **바깥**에
+   *    렌더된다 — 조상에 걸어 둔 토큰이 닿지 않아 앱 테마를 따라 어두워졌다.
+   *    그래서 모달 자신에게도 같은 클래스를 붙인다.
+   * ⚠️ `:root`(밝은 테마)와 **같은 값**을 쓴다. 여기만 따로 색을 만들면 두 벌이 어긋난다.
+   */
+  .surface-light {
+    --background: #ffffff;
+    --foreground: #1c1917;
+    --card: #ffffff;
+    --card-foreground: #1c1917;
+    --popover: #ffffff;
+    --popover-foreground: #1c1917;
+    --secondary: #f5f5f4;
+    --secondary-foreground: #1c1917;
+    --muted: #f5f5f4;
+    --muted-foreground: #6b645e;
+    --accent: #f5f5f4;
+    --accent-foreground: #1c1917;
+    --border: #e7e5e4;
+    --input: #e7e5e4;
+    --ring: #1c1917;
+    --destructive: #dc2626;
+    --primary: #3b82f6;
+    --primary-foreground: #fafaf9;
+
+    /*
+      ⚠️ **토큰만 덮으면 글자색이 안 바뀐다.** `body`가 `text-foreground`로 색을 정해 두는데,
+         상속되는 건 변수 참조가 아니라 **거기서 이미 계산된 색**이다 — 앱이 다크면
+         `#fafaf9`(흰색)가 그대로 흘러 내려와 흰 카드 위 흰 글씨가 된다.
+         (제목·라벨처럼 `text-*` 클래스가 없는 요소가 전부 그랬다.)
+         여기서 색을 **다시 계산**시켜야 아래로 밝은 값이 흐른다.
+    */
+    color: var(--foreground);
   }
 
   /*
@@ -339,6 +452,33 @@
     --landing-green: #4ade80;
     /* ⚠️ 흰 바탕용 경고색(#b45309)은 검정 무대에서 3.9:1이라 못 읽는다 — 여기서만 원색으로 되돌린다 */
     --landing-warning: #f59e0b;
+
+    /*
+     * ⚠️ **주간 블록과 같은 키를 갖는다.** 하나라도 빠지면 앱이 라이트로 저장돼 있을 때
+     *    그 토큰만 밝은 값으로 새어 들어와, 검은 무대 위에 흰 덩어리가 얹힌다.
+     */
+    --success: #22c55e;
+    --warning: #f59e0b;
+    --destructive: #ef4444;
+    --primary: #3b82f6;
+    --primary-foreground: #ffffff;
+    --status-todo: #8a827d;
+    --status-progress: #22c55e;
+    --status-done: #a78bfa;
+    --sidebar: #151211;
+    --sidebar-foreground: #fafaf9;
+    --sidebar-primary: #3b82f6;
+    --sidebar-primary-foreground: #ffffff;
+    --sidebar-accent: #2e2a28;
+    --sidebar-accent-foreground: #fafaf9;
+    --sidebar-border: #33302d;
+    --sidebar-ring: #d6d3d1;
+    --guide-surface: #2a2624;
+    --guide-foreground: #fafaf9;
+    --guide-muted: #a8a29e;
+    --guide-border: #423c38;
+    --chart-1: #d95926;
+    --chart-2: #3987e5;
   }
 
   /*

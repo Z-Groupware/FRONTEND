@@ -9,6 +9,13 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default: "bg-primary text-primary-foreground hover:bg-primary/80",
+        /*
+          이 서비스의 **주 버튼**. shadcn 기본값(`default`)은 `--primary`(파랑)인데, 우리 파랑은
+          링크·강조용이지 실행 버튼 색이 아니다(§디자인 토큰) — 실행 버튼은 먹색이다.
+          ⚠️ 전에는 이 조합을 화면마다 손으로 적고 있었다. 높이·글자만 다르고 색은 늘 같아서,
+             `hover` 농도 하나 바꾸려 해도 열 몇 곳을 찾아야 했다.
+        */
+        ink: "bg-foreground text-background hover:bg-foreground/90",
         outline:
           "border-border bg-background hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50",
         secondary:

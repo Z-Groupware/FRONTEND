@@ -31,10 +31,12 @@ interface PageHeaderProps {
  * ⚠️ **화면에서 부르지 않는다.** 도메인의 `layout.tsx`가 그린다 —
  *    화면마다 머리를 새로 그리면 높이·여백이 갈린다(사이드바와 같은 이유).
  * ⚠️ 탭은 여기에 넣지 않는다. 탭이 필요한 화면은 이 아래에 따로 둔다.
+ * ⚠️ 높이(56px)는 **사이드바 로고 줄과 같은 값**이다. 한쪽만 고치면 두 경계선이 어긋나
+ *    화면 왼쪽 위에 계단이 생긴다 — 바꿀 때 `role-sidebar`·`system-sidebar`를 같이 본다.
  */
 export function PageHeader({ title, icon: Icon, meta, backTo, action }: PageHeaderProps) {
   return (
-    <header className="border-border bg-background flex h-[64px] shrink-0 items-center gap-3 border-b px-8">
+    <header className="border-border bg-background flex h-[56px] shrink-0 items-center gap-3 border-b px-8">
       {/* 화살표는 제목 왼쪽에 나란히 둔다 — 제목 위에 경로를 한 줄 더 쓰지 않는다 */}
       {backTo && (
         <Link
@@ -46,13 +48,19 @@ export function PageHeader({ title, icon: Icon, meta, backTo, action }: PageHead
         </Link>
       )}
 
-      {/* 제목과 같은 색이다 — 흐리게 두면 제목 옆에 붙은 게 아니라 떨어진 장식처럼 보인다 */}
-      {Icon && <Icon className="text-foreground size-5 shrink-0" aria-hidden />}
+      {/*
+        ⚠️ 표식과 제목을 **한 덩어리로 묶고 사이를 넉넉히**(16px) 준다. 헤더 기본 간격(12px)을
+           그대로 쓰면 22px 굵은 제목 옆에서 아이콘이 글자에 달라붙어 한 글자처럼 보인다.
+      */}
+      <div className="flex min-w-0 items-center gap-4">
+        {/* 제목과 같은 색이다 — 흐리게 두면 제목 옆에 붙은 게 아니라 떨어진 장식처럼 보인다 */}
+        {Icon && <Icon className="text-foreground size-5 shrink-0" aria-hidden />}
 
-      {/* ⚠️ 한글 글리프가 줄 상자 안에서 위쪽에 앉는다 — 아이콘과 맞추려면 내려야 한다(팀 규칙) */}
-      <h1 className="shrink-0 translate-y-[1.5px] truncate text-[22px] leading-[30px] font-semibold tracking-[-0.4px]">
-        {title}
-      </h1>
+        {/* ⚠️ 한글 글리프가 줄 상자 안에서 위쪽에 앉는다 — 아이콘과 맞추려면 내려야 한다(팀 규칙) */}
+        <h1 className="shrink-0 translate-y-[1.5px] truncate text-[22px] leading-[30px] font-semibold tracking-[-0.4px]">
+          {title}
+        </h1>
+      </div>
 
       {/* 남는 자리는 비워 둔다 — 선을 그으면 헤더가 시끄러워진다 */}
       <span className="flex-1" aria-hidden />
