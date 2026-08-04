@@ -17,7 +17,9 @@ export function RecentCompaniesTable({ companies }: { companies: RecentCompany[]
     return (
       <section className="border-border bg-card rounded-xl border p-6">
         <h2 className="text-foreground text-base font-semibold">최근 가입 기업</h2>
-        <p className="text-muted-foreground mt-8 text-center text-sm">아직 가입한 기업이 없어요</p>
+        <p className="text-muted-foreground mt-8 text-center text-sm">
+          아직 가입한 기업이 없습니다
+        </p>
       </section>
     );
   }

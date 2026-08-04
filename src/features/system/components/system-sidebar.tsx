@@ -69,7 +69,7 @@ export function SystemSidebar({ sections, account }: SystemSidebarProps) {
 
   return (
     <aside className="border-border bg-background flex w-[220px] shrink-0 flex-col border-r">
-      <div className="flex h-[64px] shrink-0 items-center gap-2 px-[18px]">
+      <div className="flex h-[56px] shrink-0 items-center gap-2 px-[18px]">
         <Link
           href="/system"
           aria-label="Z 운영자 홈으로"
@@ -134,7 +134,8 @@ function SidebarItem({ item, isCurrent }: { item: NavItem; isCurrent: boolean })
       <button
         type="button"
         aria-disabled
-        onClick={() => toast(`${item.label} 화면은 아직 만드는 중이에요`)}
+        // ⚠️ 토스트는 한 줄(220px)이라 짧게 쓴다 — 길면 잘린다(`sonner.tsx`)
+        onClick={() => toast(`${item.label}은 준비 중입니다`)}
         className={cn(
           shape,
           "text-muted-foreground hover:bg-foreground/5 hover:text-foreground focus-visible:ring-ring w-full text-left focus-visible:ring-2 focus-visible:outline-hidden",
