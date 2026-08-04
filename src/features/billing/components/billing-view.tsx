@@ -3,8 +3,14 @@
 import { useState } from "react";
 import { toast } from "sonner";
 
+import {
+  registerCardAction,
+  removeMethodAction,
+  setDefaultMethodAction,
+  toggleCancelAction,
+} from "../actions";
 import type { BillingConfig } from "../config";
-import { registerCardMethod, requestCardAuth } from "../payment-method";
+import { requestCardAuth } from "../payment-method";
 import {
   type BillingOverview,
   canUseWorkspace,
@@ -48,7 +54,12 @@ export function BillingView({ overview, config, today, canManage }: BillingViewP
 
   const isCanceling = subscription.status === SUBSCRIPTION_STATUS.CANCELING;
 
-  const handleToggleCancel = () => {
+  const handleToggleCancel = async () => {
+    const result = await toggleCancelAction(isCanceling);
+    if (!result.isSuccess) {
+      toast(result.message ?? "구독 상태를 바꾸지 못했습니다");
+      return;
+    }
     setSubscription((prev) => ({
       ...prev,
       status: isCanceling ? SUBSCRIPTION_STATUS.ACTIVE : SUBSCRIPTION_STATUS.CANCELING,
@@ -75,24 +86,44 @@ export function BillingView({ overview, config, today, canManage }: BillingViewP
   */
   const handleAddMethod = async () => {
     try {
-      // TODO(로그인 연동): `customerKey`는 세션의 기업 id를 쓴다 — 회사가 구독하는 단위다
+      /*
+        ⚠️ **결제사 창만 브라우저에서 연다.** 카드 번호는 그 창에서만 입력되고, 우리는
+           `authKey`만 받는다 — 빌링키로 바꾸고 저장하는 건 서버(액션)의 일이다.
+        ⚠️ TODO(로그인 연동): `customerKey`는 세션의 기업 id를 쓴다 — 회사가 구독하는 단위다
+      */
       const auth = await requestCardAuth("mock-company");
-      const next = await registerCardMethod(auth);
+      const result = await registerCardAction(auth);
 
-      setMethods((prev) => [...prev, { ...next, isDefault: prev.length === 0 }]);
+      if (!result.isSuccess || !result.method) {
+        // ⚠️ 토스트는 한 줄(220px)이라 짧게 쓴다 — 길면 잘린다(`sonner.tsx`)
+        toast(result.message ?? "결제 수단을 추가하지 못했습니다");
+        return;
+      }
+      const added = result.method;
+      setMethods((prev) => [...prev, { ...added, isDefault: prev.length === 0 }]);
       toast("결제 수단을 추가했습니다");
     } catch {
-      // ⚠️ 토스트는 한 줄(220px)이라 짧게 쓴다 — 길면 잘린다(`sonner.tsx`)
+      // 결제사 창을 닫은 경우 — 여기서만 예외로 온다
       toast("결제 수단을 추가하지 못했습니다");
     }
   };
 
-  const handleSetDefault = (id: string) => {
+  const handleSetDefault = async (id: string) => {
+    const result = await setDefaultMethodAction(id);
+    if (!result.isSuccess) {
+      toast(result.message ?? "기본 결제 수단을 바꾸지 못했습니다");
+      return;
+    }
     setMethods((prev) => prev.map((method) => ({ ...method, isDefault: method.id === id })));
     toast("기본 결제 수단을 변경했습니다");
   };
 
-  const handleRemoveMethod = (id: string) => {
+  const handleRemoveMethod = async (id: string) => {
+    const result = await removeMethodAction(id);
+    if (!result.isSuccess) {
+      toast(result.message ?? "결제 수단을 지우지 못했습니다");
+      return;
+    }
     setMethods((prev) => prev.filter((method) => method.id !== id));
     toast("결제 수단을 삭제했습니다");
   };

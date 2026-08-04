@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 
+import { confirmSubscriptionAction } from "../actions";
 import type { BillingConfig } from "../config";
-import { requestSubscriptionPayment } from "../payment";
 import { CheckoutPanel } from "./checkout-panel";
 import { PaymentFailedDialog } from "./payment-failed-dialog";
 import { PlanSummaryCard } from "./plan-summary-card";
@@ -50,7 +50,7 @@ export function SubscribeCard({
   const handleSubmit = async () => {
     setIsPending(true);
     try {
-      const result = await requestSubscriptionPayment();
+      const result = await confirmSubscriptionAction();
       if (result.isSuccess) {
         onSubscribe();
         return;
