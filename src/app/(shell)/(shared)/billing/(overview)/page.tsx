@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 
 import { BillingView } from "@/features/billing/components/billing-view";
 import { getBillingConfig, getBillingOverview } from "@/features/billing/server";
-import { canManageBilling, getViewer } from "@/features/shell/viewer";
+import { getViewer } from "@/features/shell/viewer";
+import { canManageBilling } from "@/lib/permission";
 
 export const metadata: Metadata = {
   title: "구독·결제",

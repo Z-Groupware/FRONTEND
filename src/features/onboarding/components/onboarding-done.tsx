@@ -11,7 +11,6 @@ import { roleHome } from "@/features/shell/home";
 import { cn } from "@/lib/utils";
 
 import { loadDraft } from "../draft";
-import { isValidEmail } from "../invites";
 import { type DepartmentNode, type Invite, ONBOARDING_STEP, type Position } from "../types";
 import { DoneConfetti } from "./done-confetti";
 import { DoneSummary } from "./done-summary";
@@ -40,11 +39,16 @@ function countOf(
     roleCount: departments.reduce((sum, department) => sum + department.children.length, 0),
     positionCount: positions.length,
     /**
-     * 초대 = **주소를 제대로 적어둔 줄** 전부.
-     * ⚠️ `isSent`로 거르지 않는다 — 주소를 적어둔 줄은 3단계 [완료]에서 전부 나가서
-     *    두 값이 같다. 굳이 걸러 두면 나중에 한쪽만 바뀌었을 때 수가 어긋난다.
+     * 초대 = **실제로 나간 줄**.
+     *
+     * ⚠️ 전에는 `isValidEmail`만 봤다. 주소를 적어둔 줄은 전부 나간다고 가정했는데,
+     *    발송 조건에 **부서·역할·직급을 다 골랐는지**가 추가되면서(`sendableInvites`)
+     *    가정이 깨졌다 — 주소만 적고 직급을 안 고른 줄이 있으면 완료 화면이 실제보다
+     *    많은 수를 말한다.
+     * ⚠️ 그래서 `isSent`로 센다. 커밋할 때 나간 줄에만 표시가 붙으므로,
+     *    조건이 또 바뀌어도 이 값은 따라온다.
      */
-    inviteCount: invites.filter((invite) => isValidEmail(invite.email)).length,
+    inviteCount: invites.filter((invite) => invite.isSent).length,
   };
 }
 

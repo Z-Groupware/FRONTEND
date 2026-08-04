@@ -62,6 +62,17 @@ export function canManageMembers(actor: Actor): boolean {
   return actor.role === ROLE.OWNER || isAdmin(actor);
 }
 
+/**
+ * 구독·결제 — OWNER이거나 Admin을 겸한 사람.
+ *
+ * ⚠️ 이 판정 때문에 결제 화면이 `/owner/billing`이 아니라 **`/billing`** 이다
+ *    (DECISIONS §(shared)). 역할 경로에 두면 겸직자에게 주소가 거짓말을 한다.
+ * ⚠️ 화면에서 버튼을 감추는 건 UX일 뿐이다 — **Server Action에서 다시 본다**.
+ */
+export function canManageBilling(actor: Actor): boolean {
+  return actor.role === ROLE.OWNER || isAdmin(actor);
+}
+
 /** 계정 발급 — Admin 겸직자만. OWNER는 발급 대상도 발급자도 아니다. */
 export function canIssueAccount(actor: Actor): boolean {
   return isAdmin(actor);
@@ -73,15 +84,6 @@ export function canIssueAccount(actor: Actor): boolean {
  */
 export function canGrantAdmin(target: { role: Role }): boolean {
   return ADMIN_ELIGIBLE_ROLES.some((role) => role === target.role);
-}
-
-/**
- * 구독·결제 — OWNER이거나 Admin을 겸한 사람. **보기와 변경을 나누지 않는다**(팀 확인).
- * ⚠️ 표의 행 이름은 "구독 결제 보기"지만 열람만 되는 게 아니다 — 플랜 변경·결제 수단도
- *    같은 사람들이 한다. 이름만 보고 열람 전용으로 좁히지 않는다.
- */
-export function canManageBilling(actor: Actor): boolean {
-  return actor.role === ROLE.OWNER || isAdmin(actor);
 }
 
 /**

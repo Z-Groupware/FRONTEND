@@ -2,7 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 
-import { canManageBilling, getViewer } from "@/features/shell/viewer";
+import { getViewer } from "@/features/shell/viewer";
+import { canManageBilling } from "@/lib/permission";
+import { isMock } from "@/mocks/config";
 
 import { toFailureMessage } from "./payment";
 import type { CardAuthResult } from "./payment-method";
@@ -21,8 +23,6 @@ import type { PaymentMethod } from "./subscription";
  *    입력되므로 브라우저에서 돌아야 한다 — 서버는 `authKey`만 받아 빌링키로 교환한다.
  * ⚠️ 아직 목이다. BE 스펙이 확정되면 각 함수의 본문만 채운다 — 부르는 쪽은 그대로다.
  */
-
-const isMock = true;
 
 /** 액션의 공통 결과 — 실패를 예외로 던지지 않고 값으로 돌려준다(화면이 문구를 고른다) */
 export interface ActionResult {
