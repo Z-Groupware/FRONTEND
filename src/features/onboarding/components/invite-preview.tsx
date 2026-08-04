@@ -1,7 +1,5 @@
 "use client";
 
-import { cn } from "@/lib/utils";
-
 import type { Invite } from "../types";
 import { useScrollToLatest } from "../use-scroll-to-latest";
 import type { SelectOption } from "./option-select";
@@ -29,7 +27,7 @@ export function InvitePreview({ invites, departments, rolesOf, positions }: Invi
   if (invites.length === 0) {
     return (
       <div className="border-border bg-background/50 flex min-h-20 flex-1 items-center justify-center rounded-lg border p-3">
-        <p className="text-muted-foreground/70 text-[11px]">아직 보낼 주소가 없어요</p>
+        <p className="text-muted-foreground/70 text-[11px]">아직 보낼 주소가 없습니다</p>
       </div>
     );
   }
@@ -54,22 +52,14 @@ export function InvitePreview({ invites, departments, rolesOf, positions }: Invi
             key={invite.id}
             className="animate-in fade-in slide-in-from-bottom-1 flex h-[18px] items-center gap-1.5 duration-200"
           >
-            {/* 진한 점 = 이미 나감 · 옅은 점 = 아직 안 나감 */}
-            <span
-              className={cn(
-                "size-[5px] shrink-0 rounded-full",
-                invite.isSent ? "bg-foreground" : "bg-muted-foreground/40",
-              )}
-              aria-hidden
-            />
-            <span
-              className={cn(
-                "truncate font-mono text-[10px]",
-                invite.isSent ? "text-foreground" : "text-muted-foreground",
-              )}
-            >
-              {invite.email.trim()}
-            </span>
+            {/*
+              ⚠️ 발송 여부로 진하기를 나누지 않는다 — [완료]가 발송과 단계 이동을 함께 해서
+                 이 화면에 보낸 줄이 남는 순간이 없다. 여기 줄은 전부 "보낼 것"이라
+                 **흐릴 이유가 없다** — 흐리면 아직 안 정해진 것처럼 읽힌다.
+                 오른쪽 부서·직급만 보조 정보라 한 단 연하게 둔다.
+            */}
+            <span className="bg-foreground size-[5px] shrink-0 rounded-full" aria-hidden />
+            <span className="truncate font-mono text-[10px]">{invite.email.trim()}</span>
             {(department || role || position) && (
               <span className="text-muted-foreground/60 ml-auto shrink-0 text-[9px]">
                 {[department, role, position].filter(Boolean).join(" · ")}

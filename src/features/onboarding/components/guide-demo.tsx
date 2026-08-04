@@ -29,7 +29,7 @@ const FRAMES: Record<OnboardingStep, DemoFrame[]> = {
   [ONBOARDING_STEP.DEPARTMENT]: [
     { caption: "부서를 하나 만들고", rows: [{ label: "개발팀", sub: "부서", folder: true }] },
     {
-      caption: "그 안에 역할을 넣어요",
+      caption: "그 안에 역할을 넣습니다",
       rows: [
         { label: "개발팀", sub: "부서", folder: true },
         { label: "프론트엔드", sub: "역할", indent: true, tone: "accent", folder: true },
@@ -46,7 +46,7 @@ const FRAMES: Record<OnboardingStep, DemoFrame[]> = {
   ],
   [ONBOARDING_STEP.POSITION]: [
     {
-      caption: "직급마다 권한을 정해요",
+      caption: "직급마다 권한을 정합니다",
       rows: [
         { label: "팀장", sub: "Member" },
         { label: "사원", sub: "Member", tone: "muted" },
@@ -60,7 +60,7 @@ const FRAMES: Record<OnboardingStep, DemoFrame[]> = {
       ],
     },
     {
-      caption: "나머지는 Member만 고를 수 있어요",
+      caption: "나머지는 Member만 고를 수 있습니다",
       rows: [
         { label: "팀장", sub: "Leader" },
         { label: "사원", sub: "Leader 잠김", tone: "muted" },
@@ -70,12 +70,26 @@ const FRAMES: Record<OnboardingStep, DemoFrame[]> = {
   [ONBOARDING_STEP.INVITE]: [
     { caption: "메일 주소를 적고", rows: [{ label: "dev1@company.com", sub: "" }] },
     {
-      caption: "부서를 고르면 역할이 열려요",
+      caption: "부서를 고르면 역할이 열립니다",
       rows: [{ label: "dev1@company.com", sub: "개발팀", tone: "accent" }],
     },
     {
       caption: "역할·직급까지 정해 보냅니다",
       rows: [{ label: "dev1@company.com", sub: "개발팀 · 프론트엔드 · 사원", tone: "accent" }],
+    },
+  ],
+  [ONBOARDING_STEP.PAYMENT]: [
+    {
+      caption: "회사당 기본료 하나입니다",
+      rows: [{ label: "월 기본료", sub: "인원과 무관", tone: "muted" }],
+    },
+    {
+      caption: "AI 토큰과 저장 공간이 포함되고",
+      rows: [{ label: "포함량", sub: "넘긴 만큼만 다음 결제일에", tone: "accent" }],
+    },
+    {
+      caption: "결제를 마치면 워크스페이스가 열립니다",
+      rows: [{ label: "결제 완료", sub: "다음 결제일 9월 1일", tone: "accent" }],
     },
   ],
 };

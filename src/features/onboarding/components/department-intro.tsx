@@ -2,6 +2,7 @@ import { type DepartmentNode, MAX_ORG_NAME_LENGTH, ONBOARDING_STEP } from "../ty
 import { DepartmentPreview } from "./department-preview";
 import { StepHeading } from "./step-heading";
 import { StepHintList } from "./step-hint-list";
+import { StepNote, StepNoteList } from "./step-note-list";
 
 const BENEFITS = [
   "회의를 만들 때 부서 전체를 한 번에 초대",
@@ -16,37 +17,40 @@ interface DepartmentIntroProps {
 
 export function DepartmentIntro({ departments }: DepartmentIntroProps) {
   return (
-    <section className="flex w-full flex-col gap-[17.5px] lg:h-full lg:w-[300px] lg:shrink-0">
+    <section className="flex w-full flex-col gap-[17.5px] lg:h-full lg:w-[320px] lg:shrink-0">
       <StepHeading step={ONBOARDING_STEP.DEPARTMENT} title="부서 체계를 만들어 주세요">
-        회의 참석자, 알림 대상, 인수인계 범위를 부서 단위로 관리해요. 지금 만들어 두면 사원이 합류할
-        때 바로 배정할 수 있습니다.
+        회의 참석자와 알림 대상, 인수인계 범위를 부서 단위로 관리합니다. 지금 만들어 두면 사원이
+        합류할 때 바로 배정할 수 있습니다.
       </StepHeading>
 
       <StepHintList items={BENEFITS} />
 
-      <div className="border-border bg-background/80 text-muted-foreground/70 flex flex-col gap-1.5 rounded-md border p-[10.5px] text-[11px] leading-[18px]">
-        <p>이름을 더블클릭하면 바꿀 수 있어요. 나중에 설정에서 언제든 수정할 수 있어요.</p>
+      <StepNoteList>
+        <StepNote>
+          <span className="text-muted-foreground">이름을 더블클릭</span>하면 바로 고칠 수 있습니다.
+          나중에 기업 설정에서도 바꿀 수 있습니다.
+        </StepNote>
         {/*
           ⚠️ 글자 수 제한은 **여기 적어 둔다.** 3단계 초대 목록의 좁은 칸에서 역산한 값이라
              모르고 길게 적으면 거기서 잘린다 — 조용히 막지 않는다(§정직성).
         */}
-        <p>
-          이름은 <span className="text-muted-foreground">{MAX_ORG_NAME_LENGTH}자까지</span> 적을 수
-          있어요. 사원 초대 화면에서 이 이름을 골라야 해서예요.
-        </p>
-        <p>
-          <span className="text-muted-foreground">역할</span>은 부서 안에서 맡는 일이에요 — 개발팀
-          안의 프론트엔드·백엔드처럼요.
-        </p>
-        <p>
-          손잡이를 끌면 순서를 바꾸거나{" "}
-          <span className="text-muted-foreground">다른 부서로 옮길</span> 수 있어요.
-        </p>
-        <p>
-          <span className="text-muted-foreground">역할 없이 부서에만</span> 속할 수도 있어요. 팀장이
-          그런 경우입니다.
-        </p>
-      </div>
+        <StepNote>
+          이름은 <span className="text-muted-foreground">{MAX_ORG_NAME_LENGTH}자까지</span>입니다.
+          3단계 초대 목록의 좁은 칸에서 이 이름을 골라야 해서입니다.
+        </StepNote>
+        <StepNote>
+          <span className="text-muted-foreground">역할</span>은 부서 안에서 맡는 일입니다. 개발팀
+          안의 프론트엔드·백엔드가 그렇습니다.
+        </StepNote>
+        <StepNote>
+          <span className="text-muted-foreground">손잡이를 끌면</span> 순서를 바꾸거나 다른 부서로
+          옮길 수 있습니다.
+        </StepNote>
+        <StepNote>
+          <span className="text-muted-foreground">역할 없이 부서에만</span> 속할 수도 있습니다.
+          팀장이 그렇습니다.
+        </StepNote>
+      </StepNoteList>
 
       <DepartmentPreview departments={departments} />
     </section>

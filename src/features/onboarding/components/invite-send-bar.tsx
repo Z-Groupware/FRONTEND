@@ -1,51 +1,44 @@
 "use client";
 
-import { Mail, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 
 interface InviteSendBarProps {
   /** 이번에 나갈 줄 수 — 주소가 유효하고 아직 안 보낸 것 */
   sendableCount: number;
   onAddRow: () => void;
-  onSend: () => void;
 }
 
 /**
- * 카드 하단 바 — [행 추가]와 [초대 발송].
+ * 카드 하단 바 — [행 추가]와 몇 명이 나가는지.
  *
+ * ⚠️ **[초대 발송] 버튼을 두지 않는다**(2026-08-04 변경). 발송과 다음 단계가 따로 있으면
+ *    "보냈는데 왜 안 넘어가지", "넘어갔는데 안 보냈네" 두 실수가 다 생긴다 —
+ *    **[완료]를 누를 때 함께 나간다.**
  * 추가 버튼이 목록 안에 있으면 줄이 늘 때마다 아래로 밀려 스크롤해야 눌린다 — 여기 고정한다.
- * 제출 버튼은 하단 우측(CONVENTIONS §9).
+ * ⚠️ 1·2단계 하단 바(`DepartmentAddRow`·`PositionAddRow`)와 **같은 높이(54px)**, 버튼도
+ *    그쪽처럼 **오른쪽 끝**이다. 단계를 넘길 때 같은 자리에 있어야 손이 안 헤맨다.
+ *    1·2단계는 왼쪽이 입력칸이라 여기서는 그 자리에 안내 문구가 온다.
+ * ⚠️ 다만 **배경은 깔지 않는다.** 저쪽은 입력칸과 짝을 이뤄야 해서 상자가 필요하지만,
+ *    여기는 옆이 문구뿐이라 상자를 두면 바 안에서 그것만 도드라진다.
  */
-export function InviteSendBar({ sendableCount, onAddRow, onSend }: InviteSendBarProps) {
+export function InviteSendBar({ sendableCount, onAddRow }: InviteSendBarProps) {
   return (
-    <div className="border-border bg-muted flex h-[54px] shrink-0 items-center gap-3 border-t px-4">
+    <div className="border-border bg-muted flex h-[54px] shrink-0 items-center gap-2 border-t px-4">
+      {/* 몇 명이 나가는지 — [완료]를 누르면 이 수만큼 계정이 만들어진다 */}
+      <p className="text-muted-foreground/70 min-w-0 flex-1 truncate text-xs leading-4">
+        {sendableCount > 0
+          ? `[완료]를 누르면 ${sendableCount}명에게 발송됩니다`
+          : "주소를 적으면 [완료]에서 함께 발송됩니다"}
+      </p>
+
       <button
         type="button"
         onClick={onAddRow}
-        className="text-foreground/80 hover:text-foreground hover:bg-foreground/10 focus-visible:ring-ring flex h-7 shrink-0 items-center gap-1.5 rounded-md px-2.5 text-xs leading-none transition-colors focus-visible:ring-2 focus-visible:outline-hidden"
+        className="text-muted-foreground hover:text-foreground focus-visible:ring-ring flex h-8 shrink-0 items-center gap-1 rounded-md px-1.5 text-xs transition-colors focus-visible:ring-2 focus-visible:outline-hidden"
       >
         <Plus className="size-3.5" />
         {/* 한글 글자가 상자 안에서 위쪽에 앉아 아이콘보다 떠 보인다 — 1px 내려 맞춘다 */}
         <span className="translate-y-px leading-none">행 추가</span>
-      </button>
-
-      <span className="flex-1" aria-hidden />
-
-      {/* 인원 수는 버튼이 아니라 여기서 알린다 — 버튼이 커지지 않게 */}
-      <p className="text-muted-foreground/70 hidden text-[11px] leading-4 sm:block">
-        {sendableCount > 0
-          ? `${sendableCount}명에게 보내요`
-          : "초대받은 사람이 링크로 계정을 만들 수 있어요"}
-      </p>
-
-      {/* ⚠️ 실제 메일 발송은 서버가 한다. 지금은 목록만 담아두고 [완료]에서 커밋한다. */}
-      <button
-        type="button"
-        disabled={sendableCount === 0}
-        onClick={onSend}
-        className="bg-foreground text-background hover:bg-foreground/90 focus-visible:ring-ring flex h-7 shrink-0 items-center gap-1.5 rounded-md px-2.5 text-xs leading-none transition-colors focus-visible:ring-2 focus-visible:outline-hidden disabled:pointer-events-none disabled:opacity-40"
-      >
-        <Mail className="size-3.5" />
-        <span className="leading-none">초대 발송</span>
       </button>
     </div>
   );

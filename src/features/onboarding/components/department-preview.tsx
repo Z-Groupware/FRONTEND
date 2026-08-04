@@ -13,7 +13,7 @@ export function DepartmentPreview({ departments }: { departments: DepartmentNode
   if (rows.length === 0) {
     return (
       <div className="border-border bg-background/50 flex min-h-20 flex-1 items-center justify-center rounded-lg border p-3">
-        <p className="text-muted-foreground/70 text-[11px]">아직 부서가 없어요</p>
+        <p className="text-muted-foreground/70 text-[11px]">아직 부서가 없습니다</p>
       </div>
     );
   }

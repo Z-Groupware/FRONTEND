@@ -27,7 +27,7 @@ export function PositionPreview({ positions }: { positions: Position[] }) {
       ))}
       {positions.length === 0 && (
         <li className="text-muted-foreground/70 py-1 text-center text-[10px]">
-          아직 직급이 없어요
+          아직 직급이 없습니다
         </li>
       )}
     </ul>

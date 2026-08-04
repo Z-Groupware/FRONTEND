@@ -7,39 +7,49 @@ import {
   departmentsWithLeader,
   duplicatedLeaderIds,
   duplicateEmails,
+  type InviteRules,
   isValidEmail,
   markInvitesSent,
   removeInvite,
   sendableInvites,
-  sentInvites,
   toggleInviteAdmin,
 } from "./invites";
 import type { Invite } from "./types";
+import { NO_ROLE_ID } from "./types";
+
+/** 목록에서 `lead`만 리더 직급으로 보고, 모든 부서에 역할이 있다고 본다 */
+const isLeader: InviteRules = {
+  isLeaderPosition: (positionId) => positionId === "lead",
+  hasRoles: () => true,
+};
 
 const makeList = (): Invite[] => [
   {
     id: "a",
+    name: "",
     email: "dev1@company.com",
     departmentId: "dev",
-    roleId: "",
+    roleId: NO_ROLE_ID,
     positionId: "staff",
     isAdmin: false,
     isSent: false,
   },
   {
     id: "b",
+    name: "",
     email: "design@company.com",
     departmentId: "design",
-    roleId: "",
+    roleId: NO_ROLE_ID,
     positionId: "staff",
     isAdmin: false,
     isSent: false,
   },
   {
     id: "c",
+    name: "",
     email: "",
     departmentId: "dev",
-    roleId: "",
+    roleId: NO_ROLE_ID,
     positionId: "staff",
     isAdmin: false,
     isSent: false,
@@ -49,13 +59,15 @@ const makeList = (): Invite[] => [
 const emails = (invites: Invite[]) => invites.map((invite) => invite.email);
 
 describe("createInvite", () => {
-  it("빈 주소와 지정한 부서·직급으로 만든다", () => {
-    expect(createInvite("invite-1", "dev", "staff")).toEqual({
+  it("부서·역할·직급까지 **전부 빈 채로** 만든다 — 고르지 않은 값이 채워져 있으면 안 된다", () => {
+    expect(createInvite("invite-1")).toEqual({
       id: "invite-1",
+      name: "",
       email: "",
-      departmentId: "dev",
+      departmentId: "",
+      // ⚠️ `NO_ROLE_ID`가 아니다 — 그건 `없음`을 **고른** 상태다. 새 줄은 아직 안 골랐다.
       roleId: "",
-      positionId: "staff",
+      positionId: "",
       isAdmin: false,
       isSent: false,
     });
@@ -85,13 +97,28 @@ describe("changeInvite*", () => {
   });
 
   it("부서를 바꾼다", () => {
-    const next = changeInviteDepartment(makeList(), "a", "biz");
+    const next = changeInviteDepartment(makeList(), "a", "biz", isLeader);
     expect(next[0]?.departmentId).toBe("biz");
   });
 
   it("직급을 바꾼다", () => {
-    const next = changeInvitePosition(makeList(), "a", "lead");
+    const next = changeInvitePosition(makeList(), "a", "staff", isLeader);
+    expect(next[0]?.positionId).toBe("staff");
+  });
+
+  /*
+    리더는 부서 전체를 맡는 자리다 — 부서 안의 한 역할에 매이면 관리 범위가 어긋난다.
+    화면에서 막는 것만으로는 부족하다: 역할을 먼저 고른 뒤 직급을 리더로 바꾸는 순서가 남는다.
+  */
+  it("리더 직급을 고르면 역할이 함께 비워진다", () => {
+    const next = changeInvitePosition(makeList(), "a", "lead", isLeader);
     expect(next[0]?.positionId).toBe("lead");
+    expect(next[0]?.roleId).toBe(NO_ROLE_ID);
+  });
+
+  it("리더가 아닌 직급은 역할을 건드리지 않는다", () => {
+    const before = makeList()[0]?.roleId;
+    expect(changeInvitePosition(makeList(), "a", "staff", isLeader)[0]?.roleId).toBe(before);
   });
 
   it("원본을 바꾸지 않는다", () => {
@@ -117,7 +144,7 @@ describe("sendableInvites", () => {
   });
 });
 
-describe("sentInvites · markInvitesSent", () => {
+describe("markInvitesSent", () => {
   it("발송하면 주소가 유효한 줄에만 도장이 찍힌다 — 빈 줄은 그대로다", () => {
     const next = markInvitesSent(makeList());
     expect(next.map((invite) => invite.isSent)).toEqual([true, true, false]);
@@ -126,7 +153,6 @@ describe("sentInvites · markInvitesSent", () => {
   it("이미 보낸 줄은 다음 발송 대상에서 빠진다", () => {
     const sent = markInvitesSent(makeList());
     expect(sendableInvites(sent)).toEqual([]);
-    expect(emails(sentInvites(sent))).toEqual(["dev1@company.com", "design@company.com"]);
   });
 
   it("나중에 추가한 줄만 다음 발송 대상이 된다", () => {
@@ -135,9 +161,10 @@ describe("sentInvites · markInvitesSent", () => {
       ...sent,
       {
         id: "d",
+        name: "",
         email: "new@company.com",
         departmentId: "dev",
-        roleId: "",
+        roleId: NO_ROLE_ID,
         positionId: "staff",
         isAdmin: false,
         isSent: false,
@@ -152,27 +179,30 @@ describe("duplicateEmails", () => {
     const invites: Invite[] = [
       {
         id: "a",
+        name: "",
         email: "dev1@company.com",
         departmentId: "dev",
-        roleId: "",
+        roleId: NO_ROLE_ID,
         positionId: "staff",
         isAdmin: false,
         isSent: false,
       },
       {
         id: "b",
+        name: "",
         email: " DEV1@Company.com ",
         departmentId: "design",
-        roleId: "",
+        roleId: NO_ROLE_ID,
         positionId: "staff",
         isAdmin: false,
         isSent: false,
       },
       {
         id: "c",
+        name: "",
         email: "biz@company.com",
         departmentId: "biz",
-        roleId: "",
+        roleId: NO_ROLE_ID,
         positionId: "staff",
         isAdmin: false,
         isSent: false,
@@ -185,18 +215,20 @@ describe("duplicateEmails", () => {
     const invites: Invite[] = [
       {
         id: "a",
+        name: "",
         email: "",
         departmentId: "dev",
-        roleId: "",
+        roleId: NO_ROLE_ID,
         positionId: "staff",
         isAdmin: false,
         isSent: false,
       },
       {
         id: "b",
+        name: "",
         email: "  ",
         departmentId: "dev",
-        roleId: "",
+        roleId: NO_ROLE_ID,
         positionId: "staff",
         isAdmin: false,
         isSent: false,
@@ -206,23 +238,60 @@ describe("duplicateEmails", () => {
   });
 });
 
+/*
+  역할이 하나도 없는 부서는 규칙에서 빠진다 — 고를 역할이 `없음`뿐이라
+  그대로 적용하면 그 부서에 팀장 한 명밖에 못 들어간다(팀 결정: 예외 허용).
+*/
+describe("역할 없는 부서 — 짝 규칙에서 빠진다", () => {
+  const noRoles: InviteRules = { isLeaderPosition: (id) => id === "lead", hasRoles: () => false };
+
+  it("역할이 `없음`이어도 일반 직급을 그대로 둔다", () => {
+    const next = changeInviteRole(makeList(), "a", NO_ROLE_ID, noRoles);
+    expect(next[0]?.roleId).toBe(NO_ROLE_ID);
+    expect(next[0]?.positionId).toBe("staff");
+  });
+
+  it("역할이 있는 부서라면 같은 조작에서 직급이 비워진다 — 예외인지 아닌지가 갈린다", () => {
+    const next = changeInviteRole(makeList(), "a", NO_ROLE_ID, isLeader);
+    expect(next[0]?.positionId).toBe("");
+  });
+});
+
 describe("changeInviteRole", () => {
   it("역할만 바꾼다", () => {
-    const next = changeInviteRole(makeList(), "a", "fe");
+    const next = changeInviteRole(makeList(), "a", "fe", isLeader);
     expect(next[0]?.roleId).toBe("fe");
     expect(next[0]?.departmentId).toBe("dev");
   });
 
-  it('빈 문자열이면 "없음"이다 — 부서에 바로 속한다', () => {
-    const assigned = changeInviteRole(makeList(), "a", "fe");
-    expect(changeInviteRole(assigned, "a", "")[0]?.roleId).toBe("");
+  /*
+    역할과 직급은 짝이 맞아야 한다: 리더는 `없음`, 나머지는 역할이 있어야 한다.
+    ⚠️ 어긋나면 **직급을 비운다.** 막기만 하면 어느 쪽도 못 고치는 줄이 생긴다.
+  */
+  it("리더가 아닌 직급인데 역할을 `없음`으로 바꾸면 직급이 비워진다", () => {
+    const staff = changeInviteRole(makeList(), "a", "fe", isLeader);
+    const next = changeInviteRole(staff, "a", NO_ROLE_ID, isLeader);
+    expect(next[0]?.roleId).toBe(NO_ROLE_ID);
+    expect(next[0]?.positionId).toBe("");
+  });
+
+  it("리더 직급인데 역할을 고르면 직급이 비워진다", () => {
+    const leader = changeInvitePosition(makeList(), "a", "lead", isLeader);
+    const next = changeInviteRole(leader, "a", "fe", isLeader);
+    expect(next[0]?.roleId).toBe("fe");
+    expect(next[0]?.positionId).toBe("");
+  });
+
+  it("짝이 맞으면 직급은 그대로다", () => {
+    const next = changeInviteRole(makeList(), "a", "fe", isLeader);
+    expect(next[0]?.positionId).toBe("staff");
   });
 });
 
 describe("changeInviteDepartment — 역할 초기화", () => {
   it("부서를 바꾸면 역할은 비운다 — 다른 부서의 역할이 남으면 안 된다", () => {
-    const assigned = changeInviteRole(makeList(), "a", "fe");
-    const moved = changeInviteDepartment(assigned, "a", "design");
+    const assigned = changeInviteRole(makeList(), "a", "fe", isLeader);
+    const moved = changeInviteDepartment(assigned, "a", "design", isLeader);
     expect(moved[0]?.departmentId).toBe("design");
     expect(moved[0]?.roleId).toBe("");
   });
@@ -232,26 +301,34 @@ describe("departmentsWithLeader / duplicatedLeaderIds — 부서마다 리더 �
   const isLeader = (positionId: string) => positionId === "lead";
   const row = (id: string, departmentId: string, positionId: string): Invite => ({
     id,
+    name: "",
     email: `${id}@company.com`,
     departmentId,
-    roleId: "",
+    roleId: NO_ROLE_ID,
     positionId,
     isAdmin: false,
     isSent: false,
   });
 
-  it("주소가 빈 줄은 리더 자리를 차지하지 않는다 — 아직 초대가 아니다", () => {
+  /*
+    ⚠️ 주소를 안 적었어도 리더 자리는 **차지한다**(2026-08-04 변경).
+       전에는 빼고 셌는데, 그러면 리더로 골라 둔 줄을 여러 개 만든 뒤 주소만 채우는 순서로
+       한 부서에 리더가 여럿 남았다. 직급은 부서·역할을 고른 뒤에야 열리므로,
+       리더로 고른 줄은 주소가 없어도 작정한 줄이다.
+  */
+  it("주소가 비어도 리더 자리를 차지한다", () => {
     const empty: Invite = {
       id: "a",
+      name: "",
       email: "",
       departmentId: "dev",
-      roleId: "",
+      roleId: NO_ROLE_ID,
       positionId: "lead",
       isAdmin: false,
       isSent: false,
     };
-    expect(departmentsWithLeader([empty], isLeader).size).toBe(0);
-    expect(duplicatedLeaderIds([empty, { ...empty, id: "b" }], isLeader).size).toBe(0);
+    expect(departmentsWithLeader([empty], isLeader)).toEqual(new Set(["dev"]));
+    expect(duplicatedLeaderIds([empty, { ...empty, id: "b" }], isLeader)).toEqual(new Set(["b"]));
   });
 
   it("리더가 있는 부서를 알려준다", () => {
@@ -279,6 +356,7 @@ describe("이미 발송한 줄은 고칠 수 없다", () => {
   const sent: Invite[] = [
     {
       id: "a",
+      name: "",
       email: "dev1@company.com",
       departmentId: "dev",
       roleId: "fe",
@@ -293,14 +371,14 @@ describe("이미 발송한 줄은 고칠 수 없다", () => {
   });
 
   it("부서를 바꾸려 해도 그대로다 — 역할도 지워지지 않는다", () => {
-    const next = changeInviteDepartment(sent, "a", "design")[0];
+    const next = changeInviteDepartment(sent, "a", "design", isLeader)[0];
     expect(next?.departmentId).toBe("dev");
     expect(next?.roleId).toBe("fe");
   });
 
   it("역할·직급도 그대로다", () => {
-    expect(changeInviteRole(sent, "a", "be")[0]?.roleId).toBe("fe");
-    expect(changeInvitePosition(sent, "a", "lead")[0]?.positionId).toBe("staff");
+    expect(changeInviteRole(sent, "a", "be", isLeader)[0]?.roleId).toBe("fe");
+    expect(changeInvitePosition(sent, "a", "lead", isLeader)[0]?.positionId).toBe("staff");
   });
 });
 
@@ -308,18 +386,20 @@ describe("같은 주소는 한 번만 나간다", () => {
   const twice: Invite[] = [
     {
       id: "a",
+      name: "",
       email: "dev1@company.com",
       departmentId: "dev",
-      roleId: "",
+      roleId: NO_ROLE_ID,
       positionId: "staff",
       isAdmin: false,
       isSent: false,
     },
     {
       id: "b",
+      name: "",
       email: "DEV1@company.com",
       departmentId: "design",
-      roleId: "",
+      roleId: NO_ROLE_ID,
       positionId: "staff",
       isAdmin: false,
       isSent: false,
@@ -349,9 +429,10 @@ describe("Admin 겸직 토글", () => {
   const make = (isAdmin: boolean, isSent: boolean): Invite[] => [
     {
       id: "a",
+      name: "",
       email: "a@company.com",
       departmentId: "dev",
-      roleId: "",
+      roleId: NO_ROLE_ID,
       positionId: "staff",
       isAdmin,
       isSent,
@@ -371,6 +452,6 @@ describe("Admin 겸직 토글", () => {
     const [next] = toggleInviteAdmin(make(false, false), "a");
 
     expect(next?.positionId).toBe("staff");
-    expect(next?.roleId).toBe("");
+    expect(next?.roleId).toBe(NO_ROLE_ID);
   });
 });

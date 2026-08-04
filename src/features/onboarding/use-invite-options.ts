@@ -67,14 +67,11 @@ export function useInviteOptions(departments: DepartmentNode[], positions: Posit
     return (positionId: string) => leaderIds.has(positionId);
   }, [source]);
 
-  /**
-   * 새 줄의 기본 직급 — **리더가 아닌 직급**으로 잡는다.
-   * 목록 첫 줄이 팀장(리더)이라 그대로 쓰면 줄을 추가할 때마다 리더가 겹친다.
-   */
-  const defaultPositionId = useMemo(() => {
-    const member = source.positions.find((position) => position.role !== ROLE.LEADER);
-    return member?.id ?? positionOptions[0]?.id ?? "";
-  }, [source, positionOptions]);
+  /*
+    ⚠️ **기본 부서·직급을 내주지 않는다**(2026-08-04). 새 줄은 아무것도 안 고른 상태로 나고,
+       화면에는 `선택`으로 뜬다 — 고르지 않은 값이 채워져 있으면 확인 없이 넘긴 줄이
+       엉뚱한 부서로 초대장을 받는다.
+  */
 
   return {
     /** 보관함까지 읽어 선택지가 확정됐는가 */
@@ -83,7 +80,5 @@ export function useInviteOptions(departments: DepartmentNode[], positions: Posit
     rolesOf,
     positionOptions,
     isLeaderPosition,
-    defaultPositionId,
-    defaultDepartmentId: departmentOptions[0]?.id ?? "",
   };
 }
