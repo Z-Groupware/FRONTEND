@@ -124,9 +124,32 @@ describe("공지 발행", () => {
     const result = await publishNoticeAction({
       title: "제목",
       content: "",
-      target: NOTICE_TARGET.TEAM,
+      target: NOTICE_TARGET.UNPAID,
     });
 
     expect(result).toEqual({ success: false });
+  });
+
+  // ⚠️ "특정 기업" 대상인데 고른 곳이 없으면 발송 대상이 없다 — 서버에서도 막는다.
+  it("특정 기업 대상인데 고른 기업이 없으면 막는다", async () => {
+    const result = await publishNoticeAction({
+      title: "제목",
+      content: "내용",
+      target: NOTICE_TARGET.SPECIFIC,
+      companyIds: [],
+    });
+
+    expect(result).toEqual({ success: false });
+  });
+
+  it("특정 기업을 골랐으면 발행 성공", async () => {
+    const result = await publishNoticeAction({
+      title: "제목",
+      content: "내용",
+      target: NOTICE_TARGET.SPECIFIC,
+      companyIds: ["1", "2"],
+    });
+
+    expect(result).toEqual({ success: true });
   });
 });
