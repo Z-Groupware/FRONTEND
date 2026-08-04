@@ -72,10 +72,10 @@ export function CompanyFilterBar() {
         value={searchParams.get("size") ?? ALL}
         onValueChange={(value) => pushWith({ size: value ?? ALL })}
       >
-        <SelectTrigger aria-label="규모 필터" className="w-[110px]">
+        <SelectTrigger aria-label="규모 필터" className="w-36">
           <SelectValue />
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent side="bottom" alignItemWithTrigger={false}>
           <SelectItem value={ALL}>전체 규모</SelectItem>
           {SIZE_OPTIONS.map((size) => (
             <SelectItem key={size} value={size}>
@@ -89,10 +89,10 @@ export function CompanyFilterBar() {
         value={searchParams.get("status") ?? ALL}
         onValueChange={(value) => pushWith({ status: value ?? ALL })}
       >
-        <SelectTrigger aria-label="상태 필터" className="w-[100px]">
+        <SelectTrigger aria-label="상태 필터" className="w-36">
           <SelectValue />
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent side="bottom" alignItemWithTrigger={false}>
           <SelectItem value={ALL}>전체 상태</SelectItem>
           {STATUS_OPTIONS.map((status) => (
             <SelectItem key={status} value={status}>
