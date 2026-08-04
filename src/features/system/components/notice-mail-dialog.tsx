@@ -1,16 +1,13 @@
 "use client";
 
-import { useTransition } from "react";
-import { toast } from "sonner";
-
 import { ConfirmDialog } from "@/components/common/confirm-dialog";
-
-import { sendUnpaidNoticeAction } from "../actions";
 
 interface NoticeMailDialogProps {
   /** 발송 대상. `null`이면 닫힌 상태다(`department-delete-dialog.tsx`와 같은 패턴). */
   target: { companyId: string; companyName: string; ownerEmail: string } | null;
-  onClose: () => void;
+  onCancel: () => void;
+  onConfirm: (companyId: string) => void;
+  isPending: boolean;
 }
 
 /**
@@ -18,43 +15,30 @@ interface NoticeMailDialogProps {
  *
  * ⚠️ **되돌릴 수 없는 조작은 토스트가 아니라 확인창으로 받는다**(§토스트).
  *    창은 공용 `ConfirmDialog`를 쓴다 — 확인창이 화면마다 다르게 생기면 같은 무게의 결정인데
- *    다른 물건처럼 보인다.
+ *    다른 물건처럼 보인다. (develop에서는 `Dialog` 프리미티브로 직접 그렸는데, 그때는 아직
+ *    공용 확인창이 없었다 — #67에서 생겼으므로 여기로 모은다.)
  * ⚠️ 버튼 문구는 "예/아니오"가 아니라 **하는 일**을 적는다. 예/아니오는 무엇에 답하는지
  *    다시 위를 읽어야 한다.
- * ⚠️ 목이라 **실제로 메일이 나가지 않는다** — 성공 흉내만 낸다. 조용히 되는 척하지 않도록
- *    발송 완료 토스트 문구에도 이 사실을 남긴다(§정직성).
+ * ⚠️ **보내는 일은 부모가 한다.** 이 창은 묻기만 한다 — 표(`subscription-table`)가 목록을
+ *    쥐고 있어서, 발송 뒤 어느 줄을 어떻게 바꿀지는 거기서 알아야 한다.
  */
-export function NoticeMailDialog({ target, onClose }: NoticeMailDialogProps) {
-  const [isPending, startTransition] = useTransition();
-
-  const handleConfirm = () => {
-    if (!target) return;
-
-    startTransition(async () => {
-      const result = await sendUnpaidNoticeAction(target.companyId);
-
-      if (result.success) {
-        // ⚠️ 토스트는 한 줄(220px)이라 짧게 쓴다 — 회사 이름이 길면 그만큼 잘린다(`sonner.tsx`)
-        toast("안내 메일을 발송했습니다");
-      } else {
-        toast("발송하지 못했습니다");
-      }
-
-      onClose();
-    });
-  };
-
+export function NoticeMailDialog({
+  target,
+  onCancel,
+  onConfirm,
+  isPending,
+}: NoticeMailDialogProps) {
   return (
     <ConfirmDialog
       isOpen={target !== null}
-      onOpenChange={onClose}
+      onOpenChange={(open) => !open && onCancel()}
       title="안내 메일을 보낼까요?"
       description={`${target?.companyName ?? ""} 담당자(${target?.ownerEmail ?? ""})에게 미납 안내 메일이 갑니다.`}
       confirmLabel="보낼게요"
       cancelLabel="그만둘게요"
       isPending={isPending}
       pendingLabel="보내는 중…"
-      onConfirm={handleConfirm}
+      onConfirm={() => target && onConfirm(target.companyId)}
     />
   );
 }

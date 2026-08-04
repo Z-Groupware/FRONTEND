@@ -33,8 +33,8 @@ export default async function SystemApprovalPage({ searchParams }: SystemApprova
   ]);
 
   return (
-    <main className="min-h-0 flex-1 overflow-y-auto p-8">
-      <div className="mx-auto flex max-w-[1440px] flex-col gap-4">
+    <main className="min-h-0 flex-1 overflow-y-auto p-6">
+      <div className="mx-auto flex max-w-[1440px] flex-col gap-3">
         <ApprovalTable
           companies={items}
           buildDetailHref={(id) => buildHref(page, id)}

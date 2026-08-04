@@ -3,11 +3,12 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
-import { COMPANY_STATUS } from "@/constants/domain";
+import { COMPANY_STATUS, NOTICE_TARGET, type NoticeTarget } from "@/constants/domain";
 import { isMock } from "@/mocks/config";
 
 import { removeMockPendingApproval } from "./mock/approvals";
 import { findMockCompany, setMockCompanyStatus } from "./mock/companies";
+import { findMockFailedItem } from "./mock/monitoring";
 
 /**
  * 기업 승인 화면의 **변경 창구** — 격리막(CLAUDE.md §Mock 격리막).
@@ -77,9 +78,10 @@ export async function unsuspendCompanyAction(formData: FormData): Promise<void> 
 /**
  * "구독·매출" 미납 안내 발송 — 격리막(CLAUDE.md §Mock 격리막).
  *
- * ⚠️ **폼이 아니라 직접 호출한다.** 확인 Dialog에서 "예"를 누른 뒤 그 자리에서 toast로
- *    결과를 보여줘야 해서(CLAUDE.md §토스트: 변경 결과 피드백) `redirect`도 `revalidatePath`도
- *    필요 없다 — 화면·데이터 어느 것도 안 바뀌고 그냥 메일 한 통을 보내는 조작이다.
+ * ⚠️ **폼이 아니라 직접 호출한다.** "안내 발송" 버튼을 누르면 바로 이 액션을 실행하고,
+ *    끝나면 결과를 `SuccessDialog`로 보여준다(`owner/billing/checkout`의 결제 흐름과 같은
+ *    패턴 — 확인 Dialog 없이 액션 → 완료 안내). `redirect`도 `revalidatePath`도 필요 없다 —
+ *    화면·데이터 어느 것도 안 바뀌고 그냥 메일 한 통을 보내는 조작이다.
  * ⚠️ 지금은 목이라 **실제로 메일이 나가지 않는다** — 성공만 흉내 낸다(§정직성).
  */
 export async function sendUnpaidNoticeAction(
@@ -94,4 +96,49 @@ export async function sendUnpaidNoticeAction(
   if (!company) return { success: false };
 
   return { success: true, ownerEmail: company.ownerEmail };
+}
+
+/**
+ * "시스템 모니터링" 실패 건 재처리 — 격리막(CLAUDE.md §Mock 격리막).
+ *
+ * ⚠️ **폼이 아니라 직접 호출한다.** 실패 행의 "재처리" 버튼을 누르면 이 액션을 실행하고
+ *    결과를 그 자리에서 "완료"로 바꿔 보여준다(구독·매출 "안내 발송"과 같은 패턴).
+ *    `redirect`도 `revalidatePath`도 필요 없다 — 잡 하나를 큐에 다시 넣을 뿐이다.
+ * ⚠️ 지금은 목이라 **실제로 재처리가 돌지 않는다** — 성공만 흉내 낸다(§정직성).
+ */
+export async function retryPipelineAction(meetingId: string): Promise<{ success: boolean }> {
+  if (!isMock) {
+    // ⚠️ 미구현 — API 스펙 확정 후 BFF 경로로 파이프라인 재처리 요청을 보낸다.
+    throw new Error("파이프라인 재처리 API가 아직 연결되지 않았습니다.");
+  }
+
+  return { success: findMockFailedItem(meetingId) !== null };
+}
+
+/**
+ * "공지 관리" 공지 발행 — 격리막(CLAUDE.md §Mock 격리막).
+ *
+ * ⚠️ 제목·내용이 비면 발행 버튼 자체가 눌리지 않지만(클라이언트 가드), 서버에서도 한 번 더
+ *    막는다 — 화면 가드는 UX일 뿐 검증이 아니다(CLAUDE.md §권한: 검증은 서버에서).
+ * ⚠️ 지금은 목이라 **실제로 공지가 나가지 않는다** — 성공만 흉내 낸다(§정직성).
+ */
+export async function publishNoticeAction(input: {
+  title: string;
+  content: string;
+  target: NoticeTarget;
+  /** target이 "특정 기업"일 때 고른 기업 id들 */
+  companyIds?: string[];
+}): Promise<{ success: boolean }> {
+  if (!isMock) {
+    // ⚠️ 미구현 — API 스펙 확정 후 BFF 경로로 공지 발행 요청을 보낸다.
+    throw new Error("공지 발행 API가 아직 연결되지 않았습니다.");
+  }
+
+  if (!input.title.trim() || !input.content.trim()) return { success: false };
+  // 특정 기업 대상인데 고른 곳이 없으면 발송 대상이 없다 — 화면 가드와 별개로 서버에서도 막는다.
+  if (input.target === NOTICE_TARGET.SPECIFIC && (input.companyIds?.length ?? 0) === 0) {
+    return { success: false };
+  }
+
+  return { success: true };
 }

@@ -12,17 +12,17 @@ const LEGEND_DOT_CLASS = {
 /** "플랜 분포" 카드 — 도넛차트(클라이언트) + 범례(서버). */
 export function PlanDistributionCard({ data }: { data: PlanDistributionSlice[] }) {
   return (
-    <section className="border-border bg-card w-[300px] shrink-0 rounded-xl border p-6">
-      <h2 className="text-foreground text-base font-semibold">플랜 분포</h2>
+    <section className="border-border bg-card w-64 shrink-0 rounded-xl border p-5">
+      <h2 className="text-foreground text-sm font-semibold">플랜 분포</h2>
 
-      <div className="mt-4">
+      <div className="mt-3">
         <PlanDonutChartLoader data={data} />
       </div>
 
-      <ul className="mt-4 flex flex-col gap-2">
+      <ul className="mt-3 flex flex-col gap-1.5">
         {data.map((slice) => (
-          <li key={slice.plan} className="flex items-center justify-between text-sm">
-            <span className="flex items-center gap-2">
+          <li key={slice.plan} className="flex items-center justify-between text-xs">
+            <span className="flex items-center gap-1.5">
               <span
                 className={`size-2 shrink-0 rounded-full ${LEGEND_DOT_CLASS[slice.plan]}`}
                 aria-hidden

@@ -2,12 +2,12 @@
 
 import {
   Activity,
-  Bell,
   Building2,
   ClipboardCheck,
   CreditCard,
   LayoutDashboard,
   type LucideIcon,
+  Megaphone,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -27,7 +27,7 @@ const NAV_ICON: Partial<Record<NavIconName, LucideIcon>> = {
   company: Building2,
   billing: CreditCard,
   monitor: Activity,
-  notice: Bell,
+  notice: Megaphone,
 };
 
 interface SystemSidebarProps {
@@ -76,20 +76,19 @@ export function SystemSidebar({ sections, account }: SystemSidebarProps) {
           className="focus-visible:ring-ring flex items-center gap-2 rounded transition-opacity hover:opacity-70 focus-visible:ring-2 focus-visible:outline-hidden"
         >
           <ZLogo className="text-foreground size-[22px]" title="Z" />
-          <span className="text-foreground text-sm leading-none font-semibold">운영자</span>
         </Link>
       </div>
 
-      <nav className="flex-1 overflow-y-auto p-[7px]">
+      <nav className="flex-1 overflow-y-auto p-1.5">
         {sections.map((section, index) => (
-          <div key={section.title ?? "primary"} className={index > 0 ? "pt-2.5" : undefined}>
+          <div key={section.title ?? "primary"} className={index > 0 ? "pt-2" : undefined}>
             {section.title && (
-              <p className="text-muted-foreground/80 px-[10.5px] pb-[5.25px] text-[11px] leading-4 tracking-[0.275px]">
+              <p className="text-muted-foreground/80 px-2 pb-1 text-[10px] leading-4 tracking-[0.275px]">
                 {section.title}
               </p>
             )}
 
-            <ul className="flex flex-col gap-[1.75px]">
+            <ul className="flex flex-col gap-[1.5px]">
               {section.items.map((item) => (
                 <li key={item.href}>
                   <SidebarItem item={item} isCurrent={item.href === activeHref} />
@@ -100,13 +99,13 @@ export function SystemSidebar({ sections, account }: SystemSidebarProps) {
         ))}
       </nav>
 
-      <div className="border-border flex h-[49px] shrink-0 items-center gap-[7px] border-t px-[17.5px]">
-        <span className="bg-role-owner flex size-[21px] shrink-0 items-center justify-center rounded-full text-[10px] leading-none text-white">
+      <div className="border-border flex h-11 shrink-0 items-center gap-1.5 border-t px-4">
+        <span className="bg-role-owner flex size-[19px] shrink-0 items-center justify-center rounded-full text-[9px] leading-none text-white">
           운
         </span>
         <div className="min-w-0 flex-1">
-          <p className="text-foreground truncate text-xs leading-[15px]">운영자 계정</p>
-          <p className="text-muted-foreground truncate text-[11px] leading-[14px]">
+          <p className="text-foreground truncate text-[11px] leading-[14px]">운영자 계정</p>
+          <p className="text-muted-foreground truncate text-[10px] leading-[13px]">
             {account.email}
           </p>
         </div>
@@ -119,14 +118,12 @@ function SidebarItem({ item, isCurrent }: { item: NavItem; isCurrent: boolean })
   const Icon = NAV_ICON[item.icon] ?? LayoutDashboard;
   const inner = (
     <>
-      <Icon className="size-[14px] shrink-0" aria-hidden />
-      <span className="min-w-0 flex-1 translate-y-px truncate text-[13px] leading-5">
-        {item.label}
-      </span>
+      <Icon className="size-3 shrink-0" aria-hidden />
+      <span className="min-w-0 flex-1 translate-y-px truncate text-xs leading-5">{item.label}</span>
     </>
   );
 
-  const shape = "flex h-[34px] items-center gap-[8.75px] rounded-md px-[10.5px] transition-colors";
+  const shape = "flex h-7 items-center gap-2 rounded-md px-2 transition-colors";
 
   // ⚠️ 아직 없는 화면은 링크로 두지 않는다 — 누르면 404가 뜬다(CLAUDE.md §정직성).
   if (!item.isReady) {
@@ -154,7 +151,7 @@ function SidebarItem({ item, isCurrent }: { item: NavItem; isCurrent: boolean })
         shape,
         "focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-hidden",
         isCurrent
-          ? "bg-foreground text-background"
+          ? "bg-foreground/10 text-foreground font-medium"
           : "text-muted-foreground hover:bg-foreground/5 hover:text-foreground",
       )}
     >
