@@ -9,11 +9,13 @@ import { MOCK_BILLING_OVERVIEW } from "./mock/billing";
 import { findMockCompany, listMockCompanies, setMockCompanyStatus } from "./mock/companies";
 import { MOCK_DASHBOARD_OVERVIEW } from "./mock/dashboard";
 import { MOCK_MONITORING_OVERVIEW } from "./mock/monitoring";
+import { MOCK_NOTICE_HISTORY } from "./mock/notices";
 import type {
   BillingOverview,
   DashboardOverview,
   ManagedCompany,
   MonitoringOverview,
+  NoticeHistoryItem,
   PendingCompanyApproval,
 } from "./types";
 
@@ -128,4 +130,15 @@ export async function getMonitoringOverview(): Promise<MonitoringOverview> {
 
   // ⚠️ 미구현 — API 스펙 확정 후 파이프라인 메트릭 경로로 fetch하고 매퍼로 UI 계약에 맞춘다.
   throw new Error("시스템 모니터링 조회 API가 아직 연결되지 않았습니다.");
+}
+
+/**
+ * SYSTEM 공지 "발행 이력" 조회 — **격리막**(CLAUDE.md).
+ * ⚠️ 이 화면은 프로젝트 기간 내내 목으로 남을 가능성이 크다(팀 합의) — 그래도 격리막은 유지한다.
+ */
+export async function getNoticeHistory(): Promise<NoticeHistoryItem[]> {
+  if (isMock) return MOCK_NOTICE_HISTORY;
+
+  // ⚠️ 미구현 — API 스펙 확정 후 공지 목록 경로로 fetch하고 매퍼로 UI 계약에 맞춘다.
+  throw new Error("공지 이력 조회 API가 아직 연결되지 않았습니다.");
 }

@@ -2,12 +2,12 @@
 
 import {
   Activity,
-  Bell,
   Building2,
   ClipboardCheck,
   CreditCard,
   LayoutDashboard,
   type LucideIcon,
+  Megaphone,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -27,7 +27,7 @@ const NAV_ICON: Partial<Record<NavIconName, LucideIcon>> = {
   company: Building2,
   billing: CreditCard,
   monitor: Activity,
-  notice: Bell,
+  notice: Megaphone,
 };
 
 interface SystemSidebarProps {

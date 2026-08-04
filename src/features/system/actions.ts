@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
-import { COMPANY_STATUS } from "@/constants/domain";
+import { COMPANY_STATUS, type NoticeTarget } from "@/constants/domain";
 import { isMock } from "@/mocks/config";
 
 import { removeMockPendingApproval } from "./mock/approvals";
@@ -113,4 +113,26 @@ export async function retryPipelineAction(meetingId: string): Promise<{ success:
   }
 
   return { success: findMockFailedItem(meetingId) !== null };
+}
+
+/**
+ * "공지 관리" 공지 발행 — 격리막(CLAUDE.md §Mock 격리막).
+ *
+ * ⚠️ 제목·내용이 비면 발행 버튼 자체가 눌리지 않지만(클라이언트 가드), 서버에서도 한 번 더
+ *    막는다 — 화면 가드는 UX일 뿐 검증이 아니다(CLAUDE.md §권한: 검증은 서버에서).
+ * ⚠️ 지금은 목이라 **실제로 공지가 나가지 않는다** — 성공만 흉내 낸다(§정직성).
+ */
+export async function publishNoticeAction(input: {
+  title: string;
+  content: string;
+  target: NoticeTarget;
+}): Promise<{ success: boolean }> {
+  if (!isMock) {
+    // ⚠️ 미구현 — API 스펙 확정 후 BFF 경로로 공지 발행 요청을 보낸다.
+    throw new Error("공지 발행 API가 아직 연결되지 않았습니다.");
+  }
+
+  if (!input.title.trim() || !input.content.trim()) return { success: false };
+
+  return { success: true };
 }

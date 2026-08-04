@@ -183,6 +183,23 @@ export const PIPELINE_STAGE_LABEL: Record<PipelineStage, string> = {
   EXTRACT_ACTION: "액션 추출",
 };
 
+/* ───────── 공지 (시스템 운영자 발행) ───────── */
+/** 공지 발행 대상. SYSTEM 운영자가 어느 기업군에 공지를 뿌릴지 고른다. */
+export const NOTICE_TARGET = {
+  ALL: "ALL",
+  FREE: "FREE",
+  TEAM: "TEAM",
+  SPECIFIC: "SPECIFIC",
+} as const;
+export type NoticeTarget = (typeof NOTICE_TARGET)[keyof typeof NOTICE_TARGET];
+
+export const NOTICE_TARGET_LABEL: Record<NoticeTarget, string> = {
+  ALL: "전체 기업",
+  FREE: "Free 플랜",
+  TEAM: "Team 플랜",
+  SPECIFIC: "특정 기업",
+};
+
 /* ───────── 구독 · 기업 ───────── */
 export const PLAN = { FREE: "FREE", TEAM: "TEAM" } as const;
 export type Plan = (typeof PLAN)[keyof typeof PLAN];

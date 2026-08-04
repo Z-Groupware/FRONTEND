@@ -1,6 +1,7 @@
 import type {
   CompanySize,
   CompanyStatus,
+  NoticeTarget,
   PaymentStatus,
   PipelineStage,
   Plan,
@@ -165,4 +166,15 @@ export interface MonitoringOverview {
   stageTimings: StageTiming[];
   /** 실패 목록 — 재처리 필요분(화면 명세: 최신 실패순) */
   failedItems: FailedPipelineItem[];
+}
+
+/** 발행된 공지 한 건 — "발행 이력" 목록 한 행. */
+export interface NoticeHistoryItem {
+  id: string;
+  title: string;
+  target: NoticeTarget;
+  /** "YYYY-MM-DD" — 운영자 화면 표기 */
+  sentAt: string;
+  /** 실제로 발송된 기업 수 */
+  recipientCompanyCount: number;
 }
