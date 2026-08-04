@@ -62,6 +62,14 @@ export function canManageMembers(actor: Actor): boolean {
   return actor.role === ROLE.OWNER || isAdmin(actor);
 }
 
+/**
+ * 사내 공지 작성·수정 — OWNER이거나 Admin을 겸한 사람.
+ * ⚠️ 열람은 전원 가능하다(공지는 다 같이 본다) — 작성·수정만 이 권한으로 막는다.
+ */
+export function canManageNotice(actor: Actor): boolean {
+  return actor.role === ROLE.OWNER || isAdmin(actor);
+}
+
 /** 계정 발급 — Admin 겸직자만. OWNER는 발급 대상도 발급자도 아니다. */
 export function canIssueAccount(actor: Actor): boolean {
   return isAdmin(actor);

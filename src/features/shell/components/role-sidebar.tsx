@@ -151,6 +151,12 @@ function SidebarItem({ item, isCurrent }: { item: NavItem; isCurrent: boolean })
       <span className="min-w-0 flex-1 translate-y-px truncate text-[13px] leading-5">
         {item.label}
       </span>
+      {item.dot && (
+        <>
+          <span className="bg-destructive size-[6px] shrink-0 rounded-full" aria-hidden />
+          <span className="sr-only">안 읽음</span>
+        </>
+      )}
       {item.badge !== undefined && (
         <span className="bg-foreground text-background flex h-[17px] min-w-[17px] shrink-0 items-center justify-center rounded-full px-[3.5px] text-[10px] leading-none font-semibold tabular-nums">
           {item.badge}

@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 
 import { NoticeDetail } from "@/features/notice/components/notice-detail";
 import { getNoticeById } from "@/features/notice/server";
+import { getMockActor } from "@/lib/mock-actor";
+import { canManageNotice } from "@/lib/permission";
 
 interface AppNoticeDetailPageProps {
   params: Promise<{ id: string }>;
@@ -24,7 +26,7 @@ export default async function AppNoticeDetailPage({ params }: AppNoticeDetailPag
   return (
     <main className="min-h-0 flex-1 overflow-y-auto p-6">
       <div className="mx-auto max-w-[1440px]">
-        <NoticeDetail notice={notice} />
+        <NoticeDetail notice={notice} canManage={canManageNotice(getMockActor())} />
       </div>
     </main>
   );

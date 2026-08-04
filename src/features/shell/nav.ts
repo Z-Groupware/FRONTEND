@@ -37,6 +37,11 @@ export interface NavItem {
   isReady?: boolean;
   /** 오른쪽에 붙는 숫자(처리할 일 수) */
   badge?: number;
+  /**
+   * 미읽음 등 "안 본 게 있음"을 알리는 빨간 점. 숫자(`badge`)와 달리 개수는 안 보여준다.
+   * ⚠️ 정적 구성이 아니라 **레이아웃이 서버에서 계산해 끼워 넣는다**(예: 공지 미읽음 수 > 0).
+   */
+  dot?: boolean;
 }
 
 export interface NavSection {
