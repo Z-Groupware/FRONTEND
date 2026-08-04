@@ -6,7 +6,7 @@ import { useFormStatus } from "react-dom";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { COMPANY_SIZE_LABEL, COMPANY_STATUS, COMPANY_STATUS_LABEL, PLAN } from "@/constants/domain";
+import { COMPANY_STATUS, COMPANY_STATUS_LABEL } from "@/constants/domain";
 
 import { suspendCompanyAction, unsuspendCompanyAction } from "../actions";
 import type { ManagedCompany } from "../types";
@@ -47,8 +47,6 @@ export function CompanyDetailSheet({ company, closeHref, currentPath }: CompanyD
 
             <div className="flex flex-1 flex-col gap-4 overflow-y-auto px-4">
               <Field label="기업 코드" value={company.code} />
-              <Field label="규모" value={COMPANY_SIZE_LABEL[company.size]} />
-              <Field label="플랜" value={company.plan === PLAN.TEAM ? "Team" : "Free"} />
               <Field label="가입일" value={company.joinedAt} />
               <Field label="구성원 수" value={`${company.memberCount}명`} />
               <Field label="이번 달 회의" value={`${company.meetingCountThisMonth}회`} />

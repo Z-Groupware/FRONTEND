@@ -1,4 +1,3 @@
-import { Badge } from "@/components/ui/badge";
 import {
   Table,
   TableBody,
@@ -7,7 +6,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { PLAN, PLAN_LABEL } from "@/constants/domain";
 
 import type { RecentCompany } from "../types";
 
@@ -26,34 +24,37 @@ export function RecentCompaniesTable({ companies }: { companies: RecentCompany[]
     <section className="border-border bg-card overflow-hidden rounded-xl border">
       <h2 className="text-foreground px-5 pt-5 pb-3 text-sm font-semibold">최근 가입 기업</h2>
 
-      <Table className="text-xs">
-        <TableHeader>
-          <TableRow className="h-[34px] hover:bg-transparent">
-            <TableHead className="pl-4 text-xs">기업명</TableHead>
-            <TableHead className="text-center text-xs">플랜</TableHead>
-            <TableHead className="text-center text-xs">구성원</TableHead>
-            <TableHead className="pr-4 text-center text-xs">가입일</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {companies.map((company) => (
-            <TableRow key={company.id} className="h-[42px]">
-              <TableCell className="text-foreground pl-4">{company.name}</TableCell>
-              <TableCell className="text-center">
-                <Badge variant={company.plan === PLAN.TEAM ? "default" : "secondary"}>
-                  {PLAN_LABEL[company.plan]}
-                </Badge>
-              </TableCell>
-              <TableCell className="text-muted-foreground text-center tabular-nums">
-                {company.memberCount}명
-              </TableCell>
-              <TableCell className="text-muted-foreground pr-4 text-center tabular-nums">
-                {company.joinedAt}
-              </TableCell>
+      <div className="overflow-x-auto">
+        <Table className="min-w-[520px] text-xs">
+          <TableHeader>
+            <TableRow className="h-[34px] hover:bg-transparent">
+              <TableHead className="pl-4 text-xs">기업명</TableHead>
+              <TableHead className="text-center text-xs">기업 코드</TableHead>
+              <TableHead className="text-center text-xs">구성원</TableHead>
+              <TableHead className="pr-4 text-center text-xs">가입일</TableHead>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {companies.map((company) => (
+              <TableRow key={company.id} className="h-[42px]">
+                <TableCell className="text-foreground pl-4">{company.name}</TableCell>
+                <TableCell
+                  className="text-muted-foreground text-center font-mono"
+                  title={company.code}
+                >
+                  {company.code}
+                </TableCell>
+                <TableCell className="text-muted-foreground text-center tabular-nums">
+                  {company.memberCount}명
+                </TableCell>
+                <TableCell className="text-muted-foreground pr-4 text-center tabular-nums">
+                  {company.joinedAt}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
     </section>
   );
 }

@@ -5,7 +5,6 @@ import { useFormStatus } from "react-dom";
 
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { COMPANY_SIZE_LABEL } from "@/constants/domain";
 
 import { approveCompanyAction, rejectCompanyAction } from "../actions";
 import type { PendingCompanyApproval } from "../types";
@@ -43,7 +42,7 @@ export function ApprovalDetailSheet({ company, closeHref }: ApprovalDetailSheetP
               <Field label="사업자등록번호" value={company.businessRegistrationNumber} />
               <Field label="대표자" value={company.representativeName} />
               <Field label="담당자 이메일" value={company.contactEmail} />
-              <Field label="직원 규모" value={COMPANY_SIZE_LABEL[company.size]} />
+              <Field label="구성원" value={`${company.memberCount}명`} />
               <Field label="신청일" value={company.appliedAt} />
 
               <p className="text-muted-foreground bg-muted rounded-md p-3 text-xs leading-[18px]">
