@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 
 import { NOTICE_TARGET } from "@/constants/domain";
 
+import type { NoticeTargetCompany } from "../types";
 import { NoticeComposeCard } from "./notice-compose-card";
 
 // 서버 액션은 격리막 너머다 — 여기선 카드의 발행 흐름만 본다(액션 자체는 actions.test.ts에서).
@@ -11,8 +12,13 @@ jest.mock("../actions", () => ({
   publishNoticeAction: (input: unknown) => publishNoticeAction(input),
 }));
 
+const COMPANIES: NoticeTargetCompany[] = [
+  { id: "1", name: "(주)테크스타트", code: "TECHSTART-2025" },
+  { id: "2", name: "그린로직스", code: "GREENLOGICS-25" },
+];
+
 function setup() {
-  return { user: userEvent.setup(), ...render(<NoticeComposeCard />) };
+  return { user: userEvent.setup(), ...render(<NoticeComposeCard companies={COMPANIES} />) };
 }
 
 beforeEach(() => publishNoticeAction.mockReset());
@@ -51,6 +57,8 @@ describe("NoticeComposeCard", () => {
       title: "점검 안내",
       content: "오늘 밤 점검이 있어요",
       target: NOTICE_TARGET.ALL,
+      // 전체 기업 대상이면 companyIds는 넘기지 않는다("특정 기업"일 때만 채운다)
+      companyIds: undefined,
     });
     expect(await screen.findByText("공지를 발행했어요")).toBeInTheDocument();
   });
