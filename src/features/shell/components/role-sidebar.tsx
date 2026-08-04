@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  Bell,
   CalendarDays,
   CalendarRange,
   Columns3,
@@ -10,6 +9,7 @@ import {
   HardDrive,
   LayoutDashboard,
   type LucideIcon,
+  Megaphone,
   Search,
   Settings,
   UserRound,
@@ -37,7 +37,7 @@ const NAV_ICON: Partial<Record<NavIconName, LucideIcon>> = {
   project: Folder,
   search: Search,
   calendar: CalendarDays,
-  notice: Bell,
+  notice: Megaphone,
   meeting: Video,
   room: CalendarRange,
   board: Columns3,
