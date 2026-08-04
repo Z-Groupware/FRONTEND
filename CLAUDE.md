@@ -27,16 +27,18 @@
 
 ```
 app/
-├─ (public)/     /  /login  /register  /pricing  /invite/[token]
-├─ (onboarding)/ /onboarding/*                     ← OWNER 초기설정
+├─ (public)/     /  /login  /register  /plans
+├─ (onboarding)/ /onboarding/1~3 · /payment · /done ← OWNER 초기설정 + **결제 관문**
 ├─ (role)/       /owner  /manage  /team  /my       ← 역할 전용 대시보드·관리
+├─ (shared)/     /billing  /members                 ← 권한으로 들어오는 공용 화면(OWNER+Admin)
 ├─ (app)/        /app/*                            ← 공용 워크벤치(권한 차등, ADMIN 제외)
 └─ (system)/     /system/*                         ← 목업(더미), 향후 개선
 ```
 
-- **기업 코드를 URL에 붙이지 않는다.** 기업 식별은 세션(httpOnly 쿠키의 `companyId`)이 한다 — 주소창 값은 사용자가 고칠 수 있어 어차피 서버가 세션과 대조해야 한다. 기업 코드는 **로그인 전 화면**(`/login`·`/register`·`/invite`)에만 등장.
+- **기업 코드를 URL에 붙이지 않는다.** 기업 식별은 세션(httpOnly 쿠키의 `companyId`)이 한다 — 주소창 값은 사용자가 고칠 수 있어 어차피 서버가 세션과 대조해야 한다. 기업 코드는 **로그인 전 화면**(`/login`·`/register`)에만 등장.
 - `(role)` 하위 4개는 **같은 셸(사이드바 220px)** 을 쓰고 네비 항목만 역할별로 달라진다 → 레이아웃 1개 + 역할별 네비 구성.
 - `/owner`와 `/manage`는 **사원관리 권한이 사실상 동일** → 화면을 복붙하지 말고 **공용 컴포넌트 + 권한 prop**으로.
+- **구독·결제와 사원 관리는 역할 경로에 두지 않는다** — OWNER와 Admin 겸직자가 같이 쓰므로 `/billing`·`/members`다. `/owner/billing`으로 두면 겸직자에게 주소가 거짓말을 한다(DECISIONS §(shared)).
 - `/app/*`은 공용 화면에서 권한만 다르다 → 라우트를 나누지 말고 **컴포넌트 레벨 가드**.
 - ⛔ **팀 명세에 없는 화면·기능은 만들지 않는다.** 화면 안 항목 배치도 명세 순서를 따른다.
 
@@ -54,6 +56,13 @@ app/
 - 인증=**httpOnly 쿠키**, `localStorage` 토큰 금지. 라우트 보호는 `middleware.ts` + 서버 재검사.
 - 알림=**SSE**(`/app/notification`). BFF가 스트림을 중계하고 토큰을 주입한다.
 - 변경 결과 피드백=**토스트**(shadcn `sonner`, `<Toaster />`는 루트 레이아웃 1개). ❌폼 검증 오류(→필드 인라인)·파괴적 작업 확인(→Dialog)·페이지 전체 실패(→`error.tsx`). 토스트는 사라지므로 **보조**다.
+
+## 요금제 — 유료 하나뿐 ⚠️
+
+- **무료 요금제도 체험도 없다**(2026-08-04). 온보딩 4단계에서 **결제를 마쳐야** 워크스페이스가 열린다.
+- **결제 전·해지 후는 플랜이 아니라 상태**다 — `SUBSCRIPTION_STATUS`(`ACTIVE`·`CANCELING`·`UNPAID`·`EXPIRED`). 쓸 수 있는지는 `canUseWorkspace()` 한 곳에서 판정한다.
+- 화면에 **"무료"·"결제 없이"라고 쓰지 않는다.** 한 곳만 남아도 돈을 안 받는 것처럼 읽힌다(§정직성).
+- 한도·금액·청구 시점은 `billing/plans.ts`·`pricing.ts`·`checkout-mode.ts` **세 곳에만** 둔다. 정책은 바뀔 수 있다(DECISIONS §요금제).
 
 ## 도메인 상수
 
@@ -87,7 +96,10 @@ app/
   - ⚠️ **위 폭은 목표치이지 고정값이 아니다.** `w-[1440px]` 대신 `mx-auto max-w-[1440px] px-8`, absolute 대신 flex/grid, 표는 `overflow-x-auto`로 감싼다. 사이드바는 컴포넌트로 분리(모바일은 Sheet).
   - 반응형 전면 구현은 지금 안 한다. 대상 화면 선별은 디자인 확정 후.
 - 폼 2열(`FormRow`) · 제출 버튼 하단우측 · 로딩=스켈레톤 · 모션 100/150/250ms · 숫자 `tabular-nums`
-- **카피:** ~해요체 · 날짜 `8월 5일(화)` · 역할 워딩은 영어
+- **카피:** **~합니다체**(2026-08-04 변경) · 날짜 `8월 5일(화)` · 역할 워딩은 영어
+  - 사내 도구이고 **돈·권한·기록이 걸린 화면**이라 친근한 말투가 오히려 가볍게 읽힌다. `들어올 수 없어요` → `접근할 수 없습니다`.
+  - 명령은 **`~해 주세요`** 를 쓴다. `~하십시오`는 딱딱해서 안 쓴다.
+  - ⚠️ 옛 화면에 `~해요체`가 남아 있으면 그건 이 변경 전 것이다.
 - 아이콘: `lucide-react` 표준 / 커스텀SVG=SVGR(`currentColor`). ❌이모지·`<img src=.svg>`
 
 ## 브라우저 API (캡처 화면) ⚠️
