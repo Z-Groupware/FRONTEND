@@ -12,7 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { PAYMENT_STATUS, PAYMENT_STATUS_LABEL, PLAN } from "@/constants/domain";
+import { PAYMENT_STATUS, PAYMENT_STATUS_LABEL } from "@/constants/domain";
 import { cn } from "@/lib/utils";
 
 import { sendUnpaidNoticeAction } from "../actions";
@@ -40,11 +40,10 @@ const STATUS_TONE: Record<SubscriptionRecord["paymentStatus"], StatusTone> = {
  * 기업 관리·기업 승인 표에서 겪은 "페이지 전환 시 열 밀림"과 같은 문제를 처음부터 막는다.
  */
 const COLUMN_WIDTH = {
-  company: "26%",
-  plan: "12%",
-  members: "10%",
-  amount: "16%",
-  billingDate: "14%",
+  company: "30%",
+  members: "12%",
+  amount: "18%",
+  billingDate: "18%",
   status: "10%",
   action: "12%",
 } as const;
@@ -94,7 +93,6 @@ export function SubscriptionTable({ subscriptions }: SubscriptionTableProps) {
         {/* 각 컬럼 폭을 %로 고정 — 기업명 길이가 달라져도 다른 컬럼이 밀리지 않는다(위 COLUMN_WIDTH 참고) */}
         <colgroup>
           <col style={{ width: COLUMN_WIDTH.company }} />
-          <col style={{ width: COLUMN_WIDTH.plan }} />
           <col style={{ width: COLUMN_WIDTH.members }} />
           <col style={{ width: COLUMN_WIDTH.amount }} />
           <col style={{ width: COLUMN_WIDTH.billingDate }} />
@@ -104,7 +102,6 @@ export function SubscriptionTable({ subscriptions }: SubscriptionTableProps) {
         <TableHeader>
           <TableRow className={cn(HEADER_HEIGHT_CLASS, "hover:bg-transparent")}>
             <TableHead className="pl-4 text-xs">기업명</TableHead>
-            <TableHead className="text-center text-xs">플랜</TableHead>
             <TableHead className="text-center text-xs">인원</TableHead>
             <TableHead className="text-center text-xs">금액</TableHead>
             <TableHead className="text-center text-xs">결제일</TableHead>
@@ -117,9 +114,6 @@ export function SubscriptionTable({ subscriptions }: SubscriptionTableProps) {
             <TableRow key={subscription.companyId} className={ROW_HEIGHT_CLASS}>
               <TableCell className="max-w-0 truncate pl-4" title={subscription.companyName}>
                 {subscription.companyName}
-              </TableCell>
-              <TableCell className="text-foreground text-center">
-                {subscription.plan === PLAN.TEAM ? "Team" : "Free"}
               </TableCell>
               <TableCell className="text-muted-foreground text-center tabular-nums">
                 {subscription.memberCount}명

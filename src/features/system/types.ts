@@ -38,7 +38,8 @@ export interface PlanDistributionSlice {
 export interface RecentCompany {
   id: string;
   name: string;
-  plan: Plan;
+  /** 화면에 그대로 나가는 식별 코드(가입 승인 시 발급) */
+  code: string;
   memberCount: number;
   /** "YYYY-MM-DD" — 관리자 화면 표기라 일반 화면의 "8월 5일(화)" 형식을 따르지 않는다 */
   joinedAt: string;
@@ -59,7 +60,8 @@ export interface PendingCompanyApproval {
   businessRegistrationNumber: string;
   representativeName: string;
   contactEmail: string;
-  size: CompanySize;
+  /** 신청 시 밝힌 구성원 수 */
+  memberCount: number;
   /** "YYYY-MM-DD" */
   appliedAt: string;
 }
@@ -166,6 +168,14 @@ export interface MonitoringOverview {
   stageTimings: StageTiming[];
   /** 실패 목록 — 재처리 필요분(화면 명세: 최신 실패순) */
   failedItems: FailedPipelineItem[];
+}
+
+/** 공지 "특정 기업" 대상 검색에 쓰는 가벼운 기업 항목 — 이름·코드로 검색해 고른다. */
+export interface NoticeTargetCompany {
+  id: string;
+  name: string;
+  /** 화면에 그대로 나가는 식별 코드 — 검색 대상이기도 하다 */
+  code: string;
 }
 
 /** 발행된 공지 한 건 — "발행 이력" 목록 한 행. */

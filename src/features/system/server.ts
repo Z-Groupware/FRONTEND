@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { CompanySize, CompanyStatus } from "@/constants/domain";
+import { COMPANY_SORT, type CompanySort, type CompanyStatus } from "@/constants/domain";
 import { paginate, type PaginatedResult } from "@/lib/paginate";
 import { isMock } from "@/mocks/config";
 
@@ -16,6 +16,7 @@ import type {
   ManagedCompany,
   MonitoringOverview,
   NoticeHistoryItem,
+  NoticeTargetCompany,
   PendingCompanyApproval,
 } from "./types";
 
@@ -55,12 +56,12 @@ export async function getPendingApprovalById(id: string): Promise<PendingCompany
 export interface CompanyListFilter {
   /** 기업명 또는 코드 부분 일치(대소문자 무시) */
   keyword?: string;
-  size?: CompanySize;
   status?: CompanyStatus;
+  /** 정렬 기준 — 없으면 최신 가입순 */
+  sort?: CompanySort;
 }
 
 function matchesFilter(company: ManagedCompany, filter: CompanyListFilter): boolean {
-  if (filter.size && company.size !== filter.size) return false;
   if (filter.status && company.status !== filter.status) return false;
 
   if (filter.keyword) {
@@ -75,6 +76,22 @@ function matchesFilter(company: ManagedCompany, filter: CompanyListFilter): bool
   return true;
 }
 
+/** 정렬 — 구성원수·가입일 기준(규모·플랜 필터를 대신한다). 없으면 최신 가입순. */
+function sortCompanies(companies: ManagedCompany[], sort: CompanySort): ManagedCompany[] {
+  const sorted = [...companies];
+  switch (sort) {
+    case COMPANY_SORT.MEMBERS_DESC:
+      return sorted.sort((a, b) => b.memberCount - a.memberCount);
+    case COMPANY_SORT.MEMBERS_ASC:
+      return sorted.sort((a, b) => a.memberCount - b.memberCount);
+    case COMPANY_SORT.JOINED_ASC:
+      return sorted.sort((a, b) => a.joinedAt.localeCompare(b.joinedAt));
+    case COMPANY_SORT.JOINED_DESC:
+    default:
+      return sorted.sort((a, b) => b.joinedAt.localeCompare(a.joinedAt));
+  }
+}
+
 /**
  * 기업 관리 목록 — 검색·필터 후 페이지 단위로 잘라 돌려준다.
  * ⚠️ 검색·필터는 서버에서 계산한다 — 목록이 무한히 늘어날 수 있어(CLAUDE.md §성능) 클라이언트로
@@ -87,7 +104,8 @@ export async function getManagedCompanies(
 ): Promise<PaginatedResult<ManagedCompany>> {
   if (isMock) {
     const filtered = listMockCompanies().filter((company) => matchesFilter(company, filter));
-    return paginate(filtered, page, pageSize);
+    const sorted = sortCompanies(filtered, filter.sort ?? COMPANY_SORT.JOINED_DESC);
+    return paginate(sorted, page, pageSize);
   }
 
   // ⚠️ 미구현 — API 스펙 확정 후 `ep.systemDashboard()`류 경로로 fetch하고 매퍼로 맞춘다.
@@ -141,4 +159,21 @@ export async function getNoticeHistory(): Promise<NoticeHistoryItem[]> {
 
   // ⚠️ 미구현 — API 스펙 확정 후 공지 목록 경로로 fetch하고 매퍼로 UI 계약에 맞춘다.
   throw new Error("공지 이력 조회 API가 아직 연결되지 않았습니다.");
+}
+
+/**
+ * 공지 "특정 기업" 대상 검색용 기업 목록 — 이름·코드만 가볍게 넘긴다.
+ * ⚠️ 지금은 목이라 전체 목록을 내려 클라이언트에서 걸러 보여준다(데모 규모). 실서버는 검색어를
+ *    받아 서버에서 좁힌 결과만 내려야 한다(CLAUDE.md §성능: 목록을 통째로 내리지 않는다).
+ */
+export async function getNoticeTargetCompanies(): Promise<NoticeTargetCompany[]> {
+  if (isMock) {
+    return listMockCompanies().map((company) => ({
+      id: company.id,
+      name: company.name,
+      code: company.code,
+    }));
+  }
+
+  throw new Error("공지 대상 기업 조회 API가 아직 연결되지 않았습니다.");
 }

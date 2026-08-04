@@ -1,4 +1,3 @@
-import { Badge } from "@/components/ui/badge";
 import {
   Table,
   TableBody,
@@ -7,7 +6,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { PLAN, PLAN_LABEL } from "@/constants/domain";
 
 import type { RecentCompany } from "../types";
 
@@ -30,7 +28,7 @@ export function RecentCompaniesTable({ companies }: { companies: RecentCompany[]
         <TableHeader>
           <TableRow className="h-[34px] hover:bg-transparent">
             <TableHead className="pl-4 text-xs">기업명</TableHead>
-            <TableHead className="text-center text-xs">플랜</TableHead>
+            <TableHead className="text-center text-xs">기업 코드</TableHead>
             <TableHead className="text-center text-xs">구성원</TableHead>
             <TableHead className="pr-4 text-center text-xs">가입일</TableHead>
           </TableRow>
@@ -39,10 +37,11 @@ export function RecentCompaniesTable({ companies }: { companies: RecentCompany[]
           {companies.map((company) => (
             <TableRow key={company.id} className="h-[42px]">
               <TableCell className="text-foreground pl-4">{company.name}</TableCell>
-              <TableCell className="text-center">
-                <Badge variant={company.plan === PLAN.TEAM ? "default" : "secondary"}>
-                  {PLAN_LABEL[company.plan]}
-                </Badge>
+              <TableCell
+                className="text-muted-foreground text-center font-mono"
+                title={company.code}
+              >
+                {company.code}
               </TableCell>
               <TableCell className="text-muted-foreground text-center tabular-nums">
                 {company.memberCount}명

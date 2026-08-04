@@ -8,7 +8,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { COMPANY_SIZE_LABEL, COMPANY_STATUS_LABEL, PLAN } from "@/constants/domain";
+import { COMPANY_STATUS_LABEL } from "@/constants/domain";
 import { cn } from "@/lib/utils";
 
 import type { ManagedCompany } from "../types";
@@ -39,12 +39,11 @@ const STATUS_TONE: Record<ManagedCompany["status"], StatusTone> = {
  * 브라우저가 내용 길이를 보고 폭을 다시 계산해 버려 이 값이 무시된다.
  */
 const COLUMN_WIDTH = {
-  name: "24%",
-  code: "20%",
-  size: "12%",
-  plan: "10%",
+  name: "26%",
+  code: "22%",
   members: "12%",
-  meetings: "12%",
+  meetings: "14%",
+  joinedAt: "16%",
   status: "10%",
 } as const;
 
@@ -78,20 +77,18 @@ export function CompanyTable({ companies, buildDetailHref, pageSize }: CompanyTa
         <colgroup>
           <col style={{ width: COLUMN_WIDTH.name }} />
           <col style={{ width: COLUMN_WIDTH.code }} />
-          <col style={{ width: COLUMN_WIDTH.size }} />
-          <col style={{ width: COLUMN_WIDTH.plan }} />
           <col style={{ width: COLUMN_WIDTH.members }} />
           <col style={{ width: COLUMN_WIDTH.meetings }} />
+          <col style={{ width: COLUMN_WIDTH.joinedAt }} />
           <col style={{ width: COLUMN_WIDTH.status }} />
         </colgroup>
         <TableHeader>
           <TableRow className={cn(HEADER_HEIGHT_CLASS, "hover:bg-transparent")}>
             <TableHead className="pl-4 text-xs">기업명</TableHead>
             <TableHead className="text-center text-xs">기업 코드</TableHead>
-            <TableHead className="text-center text-xs">규모</TableHead>
-            <TableHead className="text-center text-xs">플랜</TableHead>
             <TableHead className="text-center text-xs">구성원</TableHead>
             <TableHead className="text-center text-xs">이번달 회의</TableHead>
+            <TableHead className="text-center text-xs">가입일</TableHead>
             <TableHead className="pr-4 text-center text-xs">상태</TableHead>
           </TableRow>
         </TableHeader>
@@ -114,17 +111,14 @@ export function CompanyTable({ companies, buildDetailHref, pageSize }: CompanyTa
               >
                 {company.code}
               </TableCell>
-              <TableCell className="text-muted-foreground text-center">
-                {COMPANY_SIZE_LABEL[company.size]}
-              </TableCell>
-              <TableCell className="text-foreground text-center">
-                {company.plan === PLAN.TEAM ? "Team" : "Free"}
-              </TableCell>
               <TableCell className="text-muted-foreground text-center tabular-nums">
                 {company.memberCount}명
               </TableCell>
               <TableCell className="text-muted-foreground text-center tabular-nums">
                 {company.meetingCountThisMonth}회
+              </TableCell>
+              <TableCell className="text-muted-foreground text-center tabular-nums">
+                {company.joinedAt}
               </TableCell>
               <TableCell className="pr-4 text-center">
                 <StatusBadge tone={STATUS_TONE[company.status]}>
@@ -140,7 +134,7 @@ export function CompanyTable({ companies, buildDetailHref, pageSize }: CompanyTa
               aria-hidden
               className={cn(ROW_HEIGHT_CLASS, "border-transparent hover:bg-transparent")}
             >
-              <TableCell className="pl-4" colSpan={7} />
+              <TableCell className="pl-4" colSpan={6} />
             </TableRow>
           ))}
         </TableBody>

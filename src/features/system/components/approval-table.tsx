@@ -9,7 +9,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { COMPANY_SIZE_LABEL } from "@/constants/domain";
 import { cn } from "@/lib/utils";
 
 import type { PendingCompanyApproval } from "../types";
@@ -37,7 +36,7 @@ const COLUMN_WIDTH = {
   name: "28%",
   representative: "16%",
   email: "28%",
-  size: "14%",
+  members: "14%",
   appliedAt: "14%",
 } as const;
 
@@ -75,7 +74,7 @@ export function ApprovalTable({ companies, buildDetailHref, pageSize }: Approval
           <col style={{ width: COLUMN_WIDTH.name }} />
           <col style={{ width: COLUMN_WIDTH.representative }} />
           <col style={{ width: COLUMN_WIDTH.email }} />
-          <col style={{ width: COLUMN_WIDTH.size }} />
+          <col style={{ width: COLUMN_WIDTH.members }} />
           <col style={{ width: COLUMN_WIDTH.appliedAt }} />
         </colgroup>
         <TableHeader>
@@ -83,7 +82,7 @@ export function ApprovalTable({ companies, buildDetailHref, pageSize }: Approval
             <TableHead className="pl-4 text-xs">회사명</TableHead>
             <TableHead className="text-center text-xs">대표자</TableHead>
             <TableHead className="text-center text-xs">담당자 이메일</TableHead>
-            <TableHead className="text-center text-xs">규모</TableHead>
+            <TableHead className="text-center text-xs">구성원</TableHead>
             <TableHead className="pr-4 text-center text-xs">신청일</TableHead>
           </TableRow>
         </TableHeader>
@@ -113,8 +112,8 @@ export function ApprovalTable({ companies, buildDetailHref, pageSize }: Approval
               >
                 {company.contactEmail}
               </TableCell>
-              <TableCell className="text-muted-foreground text-center">
-                {COMPANY_SIZE_LABEL[company.size]}
+              <TableCell className="text-muted-foreground text-center tabular-nums">
+                {company.memberCount}명
               </TableCell>
               <TableCell className="text-muted-foreground pr-4 text-center tabular-nums">
                 {company.appliedAt}

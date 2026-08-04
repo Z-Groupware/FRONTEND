@@ -13,14 +13,17 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  COMPANY_SIZE,
-  COMPANY_SIZE_LABEL,
+  COMPANY_SORT,
+  COMPANY_SORT_LABEL,
   COMPANY_STATUS,
   COMPANY_STATUS_LABEL,
 } from "@/constants/domain";
 
-const SIZE_OPTIONS = Object.values(COMPANY_SIZE);
+const SORT_OPTIONS = Object.values(COMPANY_SORT);
 const STATUS_OPTIONS = Object.values(COMPANY_STATUS);
+
+/** 정렬 기본값 — 아무것도 안 고르면 최신 가입순. 이 값이면 URL에 sort를 안 붙인다. */
+const DEFAULT_SORT = COMPANY_SORT.JOINED_DESC;
 
 /** 필터 셀렉트의 "전체" 값 — 빈 문자열은 URLSearchParams가 지워버려 구분이 안 된다 */
 const ALL = "ALL";
@@ -69,17 +72,17 @@ export function CompanyFilterBar() {
       </div>
 
       <Select
-        value={searchParams.get("size") ?? ALL}
-        onValueChange={(value) => pushWith({ size: value ?? ALL })}
+        items={COMPANY_SORT_LABEL}
+        value={searchParams.get("sort") ?? DEFAULT_SORT}
+        onValueChange={(value) => pushWith({ sort: value === DEFAULT_SORT ? "" : (value ?? "") })}
       >
-        <SelectTrigger aria-label="규모 필터" className="w-36">
+        <SelectTrigger aria-label="정렬 기준" className="w-36">
           <SelectValue />
         </SelectTrigger>
         <SelectContent side="bottom" alignItemWithTrigger={false}>
-          <SelectItem value={ALL}>전체 규모</SelectItem>
-          {SIZE_OPTIONS.map((size) => (
-            <SelectItem key={size} value={size}>
-              {COMPANY_SIZE_LABEL[size]}
+          {SORT_OPTIONS.map((sort) => (
+            <SelectItem key={sort} value={sort}>
+              {COMPANY_SORT_LABEL[sort]}
             </SelectItem>
           ))}
         </SelectContent>

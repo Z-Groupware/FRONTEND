@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
-import { COMPANY_STATUS, type NoticeTarget } from "@/constants/domain";
+import { COMPANY_STATUS, NOTICE_TARGET, type NoticeTarget } from "@/constants/domain";
 import { isMock } from "@/mocks/config";
 
 import { removeMockPendingApproval } from "./mock/approvals";
@@ -126,6 +126,8 @@ export async function publishNoticeAction(input: {
   title: string;
   content: string;
   target: NoticeTarget;
+  /** target이 "특정 기업"일 때 고른 기업 id들 */
+  companyIds?: string[];
 }): Promise<{ success: boolean }> {
   if (!isMock) {
     // ⚠️ 미구현 — API 스펙 확정 후 BFF 경로로 공지 발행 요청을 보낸다.
@@ -133,6 +135,10 @@ export async function publishNoticeAction(input: {
   }
 
   if (!input.title.trim() || !input.content.trim()) return { success: false };
+  // 특정 기업 대상인데 고른 곳이 없으면 발송 대상이 없다 — 화면 가드와 별개로 서버에서도 막는다.
+  if (input.target === NOTICE_TARGET.SPECIFIC && (input.companyIds?.length ?? 0) === 0) {
+    return { success: false };
+  }
 
   return { success: true };
 }

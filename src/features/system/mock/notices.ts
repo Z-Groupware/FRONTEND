@@ -13,16 +13,16 @@ export const MOCK_NOTICE_HISTORY: NoticeHistoryItem[] = [
   },
   {
     id: "notice-2025-07-08",
-    title: "Team 플랜 신기능 출시",
-    target: NOTICE_TARGET.TEAM,
+    title: "미납 요금 납부 안내",
+    target: NOTICE_TARGET.UNPAID,
     sentAt: "2025-07-08",
-    recipientCompanyCount: 38,
+    recipientCompanyCount: 3,
   },
   {
     id: "notice-2025-06-28",
-    title: "베타 기간 종료 예정 안내",
-    target: NOTICE_TARGET.ALL,
+    title: "(주)테크스타트 전용 안내",
+    target: NOTICE_TARGET.SPECIFIC,
     sentAt: "2025-06-28",
-    recipientCompanyCount: 62,
+    recipientCompanyCount: 1,
   },
 ];
