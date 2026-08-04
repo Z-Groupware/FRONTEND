@@ -23,10 +23,11 @@ import { toast } from "sonner";
 
 import { ZLogo } from "@/components/icons/z-logo";
 import { ROLE_LABEL } from "@/constants/domain";
-import type { AssignableRole } from "@/features/onboarding/types";
 import { cn } from "@/lib/utils";
 
+import { roleHome } from "../home";
 import type { NavIconName, NavItem, NavSection } from "../nav";
+import type { Viewer } from "../viewer";
 
 /**
  * 이름 → 아이콘. 구성 파일은 서버에서 읽히므로 실제 컴포넌트는 여기서 붙인다.
@@ -52,15 +53,22 @@ const NAV_ICON: Partial<Record<NavIconName, LucideIcon>> = {
 interface RoleSidebarProps {
   sections: NavSection[];
   /** 하단 계정 줄 */
-  user: { name: string; role: AssignableRole };
+  /**
+   * 지금 보고 있는 사람 — 이름·역할 배지·로고 링크가 이 값에서 나온다.
+   *
+   * ⚠️ `isAdmin`까지 통째로 받는다. 네비 구성은 역할 하나로 못 정한다 —
+   *    `/manage`는 Admin 겸직자에게만 보이므로 `role` + `isAdmin`을 같이 본다
+   *    (DECISIONS §(role)).
+   */
+  user: Viewer;
 }
 
 /**
  * 지금 경로와 **가장 길게 일치하는 href 하나**를 고른다.
  *
- * ⚠️ 단순 `pathname.startsWith(item.href)`는 안 된다 — `/owner`(대시보드)가
- *    `/owner/billing/checkout`(결제)의 접두사라서 결제 화면에서 대시보드까지
- *    같이 켜진다. 후보 중 가장 구체적인(긴) href만 켜지게 골라야 한 곳만 켜진다.
+ * ⚠️ 단순 `pathname.startsWith(item.href)`는 안 된다 — `/billing`(구독·결제)이
+ *    `/billing/checkout`(결제)의 접두사라서 결제 화면에서 두 곳이 같이 켜진다.
+ *    후보 중 가장 구체적인(긴) href만 켜지게 골라야 한 곳만 켜진다.
  */
 function findActiveHref(sections: NavSection[], pathname: string): string | undefined {
   let best: string | undefined;
@@ -96,9 +104,9 @@ export function RoleSidebar({ sections, user }: RoleSidebarProps) {
         상단바(64px)와 높이를 맞춰 사이드바와 본문의 첫 줄이 한 선에 놓이게 한다.
       */}
       {/* 로고 아래 선을 두지 않는다 — 사이드바 안에서 또 나누면 조각나 보인다 */}
-      <div className="flex h-[64px] shrink-0 items-center px-[18px]">
+      <div className="flex h-[56px] shrink-0 items-center px-[18px]">
         <Link
-          href="/owner"
+          href={roleHome(user.role)}
           aria-label="Z 홈으로"
           className="focus-visible:ring-ring rounded transition-opacity hover:opacity-70 focus-visible:ring-2 focus-visible:outline-hidden"
         >
@@ -172,7 +180,8 @@ function SidebarItem({ item, isCurrent }: { item: NavItem; isCurrent: boolean })
       <button
         type="button"
         aria-disabled
-        onClick={() => toast(`${item.label} 화면은 아직 만드는 중이에요`)}
+        // ⚠️ 토스트는 한 줄(220px)이라 짧게 쓴다 — 길면 잘린다(`sonner.tsx`)
+        onClick={() => toast(`${item.label}은 준비 중입니다`)}
         // 색은 준비된 메뉴와 똑같이 — 평소 회색, 호버하면 글자가 진해진다
         className={cn(
           shape,
