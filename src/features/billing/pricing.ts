@@ -1,78 +1,77 @@
-import type { Plan } from "./types";
-
-/** 결제 주기. 화면엔 라벨을 쓰고 코드는 영문 상수로만 다룬다. */
-export const BILLING_CYCLE = {
-  MONTHLY: "MONTHLY",
-  YEARLY: "YEARLY",
-} as const;
-
-export type BillingCycle = (typeof BILLING_CYCLE)[keyof typeof BILLING_CYCLE];
-
-export const BILLING_CYCLE_LABEL: Record<BillingCycle, string> = {
-  [BILLING_CYCLE.MONTHLY]: "월간",
-  [BILLING_CYCLE.YEARLY]: "연간",
-};
+import type { BillingConfig } from "./config";
 
 /**
- * ⚠️ 아래 값은 **팀 확정 전 임시값**이다(DECISIONS §미결정: 결제 실연동 여부).
- *    가격 정책이 정해지면 BE에서 내려받는다.
+ * 금액 계산 — **기본료 + 초과분**.
+ *
+ * ⚠️ **좌석 과금이 아니다**(2026-08-04 팀 확정). 인원은 금액에 아무 영향이 없고,
+ *    금액을 움직이는 건 AI 토큰과 스토리지 사용량뿐이다.
+ *    좌석 슬라이더·좌석 하한·좌석 일할계산은 전부 걷어냈다.
+ * ⚠️ **결제 주기는 월간뿐이다.** 연간을 두면 1년치를 미리 냈는데 초과분만 매달 따로 빠져
+ *    "언제 얼마가 나가는지"가 복잡해진다(팀 확정).
+ * ⚠️ **실청구는 없다.** 여기 값은 전부 화면에 보여주기 위한 것이고, 실제 청구는
+ *    PG 연동 후 서버가 한다 — 화면 숫자와 청구서가 갈리면 서버 값을 받아 쓴다.
  */
-export const SEAT_RANGE = { min: 1, max: 200 } as const;
-/** 연간 결제 할인율 — 20% */
-export const YEARLY_DISCOUNT_RATE = 0.2;
-/** 부가세율 — 10% */
-export const VAT_RATE = 0.1;
 
-export interface PriceBreakdown {
-  /** 1인당 단가(주기 기준) */
-  unitPrice: number;
-  /** 구성원 수 */
-  seats: number;
-  /** 소계 = 단가 × 인원 */
+/** 부가세율 — 10% */
+const VAT_RATE = 0.1;
+
+/** 하루를 밀리초로. 날짜 차이를 일수로 바꿀 때 쓴다 */
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * 두 날짜 사이의 일수. **시각은 버리고 날짜만 본다** —
+ * 오전에 봤는지 오후에 봤는지로 예측이 달라지면 안 된다.
+ */
+export function daysBetween(fromIso: string, toIso: string): number {
+  const from = Date.parse(`${fromIso.slice(0, 10)}T00:00:00Z`);
+  const to = Date.parse(`${toIso.slice(0, 10)}T00:00:00Z`);
+  if (Number.isNaN(from) || Number.isNaN(to)) return 0;
+  return Math.max(0, Math.round((to - from) / DAY_MS));
+}
+
+interface PriceBreakdown {
+  /** 월 기본료(원) */
+  baseFee: number;
+  /** 이번에 더해지는 초과분(원). 없으면 0 */
+  overage: number;
+  /** 기본료 + 초과분 (부가세 전) */
   subtotal: number;
   vat: number;
   total: number;
-  /**
-   * 연간을 골라서 아낀 금액. 월간이면 0이다.
-   * 할인율(20%)만 보여주면 얼마를 아끼는지 감이 안 온다 — 금액으로 같이 보여준다.
-   */
-  yearlySaving: number;
 }
 
 /**
- * 표시용 가격 문자열(`₩9,900`)에서 숫자만 뽑는다.
- * ⚠️ 임시다 — BE가 숫자 필드를 내려주면 이 함수는 사라진다. 지금은 목이 문자열뿐이다.
- */
-export function parsePrice(price: string): number {
-  const digits = price.replace(/[^0-9]/g, "");
-  return digits === "" ? 0 : Number(digits);
-}
-
-/**
- * 결제 금액 계산.
+ * 이번 달 청구 금액.
  *
- * ⚠️ **원 단위에서 반올림한다.** 할인·부가세를 소수로 두면 화면과 실제 청구가 1원씩 어긋난다.
- *    소계를 먼저 확정한 뒤 그 값으로 부가세를 매긴다 — 순서가 바뀌면 합계가 달라진다.
+ * ⚠️ **원 단위에서 반올림한다.** 소계를 먼저 확정한 뒤 그 값으로 부가세를 매긴다 —
+ *    순서가 바뀌면 합계가 1원씩 달라진다.
+ * ⚠️ 설정에 부가세가 이미 포함돼 있으면(`isVatIncluded`) 다시 붙이지 않는다.
  */
-export function calculatePrice(plan: Plan, seats: number, cycle: BillingCycle): PriceBreakdown {
-  const monthly = parsePrice(plan.price);
-  const safeSeats = Math.min(Math.max(seats, SEAT_RANGE.min), SEAT_RANGE.max);
+export function calculatePrice(config: BillingConfig, overageAmount = 0): PriceBreakdown {
+  const baseFee = Math.max(0, config.baseFee);
+  const overage = Math.max(0, Math.round(overageAmount));
+  const subtotal = baseFee + overage;
+  const vat = config.isVatIncluded ? 0 : Math.round(subtotal * VAT_RATE);
 
-  const unitPrice =
-    cycle === BILLING_CYCLE.YEARLY
-      ? Math.round(monthly * 12 * (1 - YEARLY_DISCOUNT_RATE))
-      : monthly;
-
-  const subtotal = unitPrice * safeSeats;
-  const vat = Math.round(subtotal * VAT_RATE);
-
-  // 연간 할인은 "1년치 정가 − 할인가"다. 부가세 전 금액으로 잡는다(할인 뒤에 세금이 붙는다)
-  const yearlySaving = cycle === BILLING_CYCLE.YEARLY ? monthly * 12 * safeSeats - subtotal : 0;
-
-  return { unitPrice, seats: safeSeats, subtotal, vat, total: subtotal + vat, yearlySaving };
+  return { baseFee, overage, subtotal, vat, total: subtotal + vat };
 }
 
-/** 금액 표기 — `₩118,800`. 자릿점은 로케일에 맡기지 않는다(서버·클라이언트가 갈릴 수 있다). */
+/** 금액 표기 — `₩150,000`. 자릿점은 로케일에 맡기지 않는다(서버·클라이언트가 갈릴 수 있다). */
 export function formatWon(amount: number): string {
   return `₩${amount.toLocaleString("ko-KR")}`;
+}
+
+/**
+ * 토큰 수 표기 — **숫자를 그대로 보여준다**(`1,500,000`).
+ *
+ * ⚠️ 전에는 `150만`으로 접었는데 되돌렸다. 타깃이 개발자라 "AI 토큰 기반"이 차별점이고,
+ *    회의 N회 같은 환산이 오히려 무엇을 파는지 흐린다(팀 확정 2026-08-04).
+ */
+export function formatTokens(value: number): string {
+  return Math.round(value).toLocaleString("ko-KR");
+}
+
+/** 용량 표기 — `31.4GB`. 소수 첫째 자리까지만 본다 */
+export function formatGb(value: number): string {
+  return `${Math.round(value * 10) / 10}GB`;
 }
