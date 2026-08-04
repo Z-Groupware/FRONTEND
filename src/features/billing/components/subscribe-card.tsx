@@ -55,15 +55,27 @@ export function SubscribeCard({
   */
   const handleSubmit = async () => {
     setIsPending(true);
-    const result = await requestSubscriptionPayment();
-    setIsPending(false);
-
-    if (result.isSuccess) {
-      onSubscribe();
-      return;
+    try {
+      const result = await requestSubscriptionPayment();
+      if (result.isSuccess) {
+        onSubscribe();
+        return;
+      }
+      // ⚠️ 사유를 모르면 `undefined`로 넘긴다 — 창이 일반 문구를 쓴다. 지어내지 않는다.
+      setFailure(result.message ?? "");
+    } catch {
+      /*
+        ⚠️ **던지는 경우도 실패다.** 결제사 창을 닫거나 네트워크가 끊기면 예외로 온다 —
+           잡지 않으면 아무 일도 안 일어난 것처럼 보인다.
+      */
+      setFailure("");
+    } finally {
+      /*
+        ⚠️ `finally`다. 전에는 `await` 뒤에서 풀었는데, 요청이 거절되면 그 줄에 닿지 못해
+           **버튼이 영영 잠긴 채로** 남았다 — 새로고침 말고는 빠져나갈 길이 없었다.
+      */
+      setIsPending(false);
     }
-    // ⚠️ 사유를 모르면 `undefined`로 넘긴다 — 창이 일반 문구를 쓴다. 지어내지 않는다.
-    setFailure(result.message ?? "");
   };
 
   return (

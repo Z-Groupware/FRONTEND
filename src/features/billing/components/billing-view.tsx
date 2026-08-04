@@ -66,13 +66,25 @@ export function BillingView({ overview, config, today, canManage }: BillingViewP
        발급·보관한다 — 프론트가 만지면 PCI-DSS 대상이 된다.
     ⚠️ PG가 정해지면 `requestCardAuth` 한 함수만 바꾸면 되고 여기는 그대로다.
   */
+  /*
+    ⚠️ **던질 수 있는 호출이다.** 결제사 창을 닫거나 서버가 거절하면 `requestCardAuth`·
+       `registerCardMethod`가 예외를 낸다 — 잡지 않으면 아무 일도 안 일어난 것처럼 보이고
+       콘솔에만 남는다(§정직성).
+    ⚠️ 여기서는 창이 아니라 토스트다. 카드 등록은 결제와 달리 **돈이 빠지지 않아서**,
+       멈춰 세울 만큼의 일이 아니다(DECISIONS §토스트).
+  */
   const handleAddMethod = async () => {
-    // TODO(로그인 연동): `customerKey`는 세션의 기업 id를 쓴다 — 회사가 구독하는 단위다
-    const auth = await requestCardAuth("mock-company");
-    const next = await registerCardMethod(auth);
+    try {
+      // TODO(로그인 연동): `customerKey`는 세션의 기업 id를 쓴다 — 회사가 구독하는 단위다
+      const auth = await requestCardAuth("mock-company");
+      const next = await registerCardMethod(auth);
 
-    setMethods((prev) => [...prev, { ...next, isDefault: prev.length === 0 }]);
-    toast("결제 수단을 추가했습니다");
+      setMethods((prev) => [...prev, { ...next, isDefault: prev.length === 0 }]);
+      toast("결제 수단을 추가했습니다");
+    } catch {
+      // ⚠️ 토스트는 한 줄(220px)이라 짧게 쓴다 — 길면 잘린다(`sonner.tsx`)
+      toast("결제 수단을 추가하지 못했습니다");
+    }
   };
 
   const handleSetDefault = (id: string) => {

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 import { BillingView } from "@/features/billing/components/billing-view";
 import { getBillingConfig, getBillingOverview } from "@/features/billing/server";
+import { canManageBilling, getViewer } from "@/features/shell/viewer";
 
 export const metadata: Metadata = {
   title: "구독·결제",
@@ -22,11 +23,19 @@ export const dynamic = "force-dynamic";
  *    화면 숨김은 UX일 뿐 보안이 아니다(§권한).
  */
 export default async function OwnerBillingPage() {
-  const [overview, config] = await Promise.all([getBillingOverview(), getBillingConfig()]);
+  const [overview, config, viewer] = await Promise.all([
+    getBillingOverview(),
+    getBillingConfig(),
+    getViewer(),
+  ]);
 
-  // TODO(로그인 연동): 세션에서 actor를 읽어 `canManageBilling(actor)`로 정한다.
-  //   지금은 목이라 대표로 본다 — 잠긴 화면을 보려면 여기를 false로 바꿔 확인한다.
-  const canManage = true;
+  /*
+    ⚠️ 판정은 **`canManageBilling` 한 곳**이 한다. 전에는 여기만 `const canManage = true`로
+       손으로 두어서, 같은 판정을 하는 `/subscription`과 규칙이 갈라져 있었다 —
+       권한을 화면마다 적으면 한쪽만 고치고 지나간다(CLAUDE.md §권한).
+    ⚠️ 잠긴 화면을 보려면 `viewer.ts`의 목을 바꾼다.
+  */
+  const canManage = canManageBilling(viewer);
 
   /*
     ⚠️ 오늘 날짜를 **서버에서** 만든다. 월말 예측에 쓰이는 값이라 브라우저 시계를 믿으면
