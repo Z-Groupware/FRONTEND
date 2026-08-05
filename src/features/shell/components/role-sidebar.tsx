@@ -6,6 +6,7 @@ import { toast } from "sonner";
 
 import { ZLogo } from "@/components/icons/z-logo";
 import { ROLE_LABEL } from "@/constants/domain";
+import { topicParticle } from "@/lib/korean";
 
 import type { NavItem, NavSection } from "../nav";
 import type { Viewer } from "../viewer";
@@ -124,7 +125,7 @@ function SidebarLogo({ home }: { home: NavItem }) {
       <button
         type="button"
         aria-label={`Z ${home.label} — 준비 중`}
-        onClick={() => toast(`${home.label}는 준비 중입니다`)}
+        onClick={() => toast(`${home.label}${topicParticle(home.label)} 준비 중입니다`)}
         className={LOGO_SHAPE}
       >
         {logo}

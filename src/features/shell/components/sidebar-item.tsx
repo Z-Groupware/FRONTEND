@@ -23,6 +23,7 @@ import {
 import Link from "next/link";
 import { toast } from "sonner";
 
+import { topicParticle } from "@/lib/korean";
 import { cn } from "@/lib/utils";
 
 import type { NavIconName, NavItem } from "../nav";
@@ -76,7 +77,8 @@ export function SidebarItem({ item, isCurrent }: { item: NavItem; isCurrent: boo
         */
         aria-label={`${item.label} — 준비 중`}
         // ⚠️ 토스트는 한 줄(220px)이라 짧게 쓴다 — 길면 잘린다(`sonner.tsx`)
-        onClick={() => toast(`${item.label}은 준비 중입니다`)}
+        // ⚠️ 조사를 박아 두지 않는다 — 라벨 대부분이 모음으로 끝나 "프로젝트은"이 된다
+        onClick={() => toast(`${item.label}${topicParticle(item.label)} 준비 중입니다`)}
         // 색은 준비된 메뉴와 똑같이 — 평소 회색, 호버하면 글자가 진해진다
         className={cn(
           SHAPE,

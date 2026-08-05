@@ -1,6 +1,7 @@
 import { ROLE } from "@/constants/role";
 import type { Actor } from "@/lib/permission";
 
+import { roleHome } from "./home";
 import { dashboardFor, navFor } from "./nav-config";
 
 /**
@@ -136,4 +137,18 @@ describe("dashboardFor", () => {
   it("겸직해도 로고는 그대로다 — Admin은 첫 화면을 바꾸지 않는다", () => {
     expect(dashboardFor(actor(ROLE.LEADER, true).role).href).toBe("/team");
   });
+});
+
+/**
+ * 로그인 뒤 데려다 놓는 곳(`roleHome`)과 로고가 가리키는 곳(`dashboardFor`)은
+ * **같아야 한다.** 갈라지면 로그인 직후 떨어진 화면과 로고가 데려가는 화면이 달라진다 —
+ * 둘 다 "첫 화면"이라고 말하면서 서로 다른 곳을 가리킨다.
+ */
+describe("첫 화면은 한 곳이다", () => {
+  it.each([ROLE.OWNER, ROLE.LEADER, ROLE.MEMBER, ROLE.SYSTEM])(
+    "%s의 roleHome과 로고 목적지가 같다",
+    (role) => {
+      expect(dashboardFor(role).href).toBe(roleHome(role));
+    },
+  );
 });
