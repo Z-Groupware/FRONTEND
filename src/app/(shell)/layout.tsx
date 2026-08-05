@@ -52,15 +52,22 @@ export default async function ShellLayout({ children }: { children: ReactNode })
 
   return (
     // ⚠️ `h-screen-z` — 화면 배율(zoom)이 걸려도 셸이 아래에서 안 잘린다(§화면 배율)
-    <div className="bg-background h-screen-z flex overflow-hidden">
+    <div className="app-shell bg-background h-screen-z flex overflow-hidden">
       <RoleSidebar sections={sections} home={dashboardFor(viewer.role)} user={viewer} />
 
       {/*
         상단바는 여기서 그리지 않는다 — 제목·액션이 도메인마다 달라서
         각 도메인의 `layout.tsx`가 `PageHeader`를 그린다.
-        ⚠️ 점 그리드는 본문에만 깐다. 사이드바·상단바는 불투명 배경이라 그 위를 덮는다.
+        ⚠️ **점 그리드를 깔지 않는다**(2026-08-05 변경). 로그인 뒤 일하는 화면이라 바탕이
+           조용해야 표·카드가 먼저 읽힌다 — 온보딩·결제·랜딩은 처음 만나는 화면이라 그대로 둔다.
+        ⚠️ 대신 **사이드바·상단바·본문을 `bg-background` 한 색으로 묶고 카드만 띄운다.**
+           라이트에서 `--background`와 `--card`가 둘 다 흰색이라, 바탕을 안 내리면 카드와
+           바탕을 나누는 게 보더선 하나뿐이라 화면이 통째로 하얗게 뜬다.
+           ⚠️ **본문만 내리면 안 된다.** 그러면 껍데기와 본문이 서로 다른 색이 되어
+           화면이 셋으로 조각나 보인다(DECISIONS §셸 표면에 적힌 첫 실패). 넷을 한 색으로
+           두고, 나누는 건 **선 하나**(사이드바 오른쪽·상단바 아래)에 맡긴다.
       */}
-      <div className="bg-dot-grid flex min-w-0 flex-1 flex-col overflow-hidden">{children}</div>
+      <div className="bg-background flex min-w-0 flex-1 flex-col overflow-hidden">{children}</div>
     </div>
   );
 }
