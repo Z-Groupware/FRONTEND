@@ -74,7 +74,8 @@ app/
 - 폼=`useActionState`+`useFormStatus`(pending). multipart=`Content-Type` 수동설정 금지. `redirect()`=try/catch 밖.
 - `use client` 최소화 · 데이터는 props로 · client가 server import 말고 `children`.
 - 인증=**httpOnly 쿠키**, `localStorage` 토큰 금지. 라우트 보호는 `middleware.ts` + 서버 재검사.
-- 알림=**SSE**(`/app/notification`). BFF가 스트림을 중계하고 토큰을 주입한다.
+- 알림=**SSE**. BFF(`/api/notifications/stream`)가 스트림을 중계하고 토큰을 주입한다.
+  ⚠️ **알림 화면은 없다**(팀 워크플로우) — 상단 배너로만 띄운다. 없앤 건 화면이지 스트림이 아니다.
 - 변경 결과 피드백=**토스트**(shadcn `sonner`, `<Toaster />`는 루트 레이아웃 1개). ❌폼 검증 오류(→필드 인라인)·파괴적 작업 확인(→Dialog)·페이지 전체 실패(→`error.tsx`). 토스트는 사라지므로 **보조**다.
 
 ## 요금제 — 유료 하나뿐 ⚠️

@@ -121,7 +121,7 @@ export const ACTION_STATUS = {
 export type ActionStatus = (typeof ACTION_STATUS)[keyof typeof ACTION_STATUS];
 
 export const ACTION_STATUS_LABEL: Record<ActionStatus, string> = {
-  TODO: "대기",
+  TODO: "할일",
   IN_PROGRESS: "진행중",
   DONE: "완료",
 };
@@ -184,7 +184,7 @@ export const isDelayed = (a: { status: ActionStatus; dueDate: string }) =>
 
 - **시맨틱:** 액센트 `#3B82F6` · 성공 `#22C55E` · 경고 `#F59E0B` · 에러 `#EF4444`
 - **포커스 링(`--ring`)은 먹색**이다. 색으로 알리는 건 **에러(빨강)뿐** — 나머지 상태는 명도·아이콘·문구로 구분한다(DECISIONS 2026-07-31).
-- **상태점:** 대기=회색 · 진행중=초록 · 완료=보라
+- **상태점:** 할일=회색 · 진행중=초록 · 완료=보라 · **지연=빨강**(마감일로 계산, 저장하지 않음)
 - `globals.css`에 CSS 변수로 정의하고 Tailwind는 그 변수를 참조한다. 컴포넌트에 생 hex 금지.
 - ⚠️ **다크 배경에 순검정(`#000`·`#0C0A09`)을 쓰지 않는다.** 흰 텍스트가 번져 보이고(halation) 층이 사라진다. 다크 최저값은 `#1A1715`.
 - **셸 표면:** 사이드바·상단바는 `--background` **한 색**, 본문은 같은 색 + `.bg-dot-grid`, 카드만 `--card`.
