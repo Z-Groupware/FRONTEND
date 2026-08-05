@@ -39,13 +39,20 @@ export function isDelayed(action: { status: ActionStatus; dueDate: string }): bo
 }
 
 /* ───────── 프로젝트 ───────── */
+/**
+ * 프로젝트 상태 — **액션과 같은 셋**이다(2026-08-05, BE enum 확정).
+ * ⚠️ `TODO`가 빠져 있었다. `/app/projects` 필터 탭이 할일·진행중·완료 셋인데
+ *    상태에 `TODO`가 없으면 첫 탭이 무엇을 거르는지 말할 수 없다.
+ */
 export const PROJECT_STATUS = {
+  TODO: "TODO",
   IN_PROGRESS: "IN_PROGRESS",
   DONE: "DONE",
 } as const;
 export type ProjectStatus = (typeof PROJECT_STATUS)[keyof typeof PROJECT_STATUS];
 
 export const PROJECT_STATUS_LABEL: Record<ProjectStatus, string> = {
+  TODO: "할일",
   IN_PROGRESS: "진행중",
   DONE: "완료",
 };
@@ -54,14 +61,15 @@ export const PROJECT_STATUS_LABEL: Record<ProjectStatus, string> = {
 export const MEETING_STATUS = {
   SCHEDULED: "SCHEDULED",
   IN_PROGRESS: "IN_PROGRESS",
-  DONE: "DONE",
+  /** ⚠️ `DONE`이 아니라 `COMPLETED`다 — BE enum 이름을 그대로 쓴다 */
+  COMPLETED: "COMPLETED",
 } as const;
 export type MeetingStatus = (typeof MEETING_STATUS)[keyof typeof MEETING_STATUS];
 
 export const MEETING_STATUS_LABEL: Record<MeetingStatus, string> = {
   SCHEDULED: "예정",
   IN_PROGRESS: "진행중",
-  DONE: "완료",
+  COMPLETED: "완료",
 };
 
 /** 캡처 세션 — 담당자만 조작 가능(권한 2축, lib/permission.ts) */
@@ -103,8 +111,16 @@ export const MEETING_INVITE_STATUS_LABEL: Record<MeetingInviteStatus, string> = 
 };
 
 /* ───────── 인수인계 ───────── */
+/**
+ * 인수인계 상태.
+ *
+ * ⚠️ **임시저장이 없다**(2026-08-05 확정). 생성 즉시 팀장에게 상신되고 작성자는 `WAITING`이 된다 —
+ *    그래서 `DRAFT`가 없다. 되돌릴 수 없는 흐름이라 생성 창에서 한 번 확인을 받는다.
+ * ⚠️ 승인이 **2단계**(팀장 중간 → 오너·Admin 최종)라 상태도 그만큼 필요하다.
+ *    BE 문서는 3개(`SUBMITTED`/`REASSIGNED`/`FINALIZED`)뿐이라 **반려와 중간 승인을 표현할 수 없다**
+ *    — BE에 요청한 상태다(§BE 요청).
+ */
 export const HANDOVER_STATUS = {
-  DRAFT: "DRAFT",
   SUBMITTED: "SUBMITTED",
   MID_APPROVED: "MID_APPROVED",
   FINAL_APPROVED: "FINAL_APPROVED",
@@ -113,7 +129,6 @@ export const HANDOVER_STATUS = {
 export type HandoverStatus = (typeof HANDOVER_STATUS)[keyof typeof HANDOVER_STATUS];
 
 export const HANDOVER_STATUS_LABEL: Record<HandoverStatus, string> = {
-  DRAFT: "작성 중",
   SUBMITTED: "전달 완료",
   MID_APPROVED: "중간 승인",
   FINAL_APPROVED: "최종 승인",
@@ -133,18 +148,26 @@ export const HANDOVER_TYPE_LABEL: Record<HandoverType, string> = {
 };
 
 /* ───────── 사원 · 역할 ───────── */
+/**
+ * 회원 상태 — **화면에 보이는 셋이 전부**다(2026-08-05 확정).
+ *
+ * ⚠️ `WAITING`은 "계정 발급 후 미로그인"이 아니라 **휴직·오프보딩을 신청하고 승인을 기다리는**
+ *    상태다. 이름만 보고 온보딩 대기로 읽으면 화면 분기가 틀린다.
+ * ⚠️ BE enum과 **이름·값이 같아야 한다**. `ON_LEAVE`는 BE가 소프트 딜리트용으로 남겨 둔 값이라
+ *    화면 상태로 쓰지 않는다.
+ */
 export const MEMBER_STATUS = {
   ACTIVE: "ACTIVE",
-  ON_LEAVE: "ON_LEAVE",
-  /** 계정은 발급됐으나 아직 로그인하지 않음 */
-  PENDING: "PENDING",
+  VACATION: "VACATION",
+  /** 휴직·오프보딩 신청 후 승인 대기 */
+  WAITING: "WAITING",
 } as const;
 export type MemberStatus = (typeof MEMBER_STATUS)[keyof typeof MEMBER_STATUS];
 
 export const MEMBER_STATUS_LABEL: Record<MemberStatus, string> = {
   ACTIVE: "재직",
-  ON_LEAVE: "휴직",
-  PENDING: "대기",
+  VACATION: "휴직",
+  WAITING: "대기",
 };
 
 /*
