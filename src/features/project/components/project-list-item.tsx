@@ -60,10 +60,7 @@ export function ProjectListItem({ project }: { project: ProjectListItemModel }) 
         <div className="flex shrink-0 items-center gap-4">
           <div className="flex items-center gap-2">
             <Progress value={percent} className="w-32" />
-            <span className="text-muted-foreground text-xs tabular-nums">
-              <span className="text-foreground font-medium">{percent}%</span> ({project.actionDone}/
-              {project.actionTotal})
-            </span>
+            <span className="text-foreground text-xs font-medium tabular-nums">{percent}%</span>
           </div>
 
           <span className="text-muted-foreground text-sm tabular-nums">{due}</span>
