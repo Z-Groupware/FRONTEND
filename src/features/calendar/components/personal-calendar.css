@@ -33,6 +33,11 @@
   border-color: var(--border);
 }
 
+/* 셀 배경이 투명이면 뒤의 점 그리드가 비쳐 보인다 — 카드처럼 떠 있는 면으로 채운다. */
+.rbc-day-bg {
+  background-color: var(--card);
+}
+
 .rbc-off-range-bg {
   background-color: var(--secondary);
 }
@@ -41,15 +46,49 @@
   color: color-mix(in srgb, var(--muted-foreground) 60%, transparent);
 }
 
+/*
+  ⚠️ `.rbc-today`는 `.rbc-day-bg`와 **같은 엘리먼트**에 붙는 클래스다 — 여기서 `transparent`를
+  주면 오늘 셀만 위 카드색이 지워져 투명해진다. 오늘도 다른 날과 **같은 카드색**을 쓰고,
+  구분은 날짜 숫자의 원으로만 한다(아래 참고). 셀 전체를 칠하던 파란 강조는 이렇게 없앤다.
+*/
 .rbc-today {
-  background-color: color-mix(in srgb, var(--primary) 8%, transparent);
+  background-color: var(--card);
 }
 
+/*
+  오늘 날짜 숫자 — 라이브러리 기본 굵기(`.rbc-date-cell.rbc-now { font-weight: bold }`)는 끄고,
+  숫자 자리에만 원 배경을 얹는다. 라이트=먹색 원, 다크=흰 원(`--foreground`가 이미 그렇게 뒤집힌다).
+*/
+.rbc-date-cell.rbc-now {
+  font-weight: normal;
+}
+
+.rbc-date-cell.rbc-now > span,
+.rbc-date-cell.rbc-now > button.rbc-button-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 9999px;
+  background-color: var(--foreground);
+  color: var(--background);
+}
+
+/*
+  텍스트 없이 색상 막대만 그린다 — 제목·태그는 오른쪽 상세조회 패널에서 본다
+  (`personal-calendar.tsx`의 `CalendarEventBar`, sr-only로만 이름을 남김).
+*/
 .rbc-event {
   border: none;
-  border-radius: var(--radius-sm);
-  padding: 2px 6px;
-  font-size: 12px;
+  border-radius: 4px;
+  min-height: 10px;
+  padding: 0;
+  font-size: 0;
+}
+
+.rbc-row-segment {
+  padding: 0 2px 4px;
 }
 
 .rbc-event.rbc-selected,

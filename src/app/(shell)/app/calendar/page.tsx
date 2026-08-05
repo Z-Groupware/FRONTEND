@@ -28,7 +28,7 @@ export default async function CalendarPage({ searchParams }: CalendarPageProps) 
   const events = await getMonthEvents(month);
 
   return (
-    <main className="min-h-0 flex-1 overflow-y-auto p-6 px-30">
+    <main className="min-h-0 flex-1 overflow-y-auto p-6">
       <div className="mx-auto flex max-w-[1440px] flex-col gap-4">
         <CalendarBoard
           key={format(month, "yyyy-MM")}
