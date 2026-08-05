@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 
 import { cn } from "@/lib/utils";
 
-import { DEFAULT_SCALE, parseScale, SCREEN_SCALES, shouldSuggestScale } from "../scale";
+import { DEFAULT_SCALE, parseScale, REFERENCE_WIDTH, SCREEN_SCALES, suggestScale } from "../scale";
 import {
   readScale,
   readViewport,
@@ -16,9 +16,11 @@ import {
 /**
  * 화면 배율 카드.
  *
- * ⚠️ **자동으로 안 바꾼다.** 넓은 화면을 배율 없이 쓰는 것으로 보이면 한 줄로 권하기만 한다 —
- *    27인치 모니터도 `dpr = 1`이라 노트북과 구분할 수 없어서, 임의로 확대하면 모니터 쓰는
- *    사람 화면이 우스꽝스러워진다(`scale.ts`).
+ * ⚠️ **자동으로 안 바꾼다.** 기준 폭에서 많이 벗어났으면 한 줄로 권하기만 한다 —
+ *    브라우저는 화면의 물리적 크기를 안 알려줘서 27인치 모니터와 노트북을 구분할 수 없고,
+ *    지금 배율을 일부러 고른 사람에게 강제로 바꾸면 서비스가 고장 난 것으로 보인다.
+ * ⚠️ **양쪽으로 권한다.** 화면이 좁으면 크게 보이고(OS 배율이 높다) 넓으면 작게 보인다 —
+ *    어느 쪽으로 어긋날지는 기기마다 다르다.
  * ⚠️ 값은 **이 기기에만** 남는다. 계정을 따라다니면 노트북과 모니터가 같은 배율이 된다.
  * ⚠️ `zoom`은 `<html>`에 건다. 본문에만 걸면 사이드바·상단바가 따로 놀고, `100dvh`를 쓰는
  *    화면들이 어긋난다.
@@ -37,14 +39,8 @@ export function ScreenScaleCard() {
   useEffect(() => subscribeViewport(() => setViewport(readViewport())), []);
 
   const scale = parseScale(stored);
-  const [pixelRatio = 0, width = 0] = viewport.split("|").map(Number);
-  const isSuggested =
-    viewport !== "" &&
-    shouldSuggestScale({
-      devicePixelRatio: pixelRatio,
-      viewportWidth: width,
-      hasChosen: stored !== null,
-    });
+  const [, width = 0] = viewport.split("|").map(Number);
+  const hint = suggestScale({ viewportWidth: width, hasChosen: stored !== null });
 
   /*
     ⚠️ **DOM을 맞추는 건 효과의 일이다.** 브라우저는 React 밖의 시스템이라, 고른 값이 바뀔 때마다
@@ -93,15 +89,36 @@ export function ScreenScaleCard() {
         ))}
       </div>
 
-      {isSuggested && (
+      {/*
+        ⚠️ **지금 폭을 적어 준다.** 두 기기가 다르게 보일 때, 이 숫자를 맞추면 같아진다 —
+           "작아 보인다"는 느낌만으로는 어느 쪽으로 얼마나 옮길지 알 수 없다.
+      */}
+      {width > 0 && (
+        <p className="text-muted-foreground/70 pt-4 text-[12px] leading-4 tabular-nums">
+          지금 화면 폭 {width}px · 설계 기준 {REFERENCE_WIDTH}px
+        </p>
+      )}
+
+      {hint !== "none" && (
         /*
-          ⚠️ **권하기만 한다.** 여기서 자동으로 바꾸면, 배율 100%를 일부러 골라 한 화면에
-             많이 띄우는 사람에게는 서비스가 고장 난 것으로 보인다.
+          ⚠️ **권하기만 한다.** 자동으로 바꾸면, 지금 배율을 일부러 고른 사람에게는 서비스가
+             고장 난 것으로 보인다.
           ⚠️ 색을 쓰지 않는다 — 잘못된 상태가 아니라 알려 주는 말이다(§디자인 토큰).
         */
-        <p className="border-border bg-secondary mt-5 rounded-lg border px-3.5 py-3 text-[12px] leading-[18px] break-keep">
-          화면은 넓은데 배율이 켜져 있지 않습니다. 글자가 작아 보이면{" "}
-          <span className="font-medium">200%</span>를 눌러 보세요.
+        <p className="border-border bg-secondary mt-4 rounded-lg border px-3.5 py-3 text-[12px] leading-[18px] break-keep">
+          {hint === "smaller" ? (
+            <>
+              화면이 기준보다 좁아 다른 기기보다 <span className="font-medium">크게</span> 보입니다.
+              <span className="font-medium"> 90%</span>나 <span className="font-medium">75%</span>를
+              눌러 보세요.
+            </>
+          ) : (
+            <>
+              화면이 기준보다 넓어 다른 기기보다 <span className="font-medium">작게</span> 보입니다.
+              <span className="font-medium"> 125%</span>나 <span className="font-medium">150%</span>
+              를 눌러 보세요.
+            </>
+          )}
         </p>
       )}
     </section>

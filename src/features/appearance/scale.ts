@@ -12,7 +12,14 @@
  *    같은 사람이 노트북과 모니터에서 다른 배율을 써야 한다.
  */
 
-export const SCREEN_SCALES = [100, 125, 150, 200] as const;
+/**
+ * 고를 수 있는 배율 — **줄이는 쪽과 키우는 쪽이 다 있어야 한다.**
+ *
+ * ⚠️ 처음에 100~200만 뒀는데 틀렸다. OS 배율이 높은 기기(예: 2880×1800을 250%로 쓰는 노트북)는
+ *    CSS 뷰포트가 1152라 맥북(1440)보다 **크게** 보인다 — 거기서는 줄여야 맞는다.
+ *    어느 쪽으로 어긋날지는 기기마다 다르므로 양쪽을 다 연다.
+ */
+export const SCREEN_SCALES = [75, 90, 100, 125, 150] as const;
 
 export type ScreenScale = (typeof SCREEN_SCALES)[number];
 
@@ -33,20 +40,28 @@ export function parseScale(raw: string | null): ScreenScale {
 }
 
 /**
- * 배율을 **제안**할 상황인가.
- *
- * ⚠️ 두 조건을 다 만족할 때만이다.
- *    ① `dpr === 1` — OS가 확대해 주고 있지 않다
- *    ② 넓은 CSS 뷰포트 — 고해상도 화면을 배율 없이 쓰고 있다는 신호
- * ⚠️ **이미 고른 사람에게는 안 띄운다.** 100%를 일부러 고른 사람에게 매번 권하면 잔소리다.
+ * 설계 기준 폭 — 화면들이 이 폭을 전제로 그려져 있다(§디자인 토큰: 1440 기준).
+ * 여기서 얼마나 벗어났는지가 곧 "다른 기기와 얼마나 다르게 보이나"다.
  */
-export function shouldSuggestScale(input: {
-  devicePixelRatio: number;
-  viewportWidth: number;
-  hasChosen: boolean;
-}): boolean {
-  if (input.hasChosen) return false;
-  return input.devicePixelRatio === 1 && input.viewportWidth >= 2400;
+export const REFERENCE_WIDTH = 1440;
+
+export type ScaleHint = "none" | "smaller" | "larger";
+
+/**
+ * 배율을 **어느 쪽으로** 권할지.
+ *
+ * ⚠️ 한 방향만 보면 안 된다. CSS 뷰포트가 기준보다 **좁으면 크게 보이고**(OS 배율이 높다)
+ *    **넓으면 작게 보인다**(배율이 없다) — 어느 쪽으로 어긋날지는 기기마다 다르다.
+ * ⚠️ **이미 고른 사람에게는 안 띄운다.** 일부러 고른 사람에게 매번 권하면 잔소리다.
+ * ⚠️ 문턱을 넉넉히 둔다(±25%). 1200~1800은 보통 화면이라 권할 일이 아니다 —
+ *    조금만 달라도 참견하면 대부분의 사람에게 잘못된 안내가 뜬다.
+ */
+export function suggestScale(input: { viewportWidth: number; hasChosen: boolean }): ScaleHint {
+  if (input.hasChosen || input.viewportWidth === 0) return "none";
+  // ⚠️ 경계를 포함한다. 2880을 250%로 쓰면 정확히 1152(= 1440 × 0.8)라 딱 걸린다
+  if (input.viewportWidth <= REFERENCE_WIDTH * 0.8) return "smaller";
+  if (input.viewportWidth > REFERENCE_WIDTH * 1.25) return "larger";
+  return "none";
 }
 
 /**
@@ -56,7 +71,10 @@ export function shouldSuggestScale(input: {
  *    화면이 통째로 튄다 — 랜딩 밝기가 이미 같은 방식으로 `<head>`에서 처리한다.
  * ⚠️ 저장소를 못 읽어도(사생활 모드·CSP) 화면은 산다. 기본값 100%로 남을 뿐이다.
  * ⚠️ 100%면 `zoom`을 **아예 안 건다.** 빈 값으로 두면 브라우저가 계산을 한 단계 덜 한다.
+ * ⚠️ 목록에 있는지를 `indexOf(s) >= 0`으로 본다. 전에는 `> 0`이었는데, 100%가 배열 첫
+ *    자리라 그걸로 "100%는 건너뛴다"까지 겸했다 — 줄이는 배율이 앞에 붙자 **75%가 통째로
+ *    무시됐다.** 두 판정을 섞어 쓰면 목록이 바뀔 때 조용히 틀린다.
  * ⚠️ 문자열로 넣는다. 브라우저는 숫자도 받아 주지만, 값을 다시 읽는 쪽(테스트 등)에서
  *    타입이 갈려 헷갈린다.
  */
-export const SCALE_BOOT_SCRIPT = `try{var s=Number(localStorage.getItem("${SCALE_STORAGE_KEY}"));if([${SCREEN_SCALES.join(",")}].indexOf(s)>0)document.documentElement.style.zoom=String(s/100)}catch(e){}`;
+export const SCALE_BOOT_SCRIPT = `try{var s=Number(localStorage.getItem("${SCALE_STORAGE_KEY}"));if(s!==${DEFAULT_SCALE}&&[${SCREEN_SCALES.join(",")}].indexOf(s)>=0)document.documentElement.style.zoom=String(s/100)}catch(e){}`;
