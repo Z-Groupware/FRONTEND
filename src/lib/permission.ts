@@ -81,6 +81,18 @@ export function canManageBilling(actor: Actor): boolean {
   return actor.role === ROLE.OWNER || isAdmin(actor);
 }
 
+/**
+ * 녹음 용량 관리 — OWNER이거나 Admin을 겸한 사람(팀 워크플로우).
+ *
+ * ⚠️ `canManageBilling`과 지금은 판정이 같지만 **함수를 따로 둔다.** 용량은 돈이 아니라
+ *    **데이터를 지우는 일**이라, 한쪽 정책이 바뀔 때 다른 쪽이 끌려가면 안 된다 —
+ *    `role >= X` 비교가 아니라 화면·액션 단위로 판정한다(CLAUDE.md §권한).
+ * ⚠️ 녹음 삭제는 되돌릴 수 없다 — **Server Action에서 다시 본다**.
+ */
+export function canManageStorage(actor: Actor): boolean {
+  return actor.role === ROLE.OWNER || isAdmin(actor);
+}
+
 /** 계정 발급 — Admin 겸직자만. OWNER는 발급 대상도 발급자도 아니다. */
 export function canIssueAccount(actor: Actor): boolean {
   return isAdmin(actor);

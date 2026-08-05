@@ -145,6 +145,53 @@
   --status-todo: #a8a29e;
   --status-progress: #22c55e;
   --status-done: #8b5cf6;
+  /* 태그 색 — **뜻이 없는 구분용**이다. 프로젝트 태그·프로필 아바타가 같이 쓴다.
+     ⚠️ 라이트·다크가 **다른 값**이다. 파스텔을 다크에 그대로 쓰면 칩만 형광등처럼 뜬다 —
+        다크는 원색을 카드(#242120) 위에 20%로 얹은 값이고 글자는 밝은 쪽을 쓴다.
+     ⚠️ 여기 없는 색(red·green·blue·amber·orange·violet·stone)은 **뜻이 이미 있다**
+        (에러·상태점·액센트·경고·Owner). 태그가 그 색을 쓰면 뜻이 있는 것처럼 읽힌다.
+     ⚠️ **순서를 바꾸지 않는다.** `lib/palette`가 이 순서로 색을 배정한다 — 바꾸면
+        기존 프로젝트·사람의 색이 전부 밀린다. 값만 손본다.
+     전부 WCAG AA(4.5:1) 통과. 최소 6.4:1 */
+  --tag-slate-bg: #f1f5f9;
+  --tag-slate-fg: #1e293b;
+  --tag-yellow-bg: #fef9c3;
+  --tag-yellow-fg: #854d0e;
+  --tag-lime-bg: #ecfccb;
+  --tag-lime-fg: #3f6212;
+  --tag-emerald-bg: #d1fae5;
+  --tag-emerald-fg: #065f46;
+  --tag-teal-bg: #ccfbf1;
+  --tag-teal-fg: #115e59;
+  --tag-cyan-bg: #cffafe;
+  --tag-cyan-fg: #155e75;
+  --tag-sky-bg: #e0f2fe;
+  --tag-sky-fg: #075985;
+  --tag-indigo-bg: #e0e7ff;
+  --tag-indigo-fg: #3730a3;
+  --tag-purple-bg: #f3e8ff;
+  --tag-purple-fg: #6b21a8;
+  --tag-fuchsia-bg: #fae8ff;
+  --tag-fuchsia-fg: #86198f;
+  --tag-pink-bg: #fce7f3;
+  --tag-pink-fg: #9d174d;
+  /* 태그 **원색** — 막대처럼 글자가 안 얹히는 자리에 쓴다.
+     ⚠️ **라이트·다크가 다른 값이다.** 처음엔 한 값으로 뒀는데, 막대 바탕(`--secondary`)이
+        라이트에서는 거의 흰색이고 다크에서는 어두워서 **한 색으로는 양쪽을 못 넘긴다** —
+        노랑·연두는 라이트에서 1.8:1로 거의 안 보였다.
+     ⚠️ 기준은 3:1이다(WCAG 1.4.11 비텍스트 대비). 글자가 안 얹히니 4.5:1까지는 필요 없다.
+        지금 값은 전부 4.7:1 이상이다. */
+  --tag-slate-solid: #475569;
+  --tag-yellow-solid: #a16207;
+  --tag-lime-solid: #4d7c0f;
+  --tag-emerald-solid: #047857;
+  --tag-teal-solid: #0f766e;
+  --tag-cyan-solid: #0e7490;
+  --tag-sky-solid: #0369a1;
+  --tag-indigo-solid: #4338ca;
+  --tag-purple-solid: #7e22ce;
+  --tag-fuchsia-solid: #a21caf;
+  --tag-pink-solid: #be185d;
   /* 랜딩 검정 섹션 — 로그인 전 화면이라 **테마와 무관하게 어둡다**(도움말 패널과 같은 규칙) */
   --landing-dark: #0a0a0a;
   --landing-dark-foreground: #ffffff;
@@ -214,6 +261,41 @@
   --status-todo: #8a827d;
   --status-progress: #22c55e;
   --status-done: #a78bfa;
+  /* 태그 색 — 라이트와 다른 값이다(위 주석 참고) */
+  --tag-slate-bg: #313235;
+  --tag-slate-fg: #cbd5e1;
+  --tag-yellow-bg: #4c3e1b;
+  --tag-yellow-fg: #fde047;
+  --tag-lime-bg: #37431e;
+  --tag-lime-fg: #bef264;
+  --tag-emerald-bg: #203f33;
+  --tag-emerald-fg: #6ee7b7;
+  --tag-teal-bg: #213f3b;
+  --tag-teal-fg: #5eead4;
+  --tag-cyan-bg: #1e3f44;
+  --tag-cyan-fg: #67e8f9;
+  --tag-sky-bg: #203b48;
+  --tag-sky-fg: #7dd3fc;
+  --tag-indigo-bg: #312f4a;
+  --tag-indigo-fg: #a5b4fc;
+  --tag-purple-bg: #3e2b4b;
+  --tag-purple-fg: #d8b4fe;
+  --tag-fuchsia-bg: #482849;
+  --tag-fuchsia-fg: #f0abfc;
+  --tag-pink-bg: #4c2938;
+  --tag-pink-fg: #f9a8d4;
+  /* 태그 원색 — 다크 바탕에서 보이는 값이다(라이트와 다르다, 위 주석 참고) */
+  --tag-slate-solid: #94a3b8;
+  --tag-yellow-solid: #facc15;
+  --tag-lime-solid: #a3e635;
+  --tag-emerald-solid: #34d399;
+  --tag-teal-solid: #2dd4bf;
+  --tag-cyan-solid: #22d3ee;
+  --tag-sky-solid: #38bdf8;
+  --tag-indigo-solid: #818cf8;
+  --tag-purple-solid: #c084fc;
+  --tag-fuchsia-solid: #e879f9;
+  --tag-pink-solid: #f472b6;
   /* 랜딩 검정 섹션은 다크에서도 같은 값이다 — 라이트/다크가 갈리면 랜딩 톤이 흔들린다 */
   --landing-dark: #0a0a0a;
   --landing-dark-foreground: #ffffff;
