@@ -84,3 +84,20 @@ export function formatElapsed(iso: string, today: string): string | null {
 
   return `${Math.floor(months / 12)}년 전`;
 }
+
+/** 요일 라벨 — `Date.getUTCDay()` 인덱스(0=일)와 짝. */
+const WEEKDAY_LABEL = ["일", "월", "화", "수", "목", "금", "토"] as const;
+
+/**
+ * `2026-09-05` → `9월 5일(토)`. 형식이 아니면 `null`.
+ *
+ * ⚠️ 요일도 `toLocaleDateString` 대신 `Date.UTC`로 구한다 — 로케일·시간대에 흔들리지 않게
+ *    (§렌더링: 서버·클라 표기가 갈리면 하이드레이션이 어긋난다). 카피 규칙 `8월 5일(수)`.
+ */
+export function formatMonthDayWeekday(iso: string): string | null {
+  const d = parseIsoDate(iso);
+  if (!d) return null;
+
+  const weekday = WEEKDAY_LABEL[new Date(Date.UTC(d.y, d.m - 1, d.d)).getUTCDay()] ?? "";
+  return `${d.m}월 ${d.d}일(${weekday})`;
+}

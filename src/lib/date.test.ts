@@ -1,4 +1,4 @@
-import { formatElapsed } from "./date";
+import { formatElapsed, formatMonthDayWeekday } from "./date";
 
 /**
  * ⚠️ `todayIso()`는 테스트하지 않는다 — 실제 시계를 읽는 함수라 시각을 고정하지 않으면
@@ -45,5 +45,21 @@ describe("formatElapsed", () => {
   it("형식이 아니면 null이다", () => {
     expect(formatElapsed("", TODAY)).toBeNull();
     expect(formatElapsed("어제", TODAY)).toBeNull();
+  });
+});
+
+describe("formatMonthDayWeekday", () => {
+  it("월·일·요일을 조립한다 — 2026-09-05는 토요일", () => {
+    expect(formatMonthDayWeekday("2026-09-05")).toBe("9월 5일(토)");
+    expect(formatMonthDayWeekday("2026-08-05")).toBe("8월 5일(수)");
+  });
+
+  it("앞자리 0을 붙이지 않는다", () => {
+    expect(formatMonthDayWeekday("2026-01-03")).toBe("1월 3일(토)");
+  });
+
+  it("형식이 아니면 null이다", () => {
+    expect(formatMonthDayWeekday("2026/09/05")).toBeNull();
+    expect(formatMonthDayWeekday("")).toBeNull();
   });
 });
