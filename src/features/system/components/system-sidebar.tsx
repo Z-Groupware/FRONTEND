@@ -80,7 +80,7 @@ export function SystemSidebar({ sections, account }: SystemSidebarProps) {
 
       {/* ⚠️ 높이·표식 크기는 역할 셸의 계정 줄과 같다. 다른 건 배지 대신 이메일이 오는 것뿐이다 */}
       <div className="border-border flex h-[49px] shrink-0 items-center gap-[7px] border-t px-[17.5px]">
-        <span className="bg-role-owner flex size-[21px] shrink-0 items-center justify-center rounded-full text-[10px] leading-none text-white">
+        <span className="bg-role-owner text-background flex size-[21px] shrink-0 items-center justify-center rounded-full text-[10px] leading-none">
           운
         </span>
         <div className="min-w-0 flex-1">

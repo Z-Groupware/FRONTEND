@@ -1,5 +1,4 @@
 import { ROLE, type Role, ROLE_LABEL } from "@/constants/role";
-import type { Actor } from "@/lib/permission";
 
 import { dashboardFor, navFor } from "../nav-config";
 import type { Viewer } from "../viewer";
@@ -115,7 +114,7 @@ function PreviewColumn({ item }: { item: PreviewCase }) {
       */}
       <div className="border-border overflow-hidden rounded-xl border">
         <RoleSidebar
-          sections={navFor(item.viewer as Actor)}
+          sections={navFor(item.viewer)}
           home={dashboardFor(item.viewer.role)}
           user={item.viewer}
         />

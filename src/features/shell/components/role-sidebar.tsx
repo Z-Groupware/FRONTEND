@@ -5,8 +5,9 @@ import { usePathname } from "next/navigation";
 import { toast } from "sonner";
 
 import { ZLogo } from "@/components/icons/z-logo";
-import { ROLE_LABEL } from "@/constants/domain";
+import { ROLE_BADGE_CLASS, ROLE_LABEL, ROLE_MARK_CLASS } from "@/constants/role";
 import { topicParticle } from "@/lib/korean";
+import { cn } from "@/lib/utils";
 
 import type { NavItem, NavSection } from "../nav";
 import type { Viewer } from "../viewer";
@@ -140,15 +141,37 @@ function SidebarLogo({ home }: { home: NavItem }) {
   );
 }
 
-/** 하단 계정 줄 — 이름 첫 글자 · 이름 · 역할 배지 */
+/**
+ * 하단 계정 줄 — 이름 첫 글자 · 이름 · 역할 배지.
+ *
+ * ⚠️ **색은 그 사람의 역할에서 온다.** 전에는 `bg-role-owner`가 박혀 있어서 팀장·사원으로
+ *    로그인해도 배지 글자만 바뀌고 색은 Owner였다 — 색으로 역할을 알리는 자리인데
+ *    색이 역할을 안 따라가면 배지가 거짓말을 한다.
+ */
 function AccountRow({ user }: { user: Viewer }) {
   return (
     <div className="border-border flex h-[49px] shrink-0 items-center gap-[7px] border-t px-[17.5px]">
-      <span className="bg-role-owner flex size-[21px] shrink-0 items-center justify-center rounded-full text-[10px] leading-none text-white">
+      {/*
+        ⚠️ 글자색은 `text-white`가 아니라 **`text-background`** 다. 역할 색은 테마에 따라
+           밝기가 뒤집혀서(라이트 `#c2410c` ↔ 다크 `#fb923c`), 흰 글자로 고정하면 다크에서
+           대비가 2.1~2.5:1까지 떨어진다 — 이름 첫 글자는 글자라 4.5:1이 필요하다.
+           `--background`를 쓰면 라이트에서 흰 글자, 다크에서 먹 글자가 되어 양쪽 다 5.2:1 위다.
+      */}
+      <span
+        className={cn(
+          ROLE_MARK_CLASS[user.role],
+          "text-background flex size-[21px] shrink-0 items-center justify-center rounded-full text-[10px] leading-none",
+        )}
+      >
         {user.name.slice(0, 1)}
       </span>
       <span className="min-w-0 flex-1 truncate text-xs leading-[18px]">{user.name}</span>
-      <span className="bg-role-owner-surface text-role-owner shrink-0 rounded px-[5.25px] py-[1.75px] text-[9px] leading-[14px]">
+      <span
+        className={cn(
+          ROLE_BADGE_CLASS[user.role],
+          "shrink-0 rounded px-[5.25px] py-[1.75px] text-[9px] leading-[14px]",
+        )}
+      >
         {ROLE_LABEL[user.role]}
       </span>
     </div>
