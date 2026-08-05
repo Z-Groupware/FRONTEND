@@ -12,6 +12,9 @@ export interface MemberAction {
   /** 자유 HEX(프로젝트 태그 색) */
   color: string;
   status: ActionStatus;
+  /** 작업 시작일 `YYYY-MM-DD` — 타임라인 기간 바의 왼쪽 끝. BE가 시작일+마감일을 함께 준다. */
+  startDate: string;
+  /** 마감일 `YYYY-MM-DD` — 기간 바의 오른쪽 끝. 임박·지연 상태는 이 값으로 계산한다. */
   dueDate: string;
 }
 
