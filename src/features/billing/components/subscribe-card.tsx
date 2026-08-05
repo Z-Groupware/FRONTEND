@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 import { confirmSubscriptionAction } from "../actions";
-import type { BillingConfig } from "../config";
+import type { BillingConfig } from "../types";
 import { CheckoutPanel } from "./checkout-panel";
 import { PaymentFailedDialog } from "./payment-failed-dialog";
 import { PlanSummaryCard } from "./plan-summary-card";

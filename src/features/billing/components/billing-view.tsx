@@ -9,7 +9,6 @@ import {
   setDefaultMethodAction,
   toggleCancelAction,
 } from "../actions";
-import type { BillingConfig } from "../config";
 import { requestCardAuth } from "../payment-method";
 import {
   type BillingOverview,
@@ -17,6 +16,7 @@ import {
   type PaymentMethod,
   SUBSCRIPTION_STATUS,
 } from "../subscription";
+import type { BillingConfig } from "../types";
 import { CancelSubscription } from "./cancel-subscription";
 import { PaymentHistoryPanel } from "./payment-history-panel";
 import { PaymentMethodsPanel } from "./payment-methods-panel";

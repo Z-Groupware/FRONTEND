@@ -3,9 +3,9 @@
 import type { LucideIcon } from "lucide-react";
 import { Check, HardDrive, Infinity as InfinityIcon, Sparkles } from "lucide-react";
 
-import type { BillingConfig } from "../config";
 import { CURRENT_PLAN, PLAN_UNLIMITED } from "../plans";
 import { formatGb, formatTokens, formatWon } from "../pricing";
+import type { BillingConfig } from "../types";
 
 /**
  * 플랜 한 장 — **파는 물건을 설명하는 카드.** 값은 전부 `BillingConfig`에서 읽는다.

@@ -1,6 +1,6 @@
-import type { BillingConfig } from "../config";
 import { formatGb, formatTokens, formatWon } from "../pricing";
 import type { Subscription } from "../subscription";
+import type { BillingConfig } from "../types";
 import { buildUsage, shouldWarnUsage, USAGE_WARN_RATIO, type UsageAxis } from "../usage";
 
 interface UsagePanelProps {

@@ -7,9 +7,9 @@ import type { Role } from "@/constants/role";
 import { roleHome } from "@/features/shell/home";
 import { cn } from "@/lib/utils";
 
-import type { BillingConfig } from "../config";
 import { PAYMENT_WIDTH } from "../layout";
 import { type Subscription, SUBSCRIPTION_STATUS } from "../subscription";
+import type { BillingConfig } from "../types";
 import { PaymentDoneDialog } from "./payment-done-dialog";
 import { SubscribeCard } from "./subscribe-card";
 

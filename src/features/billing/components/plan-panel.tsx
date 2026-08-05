@@ -1,6 +1,6 @@
-import type { BillingConfig } from "../config";
 import { formatWon } from "../pricing";
 import { canUseWorkspace, type Subscription, SUBSCRIPTION_STATUS_LABEL } from "../subscription";
+import type { BillingConfig } from "../types";
 import { UsagePanel } from "./usage-panel";
 
 interface PlanPanelProps {

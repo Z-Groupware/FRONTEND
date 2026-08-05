@@ -33,3 +33,35 @@ export interface Plan {
   /** 눈에 띄게 밀어주는 플랜인지 — 배지가 붙는다 */
   isRecommended?: boolean;
 }
+
+/**
+ * 요금 설정 — **BE가 내려주는 값**이다.
+ *
+ * ⚠️ **화면에도 상수 파일에도 숫자를 박지 않는다**(팀 확정 2026-08-04). 실측 전 가정값이라
+ *    바뀔 것이 확정돼 있고, 코드에 흩어 두면 바뀔 때마다 화면을 뒤져야 한다.
+ * ⚠️ 컴포넌트는 이 타입만 본다. 연동되면 `server.ts`의 `isMock` 분기만 실호출로 바꾼다
+ *    (CLAUDE.md §Mock 격리막).
+ *
+ * **과금 모델** — 좌석(인당×인원)이 아니라 **2축 사용량**이다.
+ *   기본료(월 정액) + 초과분
+ *   ① AI 토큰  ② 스토리지(음성 + 자막·요약)
+ * 기본료에 포함량이 딸려 오고, **넘긴 만큼만 금액으로 표기**한다.
+ * ⚠️ 순수 종량이 아니다 — 안 써도 기본료는 나간다.
+ */
+export interface BillingConfig {
+  /** 회사당 월 기본료(원). ⚠️ **인당이 아니다** — 인원은 과금과 무관하다 */
+  baseFee: number;
+  /** 기본료에 포함된 월 AI 토큰 */
+  includedTokens: number;
+  /** 기본료에 포함된 스토리지(GB) — 음성과 자막·요약을 합쳐서 센다 */
+  includedStorageGb: number;
+  /** 초과 토큰 1,000개당(원) */
+  overagePerThousandTokens: number;
+  /** 초과 스토리지 1GB·월당(원) */
+  overagePerGbMonth: number;
+  /**
+   * 기본료에 부가세가 포함돼 있는지.
+   * ⚠️ 경쟁사가 대부분 VAT 별도로 적어, 어느 쪽인지 밝히지 않으면 비교가 어긋난다.
+   */
+  isVatIncluded: boolean;
+}

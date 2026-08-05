@@ -2,13 +2,13 @@ import "server-only";
 
 import { isMock } from "@/mocks/config";
 
-import type { BillingConfig } from "./config";
 import {
   type BillingOverview,
   PAYMENT_STATUS,
   type Subscription,
   SUBSCRIPTION_STATUS,
 } from "./subscription";
+import type { BillingConfig } from "./types";
 import { PLAN } from "./types";
 
 /**

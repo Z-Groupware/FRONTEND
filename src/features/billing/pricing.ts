@@ -1,4 +1,4 @@
-import type { BillingConfig } from "./config";
+import type { BillingConfig } from "./types";
 
 /**
  * 금액 계산 — **기본료 + 초과분**.
