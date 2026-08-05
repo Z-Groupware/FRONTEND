@@ -106,7 +106,7 @@ export function LegalDialog({ doc, children }: LegalDialogProps) {
               observer.observe(node);
               return () => observer.disconnect();
             }}
-            className="scrollbar-hidden focus-visible:ring-ring h-full overflow-y-auto px-1 pt-4 pb-9 focus-visible:ring-2 focus-visible:outline-hidden"
+            className="focus-visible:ring-ring h-full overflow-y-auto px-1 pt-4 pb-9 focus-visible:ring-2 focus-visible:outline-hidden"
           >
             {doc === "terms" ? <TermsContent /> : <PrivacyContent />}
           </div>

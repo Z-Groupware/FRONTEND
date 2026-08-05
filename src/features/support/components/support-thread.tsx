@@ -19,8 +19,8 @@ interface SupportThreadProps {
  * 주고받은 내용.
  *
  * ⚠️ `role="log"` — 답이 새로 붙는 걸 스크린 리더가 따라 읽는다.
- * ⚠️ 스크롤 막대는 감춘다(`scrollbar-hidden`) — 창 틀이 이미 경계를 말해 준다.
- *    **스크롤 자체는 살아 있다.** 막대만 지우는 것이라 휠·트랙패드·키보드 모두 그대로다.
+ * ⚠️ 스크롤 막대는 **사이트 전체에서 감춘다**(`globals.css`) — 여기서 따로 붙이지 않는다.
+ *    막대만 지우는 것이라 휠·트랙패드·키보드는 그대로다.
  */
 export function SupportThread({ turns, onPickCategory, onPickEntry }: SupportThreadProps) {
   const boxRef = useRef<HTMLDivElement>(null);
@@ -46,7 +46,7 @@ export function SupportThread({ turns, onPickCategory, onPickEntry }: SupportThr
          `tabIndex`가 없으면 키보드만 쓰는 사람은 위로 올라간 답을 아예 못 읽는다(§a11y) */
       tabIndex={0}
       ref={boxRef}
-      className="scrollbar-hidden flex flex-1 flex-col overflow-y-auto p-4"
+      className="flex flex-1 flex-col overflow-y-auto p-4"
     >
       {turns.length === 1 && <Greeting />}
 

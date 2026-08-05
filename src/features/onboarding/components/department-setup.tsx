@@ -92,7 +92,7 @@ export function DepartmentSetup({
           </header>
 
           {/* 스크롤바는 숨긴다(스크롤 자체는 된다) */}
-          <div className="flex-1 [scrollbar-width:none] overflow-auto overscroll-contain px-4 pt-4 pb-3 [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+          <div className="flex-1 overflow-auto overscroll-contain px-4 pt-4 pb-3">
             {tree.departments.length === 0 ? (
               <p className="text-muted-foreground/70 py-12 text-center text-[13px]">
                 아래에서 첫 부서를 추가해 주세요

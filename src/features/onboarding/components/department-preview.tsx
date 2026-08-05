@@ -22,7 +22,7 @@ export function DepartmentPreview({ departments }: { departments: DepartmentNode
     // 남는 세로 공간을 채운다. 부서가 많아지면 안에서만 스크롤한다(스크롤바 숨김)
     <ul
       ref={listRef}
-      className="border-border bg-background/50 flex min-h-20 flex-1 [scrollbar-width:none] flex-col gap-1.5 overflow-auto overscroll-contain rounded-lg border p-3 [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+      className="border-border bg-background/50 flex min-h-20 flex-1 flex-col gap-1.5 overflow-auto overscroll-contain rounded-lg border p-3"
     >
       {rows.map(({ id, name, depth }) => (
         <li
