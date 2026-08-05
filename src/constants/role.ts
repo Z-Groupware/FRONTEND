@@ -64,3 +64,28 @@ export const ASSIGNABLE_ROLES = [ROLE.OWNER, ROLE.LEADER, ROLE.MEMBER] as const;
  *    한 사람이 Leader이면서 Admin일 수 있고, 계정을 나눠 쓰지 않는다.
  */
 export const POSITION_ROLES = [ROLE.LEADER, ROLE.MEMBER] as const;
+
+/**
+ * 역할 배지 색 — **토큰 클래스만** 담는다(§디자인 토큰: 하드코딩 금지).
+ *
+ * ⚠️ 화면마다 이 맵을 다시 적지 않는다. 전에는 사이드바 계정 줄이 `bg-role-owner`를
+ *    통째로 박아 두어, 팀장·사원으로 로그인해도 배지 글자만 바뀌고 **색은 Owner**였다 —
+ *    색으로 역할을 알리는 자리인데 색이 역할을 안 따라갔다.
+ * ⚠️ `SYSTEM`은 자기 색이 없다. 기업 화면의 역할이 아니라 **회색(=member)** 을 그대로 쓴다 —
+ *    없는 토큰을 지어내는 것보다, 눈에 띄지 않는 게 맞는 자리다.
+ * ⚠️ 클래스는 **문자열 그대로** 적는다. 조각을 이어 만들면 Tailwind가 못 찾아 색이 안 나온다.
+ */
+export const ROLE_BADGE_CLASS: Record<Role, string> = {
+  OWNER: "bg-role-owner-surface text-role-owner",
+  LEADER: "bg-role-leader-surface text-role-leader",
+  MEMBER: "bg-role-member-surface text-role-member",
+  SYSTEM: "bg-role-member-surface text-role-member",
+};
+
+/** 이름 첫 글자를 담는 동그라미 — 배지와 같은 계열의 **진한 쪽**을 쓴다 */
+export const ROLE_MARK_CLASS: Record<Role, string> = {
+  OWNER: "bg-role-owner",
+  LEADER: "bg-role-leader",
+  MEMBER: "bg-role-member",
+  SYSTEM: "bg-role-member",
+};
