@@ -12,6 +12,7 @@ import { type Subscription, SUBSCRIPTION_STATUS } from "../subscription";
 import type { BillingConfig } from "../types";
 import { PaymentDoneDialog } from "./payment-done-dialog";
 import { SubscribeCard } from "./subscribe-card";
+import { SubscriptionBlockedDialog } from "./subscription-blocked-dialog";
 
 interface SubscriptionGateProps {
   config: BillingConfig;
@@ -29,8 +30,9 @@ interface SubscriptionGateProps {
  *    안 눌리는지 알 수 없다. 온보딩 4단계처럼 껍데기를 벗기고 결제 칸만 남긴다.
  * ⚠️ 결제 칸은 온보딩·구독 관리와 **같은 것**(`SubscribeCard`)을 쓴다. 돈을 내는 자리가
  *    화면마다 다르게 생기면 같은 서비스로 안 읽힌다(§컴포넌트 위생).
- * ⚠️ **결제 권한이 없는 사람에게는 결제 칸을 보여주지 않는다.** 눌러도 못 하는 버튼을 주는 건
- *    안내가 아니라 막다른 길이다 — 누구에게 말해야 하는지를 적는다(§정직성).
+ * ⚠️ **결제 권한이 없는 사람에게는 이 화면을 아예 안 준다.** 눌러도 못 하는 버튼은 물론이고,
+ *    결제하라는 안내 화면조차 그 사람에게는 할 일이 없는 화면이다 —
+ *    공통 결과 창(`SubscriptionBlockedDialog`)으로 막고 끝낸다(§정직성).
  * ⚠️ 결제를 마치면 **`/billing/checkout`과 같은 완료 창**(`PaymentDoneDialog`)이 뜬다.
  *    온보딩 완료 화면은 못 쓴다 — 거기는 부서·직급·초대 수를 요약하는 자리라, 이미 다 만들어
  *    놓고 결제만 끊긴 회사에게는 맞지 않는 말이다.
@@ -40,6 +42,20 @@ interface SubscriptionGateProps {
 export function SubscriptionGate({ config, status, role, canManage }: SubscriptionGateProps) {
   const [isDone, setIsDone] = useState(false);
   const isUnpaid = status === SUBSCRIPTION_STATUS.UNPAID;
+
+  /*
+    결제할 수 없는 사람 — **창으로 막는다.** 뒤에는 브랜드 바만 남긴다.
+    ⚠️ 결제 칸을 감춘 화면을 대신 보여주지 않는다. 제목·안내·카드가 전부 "결제해라"는 말인데
+       정작 그럴 수 없는 사람이라, 읽을수록 무엇을 하라는 건지 알 수 없어진다.
+  */
+  if (!canManage) {
+    return (
+      <div className="bg-background bg-dot-grid flex min-h-dvh flex-col">
+        <BrandBar />
+        <SubscriptionBlockedDialog status={status} />
+      </div>
+    );
+  }
 
   return (
     <div className="bg-background bg-dot-grid flex min-h-dvh flex-col">
@@ -64,24 +80,11 @@ export function SubscriptionGate({ config, status, role, canManage }: Subscripti
                  지금 말할 수 있는 건 "결제해야 다시 열린다"까지다.
             */}
             <p className="text-muted-foreground text-[13px] leading-5 break-keep">
-              {canManage
-                ? "결제를 마치면 워크스페이스가 다시 열립니다."
-                : "대표 또는 Admin 권한을 가진 분에게 결제를 요청해 주세요."}
+              결제를 마치면 워크스페이스가 다시 열립니다.
             </p>
           </div>
 
-          {canManage ? (
-            <SubscribeCard config={config} onSubscribe={() => setIsDone(true)} />
-          ) : (
-            /*
-              권한이 없는 사람 — 결제 칸 대신 **누구에게 말해야 하는지**를 준다.
-              ⚠️ 담당자 이름·연락처를 적고 싶지만 세션이 없어 모른다. 지어내지 않는다.
-            */
-            <p className="border-border bg-card text-muted-foreground rounded-2xl border p-7 text-[13px] leading-[21px] break-keep">
-              결제는 대표 또는 Admin 권한을 가진 분만 할 수 있습니다. 결제가 끝나면 이 화면 없이
-              바로 들어올 수 있습니다.
-            </p>
-          )}
+          <SubscribeCard config={config} onSubscribe={() => setIsDone(true)} />
         </div>
       </main>
 
