@@ -12,7 +12,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { DEFAULT_PROJECT_SORT, PROJECT_SORT, PROJECT_SORT_LABEL } from "@/features/project/lib";
+import { DEFAULT_PROJECT_SORT, PROJECT_SORT, PROJECT_SORT_LABEL } from "@/constants/domain";
+import { parseProjectSort } from "@/features/project/lib";
 
 const SORT_OPTIONS = Object.values(PROJECT_SORT);
 
@@ -56,9 +57,10 @@ export function ProjectToolbar() {
 
       <Select
         items={PROJECT_SORT_LABEL}
-        value={searchParams.get("sort") ?? DEFAULT_PROJECT_SORT}
+        value={parseProjectSort(searchParams.get("sort") ?? undefined)}
         onValueChange={(value) =>
-          pushWith({ sort: value === DEFAULT_PROJECT_SORT ? "" : (value ?? "") })
+          // 검색어(q)도 같이 실어 보낸다 — 입력 중(미제출) 검색어가 정렬 바꿀 때 날아가지 않게
+          pushWith({ q: keyword, sort: value === DEFAULT_PROJECT_SORT ? "" : (value ?? "") })
         }
       >
         <SelectTrigger aria-label="정렬 기준" className="w-36">

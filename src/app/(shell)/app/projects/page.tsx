@@ -17,17 +17,23 @@ export const metadata: Metadata = {
 };
 
 interface ProjectsPageProps {
-  searchParams: Promise<{ status?: string; q?: string; sort?: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}
+
+/** 같은 키가 여러 번 오면(`?q=a&q=b`) 첫 값만 쓴다 — 파서·trim이 배열을 못 받는다. */
+function first(value: string | string[] | undefined): string | undefined {
+  return Array.isArray(value) ? value[0] : value;
 }
 
 export default async function ProjectsPage({ searchParams }: ProjectsPageProps) {
-  const { status, q, sort } = await searchParams;
-  const activeStatus = parseProjectStatus(status);
-  const activeSort = parseProjectSort(sort);
+  const params = await searchParams;
+  const keyword = first(params.q);
+  const activeStatus = parseProjectStatus(first(params.status));
+  const activeSort = parseProjectSort(first(params.sort));
 
   const [projects, counts, viewer] = await Promise.all([
-    getProjectList({ status: activeStatus, keyword: q, sort: activeSort }),
-    getProjectStatusCounts(q),
+    getProjectList({ status: activeStatus, keyword, sort: activeSort }),
+    getProjectStatusCounts(keyword),
     getViewer(),
   ]);
 
@@ -36,7 +42,12 @@ export default async function ProjectsPage({ searchParams }: ProjectsPageProps) 
       <div className="mx-auto flex w-full max-w-[1080px] flex-col gap-4">
         {/* 상단바엔 버튼을 두지 않는다(팀 규칙) — 생성 버튼은 본문 안, Owner 전용 */}
         <div className="flex items-center justify-between gap-4">
-          <ProjectFilterTabs active={activeStatus} counts={counts} keyword={q} sort={activeSort} />
+          <ProjectFilterTabs
+            active={activeStatus}
+            counts={counts}
+            keyword={keyword}
+            sort={activeSort}
+          />
           {canCreateProject(viewer) && (
             <Link
               href="/app/projects/new"
@@ -58,7 +69,7 @@ export default async function ProjectsPage({ searchParams }: ProjectsPageProps) 
         <section className="border-border bg-card overflow-hidden rounded-xl border">
           {projects.length === 0 ? (
             <p className="text-muted-foreground flex min-h-[360px] items-center justify-center px-4 text-sm">
-              {q?.trim() ? "검색 결과가 없습니다." : "해당 상태의 프로젝트가 없습니다."}
+              {keyword?.trim() ? "검색 결과가 없습니다." : "해당 상태의 프로젝트가 없습니다."}
             </p>
           ) : (
             <ul className="divide-border divide-y">

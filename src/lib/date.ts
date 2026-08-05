@@ -98,6 +98,16 @@ export function formatMonthDayWeekday(iso: string): string | null {
   const d = parseIsoDate(iso);
   if (!d) return null;
 
-  const weekday = WEEKDAY_LABEL[new Date(Date.UTC(d.y, d.m - 1, d.d)).getUTCDay()] ?? "";
+  const date = new Date(Date.UTC(d.y, d.m - 1, d.d));
+  // `2026-02-30`처럼 형식은 맞지만 없는 날짜는 Date가 다음 달로 굴러간다 — 되돌려 확인해 걸러낸다
+  if (
+    date.getUTCFullYear() !== d.y ||
+    date.getUTCMonth() !== d.m - 1 ||
+    date.getUTCDate() !== d.d
+  ) {
+    return null;
+  }
+
+  const weekday = WEEKDAY_LABEL[date.getUTCDay()] ?? "";
   return `${d.m}월 ${d.d}일(${weekday})`;
 }

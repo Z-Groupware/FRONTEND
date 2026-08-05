@@ -62,4 +62,9 @@ describe("formatMonthDayWeekday", () => {
     expect(formatMonthDayWeekday("2026/09/05")).toBeNull();
     expect(formatMonthDayWeekday("")).toBeNull();
   });
+
+  it("형식은 맞지만 실재하지 않는 날짜는 null이다", () => {
+    expect(formatMonthDayWeekday("2026-02-30")).toBeNull();
+    expect(formatMonthDayWeekday("2026-02-29")).toBeNull(); // 2026은 평년
+  });
 });

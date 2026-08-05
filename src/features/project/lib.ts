@@ -1,4 +1,11 @@
-import { PROJECT_STATUS, PROJECT_STATUS_LABEL, type ProjectStatus } from "@/constants/domain";
+import {
+  DEFAULT_PROJECT_SORT,
+  PROJECT_SORT,
+  PROJECT_STATUS,
+  PROJECT_STATUS_LABEL,
+  type ProjectSort,
+  type ProjectStatus,
+} from "@/constants/domain";
 
 import type { ProjectListItem } from "./types";
 
@@ -14,20 +21,6 @@ export const DEFAULT_PROJECT_STATUS: ProjectStatus = PROJECT_STATUS.IN_PROGRESS;
 
 /** 담당 부서 라벨을 몇 개까지 노출하는지 — 나머지는 `+N`. */
 export const MAX_VISIBLE_DEPARTMENTS = 2;
-
-/** 정렬 기준 — 마감 임박순이 기본(스펙). '마감 늦은순'은 임박순과 결이 겹쳐 두지 않는다. */
-export const PROJECT_SORT = {
-  DUE_ASC: "DUE_ASC",
-  NAME: "NAME",
-} as const;
-export type ProjectSort = (typeof PROJECT_SORT)[keyof typeof PROJECT_SORT];
-
-export const PROJECT_SORT_LABEL: Record<ProjectSort, string> = {
-  DUE_ASC: "마감 임박순",
-  NAME: "이름순",
-};
-
-export const DEFAULT_PROJECT_SORT: ProjectSort = PROJECT_SORT.DUE_ASC;
 
 /** URL의 `?status=` 값을 안전하게 상태로 — 모르는 값이면 기본 탭. */
 export function parseProjectStatus(value: string | undefined): ProjectStatus {

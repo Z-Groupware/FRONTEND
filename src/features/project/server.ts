@@ -1,7 +1,7 @@
-import type { ProjectStatus } from "@/constants/domain";
+import { DEFAULT_PROJECT_SORT, type ProjectSort, type ProjectStatus } from "@/constants/domain";
 import { isMock } from "@/mocks/config";
 
-import { DEFAULT_PROJECT_SORT, type ProjectSort, sortProjects } from "./lib";
+import { sortProjects } from "./lib";
 import { TOP_LEVEL_PROJECTS } from "./mock/projects";
 import type { ProjectListItem } from "./types";
 

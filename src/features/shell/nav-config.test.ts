@@ -178,6 +178,7 @@ describe("화면이 있으면 자동으로 이어진다", () => {
     ["/owner", "대시보드"],
     ["/team", "대시보드"],
     ["/my", "대시보드"],
+    ["/app/projects", "프로젝트"],
     ["/app/calendar", "캘린더"],
     ["/app/notice", "공지"],
     ["/app/me", "마이페이지"],
@@ -191,7 +192,6 @@ describe("화면이 있으면 자동으로 이어진다", () => {
   });
 
   it.each([
-    ["/app/projects", "프로젝트"],
     ["/app/meeting", "회의"],
     ["/manage/members", "사원 관리"],
     ["/owner/setting", "기업 설정"],

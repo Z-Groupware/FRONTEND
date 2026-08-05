@@ -1,12 +1,10 @@
-import { PROJECT_STATUS } from "@/constants/domain";
+import { DEFAULT_PROJECT_SORT, PROJECT_SORT, PROJECT_STATUS } from "@/constants/domain";
 
 import {
-  DEFAULT_PROJECT_SORT,
   DEFAULT_PROJECT_STATUS,
   getProgressPercent,
   parseProjectSort,
   parseProjectStatus,
-  PROJECT_SORT,
   sortProjects,
   splitDepartments,
 } from "./lib";

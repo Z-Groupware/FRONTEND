@@ -1,11 +1,7 @@
 import Link from "next/link";
 
-import type { ProjectStatus } from "@/constants/domain";
-import {
-  DEFAULT_PROJECT_SORT,
-  PROJECT_FILTER_TABS,
-  type ProjectSort,
-} from "@/features/project/lib";
+import { DEFAULT_PROJECT_SORT, type ProjectSort, type ProjectStatus } from "@/constants/domain";
+import { PROJECT_FILTER_TABS } from "@/features/project/lib";
 import { cn } from "@/lib/utils";
 
 interface ProjectFilterTabsProps {
@@ -30,15 +26,14 @@ export function ProjectFilterTabs({ active, counts, keyword, sort }: ProjectFilt
   };
 
   return (
-    <div role="tablist" aria-label="프로젝트 상태 필터" className="flex gap-1">
+    <nav aria-label="프로젝트 상태 필터" className="flex gap-1">
       {PROJECT_FILTER_TABS.map((tab) => {
         const selected = tab.status === active;
         return (
           <Link
             key={tab.status}
             href={hrefFor(tab.status)}
-            role="tab"
-            aria-selected={selected}
+            aria-current={selected ? "page" : undefined}
             className={cn(
               "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors",
               selected
@@ -58,6 +53,6 @@ export function ProjectFilterTabs({ active, counts, keyword, sort }: ProjectFilt
           </Link>
         );
       })}
-    </div>
+    </nav>
   );
 }
