@@ -2,7 +2,9 @@
 
 import { endOfDay, isSameMonth, parse, startOfDay, startOfMonth } from "date-fns";
 import { useMemo, useState } from "react";
+import { toast } from "sonner";
 
+import { toggleTodoCompletionAction } from "../actions";
 import { getCalendarHeight } from "../calendar-height";
 import type { PersonalCalendarEvent } from "../types";
 import { AddTodoDialog } from "./add-todo-dialog";
@@ -59,6 +61,28 @@ export function CalendarBoard({ initialEvents, month }: CalendarBoardProps) {
 
   const calendarHeight = useMemo(() => getCalendarHeight(parseMonth(month)), [month]);
 
+  /**
+   * 완료 토글 — 개인 Todo만 다룬다(개인 액션은 다른 화면에서 처리, `calendar-event-list-item.tsx`
+   * 가 애초에 액션엔 체크박스를 안 준다). 먼저 화면에 반영하고 서버 액션을 부른 뒤, 실패하면
+   * 되돌리고 토스트로 알린다.
+   */
+  function handleToggleCompletion(id: string) {
+    setEvents((prev) =>
+      prev.map((event) =>
+        event.id === id ? { ...event, isCompleted: !event.isCompleted } : event,
+      ),
+    );
+
+    toggleTodoCompletionAction(id).catch(() => {
+      setEvents((prev) =>
+        prev.map((event) =>
+          event.id === id ? { ...event, isCompleted: !event.isCompleted } : event,
+        ),
+      );
+      toast.error("완료 처리에 실패했어요");
+    });
+  }
+
   return (
     <div className="flex items-stretch gap-6" style={{ height: calendarHeight }}>
       <div className="min-w-0 flex-1">
@@ -75,7 +99,11 @@ export function CalendarBoard({ initialEvents, month }: CalendarBoardProps) {
         />
       </div>
 
-      <CalendarDayDetailPanel selectedDate={selectedDate} events={dayEvents} />
+      <CalendarDayDetailPanel
+        selectedDate={selectedDate}
+        events={dayEvents}
+        onToggleCompletion={handleToggleCompletion}
+      />
     </div>
   );
 }
