@@ -76,30 +76,20 @@ export function ProjectStorageTable({
         <div className="border-border overflow-x-auto border-t">
           <table className="w-full min-w-[760px] table-fixed text-[13px]">
             {/*
-              ⚠️ 열 폭을 **여기 한 곳에서** 정한다. 내용에 맡기면 프로젝트 이름 길이에 따라
-                 열이 좌우로 흔들려 머리와 칸의 세로축이 어긋난다 — 다섯 줄을 세로로 훑는 표라
-                 축이 흔들리면 비교가 안 된다.
+              ⚠️ 열 폭을 **비율(%)로** 준다. px로 고정하면 남는 폭을 첫 열(프로젝트)이 통째로
+                 먹어서, 넓은 화면에서는 이름 왼쪽만 텅 비고 나머지 값이 오른쪽에 구겨진다 —
+                 비율이면 화면이 넓어질 때 모든 열이 같이 늘어난다.
               ⚠️ `table-fixed`가 있어야 이 값이 실제로 먹는다. 없으면 브라우저가 내용을 보고
-                 다시 계산한다.
-            */}
-            {/*
-              ⚠️ 고정 열을 **꼭 필요한 만큼만** 준다. 전에는 여섯 열이 744px을 먹어서
-                 1280 화면에서 프로젝트 열에 250px밖에 안 남았고, 이름이 두 글자 만에 잘렸다 —
-                 목록에서 사람이 가장 먼저 찾는 열이 가장 좁았다.
-              ⚠️ 좁아지면 `min-w`까지 줄었다가 가로로 스크롤한다(§레이아웃).
+                 다시 계산한다. 좁아지면 `min-w`까지 줄었다가 가로로 스크롤한다.
             */}
             <colgroup>
-              <col />
-              <col className="w-[92px]" />
-              <col className="w-[84px]" />
-              <col className="w-[150px]" />
-              <col className="w-[92px]" />
-              <col className="w-[128px]" />
-              {/*
-                ⚠️ 지우기 열은 **아이콘(32px)에 오른쪽 여백을 더해** 잡는다. 아이콘을 표
-                   맨 끝에 붙이면 카드 모서리에 닿아 밀려난 것처럼 보인다 — 안쪽으로 당긴다.
-              */}
-              <col className="w-[76px]" />
+              <col className="w-[26%]" />
+              <col className="w-[11%]" />
+              <col className="w-[10%]" />
+              <col className="w-[19%]" />
+              <col className="w-[11%]" />
+              <col className="w-[15%]" />
+              <col className="w-[8%]" />
             </colgroup>
             <thead>
               {/*

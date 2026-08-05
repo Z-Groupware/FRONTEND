@@ -11,6 +11,8 @@ import type { StorageTotals } from "../storage";
  *    (§디자인 토큰).
  * ⚠️ **그림은 보조다.** 정확한 값은 옆의 숫자가 말하고 링은 `aria-hidden`이다 —
  *    링만으로 값을 읽히려 하면 스크린 리더에서 사라진다.
+ * ⚠️ **끝을 둥글게 깎지 않는다**(`strokeLinecap`). 둥근 끝은 선 굵기의 절반(6px)만큼
+ *    양끝으로 삐져나와, 69.8%인 조각이 73%처럼 보이고 뒤 조각을 덮는다 — 눈금이 안 맞는다.
  */
 export function StorageGauge({ totals }: { totals: StorageTotals }) {
   const isOver = totals.overageGb > 0;
@@ -31,7 +33,7 @@ export function StorageGauge({ totals }: { totals: StorageTotals }) {
   const CIRCUMFERENCE = 2 * Math.PI * 52;
 
   return (
-    <svg viewBox="0 0 120 120" className="size-[132px] shrink-0 -rotate-90" aria-hidden>
+    <svg viewBox="0 0 120 120" className="size-[112px] shrink-0 -rotate-90" aria-hidden>
       {/* 남은 자리 — 링의 바탕 */}
       <circle cx="60" cy="60" r="52" fill="none" strokeWidth="12" className="stroke-secondary" />
 
@@ -53,7 +55,6 @@ export function StorageGauge({ totals }: { totals: StorageTotals }) {
         r="52"
         fill="none"
         strokeWidth="12"
-        strokeLinecap="round"
         strokeDasharray={`${voiceRatio * CIRCUMFERENCE} ${CIRCUMFERENCE}`}
         className={isOver ? "stroke-destructive" : "stroke-foreground"}
       />
