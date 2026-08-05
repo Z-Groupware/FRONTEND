@@ -61,10 +61,14 @@ export function SystemSidebar({ sections, account }: SystemSidebarProps) {
       <nav className="flex-1 overflow-y-auto p-[7px]">
         {sections.map((section, index) => (
           <div key={section.title ?? "primary"} className={index > 0 ? "pt-2.5" : undefined}>
+            {/* ⚠️ 구분선까지 `RoleSidebar`와 같다 — 하나만 빠지면 두 셸이 다르게 생긴다 */}
             {section.title && (
-              <p className="text-muted-foreground/80 px-[10.5px] pt-3.5 pb-[5.25px] text-[11px] leading-4 tracking-[0.275px]">
-                {section.title}
-              </p>
+              <>
+                <div className="border-border/70 mx-[10.5px] border-t" />
+                <p className="text-muted-foreground/80 px-[10.5px] pt-3.5 pb-[5.25px] text-[11px] leading-4 tracking-[0.275px]">
+                  {section.title}
+                </p>
+              </>
             )}
 
             <ul className="flex flex-col gap-[1.75px]">
