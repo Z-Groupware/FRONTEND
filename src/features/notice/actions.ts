@@ -7,7 +7,12 @@ import { getMockActor } from "@/lib/mock-actor";
 import { canManageNotice } from "@/lib/permission";
 import { isMock } from "@/mocks/config";
 
-import { addMockNotice, markMockNoticeRead, updateMockNotice } from "./mock/notices";
+import {
+  addMockNotice,
+  deleteMockNotice,
+  markMockNoticeRead,
+  updateMockNotice,
+} from "./mock/notices";
 import type { NoticeDraft, NoticeFormErrors } from "./types";
 import { validateNoticeDraft } from "./validate";
 
@@ -95,4 +100,27 @@ export async function updateNoticeAction(
   revalidatePath(LIST_PATH);
   revalidatePath(`${LIST_PATH}/${id}`);
   redirect(`${LIST_PATH}/${id}`);
+}
+
+/**
+ * 공지 삭제 — 격리막(CLAUDE.md §Mock 격리막).
+ * ⚠️ 되돌릴 수 없는 조작이라 화면(`NoticeDeleteButton`)에서 확인 Dialog를 먼저 띄운 뒤에만 이 폼이
+ *    제출된다(§토스트: 파괴적 작업은 Dialog). 여기서도 **권한을 다시 본다**(§권한: 서버 재검사).
+ */
+export async function deleteNoticeAction(formData: FormData): Promise<void> {
+  if (!canManageNotice(getMockActor())) {
+    throw new Error("공지를 삭제할 권한이 없어요");
+  }
+
+  if (!isMock) {
+    // ⚠️ 미구현 — API 스펙 확정 후 BFF 경로로 삭제 요청을 보낸다.
+    throw new Error("공지 삭제 API가 아직 연결되지 않았습니다.");
+  }
+
+  const id = String(formData.get("id") ?? "");
+  deleteMockNotice(id);
+
+  revalidatePath(LIST_PATH);
+  // ⚠️ `redirect`는 내부적으로 예외를 던진다 — try/catch 밖에 둔다(§렌더링·데이터)
+  redirect(LIST_PATH);
 }

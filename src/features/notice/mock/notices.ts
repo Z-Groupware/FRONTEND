@@ -72,3 +72,10 @@ export function updateMockNotice(id: string, draft: NoticeDraft): Notice | null 
   store.notices = store.notices.map((item) => (item.id === id ? updated : item));
   return updated;
 }
+
+/** 삭제 — 있던 공지면 지우고 true, 이미 없으면 false(중복 삭제 요청도 조용히 넘어간다). */
+export function deleteMockNotice(id: string): boolean {
+  const existed = store.notices.some((notice) => notice.id === id);
+  store.notices = store.notices.filter((notice) => notice.id !== id);
+  return existed;
+}

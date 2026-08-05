@@ -7,6 +7,7 @@ import { NoticeList } from "@/features/notice/components/notice-list";
 import { getNotices } from "@/features/notice/server";
 import { getMockActor } from "@/lib/mock-actor";
 import { canManageNotice } from "@/lib/permission";
+import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
   title: "공지",
@@ -25,7 +26,11 @@ export default async function AppNoticePage() {
           {canManage && (
             <Link
               href="/app/notice/new"
-              className={buttonVariants({ variant: "default", size: "sm" })}
+              // 시안의 주 버튼은 액센트(파랑)가 아니라 먹색이다 — `department-setup.tsx`와 같은 이유.
+              className={cn(
+                buttonVariants({ size: "sm" }),
+                "bg-foreground text-background hover:bg-foreground/90",
+              )}
             >
               <Plus aria-hidden />새 공지
             </Link>
