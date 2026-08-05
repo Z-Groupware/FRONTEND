@@ -29,7 +29,12 @@ import { pickPaletteColor } from "@/lib/palette";
  * ⚠️ `viewBox`가 정사각이라 `preserveAspectRatio`를 건드릴 필요가 없다 — `slice`로 늘리면
  *    비정사각 크기에서 얼굴이 찌그러진다.
  */
-function ProfileSilhouette({ color }: { color: string }) {
+interface ProfileSilhouetteProps {
+  /** 실루엣을 칠할 색 — 그 사람의 id에서 뽑은 팔레트 색이다 */
+  color: string;
+}
+
+function ProfileSilhouette({ color }: ProfileSilhouetteProps) {
   return (
     <svg viewBox="0 0 100 100" className="block size-full" aria-hidden="true">
       {/* 머리 */}
