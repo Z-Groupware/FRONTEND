@@ -175,19 +175,23 @@
   --tag-fuchsia-fg: #86198f;
   --tag-pink-bg: #fce7f3;
   --tag-pink-fg: #9d174d;
-  /* 태그 **원색** — 막대처럼 글자가 안 얹히는 자리에 쓴다. 대비 기준이 글자와 달라서
-     (바탕 위에서 보이기만 하면 된다) 라이트·다크가 같은 값이다. */
-  --tag-slate-solid: #64748b;
-  --tag-yellow-solid: #eab308;
-  --tag-lime-solid: #84cc16;
-  --tag-emerald-solid: #10b981;
-  --tag-teal-solid: #14b8a6;
-  --tag-cyan-solid: #06b6d4;
-  --tag-sky-solid: #0ea5e9;
-  --tag-indigo-solid: #6366f1;
-  --tag-purple-solid: #a855f7;
-  --tag-fuchsia-solid: #d946ef;
-  --tag-pink-solid: #ec4899;
+  /* 태그 **원색** — 막대처럼 글자가 안 얹히는 자리에 쓴다.
+     ⚠️ **라이트·다크가 다른 값이다.** 처음엔 한 값으로 뒀는데, 막대 바탕(`--secondary`)이
+        라이트에서는 거의 흰색이고 다크에서는 어두워서 **한 색으로는 양쪽을 못 넘긴다** —
+        노랑·연두는 라이트에서 1.8:1로 거의 안 보였다.
+     ⚠️ 기준은 3:1이다(WCAG 1.4.11 비텍스트 대비). 글자가 안 얹히니 4.5:1까지는 필요 없다.
+        지금 값은 전부 4.7:1 이상이다. */
+  --tag-slate-solid: #475569;
+  --tag-yellow-solid: #a16207;
+  --tag-lime-solid: #4d7c0f;
+  --tag-emerald-solid: #047857;
+  --tag-teal-solid: #0f766e;
+  --tag-cyan-solid: #0e7490;
+  --tag-sky-solid: #0369a1;
+  --tag-indigo-solid: #4338ca;
+  --tag-purple-solid: #7e22ce;
+  --tag-fuchsia-solid: #a21caf;
+  --tag-pink-solid: #be185d;
   /* 랜딩 검정 섹션 — 로그인 전 화면이라 **테마와 무관하게 어둡다**(도움말 패널과 같은 규칙) */
   --landing-dark: #0a0a0a;
   --landing-dark-foreground: #ffffff;
@@ -280,6 +284,18 @@
   --tag-fuchsia-fg: #f0abfc;
   --tag-pink-bg: #4c2938;
   --tag-pink-fg: #f9a8d4;
+  /* 태그 원색 — 다크 바탕에서 보이는 값이다(라이트와 다르다, 위 주석 참고) */
+  --tag-slate-solid: #94a3b8;
+  --tag-yellow-solid: #facc15;
+  --tag-lime-solid: #a3e635;
+  --tag-emerald-solid: #34d399;
+  --tag-teal-solid: #2dd4bf;
+  --tag-cyan-solid: #22d3ee;
+  --tag-sky-solid: #38bdf8;
+  --tag-indigo-solid: #818cf8;
+  --tag-purple-solid: #c084fc;
+  --tag-fuchsia-solid: #e879f9;
+  --tag-pink-solid: #f472b6;
   /* 랜딩 검정 섹션은 다크에서도 같은 값이다 — 라이트/다크가 갈리면 랜딩 톤이 흔들린다 */
   --landing-dark: #0a0a0a;
   --landing-dark-foreground: #ffffff;
