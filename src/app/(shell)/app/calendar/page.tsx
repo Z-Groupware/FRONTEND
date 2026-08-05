@@ -1,7 +1,7 @@
 import { format } from "date-fns";
 import type { Metadata } from "next";
 
-import { PersonalCalendarLoader } from "@/features/calendar/components/personal-calendar-loader";
+import { CalendarBoard } from "@/features/calendar/components/calendar-board";
 import { getMonthEvents } from "@/features/calendar/server";
 
 export const metadata: Metadata = {
@@ -28,9 +28,13 @@ export default async function CalendarPage({ searchParams }: CalendarPageProps) 
   const events = await getMonthEvents(month);
 
   return (
-    <main className="min-h-0 flex-1 overflow-y-auto p-6">
+    <main className="min-h-0 flex-1 overflow-y-auto p-6 px-30">
       <div className="mx-auto flex max-w-[1440px] flex-col gap-4">
-        <PersonalCalendarLoader events={events} month={format(month, "yyyy-MM")} />
+        <CalendarBoard
+          key={format(month, "yyyy-MM")}
+          initialEvents={events}
+          month={format(month, "yyyy-MM")}
+        />
       </div>
     </main>
   );
