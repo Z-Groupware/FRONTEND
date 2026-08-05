@@ -39,8 +39,12 @@ export function ProjectStorageTable({
   canManage,
   onDelete,
 }: ProjectStorageTableProps) {
+  /*
+    ⚠️ `overflow-hidden`이 있어야 **줄 왼쪽 세로 띠가 둥근 모서리 안에서 잘린다.**
+       없으면 마지막 줄의 띠가 카드 밖으로 삐져나와 각진 꼬리가 남는다.
+  */
   return (
-    <section className="border-border bg-card rounded-2xl border">
+    <section className="border-border bg-card overflow-hidden rounded-2xl border">
       <div className="flex items-baseline justify-between gap-3 px-7 py-6">
         <h2 className="flex items-center gap-2 text-[17px] leading-7 font-semibold tracking-[-0.3px]">
           <span className="bg-foreground size-2 rounded-full" aria-hidden />
@@ -79,14 +83,20 @@ export function ProjectStorageTable({
               ⚠️ `table-fixed`가 있어야 이 값이 실제로 먹는다. 없으면 브라우저가 내용을 보고
                  다시 계산한다.
             */}
+            {/*
+              ⚠️ 고정 열을 **꼭 필요한 만큼만** 준다. 전에는 여섯 열이 744px을 먹어서
+                 1280 화면에서 프로젝트 열에 250px밖에 안 남았고, 이름이 두 글자 만에 잘렸다 —
+                 목록에서 사람이 가장 먼저 찾는 열이 가장 좁았다.
+              ⚠️ 좁아지면 `min-w`까지 줄었다가 가로로 스크롤한다(§레이아웃).
+            */}
             <colgroup>
               <col />
-              <col className="w-[104px]" />
-              <col className="w-[96px]" />
-              <col className="w-[168px]" />
-              <col className="w-[104px]" />
-              <col className="w-[140px]" />
-              <col className="w-[132px]" />
+              <col className="w-[92px]" />
+              <col className="w-[84px]" />
+              <col className="w-[150px]" />
+              <col className="w-[92px]" />
+              <col className="w-[128px]" />
+              <col className="w-[64px]" />
             </colgroup>
             <thead>
               {/*
@@ -108,21 +118,21 @@ export function ProjectStorageTable({
                      세로로 훑을 수가 없다 — 지울 수 있는 줄을 고르는 게 이 표의 일이라
                      상태가 한 줄로 서 있어야 한다.
                 */}
-                <th className="px-6 py-3 text-center font-normal">상태</th>
+                <th className="px-4 py-3 text-center font-normal">상태</th>
                 {/*
                   ⚠️ **`회의`가 아니라 `녹음 회의`** 다. 지우고 나면 이 값이 0이 되는데,
                      `회의`라고만 적으면 회의 자체가 사라진 것으로 읽힌다 — 사라진 건 녹음뿐이다.
                 */}
-                <th className="px-6 py-3 text-center font-normal">녹음 회의</th>
+                <th className="px-4 py-3 text-center font-normal">녹음 회의</th>
                 {/*
                   ⚠️ 음성 열에만 **비중 막대**를 붙인다. 어느 프로젝트가 자리를 많이 먹는지가
                      이 표를 보는 이유인데, 숫자만 늘어놓으면 다섯 줄을 다 읽고 비교해야 한다.
                      자막·요약은 지울 수 없어 비교할 이유가 없으므로 숫자만 둔다.
                 */}
-                <th className="px-6 py-3 text-center font-normal">음성</th>
-                <th className="px-6 py-3 text-center font-normal">자막·요약</th>
-                <th className="px-6 py-3 text-center font-normal">가장 오래된 녹음</th>
-                <th className="px-6 py-3 text-center font-normal">
+                <th className="px-4 py-3 text-center font-normal">음성</th>
+                <th className="px-4 py-3 text-center font-normal">자막·요약</th>
+                <th className="px-4 py-3 text-center font-normal">가장 오래된 녹음</th>
+                <th className="px-4 py-3 text-center font-normal">
                   <span className="sr-only">녹음 지우기</span>
                 </th>
               </tr>
@@ -168,7 +178,20 @@ function Row({
   */
   return (
     <tr className="group border-border hover:bg-foreground/[0.04] transition-colors not-first:border-t">
-      <td className="px-6 py-3.5">
+      {/*
+        ⚠️ **줄 왼쪽 세로 띠가 그 프로젝트의 색**이다(`lib/palette`). 표에서 프로젝트를
+           구분하는 건 태그 글자인데, 다섯 줄을 훑을 때 글자를 읽기 전에 색이 먼저 잡힌다 —
+           대시보드 회의 목록이 같은 방식을 쓴다.
+        ⚠️ `relative`로 띠를 칸 안에 절대배치한다. `border-left`로 그리면 hover 배경이
+           띠까지 덮고, 줄 사이 가로 구분선(`border-t`)과 모서리에서 겹친다.
+        ⚠️ 띠는 `aria-hidden`이다 — 색이 말하는 건 태그 글자가 이미 말한다(§a11y).
+      */}
+      <td className="relative px-6 py-3.5">
+        <span
+          aria-hidden
+          className="absolute inset-y-0 left-0 w-[3px]"
+          style={{ backgroundColor: tagColor.solidColor }}
+        />
         {/*
           ⚠️ 이름은 **프로젝트로 가는 링크**다. 지울지 판단하려면 무슨 프로젝트였는지 봐야 하는데,
              이름만 있으면 검색으로 다시 찾아 들어가야 한다.
@@ -205,13 +228,19 @@ function Row({
              `진행중`이라고 박아 두면 라벨이 바뀔 때 이 화면만 옛말을 한다.
           ⚠️ 점 색은 공용 `StatusDot`이 정한다. 화면마다 색을 고르면 같은 색이 두 뜻을 갖는다.
         */}
+        {/*
+          ⚠️ **묶음을 가운데 두지 않는다**(`justify-center` 금지). `진행중`(3자)과 `완료`(2자)는
+             폭이 달라서, 묶음 전체를 가운데 놓으면 **점이 줄마다 좌우로 어긋난다.**
+             칸 안에서 묶음을 가운데 두되 **라벨 폭을 고정**해 점이 한 줄로 서게 한다.
+        */}
         <StatusDot
           tone={project.status}
           label={PROJECT_STATUS_LABEL[project.status]}
-          className="justify-center text-[12px] leading-4"
+          labelClassName="w-[42px] text-left"
+          className="mx-auto w-fit text-[12px] leading-4"
         />
       </td>
-      <td className="text-muted-foreground px-6 py-3.5 text-center tabular-nums">
+      <td className="text-muted-foreground px-4 py-3.5 text-center tabular-nums">
         {project.meetingCount}개
       </td>
       <td className="px-6 py-3.5">
@@ -242,14 +271,14 @@ function Row({
           <span className="shrink-0 tabular-nums">{formatGb(project.voiceGb)}</span>
         </span>
       </td>
-      <td className="text-muted-foreground px-6 py-3.5 text-center tabular-nums">
+      <td className="text-muted-foreground px-4 py-3.5 text-center tabular-nums">
         {formatGb(project.sttGb)}
       </td>
       {/*
         ⚠️ 녹음이 없으면 날짜 대신 `—`다. 지운 뒤 이 줄은 `녹음 0개 · 0GB`가 되는데,
            "가장 오래된 녹음" 칸에 옛 날짜가 남아 있으면 없는 녹음의 날짜를 말하는 셈이다.
       */}
-      <td className="text-muted-foreground px-6 py-3.5 text-center tabular-nums">
+      <td className="text-muted-foreground px-4 py-3.5 text-center tabular-nums">
         {project.voiceGb > 0 ? formatRecordedDate(project.oldestRecordedAt) : "—"}
       </td>
       <td className="px-6 py-3.5 text-center">

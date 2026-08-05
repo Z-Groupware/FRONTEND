@@ -29,14 +29,21 @@ interface StatusDotProps {
   /** 화면에 나가는 한글 라벨 — `PROJECT_STATUS_LABEL[...]`처럼 라벨맵에서 꺼내 넘긴다 */
   label: string;
   className?: string;
+  /**
+   * 라벨에만 붙는 클래스 — **표에서 점을 한 줄로 세울 때** 쓴다.
+   *
+   * ⚠️ 라벨 길이가 다르면(`진행중` 3자 · `완료` 2자) 묶음을 가운데 놓았을 때 **점이 줄마다
+   *    좌우로 어긋난다.** 부르는 쪽이 `w-[42px] text-left`처럼 폭을 고정해 축을 맞춘다.
+   */
+  labelClassName?: string;
 }
 
-export function StatusDot({ tone, label, className }: StatusDotProps) {
+export function StatusDot({ tone, label, className, labelClassName }: StatusDotProps) {
   return (
     <span className={cn("flex items-center gap-1.5", className)}>
       <span className={cn("size-1.5 shrink-0 rounded-full", TONE_CLASS[tone])} aria-hidden />
       {/* 한글 글자가 점보다 떠 보인다 — 1px 내려 맞춘다 */}
-      <span className="translate-y-px">{label}</span>
+      <span className={cn("translate-y-px", labelClassName)}>{label}</span>
     </span>
   );
 }

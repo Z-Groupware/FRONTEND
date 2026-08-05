@@ -88,7 +88,8 @@ export function StorageView({ overview, config, canManage }: StorageViewProps) {
 
   return (
     <div className="flex-1 overflow-y-auto px-8 py-7">
-      <div className="mx-auto w-full max-w-[1080px]">
+      {/* ⚠️ 목록 화면 규격은 1440이다(CLAUDE.md §디자인 토큰 — PageLayout `list`) */}
+      <div className="mx-auto w-full max-w-[1440px]">
         <div className="flex flex-col gap-7">
           <StorageSummary totals={totals} />
 
