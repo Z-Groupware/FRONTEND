@@ -1,5 +1,6 @@
 import "server-only";
 
+import { PROJECT_STATUS } from "@/constants/project";
 import { isMock } from "@/mocks/config";
 
 import type { StorageOverview } from "./types";
@@ -30,7 +31,7 @@ const MOCK: StorageOverview = {
       voiceGb: 7.3,
       sttGb: 0.9,
       oldestRecordedAt: "2026-05-03",
-      isDone: false,
+      status: PROJECT_STATUS.IN_PROGRESS,
     },
     {
       tag: "infra-migration",
@@ -39,7 +40,7 @@ const MOCK: StorageOverview = {
       voiceGb: 8.7,
       sttGb: 1.1,
       oldestRecordedAt: "2026-03-08",
-      isDone: false,
+      status: PROJECT_STATUS.IN_PROGRESS,
     },
     {
       tag: "marketing-q3",
@@ -48,7 +49,7 @@ const MOCK: StorageOverview = {
       voiceGb: 5.4,
       sttGb: 0.7,
       oldestRecordedAt: "2026-06-14",
-      isDone: false,
+      status: PROJECT_STATUS.IN_PROGRESS,
     },
     {
       tag: "hr-process",
@@ -57,7 +58,7 @@ const MOCK: StorageOverview = {
       voiceGb: 3.6,
       sttGb: 0.8,
       oldestRecordedAt: "2026-02-20",
-      isDone: true,
+      status: PROJECT_STATUS.DONE,
     },
     {
       tag: "ops-automation",
@@ -66,7 +67,7 @@ const MOCK: StorageOverview = {
       voiceGb: 2.1,
       sttGb: 0.8,
       oldestRecordedAt: "2026-01-12",
-      isDone: true,
+      status: PROJECT_STATUS.DONE,
     },
   ],
 };

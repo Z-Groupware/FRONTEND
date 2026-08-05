@@ -1,3 +1,4 @@
+import { PROJECT_STATUS } from "@/constants/project";
 import type { BillingConfig } from "@/features/billing/types";
 
 import type { ProjectStorage, StorageOverview } from "./types";
@@ -55,7 +56,7 @@ export function buildStorageTotals(
  * ⚠️ 음성이 0인 줄도 지울 게 없다 — 눌러도 아무 일이 없는 버튼은 두지 않는다.
  */
 export function canDeleteRecordings(project: ProjectStorage): boolean {
-  return project.isDone && project.voiceGb > 0;
+  return project.status === PROJECT_STATUS.DONE && project.voiceGb > 0;
 }
 
 /**

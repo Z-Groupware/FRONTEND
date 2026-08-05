@@ -1,3 +1,4 @@
+import { PROJECT_STATUS } from "@/constants/project";
 import type { BillingConfig } from "@/features/billing/types";
 
 import { buildStorageTotals, canDeleteRecordings, freedGb, totalFreeableGb } from "./storage";
@@ -13,7 +14,7 @@ const project = (patch: Partial<ProjectStorage> = {}): ProjectStorage => ({
   voiceGb: 5,
   sttGb: 1,
   oldestRecordedAt: "2026-01-01",
-  isDone: false,
+  status: PROJECT_STATUS.IN_PROGRESS,
   ...patch,
 });
 
@@ -69,12 +70,16 @@ describe("buildStorageTotals", () => {
 
 describe("canDeleteRecordings", () => {
   it("끝난 프로젝트만 지운다 — 진행 중인 녹음은 다시 들을 일이 남아 있다", () => {
-    expect(canDeleteRecordings(project({ isDone: false }))).toBe(false);
-    expect(canDeleteRecordings(project({ isDone: true }))).toBe(true);
+    expect(canDeleteRecordings(project({ status: PROJECT_STATUS.IN_PROGRESS }))).toBe(false);
+    expect(canDeleteRecordings(project({ status: PROJECT_STATUS.DONE }))).toBe(true);
+  });
+
+  it("`할일`도 지울 수 없다 — 참·거짓으로 줄였으면 진행중과 같이 묶였을 값이다", () => {
+    expect(canDeleteRecordings(project({ status: PROJECT_STATUS.TODO }))).toBe(false);
   });
 
   it("음성이 0이면 지울 게 없다 — 눌러도 아무 일이 없는 버튼은 두지 않는다", () => {
-    expect(canDeleteRecordings(project({ isDone: true, voiceGb: 0 }))).toBe(false);
+    expect(canDeleteRecordings(project({ status: PROJECT_STATUS.DONE, voiceGb: 0 }))).toBe(false);
   });
 });
 
@@ -87,9 +92,9 @@ describe("freedGb", () => {
 describe("totalFreeableGb", () => {
   it("지울 수 있는 줄만 더한다", () => {
     const projects = [
-      project({ tag: "a", isDone: true, voiceGb: 4 }),
-      project({ tag: "b", isDone: false, voiceGb: 9 }),
-      project({ tag: "c", isDone: true, voiceGb: 2, sttGb: 5 }),
+      project({ tag: "a", status: PROJECT_STATUS.DONE, voiceGb: 4 }),
+      project({ tag: "b", status: PROJECT_STATUS.IN_PROGRESS, voiceGb: 9 }),
+      project({ tag: "c", status: PROJECT_STATUS.DONE, voiceGb: 2, sttGb: 5 }),
     ];
 
     // ⚠️ `c`의 자막·요약 5GB는 안 센다 — 지워도 안 비는 값이다

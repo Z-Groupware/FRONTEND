@@ -1,3 +1,5 @@
+import type { ProjectStatus } from "@/constants/project";
+
 /**
  * 녹음 용량 화면(`/manage/storage`)의 **UI 계약**.
  *
@@ -31,8 +33,13 @@ export interface ProjectStorage {
   sttGb: number;
   /** 가장 오래된 녹음 날짜 `YYYY-MM-DD` — 지울지 판단하는 기준이다 */
   oldestRecordedAt: string;
-  /** 프로젝트가 끝났는지 — **끝난 프로젝트의 녹음만 지운다** */
-  isDone: boolean;
+  /**
+   * 프로젝트 상태 — **끝난 프로젝트의 녹음만 지운다.**
+   *
+   * ⚠️ `isDone: boolean`이 아니다. 상태는 셋이라(`할일`·`진행중`·`완료`) 참·거짓으로 줄이면
+   *    화면이 `할일`을 `진행중`으로 잘못 부른다 — 값도 라벨도 `constants/project`가 정본이다.
+   */
+  status: ProjectStatus;
 }
 
 /** 화면 한 장이 필요로 하는 전부 */

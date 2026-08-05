@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 
+import { StatusDot } from "@/components/common/status-dot";
 import { Button } from "@/components/ui/button";
+import { PROJECT_STATUS_LABEL } from "@/constants/project";
 import { formatGb } from "@/features/billing/pricing";
 
 import { canDeleteRecordings } from "../storage";
@@ -66,7 +68,23 @@ export function ProjectStorageTable({
         </p>
       ) : (
         <div className="border-border overflow-x-auto border-t">
-          <table className="w-full min-w-[720px] text-[13px]">
+          <table className="w-full min-w-[760px] table-fixed text-[13px]">
+            {/*
+              ⚠️ 열 폭을 **여기 한 곳에서** 정한다. 내용에 맡기면 프로젝트 이름 길이에 따라
+                 열이 좌우로 흔들려 머리와 칸의 세로축이 어긋난다 — 다섯 줄을 세로로 훑는 표라
+                 축이 흔들리면 비교가 안 된다.
+              ⚠️ `table-fixed`가 있어야 이 값이 실제로 먹는다. 없으면 브라우저가 내용을 보고
+                 다시 계산한다.
+            */}
+            <colgroup>
+              <col />
+              <col className="w-[104px]" />
+              <col className="w-[96px]" />
+              <col className="w-[168px]" />
+              <col className="w-[104px]" />
+              <col className="w-[140px]" />
+              <col className="w-[132px]" />
+            </colgroup>
             <thead>
               <tr className="text-muted-foreground border-border border-b text-[12px] leading-4">
                 <th className="px-6 py-3 text-left font-normal">프로젝트</th>
@@ -86,7 +104,7 @@ export function ProjectStorageTable({
                      이 표를 보는 이유인데, 숫자만 늘어놓으면 다섯 줄을 다 읽고 비교해야 한다.
                      자막·요약은 지울 수 없어 비교할 이유가 없으므로 숫자만 둔다.
                 */}
-                <th className="px-6 py-3 text-left font-normal">음성</th>
+                <th className="px-6 py-3 text-right font-normal">음성</th>
                 <th className="px-6 py-3 text-right font-normal">자막·요약</th>
                 <th className="px-6 py-3 text-right font-normal">가장 오래된 녹음</th>
                 <th className="px-6 py-3 text-right font-normal">
@@ -136,30 +154,23 @@ function Row({
         */}
         <Link
           href={`/app/projects/${project.tag}`}
-          className="focus-visible:ring-ring rounded hover:underline focus-visible:ring-2 focus-visible:outline-hidden"
+          title={project.name}
+          className="focus-visible:ring-ring block truncate rounded hover:underline focus-visible:ring-2 focus-visible:outline-hidden"
         >
           {project.name}
         </Link>
       </td>
       <td className="px-6 py-3.5">
         {/*
-          ⚠️ 상태점은 **정해진 색**을 쓴다 — 진행중=초록, 완료=보라(§디자인 토큰 상태점).
-             이 화면에서 유일하게 색이 들어가는 자리라, 다른 뜻으로 쓰면 규칙이 무너진다.
-          ⚠️ **글자를 같이 적는다.** 색만으로 알리면 색을 못 보는 사람에게 통째로 사라진다.
+          ⚠️ 라벨을 손으로 적지 않는다 — `PROJECT_STATUS_LABEL`이 정본이다(§도메인 상수).
+             `진행중`이라고 박아 두면 라벨이 바뀔 때 이 화면만 옛말을 한다.
+          ⚠️ 점 색은 공용 `StatusDot`이 정한다. 화면마다 색을 고르면 같은 색이 두 뜻을 갖는다.
         */}
-        <span className="flex items-center gap-1.5">
-          <span
-            className={
-              project.isDone
-                ? "bg-status-done size-1.5 shrink-0 rounded-full"
-                : "bg-status-progress size-1.5 shrink-0 rounded-full"
-            }
-            aria-hidden
-          />
-          <span className="translate-y-px text-[12px] leading-4">
-            {project.isDone ? "완료" : "진행중"}
-          </span>
-        </span>
+        <StatusDot
+          tone={project.status}
+          label={PROJECT_STATUS_LABEL[project.status]}
+          className="text-[12px] leading-4"
+        />
       </td>
       <td className="text-muted-foreground px-6 py-3.5 text-right tabular-nums">
         {project.meetingCount}개
@@ -168,11 +179,12 @@ function Row({
         {/*
           ⚠️ 막대는 **전체 음성 대비 비중**이다. 포함량(50GB) 기준으로 그리면 한 프로젝트가
              차지하는 조각이 너무 작아 다섯 줄이 전부 비슷해 보인다.
-          ⚠️ 숫자를 막대 오른쪽에 **붙여** 둔다. 열을 따로 나누면 눈이 두 번 움직인다.
+          ⚠️ 숫자는 **오른쪽 끝에 세운다.** 옆 열들과 같은 축이라야 자릿수가 나란히 읽힌다 —
+             막대는 그 왼쪽에 붙고, 남는 자리는 막대가 먹는다.
         */}
-        <span className="flex items-center gap-2.5">
+        <span className="flex items-center justify-end gap-2.5">
           <span
-            className="bg-secondary h-1.5 w-20 shrink-0 overflow-hidden rounded-full"
+            className="bg-secondary h-1.5 min-w-0 flex-1 overflow-hidden rounded-full"
             aria-hidden
           >
             <span
@@ -180,7 +192,7 @@ function Row({
               style={{ width: `${share}%` }}
             />
           </span>
-          <span className="tabular-nums">{formatGb(project.voiceGb)}</span>
+          <span className="shrink-0 tabular-nums">{formatGb(project.voiceGb)}</span>
         </span>
       </td>
       <td className="text-muted-foreground px-6 py-3.5 text-right tabular-nums">
