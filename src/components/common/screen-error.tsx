@@ -27,11 +27,23 @@ interface ScreenErrorProps {
    *    **아래 56px이 잘리고**(스크롤도 안 된다) 카드가 그만큼 아래로 밀린다.
    * ⚠️ 셸 밖(온보딩·`/subscription`·public)에서는 **끈 채로 둔다.** 거기서는 이 화면이
    *    페이지를 통째로 대체하고 위에 상시 상단바가 없어서 `min-h-dvh`가 맞다.
+   * ⚠️ **`(shell)`뿐 아니라 `(system)`도 셸이다.** 두 레이아웃 다 `flex h-dvh overflow-hidden`에
+   *    `PageHeader`(56px)를 얹는 같은 구조라, 라우트 그룹 이름이 아니라 **위에 상단바가 남는지**로
+   *    판단한다. 그룹 이름으로 외우면 셸이 하나 더 생길 때 똑같이 잘린다.
    */
   isInsideShell?: boolean;
 }
 
 export function ScreenError({ title, reset, isInsideShell }: ScreenErrorProps) {
+  /*
+    ⚠️ 셸 안에서는 **`h1`을 쓰지 않는다.** 위에 `PageHeader`의 `h1`이 그대로 남아 있어서
+       여기서 또 `h1`을 그리면 한 페이지에 제목이 둘이 된다 — 스크린 리더는 무엇이 이 화면의
+       제목인지 못 가리고, RTL `getByRole("heading", { level: 1 })`도 복수 매치로 깨진다
+       (CLAUDE.md §SEO — h1 1개).
+    ⚠️ 셸 밖에서는 이 화면이 페이지를 통째로 대체하므로 `h1`이 맞다.
+  */
+  const Heading = isInsideShell ? "h2" : "h1";
+
   return (
     <div
       className={cn(
@@ -41,7 +53,7 @@ export function ScreenError({ title, reset, isInsideShell }: ScreenErrorProps) {
       )}
     >
       <div className="flex flex-col gap-2">
-        <h1 className="text-lg font-semibold tracking-tight break-keep">{title}</h1>
+        <Heading className="text-lg font-semibold tracking-tight break-keep">{title}</Heading>
         <p className="text-muted-foreground text-[13px] leading-[21px] break-keep">
           잠시 후 다시 시도해 주세요. 계속 안 되면 담당자에게 알려주세요.
         </p>
