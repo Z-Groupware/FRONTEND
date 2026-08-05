@@ -6,6 +6,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { getProgressPercent, splitDepartments } from "@/features/project/lib";
 import type { ProjectListItem as ProjectListItemModel } from "@/features/project/types";
 import { formatMonthDayWeekday } from "@/lib/date";
+import { pickPaletteColor } from "@/lib/palette";
 
 /**
  * 프로젝트 한 줄 — 회의 아이템과 같은 결.
@@ -19,6 +20,8 @@ export function ProjectListItem({ project }: { project: ProjectListItemModel }) 
   const percent = getProgressPercent(project.actionDone, project.actionTotal);
   const { visible, overflow } = splitDepartments(project.departments);
   const due = formatMonthDayWeekday(project.dueDate);
+  // 태그 색은 고정 팔레트(globals.css `--tag-*`)에서 태그명으로 뽑는다 — 라이트/다크는 CSS가 대응
+  const tagColor = pickPaletteColor(project.tag);
 
   const visibleTeamBadges = visible.map((team) => (
     <Badge key={team} variant="outline" className="shrink-0">
@@ -31,7 +34,7 @@ export function ProjectListItem({ project }: { project: ProjectListItemModel }) 
       {/* 태그색 스트립 — 행 왼쪽 끝 */}
       <span
         className="absolute inset-y-0 left-0 w-1"
-        style={{ backgroundColor: project.color }}
+        style={{ backgroundColor: tagColor.solidColor }}
         aria-hidden
       />
 
@@ -43,7 +46,7 @@ export function ProjectListItem({ project }: { project: ProjectListItemModel }) 
         <div className="flex min-w-0 flex-1 flex-col gap-1">
           <span
             className="w-fit rounded px-1.5 py-0.5 font-mono text-[10px] font-semibold"
-            style={{ backgroundColor: `${project.color}1a`, color: project.color }}
+            style={{ backgroundColor: tagColor.bgColor, color: tagColor.textColor }}
           >
             {project.tag}
           </span>

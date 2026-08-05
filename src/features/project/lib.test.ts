@@ -17,7 +17,6 @@ function project(overrides: Partial<ProjectListItem>): ProjectListItem {
     name: "프로젝트",
     description: "",
     tag: "TAG",
-    color: "#000000",
     departments: [],
     actionTotal: 0,
     actionDone: 0,

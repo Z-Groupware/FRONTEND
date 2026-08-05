@@ -14,7 +14,6 @@ export const TOP_LEVEL_PROJECTS: ProjectListItem[] = [
     description:
       "아티스트 공식 굿즈를 판매하는 모바일 커머스 앱을 신규 구축한다. 회원가입·결제·상품 관리 전반을 포함하며 개발·마케팅·디자인 3개 팀이 참여한다.",
     tag: "GOODS",
-    color: "#7C3AED",
     departments: ["개발팀", "마케팅팀", "디자인팀"],
     actionTotal: 11,
     actionDone: 0,
@@ -27,7 +26,6 @@ export const TOP_LEVEL_PROJECTS: ProjectListItem[] = [
     description:
       "3분기 브랜드 아이덴티티를 리뉴얼한다. 로고·가이드라인 개편과 캠페인 자산 제작을 마케팅·디자인팀이 함께 진행한다.",
     tag: "BRAND",
-    color: "#DB2777",
     departments: ["마케팅팀", "디자인팀"],
     actionTotal: 4,
     actionDone: 0,
@@ -40,7 +38,6 @@ export const TOP_LEVEL_PROJECTS: ProjectListItem[] = [
     description:
       "사내에서 쓰는 협업 도구를 재정비한다. 회의·문서·일정 흐름을 하나로 잇는 개편을 개발·전략기획팀이 담당한다.",
     tag: "COLLAB",
-    color: "#2563EB",
     departments: ["개발팀", "전략기획팀"],
     actionTotal: 4,
     actionDone: 0,
