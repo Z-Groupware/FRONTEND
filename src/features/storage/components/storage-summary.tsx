@@ -21,17 +21,15 @@ import type { StorageTotals } from "../storage";
 /** 지울 수 있는 건 끝난 프로젝트뿐이라 이 화면 문구에 `완료` 라벨이 두 번 들어간다 */
 const DONE_LABEL = PROJECT_STATUS_LABEL[PROJECT_STATUS.DONE];
 
-export function StorageSummary({
-  totals,
-  freeableGb,
-  deletableCount,
-}: {
+interface StorageSummaryProps {
   totals: StorageTotals;
   /** 끝난 프로젝트를 다 지우면 비는 용량(GB) */
   freeableGb: number;
   /** 지금 지울 수 있는 프로젝트 수 */
   deletableCount: number;
-}) {
+}
+
+export function StorageSummary({ totals, freeableGb, deletableCount }: StorageSummaryProps) {
   const percent = Math.round(totals.ratio * 100);
   const isOver = totals.overageGb > 0;
 
@@ -226,7 +224,9 @@ function Legend({
       />
       <dt className="text-[13px] leading-5">{label}</dt>
       <dd className="text-[13px] leading-5 font-medium tabular-nums">{value}</dd>
-      <span className="text-muted-foreground/70 text-[11px] leading-5">{hint}</span>
+      {/* ⚠️ `/70`을 쓰지 않는다 — 11px 글자가 라이트에서 4.5:1에 못 미친다. 이 문구는
+         "어느 쪽을 지울 수 있나"를 말하는 자리라 흐리면 안 된다(§a11y) */}
+      <span className="text-muted-foreground text-[11px] leading-5">{hint}</span>
     </div>
   );
 }

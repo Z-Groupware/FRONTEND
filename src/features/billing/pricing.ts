@@ -16,18 +16,6 @@ import type { BillingConfig } from "./types";
 const VAT_RATE = 0.1;
 
 /** 하루를 밀리초로. 날짜 차이를 일수로 바꿀 때 쓴다 */
-const DAY_MS = 24 * 60 * 60 * 1000;
-
-/**
- * 두 날짜 사이의 일수. **시각은 버리고 날짜만 본다** —
- * 오전에 봤는지 오후에 봤는지로 예측이 달라지면 안 된다.
- */
-export function daysBetween(fromIso: string, toIso: string): number {
-  const from = Date.parse(`${fromIso.slice(0, 10)}T00:00:00Z`);
-  const to = Date.parse(`${toIso.slice(0, 10)}T00:00:00Z`);
-  if (Number.isNaN(from) || Number.isNaN(to)) return 0;
-  return Math.max(0, Math.round((to - from) / DAY_MS));
-}
 
 interface PriceBreakdown {
   /** 월 기본료(원) */

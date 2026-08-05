@@ -1,6 +1,6 @@
 import { CircleAlert, Info } from "lucide-react";
 
-import { formatDate } from "@/lib/date";
+import { formatFullDate } from "@/lib/date";
 
 import { formatGb, formatTokens, formatWon } from "../pricing";
 import type { Subscription } from "../subscription";
@@ -34,8 +34,8 @@ export function UsagePanel({ subscription, config }: UsagePanelProps) {
           이번 주기 사용량
         </h2>
         <p className="text-muted-foreground/70 text-[12px] leading-4 tabular-nums">
-          {formatDate(subscription.currentPeriodStart)} ~{" "}
-          {formatDate(subscription.currentPeriodEnd)}
+          {formatFullDate(subscription.currentPeriodStart)} ~{" "}
+          {formatFullDate(subscription.currentPeriodEnd)}
         </p>
       </div>
 
@@ -134,7 +134,7 @@ function UsageBanner({ tokens, storage }: { tokens: UsageAxis; storage: UsageAxi
   );
 }
 
-/** 한 축 — 쓴 양 / 총량, 소진율 막대, 월말 예측 */
+/** 한 축 — 쓴 양 / 총량, 소진율 막대. 넘겼을 때만 초과량·금액을 덧붙인다 */
 function Axis({ axis, format }: { axis: UsageAxis; format: (value: number) => string }) {
   const percent = Math.round(axis.ratio * 100);
   const isOver = axis.overage > 0;

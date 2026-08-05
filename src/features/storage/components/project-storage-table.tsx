@@ -6,8 +6,7 @@ import Link from "next/link";
 import { StatusDot } from "@/components/common/status-dot";
 import { PROJECT_STATUS_LABEL } from "@/constants/project";
 import { formatGb } from "@/features/billing/pricing";
-import { formatElapsed } from "@/lib/date";
-import { formatDateWithYear } from "@/lib/date";
+import { formatDateWithYear, formatElapsed } from "@/lib/date";
 import { pickPaletteColor } from "@/lib/palette";
 
 import { canDeleteRecordings } from "../storage";
@@ -199,6 +198,16 @@ function Row({
   onDelete: (project: ProjectStorage) => void;
 }) {
   const isDeletable = canDeleteRecordings(project);
+  /*
+    ⚠️ **사유를 `진행 중`으로 박지 않는다.** 못 지우는 경로가 둘이다 —
+       ① 끝나지 않은 프로젝트(`할일`·`진행중`) ② 이미 비어 남은 게 없는 줄.
+       하나로 적으면 상태 칸에 `할일`·`완료`를 찍어 놓고 툴팁은 `진행 중`이라 말한다.
+    ⚠️ 라벨은 `PROJECT_STATUS_LABEL`에서 꺼낸다(§도메인 상수 — 라벨 하드코딩 금지).
+  */
+  const blockedReason =
+    project.voiceGb + project.sttGb === 0
+      ? "삭제할 기록이 없습니다"
+      : `${PROJECT_STATUS_LABEL[project.status]} 상태에서는 삭제할 수 없습니다`;
   // 툴팁에 넣을 정확한 날짜. 기준 연도는 서버가 준 `today`에서 뽑는다(여기서 `new Date()` 금지)
   const recordedOn = formatDateWithYear(project.lastRecordedAt, Number(today.slice(0, 4)));
   const tagColor = pickPaletteColor(project.tag);
@@ -314,8 +323,11 @@ function Row({
         {formatGb(project.sttGb)}
       </td>
       {/*
-        ⚠️ 녹음이 없으면 날짜 대신 `—`다. 지운 뒤 이 줄은 `녹음 0개 · 0GB`가 되는데,
-           `마지막 녹음` 칸에 옛 날짜가 남아 있으면 없는 녹음의 날짜를 말하는 셈이다.
+        ⚠️ **남은 게 하나도 없을 때만** `—`다. 조건이 `voiceGb > 0`이던 때가 있었는데,
+           삭제 대상이 음성+자막·요약으로 넓어진 뒤로는 **자막·요약만 남은 줄**이
+           `—`(= 남은 게 없다)로 읽혔다 — 같은 줄에서 삭제 버튼은 살아 있고 확인 창은
+           `자막·요약 1.3GB가 삭제됩니다`라고 말하는데 말이 어긋난다.
+           판정은 `canDeleteRecordings`와 **같은 기준**을 쓴다.
       */}
       <td className="text-muted-foreground px-4 py-3.5 text-center">
         {/*
@@ -326,7 +338,7 @@ function Row({
           ⚠️ 미래 날짜면 `formatElapsed`가 `null`을 준다(시계 어긋남·이상한 BE 값).
              `-3일 전`을 지어내느니 절대 날짜로 물러선다.
         */}
-        {project.voiceGb > 0 ? (
+        {project.voiceGb + project.sttGb > 0 ? (
           <time dateTime={project.lastRecordedAt} title={recordedOn}>
             {formatElapsed(project.lastRecordedAt, today) ?? recordedOn}
           </time>
@@ -351,12 +363,10 @@ function Row({
             disabled={!isDeletable}
             onClick={() => onDelete(project)}
             aria-label={
-              isDeletable
-                ? `${project.name} 기록 삭제`
-                : `${project.name} — 진행 중이라 삭제할 수 없습니다`
+              isDeletable ? `${project.name} 기록 삭제` : `${project.name} — ${blockedReason}`
             }
-            title={isDeletable ? "기록 삭제" : "진행 중인 프로젝트는 삭제할 수 없습니다"}
-            className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 focus-visible:ring-ring inline-flex size-8 items-center justify-center rounded-md transition-colors focus-visible:ring-2 focus-visible:outline-hidden disabled:pointer-events-none disabled:opacity-25"
+            title={isDeletable ? "기록 삭제" : blockedReason}
+            className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 focus-visible:ring-ring inline-flex size-8 items-center justify-center rounded-md transition-colors focus-visible:ring-2 focus-visible:outline-hidden disabled:opacity-30"
           >
             <Trash2 className="size-4" aria-hidden />
           </button>

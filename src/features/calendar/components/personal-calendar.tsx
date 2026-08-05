@@ -130,7 +130,7 @@ export function PersonalCalendar({
         day: "일",
         agenda: "일정",
         showMore: (count: number) => `+${count} 더보기`,
-        noEventsInRange: "이 기간에 일정이 없어요",
+        noEventsInRange: "이 기간에 일정이 없습니다",
       }}
     />
   );

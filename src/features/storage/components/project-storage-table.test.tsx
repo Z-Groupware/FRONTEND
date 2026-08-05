@@ -56,9 +56,20 @@ describe("ProjectStorageTable", () => {
     expect(screen.getByText("12월 25일(금)")).toBeInTheDocument();
   });
 
-  it("녹음이 없으면 날짜 대신 `—`다 — 지운 줄이 없는 녹음의 날짜를 말하면 안 된다", () => {
-    // 삭제 뒤 상태: 음성 0 · 회의 0, 자막·요약과 옛 날짜만 남는다
-    renderTable([project({ voiceGb: 0, meetingCount: 0 })]);
+  /*
+    ⚠️ 판정 기준은 **음성 + 자막·요약**이다(`canDeleteRecordings`와 같다). 전에는 음성만
+       봐서, 자막·요약이 남은 줄이 `—`(= 남은 게 없다)로 읽혔다 — 같은 줄에서 삭제 버튼은
+       살아 있고 확인 창은 "자막·요약이 삭제됩니다"라고 말하는데 말이 어긋났다.
+  */
+  it("자막·요약만 남아 있으면 날짜를 그대로 보여 준다 — 아직 지울 게 있는 줄이다", () => {
+    renderTable([project({ voiceGb: 0, meetingCount: 0, sttGb: 1.3 })]);
+
+    expect(screen.getByText("3개월 전")).toBeInTheDocument();
+    expect(screen.queryByText("—")).not.toBeInTheDocument();
+  });
+
+  it("남은 게 하나도 없으면 날짜 대신 `—`다 — 없는 기록의 날짜를 말하면 안 된다", () => {
+    renderTable([project({ voiceGb: 0, sttGb: 0, meetingCount: 0 })]);
 
     expect(screen.queryByText("3개월 전")).not.toBeInTheDocument();
     expect(screen.getByText("—")).toBeInTheDocument();

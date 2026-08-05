@@ -63,12 +63,6 @@ export interface UsageCounters {
   voiceStorageGb: number;
   /** 자막·요약이 차지한 용량(GB) — ⚠️ 음성과 **나눠서** 보여준다(둘 다 과금 대상) */
   sttStorageGb: number;
-  /**
-   * 이번 주기에 **늘어난** 용량(GB).
-   * ⚠️ 스토리지는 쌓이는 값이라 총량만으로는 늘어나는 속도를 알 수 없다 —
-   *    월말 예측을 하려면 "이번 주기에 얼마나 늘었나"가 따로 필요하다.
-   */
-  addedStorageGbThisPeriod: number;
   /** 참고 지표 — 청구와 무관하다 */
   meetingCount: number;
 }

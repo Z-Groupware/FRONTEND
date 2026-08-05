@@ -16,7 +16,11 @@ export default function ManageBillingLoading() {
       <div className="mx-auto w-full max-w-[1440px]">
         <div className="flex flex-col gap-7">
           <Skeleton className="h-[188px] w-full rounded-2xl" />
-          <Skeleton className="h-[268px] w-full rounded-2xl" />
+          {/*
+            ⚠️ 사용량 카드는 **예상 사용량 줄을 뺀 뒤 44px 낮아졌다**(축마다 `pt-1.5`+`leading-4`
+               = 22px, 두 축). 옛 높이(268px)를 두면 채워지는 순간 아래가 위로 딸려 올라간다.
+          */}
+          <Skeleton className="h-[224px] w-full rounded-2xl" />
           <Skeleton className="h-[152px] w-full rounded-2xl" />
           <Skeleton className="h-[228px] w-full rounded-2xl" />
         </div>

@@ -18,20 +18,11 @@ import type { BillingConfig } from "./types";
  * ⚠️ 이걸 같게 다루면 예측이 터진다. 스토리지에 "쓴 양 ÷ 지난 일수 × 주기 일수"를 쓰면
  *    **지난 달까지 쌓여 있던 40GB까지 이번 주기에 쓴 것으로 보고 곱한다.**
  */
-const USAGE_KIND = {
-  /** 주기마다 0에서 다시 시작한다 */
-  RESET: "RESET",
-  /** 지우기 전까지 계속 쌓인다 */
-  CUMULATIVE: "CUMULATIVE",
-} as const;
-
-type UsageKind = (typeof USAGE_KIND)[keyof typeof USAGE_KIND];
 
 /** 어느 축이 얼마나 남았는지 — 화면 한 줄이 필요로 하는 전부 */
 export interface UsageAxis {
   /** 화면에 그대로 나가는 이름 — `AI 토큰`·`저장 공간` */
   label: string;
-  kind: UsageKind;
   used: number;
   /** 기본료에 포함된 양 */
   included: number;
@@ -71,18 +62,16 @@ function calculateOverageAmount(params: {
 
 function toAxis(params: {
   label: string;
-  kind: UsageKind;
   used: number;
   included: number;
   unitSize: number;
   unitRate: number;
 }): UsageAxis {
-  const { label, kind, used, included, unitSize, unitRate } = params;
+  const { label, used, included, unitSize, unitRate } = params;
   const overage = Math.max(0, used - included);
 
   return {
     label,
-    kind,
     used,
     included,
     // 포함량이 0이면 나눌 수 없다 — 쓴 게 있으면 전부 초과로 본다
@@ -102,7 +91,6 @@ export function buildUsage(params: { config: BillingConfig; usage: UsageCounters
 
   const tokens = toAxis({
     label: "AI 토큰",
-    kind: USAGE_KIND.RESET,
     used: usage.tokens,
     included: config.includedTokens,
     unitSize: 1_000,
@@ -111,7 +99,6 @@ export function buildUsage(params: { config: BillingConfig; usage: UsageCounters
 
   const storage = toAxis({
     label: "저장 공간",
-    kind: USAGE_KIND.CUMULATIVE,
     used: usage.voiceStorageGb + usage.sttStorageGb,
     included: config.includedStorageGb,
     unitSize: 1,

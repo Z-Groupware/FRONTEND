@@ -46,14 +46,11 @@ const MOCK: BillingOverview = {
     */
     usage: {
       /*
-        ⚠️ **토큰은 주기 초반 며칠치**로 둔다 — 주기 전체를 쓴 양을 넣으면 예측이 10배로 튄다.
-        ⚠️ **스토리지는 쌓인 총량**이다. 지난 달까지 쌓인 게 대부분이고, 이번 주기 증가분은
-           따로 담는다(`addedStorageGbThisPeriod`) — 이게 없으면 늘어나는 속도를 알 수 없다.
+        ⚠️ **스토리지는 쌓인 총량**이다. 지난 달까지 쌓인 게 대부분이다.
       */
       tokens: 186_000,
       voiceStorageGb: 34.9,
       sttStorageGb: 6.8,
-      addedStorageGbThisPeriod: 1.2,
       meetingCount: 6,
     },
   },
@@ -119,7 +116,6 @@ const MOCK_PENDING: Subscription = {
     tokens: 0,
     voiceStorageGb: 0,
     sttStorageGb: 0,
-    addedStorageGbThisPeriod: 0,
     meetingCount: 0,
   },
 };

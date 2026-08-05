@@ -7,6 +7,16 @@ import { getStorageOverview } from "@/features/storage/server";
 import { todayIso } from "@/lib/date";
 import { canManageStorage } from "@/lib/permission";
 
+/*
+  ⚠️ **정적으로 굳히지 않는다.** 이 화면은 `todayIso()`를 props로 내려 표에 `2일 전`·
+     `4개월 전` 같은 **상대 표기**를 그린다. 프리렌더되면 그 값이 빌드 시각에 고정돼,
+     한 달 뒤에 열어도 계속 `2일 전`이라고 말한다 — 이 화면의 판단 기준이 "얼마나
+     식었는지"라 그 값이 멈추면 화면이 거짓말을 한다.
+  ⚠️ 세션이 붙으면 `getViewer()`가 쿠키를 읽어 저절로 동적이 되지만, 목인 지금은
+     동적 신호가 하나도 없어 `○`(Static)으로 빌드된다 — 그때 지워도 되는 줄이다.
+*/
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "저장소 관리",
 };

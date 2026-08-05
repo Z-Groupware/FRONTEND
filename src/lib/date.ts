@@ -124,3 +124,19 @@ export function formatDateWithYear(iso: string, currentYear: number): string {
 
   return Number(match[1]) === currentYear ? formatDate(iso) : `${match[1]}년 ${formatDate(iso)}`;
 }
+
+/**
+ * `2026년 9월 1일(화)` — **연도를 항상 붙인다.**
+ *
+ * ⚠️ 결제 주기·다음 결제일·해지 시점처럼 **계약에 걸린 날짜**에 쓴다. 이런 값은 앞뒤로
+ *    해가 갈릴 수 있어서(`12월 1일 ~ 1월 1일`) 연도가 없으면 어느 해인지 알 수 없고,
+ *    돈이 언제 빠져나가는지를 말하는 자리라 짐작하게 두면 안 된다.
+ * ⚠️ `formatDateWithYear`와 달리 **기준 연도를 안 받는다.** 올해든 아니든 늘 붙이므로
+ *    서버에서 오늘을 내려보낼 필요가 없다 — 하이드레이션이 어긋날 자리가 없다.
+ */
+export function formatFullDate(iso: string): string {
+  const match = ISO_DATE.exec(iso);
+  if (!match) return iso;
+
+  return `${match[1]}년 ${formatDate(iso)}`;
+}

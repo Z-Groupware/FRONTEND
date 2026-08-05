@@ -4,7 +4,7 @@ import { useState } from "react";
 
 import { ConfirmDialog } from "@/components/common/confirm-dialog";
 import { Button } from "@/components/ui/button";
-import { formatDate } from "@/lib/date";
+import { formatFullDate } from "@/lib/date";
 
 interface CancelSubscriptionProps {
   /**
@@ -68,14 +68,14 @@ export function CancelSubscription({
         <p className="text-muted-foreground pt-1 text-[13px] leading-5 break-keep">
           {isCanceling ? (
             <>
-              <span className="text-foreground font-medium">{formatDate(periodEnd)}</span>까지
+              <span className="text-foreground font-medium">{formatFullDate(periodEnd)}</span>까지
               이용할 수 있습니다. 계속 이용하시려면 해지를 취소해 주세요.
             </>
           ) : (
             <>
               해지 시 현재 결제 주기(
-              <span className="text-foreground font-medium">{formatDate(periodEnd)}</span>)가 끝난
-              뒤 구독이 종료됩니다. {DOWNGRADE_NOTE}
+              <span className="text-foreground font-medium">{formatFullDate(periodEnd)}</span>)가
+              끝난 뒤 구독이 종료됩니다. {DOWNGRADE_NOTE}
             </>
           )}
         </p>
@@ -105,7 +105,12 @@ export function CancelSubscription({
       <ConfirmDialog
         isOpen={isOpen}
         onOpenChange={setIsOpen}
-        title={isCanceling ? "해지를 취소할까요?" : "구독을 해지할까요?"}
+        /*
+          ⚠️ 해지를 되돌리는 창에서 **`취소`라는 말을 안 쓴다.** `해지를 취소할까요?` +
+             실행 `해지 취소` + 물러남 `취소`가 되어 **두 버튼이 다 취소로 읽혔다** —
+             어느 쪽이 구독을 지키는 건지 알 수 없다. `유지`로 뒤집어 말한다.
+        */
+        title={isCanceling ? "구독을 계속 이용할까요?" : "구독을 해지할까요?"}
         /*
           ⚠️ **두 문장을 줄로 나눈다.** 한 줄로 이어 두면 창 폭에서 아무 데나 접혀
              `워크스페이스에` / `접근할 수 없습니다`처럼 끊긴다 — 뜻 단위로 끊어야 읽힌다.
@@ -114,13 +119,13 @@ export function CancelSubscription({
         description={
           isCanceling ? (
             <>
-              {formatDate(periodEnd)} 이후에도 구독이 유지됩니다.
+              {formatFullDate(periodEnd)} 이후에도 구독이 유지됩니다.
               <br />
               다음 결제일에 정상 청구됩니다.
             </>
           ) : (
             <>
-              {formatDate(periodEnd)}까지 이용할 수 있습니다.
+              {formatFullDate(periodEnd)}까지 이용할 수 있습니다.
               <br />
               {DOWNGRADE_NOTE}
             </>
@@ -131,7 +136,9 @@ export function CancelSubscription({
              버튼은 **하는 일**만 짧게 말한다(§카피).
           ⚠️ `cancelLabel`은 안 넘긴다. 기본값이 `취소`라 창마다 다른 말을 안 쓰게 된다.
         */
-        confirmLabel={isCanceling ? "해지 취소" : "해지"}
+        confirmLabel={isCanceling ? "구독 유지" : "해지"}
+        /* 되돌리는 창에서는 물러나는 쪽도 `취소`가 아니라 `닫기`다 — 취소가 두 번 나온다 */
+        cancelLabel={isCanceling ? "닫기" : undefined}
         isDestructive={!isCanceling}
         onConfirm={handleConfirm}
       />
