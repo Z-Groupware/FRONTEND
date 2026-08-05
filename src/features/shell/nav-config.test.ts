@@ -203,49 +203,54 @@ describe("화면이 있으면 자동으로 이어진다", () => {
     ⚠️ 자동 판정이 **양쪽 다** 맞아야 한다. 한쪽만 보면 "전부 true"로 만들어도 통과한다.
   */
   it("모든 항목의 판정이 실제 `page.tsx` 존재와 일치한다", () => {
+    const routes = collectAppRoutes(path.join(process.cwd(), "src/app"));
+
     const mismatched = everyItem
-      .filter((item) => {
-        const dir = path.join(process.cwd(), "src/app");
-        const exists = findPage(dir, item.href);
-        return Boolean(item.isReady) !== exists;
-      })
+      .filter((item) => Boolean(item.isReady) !== routes.has(item.href))
       .map((item) => `${item.label} (${item.href}) — isReady=${item.isReady}`);
 
     expect(mismatched).toEqual([]);
   });
+
+  /* ⚠️ 중첩 그룹(`/a/(x)/(y)/page.tsx`)도 한 라우트다 — 헬퍼가 여기서 한 번 깨졌다 */
+  it("중첩 라우트 그룹도 한 겹이 아니라 끝까지 판다", () => {
+    const routes = collectAppRoutes(path.join(process.cwd(), "src/app"));
+
+    expect(routes.has("/owner")).toBe(true);
+    expect(routes.has("/manage/billing")).toBe(true);
+  });
 });
 
-/** 괄호 그룹을 건너뛰며 그 주소의 `page.tsx`를 찾는다 */
-function findPage(root: string, href: string): boolean {
-  const wanted = href.split("/").filter(Boolean);
+/**
+ * `src/app` 아래 **모든 고정 라우트**를 모은다.
+ *
+ * ⚠️ 경로를 거슬러 찾지 않는다. 전에는 href를 한 칸씩 따라가며 그룹을 건너뛰었는데,
+ *    **중첩 그룹**(`/owner/(shell)/(dashboard)/page.tsx`)에서 한 겹만 보고 놓쳤다 —
+ *    제품 코드는 맞게 판정했는데 테스트만 틀려서 잘못된 실패가 났다.
+ *    전부 모아 놓고 `has`로 보면 깊이가 몇 겹이든 상관없다.
+ */
+function collectAppRoutes(root: string): Set<string> {
+  const found = new Set<string>();
 
-  const walk = (dir: string, matched: number): boolean => {
+  const walk = (dir: string) => {
     for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-      if (!entry.isDirectory()) continue;
       const full = path.join(dir, entry.name);
-      const isGroup = entry.name.startsWith("(") && entry.name.endsWith(")");
 
-      if (isGroup) {
-        if (walk(full, matched)) return true;
+      if (entry.isDirectory()) {
+        walk(full);
         continue;
       }
-      if (entry.name !== wanted[matched]) continue;
+      if (entry.name !== "page.tsx") continue;
 
-      const next = matched + 1;
-      if (next === wanted.length) {
-        if (fs.existsSync(path.join(full, "page.tsx"))) return true;
-        // 다음 칸이 괄호 그룹일 수 있다 — `/owner/(dashboard)/page.tsx`
-        for (const inner of fs.readdirSync(full, { withFileTypes: true })) {
-          if (!inner.isDirectory()) continue;
-          if (!inner.name.startsWith("(")) continue;
-          if (fs.existsSync(path.join(full, inner.name, "page.tsx"))) return true;
-        }
-        continue;
-      }
-      if (walk(full, next)) return true;
+      const segments = path.relative(root, dir).split(path.sep).filter(Boolean);
+      // 동적 구간(`[id]`)은 사이드바가 가리키지 않는다
+      if (segments.some((segment) => segment.includes("["))) continue;
+
+      const url = segments.filter((segment) => !segment.startsWith("(")).join("/");
+      found.add("/" + url);
     }
-    return false;
   };
 
-  return walk(root, 0);
+  walk(root);
+  return found;
 }
