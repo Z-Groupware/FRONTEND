@@ -83,6 +83,18 @@ const DASHBOARD: Record<Role, NavItem> = {
 };
 
 /**
+ * 사이드바 **로고**가 데려갈 곳 — 메뉴 [대시보드]와 **같은 항목**을 준다.
+ *
+ * ⚠️ 경로를 따로 적지 않는다(`roleHome`으로도 안 짚는다). 로고와 메뉴가 같은 곳을 가리키면서
+ *    한쪽만 `isReady`를 보면 **로고만 404로 보낸다** — 메뉴는 "준비 중"이라고 말하는데
+ *    로고는 없는 화면으로 데려가니, 둘 중 로고가 거짓말을 하는 쪽이 된다(§정직성).
+ *    항목 하나를 나눠 쓰면 화면이 생기는 날 `isReady` 한 줄로 둘이 같이 열린다.
+ */
+export function dashboardFor(role: Role): NavItem {
+  return DASHBOARD[role];
+}
+
+/**
  * 이 사람의 사이드바.
  *
  * ⚠️ **base role로 뼈대를 잡고, `is_admin`이면 회사 운영 구역을 덧붙인다.** 순서가 중요하다 —

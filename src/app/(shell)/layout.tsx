@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { getUnreadNoticeCount } from "@/features/notice/server";
 import { RoleSidebar } from "@/features/shell/components/role-sidebar";
 import type { NavSection } from "@/features/shell/nav";
-import { navFor } from "@/features/shell/nav-config";
+import { dashboardFor, navFor } from "@/features/shell/nav-config";
 import { getViewer } from "@/features/shell/viewer";
 
 /**
@@ -52,7 +52,7 @@ export default async function ShellLayout({ children }: { children: ReactNode })
 
   return (
     <div className="bg-background flex h-dvh overflow-hidden">
-      <RoleSidebar sections={sections} user={viewer} />
+      <RoleSidebar sections={sections} home={dashboardFor(viewer.role)} user={viewer} />
 
       {/*
         상단바는 여기서 그리지 않는다 — 제목·액션이 도메인마다 달라서

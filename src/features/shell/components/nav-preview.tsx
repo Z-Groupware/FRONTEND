@@ -1,7 +1,7 @@
 import { ROLE, type Role, ROLE_LABEL } from "@/constants/role";
 import type { Actor } from "@/lib/permission";
 
-import { navFor } from "../nav-config";
+import { dashboardFor, navFor } from "../nav-config";
 import type { Viewer } from "../viewer";
 import { RoleSidebar } from "./role-sidebar";
 
@@ -114,7 +114,11 @@ function PreviewColumn({ item }: { item: PreviewCase }) {
            스크롤이 안 생긴다. 열마다 높이가 달라지는 건 의도다 — 그 차이가 곧 정보다.
       */}
       <div className="border-border overflow-hidden rounded-xl border">
-        <RoleSidebar sections={navFor(item.viewer as Actor)} user={item.viewer} />
+        <RoleSidebar
+          sections={navFor(item.viewer as Actor)}
+          home={dashboardFor(item.viewer.role)}
+          user={item.viewer}
+        />
       </div>
     </section>
   );

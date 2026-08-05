@@ -1,7 +1,7 @@
 import { ROLE } from "@/constants/role";
 import type { Actor } from "@/lib/permission";
 
-import { navFor } from "./nav-config";
+import { dashboardFor, navFor } from "./nav-config";
 
 /**
  * 사이드바 구성 — **Admin이 역할을 갈아치우지 않는지**가 핵심이다.
@@ -109,5 +109,31 @@ describe("Admin 겸직", () => {
   it("Owner에게 `isAdmin`이 잘못 켜져도 계정 발급이 생기지 않는다", () => {
     // ⚠️ `canGrantAdmin`이 Owner를 겸직 대상에서 빼므로 판정 자체가 거짓이다
     expect(labels(navFor(actor(ROLE.OWNER, true)), "회사 운영")).not.toContain("계정 발급");
+  });
+});
+
+/**
+ * 로고가 데려갈 곳 — **메뉴 [대시보드]와 한 항목**이어야 한다.
+ * 둘이 갈라지면 메뉴는 "준비 중"이라 말하는데 로고만 404로 데려간다.
+ */
+describe("dashboardFor", () => {
+  it.each([
+    [ROLE.OWNER, "/owner"],
+    [ROLE.LEADER, "/team"],
+    [ROLE.MEMBER, "/my"],
+    [ROLE.SYSTEM, "/system"],
+  ])("%s의 로고는 자기 대시보드로 간다 — 랜딩이 아니다", (role, href) => {
+    expect(dashboardFor(role).href).toBe(href);
+    expect(dashboardFor(role).href).not.toBe("/");
+  });
+
+  it("사이드바 첫 항목과 **같은 객체**다 — 갈라지면 한쪽만 준비 상태를 본다", () => {
+    for (const role of [ROLE.OWNER, ROLE.LEADER, ROLE.MEMBER] as const) {
+      expect(navFor(actor(role))[0]?.items[0]).toBe(dashboardFor(role));
+    }
+  });
+
+  it("겸직해도 로고는 그대로다 — Admin은 첫 화면을 바꾸지 않는다", () => {
+    expect(dashboardFor(actor(ROLE.LEADER, true).role).href).toBe("/team");
   });
 });
