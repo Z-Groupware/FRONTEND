@@ -7,6 +7,8 @@ import { Skeleton } from "@/components/ui/skeleton";
  *    탭 셋이 남아 있었다 — 로딩이 끝나는 순간 그 줄이 사라지면서 아래가 통째로 위로 밀린다.
  * ⚠️ 카드는 **네 장**이다(플랜 · 사용량 · 결제 수단 · 결제 내역). 간격도 본문과 같은 `gap-7`이다.
  *    수를 줄여 두면 채워질 때 아래로 길어지면서 스크롤이 튄다.
+ * ⚠️ 결제 수단은 **한 줄뿐**이다(카드는 회사당 한 장, 2026-08-05). 여러 장 목록이던 시절의
+ *    높이를 그대로 두면 채워지는 순간 45px이 접히면서 아래가 위로 딸려 올라간다.
  */
 export default function ManageBillingLoading() {
   return (
@@ -15,7 +17,7 @@ export default function ManageBillingLoading() {
         <div className="flex flex-col gap-7">
           <Skeleton className="h-[188px] w-full rounded-2xl" />
           <Skeleton className="h-[268px] w-full rounded-2xl" />
-          <Skeleton className="h-[196px] w-full rounded-2xl" />
+          <Skeleton className="h-[152px] w-full rounded-2xl" />
           <Skeleton className="h-[228px] w-full rounded-2xl" />
         </div>
       </div>

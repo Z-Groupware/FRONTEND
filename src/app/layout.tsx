@@ -5,6 +5,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 
 import { ThemeProvider } from "@/components/common/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
+import { SCALE_BOOT_SCRIPT } from "@/features/appearance/scale";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -53,6 +54,11 @@ export default function RootLayout({
     >
       <head>
         <script dangerouslySetInnerHTML={{ __html: LANDING_THEME_BOOT }} />
+        {/*
+          ⚠️ 화면 배율도 **첫 페인트 전에** 건다. 하이드레이션까지 기다리면 새로고침마다
+             100%로 한 번 그려졌다가 확대되면서 화면이 통째로 튄다 — 랜딩 밝기와 같은 이유다.
+        */}
+        <script dangerouslySetInnerHTML={{ __html: SCALE_BOOT_SCRIPT }} />
       </head>
       <body className="bg-background text-foreground flex min-h-full flex-col">
         <ThemeProvider>

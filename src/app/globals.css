@@ -94,6 +94,14 @@
 }
 
 :root {
+  /*
+   * 화면 배율의 기준값 — 부트 스크립트가 `<html>`에 실제 값을 덮어쓴다(`SCALE_BOOT_SCRIPT`).
+   *
+   * ⚠️ **`zoom`만으로는 부족하다.** `100dvh`는 화면 높이를 CSS 픽셀로 그대로 돌려주는데,
+   *    그 값을 가진 상자가 0.75배로 그려지면 **아래 25%가 빈 채로 남는다** —
+   *    셸이 화면 중간에서 끝나 보인다. 화면 높이를 쓰는 자리는 이 값으로 나눠 준다.
+   */
+  --app-zoom: 1;
   --radius: 0.625rem;
 
   /* ───────── Z 디자인 토큰 (라이트) — CONVENTIONS §8
@@ -150,6 +158,54 @@
   /* 개인 캘린더 항목 기본색 — 상태색이 아니라 태그 구분용 카테고리색이다(역할 배지와 같은 성격). */
   --calendar-todo: #166534;
   --calendar-action: #6d28d9;
+  --calendar-action-surface: #ede9fe;
+  /* 태그 색 — **뜻이 없는 구분용**이다. 프로젝트 태그·프로필 아바타가 같이 쓴다.
+     ⚠️ 라이트·다크가 **다른 값**이다. 파스텔을 다크에 그대로 쓰면 칩만 형광등처럼 뜬다 —
+        다크는 원색을 카드(#242120) 위에 20%로 얹은 값이고 글자는 밝은 쪽을 쓴다.
+     ⚠️ 여기 없는 색(red·green·blue·amber·orange·violet·stone)은 **뜻이 이미 있다**
+        (에러·상태점·액센트·경고·Owner). 태그가 그 색을 쓰면 뜻이 있는 것처럼 읽힌다.
+     ⚠️ **순서를 바꾸지 않는다.** `lib/palette`가 이 순서로 색을 배정한다 — 바꾸면
+        기존 프로젝트·사람의 색이 전부 밀린다. 값만 손본다.
+     전부 WCAG AA(4.5:1) 통과. 최소 6.4:1 */
+  --tag-slate-bg: #f1f5f9;
+  --tag-slate-fg: #1e293b;
+  --tag-yellow-bg: #fef9c3;
+  --tag-yellow-fg: #854d0e;
+  --tag-lime-bg: #ecfccb;
+  --tag-lime-fg: #3f6212;
+  --tag-emerald-bg: #d1fae5;
+  --tag-emerald-fg: #065f46;
+  --tag-teal-bg: #ccfbf1;
+  --tag-teal-fg: #115e59;
+  --tag-cyan-bg: #cffafe;
+  --tag-cyan-fg: #155e75;
+  --tag-sky-bg: #e0f2fe;
+  --tag-sky-fg: #075985;
+  --tag-indigo-bg: #e0e7ff;
+  --tag-indigo-fg: #3730a3;
+  --tag-purple-bg: #f3e8ff;
+  --tag-purple-fg: #6b21a8;
+  --tag-fuchsia-bg: #fae8ff;
+  --tag-fuchsia-fg: #86198f;
+  --tag-pink-bg: #fce7f3;
+  --tag-pink-fg: #9d174d;
+  /* 태그 **원색** — 막대처럼 글자가 안 얹히는 자리에 쓴다.
+     ⚠️ **라이트·다크가 다른 값이다.** 처음엔 한 값으로 뒀는데, 막대 바탕(`--secondary`)이
+        라이트에서는 거의 흰색이고 다크에서는 어두워서 **한 색으로는 양쪽을 못 넘긴다** —
+        노랑·연두는 라이트에서 1.8:1로 거의 안 보였다.
+     ⚠️ 기준은 3:1이다(WCAG 1.4.11 비텍스트 대비). 글자가 안 얹히니 4.5:1까지는 필요 없다.
+        지금 값은 전부 4.7:1 이상이다. */
+  --tag-slate-solid: #475569;
+  --tag-yellow-solid: #a16207;
+  --tag-lime-solid: #4d7c0f;
+  --tag-emerald-solid: #047857;
+  --tag-teal-solid: #0f766e;
+  --tag-cyan-solid: #0e7490;
+  --tag-sky-solid: #0369a1;
+  --tag-indigo-solid: #4338ca;
+  --tag-purple-solid: #7e22ce;
+  --tag-fuchsia-solid: #a21caf;
+  --tag-pink-solid: #be185d;
   /* 랜딩 검정 섹션 — 로그인 전 화면이라 **테마와 무관하게 어둡다**(도움말 패널과 같은 규칙) */
   --landing-dark: #0a0a0a;
   --landing-dark-foreground: #ffffff;
@@ -221,6 +277,42 @@
   --status-done: #a78bfa;
   --calendar-todo: #4ade80;
   --calendar-action: #c4b5fd;
+  --calendar-action-surface: #2b2140;
+  /* 태그 색 — 라이트와 다른 값이다(위 주석 참고) */
+  --tag-slate-bg: #313235;
+  --tag-slate-fg: #cbd5e1;
+  --tag-yellow-bg: #4c3e1b;
+  --tag-yellow-fg: #fde047;
+  --tag-lime-bg: #37431e;
+  --tag-lime-fg: #bef264;
+  --tag-emerald-bg: #203f33;
+  --tag-emerald-fg: #6ee7b7;
+  --tag-teal-bg: #213f3b;
+  --tag-teal-fg: #5eead4;
+  --tag-cyan-bg: #1e3f44;
+  --tag-cyan-fg: #67e8f9;
+  --tag-sky-bg: #203b48;
+  --tag-sky-fg: #7dd3fc;
+  --tag-indigo-bg: #312f4a;
+  --tag-indigo-fg: #a5b4fc;
+  --tag-purple-bg: #3e2b4b;
+  --tag-purple-fg: #d8b4fe;
+  --tag-fuchsia-bg: #482849;
+  --tag-fuchsia-fg: #f0abfc;
+  --tag-pink-bg: #4c2938;
+  --tag-pink-fg: #f9a8d4;
+  /* 태그 원색 — 다크 바탕에서 보이는 값이다(라이트와 다르다, 위 주석 참고) */
+  --tag-slate-solid: #94a3b8;
+  --tag-yellow-solid: #facc15;
+  --tag-lime-solid: #a3e635;
+  --tag-emerald-solid: #34d399;
+  --tag-teal-solid: #2dd4bf;
+  --tag-cyan-solid: #22d3ee;
+  --tag-sky-solid: #38bdf8;
+  --tag-indigo-solid: #818cf8;
+  --tag-purple-solid: #c084fc;
+  --tag-fuchsia-solid: #e879f9;
+  --tag-pink-solid: #f472b6;
   /* 랜딩 검정 섹션은 다크에서도 같은 값이다 — 라이트/다크가 갈리면 랜딩 톤이 흔들린다 */
   --landing-dark: #0a0a0a;
   --landing-dark-foreground: #ffffff;
@@ -237,6 +329,19 @@
 
 @layer utilities {
   /*
+   * 화면 전체 높이 — **배율을 반영한다.** `h-dvh`를 그대로 쓰면 배율이 1이 아닐 때
+   * 아래가 남거나 넘친다(위 `--app-zoom` 주석 참고).
+   * ⚠️ 새 화면에서 화면 높이가 필요하면 `h-dvh`가 아니라 이걸 쓴다.
+   */
+  .h-screen-z {
+    height: calc(100dvh / var(--app-zoom));
+  }
+
+  .min-h-screen-z {
+    min-height: calc(100dvh / var(--app-zoom));
+  }
+
+  /*
    * 밝은 무대의 3D Z — **가장자리를 지운다.**
    * ⚠️ 흰 바탕에서는 물체의 경계선이 그대로 보여 "떠 있는 덩어리"가 된다.
    *    가운데만 남기고 밖으로 갈수록 없애면 종이에 눌러 찍힌 자국처럼 배경에 녹는다.
@@ -245,19 +350,6 @@
   .landing-day .landing-z-fade {
     -webkit-mask-image: radial-gradient(closest-side, #000 14%, transparent 62%);
     mask-image: radial-gradient(closest-side, #000 14%, transparent 62%);
-  }
-
-  /*
-   * 스크롤바를 감춘다 — 모달 안처럼 **틀이 이미 경계를 말해 주는** 자리에서만 쓴다.
-   * ⚠️ 스크롤 자체는 살아 있다. 막대만 지우는 것이라 휠·트랙패드·키보드 모두 그대로 동작한다.
-   */
-  .scrollbar-hidden {
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-  }
-
-  .scrollbar-hidden::-webkit-scrollbar {
-    display: none;
   }
 
   /*
@@ -1506,6 +1598,30 @@
 }
 
 @layer base {
+  /*
+   * 스크롤바는 **사이트 전체에서 감춘다**(팀 결정). 화면마다 붙이는 게 아니라 기본값이다 —
+   * 전에는 52곳 중 9곳만 처리돼 있었고, 그중 6곳은 같은 선언을 인라인으로 세 줄씩 적고
+   * 있었다. 규칙이 "무조건"이면 기본값이어야 한다.
+   *
+   * ⚠️ **스크롤 자체는 살아 있다.** 막대만 지우는 것이라 휠·트랙패드·키보드·`scrollTop`이
+   *    전부 그대로 동작한다.
+   * ⚠️ 막대는 "여기 더 있다"를 알려 주는 표시이기도 했다. 지운 만큼 **다른 걸로 갚아야 한다.**
+   *    - **가로로 넘치는 표**는 감싸는 칸이 포커스를 받는다(`ui/table.tsx`의 `tabIndex`).
+   *      막대가 없으면 키보드만 쓰는 사람은 잘려 나간 오른쪽 칸에 닿을 방법이 없다.
+   *    - **긴 목록**은 아래에 [더 보기]를 둔다(CLAUDE.md §목록·페이지네이션).
+   *    ⚠️ **아직 안 갚은 것: 목록·표 머리의 `전체 N건`.** 규칙에는 적혀 있고 `paginate.ts`가
+   *       `totalCount`를 이미 돌려주는데, 그걸 화면에 그리는 곳이 아직 없다 — 목록 화면이
+   *       붙을 때 같이 단다. 여기에 "적는다"고 현재형으로 써 두면 다음 사람이 이미 된 줄 안다.
+   */
+  * {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  *::-webkit-scrollbar {
+    display: none;
+  }
+
   * {
     @apply border-border outline-ring/50;
   }

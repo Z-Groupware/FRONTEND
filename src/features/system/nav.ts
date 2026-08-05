@@ -8,7 +8,11 @@ import type { NavSection } from "@/features/shell/nav";
  */
 export const SYSTEM_NAV: NavSection[] = [
   {
-    title: "운영 메뉴",
+    /*
+      ⚠️ **제목을 두지 않는다.** 구역이 하나뿐이라 이름표가 가리킬 대상이 없고,
+         `RoleSidebar`는 제목이 있는 구역 위에 구분선을 긋는다 — 여기서만 제목을 두면
+         로고 바로 아래에 선이 생겨 역할 셸과 다르게 보인다(로고 아래 선은 두지 않는다).
+    */
     items: [
       { href: "/system", label: "대시보드", icon: "dashboard", isReady: true },
       { href: "/system/approval", label: "기업 승인", icon: "approval", isReady: true },

@@ -32,7 +32,7 @@ export function OnboardingShell({ step, isDone = false, children }: OnboardingSh
     // 배경 점 그리드 — 토큰(--border)을 그대로 써서 다크에서도 따라온다.
     // ⚠️ 화면 높이에 맞춘다 — 평소엔 페이지가 스크롤되거나
     //    끝에서 튕기지 않는다. 움직임은 카드 안쪽 목록에서만 일어난다.
-    <div className="bg-background bg-dot-grid flex h-dvh flex-col overflow-hidden overscroll-none">
+    <div className="bg-background bg-dot-grid h-screen-z flex flex-col overflow-hidden overscroll-none">
       <BrandBar
         right={
           isDone ? (

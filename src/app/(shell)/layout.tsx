@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { getUnreadNoticeCount } from "@/features/notice/server";
 import { RoleSidebar } from "@/features/shell/components/role-sidebar";
 import type { NavSection } from "@/features/shell/nav";
-import { OWNER_NAV } from "@/features/shell/nav";
+import { dashboardFor, navFor } from "@/features/shell/nav-config";
 import { getViewer } from "@/features/shell/viewer";
 
 /**
@@ -44,11 +44,16 @@ export default async function ShellLayout({ children }: { children: ReactNode })
     getViewer(),
     getUnreadNoticeCount().catch(() => 0),
   ]);
-  const sections = withNoticeDot(OWNER_NAV, unreadNoticeCount > 0);
+  /*
+    ⚠️ **역할이 목록을 정한다.** 전에는 `OWNER_NAV` 하나를 모두에게 줘서, 팀장·사원으로
+       로그인해도 대표 메뉴가 그대로 떴다. `is_admin` 겸직도 아무 표시가 없었다.
+  */
+  const sections = withNoticeDot(navFor(viewer), unreadNoticeCount > 0);
 
   return (
-    <div className="bg-background flex h-dvh overflow-hidden">
-      <RoleSidebar sections={sections} user={viewer} />
+    // ⚠️ `h-screen-z` — 화면 배율(zoom)이 걸려도 셸이 아래에서 안 잘린다(§화면 배율)
+    <div className="bg-background h-screen-z flex overflow-hidden">
+      <RoleSidebar sections={sections} home={dashboardFor(viewer.role)} user={viewer} />
 
       {/*
         상단바는 여기서 그리지 않는다 — 제목·액션이 도메인마다 달라서
