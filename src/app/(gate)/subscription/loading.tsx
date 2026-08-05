@@ -9,7 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
  */
 export default function Loading() {
   return (
-    <div className="bg-background bg-dot-grid flex min-h-dvh flex-col">
+    <div className="bg-background bg-dot-grid min-h-screen-z flex flex-col">
       <div className="border-border h-[52px] shrink-0 border-b" />
       <div className="mx-auto flex w-full max-w-[1120px] flex-col gap-[21px] px-[21px] py-6 lg:py-10">
         <div className="flex flex-col gap-[7px]">

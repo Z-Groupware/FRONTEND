@@ -51,7 +51,8 @@ export default async function ShellLayout({ children }: { children: ReactNode })
   const sections = withNoticeDot(navFor(viewer), unreadNoticeCount > 0);
 
   return (
-    <div className="bg-background flex h-dvh overflow-hidden">
+    // ⚠️ `h-screen-z` — 화면 배율(zoom)이 걸려도 셸이 아래에서 안 잘린다(§화면 배율)
+    <div className="bg-background h-screen-z flex overflow-hidden">
       <RoleSidebar sections={sections} home={dashboardFor(viewer.role)} user={viewer} />
 
       {/*

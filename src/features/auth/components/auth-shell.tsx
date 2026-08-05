@@ -51,7 +51,7 @@ export function AuthShell({ children, hasLegalNotice = true }: AuthShellProps) {
       ⚠️ 높이 조건(`@media(min-height:…)`)으로 잠그지 않는다. 기준값을 찍어 맞추는 방식은
          카드 높이가 바뀔 때마다 다시 재야 하고, 그 사이 화면에서는 잘린다.
     */
-    <div className="flex h-dvh overflow-hidden overscroll-none">
+    <div className="h-screen-z flex overflow-hidden overscroll-none">
       {/* 왼쪽 — 제품이 뭘 하는지 한 번 더. 검정은 랜딩 무대와 같은 값이다 */}
       <SpotlightPanel className="relative hidden w-[46%] max-w-[720px] shrink-0 overflow-hidden bg-[#0a0a0a] md:block">
         {/* 무대 광원 — 랜딩과 같은 축(파랑·보라) */}

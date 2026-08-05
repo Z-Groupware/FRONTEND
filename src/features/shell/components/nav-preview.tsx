@@ -71,7 +71,7 @@ const CASES: PreviewCase[] = [
 
 export function NavPreview() {
   return (
-    <div className="bg-background bg-dot-grid min-h-dvh overflow-x-auto p-8">
+    <div className="bg-background bg-dot-grid min-h-screen-z overflow-x-auto p-8">
       <div className="mx-auto w-fit">
         <header className="pb-6">
           <h1 className="text-2xl leading-8 font-semibold tracking-[-0.48px]">역할별 사이드바</h1>

@@ -26,7 +26,8 @@ interface ScreenErrorProps {
    *    그 안에서 상단바(56px) 다음에 `min-h-dvh`를 두면 `56 + 100dvh`가 되어
    *    **아래 56px이 잘리고**(스크롤도 안 된다) 카드가 그만큼 아래로 밀린다.
    * ⚠️ 셸 밖(온보딩·`/subscription`·public)에서는 **끈 채로 둔다.** 거기서는 이 화면이
-   *    페이지를 통째로 대체하고 위에 상시 상단바가 없어서 `min-h-dvh`가 맞다.
+   *    페이지를 통째로 대체하고 위에 상시 상단바가 없어서 화면 높이를 그대로 쓴다
+   *    (`min-h-screen-z` — 배율을 반영한 높이다).
    * ⚠️ **`(shell)`뿐 아니라 `(system)`도 셸이다.** 두 레이아웃 다 `flex h-dvh overflow-hidden`에
    *    `PageHeader`(56px)를 얹는 같은 구조라, 라우트 그룹 이름이 아니라 **위에 상단바가 남는지**로
    *    판단한다. 그룹 이름으로 외우면 셸이 하나 더 생길 때 똑같이 잘린다.
@@ -49,7 +50,9 @@ export function ScreenError({ title, reset, isInsideShell }: ScreenErrorProps) {
       className={cn(
         "bg-background flex flex-col items-center justify-center gap-4 px-6 text-center",
         // `min-h-0`이 있어야 flex 자식이 부모보다 커지지 않는다 — 없으면 내용 높이만큼 삐져나간다
-        isInsideShell ? "min-h-0 flex-1" : "min-h-dvh",
+        // ⚠️ 셸 밖은 `min-h-screen-z`다 — `100dvh`는 배율(zoom)을 모르는 값이라
+        //    그대로 두면 배율이 걸린 화면에서 아래가 남거나 넘친다(§화면 배율)
+        isInsideShell ? "min-h-0 flex-1" : "min-h-screen-z",
       )}
     >
       <div className="flex flex-col gap-2">
