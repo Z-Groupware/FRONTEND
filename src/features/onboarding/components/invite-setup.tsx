@@ -135,7 +135,7 @@ export function InviteSetup({ departments, positions }: InviteSetupProps) {
           <InviteColumnHead />
 
           {/* 스크롤바는 숨긴다(스크롤 자체는 된다) */}
-          <div className="flex-1 [scrollbar-width:none] overflow-auto overscroll-contain [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+          <div className="flex-1 overflow-auto overscroll-contain">
             {list.invites.map((invite: Invite, index: number) => (
               <InviteRow
                 key={invite.id}
