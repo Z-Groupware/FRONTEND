@@ -6,8 +6,10 @@ import { cn } from "@/lib/utils";
 
 /**
  * 대시보드 "회의" 위젯 한 줄의 UI 계약 — 오너·팀장 대시보드가 **공용**으로 쓴다.
- * ⚠️ 유일한 차이는 `hostLabel`이다: 오너 개설이면 `"Owner"`, 팀 회의면 부서명(`"개발팀"`).
- *    그 외 구조는 두 대시보드가 완전히 동일하다.
+ * 라벨은 2단이다:
+ *   - `originLabel`(항상): 회의의 소속·권한 — 오너 개설="Owner", 팀 회의=부서명("개발팀").
+ *   - `hostLabel`(선택): **개설자(주최자) 사람** — 비오너 회의만. 오너 회의는 개설 주체를
+ *     "Owner"로 추상화하므로 없다. 이 규칙은 나중의 회의 목록·탭에도 그대로 적용된다.
  */
 export interface DashboardMeeting {
   id: string;
@@ -20,8 +22,10 @@ export interface DashboardMeeting {
   room: string;
   scheduledAt: string;
   attendeeCount: number;
-  /** 개설 주체 라벨 — 오너 개설="Owner", 팀 회의=부서명 */
-  hostLabel: string;
+  /** 소속·권한 라벨 — 오너 개설="Owner", 팀 회의=부서명("개발팀") */
+  originLabel: string;
+  /** 개설자 사람 — 팀장이면 "김서준(팀장)", 팀원이면 "이하윤". 오너 회의는 없음(undefined) */
+  hostLabel?: string;
 }
 
 /**
@@ -85,9 +89,15 @@ export function DashboardMeetingItem({ meeting, showDivider }: DashboardMeetingI
             </span>
             <div className="flex min-w-0 items-center gap-2">
               <span className="truncate text-[15px]">{meeting.title}</span>
+              {/* 소속·권한 라벨(항상) + 개설자 라벨(비오너 회의만) */}
               <Badge variant="secondary" className="shrink-0">
-                {meeting.hostLabel}
+                {meeting.originLabel}
               </Badge>
+              {meeting.hostLabel && (
+                <Badge variant="outline" className="shrink-0">
+                  {meeting.hostLabel}
+                </Badge>
+              )}
             </div>
           </div>
 

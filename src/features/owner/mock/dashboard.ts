@@ -80,7 +80,7 @@ export const OWNER_DASHBOARD_MOCK: OwnerDashboardOverview = {
       room: "회의실 A",
       scheduledAt: "2026-07-30T10:00:00",
       attendeeCount: 4,
-      hostLabel: "Owner",
+      originLabel: "Owner",
     },
     {
       id: "m2",
@@ -91,7 +91,7 @@ export const OWNER_DASHBOARD_MOCK: OwnerDashboardOverview = {
       room: "대회의실",
       scheduledAt: "2026-08-01T14:00:00",
       attendeeCount: 4,
-      hostLabel: "Owner",
+      originLabel: "Owner",
     },
     {
       id: "m3",
@@ -102,7 +102,7 @@ export const OWNER_DASHBOARD_MOCK: OwnerDashboardOverview = {
       room: "회의실 B",
       scheduledAt: "2026-08-05T11:00:00",
       attendeeCount: 3,
-      hostLabel: "Owner",
+      originLabel: "Owner",
     },
     {
       id: "m4",
@@ -113,7 +113,7 @@ export const OWNER_DASHBOARD_MOCK: OwnerDashboardOverview = {
       room: "회의실 C",
       scheduledAt: "2026-08-08T15:00:00",
       attendeeCount: 3,
-      hostLabel: "Owner",
+      originLabel: "Owner",
     },
     {
       id: "m5",
@@ -124,7 +124,7 @@ export const OWNER_DASHBOARD_MOCK: OwnerDashboardOverview = {
       room: "회의실 A",
       scheduledAt: "2026-08-12T10:00:00",
       attendeeCount: 2,
-      hostLabel: "Owner",
+      originLabel: "Owner",
     },
   ],
 };
