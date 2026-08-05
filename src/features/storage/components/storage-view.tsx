@@ -92,17 +92,12 @@ export function StorageView({ overview, config, canManage }: StorageViewProps) {
         <div className="flex flex-col gap-7">
           <StorageSummary totals={totals} />
 
-          {/*
-            ⚠️ **무엇이 사라지는지 먼저 말한다.** 지우라고만 하고 무엇을 잃는지 안 알리면,
-               요약·액션까지 사라지는 줄 알고 아무도 손을 못 댄다 — 반대로 다 남는 줄 알고
-               지웠다가 다시듣기가 안 되는 것도 마찬가지로 나쁘다(§정직성).
-          */}
-          <p className="border-border bg-secondary/40 rounded-xl border px-5 py-4 text-[13px] leading-[21px] break-keep">
-            녹음을 지우면 <span className="font-medium">음성 파일만 사라집니다.</span> 자막·요약과
-            액션은 그대로 남습니다 — 다시 들을 수 없게 될 뿐입니다.
-          </p>
-
-          <ProjectStorageTable projects={projects} canManage={canManage} onDelete={setTarget} />
+          <ProjectStorageTable
+            projects={projects}
+            totalVoiceGb={totals.voiceGb}
+            canManage={canManage}
+            onDelete={setTarget}
+          />
         </div>
       </div>
 
