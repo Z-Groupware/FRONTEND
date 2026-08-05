@@ -60,7 +60,10 @@ export interface BillingConfig {
   /** 초과 스토리지 1GB·월당(원) */
   overagePerGbMonth: number;
   /**
-   * 기본료에 부가세가 포함돼 있는지.
+   * **청구 금액 전체**(기본료 + 초과분)에 부가세가 포함돼 있는지.
+   *
+   * ⚠️ "기본료에만"이 아니다. `calculatePrice`가 **소계 전체**에 매기므로, BE가 기본료만
+   *    포함해서 내려 주면 초과분 부가세가 빠진다 — 값을 정할 때 이 범위로 합의해야 한다.
    * ⚠️ 경쟁사가 대부분 VAT 별도로 적어, 어느 쪽인지 밝히지 않으면 비교가 어긋난다.
    */
   isVatIncluded: boolean;

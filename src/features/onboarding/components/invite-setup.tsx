@@ -162,6 +162,11 @@ export function InviteSetup({ departments, positions }: InviteSetupProps) {
    * ⚠️ 실제 메일 발송은 서버가 한다 — 지금은 목이라 목록만 확정된다.
    *    BE 연동 후 이 자리에서 `POST /companies/me/onboarding`으로 함께 커밋한다.
    */
+  /*
+    ⚠️ **`isSent`는 서버가 보냈다고 답한 줄에만 붙여야 한다.** 완료 화면의 초대 수가 이 값을
+       세므로, 지금처럼 요청 없이 전부 찍으면 부분 실패 때 실제보다 많은 수를 말한다.
+       TODO(BE 연동): 커밋 응답의 성공 목록으로 `markSent(ids)`를 부른다.
+  */
   const handleCommit = () => {
     const count = list.sendable.length;
     if (count > 0) {

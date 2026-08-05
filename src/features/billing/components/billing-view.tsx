@@ -54,10 +54,15 @@ export function BillingView({ overview, config, today, canManage }: BillingViewP
 
   const isCanceling = subscription.status === SUBSCRIPTION_STATUS.CANCELING;
 
+  /*
+    ⚠️ 액션은 **거절될 수도 있다.** 권한·검증 실패는 값으로 오지만, 네트워크가 끊기거나
+       서버가 죽으면 호출 자체가 거절된다 — 잡지 않으면 아무 일도 안 일어난 것처럼 보이고
+       콘솔에만 남는다(§정직성).
+  */
   const handleToggleCancel = async () => {
-    const result = await toggleCancelAction(isCanceling);
-    if (!result.isSuccess) {
-      toast(result.message ?? "구독 상태를 바꾸지 못했습니다");
+    const result = await toggleCancelAction(isCanceling).catch(() => null);
+    if (!result?.isSuccess) {
+      toast(result?.message ?? "구독 상태를 바꾸지 못했습니다");
       return;
     }
     setSubscription((prev) => ({
@@ -109,9 +114,9 @@ export function BillingView({ overview, config, today, canManage }: BillingViewP
   };
 
   const handleSetDefault = async (id: string) => {
-    const result = await setDefaultMethodAction(id);
-    if (!result.isSuccess) {
-      toast(result.message ?? "기본 결제 수단을 바꾸지 못했습니다");
+    const result = await setDefaultMethodAction(id).catch(() => null);
+    if (!result?.isSuccess) {
+      toast(result?.message ?? "기본 결제 수단을 바꾸지 못했습니다");
       return;
     }
     setMethods((prev) => prev.map((method) => ({ ...method, isDefault: method.id === id })));
@@ -119,9 +124,9 @@ export function BillingView({ overview, config, today, canManage }: BillingViewP
   };
 
   const handleRemoveMethod = async (id: string) => {
-    const result = await removeMethodAction(id);
-    if (!result.isSuccess) {
-      toast(result.message ?? "결제 수단을 지우지 못했습니다");
+    const result = await removeMethodAction(id).catch(() => null);
+    if (!result?.isSuccess) {
+      toast(result?.message ?? "결제 수단을 지우지 못했습니다");
       return;
     }
     setMethods((prev) => prev.filter((method) => method.id !== id));
