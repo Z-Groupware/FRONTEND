@@ -271,6 +271,8 @@ function Row({
               "text-muted-foreground hover:text-destructive hover:bg-destructive/10 focus-visible:ring-ring",
               "inline-flex size-8 items-center justify-center rounded-md opacity-0 transition-[color,background-color,opacity]",
               "group-focus-within:opacity-100 group-hover:opacity-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:outline-hidden",
+              // 손가락에는 hover가 없다 — 이게 없으면 터치 기기에서 지우기가 아예 없는 화면이 된다
+              "[@media(hover:none)]:opacity-100",
             )}
           >
             <Trash2 className="size-4" aria-hidden />
