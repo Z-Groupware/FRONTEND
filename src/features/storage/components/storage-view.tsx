@@ -19,10 +19,10 @@ interface StorageViewProps {
   /** 지울 수 있는 사람인지 — 대표이거나 Admin을 겸한 사람 */
   canManage: boolean;
   /**
-   * 날짜에 연도를 붙일지 가르는 기준 연도 — **서버가 정한다.**
+   * `4개월 전` 같은 표기를 계산하는 기준 날짜 `YYYY-MM-DD` — **서버가 정한다.**
    * ⚠️ 여기서 `new Date()`를 부르면 안 된다(하이드레이션 §서버우선).
    */
-  currentYear: number;
+  today: string;
 }
 
 /**
@@ -41,7 +41,7 @@ interface StorageViewProps {
  * ⚠️ 지운 결과는 지금 **화면 안에서만** 반영된다. 목이라서다 — 연동되면 이 `useState`를
  *    지우고 `revalidatePath`가 새 값을 내려 준다.
  */
-export function StorageView({ overview, config, canManage, currentYear }: StorageViewProps) {
+export function StorageView({ overview, config, canManage, today }: StorageViewProps) {
   const [projects, setProjects] = useState<readonly ProjectStorage[]>(overview.projects);
   const [target, setTarget] = useState<ProjectStorage | null>(null);
   const [isPending, setIsPending] = useState(false);
@@ -110,7 +110,7 @@ export function StorageView({ overview, config, canManage, currentYear }: Storag
             projects={projects}
             totalVoiceGb={totals.voiceGb}
             canManage={canManage}
-            currentYear={currentYear}
+            today={today}
             onDelete={setTarget}
           />
         </div>

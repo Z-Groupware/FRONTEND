@@ -27,24 +27,40 @@ const renderTable = (projects: ProjectStorage[]) =>
       projects={projects}
       totalVoiceGb={projects.reduce((sum, p) => sum + p.voiceGb, 0)}
       canManage
-      currentYear={2026}
+      today="2026-08-05"
       onDelete={() => {}}
     />,
   );
 
 describe("ProjectStorageTable", () => {
-  it("녹음 날짜를 우리 표기로 보여 준다 — ISO를 그대로 찍지 않는다", () => {
+  it("마지막 녹음을 상대 표기로 보여 준다 — 며칠인지 세는 건 사람 몫이 아니다", () => {
+    // 기준 날짜는 2026-08-05, 픽스처의 마지막 녹음은 2026-05-03이다
     renderTable([project()]);
 
-    expect(screen.getByText("5월 3일(일)")).toBeInTheDocument();
+    expect(screen.getByText("3개월 전")).toBeInTheDocument();
     expect(screen.queryByText("2026-05-03")).not.toBeInTheDocument();
+  });
+
+  it("정확한 날짜를 버리지 않는다 — `time`에 원본과 우리 표기가 함께 남는다", () => {
+    renderTable([project()]);
+
+    const recorded = screen.getByText("3개월 전");
+    expect(recorded.tagName).toBe("TIME");
+    expect(recorded).toHaveAttribute("dateTime", "2026-05-03");
+    expect(recorded).toHaveAttribute("title", "5월 3일(일)");
+  });
+
+  it("미래 날짜는 지어내지 않고 절대 날짜로 물러선다", () => {
+    renderTable([project({ lastRecordedAt: "2026-12-25" })]);
+
+    expect(screen.getByText("12월 25일(금)")).toBeInTheDocument();
   });
 
   it("녹음이 없으면 날짜 대신 `—`다 — 지운 줄이 없는 녹음의 날짜를 말하면 안 된다", () => {
     // 삭제 뒤 상태: 음성 0 · 회의 0, 자막·요약과 옛 날짜만 남는다
     renderTable([project({ voiceGb: 0, meetingCount: 0 })]);
 
-    expect(screen.queryByText("5월 3일(일)")).not.toBeInTheDocument();
+    expect(screen.queryByText("3개월 전")).not.toBeInTheDocument();
     expect(screen.getByText("—")).toBeInTheDocument();
   });
 });

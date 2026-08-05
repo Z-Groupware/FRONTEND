@@ -6,6 +6,7 @@ import Link from "next/link";
 import { StatusDot } from "@/components/common/status-dot";
 import { PROJECT_STATUS_LABEL } from "@/constants/project";
 import { formatGb } from "@/features/billing/pricing";
+import { formatElapsed } from "@/lib/date";
 import { pickPaletteColor } from "@/lib/palette";
 
 import { canDeleteRecordings, formatRecordedDate } from "../storage";
@@ -18,10 +19,10 @@ interface ProjectStorageTableProps {
   /** 지울 수 있는 사람인지 — 대표이거나 Admin을 겸한 사람 */
   canManage: boolean;
   /**
-   * 날짜에 연도를 붙일지 가르는 기준 연도 — **서버가 정한다.**
-   * ⚠️ 여기서 `new Date()`를 부르면 해가 바뀌는 순간 서버 렌더와 갈린다(하이드레이션).
+   * `4개월 전` 같은 표기를 계산하는 기준 날짜 `YYYY-MM-DD` — **서버가 정한다.**
+   * ⚠️ 여기서 `new Date()`를 부르면 날짜가 바뀌는 순간 서버 렌더와 갈린다(하이드레이션).
    */
-  currentYear: number;
+  today: string;
   onDelete: (project: ProjectStorage) => void;
 }
 
@@ -41,7 +42,7 @@ export function ProjectStorageTable({
   projects,
   totalVoiceGb,
   canManage,
-  currentYear,
+  today,
   onDelete,
 }: ProjectStorageTableProps) {
   /*
@@ -149,6 +150,9 @@ export function ProjectStorageTable({
                      녹음을 전부 없애므로, 언제부터 쌓였는지는 판단에 쓸 데가 없다 —
                      알아야 하는 건 **얼마나 식었는지**다. `완료` + 마지막 녹음이 오래됨 =
                      가장 안심하고 지울 줄이다.
+                  ⚠️ 값은 **상대 표기**다(`4개월 전`). 날짜를 읽고 오늘과 빼서 얼마나 됐는지
+                     세는 건 사람이 할 일이 아니다 — 이 열이 답해야 하는 건 "식었나"이지
+                     "며칠이었나"가 아니다. 정확한 날짜는 `title`·`dateTime`에 남는다.
                   ⚠️ 이 표의 열 구성은 팀 명세에 없다(`docs/WORKFLOW.md`는 `용량 관리` 화면이
                      있다는 것까지만 적혀 있다). 확정되면 그쪽을 정본으로 맞춘다.
                 */}
@@ -168,7 +172,7 @@ export function ProjectStorageTable({
                   project={project}
                   totalVoiceGb={totalVoiceGb}
                   canManage={canManage}
-                  currentYear={currentYear}
+                  today={today}
                   onDelete={onDelete}
                 />
               ))}
@@ -184,16 +188,18 @@ function Row({
   project,
   totalVoiceGb,
   canManage,
-  currentYear,
+  today,
   onDelete,
 }: {
   project: ProjectStorage;
   totalVoiceGb: number;
   canManage: boolean;
-  currentYear: number;
+  today: string;
   onDelete: (project: ProjectStorage) => void;
 }) {
   const isDeletable = canDeleteRecordings(project);
+  // 툴팁에 넣을 정확한 날짜. 기준 연도는 서버가 준 `today`에서 뽑는다(여기서 `new Date()` 금지)
+  const recordedOn = formatRecordedDate(project.lastRecordedAt, Number(today.slice(0, 4)));
   const tagColor = pickPaletteColor(project.tag);
   // ⚠️ 0으로 나누면 `NaN%`가 되어 막대가 아예 안 그려진다
   const share = totalVoiceGb > 0 ? (project.voiceGb / totalVoiceGb) * 100 : 0;
@@ -310,8 +316,22 @@ function Row({
         ⚠️ 녹음이 없으면 날짜 대신 `—`다. 지운 뒤 이 줄은 `녹음 0개 · 0GB`가 되는데,
            `마지막 녹음` 칸에 옛 날짜가 남아 있으면 없는 녹음의 날짜를 말하는 셈이다.
       */}
-      <td className="text-muted-foreground px-4 py-3.5 text-center tabular-nums">
-        {project.voiceGb > 0 ? formatRecordedDate(project.lastRecordedAt, currentYear) : "—"}
+      <td className="text-muted-foreground px-4 py-3.5 text-center">
+        {/*
+          ⚠️ `<time>`이라야 기계도 이 값이 날짜인 줄 안다. 화면에 뜨는 건 `4개월 전`이지만
+             `dateTime`에는 원본 ISO가 남아 표기 방식과 무관하게 값이 보존된다.
+          ⚠️ **정확한 날짜를 버리지 않는다.** 상대 표기는 감을 주는 것이고, 며칠인지
+             정확히 봐야 하는 사람도 있다 — `title`로 그대로 남긴다(§정직성).
+          ⚠️ 미래 날짜면 `formatElapsed`가 `null`을 준다(시계 어긋남·이상한 BE 값).
+             `-3일 전`을 지어내느니 절대 날짜로 물러선다.
+        */}
+        {project.voiceGb > 0 ? (
+          <time dateTime={project.lastRecordedAt} title={recordedOn}>
+            {formatElapsed(project.lastRecordedAt, today) ?? recordedOn}
+          </time>
+        ) : (
+          "—"
+        )}
       </td>
       {/*
         ⚠️ **줄마다 버튼이 있다 없다 하지 않는다.** 전에는 지울 수 있는 줄에만 그려서, 다섯
