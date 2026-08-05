@@ -1,3 +1,5 @@
+import { Sparkles } from "lucide-react";
+
 import { formatWon } from "../pricing";
 import { canUseWorkspace, type Subscription, SUBSCRIPTION_STATUS_LABEL } from "../subscription";
 import type { BillingConfig } from "../types";
@@ -29,18 +31,23 @@ export function PlanPanel({ subscription, config, today }: PlanPanelProps) {
     <div className="flex flex-col gap-5">
       <section className="border-border bg-card rounded-2xl border">
         {/*
-          ⚠️ 결제 화면처럼 **큰 표식을 두지 않는다.** 저기는 이름 아래 금액이 한 줄 더 있어
-             40px 사각형과 균형이 맞지만, 여기는 이름 한 줄뿐이라 표식이 글자를 눌러 버린다.
-             대신 다른 카드들과 **같은 점 표식**을 써서 결을 맞춘다.
+          ⚠️ 표식은 **결제 화면(`PlanSummaryCard`)과 같은 것**이다. 랜딩에서 보고, 결제할 때 보고,
+             관리 화면에서 다시 보는 게 같은 물건이라 표식도 같아야 한다.
+          ⚠️ 이름 아래 한 줄을 같이 둔다 — 이름만 있으면 40px 사각형이 글자를 눌러 버린다.
+             단 **금액을 적지 않는다.** 바로 아래 `월 기본료` 칸과 같은 말이 두 번이 된다.
         */}
         <div className="flex items-center gap-3 p-7 pb-6">
+          <span className="bg-foreground text-background flex size-10 shrink-0 items-center justify-center rounded-xl">
+            <Sparkles className="size-[18px]" aria-hidden />
+          </span>
+
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2">
-              <h2 className="flex items-center gap-2 text-[17px] leading-7 font-semibold tracking-[-0.3px]">
-                <span className="bg-foreground size-2 rounded-full" aria-hidden />
-                {subscription.planName} 플랜
-              </h2>
-            </div>
+            <h2 className="text-[17px] leading-7 font-semibold tracking-[-0.3px]">
+              {subscription.planName} 플랜
+            </h2>
+            <p className="text-muted-foreground text-[13px] leading-5">
+              인원 제한 없이 회사당 하나
+            </p>
             {/*
               ⚠️ **기능을 나열하지 않는다.** 아홉 개를 가운뎃점으로 이으면 한 줄짜리 글자
                  덩어리가 되어 아무도 안 읽는다. 여기는 이미 쓰고 있는 사람이 보는 관리 화면이라
@@ -110,10 +117,14 @@ export function PlanPanel({ subscription, config, today }: PlanPanelProps) {
  *
  * ⚠️ 테두리 격자가 아니라 **연한 카드**다 — 결제 화면의 포함량 칸(`Included`)과 같은 모양이라,
  *    두 화면을 오갈 때 같은 종류의 값으로 읽힌다.
+ * ⚠️ 값을 칸 **가운데**로 모은다. 왼쪽에 붙여 두면 숫자 오른쪽이 비어 칸이 헐거워 보이고,
+ *    세 칸이 나란히 설 때 값의 눈높이가 안 맞는다.
+ * ⚠️ **아이콘은 두지 않는다.** 셋 다 금액·날짜라 무슨 그림을 붙여도 뜻이 겹치고,
+ *    작은 칸에서 라벨보다 그림이 먼저 눈에 들어와 정작 숫자가 뒤로 밀린다.
  */
 function Metric({ label, value, hint }: { label: string; value: string; hint?: string }) {
   return (
-    <div className="bg-secondary/40 rounded-xl px-5 py-4">
+    <div className="bg-secondary/40 rounded-xl px-5 py-4 text-center">
       <dt className="text-muted-foreground text-[12px] leading-4">{label}</dt>
       <dd className="pt-1.5 text-[20px] leading-7 font-semibold tracking-[-0.4px] tabular-nums">
         {value}
