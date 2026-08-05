@@ -26,27 +26,29 @@
 ## 라우트 그룹
 
 app/
-├─ (public)/     /  /login  /register  /pricing  /invite/[token]
-│                                                  ← 로그인 전. 기업 코드는 여기서만.
-├─ (onboarding)/ /onboarding/*                     ← OWNER 초기설정 (부서·직급/권한·사원초대)
+├─ (public)/ / /login /register /plans /roles /location /terms /privacy
+│ ← 로그인 전. 기업 코드는 여기서만.
+├─ (onboarding)/ /onboarding/1~3 · /payment · /done ← OWNER 초기설정 **4단계**(결제가 개통 관문)
 │
-├─ (role)/       ← 같은 셸(사이드바 220px), 네비 항목만 역할/권한별로 다름
-│   ├─ /owner        OWNER 전용 : 대시보드 · /owner/setting(기업설정)
-│   │                            · /owner/leader-handovers(팀장급 오프보딩 인수인계, :no_entry:OWNER 전용)
-│   ├─ /manage       OWNER ‖ is_admin : /manage/members(+/:id) · /manage/new(계정발급)
-│   │                            · /manage/rooms · /manage/billing · /manage/storage
-│   ├─ /team         LEADER 전용(본인 부서 스코프) : 대시보드 · /team/members(+/:id)
-│   │                            · /team/action · /team/handover(+/:id)
-│   └─ /my           MEMBER 대시보드
+├─ (role)/ ← 같은 셸(사이드바 220px), 네비 항목만 역할/권한별로 다름
+│ ├─ /owner **base role = Owner 전용** : 대시보드 · /owner/setting(기업설정)
+│ │ · /owner/leader-handovers(+/:id) — 팀장급 **오프보딩** 인수인계
+│ ├─ /manage **Owner ‖ is_admin — 관리 기능 전부가 여기 하나로** :
+│ │ /manage/members(+/:id) · /manage/new(계정발급) · /manage/rooms
+│ │ · /manage/billing(구독·결제) · /manage/storage(용량)
+│ ├─ /team **base role = Leader**(본인 부서 스코프) : 대시보드 · /team/members(+/:id)
+│ │ · /team/action · /team/handover(+/:id)
+│ └─ /my **base role = Member** 대시보드
 │
-├─ (app)/        /app/*   ← 공용 워크벤치(로그인 전원, 컴포넌트 레벨 권한 차등)
-│                 projects(+/new·/:tag·/:tag/team/:teamId) · actions/:id · my/actions
-│                 · meeting(+/:id·/:id/capture·/:id/review) · rooms · board · calendar
-│                 · notice(+/:id·/new·/:id/edit) · people · me · search · handover
+├─ (app)/ /app/* ← 공용 워크벤치(로그인 전원, 컴포넌트 레벨 권한 차등)
+│ projects(+/new·/:tag·/:tag/team/:teamId) · actions/:id · my/actions
+│ · meeting(+/:id·/:id/capture·/:id/review) · rooms · board · calendar
+│ · notice(+/:id·/new·/:id/edit) · people · me · search · handover
 │
-└─ (system)/     /system/*                          ← 목업(더미), 향후 개선
+├─ (gate)/ /subscription ← 구독이 끊긴 회사의 재개 화면
+└─ (system)/ /system/* ← 목업(더미), 향후 개선
 
-- **기업 코드는 URL에 안 붙인다.** 기업 식별은 세션 쿠키(`companyId`). 코드는 로그인 전 화면(`/login`·`/register`·`/invite`)에만.
+- **기업 코드는 URL에 안 붙인다.** 기업 식별은 세션 쿠키(`companyId`). 코드는 로그인 전 화면(`/login`·`/register`)에만.
 - `(role)` 4개는 **같은 셸(사이드바 220px)**, 네비만 역할별 → 레이아웃 1개 + 역할별 네비.
 - :star: **ADMIN은 역할 아닌 플래그(`is_admin`).** 전용 대시보드 없이 base role 대시보드 사용, `/manage/*` 메뉴만 추가. 가드 = `role==="owner" || is_admin`. 관리 기능은 `/manage`로 단일화(중복 금지). 관리자 권한 부여 토글도 admin 조작 가능.
 - :no_entry: 단 **`/owner/leader-handovers`(팀장 오프보딩 인수인계)는 OWNER 전용**(위계상 admin 불가). 팀장 휴직은 여기 말고 `/manage/members/:id`에서 승인.
@@ -54,6 +56,11 @@ app/
 - 진입 스코프만 다르고 데이터 같으면 라우트는 나누되 **상세 컴포넌트 재사용** (`/team/action` vs `/app/projects/:tag/team/:teamId`).
 - 회의 생성 진입점 없음 → `/app/rooms` 예약 = 회의 개설.
 - :no_entry: **명세에 없는 화면·기능은 안 만든다.** 화면 내 항목 순서도 명세 따름.
+- ⚠️ **관리 기능은 `/manage/*` 하나로 모은다**(팀 URL 문서 2026-08-05). `/owner/*`에 두면 겸직자에게
+  주소가 거짓말을 하고, 두 곳에 나눠 두면 같은 화면이 두 벌이 된다. 판정은
+  `canManageBilling(actor)` 한 곳(`lib/permission.ts`)에서 한다.
+- 📄 **화면별 동작·라벨·예외는 [`docs/WORKFLOW.md`](docs/WORKFLOW.md)** 를 본다(팀 정본).
+  **정책·기능은 그 문서**, **라우트 경로 최신값은 위 트리**가 정본이다 — 어긋나면 각자 자기 몫을 따른다.
 
 ## 폴더·네이밍
 
@@ -70,11 +77,21 @@ app/
 - 알림=**SSE**(`/app/notification`). BFF가 스트림을 중계하고 토큰을 주입한다.
 - 변경 결과 피드백=**토스트**(shadcn `sonner`, `<Toaster />`는 루트 레이아웃 1개). ❌폼 검증 오류(→필드 인라인)·파괴적 작업 확인(→Dialog)·페이지 전체 실패(→`error.tsx`). 토스트는 사라지므로 **보조**다.
 
+## 요금제 — 유료 하나뿐 ⚠️
+
+- **무료 요금제도 체험도 없다**(2026-08-04). 온보딩 4단계에서 **결제를 마쳐야** 워크스페이스가 열린다.
+- **결제 전·해지 후는 플랜이 아니라 상태**다 — `SUBSCRIPTION_STATUS`(`ACTIVE`·`CANCELING`·`UNPAID`·`EXPIRED`). 쓸 수 있는지는 `canUseWorkspace()` 한 곳에서 판정한다.
+- 화면에 **"무료"·"결제 없이"라고 쓰지 않는다.** 한 곳만 남아도 돈을 안 받는 것처럼 읽힌다(§정직성).
+- 한도·금액·청구 시점은 `billing/plans.ts`·`pricing.ts`·`checkout-mode.ts` **세 곳에만** 둔다. 정책은 바뀔 수 있다(DECISIONS §요금제).
+
 ## 도메인 상수
 
 - **`as const` + 라벨맵**으로 정의(`enum` 금지). 코드엔 영문 상수, 화면엔 한글 라벨 — **라벨 하드코딩 금지.**
 - 값 목록은 **ERD 확정 후 `constants/`에 정의**한다. 문서에 옮겨 적지 않는다(바뀌면 두 벌이 어긋난다).
 - 마감 경과 같은 **파생값은 상태 필드에 넣지 말고 계산**한다.
+  예) 액션 상태는 **저장 3개**(`할일`·`진행중`·`완료`), **`지연`은 마감일로 계산해 표시**한다.
+- 🚫 **화면에 안 내보내는 것:** 내부 식별자(`GOODS-01`)·임의 해시태그(`#OKR`). 태그는
+  **프로젝트 태그 하나뿐**이다 — 없는 걸 금지 문장으로만 두면 나중에 누가 만든다(§CONVENTIONS 6).
 
 ## Mock → Live 격리막
 
@@ -102,7 +119,10 @@ app/
   - ⚠️ **위 폭은 목표치이지 고정값이 아니다.** `w-[1440px]` 대신 `mx-auto max-w-[1440px] px-8`, absolute 대신 flex/grid, 표는 `overflow-x-auto`로 감싼다. 사이드바는 컴포넌트로 분리(모바일은 Sheet).
   - 반응형 전면 구현은 지금 안 한다. 대상 화면 선별은 디자인 확정 후.
 - 폼 2열(`FormRow`) · 제출 버튼 하단우측 · 로딩=스켈레톤 · 모션 100/150/250ms · 숫자 `tabular-nums`
-- **카피:** ~해요체 · 날짜 `8월 5일(화)` · 역할 워딩은 영어
+- **카피:** **~합니다체**(2026-08-04 변경) · 날짜 `8월 5일(화)` · 역할 워딩은 영어
+  - 사내 도구이고 **돈·권한·기록이 걸린 화면**이라 친근한 말투가 오히려 가볍게 읽힌다. `들어올 수 없어요` → `접근할 수 없습니다`.
+  - 명령은 **`~해 주세요`** 를 쓴다. `~하십시오`는 딱딱해서 안 쓴다.
+  - ⚠️ 옛 화면에 `~해요체`가 남아 있으면 그건 이 변경 전 것이다.
 - 아이콘: `lucide-react` 표준 / 커스텀SVG=SVGR(`currentColor`). ❌이모지·`<img src=.svg>`
 
 ## 브라우저 API (캡처 화면) ⚠️

@@ -8,7 +8,7 @@ import { ROLE_ACCESS } from "@/features/landing/roles";
 export const metadata: Metadata = {
   title: "권한 매트릭스 — Z",
   description:
-    "Owner · Leader · Member 세 역할과 겸직 권한 Admin이 각각 무엇에 닿을 수 있는지 정리했어요.",
+    "Owner · Leader · Member 세 역할과 겸직 권한 Admin이 각각 무엇에 닿을 수 있는지 정리했습니다.",
 };
 
 /**
@@ -62,7 +62,7 @@ export default function RolesPage() {
 
       <h2 className="pt-14 text-[20px] leading-7 font-semibold tracking-[-0.4px]">기능별 정리</h2>
       <p className="text-muted-foreground pt-1.5 pb-5 text-[13px] leading-[21px] break-keep">
-        가로로 넘겨서 보실 수 있어요.
+        가로로 넘겨서 보실 수 있습니다.
       </p>
 
       <PermissionTable />

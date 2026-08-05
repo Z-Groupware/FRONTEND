@@ -15,9 +15,9 @@ const MEMOS = [
 ] as const;
 
 const SUMMARY = [
-  "스프린트 블로커를 먼저 처리하기로 했어요",
-  "문서 두 건은 이번 주 안에 마감해요",
-  "KPI 논의는 다음 회의로 넘겼어요",
+  "스프린트 블로커를 먼저 처리하기로 했습니다",
+  "문서 두 건은 이번 주 안에 마감합니다",
+  "KPI 논의는 다음 회의로 넘김",
 ] as const;
 
 const BY_OWNER = [
@@ -44,7 +44,8 @@ interface AsideProps {
 
 function Aside({ title, icon: Icon, children }: AsideProps) {
   return (
-    <div className="border-landing-dark-border flex min-w-0 flex-col rounded-lg border p-3">
+    // ⚠️ `h-full` — 왼쪽 목록이 더 길 때 칸이 같이 늘어난다. 안 그러면 오른쪽만 짧게 떠 있다
+    <div className="border-landing-dark-border flex h-full min-w-0 flex-col rounded-lg border p-3">
       <p className="text-landing-dark-muted flex items-center gap-1.5 text-[11px] leading-4">
         <Icon className="size-3 shrink-0" aria-hidden />
         {/* 한글 글자가 상자 안에서 위쪽에 앉아 아이콘보다 떠 보인다 — 1px 내려 맞춘다 */}
@@ -58,7 +59,7 @@ function Aside({ title, icon: Icon, children }: AsideProps) {
 /** 01 캡처 — 자막 옆에 붙는 메모. 자막과 **1:1로 이어진다**(§브라우저 API) */
 export function CaptureAside() {
   return (
-    <Aside title="메모 · 자막과 1:1로 붙어요" icon={PenLine}>
+    <Aside title="메모 · 자막과 1:1로 붙습니다" icon={PenLine}>
       <div className="flex flex-col gap-1.5 pt-2.5">
         {MEMOS.map((memo, index) => (
           <p
@@ -75,7 +76,19 @@ export function CaptureAside() {
   );
 }
 
-/** 02 분석 — 3줄 요약. 결정·액션과 **같은 회의에서 한 번에** 나온다 */
+/**
+ * 02 분석 — 3줄 요약. 결정·액션과 **같은 회의에서 한 번에** 나온다.
+ *
+ * ⚠️ 세 줄만 두면 옆 목록보다 훨씬 짧아 칸 아래가 통째로 빈다. 자리를 메우려고 없는 걸
+ *    그리지 않고, **같은 분석에서 이미 나온 수치**를 아래에 붙인다 — 왼쪽 목록의
+ *    `3줄 요약 · 결정 2건 · 액션 3건`과 같은 회의, 같은 숫자다.
+ */
+const ANALYZED_COUNTS = [
+  { label: "결정", value: "2건" },
+  { label: "액션", value: "3건" },
+  { label: "다음 안건", value: "1건" },
+] as const;
+
 export function AnalyzeAside() {
   return (
     <Aside title="3줄 요약" icon={FileText}>
@@ -91,6 +104,18 @@ export function AnalyzeAside() {
           </li>
         ))}
       </ol>
+
+      {/* ⚠️ `mt-auto`다 — 칸이 늘어나면 이 줄이 바닥에 붙어, 위 요약과 아래가 따로 놀지 않는다 */}
+      <div className="border-landing-dark-border mt-auto grid grid-cols-3 gap-2 border-t pt-3">
+        {ANALYZED_COUNTS.map((item) => (
+          <div key={item.label}>
+            <p className="text-landing-dark-muted text-[10px] leading-[14px]">{item.label}</p>
+            <p className="pt-0.5 text-[15px] leading-[21px] font-semibold tabular-nums">
+              {item.value}
+            </p>
+          </div>
+        ))}
+      </div>
     </Aside>
   );
 }

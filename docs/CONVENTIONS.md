@@ -44,9 +44,10 @@ npm run typecheck
 ```
 src/
 ├─ app/
-│  ├─ (public)/       /  /login  /register  /pricing  /invite/[token]
+│  ├─ (public)/       /  /login  /register  /plans
 │  ├─ (onboarding)/   /onboarding/*                  ← OWNER 초기설정
 │  ├─ (role)/         /owner  /manage  /team  /my    ← 역할 전용 대시보드·관리
+│  ├─ (shared)/       /billing  /members             ← 권한으로 들어오는 공용 화면
 │  ├─ (app)/          /app/*                         ← 공용 워크벤치(권한 차등)
 │  ├─ (system)/       /system/*                      ← 확장(데모 제외)
 │  ├─ api/[...path]/  BFF 프록시
@@ -142,6 +143,19 @@ export const isDelayed = (a: { status: ActionStatus; dueDate: string }) =>
 
 ---
 
+### 화면에 안 내보내는 값
+
+설계에 **아예 없는 것**이라, 만들지 않는 것이 규칙이다. 금지 문장만 문서에 두면
+"있는데 가리는 것"으로 읽혀서 나중에 누가 만든다.
+
+| 안 만드는 것             | 대신 쓰는 것                                                     |
+| ------------------------ | ---------------------------------------------------------------- |
+| 내부 식별자 (`GOODS-01`) | 이름 그대로. 링크는 `id`로 걸되 화면에 찍지 않는다               |
+| 임의 해시태그 (`#OKR`)   | **프로젝트 태그 하나뿐.** 라벨은 상위 팀 액션·회의 안건이 맡는다 |
+
+> 태그가 여러 종류가 되면 무엇을 눌러야 상위로 가는지 알 수 없어진다 —
+> Z의 순환 추적은 **태그 한 종류**를 전제로 한다.
+
 ## 7. 권한 — 축이 2개다 ⭐
 
 > Z에서 가장 틀리기 쉬운 부분. **역할 가드만 짜면 안 된다.**
@@ -204,7 +218,7 @@ export const isDelayed = (a: { status: ActionStatus; dueDate: string }) =>
 - Tailwind는 **모바일 퍼스트**다. 접두사 없는 스타일을 유연하게 쓰고, 넓은 화면 전용은 `md:`·`lg:`로 얹는다.
 - 폼은 **2열(`FormRow`)**, 제출 버튼은 **하단 우측**.
 - 로딩은 **스켈레톤**. 모션 100/150/250ms. 숫자는 `tabular-nums`.
-- **카피:** ~해요체 · 날짜 `8월 5일(화)` · 역할 워딩은 영어(`OWNER`).
+- **카피:** **~합니다체**(2026-08-04 변경) · 명령은 `~해 주세요` · 날짜 `8월 5일(화)` · 역할 워딩은 영어(`OWNER`).
 
 ---
 
@@ -267,7 +281,7 @@ export const isDelayed = (a: { status: ActionStatus; dueDate: string }) =>
   - 시맨틱 태그(`header/nav/main/section`), **`<h1>` 페이지당 1개**
   - 이동은 `<a>`/`<Link>`(button+`router.push` 지양)
   - `alt`·의미 있는 파일명
-- 예외: 랜딩 `/`·요금제 `/pricing`은 공개 마케팅 페이지라 **여기만 metadata·OG를 붙인다.**
+- 예외: 랜딩 `/`·요금제 `/plans`는 공개 마케팅 페이지라 **여기만 metadata·OG를 붙인다.**
 
 ---
 

@@ -5,7 +5,7 @@ import { RegisterForm } from "@/features/auth/components/register-form";
 
 export const metadata: Metadata = {
   title: "기업 등록 신청 — Z",
-  description: "회사 정보를 남기면 검토 후 기업 코드를 메일로 보내 드려요.",
+  description: "회사 정보를 남기면 검토 후 기업 코드를 메일로 보내 드립니다.",
 };
 
 /**

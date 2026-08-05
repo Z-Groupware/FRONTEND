@@ -36,7 +36,7 @@ export function CompanyCodeStep() {
       icon={Building2}
       step="1 / 2"
       title="워크스페이스 연결"
-      description="회사에서 받은 기업 코드로 워크스페이스에 연결해요"
+      description="회사에서 받은 기업 코드로 워크스페이스에 연결합니다"
       footer={
         <>
           아직 기업 코드가 없나요?{" "}

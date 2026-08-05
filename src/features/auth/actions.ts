@@ -35,7 +35,7 @@ export async function findCompanyAction(
 
   const company = isMock ? findMockCompany(code) : await findCompanyFromApi();
   if (!company) {
-    return { company: null, error: "기업 코드를 찾을 수 없어요. 관리자에게 다시 확인해 주세요." };
+    return { company: null, error: "기업 코드를 찾을 수 없습니다. 관리자에게 다시 확인해 주세요." };
   }
   return { company };
 }
@@ -104,9 +104,23 @@ export async function loginAction(_prevState: LoginState, formData: FormData): P
        비밀번호가 틀린 줄 안다 — 안 되는 건 안 된다고 말한다(§정직성).
     ⚠️ 연동되면 이 자리에서 BE에 붙고, 받은 토큰을 **httpOnly 쿠키로** 굽는다.
        "로그인 상태 유지" 체크값이 그 쿠키의 수명(`maxAge`)이 된다.
+    ⚠️ 그다음 갈 곳은 **`loginRedirect()`가 정한다**(`features/shell/entry.ts`).
+       여기에 `redirect("/owner")`처럼 적지 않는다 — 첫 로그인이 대표(→온보딩)일 수도,
+       초대받은 사원(→자기 역할 대시보드)일 수도 있다.
+
+         const entry = { viewer, isOnboarded, status };   // 로그인 응답에서 온다
+         redirect(loginRedirect(entry));                  // ⚠️ try/catch 밖에서
+
+    ⚠️ 그래서 **로그인 응답에 `isOnboarded`와 구독 상태가 같이 와야 한다**(BE 협의 필요).
+       없으면 로그인 직후에 한 번 더 물어봐야 해서 첫 화면이 그만큼 늦게 뜬다.
+    ⚠️ **첫 비밀번호는 바꾸지 않는다**(팀 결정 2026-08-04, BE 미구현). 메일로 받은 비밀번호를
+       그대로 쓴다 — 강제 변경 화면을 만들지 않는다. 나중에 붙이면 그 화면이 여기 분기에 하나 는다.
   */
   if (isMock) {
-    return { errors: {}, notice: "로그인 API가 아직 연결되지 않았어요. 화면만 준비된 상태예요." };
+    return {
+      errors: {},
+      notice: "로그인 API가 아직 연결되지 않았습니다. 화면만 준비된 상태입니다.",
+    };
   }
 
   throw new Error("로그인 API가 아직 연결되지 않았습니다.");

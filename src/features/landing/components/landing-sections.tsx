@@ -94,7 +94,7 @@ export function FeatureSection() {
   return (
     <section className="py-20 lg:py-28">
       <div className="mx-auto w-full max-w-[1144px] px-7">
-        <SectionHeading label="Features" title="별도 노력 없이 회의가 자산이 돼요" />
+        <SectionHeading label="Features" title="별도 노력 없이 회의가 자산이 됩니다" />
 
         <div className="flex flex-col gap-14 pt-14">
           {FEATURES.map((feature, index) => (
@@ -146,7 +146,7 @@ export function CompareSection() {
   return (
     <section className="py-20 lg:py-28">
       <div className="mx-auto w-full max-w-[1144px] px-7">
-        <SectionHeading label="Before · After" title="지금까지와 달라요" />
+        <SectionHeading label="Before · After" title="지금까지와 다릅니다" />
 
         <div className="grid items-center gap-10 pt-12 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] lg:gap-14">
           {/*

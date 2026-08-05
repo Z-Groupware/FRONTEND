@@ -22,6 +22,12 @@ function setup(initial: Position[] = SEED) {
   return { user: userEvent.setup(), ...render(<PositionSetup initialPositions={initial} />) };
 }
 
+/*
+  이 화면은 **제출을 마친 보관함이면 결제로 돌려보낸다**(`useCommittedRedirect`) — 그래서 라우터를 쓴다.
+  테스트는 제출 전 상태만 다루므로 돌려보내는 일이 없다. 목은 라우터가 없다는 오류만 막는다.
+*/
+jest.mock("next/navigation", () => ({ useRouter: () => ({ replace: jest.fn() }) }));
+
 beforeEach(() => window.sessionStorage.clear());
 
 describe("PositionSetup", () => {

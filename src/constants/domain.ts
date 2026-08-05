@@ -16,7 +16,8 @@ export const ACTION_STATUS = {
 export type ActionStatus = (typeof ACTION_STATUS)[keyof typeof ACTION_STATUS];
 
 export const ACTION_STATUS_LABEL: Record<ActionStatus, string> = {
-  TODO: "대기",
+  /* ⚠️ `대기`가 아니라 **`할일`**이다(팀 워크플로우 2026-08-05). 보드 첫 열과 같은 말이어야 한다 */
+  TODO: "할일",
   IN_PROGRESS: "진행중",
   DONE: "완료",
 };

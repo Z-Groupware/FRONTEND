@@ -2,70 +2,66 @@
 
 import Link from "next/link";
 
-import { SuccessDialog } from "@/components/common/success-dialog";
+import { ResultDialog } from "@/components/common/result-dialog";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
-import { BILLING_CYCLE_LABEL, type BillingCycle, formatWon, type PriceBreakdown } from "../pricing";
-import type { Plan } from "../types";
+import type { BillingConfig } from "../config";
+import { calculatePrice, formatGb, formatTokens, formatWon } from "../pricing";
 
 interface PaymentDoneDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  plan: Plan;
-  cycle: BillingCycle;
-  price: PriceBreakdown;
+  config: BillingConfig;
+  /**
+   * 결제 뒤에 갈 곳 — **화면마다 다르다.**
+   *
+   * ⚠️ 여기에 `/owner`를 박아 두지 않는다. 결제하는 사람이 대표라는 보장이 없고
+   *    (Admin 겸직자도 한다), 이미 워크스페이스 안에서 결제한 사람에게는 대시보드로
+   *    보내는 것 자체가 갈 일 없는 이동이다.
+   */
+  next: { href: string; label: string };
 }
 
 /**
- * 결제 완료 안내 — 모양은 공용 `SuccessDialog`가 잡고, 여기서는 **무엇을 결제했는지**만 채운다.
+ * 결제 완료 안내 — 모양은 공용 `ResultDialog`가 잡고, 여기서는 **무엇을 결제했는지**만 채운다.
  *
- * ⚠️ **실제 결제는 일어나지 않는다.** Toss 연동 전이라 버튼을 누르면 이 창만 뜬다 —
- *    연동되면 결제 성공 응답을 받은 뒤에 연다.
+ * ⚠️ **실제 청구는 일어나지 않는다.** PG 연동 전이라 버튼을 누르면 이 창만 뜬다 —
+ *    목 격리막으로 흐름만 이어 둔 것이고, 연동되면 결제 성공 응답을 받은 뒤에 연다.
+ * ⚠️ 포함량을 같이 적는다. 결제 직후가 **"내가 얼마치를 쓸 수 있나"를 가장 궁금해하는 순간**이다.
  */
-export function PaymentDoneDialog({
-  isOpen,
-  onOpenChange,
-  plan,
-  cycle,
-  price,
-}: PaymentDoneDialogProps) {
+export function PaymentDoneDialog({ isOpen, onOpenChange, config, next }: PaymentDoneDialogProps) {
+  const price = calculatePrice(config);
+
   return (
-    <SuccessDialog
+    <ResultDialog
       isOpen={isOpen}
       onOpenChange={onOpenChange}
-      title="결제가 완료됐어요"
-      description={
-        // 두 문장이라 줄을 나눈다 — 한 줄로 흘리면 어디서 끊길지 화면 폭에 맡기게 된다
-        <>
-          {plan.name} 플랜을 쓰실 수 있어요.
-          <br />
-          영수증은 등록한 메일로 보내드립니다.
-        </>
-      }
+      title="결제가 완료됐습니다"
+      description="이제 바로 이용하실 수 있습니다."
       action={
         <Link
-          href="/owner"
-          className="bg-foreground text-background hover:bg-foreground/90 focus-visible:ring-ring flex h-[38px] w-full items-center justify-center rounded-md text-[13px] leading-none transition-colors focus-visible:ring-2 focus-visible:outline-hidden"
+          href={next.href}
+          className={cn(buttonVariants({ variant: "ink" }), "h-11 w-full text-[14px]")}
         >
-          대시보드로 가기
+          {next.label}
         </Link>
       }
     >
       <dl className="border-border flex flex-col gap-2.5 rounded-lg border p-4 text-[13px]">
         <div className="flex items-center justify-between">
-          <dt className="text-muted-foreground">플랜</dt>
-          <dd>
-            {plan.name} ({BILLING_CYCLE_LABEL[cycle]})
-          </dd>
+          <dt className="text-muted-foreground">포함 AI 토큰</dt>
+          <dd className="tabular-nums">월 {formatTokens(config.includedTokens)}</dd>
         </div>
         <div className="flex items-center justify-between">
-          <dt className="text-muted-foreground">구성원</dt>
-          <dd className="tabular-nums">{price.seats}명</dd>
+          <dt className="text-muted-foreground">포함 저장 공간</dt>
+          <dd className="tabular-nums">{formatGb(config.includedStorageGb)}</dd>
         </div>
         <div className="border-border mt-0.5 flex items-baseline justify-between border-t pt-3">
-          <dt className="font-semibold">결제 금액</dt>
+          <dt className="font-semibold">이번 결제</dt>
           <dd className="text-[15px] font-semibold tabular-nums">{formatWon(price.total)}</dd>
         </div>
       </dl>
-    </SuccessDialog>
+    </ResultDialog>
   );
 }

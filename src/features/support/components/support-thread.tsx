@@ -87,7 +87,7 @@ export function SupportThread({ turns, onPickCategory, onPickEntry }: SupportThr
           </p>
           {/* ⚠️ 한 줄로 끝낸다 — 두 줄이 되면 아래 목록이 잘린다 */}
           <p className="text-muted-foreground text-[12px] leading-[18px]">
-            자주 묻는 것들을 모아 뒀어요
+            자주 묻는 것들을 모아 두었습니다
           </p>
         </div>
       )}

@@ -22,7 +22,10 @@ export function StepHeading({ step, title, children }: StepHeadingProps) {
 
       <div>
         <h1 className="text-xl leading-[25px] font-semibold tracking-[-0.4px]">{title}</h1>
-        <p className="text-muted-foreground pt-[7px] text-[13px] leading-[21px]">{children}</p>
+        {/* ⚠️ `break-keep` — 없으면 한글이 단어 중간에서 끊긴다(`관리합니 / 다`) */}
+        <p className="text-muted-foreground pt-[7px] text-[13px] leading-[21px] break-keep">
+          {children}
+        </p>
       </div>
     </>
   );

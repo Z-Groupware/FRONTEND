@@ -84,15 +84,11 @@ export function canGrantAdmin(target: { role: Role }): boolean {
 }
 
 /**
- * 구독·결제 **실행**(플랜 변경·카드 등록) — OWNER 전용.
- * ⚠️ 보기와 나눠 둔다. 표의 행 이름이 "구독 결제 **보기**"라 Admin은 열람까지만이다.
+ * 구독·결제 — OWNER이거나 Admin을 겸한 사람. **보기와 변경을 나누지 않는다**(팀 확인).
+ * ⚠️ 표의 행 이름은 "구독 결제 보기"지만 열람만 되는 게 아니다 — 플랜 변경·결제 수단도
+ *    같은 사람들이 한다. 이름만 보고 열람 전용으로 좁히지 않는다.
  */
 export function canManageBilling(actor: Actor): boolean {
-  return actor.role === ROLE.OWNER;
-}
-
-/** 구독·결제 **열람** — OWNER이거나 Admin을 겸한 사람 */
-export function canViewBilling(actor: Actor): boolean {
   return actor.role === ROLE.OWNER || isAdmin(actor);
 }
 

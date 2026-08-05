@@ -10,6 +10,7 @@ import {
   type PositionDropEdge,
   usePositionDrag,
 } from "../use-position-drag";
+import { POSITION_COLUMN } from "./position-columns";
 import { RoleSelect } from "./role-select";
 
 export interface PositionRowHandlers {
@@ -66,14 +67,16 @@ export function PositionRow({ position, index, ...handlers }: PositionRowProps) 
       )}
     >
       {/* 평소엔 서열 번호, 마우스를 올리면 그 자리가 드래그 손잡이가 된다 */}
-      <span className="relative flex w-5 shrink-0 items-center justify-center">
+      <span
+        className={cn(POSITION_COLUMN.INDEX, "relative flex shrink-0 items-center justify-center")}
+      >
         <span className="text-muted-foreground/40 text-[11px] leading-none tabular-nums transition-opacity group-focus-within:opacity-0 group-hover:opacity-0">
           {index + 1}
         </span>
         <button
           {...handleProps}
           type="button"
-          aria-label={`${position.name} 순서 이동 — Alt와 위아래 방향키로도 옮길 수 있어요`}
+          aria-label={`${position.name} 순서 이동 — Alt와 위아래 방향키로도 옮길 수 있습니다`}
           onKeyDown={(event) => {
             if (!event.altKey) return;
             if (event.key === "ArrowUp") {
@@ -111,7 +114,10 @@ export function PositionRow({ position, index, ...handlers }: PositionRowProps) 
               if (event.key === "Enter") submitName(event.currentTarget.value);
               if (event.key === "Escape") onEditingChange(null);
             }}
-            className="border-ring bg-background w-[80px] shrink-0 rounded border px-1.5 text-center text-[13px] leading-5 outline-none"
+            className={cn(
+              POSITION_COLUMN.NAME,
+              "border-ring bg-background shrink-0 rounded border px-1.5 text-center text-[13px] leading-5 outline-none",
+            )}
           />
         </>
       ) : (
@@ -125,7 +131,10 @@ export function PositionRow({ position, index, ...handlers }: PositionRowProps) 
             }
           }}
           aria-label={`${position.name} 이름 바꾸기`}
-          className="w-[80px] shrink-0 truncate text-center text-[13px] leading-5"
+          className={cn(
+            POSITION_COLUMN.NAME,
+            "shrink-0 truncate text-center text-[13px] leading-5",
+          )}
         >
           {position.name}
         </button>
@@ -146,7 +155,10 @@ export function PositionRow({ position, index, ...handlers }: PositionRowProps) 
         type="button"
         aria-label={`${position.name} 삭제`}
         onClick={() => onRemove(position.id)}
-        className="text-muted-foreground hover:text-foreground hover:bg-foreground/10 focus-visible:ring-ring flex size-6 shrink-0 items-center justify-center rounded opacity-0 transition-[color,background-color,opacity] group-focus-within:opacity-100 group-hover:opacity-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:outline-hidden"
+        className={cn(
+          POSITION_COLUMN.REMOVE,
+          "text-muted-foreground hover:text-foreground hover:bg-foreground/10 focus-visible:ring-ring flex shrink-0 items-center justify-center rounded opacity-0 transition-[color,background-color,opacity] group-focus-within:opacity-100 group-hover:opacity-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:outline-hidden",
+        )}
       >
         <X className="size-3.5" />
       </button>

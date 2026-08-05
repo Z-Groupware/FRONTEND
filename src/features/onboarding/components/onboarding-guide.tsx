@@ -10,19 +10,27 @@ import { GuideDemo } from "./guide-demo";
 /** 단계마다 짚어줄 것 — 화면을 보며 따라 할 수 있는 순서로 적는다. */
 const GUIDE_STEPS: Record<OnboardingStep, string[]> = {
   [ONBOARDING_STEP.DEPARTMENT]: [
-    "아래 입력칸에 부서 이름을 적고 Enter를 누르세요.",
-    "부서 줄에 마우스를 올려 + 를 누르면 그 안에 역할이 생깁니다.",
-    "이름은 더블클릭해서 바꾸고, 손잡이를 끌어 순서를 옮깁니다.",
+    "아래 칸에 부서 이름을 적고 Enter를 누릅니다.",
+    "부서 줄에 마우스를 올리면 + 가 나옵니다. 누르면 그 안에 역할이 생깁니다.",
+    "이름은 더블클릭해서 바꿉니다.",
+    "손잡이를 끌면 순서를 바꾸거나 다른 부서로 옮길 수 있습니다.",
   ],
   [ONBOARDING_STEP.POSITION]: [
-    "직급 이름을 적고 Enter를 누르세요.",
-    "직급마다 권한을 고릅니다. Leader는 회사에 한 직급만 가질 수 있어요.",
-    "위에 있을수록 높은 직급입니다. 손잡이를 끌어 순서를 맞추세요.",
+    "직급 이름을 적고 Enter를 누릅니다.",
+    "직급마다 권한을 고릅니다. Leader는 한 직급만 가질 수 있습니다.",
+    "위에 있을수록 높은 직급입니다. 손잡이를 끌어 맞춥니다.",
   ],
   [ONBOARDING_STEP.INVITE]: [
-    "메일 주소를 적습니다. 형식이 어긋나면 옆에 알려드려요.",
-    "부서를 고르면 역할 칸이 열립니다. 팀장처럼 역할이 없으면 ‘없음’을 두세요.",
-    "부서마다 리더는 한 명입니다. 이미 있으면 그 직급이 잠깁니다.",
+    "부서 · 역할 · 직급을 앞에서부터 차례로 고릅니다.",
+    "팀장처럼 역할 없이 부서에만 두려면 역할을 ‘없음’으로 둡니다.",
+    "부서마다 리더는 한 명입니다.",
+    "주소를 적고 [완료]를 누르면 초대장이 함께 나갑니다.",
+  ],
+  [ONBOARDING_STEP.PAYMENT]: [
+    "요금은 회사당 월 기본료 하나입니다.",
+    "인원이 늘어도 금액은 그대로입니다.",
+    "AI 토큰과 저장 공간은 기본료에 포함돼 있습니다. 넘긴 만큼만 다음 결제일에 더해집니다.",
+    "결제를 마쳐야 워크스페이스가 열립니다.",
   ],
 };
 
@@ -37,6 +45,8 @@ interface OnboardingGuideProps {
  *
  * ⚠️ **모달이 아니다.** 열어둔 채로 입력할 수 있어야 해서 덮개(overlay)도 포커스 가둠도 두지 않는다.
  *    본문 레이아웃도 건드리지 않는다 — 열고 닫아도 화면이 밀리지 않는다.
+ * ⚠️ **오른쪽 아래**에 뜬다(도움말의 자리). 폭은 320px로 묶어 둔다 — 400px이던 시절엔
+ *    초대 목록의 선택 칸들을 덮었다. 넓히지 말 것.
  */
 export function OnboardingGuide({ step, isOpen, onToggle }: OnboardingGuideProps) {
   return (
@@ -61,7 +71,7 @@ export function OnboardingGuide({ step, isOpen, onToggle }: OnboardingGuideProps
         // 닫혀 있을 땐 클릭도 포커스도 받지 않게 한다
         aria-hidden={!isOpen}
         className={cn(
-          "bg-guide-surface text-guide-foreground border-guide-border fixed right-6 bottom-[136px] z-50 flex max-h-[min(560px,calc(100dvh-200px))] w-[400px] max-w-[calc(100vw-3rem)] flex-col overflow-hidden rounded-2xl border shadow-2xl transition-[opacity,transform] duration-200",
+          "bg-guide-surface text-guide-foreground border-guide-border fixed right-6 bottom-[136px] z-50 flex max-h-[min(560px,calc(100dvh-200px))] w-[320px] max-w-[calc(100vw-3rem)] flex-col overflow-hidden rounded-2xl border shadow-2xl transition-[opacity,transform] duration-200",
           isOpen ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-2 opacity-0",
         )}
       >

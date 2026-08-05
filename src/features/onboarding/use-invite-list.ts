@@ -5,54 +5,54 @@ import { useMemo, useState } from "react";
 import {
   changeInviteDepartment,
   changeInviteEmail,
+  changeInviteName,
   changeInvitePosition,
   changeInviteRole,
   createInvite,
   duplicateEmails,
+  type InviteRules,
   markInvitesSent,
   nextInviteId,
   normalizeEmail,
   removeInvite,
   sendableInvites,
-  sentInvites,
   toggleInviteAdmin,
 } from "./invites";
 import type { Invite } from "./types";
+import { NO_ROLE_ID } from "./types";
 
 /**
  * 초대 목록 편집 상태.
  * 목록 조작은 `invites.ts`의 순수 함수가 하고, 여기서는 **무엇을 언제 부를지**만 정한다.
  */
-export function useInviteList(defaultDepartmentId: string, defaultPositionId: string) {
-  const newInvite = (prev: Invite[]) =>
-    createInvite(nextInviteId(prev), defaultDepartmentId, defaultPositionId);
+export function useInviteList(rules: InviteRules) {
+  const newInvite = (prev: Invite[]) => createInvite(nextInviteId(prev));
 
-  const [invites, setInvites] = useState<Invite[]>(() => [
-    createInvite(nextInviteId([]), defaultDepartmentId, defaultPositionId),
-  ]);
+  const [invites, setInvites] = useState<Invite[]>(() => [createInvite(nextInviteId([]))]);
 
   const sendable = useMemo(() => sendableInvites(invites), [invites]);
-  const sent = useMemo(() => sentInvites(invites), [invites]);
   const duplicated = useMemo(() => duplicateEmails(invites), [invites]);
 
   return {
     invites,
     /** 이번에 나갈 줄 — 주소가 유효하고 아직 안 보낸 것만 */
     sendable,
-    /** 이미 나간 줄 — 화면에서 잠근다 */
-    sent,
     /** 이 줄의 주소가 위에 또 있는지 — 화면에서 표시해 준다 */
     isDuplicated: (invite: Invite) => duplicated.has(normalizeEmail(invite.email)),
     addRow: () => setInvites((prev) => [...prev, newInvite(prev)]),
+    changeName: (id: string, name: string) =>
+      setInvites((prev) => changeInviteName(prev, id, name)),
     changeEmail: (id: string, email: string) =>
       setInvites((prev) => changeInviteEmail(prev, id, email)),
     changeDepartment: (id: string, departmentId: string) =>
-      setInvites((prev) => changeInviteDepartment(prev, id, departmentId)),
+      setInvites((prev) => changeInviteDepartment(prev, id, departmentId, rules)),
     /** 역할 — 빈 문자열이면 "없음"(부서에 바로 소속) */
+    /** ⚠️ 짝이 안 맞는 직급은 함께 비워진다(`changeInviteRole`) */
     changeRole: (id: string, roleId: string) =>
-      setInvites((prev) => changeInviteRole(prev, id, roleId)),
+      setInvites((prev) => changeInviteRole(prev, id, roleId, rules)),
+    /** ⚠️ 리더 직급이면 역할이 함께 `없음`이 된다(`changeInvitePosition`) */
     changePosition: (id: string, positionId: string) =>
-      setInvites((prev) => changeInvitePosition(prev, id, positionId)),
+      setInvites((prev) => changeInvitePosition(prev, id, positionId, rules)),
     /** Admin 겸직 — 역할을 바꾸지 않고 그 위에 얹거나 뗀다 */
     toggleAdmin: (id: string) => setInvites((prev) => toggleInviteAdmin(prev, id)),
     /** 마지막 한 줄은 남긴다 — 줄이 0개면 다시 추가할 곳이 사라진다 */
@@ -77,15 +77,18 @@ export function useInviteList(defaultDepartmentId: string, defaultPositionId: st
         prev.map((invite) => {
           if (invite.isSent) return invite;
 
-          const departmentId = departmentIds.has(invite.departmentId)
-            ? invite.departmentId
-            : defaultDepartmentId;
+          // 사라진 부서·직급은 **비운다**. 다른 값으로 바꿔 놓으면 고른 적 없는 곳으로 초대장이 간다
+          const departmentId = departmentIds.has(invite.departmentId) ? invite.departmentId : "";
           return {
             ...invite,
             departmentId,
             // 부서가 바뀌었거나 그 역할이 사라졌으면 "없음"으로 되돌린다
-            roleId: roleIdsOf(departmentId).has(invite.roleId) ? invite.roleId : "",
-            positionId: positionIds.has(invite.positionId) ? invite.positionId : defaultPositionId,
+            // `없음`은 부서가 바뀌어도 살아남는다 — 어느 부서에서나 뜻이 같다
+            roleId:
+              invite.roleId === NO_ROLE_ID || roleIdsOf(departmentId).has(invite.roleId)
+                ? invite.roleId
+                : "",
+            positionId: positionIds.has(invite.positionId) ? invite.positionId : "",
           };
         }),
       ),

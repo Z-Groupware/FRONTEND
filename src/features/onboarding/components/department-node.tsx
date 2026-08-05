@@ -95,7 +95,7 @@ export function DepartmentNode({ node, depth, parentId, ...handlers }: Departmen
         <button
           {...handleProps}
           type="button"
-          aria-label={`${node.name} 위치 이동 — Alt와 방향키로도 옮길 수 있어요(위아래: 순서, 왼쪽: 부서로 빼기, 오른쪽: 바로 위 부서의 역할로)`}
+          aria-label={`${node.name} 위치 이동 — Alt와 방향키로도 옮길 수 있습니다(위아래: 순서, 왼쪽: 부서로 빼기, 오른쪽: 바로 위 부서의 역할로)`}
           onKeyDown={handleKeyMove}
           className="text-muted-foreground/40 hover:text-muted-foreground focus-visible:ring-ring shrink-0 cursor-grab rounded opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:outline-hidden active:cursor-grabbing"
         >

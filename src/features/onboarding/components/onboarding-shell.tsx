@@ -3,7 +3,7 @@
 import { Check } from "lucide-react";
 import { type ReactNode, useState } from "react";
 
-import { ZLogo } from "@/components/icons/z-logo";
+import { BrandBar } from "@/components/common/brand-bar";
 import { cn } from "@/lib/utils";
 
 import { ONBOARDING_STEP_LABEL, ONBOARDING_TOTAL_STEPS, type OnboardingStep } from "../types";
@@ -33,25 +33,34 @@ export function OnboardingShell({ step, isDone = false, children }: OnboardingSh
     // ⚠️ 화면 높이에 맞춘다 — 평소엔 페이지가 스크롤되거나
     //    끝에서 튕기지 않는다. 움직임은 카드 안쪽 목록에서만 일어난다.
     <div className="bg-background bg-dot-grid flex h-dvh flex-col overflow-hidden overscroll-none">
-      <header className="border-border bg-background/90 flex h-[52px] shrink-0 items-center gap-[7px] border-b px-[21px] backdrop-blur">
-        <ZLogo className="text-foreground size-[18px]" title="Z" />
-        {isDone ? (
-          <span className="text-foreground ml-auto text-xs leading-[18px]">완료</span>
-        ) : (
-          <span className="text-muted-foreground/70 ml-auto text-xs leading-[18px] tabular-nums">
-            단계 <span className="text-foreground">{step}</span> / {ONBOARDING_TOTAL_STEPS}
-          </span>
-        )}
-      </header>
+      <BrandBar
+        right={
+          isDone ? (
+            <span className="text-foreground text-xs leading-[18px]">완료</span>
+          ) : (
+            <span className="text-muted-foreground/70 text-xs leading-[18px] tabular-nums">
+              단계 <span className="text-foreground">{step}</span> / {ONBOARDING_TOTAL_STEPS}
+            </span>
+          )
+        }
+      />
 
       {/*
         ⚠️ `overflow-hidden`이 아니라 `overflow-y-auto`다. 화면이 낮으면 내용이 안 들어가는데,
-           숨겨버리면 [다음] 버튼에 아예 닿을 수 없다. 평소에는 넘치지 않아 스크롤바가 안 보인다.
+           숨겨버리면 다음 단계 버튼에 아예 닿을 수 없다. 평소에는 넘치지 않아 스크롤바가 안 보인다.
         ⚠️ 가운데 정렬을 `justify-center`로 하지 않는다 — 내용이 넘치면 **위쪽이 스크롤 시작점 밖으로**
            밀려나 아예 닿을 수 없다. `m-auto`는 자리가 남을 때만 가운데로 밀고, 넘치면 0이 된다.
       */}
       <main className="flex min-h-0 flex-1 flex-col overflow-y-auto px-[21px] py-6 lg:py-10">
-        <div className="m-auto w-full max-w-[1160px]">{children}</div>
+        {/*
+          ⚠️ 폭은 **네 단계가 같이** 쓴다. 3단계(사원 초대)에 이름 칸이 생기면서
+             1160px에서는 이름 칸·이메일 칸·에러 문구가 서로 밀어냈다.
+             에러 문구를 **이메일 오른쪽**에 두려면 가로가 더 필요한데, 1440까지 키우면
+             1600 미만 화면에서 오른쪽 칸(직급·Admin)이 잘린다 — 폭은 1320에서 멈추고
+             문구 칸이 남는 자리를 **유연하게** 쓰게 했다.
+             한 단계만 넓히면 단계를 넘길 때 화면이 들썩이므로 **전부 같이** 넓힌다.
+        */}
+        <div className="m-auto w-full max-w-[1320px]">{children}</div>
       </main>
 
       <footer className="border-border bg-background/90 flex h-16 shrink-0 items-center justify-center border-t px-[21px]">

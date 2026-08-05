@@ -10,9 +10,9 @@ import { MockHead } from "./flow-mock-head";
  */
 const ASSIGNED = [
   { role: "개발 담당", what: "API 문서 최신화", due: "8월 7일(금)", state: "진행중" },
-  { role: "디자인 담당", what: "디자인 기준 작성", due: "8월 5일(수)", state: "대기" },
-  { role: "기획 담당", what: "KPI 문서 업데이트", due: "8월 2일(일)", state: "대기" },
-  { role: "QA 담당", what: "회귀 테스트 시나리오", due: "8월 8일(토)", state: "대기" },
+  { role: "디자인 담당", what: "디자인 기준 작성", due: "8월 5일(수)", state: "할일" },
+  { role: "기획 담당", what: "KPI 문서 업데이트", due: "8월 2일(일)", state: "할일" },
+  { role: "QA 담당", what: "회귀 테스트 시나리오", due: "8월 8일(토)", state: "할일" },
 ] as const;
 
 const HANDOVER_ITEMS = [
@@ -67,10 +67,31 @@ export function AssignMock() {
         <AssignAside />
       </div>
 
-      <p className="text-landing-dark-muted border-landing-dark-border mt-auto flex items-center gap-1.5 border-t pt-3 text-[11px] leading-4">
-        <Bell className="size-3" aria-hidden />
-        배정되는 즉시 담당자에게 알림이 가요
-      </p>
+      {/*
+        ⚠️ 01은 파형, 04는 완성도 막대가 꼬리에 있는데 여기만 글자 한 줄이라 밋밋했다.
+           **알림이 간 사람 수**를 겹친 동그라미로 보여준다 — 문장이 말하는 걸 눈으로 받는다.
+        ⚠️ 얼굴이나 이름을 넣지 않는다. 목이라도 사람처럼 보이면 실제 계정으로 읽힌다.
+      */}
+      <div className="border-landing-dark-border mt-auto flex items-center justify-between gap-3 border-t pt-3">
+        <p className="text-landing-dark-muted flex items-center gap-1.5 text-[11px] leading-4">
+          <Bell className="size-3" aria-hidden />
+          배정되는 즉시 담당자에게 알림이 갑니다
+        </p>
+        <span className="flex shrink-0 items-center" aria-hidden>
+          {[0, 1, 2].map((index) => (
+            <span
+              key={index}
+              style={{ marginLeft: index === 0 ? 0 : -6 }}
+              className="border-landing-dark bg-landing-dark-surface landing-light:bg-white text-landing-dark-muted flex size-[18px] items-center justify-center rounded-full border-2"
+            >
+              <User className="size-2.5" />
+            </span>
+          ))}
+          <span className="text-landing-dark-muted pl-2 text-[11px] leading-4 tabular-nums">
+            3명
+          </span>
+        </span>
+      </div>
     </>
   );
 }
@@ -155,7 +176,7 @@ export function HandoverMock() {
           <path className="animate-z-land-bottom" d="M54.5 75 L100 75 L100 100 L37 100 Z" />
         </svg>
         <span className="text-[12px] leading-[18px] font-semibold text-white">
-          인수인계서 완성 — 전달할 준비가 끝났어요
+          인수인계서 완성 — 전달할 준비가 끝났습니다
         </span>
       </div>
     </>

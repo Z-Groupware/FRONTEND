@@ -1,10 +1,10 @@
 import type { ReactNode } from "react";
 
-import { ROLE } from "@/constants/domain";
 import { getUnreadNoticeCount } from "@/features/notice/server";
 import { RoleSidebar } from "@/features/shell/components/role-sidebar";
 import type { NavSection } from "@/features/shell/nav";
 import { OWNER_NAV } from "@/features/shell/nav";
+import { getViewer } from "@/features/shell/viewer";
 
 /**
  * 공지 미읽음이 있으면 사이드바 "공지" 항목에 빨간 점을 끼워 넣는다.
@@ -24,19 +24,24 @@ function withNoticeDot(sections: NavSection[], hasUnread: boolean): NavSection[]
 /**
  * 로그인 뒤 화면이 모두 쓰는 셸 — **사이드바는 여기 한 번만** 그린다.
  *
- * ⚠️ `(role)`(역할 전용)과 `(app)`(공용 워크벤치)이 이 아래에 나란히 들어온다.
- *    괄호는 URL에 안 들어가므로 주소는 그대로 `/owner`·`/app/meeting`이다.
+ * ⚠️ `(role)`(역할·관리 화면) · `(app)`(공용 워크벤치)이 이 아래에 나란히 들어온다.
+ *    괄호는 URL에 안 들어가므로 주소는 `/owner`·`/manage/billing`·`/app/meeting`이다.
  *    두 그룹을 오갈 때 사이드바가 다시 마운트되지 않아 깜빡이지 않는다.
  * ⚠️ 역할마다 **레이아웃이 아니라 `sections`만** 갈아 끼운다(CLAUDE.md §라우트 그룹).
  *    지금은 OWNER 구성뿐이다 — 로그인이 붙으면 세션의 역할로 고른다(지금 사용자는 목).
  */
 export default async function ShellLayout({ children }: { children: ReactNode }) {
-  const unreadNoticeCount = await getUnreadNoticeCount();
+  /*
+    ⚠️ 둘을 **같이 기다린다.** 앞뒤로 세우면 사이드바 하나 그리는 데 두 번 기다린다.
+    ⚠️ 사용자는 `getViewer()`가 준다 — 전에는 여기에 `{ name: "대표 계정", role: OWNER }`를
+       손으로 적고 있었다. 로그인이 붙으면 그 파일 하나만 바뀐다(#67).
+  */
+  const [viewer, unreadNoticeCount] = await Promise.all([getViewer(), getUnreadNoticeCount()]);
   const sections = withNoticeDot(OWNER_NAV, unreadNoticeCount > 0);
 
   return (
     <div className="bg-background flex h-dvh overflow-hidden">
-      <RoleSidebar sections={sections} user={{ name: "대표 계정", role: ROLE.OWNER }} />
+      <RoleSidebar sections={sections} user={viewer} />
 
       {/*
         상단바는 여기서 그리지 않는다 — 제목·액션이 도메인마다 달라서

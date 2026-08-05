@@ -1,14 +1,15 @@
 import type { Invite } from "../types";
-import { INVITE_LINK_VALID_DAYS, ONBOARDING_STEP } from "../types";
+import { ONBOARDING_STEP } from "../types";
 import { InvitePreview } from "./invite-preview";
 import type { SelectOption } from "./option-select";
 import { StepHeading } from "./step-heading";
 import { StepHintList } from "./step-hint-list";
+import { StepNote, StepNoteList } from "./step-note-list";
 
 const BENEFITS = [
-  "초대 링크로 본인이 계정을 만들어요",
-  "부서·역할·직급을 미리 지정해서 보낼 수 있어요",
-  "나중에 기업 설정에서 추가로 초대할 수 있어요",
+  "계정과 첫 비밀번호를 메일로 보내드립니다",
+  "부서·역할·직급을 미리 지정해서 보낼 수 있습니다",
+  "나중에 기업 설정에서 추가로 초대할 수 있습니다",
 ] as const;
 
 interface InviteIntroProps {
@@ -22,40 +23,46 @@ interface InviteIntroProps {
 /** 온보딩 3단계 좌측 — 설명과 축약 미리보기. */
 export function InviteIntro({ invites, departments, rolesOf, positions }: InviteIntroProps) {
   return (
-    <section className="flex w-full flex-col gap-[17.5px] lg:h-full lg:w-[300px] lg:shrink-0">
+    <section className="flex w-full flex-col gap-[17.5px] lg:h-full lg:w-[320px] lg:shrink-0">
       <StepHeading step={ONBOARDING_STEP.INVITE} title="사원을 초대하세요">
-        이메일로 초대장을 발송합니다. 초대받은 사람이 링크를 통해 계정을 만들면 자동으로 해당
+        보내면 계정이 바로 만들어지고, 아이디와 첫 비밀번호가 메일로 갑니다. 여기서 정한
         부서·역할·직급으로 배정됩니다.
       </StepHeading>
 
       <StepHintList items={BENEFITS} />
 
-      <div className="border-border bg-background/80 text-muted-foreground/70 flex flex-col gap-1.5 rounded-md border p-[10.5px] text-[11px] leading-[18px]">
-        <p>
-          초대 링크는 발송 후{" "}
-          <span className="text-muted-foreground">{INVITE_LINK_VALID_DAYS}일 동안</span> 유효해요.
-        </p>
-        <p>
-          <span className="text-muted-foreground">역할은 부서를 고른 뒤</span> 정할 수 있어요.
-          팀장처럼 역할 없이 부서에만 두려면 &lsquo;없음&rsquo;을 고릅니다.
-        </p>
-        <p>
-          직급은 <span className="text-muted-foreground">2단계에서 만든 것</span>만 고를 수 있어요.
-          더 필요하면 이전 단계에서 추가해 주세요.
-        </p>
+      <StepNoteList>
+        <StepNote>
+          {/*
+            ⚠️ 링크를 보내 본인이 가입하는 방식이 **아니다.** 보내는 순간 계정이 만들어지고
+               아이디·첫 비밀번호가 메일로 나간다.
+               ⚠️ 인원이 늘어도 금액은 그대로다 — 좌석 과금이 아니다(2026-08-04).
+               ⚠️ 받은 사람은 **그 비밀번호를 그대로 쓴다.** 강제 변경 화면은 두지 않는다(팀 결정).
+          */}
+          보내면 <span className="text-muted-foreground">계정이 바로 만들어집니다.</span> 아이디와
+          첫 비밀번호가 메일로 갑니다.
+        </StepNote>
+        <StepNote>
+          <span className="text-muted-foreground">역할은 부서를 고른 뒤</span> 정합니다. 팀장처럼
+          역할 없이 부서에만 두려면 &lsquo;없음&rsquo;을 고릅니다.
+        </StepNote>
+        <StepNote>
+          직급은 <span className="text-muted-foreground">2단계에서 만든 것</span>만 고를 수
+          있습니다. 더 필요하면 이전 단계에서 추가해 주세요.
+        </StepNote>
         {/*
           ⚠️ 이 자리에서 Admin을 켜야 회사에 관리자가 **처음부터** 있다. 안 켜고 넘어가면
              계정 발급·회의실 관리를 할 사람이 없어 대표 혼자 막힌다.
         */}
-        <p>
+        <StepNote>
           <span className="text-muted-foreground">Admin은 역할 위에 얹는 권한</span>이라 직급과 따로
-          켭니다. Leader이면서 Admin일 수 있고, 대표는 겸할 수 없어요.
-        </p>
-        <p>
-          <span className="text-muted-foreground">보낸 초대장은 고치거나 취소할 수 없어요.</span>{" "}
-          주소를 한 번 더 확인하고 보내주세요.
-        </p>
-      </div>
+          켭니다. Leader이면서 Admin일 수 있고, 대표는 겸할 수 없습니다.
+        </StepNote>
+        <StepNote>
+          <span className="text-muted-foreground">보낸 초대장은 되돌릴 수 없습니다.</span> 주소를 한
+          번 더 확인하고 [완료]를 눌러 주세요.
+        </StepNote>
+      </StepNoteList>
 
       <InvitePreview
         invites={invites}

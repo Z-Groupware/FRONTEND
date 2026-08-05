@@ -20,10 +20,20 @@ import { MAX_DEPARTMENT_DEPTH } from "./types";
 
 const KEY = "z:onboarding-draft";
 
-export interface OnboardingDraft {
+interface OnboardingDraft {
   departments?: DepartmentNode[];
   positions?: Position[];
   invites?: Invite[];
+  /**
+   * 3단계 [완료]로 **제출을 마쳤는가.**
+   *
+   * ⚠️ 초대 줄의 `isSent`로 추측하지 않는다 — 주소를 한 줄도 안 적고 마친 회사는
+   *    `isSent`가 하나도 없어서 "아직 안 했다"로 읽힌다. 제출은 초대와 별개의 사실이다.
+   * ⚠️ 이 값이 켜지면 **1·2·3단계에 머물 수 없다**(`useCommittedRedirect`).
+   *    부서·직급·초대를 한 번에 보내는 구조라, 보낸 뒤에 앞 단계를 고치면
+   *    화면과 서버가 갈라진다.
+   */
+  isCommitted?: boolean;
 }
 
 /**
@@ -60,6 +70,8 @@ function isInvite(value: unknown): value is Invite {
   const invite = value as Record<string, unknown>;
   return (
     typeof invite.id === "string" &&
+    // ⚠️ 이름은 나중에 생긴 칸이다 — 옛 보관값에는 없어서 `undefined`도 통과시킨다
+    (invite.name === undefined || typeof invite.name === "string") &&
     typeof invite.email === "string" &&
     typeof invite.departmentId === "string" &&
     typeof invite.roleId === "string" &&
@@ -87,7 +99,17 @@ function parseDraft(value: unknown): OnboardingDraft {
   return {
     departments: pick(draft.departments, isDepartmentNode),
     positions: pick(draft.positions, isPosition),
-    invites: pick(draft.invites, isInvite),
+    /*
+      ⚠️ **되살릴 때 빈 칸을 채운다.** 이름은 나중에 생긴 칸이라 옛 보관값에는 없다 —
+         `undefined`가 그대로 입력칸의 `value`로 들어가면 React가 그 칸을
+         **uncontrolled로 시작했다가 controlled로 바뀌었다**며 경고를 뱉고,
+         첫 글자를 칠 때까지 값이 안 잡힌다. 경계에서 한 번만 메운다.
+    */
+    invites: pick(draft.invites, isInvite)?.map((invite) => ({
+      ...invite,
+      name: invite.name ?? "",
+    })),
+    isCommitted: draft.isCommitted === true,
   };
 }
 
@@ -128,6 +150,15 @@ export function saveDraftPositions(positions: Position[]): void {
 
 export function saveDraftInvites(invites: Invite[]): void {
   write({ ...read(), invites });
+}
+
+/**
+ * 제출 완료 도장 — 3단계 [완료]의 확인 창에서 [등록하기]를 누른 순간 찍는다.
+ *
+ * ⚠️ 서버 커밋이 붙으면 **응답이 성공한 뒤에** 찍는다. 지금은 목이라 바로 찍는다.
+ */
+export function markDraftCommitted(): void {
+  write({ ...read(), isCommitted: true });
 }
 
 /**

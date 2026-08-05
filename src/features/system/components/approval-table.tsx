@@ -59,7 +59,7 @@ export function ApprovalTable({ companies, buildDetailHref, pageSize }: Approval
         className="border-border bg-card flex flex-col items-center justify-center rounded-xl border p-10 text-center"
         style={{ height: HEADER_HEIGHT_PX + pageSize * ROW_HEIGHT_PX }}
       >
-        <p className="text-muted-foreground text-sm">승인 대기 중인 기업이 없어요</p>
+        <p className="text-muted-foreground text-sm">승인 대기 중인 기업이 없습니다</p>
       </div>
     );
   }

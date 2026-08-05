@@ -12,10 +12,13 @@ import type { RecentCompany } from "../types";
 /** "최근 가입 기업" 표. 비어있으면 안내 문구로 대체한다(CLAUDE.md §정직성 · loading/error/empty). */
 export function RecentCompaniesTable({ companies }: { companies: RecentCompany[] }) {
   if (companies.length === 0) {
+    // 크기는 develop의 개편(#74)을 따르고, 문구만 합니다체로 둔다(2026-08-04 카피 변경)
     return (
       <section className="border-border bg-card rounded-xl border p-5">
         <h2 className="text-foreground text-sm font-semibold">최근 가입 기업</h2>
-        <p className="text-muted-foreground mt-6 text-center text-xs">아직 가입한 기업이 없어요</p>
+        <p className="text-muted-foreground mt-6 text-center text-xs">
+          아직 가입한 기업이 없습니다
+        </p>
       </section>
     );
   }

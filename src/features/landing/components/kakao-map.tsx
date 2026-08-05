@@ -149,7 +149,7 @@ export function KakaoMap({ lat, lng, label, address, mapUrl, searchKeyword }: Ka
           {/* 아래를 무대 색으로 덮어 배경에 잇는다 */}
           <span
             aria-hidden
-            className="from-landing-stage/60 [.landing-night_&]:from-landing-stage/85 pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t to-transparent [.landing-night_&]:h-28"
+            className="from-landing-stage/60 [.landing-night_&]:from-landing-stage/55 pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t to-transparent [.landing-night_&]:h-20"
           />
 
           {/* 좌상단 주소 칩 — 지도만 두면 어디를 가리키는지 글로 남지 않는다 */}

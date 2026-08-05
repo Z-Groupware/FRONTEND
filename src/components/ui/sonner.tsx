@@ -19,7 +19,16 @@ export function Toaster(props: ToasterProps) {
       // 컨테이너 폭을 줄여 토스트가 화면 가운데에 오게 한다.
       // 토스트는 컨테이너 안에서 절대 배치라 margin:auto로는 가운데로 못 민다 —
       // 컨테이너 폭(--width)이 곧 토스트 폭이다.
-      style={{ "--width": "300px" } as React.CSSProperties}
+      /*
+        컨테이너 폭을 줄여 토스트가 화면 가운데에 오게 한다.
+        ⚠️ 토스트는 컨테이너 안에서 **절대 배치**라 `margin: auto`로는 못 민다 —
+           컨테이너 폭(`--width`)이 곧 토스트 폭이다. 내용만큼만 차지하게 만들려고
+           `width: auto`를 줘 봤지만, 그러면 왼쪽이나 오른쪽 끝에 붙는다(sonner가 위치를
+           애니메이션으로 잡아서 좌우를 동시에 고정할 수 없다). **폭은 고정으로 둔다.**
+        ⚠️ 220px이 **더 못 줄이는 선**이다. 좌우 여백(18px씩)을 빼면 글자 자리가 184px인데,
+           `기본 결제 수단을 변경했습니다`(14자)가 157px이다 — 더 좁히면 한 줄 문구가 잘린다.
+      */
+      style={{ "--width": "220px" } as React.CSSProperties}
       toastOptions={{
         // sonner가 자체 배경색을 먼저 칠한다 — 토큰을 인라인으로 덮어써야 먹색이 유지된다.
         // 순검정으로 보이지 않게 배경색을 한 스푼 섞는다(다크모드에서도 같은 규칙으로 눅는다).
@@ -27,14 +36,26 @@ export function Toaster(props: ToasterProps) {
           background: "color-mix(in oklab, var(--foreground) 88%, var(--background))",
           color: "var(--background)",
           border: "none",
-          padding: "10px 16px",
+          padding: "11px 18px",
+          // ⚠️ sonner가 `[data-sonner-toast]`에 자체 반지름을 준다 — 클래스로는 못 이겨서 인라인으로 준다
+          borderRadius: "999px",
         },
         classNames: {
           // 한 줄짜리 알림이 대부분이라 가운데 정렬로 둔다.
           // ⚠️ 설명(description)이 붙는 토스트는 호출할 때 `classNames`로 왼쪽 정렬을 준다 —
           //    두 줄이 가운데 정렬되면 줄 끝이 들쭉날쭉해 읽기 어렵다.
-          toast: "items-center justify-center rounded-2xl text-center text-[13px] shadow-md gap-2",
-          title: "font-medium!",
+          /*
+            ⚠️ **알약**이다(`rounded-full`). 네모난 상자는 화면 위에 얹힌 판처럼 보이는데,
+               토스트는 잠깐 떴다 사라지는 것이라 가벼워 보여야 한다.
+            ⚠️ `mx-auto`가 필요하다 — 폭이 내용만큼이라 컨테이너 안에서 왼쪽에 붙는다.
+          */
+          toast: "items-center justify-center rounded-full text-center text-[13px] shadow-md gap-2",
+          /*
+            ⚠️ 제목은 **한 줄**이다(`line-clamp-1`). 공용이라 어느 화면에서 긴 문장을 넣을지
+               모르는데, 두 줄이 되는 순간 알약이 판처럼 커져 화면 위에 얹힌 상자가 된다.
+               토스트는 "됐다"만 알리는 자리다 — 자세한 건 화면이 말한다(DECISIONS §토스트).
+          */
+          title: "font-medium! line-clamp-1",
           description: "text-background/70! text-xs! leading-[18px]!",
           // ⚠️ sonner 기본 성공 아이콘은 **초록**이다. 색으로 알리는 건 에러뿐이라 글자색을 따르게 한다.
           icon: "text-background! m-0! size-4! shrink-0 [&>svg]:size-4 [&_*]:fill-current [&_*]:stroke-current",

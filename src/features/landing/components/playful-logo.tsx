@@ -19,7 +19,7 @@ export function PlayfulLogo() {
   return (
     <Link
       href="/"
-      aria-label={isHome ? "Z 로고 — 누르면 조각이 다시 맞춰져요" : "Z 홈"}
+      aria-label={isHome ? "Z 로고 — 누르면 조각이 다시 맞춰집니다" : "Z 홈"}
       onClick={(event) => {
         if (!isHome) return;
         event.preventDefault();

@@ -1,5 +1,7 @@
 "use client";
 
+import { ChevronDownIcon } from "lucide-react";
+
 import {
   Select,
   SelectContent,
@@ -12,10 +14,12 @@ import { cn } from "@/lib/utils";
 export interface SelectOption {
   id: string;
   name: string;
-  /** 고를 수 없는 항목 — 왜 못 고르는지는 `hint`로 알린다 */
+  /**
+   * 고를 수 없는 항목.
+   * ⚠️ **왜 못 고르는지 항목 옆에 적지 않는다.** 좁은 목록에 설명이 붙으면 이름이 밀리고
+   *    글자 크기도 섞여 무엇을 고를 수 있는지가 더 안 보인다 — 흐린 것으로 충분하다.
+   */
   disabled?: boolean;
-  /** 항목 옆에 붙일 짧은 설명 */
-  hint?: string;
 }
 
 interface OptionSelectProps {
@@ -28,14 +32,27 @@ interface OptionSelectProps {
   emptyText: string;
   /** 칸 너비(px). 펼친 목록도 같은 폭을 써서 트리거와 어긋나지 않는다. */
   width: number;
-  /** 아직 고를 수 없는 상태. 왜 못 고르는지는 `disabledText`로 알린다. */
+  /**
+   * 아직 고를 수 없는 상태.
+   * ⚠️ **왜 못 고르는지 칸 안에 적지 않는다.** `부서 먼저` 같은 문구를 값 자리에 넣으면
+   *    그게 고른 값처럼 읽히고, 옆 칸들과 글자만 다른 이상한 칸이 된다.
+   *    비활성으로 **보이게** 하고 이유는 왼쪽 안내가 맡는다.
+   */
   disabled?: boolean;
   /** 잠겨 있을 때 칸에 보여줄 문구 */
-  disabledText?: string;
-  /** 빈 값("없음")도 고를 수 있게 한다 */
-  allowNone?: boolean;
-  /** "없음" 항목에 쓸 문구 */
-  noneText?: string;
+  /**
+   * 값을 **플레이스홀더 색**으로 눕힌다. 아직 실체가 없는 줄(주소를 안 적은 줄)에 쓴다 —
+   * 옆 입력칸은 비어서 회색인데 이 칸만 진하면 빈 줄이 반쯤 채워진 것처럼 보인다.
+   * ⚠️ "안 골랐다"는 뜻이 아니다. 값은 그대로 쓰인다 — 줄 자체가 비었다는 표시다.
+   */
+  isMuted?: boolean;
+  /**
+   * 아직 아무것도 안 골랐을 때(`value === ""`) 칸에 띄울 글자.
+   *
+   * ⚠️ 빈 값은 **오직 "아직 안 골랐다"** 뿐이다. `없음`처럼 고른 결과는 목록에 실제 항목으로
+   *    넣는다(`NO_ROLE_ID`) — 둘을 같은 값으로 두면 다음 칸을 언제 열지 알 수 없다.
+   */
+  placeholder?: string;
   className?: string;
 }
 
@@ -51,53 +68,48 @@ export function OptionSelect({
   emptyText,
   width,
   disabled = false,
-  disabledText,
-  allowNone = false,
-  noneText = "없음",
+  placeholder,
+  isMuted = false,
   className,
 }: OptionSelectProps) {
-  /** base-ui Select는 빈 문자열을 "고른 게 없음"으로 봐서 값이 안 잡힌다 — 별도 키를 쓴다 */
-  const NONE = "__none__";
   const nameOf = (id: string) => options.find((option) => option.id === id)?.name;
 
   if (disabled) {
-    /**
-     * 잠긴 칸에는 두 가지가 있다.
-     * - `disabledText`가 있으면 **아직 고를 수 없는 것**이다(부서를 안 골랐다) → 이유를 보여준다.
-     * - 없으면 **이미 정해져 못 바꾸는 것**이다(발송 완료) → ⚠️ 고른 값을 그대로 둔다.
-     *   여기서 값을 문구로 갈아치우면 보낸 내용과 화면이 달라 보인다.
-     */
-    const settled =
-      value === "" ? (allowNone ? noneText : emptyText) : (nameOf(value) ?? emptyText);
+    /*
+      잠긴 칸에도 **고른 값을 그대로 보여준다.** 값이 없을 때만 안내 글자를 쓴다 —
+      리더 직급이라 잠긴 역할 칸은 `없음`이 보여야 무엇으로 정해졌는지 알 수 있다.
+    */
+    const settledText = value ? (nameOf(value) ?? emptyText) : (placeholder ?? emptyText);
 
     return (
       /*
-        ⚠️ 고를 수 있는 칸과 **폭·높이·반지름·테두리를 똑같이** 맞춘다
-           (`width` · `h-7` · `rounded-lg` · `border-input`). 하나라도 다르면 같은 줄에서
-           두 칸이 다른 물건처럼 보인다 — 특히 반지름 차이가 제일 먼저 눈에 걸린다.
-        ⚠️ 화살표는 넣지 않는다 — 누를 수 없는 칸에 열리는 표시를 두면 눌러 보게 된다.
-           잠겼다는 건 흐린 글자와 그 줄 전체가 말한다.
+        ⚠️ 고를 수 있는 칸과 **폭·높이·반지름·테두리·꺽쇠까지 똑같이** 맞추고 흐리기만 한다.
+           모양이 달라지면 "왜 이 칸만 다르지"가 되고, 흐린 것만으로 못 누른다는 건 충분히 읽힌다.
       */
       <span
         style={{ width }}
-        aria-label={`${label} — ${disabledText ?? `${settled}, 고칠 수 없어요`}`}
+        aria-disabled
+        aria-label={`${label} — ${settledText}, 고칠 수 없습니다`}
         className={cn(
-          "text-muted-foreground border-input flex h-7 items-center justify-center rounded-lg border px-2 text-[11px]",
+          // ⚠️ `opacity`로 흐리지 않는다 — 테두리까지 같이 흐려져 옆 칸과 세기가 어긋난다.
+          //    잠겼다는 건 **글자 색**만으로 말하고, 테두리는 옆 칸과 똑같이 둔다.
+          "text-muted-foreground/60 border-input flex h-8 cursor-not-allowed items-center justify-center gap-1 rounded-lg border pr-1.5 pl-2.5 text-[14px]",
           className,
         )}
       >
-        {disabledText ?? settled}
+        <span className="truncate">{settledText}</span>
+        <ChevronDownIcon className="size-3.5 shrink-0" aria-hidden />
       </span>
     );
   }
 
   // 고를 게 아무것도 없고 "없음"조차 못 쓰면 칸을 잠근다
-  if (options.length === 0 && !allowNone) {
+  if (options.length === 0) {
     return (
       <span
         style={{ width }}
         className={cn(
-          "text-muted-foreground border-input flex h-7 items-center justify-center rounded-lg border px-2 text-[11px]",
+          "text-muted-foreground border-input flex h-8 items-center justify-center rounded-lg border px-2.5 text-[14px]",
           className,
         )}
       >
@@ -109,10 +121,10 @@ export function OptionSelect({
   return (
     // 선택 해제(null)는 쓰지 않는다 — 부서·직급은 항상 하나가 골라져 있다
     <Select
-      value={allowNone && value === "" ? NONE : value}
+      value={value}
       onValueChange={(next) => {
         if (!next) return;
-        onChange(next === NONE ? "" : (next as string));
+        onChange(next as string);
       }}
     >
       <SelectTrigger
@@ -123,10 +135,34 @@ export function OptionSelect({
         // ⚠️ 정렬은 기본(`justify-between`)을 그대로 둔다. 대신 **칸을 내용에 맞게 좁혔다** —
         //    칸이 넓으면 글자와 화살표가 양 끝으로 벌어져 사이가 텅 비고, 칸 자체도 커 보인다.
         //    가운데로 모으는 것보다 이 편이 긴 이름이 들어와도 잘리며 버틴다.
-        className={cn("h-7 px-2 text-[11px] leading-none data-[size=default]:h-7", className)}
+        // ⚠️ 입력칸과 **높이(h-8)도 글자 크기(14px)도** 같아야 한 줄로 읽힌다 —
+        //    한쪽만 작으면 색이 같아도 다른 물건처럼 보인다
+        className={cn(
+          // 꺽쇠(size-4)가 좁은 칸에서 글자 자리를 뺏어 `프론트엔드`가 잘렸다 —
+          // 한 치수 줄여(3.5) 글자에 자리를 돌려준다
+          // 꺽쇠는 **오른쪽 끝에 붙인다** — 오른쪽 여백을 왼쪽보다 좁게(2.5 → 1.5) 준다
+          "h-8 pr-1.5 pl-2.5 text-[14px] leading-none data-[size=default]:h-8 [&>svg]:size-3.5",
+          /*
+            ⚠️ 값 칸은 `flex-1`(남는 자리 전부) 그대로 두고, **그 안에서** 글자를 가운데로 보낸다.
+               칸을 내용만큼만 줄여 글자+꺽쇠를 함께 가운데로 모으면 꺽쇠가 안쪽으로 딸려 들어온다.
+            ⚠️ 기본값이 `text-left`라 글자가 왼쪽 끝에 붙어 열 머리(가운데)와 어긋나 보였다.
+          */
+          "[&>[data-slot=select-value]]:min-w-0 [&>[data-slot=select-value]]:justify-center [&>[data-slot=select-value]]:text-center",
+          // ⚠️ 빈 줄이라도 **테두리는 건드리지 않는다** — 연하게 눕히면 줄 전체가 비활성으로 읽힌다
+          isMuted && "text-muted-foreground",
+          className,
+        )}
       >
         <SelectValue>
-          {(id) => (id === NONE ? noneText : (nameOf(id as string) ?? emptyText))}
+          {(id) => {
+            const name = nameOf(id as string);
+            if (name) return name;
+            // 안 고른 칸은 **연하게** 둔다 — 고른 값과 같은 세기면 이미 정해진 줄로 읽힌다
+            if (placeholder) {
+              return <span className="text-muted-foreground/70">{placeholder}</span>;
+            }
+            return emptyText;
+          }}
         </SelectValue>
       </SelectTrigger>
 
@@ -141,26 +177,22 @@ export function OptionSelect({
         alignItemWithTrigger={false}
         // 트리거 폭을 최소로만 쓴다 — 좁은 칸(76px)에서 설명이 체크 표시와 겹치던 문제
         style={{ minWidth: width }}
-        className="w-auto min-w-0"
+        /*
+          ⚠️ 항목 글자를 **가운데**로 둔다. 트리거의 값도 가운데라, 목록만 왼쪽이면
+             펼치는 순간 글자가 옆으로 튀어 보인다.
+          ⚠️ 오른쪽 체크 표식은 절대 위치라 가운데 정렬에 끼어들지 않는다. 대신 왼쪽에도
+             같은 여백(`pl-8`)을 줘야 글자가 진짜 가운데에 선다.
+        */
+        className="w-auto min-w-0 [&_[data-slot=select-item]]:justify-center [&_[data-slot=select-item]]:pl-8"
       >
-        {allowNone && (
-          <SelectItem value={NONE} className="text-muted-foreground text-xs">
-            {noneText}
-          </SelectItem>
-        )}
         {options.map((option) => (
           <SelectItem
             key={option.id}
             value={option.id}
             disabled={option.disabled && option.id !== value}
-            className="text-xs"
+            className="text-[14px]"
           >
             {option.name}
-            {option.disabled && option.id !== value && option.hint && (
-              <span className="text-muted-foreground/60 text-[10px] whitespace-nowrap">
-                {option.hint}
-              </span>
-            )}
           </SelectItem>
         ))}
       </SelectContent>

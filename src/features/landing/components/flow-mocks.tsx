@@ -9,7 +9,7 @@ import { MockHead } from "./flow-mock-head";
 */
 const CAPTURE_CHUNKS = [
   { at: "07:41", text: "이번 스프린트 블로커부터 정리하죠" },
-  { at: "07:58", text: "API 문서 최신화가 계속 밀리고 있어요" },
+  { at: "07:58", text: "API 문서 최신화가 계속 밀리고 있습니다" },
   { at: "08:14", text: "그럼 이번 주 안에 끝내는 걸로 하죠" },
   { at: "08:22", text: "디자인 기준 문서도 이번에 같이 잡죠" },
   { at: "08:35", text: "KPI 지표는 다음 회의에서 다시 볼게요" },
@@ -78,15 +78,15 @@ export function CaptureMock() {
       <div className="border-landing-dark-border mt-auto flex items-center justify-between border-t pt-3">
         <p className="text-landing-dark-muted flex items-center gap-1.5 text-[11px] leading-4">
           <Mic className="size-3" aria-hidden />
-          녹음 파일도 함께 보관돼요
+          녹음 파일도 함께 보관됩니다
         </p>
         {/* 소리가 들어오는 중 — 파형이 뛴다 */}
-        <span className="flex h-4 items-end gap-[2px]" aria-hidden>
-          {[8, 14, 6, 12, 16, 9, 13].map((height, index) => (
+        <span className="flex h-6 items-end gap-[3px]" aria-hidden>
+          {[12, 21, 9, 18, 24, 14, 20].map((height, index) => (
             <span
               key={index}
               style={{ height, animationDelay: `${(index % 4) * 0.15}s` }}
-              className="animate-eq bg-landing-green/70 w-[2px] rounded-full"
+              className="animate-eq bg-landing-green w-[3px] rounded-full"
             />
           ))}
         </span>
@@ -135,9 +135,31 @@ export function AnalyzeMock() {
         <AnalyzeAside />
       </div>
 
-      <p className="text-landing-dark-muted border-landing-dark-border mt-auto border-t pt-3 text-[11px] leading-4">
-        확신이 낮은 항목만 개설자가 확인해요 — 나머지는 그대로 배정돼요
-      </p>
+      {/*
+        ⚠️ 다른 단계(01 파형 · 04 완성도 막대)는 꼬리에 **볼 것**이 있는데 여기만 글자 한 줄이라,
+           네 장을 넘겨 보면 이 단계만 비어 보였다. 문장은 그대로 두고 오른쪽에 **확신 눈금**을
+           붙인다 — 문장이 말하는 "확신이 낮은 항목"을 눈으로도 보여준다.
+      */}
+      <div className="border-landing-dark-border mt-auto flex items-center justify-between gap-3 border-t pt-3">
+        <p className="text-landing-dark-muted text-[11px] leading-4">
+          확신이 낮은 항목만 개설자가 확인합니다 — 나머지는 그대로 배정됩니다
+        </p>
+        <span className="flex shrink-0 items-center gap-1.5" aria-hidden>
+          {[true, true, true, false].map((isConfident, index) => (
+            <span
+              key={index}
+              className={
+                isConfident
+                  ? "bg-landing-violet h-[5px] w-4 rounded-full"
+                  : "bg-landing-dark-border h-[5px] w-4 rounded-full"
+              }
+            />
+          ))}
+          <span className="text-landing-dark-muted pl-0.5 text-[11px] leading-4 tabular-nums">
+            3/4
+          </span>
+        </span>
+      </div>
     </>
   );
 }

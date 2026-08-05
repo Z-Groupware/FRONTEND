@@ -146,7 +146,7 @@ export function SupportWidget() {
               </span>
               {/* ⚠️ 무엇인지 정확히 말한다 — "AI 상담원"이 아니다 */}
               <span className="text-muted-foreground block text-[11px] leading-4">
-                자주 묻는 질문에서 찾아드려요
+                자주 묻는 질문에서 찾아드립니다
               </span>
             </span>
 
@@ -175,7 +175,7 @@ export function SupportWidget() {
               autoFocus
               value={input}
               onChange={(event) => setInput(event.target.value)}
-              placeholder="직접 입력해도 돼요"
+              placeholder="직접 입력해도 됩니다"
               autoComplete="off"
               className="text-popover-foreground placeholder:text-muted-foreground/70 focus-visible:ring-ring/40 border-border bg-secondary h-10 w-full rounded-lg border px-3 text-[13px] focus-visible:ring-2 focus-visible:outline-hidden"
             />

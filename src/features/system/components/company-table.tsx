@@ -63,7 +63,7 @@ export function CompanyTable({ companies, buildDetailHref, pageSize }: CompanyTa
         className="border-border bg-card flex flex-col items-center justify-center rounded-xl border p-10 text-center"
         style={{ height: HEADER_HEIGHT_PX + pageSize * ROW_HEIGHT_PX }}
       >
-        <p className="text-muted-foreground text-sm">조건에 맞는 기업이 없어요</p>
+        <p className="text-muted-foreground text-sm">조건에 맞는 기업이 없습니다</p>
       </div>
     );
   }

@@ -14,7 +14,7 @@ import { AuthCard } from "./auth-card";
  *    시스템 관리자 승인 흐름이 예정돼 있어(팀 결정) 문구를 두 번 갈아엎지 않는다.
  */
 const NEXT_STEPS = [
-  { icon: Search, title: "검토", text: "적어 주신 회사 정보를 확인해요" },
+  { icon: Search, title: "검토", text: "적어 주신 회사 정보를 확인합니다" },
   { icon: Mail, title: "발송", text: "승인되면 담당자 메일로 기업 코드를 보내요" },
   { icon: KeyRound, title: "시작", text: "받은 코드로 로그인하면 워크스페이스가 열려요" },
 ] as const;
@@ -23,8 +23,10 @@ export function RegisterDone() {
   return (
     <AuthCard
       mark={<ZDoneMark />}
-      title="신청이 접수됐어요"
-      description="영업일 기준 1~2일 안에 담당자 메일로 결과를 보내 드려요"
+      title="신청이 접수됐습니다"
+      // ⚠️ **처리 기한을 숫자로 약속하지 않는다.** 승인을 사람이 하는데 운영 인력이
+      //    정해지지 않았다 — 못 지킬 기한을 적으면 그게 그대로 항의가 된다(§정직성).
+      description="검토가 끝나면 담당자 메일로 결과를 보내 드립니다"
     >
       {/*
         ⚠️ 설명을 제목 **아래**가 아니라 오른쪽 끝에 둔다. 아래로 쌓으면 글이 전부 왼쪽에

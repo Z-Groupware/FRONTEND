@@ -24,7 +24,15 @@ interface RoleSelectProps {
   className?: string;
 }
 
-/** 직급 한 줄의 권한 선택. 폭을 고정해 어떤 권한이든 크기가 같다. */
+/**
+ * 직급 한 줄의 권한 선택. 폭을 고정해 어떤 권한이든 크기가 같다.
+ *
+ * ⚠️ 3단계 선택 칸(`OptionSelect`)과 **작동 방식이 같아야 한다** — 꺽쇠 크기(3.5)·꺽쇠를
+ *    오른쪽 끝에 붙이는 것·값을 가운데 두는 것·목록 글자를 트리거와 맞추는 것.
+ *    폭과 높이만 다르다(여기는 28px 줄, 3단계는 60px 줄).
+ * ⚠️ 글자 크기는 **옆 직급명(13px)에 맞춘다.** 11px이던 시절엔 같은 줄에서 권한만 작아
+ *    다른 물건처럼 보였다.
+ */
 export function RoleSelect({
   value,
   onChange,
@@ -40,7 +48,9 @@ export function RoleSelect({
         // ⚠️ 기본 `data-[size=default]:h-8`이 특이도가 높아 `h-7`만으로는 안 먹는다.
         //    그래서 높이를 className으로 넘겨받지 않고 여기서 정한다 — 밖에서 덮으려 하면 조용히 무시된다.
         className={cn(
-          "w-[92px] px-2 text-[11px] leading-none",
+          "w-[92px] pr-1.5 pl-2.5 text-[13px] leading-none [&>svg]:size-3.5",
+          // 값 칸이 기본 `flex-1`이라 글자가 왼쪽 끝에 붙는다 — 안에서 가운데로 모은다
+          "[&>[data-slot=select-value]]:min-w-0 [&>[data-slot=select-value]]:justify-center [&>[data-slot=select-value]]:text-center",
           size === "sm" ? "h-7 data-[size=default]:h-7" : "h-8 data-[size=default]:h-8",
           className,
         )}
@@ -66,7 +76,7 @@ export function RoleSelect({
             key={role}
             value={role}
             disabled={blocked.includes(role) && role !== value}
-            className="text-xs"
+            className="text-[13px]"
           >
             {ROLE_LABEL[role]}
           </SelectItem>

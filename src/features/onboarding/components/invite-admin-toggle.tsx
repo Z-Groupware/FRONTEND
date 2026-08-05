@@ -13,38 +13,17 @@ import { cn } from "@/lib/utils";
  * ⚠️ `aria-pressed`로 상태를 읽힌다. 체크박스가 아니라 토글 버튼이라 `checked`가 아니다(§a11y).
  * ⚠️ **이미 나간 줄은 버튼을 그리지 않는다.** 같은 자리에 먹색 버튼이 그대로 남으면
  *    흐려진 줄에서 그것만 도드라져 아직 누를 수 있는 것처럼 보인다.
- * ⚠️ 잠긴 줄도 **모양을 바꾸지 않는다.** 점선으로 바꾸거나 아이콘을 지우면 "왜 사라졌지"가 되고,
- *    켜져 있었는지 아닌지도 같이 흐려진다. 네모와 방패는 그대로 두고 **밝기만 한 단 낮춘다** —
- *    잠겼다는 건 그 줄 전체(회색 바탕·"발송 완료")가 이미 말하고 있다.
- * ⚠️ 잠긴 칸은 `button`이 아니라 `span`이다. 눌리지 않는 버튼을 남겨 두면 마우스가 올라갔을 때
- *    아직 고칠 수 있는 것처럼 보인다.
+ * ⚠️ **잠긴 모양은 두지 않는다**(2026-08-04). 발송과 단계 이동을 [완료]가 함께 해서
+ *    보낸 줄이 화면에 남는 순간이 없다 — 그릴 일 없는 상태를 위한 분기는 없앴다.
  */
 interface InviteAdminToggleProps {
   isOn: boolean;
-  /** 이미 초대장이 나간 줄은 못 고친다 */
-  isLocked: boolean;
   /** 스크린 리더가 어느 줄인지 알 수 있게 — 메일 주소를 넣는다 */
   label: string;
   onToggle: () => void;
 }
 
-export function InviteAdminToggle({ isOn, isLocked, label, onToggle }: InviteAdminToggleProps) {
-  if (isLocked) {
-    return (
-      <span
-        className={cn(
-          "flex size-6 items-center justify-center rounded-md border opacity-70",
-          isOn
-            ? "bg-foreground text-background border-foreground"
-            : "border-border text-muted-foreground/40",
-        )}
-      >
-        <ShieldCheck className="size-3.5" aria-hidden />
-        <span className="sr-only">{isOn ? "Admin 겸직" : "Admin 아님"}</span>
-      </span>
-    );
-  }
-
+export function InviteAdminToggle({ isOn, label, onToggle }: InviteAdminToggleProps) {
   return (
     <button
       type="button"
@@ -55,7 +34,9 @@ export function InviteAdminToggle({ isOn, isLocked, label, onToggle }: InviteAdm
         "focus-visible:ring-ring flex size-6 items-center justify-center rounded-md border transition-colors focus-visible:ring-2 focus-visible:outline-hidden",
         isOn
           ? "bg-foreground text-background border-foreground"
-          : "border-border text-muted-foreground/50 hover:text-foreground hover:border-foreground/40",
+          : // ⚠️ 한 줄의 다른 칸들과 **같은 토큰**(`border-input`)을 쓴다 — `border-border`는
+            //    카드·구분선용이라 값이 달라, 같은 줄에서 이 칸만 테두리가 달라 보였다.
+            "border-input text-muted-foreground/50 hover:text-foreground hover:border-foreground/40",
       )}
     >
       <ShieldCheck className="size-3.5" aria-hidden />

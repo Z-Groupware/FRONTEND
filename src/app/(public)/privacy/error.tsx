@@ -3,5 +3,5 @@
 import { ScreenError } from "@/components/common/screen-error";
 
 export default function Error({ reset }: { reset: () => void }) {
-  return <ScreenError title="개인정보처리방침을 불러오지 못했어요" reset={reset} />;
+  return <ScreenError title="개인정보처리방침을 불러오지 못했습니다" reset={reset} />;
 }

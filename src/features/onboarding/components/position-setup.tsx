@@ -10,11 +10,13 @@ import { cn } from "@/lib/utils";
 import { loadDraft, saveDraftPositions } from "../draft";
 import { blockedRoles } from "../positions";
 import type { AssignableRole, Position } from "../types";
+import { useCommittedRedirect } from "../use-committed-redirect";
 import { useDraftSync } from "../use-draft-sync";
 import type { DraggingPositionId } from "../use-position-drag";
 import { usePositionList } from "../use-position-list";
 import { LeaveGuard } from "./leave-guard";
 import { PositionAddRow } from "./position-add-row";
+import { POSITION_COLUMN } from "./position-columns";
 import { PositionIntro } from "./position-intro";
 import { PositionRow, type PositionRowHandlers } from "./position-row";
 
@@ -28,6 +30,9 @@ interface PositionSetupProps {
 }
 
 export function PositionSetup({ initialPositions }: PositionSetupProps) {
+  // 제출을 마쳤으면 앞 단계를 고칠 수 없다 — 세 단계가 3단계 [완료]에서 한 번에 커밋된다
+  useCommittedRedirect();
+
   const list = usePositionList(initialPositions);
   const [draftName, setDraftName] = useState("");
   const [draftRole, setDraftRole] = useState<AssignableRole>(list.defaultRole);
@@ -75,7 +80,7 @@ export function PositionSetup({ initialPositions }: PositionSetupProps) {
         <PositionIntro positions={list.positions} />
 
         {/* 높이 고정 — 직급을 아무리 추가해도 카드 크기는 그대로고 안에서만 스크롤된다 */}
-        <section className="border-border bg-card flex h-[440px] flex-1 flex-col overflow-hidden rounded-xl border shadow-sm [@media(min-height:820px)]:lg:h-full">
+        <section className="border-border bg-card flex h-[460px] flex-1 flex-col overflow-hidden rounded-xl border shadow-sm [@media(min-height:820px)]:lg:h-full">
           <header className="border-border bg-muted flex h-12 shrink-0 items-center border-b px-4">
             <h2 className="flex items-center gap-2 text-[13px] leading-5">
               <span className="bg-foreground size-2 rounded-full" aria-hidden />
@@ -83,13 +88,17 @@ export function PositionSetup({ initialPositions }: PositionSetupProps) {
             </h2>
           </header>
 
-          {/* 행(PositionRow)과 같은 padding·gap·칸 너비를 써야 열이 맞는다 */}
-          <div className="text-muted-foreground/60 border-border bg-card flex h-7 shrink-0 items-center gap-2 border-b px-4 text-[11px] leading-4">
-            <span className="w-5 shrink-0" aria-hidden />
-            <span className="w-[80px] shrink-0 text-center">직급명</span>
+          {/*
+            행(PositionRow)과 같은 padding·gap을 쓰고, 칸 너비는 `position-columns.ts`에서 온다.
+            ⚠️ 높이·글자는 3단계 열 머리(`InviteColumnHead`)와 **같다**(h-8 · 12px) —
+               `gap`만 다른 건 행의 칸 간격이 단계마다 다르기 때문이다.
+          */}
+          <div className="text-muted-foreground/60 border-border bg-card flex h-8 shrink-0 items-center gap-2 border-b px-4 text-[12px] leading-4">
+            <span className={cn(POSITION_COLUMN.INDEX, "shrink-0")} aria-hidden />
+            <span className={cn(POSITION_COLUMN.NAME, "shrink-0 text-center")}>직급명</span>
             <span className="flex-1" aria-hidden />
-            <span className="w-[92px] shrink-0 text-center">권한</span>
-            <span className="size-6 shrink-0" aria-hidden />
+            <span className={cn(POSITION_COLUMN.ROLE, "shrink-0 text-center")}>권한</span>
+            <span className={cn(POSITION_COLUMN.REMOVE, "shrink-0")} aria-hidden />
           </div>
 
           {/* 스크롤바는 숨긴다(스크롤 자체는 된다) */}

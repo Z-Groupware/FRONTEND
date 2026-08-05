@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import { loadDraft, saveDraftDepartments } from "../draft";
 import { countDepartments } from "../tree";
 import type { DepartmentNode as DepartmentNodeType } from "../types";
+import { useCommittedRedirect } from "../use-committed-redirect";
 import type { DraggingInfo } from "../use-department-drag";
 import { useDepartmentTree } from "../use-department-tree";
 import { useDraftSync } from "../use-draft-sync";
@@ -29,6 +30,9 @@ export function DepartmentSetup({
 }: {
   initialDepartments: DepartmentNodeType[];
 }) {
+  // 제출을 마쳤으면 앞 단계를 고칠 수 없다 — 세 단계가 3단계 [완료]에서 한 번에 커밋된다
+  useCommittedRedirect();
+
   const tree = useDepartmentTree(initialDepartments);
   const [draftName, setDraftName] = useState("");
   const [dragging, setDragging] = useState<DraggingInfo | null>(null);
@@ -75,7 +79,7 @@ export function DepartmentSetup({
         <DepartmentIntro departments={tree.departments} />
 
         {/* 높이 고정 — 부서를 아무리 추가해도 카드 크기는 그대로고 안에서만 스크롤된다 */}
-        <section className="border-border bg-card flex h-[440px] flex-1 flex-col overflow-hidden rounded-xl border shadow-sm [@media(min-height:820px)]:lg:h-full">
+        <section className="border-border bg-card flex h-[460px] flex-1 flex-col overflow-hidden rounded-xl border shadow-sm [@media(min-height:820px)]:lg:h-full">
           <header className="border-border bg-muted flex h-12 shrink-0 items-center justify-between border-b px-4">
             <h2 className="flex items-center gap-2 text-[13px] leading-5">
               <span className="bg-foreground size-2 rounded-full" aria-hidden />

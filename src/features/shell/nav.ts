@@ -79,9 +79,15 @@ export const OWNER_NAV: NavSection[] = [
   {
     title: "회사 운영",
     items: [
-      { href: "/owner/members", label: "사원 관리", icon: "members" },
-      { href: "/owner/billing", label: "구독·결제", icon: "billing", isReady: true },
-      { href: "/owner/storage", label: "녹음 용량", icon: "storage" },
+      /*
+        ⚠️ 관리 기능은 **`/manage/*` 하나**로 모은다(팀 URL 문서 2026-08-05).
+           OWNER와 Admin 겸직자가 같이 쓰는 화면이라 `/owner/*`에 두면 겸직자에게 주소가
+           거짓말을 하고, 두 곳에 나눠 두면 같은 화면이 두 벌이 된다.
+           가드는 `역할 === admin`이 아니라 **`role === "owner" || isAdmin`** 이다.
+      */
+      { href: "/manage/members", label: "사원 관리", icon: "members" },
+      { href: "/manage/billing", label: "구독·결제", icon: "billing", isReady: true },
+      { href: "/manage/storage", label: "녹음 용량", icon: "storage" },
       { href: "/owner/setting", label: "기업 설정", icon: "setting" },
     ],
   },
