@@ -31,9 +31,15 @@ const TAG_NAMES = [
 ] as const;
 
 export interface PaletteColor {
-  /** `var(--tag-teal-bg)` — 테마 전환은 CSS가 한다 */
+  /** 칩 배경 — `var(--tag-teal-bg)`. 테마 전환은 CSS가 한다 */
   bgColor: string;
+  /** 칩 글자 — 배경 위에서 4.5:1을 넘는 값이다 */
   textColor: string;
+  /**
+   * 원색 — **막대처럼 글자가 안 얹히는 자리**에 쓴다.
+   * ⚠️ 글자에 쓰지 않는다. 바탕 위에서 보이기만 하면 되는 값이라 대비 기준이 다르다.
+   */
+  solidColor: string;
 }
 
 function hashString(value: string): number {
@@ -52,5 +58,9 @@ function hashString(value: string): number {
  */
 export function pickPaletteColor(key: string): PaletteColor {
   const name = TAG_NAMES[hashString(key) % TAG_NAMES.length] ?? TAG_NAMES[0];
-  return { bgColor: `var(--tag-${name}-bg)`, textColor: `var(--tag-${name}-fg)` };
+  return {
+    bgColor: `var(--tag-${name}-bg)`,
+    textColor: `var(--tag-${name}-fg)`,
+    solidColor: `var(--tag-${name}-solid)`,
+  };
 }

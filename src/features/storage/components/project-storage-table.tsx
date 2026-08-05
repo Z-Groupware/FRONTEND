@@ -185,17 +185,14 @@ function Row({
           {/*
             ⚠️ **프로젝트 태그는 화면에 내보내도 되는 유일한 태그**다(§도메인 상수).
                내부 식별자나 임의 해시태그와 달리, 이건 회의·액션을 잇는 실제 이동 수단이다.
-            ⚠️ 색은 **태그 이름에서 뽑는다**(`lib/palette`) — 같은 프로젝트는 어느 화면에서든
-               같은 색이라 "그 초록 프로젝트"로 기억할 수 있다. 무작위였다면 새로고침마다 바뀐다.
-            ⚠️ 이 색은 **구분용이지 알림용이 아니다.** 빨간 태그가 위험하다는 뜻이 아니다 —
-               뜻을 담는 색은 §디자인 토큰이 정한 것(에러·상태점)뿐이다.
+            ⚠️ 칩은 **색을 쓰지 않는다.** 색은 줄 왼쪽 띠가 맡는다 — 같은 정보를 두 곳에서
+               색으로 말하면 어느 쪽이 기준인지 흐려지고, 표에 색 덩어리가 두 개씩 생긴다.
             ⚠️ 이름과 같은 곳으로 가지만 링크를 따로 둔다. 태그로 옮겨 다니는 사람은 이름이
                아니라 태그를 누른다(WORKFLOW §2 순환 추적).
           */}
           <Link
             href={`/app/projects/${project.tag}`}
-            style={{ backgroundColor: tagColor.bgColor, color: tagColor.textColor }}
-            className="focus-visible:ring-ring shrink-0 rounded px-1.5 py-0.5 text-[11px] leading-4 transition-opacity hover:opacity-80 focus-visible:ring-2 focus-visible:outline-hidden"
+            className="bg-secondary text-muted-foreground focus-visible:ring-ring hover:text-foreground shrink-0 rounded px-1.5 py-0.5 text-[11px] leading-4 transition-colors focus-visible:ring-2 focus-visible:outline-hidden"
           >
             #{project.tag}
           </Link>
@@ -229,9 +226,16 @@ function Row({
             className="bg-secondary h-1.5 w-[68px] shrink-0 overflow-hidden rounded-full"
             aria-hidden
           >
+            {/*
+              ⚠️ 막대 색이 **그 프로젝트의 색**이다(`lib/palette`). 표에서 가장 큰 색 덩어리라
+                 여기에 두면 어느 줄이 어느 프로젝트인지 훑어서 잡힌다 — 태그 칩에 두면
+                 글자 뒤에 깔려 잘 안 보인다.
+              ⚠️ 원색(`--tag-*-solid`)을 쓴다. 칩 글자색은 4.5:1을 맞추려 진해서 막대에 쓰면
+                 다섯 줄이 전부 시커멓다.
+            */}
             <span
-              className="bg-foreground/70 block h-full rounded-full"
-              style={{ width: `${share}%` }}
+              className="block h-full rounded-full"
+              style={{ width: `${share}%`, backgroundColor: tagColor.solidColor }}
             />
           </span>
           <span className="shrink-0 tabular-nums">{formatGb(project.voiceGb)}</span>

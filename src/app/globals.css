@@ -175,6 +175,19 @@
   --tag-fuchsia-fg: #86198f;
   --tag-pink-bg: #fce7f3;
   --tag-pink-fg: #9d174d;
+  /* 태그 **원색** — 막대처럼 글자가 안 얹히는 자리에 쓴다. 대비 기준이 글자와 달라서
+     (바탕 위에서 보이기만 하면 된다) 라이트·다크가 같은 값이다. */
+  --tag-slate-solid: #64748b;
+  --tag-yellow-solid: #eab308;
+  --tag-lime-solid: #84cc16;
+  --tag-emerald-solid: #10b981;
+  --tag-teal-solid: #14b8a6;
+  --tag-cyan-solid: #06b6d4;
+  --tag-sky-solid: #0ea5e9;
+  --tag-indigo-solid: #6366f1;
+  --tag-purple-solid: #a855f7;
+  --tag-fuchsia-solid: #d946ef;
+  --tag-pink-solid: #ec4899;
   /* 랜딩 검정 섹션 — 로그인 전 화면이라 **테마와 무관하게 어둡다**(도움말 패널과 같은 규칙) */
   --landing-dark: #0a0a0a;
   --landing-dark-foreground: #ffffff;
