@@ -1,17 +1,7 @@
-import { ROLE_LABEL } from "@/constants/domain";
+import { ROLE_BADGE_CLASS, ROLE_LABEL } from "@/constants/domain";
 import { cn } from "@/lib/utils";
 
 import type { AssignableRole } from "../types";
-
-/**
- * 권한별 배지 색 — 값은 `globals.css`의 토큰이라 다크모드가 따라온다.
- * 배지와 권한 선택(`RoleSelect`)이 같은 색을 써야 표에서 눈이 이어진다.
- */
-const ROLE_TONE: Record<AssignableRole, string> = {
-  OWNER: "bg-role-owner-surface text-role-owner",
-  LEADER: "bg-role-leader-surface text-role-leader",
-  MEMBER: "bg-role-member-surface text-role-member",
-};
 
 /*
   ⚠️ Admin 겸직 배지는 여기 없다. 온보딩에서는 방패 아이콘(`InviteAdminToggle`)으로만 알린다 —
@@ -30,7 +20,7 @@ export function RoleBadge({ role, className }: RoleBadgeProps) {
     <span
       className={cn(
         "inline-flex shrink-0 items-center rounded px-1.5 py-0.5 text-[11px] leading-none",
-        ROLE_TONE[role],
+        ROLE_BADGE_CLASS[role],
         className,
       )}
     >

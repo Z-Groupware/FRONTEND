@@ -1,3 +1,5 @@
+import { ROLE_BADGE_CLASS } from "@/constants/role";
+
 /**
  * 역할 셋 + 겸직 하나 — 탭 색·배지·기본 화면 구성.
  *
@@ -13,7 +15,7 @@ export const ROLE_VIEWS = [
   {
     name: "Owner",
     korean: "대표",
-    chip: "bg-role-owner-surface text-role-owner",
+    chip: ROLE_BADGE_CLASS.OWNER,
     activeTab: "bg-role-owner text-background",
     body: "조직 전체 현황을 한눈에 보고, 인수인계를 최종 승인합니다.",
     screen: "대시보드",
@@ -22,7 +24,7 @@ export const ROLE_VIEWS = [
   {
     name: "Leader",
     korean: "팀장",
-    chip: "bg-role-leader-surface text-role-leader",
+    chip: ROLE_BADGE_CLASS.LEADER,
     activeTab: "bg-role-leader text-background",
     body: "팀원의 액션을 보고, 인수인계를 넘겨받아 나눕니다.",
     screen: "팀 보드",
@@ -31,7 +33,7 @@ export const ROLE_VIEWS = [
   {
     name: "Member",
     korean: "사원",
-    chip: "bg-role-member-surface text-role-member",
+    chip: ROLE_BADGE_CLASS.MEMBER,
     activeTab: "bg-role-member text-background",
     body: "내게 배정된 액션만 보면 됩니다. 회의도 직접 열 수 있습니다.",
     screen: "내 업무",

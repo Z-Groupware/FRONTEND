@@ -7,6 +7,8 @@
  * ⚠️ 담당자는 **이름 대신 자리**(부서·직무)로 적는다. 목이라도 사람 이름을 넣으면
  *    실제 계정처럼 읽힌다.
  */
+import { ROLE_BADGE_CLASS } from "@/constants/role";
+
 import type { RoleName } from "./role-views";
 
 interface Metric {
@@ -63,7 +65,7 @@ export const ROLE_MOCKS: Record<RoleName, RoleMock> = {
       { title: "휴직 신청", detail: "디자인팀 · 9월 1일부터", state: "승인됨", isDone: true },
     ],
     banner: { title: "승인 대기 인수인계", detail: "전임 → 후임 · 제품팀" },
-    surface: "bg-role-owner-surface text-role-owner",
+    surface: ROLE_BADGE_CLASS.OWNER,
   },
   Leader: {
     progress: { label: "이번 스프린트 완료", value: "9 / 16", ratio: 0.56 },
@@ -79,7 +81,7 @@ export const ROLE_MOCKS: Record<RoleName, RoleMock> = {
       { title: "디자인 기준 작성", detail: "디자인 담당 · 8월 5일", state: "완료", isDone: true },
     ],
     banner: { title: "재배정 필요", detail: "API 문서 최신화 · 담당자 휴직 예정" },
-    surface: "bg-role-leader-surface text-role-leader",
+    surface: ROLE_BADGE_CLASS.LEADER,
   },
   Member: {
     progress: { label: "이번 주 완료", value: "3 / 5", ratio: 0.6 },
@@ -95,7 +97,7 @@ export const ROLE_MOCKS: Record<RoleName, RoleMock> = {
       { title: "회의록 확인", detail: "오늘 마감", state: "완료", isDone: true },
     ],
     banner: { title: "오늘 회의", detail: "스프린트 킥오프 · 14:00" },
-    surface: "bg-role-member-surface text-role-member",
+    surface: ROLE_BADGE_CLASS.MEMBER,
   },
   "+Admin": {
     progress: { label: "저장 공간", value: "41.7GB / 50GB", ratio: 0.83 },
