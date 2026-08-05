@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { getProgressPercent, splitDepartments } from "@/features/project/lib";
 import type { ProjectListItem as ProjectListItemModel } from "@/features/project/types";
 import { formatMonthDayWeekday } from "@/lib/date";
@@ -17,6 +18,12 @@ export function ProjectListItem({ project }: { project: ProjectListItemModel }) 
   const percent = getProgressPercent(project.actionDone, project.actionTotal);
   const { visible, overflow } = splitDepartments(project.departments);
   const due = formatMonthDayWeekday(project.dueDate);
+
+  const visibleTeamBadges = visible.map((team) => (
+    <Badge key={team} variant="outline" className="shrink-0">
+      {team}
+    </Badge>
+  ));
 
   return (
     <li className="relative">
@@ -59,23 +66,26 @@ export function ProjectListItem({ project }: { project: ProjectListItemModel }) 
 
           <span className="text-muted-foreground text-sm tabular-nums">{due}</span>
 
-          {/* 참여 팀 — 2개까지 + 나머지 +N(hover 시 전체) */}
-          <div className="flex items-center gap-1">
-            {visible.map((team) => (
-              <Badge key={team} variant="outline" className="shrink-0">
-                {team}
-              </Badge>
-            ))}
-            {overflow > 0 && (
-              <Badge
-                variant="secondary"
-                className="shrink-0"
-                title={project.departments.join(", ")}
-              >
-                +{overflow}
-              </Badge>
-            )}
-          </div>
+          {/* 참여 팀 — 2개까지 + 나머지 +N. 초과가 있으면 영역 전체 hover 시 전체 팀 목록 */}
+          {overflow > 0 ? (
+            <Tooltip>
+              <TooltipTrigger render={<span className="flex items-center gap-1" />}>
+                {visibleTeamBadges}
+                <Badge variant="secondary" className="shrink-0">
+                  +{overflow}
+                </Badge>
+              </TooltipTrigger>
+              <TooltipContent>
+                <ul className="space-y-0.5">
+                  {project.departments.map((team) => (
+                    <li key={team}>{team}</li>
+                  ))}
+                </ul>
+              </TooltipContent>
+            </Tooltip>
+          ) : (
+            <span className="flex items-center gap-1">{visibleTeamBadges}</span>
+          )}
         </div>
       </Link>
     </li>
