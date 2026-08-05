@@ -272,7 +272,7 @@ export const isDelayed = (a: { status: ActionStatus; dueDate: string }) =>
 - **이미지:** `<img>` 금지 → `next/image`. `fill` 시 부모 `relative`+`sizes` 필수. `alt` 필수(장식은 `""`).
 - **폰트:** `next/font`(빌드타임 self-host, CLS 0). `display:'swap'`.
 - **번들:** 무거운 것(차트·에디터·캘린더·**STT/녹음**)은 `next/dynamic`. tree-shaking은 개별 import. moment 금지 → date-fns/dayjs.
-- **고밀도 목록(액션·회의·사원)은 페이지네이션 우선.** 수백 행을 넘어가면 그때 가상화를 검토한다(미리 하지 않는다).
+- **고밀도 목록(액션·회의·사원)은 한 번에 다 그리지 않는다** — 다음 페이지는 스크롤로 이어 붙인다(CLAUDE.md §목록·페이지네이션). 수백 행을 넘어가면 그때 가상화를 검토한다(미리 하지 않는다).
 
 ---
 
