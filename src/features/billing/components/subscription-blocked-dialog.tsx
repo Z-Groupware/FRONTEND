@@ -32,7 +32,11 @@ export function SubscriptionBlockedDialog({ status }: { status: SubscriptionStat
       onOpenChange={() => {}}
       badge="alert"
       isDismissible={false}
-      title={isUnpaid ? "아직 결제가 확인되지 않았습니다" : "구독이 종료되었습니다"}
+      /*
+        ⚠️ 제목은 `SubscriptionGate`와 **같은 말**이다. 같은 상태를 두 화면이 다르게 부르면
+           대표와 사원이 같은 상황을 이야기할 때 말이 어긋난다.
+      */
+      title={isUnpaid ? "결제가 확인되지 않았습니다" : "구독이 종료되었습니다"}
       /*
         ⚠️ **두 가지만 말한다** — 왜 못 들어오는지, 누가 풀 수 있는지.
            "결제가 끝나면 바로 들어올 수 있습니다" 같은 말을 덧붙이면 같은 말이 두 번이 된다.

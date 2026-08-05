@@ -41,7 +41,6 @@ interface SubscriptionGateProps {
  */
 export function SubscriptionGate({ config, status, role, canManage }: SubscriptionGateProps) {
   const [isDone, setIsDone] = useState(false);
-  const isUnpaid = status === SUBSCRIPTION_STATUS.UNPAID;
 
   /*
     결제할 수 없는 사람 — **창으로 막는다.** 뒤에는 브랜드 바만 남긴다.
@@ -56,6 +55,8 @@ export function SubscriptionGate({ config, status, role, canManage }: Subscripti
       </div>
     );
   }
+
+  const isUnpaid = status === SUBSCRIPTION_STATUS.UNPAID;
 
   return (
     <div className="bg-background bg-dot-grid flex min-h-dvh flex-col">
