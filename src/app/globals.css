@@ -82,6 +82,10 @@
   --color-status-todo: var(--status-todo);
   --color-status-progress: var(--status-progress);
   --color-status-done: var(--status-done);
+  --color-calendar-todo: var(--calendar-todo);
+  --color-calendar-todo-surface: var(--calendar-todo-surface);
+  --color-calendar-action: var(--calendar-action);
+  --color-calendar-action-surface: var(--calendar-action-surface);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -145,6 +149,11 @@
   --status-todo: #a8a29e;
   --status-progress: #22c55e;
   --status-done: #8b5cf6;
+  /* 개인 캘린더 항목 기본색 — 상태색이 아니라 태그 구분용 카테고리색이다(역할 배지와 같은 성격). */
+  --calendar-todo: #166534;
+  --calendar-todo-surface: #dcfce7;
+  --calendar-action: #6d28d9;
+  --calendar-action-surface: #ede9fe;
   /* 랜딩 검정 섹션 — 로그인 전 화면이라 **테마와 무관하게 어둡다**(도움말 패널과 같은 규칙) */
   --landing-dark: #0a0a0a;
   --landing-dark-foreground: #ffffff;
@@ -214,6 +223,10 @@
   --status-todo: #8a827d;
   --status-progress: #22c55e;
   --status-done: #a78bfa;
+  --calendar-todo: #4ade80;
+  --calendar-todo-surface: #14291c;
+  --calendar-action: #c4b5fd;
+  --calendar-action-surface: #2b2140;
   /* 랜딩 검정 섹션은 다크에서도 같은 값이다 — 라이트/다크가 갈리면 랜딩 톤이 흔들린다 */
   --landing-dark: #0a0a0a;
   --landing-dark-foreground: #ffffff;

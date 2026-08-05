@@ -1,0 +1,84 @@
+/**
+ * react-big-calendar 기본 CSS(`rbc-*`)를 Z 디자인 토큰(CSS 변수)에 맞춘 오버라이드.
+ * 라이트/다크 모두 :root/.dark의 변수값만 바꾸면 여기는 그대로 따라간다(CLAUDE.md §디자인 토큰).
+ */
+
+.rbc-calendar {
+  color: var(--foreground);
+  font-family: var(--font-sans);
+}
+
+.rbc-month-view,
+.rbc-time-view {
+  border-color: var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.rbc-header,
+.rbc-time-header-content,
+.rbc-time-content {
+  border-color: var(--border) !important;
+}
+
+.rbc-header {
+  background-color: var(--secondary);
+  color: var(--muted-foreground);
+  padding: 8px 0;
+  font-weight: 500;
+}
+
+.rbc-day-bg + .rbc-day-bg,
+.rbc-month-row + .rbc-month-row {
+  border-color: var(--border);
+}
+
+.rbc-off-range-bg {
+  background-color: var(--secondary);
+}
+
+.rbc-off-range {
+  color: color-mix(in srgb, var(--muted-foreground) 60%, transparent);
+}
+
+.rbc-today {
+  background-color: color-mix(in srgb, var(--primary) 8%, transparent);
+}
+
+.rbc-event {
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 2px 6px;
+  font-size: 12px;
+}
+
+.rbc-event.rbc-selected,
+.rbc-day-slot .rbc-selected.rbc-background-event {
+  outline: 2px solid var(--ring);
+}
+
+.rbc-show-more {
+  background: none;
+  color: var(--primary);
+}
+
+.rbc-toolbar button {
+  color: var(--foreground);
+  border-color: var(--border);
+  background-color: var(--card);
+}
+
+.rbc-toolbar button:hover {
+  background-color: var(--accent);
+}
+
+.rbc-toolbar button.rbc-active {
+  background-color: var(--foreground);
+  color: var(--background);
+}
+
+.rbc-overlay {
+  background-color: var(--popover);
+  border-color: var(--border);
+  color: var(--popover-foreground);
+}
