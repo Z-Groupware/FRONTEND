@@ -2,19 +2,47 @@ import Link from "next/link";
 
 import { Badge } from "@/components/ui/badge";
 import { MEETING_STATUS, MEETING_STATUS_LABEL, type MeetingStatus } from "@/constants/domain";
-import { formatMeetingDate, MEETING_ITEM_HEIGHT } from "@/features/owner/lib";
-import type { OwnerDashboardMeeting } from "@/features/owner/types";
 import { cn } from "@/lib/utils";
 
-interface ProjectMeetingItemProps {
-  meeting: OwnerDashboardMeeting;
-  /** 목록의 첫 항목이 아니면 위쪽 구분선을 그린다 */
-  showDivider: boolean;
+/**
+ * 대시보드 "회의" 위젯 한 줄의 UI 계약 — 오너·팀장 대시보드가 **공용**으로 쓴다.
+ * ⚠️ 유일한 차이는 `hostLabel`이다: 오너 개설이면 `"Owner"`, 팀 회의면 부서명(`"개발팀"`).
+ *    그 외 구조는 두 대시보드가 완전히 동일하다.
+ */
+export interface DashboardMeeting {
+  id: string;
+  title: string;
+  projectTag: string;
+  /** 자유 HEX(프로젝트 태그 색) */
+  color: string;
+  status: MeetingStatus;
+  /** 회의실 장소 이름(예: "회의실 A") */
+  room: string;
+  scheduledAt: string;
+  attendeeCount: number;
+  /** 개설 주체 라벨 — 오너 개설="Owner", 팀 회의=부서명 */
+  hostLabel: string;
 }
 
 /**
- * 회의 상태 색 — 이 위젯은 상태 흐름(예정→진행중→완료)이 한눈에 보여야 해서 색으로 구분한다.
- * 값은 토큰이라 다크모드가 따라온다: 예정=파랑(primary) · 진행중=초록(success) · 완료=회색(muted).
+ * 회의 한 줄 높이(px). 대시보드 박스 높이가 이 값 × 최대 수에서 나오므로 한 곳에 둔다.
+ * 박스에 정확히 N건이 채워져 스크롤이 안 생기게 하는 기준이다.
+ */
+export const MEETING_ITEM_HEIGHT = 72;
+
+const WEEKDAY_LABEL = ["일", "월", "화", "수", "목", "금", "토"];
+
+/** 카피 규칙: 날짜 `8월 5일(화) 10:00` 포맷(CLAUDE.md §디자인 토큰). 테스트를 위해 export. */
+export function formatMeetingDate(dateIso: string): string {
+  const date = new Date(dateIso);
+  const hour = String(date.getHours()).padStart(2, "0");
+  const minute = String(date.getMinutes()).padStart(2, "0");
+  return `${date.getMonth() + 1}월 ${date.getDate()}일(${WEEKDAY_LABEL[date.getDay()]}) ${hour}:${minute}`;
+}
+
+/**
+ * 회의 상태 색 — 상태 흐름(예정→진행중→완료)이 한눈에 보이게 색으로 구분한다(토큰이라 다크 자동).
+ * 예정=파랑(primary) · 진행중=초록(success) · 완료=회색(muted).
  */
 const STATUS_TONE: Record<MeetingStatus, string> = {
   [MEETING_STATUS.SCHEDULED]: "bg-primary/10 text-primary",
@@ -22,13 +50,14 @@ const STATUS_TONE: Record<MeetingStatus, string> = {
   [MEETING_STATUS.DONE]: "bg-muted text-muted-foreground",
 };
 
-/**
- * "최근 프로젝트 회의" 목록의 한 행.
- * ⚠️ 높이는 `MEETING_ITEM_HEIGHT` 고정이다 — 박스 높이가 이 값 × 최대 수로 잡혀 있어,
- *    한 줄이라도 높이가 달라지면 5건이 박스에 안 맞아 스크롤이 생긴다.
- * 좌: 회의명 · 프로젝트 태그 · Owner · 상태 / 우: 회의실 · 시간 · 참석 인원.
- */
-export function ProjectMeetingItem({ meeting, showDivider }: ProjectMeetingItemProps) {
+interface DashboardMeetingItemProps {
+  meeting: DashboardMeeting;
+  /** 목록의 첫 항목이 아니면 위쪽 구분선을 그린다 */
+  showDivider: boolean;
+}
+
+/** 좌: 태그·회의명·개설 라벨 / 우: 회의실·시간·참석 + 상태 라벨(맨 오른쪽). */
+export function DashboardMeetingItem({ meeting, showDivider }: DashboardMeetingItemProps) {
   return (
     <li
       className={cn(showDivider && "border-border border-t")}
@@ -38,7 +67,7 @@ export function ProjectMeetingItem({ meeting, showDivider }: ProjectMeetingItemP
         href={`/app/meeting/${meeting.id}`}
         className="hover:bg-muted flex h-full items-center transition-colors"
       >
-        {/* 프로젝트 색 왼쪽 막대 — 콩 원 대신 행 위아래 끝에 딱 붙는 얇은 세로선 */}
+        {/* 프로젝트 색 왼쪽 막대 — 행 위아래 끝에 딱 붙는 얇은 세로선 */}
         <span
           className="h-full w-1 shrink-0"
           style={{ backgroundColor: meeting.color }}
@@ -46,7 +75,7 @@ export function ProjectMeetingItem({ meeting, showDivider }: ProjectMeetingItemP
         />
 
         <div className="flex min-w-0 flex-1 items-center gap-3 px-4">
-          {/* 좌: (상단) 프로젝트 태그 / (하단) 회의명 + Owner */}
+          {/* 좌: (상단) 프로젝트 태그 / (하단) 회의명 + 개설 라벨 */}
           <div className="flex min-w-0 flex-1 flex-col justify-center gap-1">
             <span
               className="w-fit rounded px-1.5 py-0.5 font-mono text-[10px] font-semibold"
@@ -57,7 +86,7 @@ export function ProjectMeetingItem({ meeting, showDivider }: ProjectMeetingItemP
             <div className="flex min-w-0 items-center gap-2">
               <span className="truncate text-[15px]">{meeting.title}</span>
               <Badge variant="secondary" className="shrink-0">
-                Owner
+                {meeting.hostLabel}
               </Badge>
             </div>
           </div>

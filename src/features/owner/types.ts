@@ -1,4 +1,5 @@
-import type { MeetingStatus, MemberStatus, ProjectStatus } from "@/constants/domain";
+import type { DashboardMeeting } from "@/components/common/dashboard-meeting-item";
+import type { MemberStatus, ProjectStatus } from "@/constants/domain";
 
 export interface OwnerDashboardProject {
   id: string;
@@ -20,23 +21,11 @@ export interface OwnerDashboardLeaderRow {
   leavePeriod: string | null;
 }
 
-export interface OwnerDashboardMeeting {
-  id: string;
-  title: string;
-  projectTag: string;
-  color: string;
-  status: MeetingStatus;
-  /** 회의실 장소 이름(예: "회의실 A") */
-  room: string;
-  scheduledAt: string;
-  attendeeCount: number;
-}
-
 export interface OwnerDashboardOverview {
   projects: OwnerDashboardProject[];
   activeMemberCount: number;
   onLeaveMemberCount: number;
   leaderRows: OwnerDashboardLeaderRow[];
-  /** Owner 주최 프로젝트 회의만 (2절) — 팀 액션 회의는 여기 안 나온다 */
-  projectMeetings: OwnerDashboardMeeting[];
+  /** Owner 주최 프로젝트 회의만 (2절) — 팀 액션 회의는 여기 안 나온다. 개설 라벨은 "Owner" */
+  projectMeetings: DashboardMeeting[];
 }

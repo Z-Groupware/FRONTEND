@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { DashboardMeetingItem } from "@/components/common/dashboard-meeting-item";
 import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { KpiCard } from "@/features/owner/components/kpi-card";
 import { LeaderStatusRow } from "@/features/owner/components/leader-status-row";
-import { ProjectMeetingItem } from "@/features/owner/components/project-meeting-item";
 import { getDaysUntilDue, LEADER_BOX_HEIGHT, MEETING_BOX_HEIGHT } from "@/features/owner/lib";
 import { getOwnerDashboardOverview } from "@/features/owner/server";
 
@@ -111,7 +111,7 @@ export default async function OwnerDashboardPage() {
           ) : (
             <ul className="flex-1 overflow-hidden">
               {projectMeetings.map((meeting, index) => (
-                <ProjectMeetingItem key={meeting.id} meeting={meeting} showDivider={index > 0} />
+                <DashboardMeetingItem key={meeting.id} meeting={meeting} showDivider={index > 0} />
               ))}
             </ul>
           )}
