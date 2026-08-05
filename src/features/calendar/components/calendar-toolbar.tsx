@@ -1,4 +1,5 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import type { ReactNode } from "react";
 import type { ToolbarProps } from "react-big-calendar";
 
 import { Button } from "@/components/ui/button";
@@ -6,14 +7,20 @@ import { Button } from "@/components/ui/button";
 import type { PersonalCalendarEvent } from "../types";
 import { CalendarLegend } from "./calendar-legend";
 
-/**
- * 커스텀 툴바 — 좌/중앙/우 3등분(`flex-1` 균등폭)이라 가운데 라벨이 항상 전체 폭의
- * 정중앙(월간뷰 7칸 중 4번째 칸, 즉 수요일 칸 위)에 온다. 오른쪽엔 색상 범례를 붙인다.
- */
-export function CalendarToolbar({ label, onNavigate }: ToolbarProps<PersonalCalendarEvent>) {
+interface CalendarToolbarOwnProps {
+  /** 범례 옆, 툴바 오른쪽 끝에 같은 줄로 붙는 액션(예: Todo 추가 버튼). */
+  action?: ReactNode;
+}
+
+/** 커스텀 툴바 — 왼쪽에 `<` 라벨 `>`을 붙여 그리고, 오른쪽 끝엔 범례+액션을 한 줄로 둔다. */
+export function CalendarToolbar({
+  label,
+  onNavigate,
+  action,
+}: ToolbarProps<PersonalCalendarEvent> & CalendarToolbarOwnProps) {
   return (
-    <div className="mb-3 flex items-center">
-      <div className="flex flex-1 items-center gap-1">
+    <div className="mb-3 flex items-center justify-between">
+      <div className="flex items-center gap-2">
         <Button
           type="button"
           variant="outline"
@@ -23,9 +30,7 @@ export function CalendarToolbar({ label, onNavigate }: ToolbarProps<PersonalCale
         >
           <ChevronLeft />
         </Button>
-        <Button type="button" variant="outline" size="sm" onClick={() => onNavigate("TODAY")}>
-          오늘
-        </Button>
+        <p className="text-base font-semibold">{label}</p>
         <Button
           type="button"
           variant="outline"
@@ -37,10 +42,9 @@ export function CalendarToolbar({ label, onNavigate }: ToolbarProps<PersonalCale
         </Button>
       </div>
 
-      <p className="flex-1 text-center text-base font-semibold">{label}</p>
-
-      <div className="flex flex-1 justify-end">
+      <div className="flex items-center gap-4">
         <CalendarLegend />
+        {action}
       </div>
     </div>
   );

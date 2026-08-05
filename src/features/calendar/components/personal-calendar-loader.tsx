@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import type { ReactNode } from "react";
 
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -15,6 +16,7 @@ const PersonalCalendar = dynamic(
 interface PersonalCalendarLoaderProps {
   events: PersonalCalendarEvent[];
   month: string;
+  toolbarAction?: ReactNode;
 }
 
 export function PersonalCalendarLoader(props: PersonalCalendarLoaderProps) {
