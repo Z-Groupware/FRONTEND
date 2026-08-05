@@ -1,4 +1,4 @@
-import { CalendarDays, type LucideIcon, ReceiptText, Sparkles, Wallet } from "lucide-react";
+import { Sparkles } from "lucide-react";
 
 import { formatWon } from "../pricing";
 import { canUseWorkspace, type Subscription, SUBSCRIPTION_STATUS_LABEL } from "../subscription";
@@ -85,15 +85,13 @@ export function PlanPanel({ subscription, config, today }: PlanPanelProps) {
              남은 셋은 전부 **돈과 직접 이어지는 값**이다.
         */}
         <dl className="grid grid-cols-2 gap-3 px-7 pb-7 md:grid-cols-3">
-          <Metric icon={Wallet} label="월 기본료" value={formatWon(config.baseFee)} />
+          <Metric label="월 기본료" value={formatWon(config.baseFee)} />
           <Metric
-            icon={CalendarDays}
             label="다음 결제일"
             value={subscription.nextBillingDate ?? "—"}
             hint={isUnpaid ? "결제 후 확정됩니다" : undefined}
           />
           <Metric
-            icon={ReceiptText}
             label="다음 청구 예상"
             value={formatWon(subscription.estimatedAmount)}
             hint={
@@ -115,34 +113,20 @@ export function PlanPanel({ subscription, config, today }: PlanPanelProps) {
 }
 
 /**
- * 지표 한 칸 — 결제 화면의 포함량 칸(`Included`)과 **같은 모양**이다.
+ * 지표 한 칸.
  *
- * ⚠️ 세 줄을 칸 **가운데**로 모은다. 왼쪽에 붙여 두면 숫자 오른쪽이 비어 칸이 헐거워 보이고,
+ * ⚠️ 테두리 격자가 아니라 **연한 카드**다 — 결제 화면의 포함량 칸(`Included`)과 같은 모양이라,
+ *    두 화면을 오갈 때 같은 종류의 값으로 읽힌다.
+ * ⚠️ 값을 칸 **가운데**로 모은다. 왼쪽에 붙여 두면 숫자 오른쪽이 비어 칸이 헐거워 보이고,
  *    세 칸이 나란히 설 때 값의 눈높이가 안 맞는다.
- * ⚠️ **테두리를 같이 준다.** 라이트에서 `--secondary`는 흰 카드와 2%밖에 차이가 없어서
- *    옅게만 깔면 칸이 있는지조차 안 보인다 — 이 서비스의 라이트 층은 색이 아니라 보더로 나뉜다.
- * ⚠️ 라벨에 **아이콘**을 붙인다. 셋 다 금액·날짜라 글자만으로는 어느 칸인지 훑어서 안 잡힌다 —
- *    색을 못 쓰는 자리라(색은 에러뿐) 구분은 아이콘과 명도가 맡는다(§디자인 토큰).
+ * ⚠️ **아이콘은 두지 않는다.** 셋 다 금액·날짜라 무슨 그림을 붙여도 뜻이 겹치고,
+ *    작은 칸에서 라벨보다 그림이 먼저 눈에 들어와 정작 숫자가 뒤로 밀린다.
  */
-function Metric({
-  icon: Icon,
-  label,
-  value,
-  hint,
-}: {
-  icon: LucideIcon;
-  label: string;
-  value: string;
-  hint?: string;
-}) {
+function Metric({ label, value, hint }: { label: string; value: string; hint?: string }) {
   return (
-    <div className="border-border bg-secondary/60 rounded-xl border px-5 py-4 text-center">
-      <dt className="text-muted-foreground flex items-center justify-center gap-1.5 text-[12px] leading-4">
-        <Icon className="size-3.5 shrink-0" aria-hidden />
-        {/* 한글 글자가 아이콘보다 떠 보인다 — 1px 내려 맞춘다 */}
-        <span className="translate-y-px">{label}</span>
-      </dt>
-      <dd className="pt-2 text-[20px] leading-7 font-semibold tracking-[-0.4px] tabular-nums">
+    <div className="bg-secondary/40 rounded-xl px-5 py-4 text-center">
+      <dt className="text-muted-foreground text-[12px] leading-4">{label}</dt>
+      <dd className="pt-1.5 text-[20px] leading-7 font-semibold tracking-[-0.4px] tabular-nums">
         {value}
       </dd>
       {hint && <p className="text-muted-foreground/70 pt-0.5 text-[11px] leading-4">{hint}</p>}
