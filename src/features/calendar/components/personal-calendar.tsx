@@ -3,16 +3,7 @@
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import "./personal-calendar.css";
 
-import {
-  differenceInCalendarWeeks,
-  endOfMonth,
-  endOfWeek,
-  format,
-  getDay,
-  parse,
-  startOfMonth,
-  startOfWeek,
-} from "date-fns";
+import { format, getDay, parse, startOfWeek } from "date-fns";
 import { ko } from "date-fns/locale";
 import { useRouter } from "next/navigation";
 import { type ReactNode, useCallback, useMemo } from "react";
@@ -20,10 +11,13 @@ import {
   Calendar,
   dateFnsLocalizer,
   type EventPropGetter,
+  type SlotInfo,
   type ToolbarProps,
 } from "react-big-calendar";
 
-import { CALENDAR_ITEM_TAG, CALENDAR_ITEM_TAG_LABEL, type PersonalCalendarEvent } from "../types";
+import { getCalendarHeight } from "../calendar-height";
+import { CALENDAR_TAG_DOT_COLOR } from "../tag-colors";
+import { CALENDAR_ITEM_TAG_LABEL, type PersonalCalendarEvent } from "../types";
 import { CalendarToolbar } from "./calendar-toolbar";
 
 const localizer = dateFnsLocalizer({
@@ -34,44 +28,21 @@ const localizer = dateFnsLocalizer({
   locales: { ko },
 });
 
-/** 태그별 기본 배경/글자색 — 항목에 `color`가 없을 때만 쓴다(§도메인 상수: 항목별 커스텀 색상). */
-const TAG_SURFACE: Record<PersonalCalendarEvent["tag"], { bg: string; fg: string }> = {
-  [CALENDAR_ITEM_TAG.PERSONAL_TODO]: {
-    bg: "var(--calendar-todo-surface)",
-    fg: "var(--calendar-todo)",
-  },
-  [CALENDAR_ITEM_TAG.PERSONAL_ACTION]: {
-    bg: "var(--calendar-action-surface)",
-    fg: "var(--calendar-action)",
-  },
-};
-
 function toMonthParam(date: Date): string {
   return format(date, "yyyy-MM");
 }
 
-/** 그 달이 몇 주(행)로 그려지는지 — 5주가 기본, 5일이 남으면 6주가 된다. */
-function getWeeksInMonth(date: Date): number {
-  const start = startOfWeek(startOfMonth(date), { locale: ko });
-  const end = endOfWeek(endOfMonth(date), { locale: ko });
-  return differenceInCalendarWeeks(end, start, { locale: ko }) + 1;
-}
-
-/** 요일 헤더 높이 — `personal-calendar.css`의 `.rbc-header` padding(8px*2)+글자 한 줄 기준. */
-const HEADER_HEIGHT_PX = 37;
-/** 5주짜리 달 기준 컨테이너 높이 — 지금까지 쓰던 값을 그대로 "행 5개 기준선"으로 삼는다. */
-const BASE_HEIGHT = "calc(100vh - 216px)";
-const BASE_WEEKS = 5;
-
 /**
- * 달마다 5주/6주로 행 수가 갈리는데, 컨테이너 높이를 고정해두면 RBC가 행 수만큼 나눠 채우기 때문에
- * 6주짜리 달에서 한 행이 얇아진다(§디자인 일관성 — 달을 넘길 때 셀 높이가 출렁이면 안 된다).
- * 그래서 **한 행의 높이를 5주 기준으로 고정**하고, 6주짜리 달은 컨테이너 전체 높이를 그만큼 늘린다
- * (기존 행은 그대로, 아래로 한 행만 더 생긴다).
+ * 셀 안에는 라벨 색상 막대만 그린다(텍스트 없음) — 제목·태그는 오른쪽 상세조회 패널에서 본다.
+ * 스크린리더용 이름은 `sr-only`로 남긴다.
  */
-function getCalendarHeight(weeks: number): string {
-  const rowHeightExpr = `((${BASE_HEIGHT} - ${HEADER_HEIGHT_PX}px) / ${BASE_WEEKS})`;
-  return `calc(${HEADER_HEIGHT_PX}px + ${weeks} * ${rowHeightExpr})`;
+function CalendarEventBar({ event, title }: { event: PersonalCalendarEvent; title: string }) {
+  return (
+    <span className="sr-only">
+      {title}
+      {event.isCompleted ? " (완료)" : ""}
+    </span>
+  );
 }
 
 interface PersonalCalendarProps {
@@ -80,6 +51,8 @@ interface PersonalCalendarProps {
   month: string;
   /** 툴바 오른쪽 끝, 범례 옆에 같은 줄로 넣을 액션(Todo 추가 버튼). */
   toolbarAction?: ReactNode;
+  /** 날짜 셀(빈 곳) 또는 이벤트를 클릭하면 그 날짜를 올려보낸다 — 오른쪽 상세조회 패널이 이걸로 갈아 끼운다. */
+  onSelectDate: (date: Date) => void;
 }
 
 /**
@@ -87,7 +60,12 @@ interface PersonalCalendarProps {
  * ⚠️ 달 이동은 로컬 state가 아니라 **URL 쿼리(`?month=`)** 로 반영한다 — 그래야 서버 컴포넌트가
  *    그 달 이벤트를 다시 내려준다(CLAUDE.md §핵심 4원칙: 조회는 Server Component).
  */
-export function PersonalCalendar({ events, month, toolbarAction }: PersonalCalendarProps) {
+export function PersonalCalendar({
+  events,
+  month,
+  toolbarAction,
+  onSelectDate,
+}: PersonalCalendarProps) {
   const router = useRouter();
 
   const ToolbarWithAction = useCallback(
@@ -98,10 +76,7 @@ export function PersonalCalendar({ events, month, toolbarAction }: PersonalCalen
   );
 
   const currentDate = useMemo(() => parse(`${month}-01`, "yyyy-MM-dd", new Date()), [month]);
-  const calendarHeight = useMemo(
-    () => getCalendarHeight(getWeeksInMonth(currentDate)),
-    [currentDate],
-  );
+  const calendarHeight = useMemo(() => getCalendarHeight(currentDate), [currentDate]);
 
   const handleNavigate = useCallback(
     (nextDate: Date) => {
@@ -110,16 +85,24 @@ export function PersonalCalendar({ events, month, toolbarAction }: PersonalCalen
     [router],
   );
 
+  const handleSelectSlot = useCallback(
+    (slotInfo: SlotInfo) => onSelectDate(slotInfo.start),
+    [onSelectDate],
+  );
+
+  const handleSelectEvent = useCallback(
+    (event: PersonalCalendarEvent) => onSelectDate(event.start),
+    [onSelectDate],
+  );
+
   const eventPropGetter = useCallback<EventPropGetter<PersonalCalendarEvent>>((event) => {
-    const surface = TAG_SURFACE[event.tag];
     return {
       style: {
-        backgroundColor: event.color ?? surface.bg,
-        color: event.color ? "var(--foreground)" : surface.fg,
+        // 범례(`calendar-legend.tsx`)·리스트(`calendar-event-list-item.tsx`)와 같은 색 하나를 공유한다.
+        backgroundColor: event.color ?? CALENDAR_TAG_DOT_COLOR[event.tag],
         opacity: event.isCompleted ? 0.55 : 1,
-        textDecoration: event.isCompleted ? "line-through" : "none",
       },
-      title: CALENDAR_ITEM_TAG_LABEL[event.tag],
+      title: `${event.title} (${CALENDAR_ITEM_TAG_LABEL[event.tag]})`,
     };
   }, []);
 
@@ -132,8 +115,11 @@ export function PersonalCalendar({ events, month, toolbarAction }: PersonalCalen
       date={currentDate}
       onNavigate={handleNavigate}
       eventPropGetter={eventPropGetter}
-      components={{ toolbar: ToolbarWithAction }}
-      popup
+      components={{ toolbar: ToolbarWithAction, event: CalendarEventBar }}
+      selectable
+      onSelectSlot={handleSelectSlot}
+      onSelectEvent={handleSelectEvent}
+      showAllEvents
       style={{ height: calendarHeight }}
       messages={{
         today: "오늘",

@@ -83,9 +83,7 @@
   --color-status-progress: var(--status-progress);
   --color-status-done: var(--status-done);
   --color-calendar-todo: var(--calendar-todo);
-  --color-calendar-todo-surface: var(--calendar-todo-surface);
   --color-calendar-action: var(--calendar-action);
-  --color-calendar-action-surface: var(--calendar-action-surface);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -159,7 +157,6 @@
   --status-done: #8b5cf6;
   /* 개인 캘린더 항목 기본색 — 상태색이 아니라 태그 구분용 카테고리색이다(역할 배지와 같은 성격). */
   --calendar-todo: #166534;
-  --calendar-todo-surface: #dcfce7;
   --calendar-action: #6d28d9;
   --calendar-action-surface: #ede9fe;
   /* 태그 색 — **뜻이 없는 구분용**이다. 프로젝트 태그·프로필 아바타가 같이 쓴다.
@@ -279,7 +276,6 @@
   --status-progress: #22c55e;
   --status-done: #a78bfa;
   --calendar-todo: #4ade80;
-  --calendar-todo-surface: #14291c;
   --calendar-action: #c4b5fd;
   --calendar-action-surface: #2b2140;
   /* 태그 색 — 라이트와 다른 값이다(위 주석 참고) */

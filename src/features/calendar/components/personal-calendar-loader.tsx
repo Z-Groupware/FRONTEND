@@ -17,6 +17,7 @@ interface PersonalCalendarLoaderProps {
   events: PersonalCalendarEvent[];
   month: string;
   toolbarAction?: ReactNode;
+  onSelectDate: (date: Date) => void;
 }
 
 export function PersonalCalendarLoader(props: PersonalCalendarLoaderProps) {
