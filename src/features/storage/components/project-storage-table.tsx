@@ -9,7 +9,7 @@ import { formatGb } from "@/features/billing/pricing";
 import { pickPaletteColor } from "@/lib/palette";
 import { cn } from "@/lib/utils";
 
-import { canDeleteRecordings } from "../storage";
+import { canDeleteRecordings, formatRecordedDate } from "../storage";
 import type { ProjectStorage } from "../types";
 
 interface ProjectStorageTableProps {
@@ -47,7 +47,8 @@ export function ProjectStorageTable({
           프로젝트별 녹음 용량
         </h2>
         {/* ⚠️ 전체 건수를 적는다 — 끝이 안 보이는 목록은 얼마나 남았는지 알 수 없다 */}
-        <p className="text-muted-foreground/70 shrink-0 text-[12px] leading-4 tabular-nums">
+        {/* ⚠️ `/70`을 쓰지 않는다 — 12px 글자가 라이트에서 2.73:1로 4.5:1에 못 미친다(§a11y) */}
+        <p className="text-muted-foreground shrink-0 text-[12px] leading-4 tabular-nums">
           전체 {projects.length}개
         </p>
       </div>
@@ -244,8 +245,12 @@ function Row({
       <td className="text-muted-foreground px-6 py-3.5 text-center tabular-nums">
         {formatGb(project.sttGb)}
       </td>
+      {/*
+        ⚠️ 녹음이 없으면 날짜 대신 `—`다. 지운 뒤 이 줄은 `녹음 0개 · 0GB`가 되는데,
+           "가장 오래된 녹음" 칸에 옛 날짜가 남아 있으면 없는 녹음의 날짜를 말하는 셈이다.
+      */}
       <td className="text-muted-foreground px-6 py-3.5 text-center tabular-nums">
-        {project.oldestRecordedAt}
+        {project.voiceGb > 0 ? formatRecordedDate(project.oldestRecordedAt) : "—"}
       </td>
       <td className="px-6 py-3.5 text-center">
         {/*

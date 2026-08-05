@@ -18,8 +18,12 @@ export function StorageGauge({ totals }: { totals: StorageTotals }) {
   /*
     ⚠️ 비율은 **포함량 기준**이고 합쳐서 1을 넘지 않게 자른다. 넘긴 만큼까지 그리면
        링이 두 바퀴를 돌아 무엇이 얼마인지 알 수 없다 — 초과는 숫자와 배너가 말한다.
+    ⚠️ **포함량이 0이면 사용량을 분모로 쓴다.** 포함량 0은 전부가 초과라는 뜻이라
+       요약은 `100% 초과`라고 적는데, 여기서 0으로 나눠 링을 비워 두면 그림과 숫자가
+       어긋난다 — 그때는 링을 꽉 채워(전부 초과) 빨강으로 보여 준다.
   */
-  const scale = totals.includedGb > 0 ? 1 / totals.includedGb : 0;
+  const denom = totals.includedGb > 0 ? totals.includedGb : totals.usedGb;
+  const scale = denom > 0 ? 1 / denom : 0;
   const voiceRatio = Math.min(1, totals.voiceGb * scale);
   const sttRatio = Math.min(1 - voiceRatio, totals.sttGb * scale);
 

@@ -1,7 +1,13 @@
 import { PROJECT_STATUS } from "@/constants/project";
 import type { BillingConfig } from "@/features/billing/types";
 
-import { buildStorageTotals, canDeleteRecordings, freedGb, totalFreeableGb } from "./storage";
+import {
+  buildStorageTotals,
+  canDeleteRecordings,
+  formatRecordedDate,
+  freedGb,
+  totalFreeableGb,
+} from "./storage";
 import type { ProjectStorage } from "./types";
 
 /** 포함량 50GB · 초과 1GB당 월 ₩500 — 값은 `BillingConfig`가 정본이다 */
@@ -114,5 +120,21 @@ describe("totalFreeableGb", () => {
 
     // ⚠️ `c`의 자막·요약 5GB는 안 센다 — 지워도 안 비는 값이다
     expect(totalFreeableGb(projects)).toBe(6);
+  });
+});
+
+describe("formatRecordedDate", () => {
+  it("ISO를 우리 날짜 표기로 바꾼다 — 2026-05-03 → 5월 3일(일)", () => {
+    expect(formatRecordedDate("2026-05-03")).toBe("5월 3일(일)");
+  });
+
+  it("요일이 시간대에 밀리지 않는다 — 자정 UTC 파싱 함정", () => {
+    // 2026-01-12는 월요일이다. new Date(iso)로 읽으면 지역 시간대에서 하루 밀릴 수 있다
+    expect(formatRecordedDate("2026-01-12")).toBe("1월 12일(월)");
+  });
+
+  it("형식이 아니면 원문을 그대로 둔다 — 지어내지 않는다", () => {
+    expect(formatRecordedDate("")).toBe("");
+    expect(formatRecordedDate("어제")).toBe("어제");
   });
 });

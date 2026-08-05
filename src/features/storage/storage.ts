@@ -75,3 +75,25 @@ export function freedGb(project: ProjectStorage): number {
 export function totalFreeableGb(projects: readonly ProjectStorage[]): number {
   return projects.filter(canDeleteRecordings).reduce((sum, project) => sum + freedGb(project), 0);
 }
+
+const WEEKDAY_KO = ["일", "월", "화", "수", "목", "금", "토"] as const;
+
+/**
+ * 녹음 날짜를 화면 표기로 — `2026-05-03` → `5월 3일(일)`(CLAUDE.md §카피).
+ *
+ * ⚠️ ISO 문자열을 그대로 찍지 않는다. `2026-05-03`은 개발자용 표기라, 화면에는 우리 날짜
+ *    규칙으로 보여 준다.
+ * ⚠️ `new Date(iso)`로 파싱하지 않는다 — `"2026-05-03"`은 UTC 자정으로 읽혀 시간대에 따라
+ *    하루가 밀린다. 조각을 직접 갈라 `Date.UTC`로 요일만 구한다.
+ * ⚠️ 형식이 아니면(빈 값·깨진 값) **원문을 그대로** 돌려준다 — 지어내는 것보다 낫다.
+ */
+export function formatRecordedDate(iso: string): string {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
+  if (!match) return iso;
+
+  const y = Number(match[1]);
+  const m = Number(match[2]);
+  const d = Number(match[3]);
+  const weekday = WEEKDAY_KO[new Date(Date.UTC(y, m - 1, d)).getUTCDay()];
+  return `${m}월 ${d}일(${weekday})`;
+}
