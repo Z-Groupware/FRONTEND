@@ -1,34 +1,11 @@
 "use client";
 
-import {
-  Activity,
-  Building2,
-  ClipboardCheck,
-  CreditCard,
-  LayoutDashboard,
-  type LucideIcon,
-  Megaphone,
-} from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { toast } from "sonner";
 
 import { ZLogo } from "@/components/icons/z-logo";
-import type { NavIconName, NavItem, NavSection } from "@/features/shell/nav";
-import { cn } from "@/lib/utils";
-
-/**
- * 이름 → 아이콘. 구성 파일은 서버에서 읽히므로 실제 컴포넌트는 여기서 붙인다.
- * SYSTEM_NAV가 쓰는 이름만 채운다 — `Partial`이라 나머지는 fallback 아이콘으로 대체된다.
- */
-const NAV_ICON: Partial<Record<NavIconName, LucideIcon>> = {
-  dashboard: LayoutDashboard,
-  approval: ClipboardCheck,
-  company: Building2,
-  billing: CreditCard,
-  monitor: Activity,
-  notice: Megaphone,
-};
+import { SidebarItem } from "@/features/shell/components/sidebar-item";
+import type { NavSection } from "@/features/shell/nav";
 
 interface SystemSidebarProps {
   sections: NavSection[];
@@ -59,9 +36,11 @@ function findActiveHref(sections: NavSection[], pathname: string): string | unde
 /**
  * SYSTEM(서비스 운영자) 전용 사이드바.
  *
- * ⚠️ `RoleSidebar`와 구조는 비슷하지만 별도 컴포넌트다 — 헤더 표기("Z 운영자")와
- *    하단 계정 줄(역할 배지 없이 이메일만)이 달라서 그대로 재사용하면 SYSTEM 분기가
- *    RoleSidebar 안에 섞여 들어간다.
+ * ⚠️ `RoleSidebar`와 **치수·항목 렌더가 같다**(공용 `SidebarItem`). 전에는 항목을 따로 구현해
+ *    높이 28px·아이콘 12px·글자 12px로 역할 셸(34/14/13)과 달랐고, 아이콘 맵도 두 벌이었다 —
+ *    같은 서비스의 사이드바가 화면마다 다르게 생기고 고칠 곳이 두 곳이 된다.
+ * ⚠️ 그래도 **컴포넌트는 따로 둔다.** 하단 계정 줄이 다르다(역할 배지 대신 이메일) —
+ *    한 컴포넌트에 넣으면 `RoleSidebar` 안에 SYSTEM 분기가 섞인다.
  */
 export function SystemSidebar({ sections, account }: SystemSidebarProps) {
   const pathname = usePathname();
@@ -79,16 +58,16 @@ export function SystemSidebar({ sections, account }: SystemSidebarProps) {
         </Link>
       </div>
 
-      <nav className="flex-1 overflow-y-auto p-1.5">
+      <nav className="flex-1 overflow-y-auto p-[7px]">
         {sections.map((section, index) => (
-          <div key={section.title ?? "primary"} className={index > 0 ? "pt-2" : undefined}>
+          <div key={section.title ?? "primary"} className={index > 0 ? "pt-2.5" : undefined}>
             {section.title && (
-              <p className="text-muted-foreground/80 px-2 pb-1 text-[10px] leading-4 tracking-[0.275px]">
+              <p className="text-muted-foreground/80 px-[10.5px] pt-3.5 pb-[5.25px] text-[11px] leading-4 tracking-[0.275px]">
                 {section.title}
               </p>
             )}
 
-            <ul className="flex flex-col gap-[1.5px]">
+            <ul className="flex flex-col gap-[1.75px]">
               {section.items.map((item) => (
                 <li key={item.href}>
                   <SidebarItem item={item} isCurrent={item.href === activeHref} />
@@ -99,63 +78,18 @@ export function SystemSidebar({ sections, account }: SystemSidebarProps) {
         ))}
       </nav>
 
-      <div className="border-border flex h-11 shrink-0 items-center gap-1.5 border-t px-4">
-        <span className="bg-role-owner flex size-[19px] shrink-0 items-center justify-center rounded-full text-[9px] leading-none text-white">
+      {/* ⚠️ 높이·표식 크기는 역할 셸의 계정 줄과 같다. 다른 건 배지 대신 이메일이 오는 것뿐이다 */}
+      <div className="border-border flex h-[49px] shrink-0 items-center gap-[7px] border-t px-[17.5px]">
+        <span className="bg-role-owner flex size-[21px] shrink-0 items-center justify-center rounded-full text-[10px] leading-none text-white">
           운
         </span>
         <div className="min-w-0 flex-1">
-          <p className="text-foreground truncate text-[11px] leading-[14px]">운영자 계정</p>
+          <p className="text-foreground truncate text-xs leading-[18px]">운영자 계정</p>
           <p className="text-muted-foreground truncate text-[10px] leading-[13px]">
             {account.email}
           </p>
         </div>
       </div>
     </aside>
-  );
-}
-
-function SidebarItem({ item, isCurrent }: { item: NavItem; isCurrent: boolean }) {
-  const Icon = NAV_ICON[item.icon] ?? LayoutDashboard;
-  const inner = (
-    <>
-      <Icon className="size-3 shrink-0" aria-hidden />
-      <span className="min-w-0 flex-1 translate-y-px truncate text-xs leading-5">{item.label}</span>
-    </>
-  );
-
-  const shape = "flex h-7 items-center gap-2 rounded-md px-2 transition-colors";
-
-  // ⚠️ 아직 없는 화면은 링크로 두지 않는다 — 누르면 404가 뜬다(CLAUDE.md §정직성).
-  if (!item.isReady) {
-    return (
-      <button
-        type="button"
-        aria-disabled
-        // ⚠️ 토스트는 한 줄(220px)이라 짧게 쓴다 — 길면 잘린다(`sonner.tsx`)
-        onClick={() => toast(`${item.label}은 준비 중입니다`)}
-        className={cn(
-          shape,
-          "text-muted-foreground hover:bg-foreground/5 hover:text-foreground focus-visible:ring-ring w-full text-left focus-visible:ring-2 focus-visible:outline-hidden",
-        )}
-      >
-        {inner}
-      </button>
-    );
-  }
-
-  return (
-    <Link
-      href={item.href}
-      aria-current={isCurrent ? "page" : undefined}
-      className={cn(
-        shape,
-        "focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-hidden",
-        isCurrent
-          ? "bg-foreground/10 text-foreground font-medium"
-          : "text-muted-foreground hover:bg-foreground/5 hover:text-foreground",
-      )}
-    >
-      {inner}
-    </Link>
   );
 }
