@@ -73,7 +73,7 @@ export const OWNER_NAV: NavSection[] = [
       { href: "/app/rooms", label: "회의실", icon: "room" },
       { href: "/app/board", label: "보드", icon: "board" },
       { href: "/app/people", label: "사람", icon: "people" },
-      { href: "/app/me", label: "마이페이지", icon: "me" },
+      { href: "/app/me", label: "마이페이지", icon: "me", isReady: true },
     ],
   },
   {
