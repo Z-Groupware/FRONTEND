@@ -51,7 +51,9 @@ export function ProjectStorageTable({
         </h2>
         {/*
           ⚠️ 전체 건수를 적는다 — 끝이 안 보이는 목록은 얼마나 남았는지 알 수 없다.
-          ⚠️ `/70`을 쓰지 않는다 — 12px 글자가 라이트에서 2.73:1로 4.5:1에 못 미친다(§a11y).
+          ⚠️ 색은 `--muted-foreground`보다 **한 단 진하다**(`foreground/75`). 표 머리글과 같은
+             흐림이면 카드 머리에서 이 숫자가 먼저 안 잡힌다 — 라이트에서 약 7:1이라
+             12px에도 넉넉하다(§a11y). ⚠️ `muted-foreground/70`은 2.73:1로 미달이라 안 쓴다.
           ⚠️ **아래 지우기 아이콘과 세로축(가운데)을 맞춘다.** 맞출 대상은 아이콘 상자의
              가운데이고, 그건 `삭제` 머리글의 가운데와 같은 선이다.
           ⚠️ 전에 여기를 **오른쪽으로 8px 밀어 뒀는데 방향이 반대였다** — 그래서 9px 어긋나
@@ -60,7 +62,7 @@ export function ProjectStorageTable({
           ⚠️ **움직이는 건 이 글자다.** 표 쪽 `pr-*`를 건드리면 다섯 줄의 아이콘이 다 같이
              움직여 열 안에서 한쪽으로 쏠린다.
         */}
-        <p className="text-muted-foreground shrink-0 -translate-x-px text-[12px] leading-4 tabular-nums">
+        <p className="text-foreground/75 shrink-0 -translate-x-px text-[12px] leading-4 tabular-nums">
           전체 {projects.length}개
         </p>
       </div>
@@ -136,7 +138,15 @@ export function ProjectStorageTable({
                 */}
                 <th className="px-4 py-3 text-center font-normal">음성</th>
                 <th className="px-4 py-3 text-center font-normal">자막·요약</th>
-                <th className="px-4 py-3 text-center font-normal">가장 오래된 녹음</th>
+                {/*
+                  ⚠️ **`가장 오래된 녹음`이 아니라 `마지막 녹음`이다.** 지우기는 그 프로젝트의
+                     녹음을 전부 없애므로, 언제부터 쌓였는지는 판단에 쓸 데가 없다 —
+                     알아야 하는 건 **얼마나 식었는지**다. `완료` + 마지막 녹음이 오래됨 =
+                     가장 안심하고 지울 줄이다.
+                  ⚠️ 이 표의 열 구성은 팀 명세에 없다(`docs/WORKFLOW.md`는 `용량 관리` 화면이
+                     있다는 것까지만 적혀 있다). 확정되면 그쪽을 정본으로 맞춘다.
+                */}
+                <th className="px-4 py-3 text-center font-normal">마지막 녹음</th>
                 {/*
                   ⚠️ **이 열에도 이름을 준다.** 다른 여섯 열은 다 머리글이 있는데 여기만 비어
                      있으면 표가 한 칸 덜 끝난 것처럼 보이고, 아이콘이 무엇을 하는 것인지도
@@ -257,8 +267,14 @@ function Row({
              크기를 견줄 수 있다(`tabular-nums`와 같은 이유).
         */}
         <span className="flex items-center justify-center gap-2.5">
+          {/*
+            ⚠️ 트랙에 **`--secondary`를 쓰지 않는다.** 라이트에서 그 값(#fafaf9)은 흰
+               카드(#ffffff)와 0.5%밖에 차이가 없어서 **빈 부분이 아예 안 보인다** —
+               채운 만큼만 떠 있고 전체가 얼마인지 읽히지 않는다. 줄 강조가 쓰는
+               **먹색 옅게**(`foreground/10`)로 깔아 양쪽 테마에서 다 보이게 한다.
+          */}
           <span
-            className="bg-secondary h-1.5 w-[68px] shrink-0 overflow-hidden rounded-full"
+            className="bg-foreground/10 h-1.5 w-[68px] shrink-0 overflow-hidden rounded-full"
             aria-hidden
           >
             {/*
@@ -283,10 +299,10 @@ function Row({
       </td>
       {/*
         ⚠️ 녹음이 없으면 날짜 대신 `—`다. 지운 뒤 이 줄은 `녹음 0개 · 0GB`가 되는데,
-           "가장 오래된 녹음" 칸에 옛 날짜가 남아 있으면 없는 녹음의 날짜를 말하는 셈이다.
+           `마지막 녹음` 칸에 옛 날짜가 남아 있으면 없는 녹음의 날짜를 말하는 셈이다.
       */}
       <td className="text-muted-foreground px-4 py-3.5 text-center tabular-nums">
-        {project.voiceGb > 0 ? formatRecordedDate(project.oldestRecordedAt) : "—"}
+        {project.voiceGb > 0 ? formatRecordedDate(project.lastRecordedAt) : "—"}
       </td>
       {/*
         ⚠️ **줄마다 버튼이 있다 없다 하지 않는다.** 전에는 지울 수 있는 줄에만 그려서, 다섯

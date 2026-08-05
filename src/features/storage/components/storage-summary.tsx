@@ -91,7 +91,7 @@ export function StorageSummary({
           ⚠️ 넘치면 `overflow-hidden`이 잘라 준다 — 초과분까지 그리면 막대가 칸을 뚫는다.
         */}
         <div
-          className="bg-secondary relative mt-3.5 flex h-2.5 overflow-hidden rounded-full"
+          className="bg-foreground/10 relative mt-3.5 flex h-2.5 overflow-hidden rounded-full"
           role="progressbar"
           aria-label="저장소 소진율"
           aria-valuenow={Math.min(100, percent)}

@@ -16,7 +16,7 @@ const project = (patch: Partial<ProjectStorage> = {}): ProjectStorage => ({
   meetingCount: 12,
   voiceGb: 3.6,
   sttGb: 0.8,
-  oldestRecordedAt: "2026-05-03",
+  lastRecordedAt: "2026-05-03",
   status: PROJECT_STATUS.DONE,
   ...patch,
 });

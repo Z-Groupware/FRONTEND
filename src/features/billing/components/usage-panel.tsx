@@ -158,7 +158,7 @@ function Axis({ axis, format }: { axis: UsageAxis; format: (value: number) => st
         aria-valuemin={0}
         aria-valuemax={100}
         aria-valuetext={`${format(axis.included)} 중 ${format(axis.used)}, ${percent}%`}
-        className="bg-secondary mt-2 h-1.5 overflow-hidden rounded-full"
+        className="bg-foreground/10 mt-2 h-1.5 overflow-hidden rounded-full"
       >
         {/*
           ⚠️ 넘겼을 때만 색을 바꾼다. 색으로 알리는 건 에러뿐이고(§디자인 토큰),
