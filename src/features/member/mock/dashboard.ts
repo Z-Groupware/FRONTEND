@@ -39,7 +39,8 @@ export const MEMBER_ACTIONS_MOCK: MemberAction[] = [
     title: "PG사 연동 문서 검토",
     projectTag: "GOODS",
     color: "#7C3AED",
-    status: ACTION_STATUS.TODO,
+    // 시작일이 오늘이라 미착수 '할일'이 아니라 오늘부터 하는 '진행중'이다(오늘선에 걸침).
+    status: ACTION_STATUS.IN_PROGRESS,
     startDate: "2026-08-05",
     dueDate: "2026-08-06", // D-1
   },
