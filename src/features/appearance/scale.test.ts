@@ -1,4 +1,11 @@
-import { DEFAULT_SCALE, parseScale, SCALE_BOOT_SCRIPT, suggestScale } from "./scale";
+import {
+  DEFAULT_SCALE,
+  parseScale,
+  recommendScale,
+  SCALE_BOOT_SCRIPT,
+  SCREEN_SCALES,
+  suggestScale,
+} from "./scale";
 
 describe("parseScale", () => {
   it.each([
@@ -109,5 +116,30 @@ describe("SCALE_BOOT_SCRIPT", () => {
     new Function(SCALE_BOOT_SCRIPT)();
 
     expect(document.documentElement.style.zoom).toBe("0.75");
+  });
+});
+
+describe("recommendScale", () => {
+  /*
+    ⚠️ 2880×1800을 250%로 쓰면 CSS 폭이 정확히 1152다. 1152 ÷ 1440 = 0.8 →
+       80%가 딱 맞는 값이라 목록에 넣어 뒀다.
+  */
+  it.each([
+    [1152, 80],
+    [1440, 100],
+    [1280, 90],
+    [1080, 75],
+    [1800, 125],
+    [2160, 150],
+  ])("폭 %s에서는 %s%%를 권한다", (width, expected) => {
+    expect(recommendScale(width)).toBe(expected);
+  });
+
+  it("폭을 아직 모르면 기본값이다 — 서버 렌더에서는 0이다", () => {
+    expect(recommendScale(0)).toBe(DEFAULT_SCALE);
+  });
+
+  it("아주 넓어도 목록 밖으로 나가지 않는다 — 임의 배율을 허용하면 걸러낼 기준이 없어진다", () => {
+    expect(SCREEN_SCALES).toContain(recommendScale(9999));
   });
 });

@@ -18,8 +18,10 @@
  * ⚠️ 처음에 100~200만 뒀는데 틀렸다. OS 배율이 높은 기기(예: 2880×1800을 250%로 쓰는 노트북)는
  *    CSS 뷰포트가 1152라 맥북(1440)보다 **크게** 보인다 — 거기서는 줄여야 맞는다.
  *    어느 쪽으로 어긋날지는 기기마다 다르므로 양쪽을 다 연다.
+ * ⚠️ 80%가 있는 이유 — 2880×1800을 250%로 쓰면 CSS 폭이 정확히 1152이고,
+ *    1152 ÷ 1440 = 0.8이다. 흔한 조합이라 딱 맞는 칸을 둔다.
  */
-export const SCREEN_SCALES = [75, 90, 100, 125, 150] as const;
+export const SCREEN_SCALES = [75, 80, 90, 100, 125, 150] as const;
 
 export type ScreenScale = (typeof SCREEN_SCALES)[number];
 
@@ -56,6 +58,24 @@ export type ScaleHint = "none" | "smaller" | "larger";
  * ⚠️ 문턱을 넉넉히 둔다(±25%). 1200~1800은 보통 화면이라 권할 일이 아니다 —
  *    조금만 달라도 참견하면 대부분의 사람에게 잘못된 안내가 뜬다.
  */
+/**
+ * 이 화면 폭에서 **기준(1440)에 가장 가까워지는** 배율.
+ *
+ * 지금 CSS 폭이 1152이면 1152 ÷ 1440 = 0.8 → 80%다. 배율을 걸면 화면이 그만큼 넓게
+ * 계산되므로 다른 기기와 같은 폭이 된다.
+ *
+ * ⚠️ 목록에 있는 값 중에서 고른다. 딱 맞는 값이 없으면 **가장 가까운 것**이다 —
+ *    임의의 배율을 허용하면 저장소에 이상한 값이 들어왔을 때 걸러낼 기준이 없어진다.
+ */
+export function recommendScale(viewportWidth: number): ScreenScale {
+  if (viewportWidth <= 0) return DEFAULT_SCALE;
+
+  const ideal = (viewportWidth / REFERENCE_WIDTH) * 100;
+  return SCREEN_SCALES.reduce((best, scale) =>
+    Math.abs(scale - ideal) < Math.abs(best - ideal) ? scale : best,
+  );
+}
+
 export function suggestScale(input: { viewportWidth: number; hasChosen: boolean }): ScaleHint {
   if (input.hasChosen || input.viewportWidth === 0) return "none";
   // ⚠️ 경계를 포함한다. 2880을 250%로 쓰면 정확히 1152(= 1440 × 0.8)라 딱 걸린다
@@ -76,5 +96,7 @@ export function suggestScale(input: { viewportWidth: number; hasChosen: boolean 
  *    무시됐다.** 두 판정을 섞어 쓰면 목록이 바뀔 때 조용히 틀린다.
  * ⚠️ 문자열로 넣는다. 브라우저는 숫자도 받아 주지만, 값을 다시 읽는 쪽(테스트 등)에서
  *    타입이 갈려 헷갈린다.
+ * ⚠️ `--app-zoom`도 같이 세운다. `100dvh`는 배율을 모르는 값이라, 그대로 두면 화면 높이를
+ *    쓰는 상자가 배율만큼 짧아지거나 넘친다 — `h-screen-z`가 이 변수로 나눠 준다.
  */
-export const SCALE_BOOT_SCRIPT = `try{var s=Number(localStorage.getItem("${SCALE_STORAGE_KEY}"));if(s!==${DEFAULT_SCALE}&&[${SCREEN_SCALES.join(",")}].indexOf(s)>=0)document.documentElement.style.zoom=String(s/100)}catch(e){}`;
+export const SCALE_BOOT_SCRIPT = `try{var s=Number(localStorage.getItem("${SCALE_STORAGE_KEY}"));if(s!==${DEFAULT_SCALE}&&[${SCREEN_SCALES.join(",")}].indexOf(s)>=0){var e=document.documentElement;e.style.zoom=String(s/100);e.style.setProperty("--app-zoom",String(s/100))}}catch(e){}`;

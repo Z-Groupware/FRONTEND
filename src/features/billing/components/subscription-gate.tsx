@@ -42,7 +42,7 @@ export function SubscriptionGate({ config, status, role, canManage }: Subscripti
   const isUnpaid = status === SUBSCRIPTION_STATUS.UNPAID;
 
   return (
-    <div className="bg-background bg-dot-grid flex min-h-dvh flex-col">
+    <div className="bg-background bg-dot-grid min-h-screen-z flex flex-col">
       <BrandBar />
 
       <main className="flex min-h-0 flex-1 flex-col overflow-y-auto px-[21px] py-6 lg:py-10">

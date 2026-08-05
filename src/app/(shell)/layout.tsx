@@ -47,7 +47,7 @@ export default async function ShellLayout({ children }: { children: ReactNode })
   const sections = withNoticeDot(OWNER_NAV, unreadNoticeCount > 0);
 
   return (
-    <div className="bg-background flex h-dvh overflow-hidden">
+    <div className="bg-background h-screen-z flex overflow-hidden">
       <RoleSidebar sections={sections} user={viewer} />
 
       {/*

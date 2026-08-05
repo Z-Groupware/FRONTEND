@@ -93,7 +93,7 @@ export function LandingShell({ children }: { children: ReactNode }) {
       <div
         id={STAGE_ID}
         // 상단바가 `fixed`라 문서 흐름에서 빠진다 — 그 높이(56px)를 여기서 메운다
-        className="text-foreground bg-landing-stage relative flex min-h-dvh flex-col pt-14"
+        className="text-foreground bg-landing-stage min-h-screen-z relative flex flex-col pt-14"
       >
         <LandingBackdrop />
         {/*

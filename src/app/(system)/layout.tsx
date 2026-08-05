@@ -12,7 +12,7 @@ import { SYSTEM_NAV } from "@/features/system/nav";
  */
 export default function SystemLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="bg-background flex h-dvh overflow-hidden">
+    <div className="bg-background h-screen-z flex overflow-hidden">
       <SystemSidebar sections={SYSTEM_NAV} account={{ email: "admin@getz.kr" }} />
       <div className="bg-dot-grid-system flex min-w-0 flex-1 flex-col overflow-hidden">
         {children}

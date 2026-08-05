@@ -19,7 +19,7 @@ export const metadata: Metadata = {
  */
 export default function NotFound() {
   return (
-    <main className="bg-background flex min-h-dvh flex-col items-center justify-center gap-7 px-6 text-center">
+    <main className="bg-background min-h-screen-z flex flex-col items-center justify-center gap-7 px-6 text-center">
       <Link href="/" aria-label="Z 홈으로" className="focus-visible:ring-ring rounded">
         <ZLogo className="text-foreground size-8" title="Z" />
       </Link>

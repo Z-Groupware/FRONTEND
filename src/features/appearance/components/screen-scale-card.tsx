@@ -4,7 +4,14 @@ import { useEffect, useState } from "react";
 
 import { cn } from "@/lib/utils";
 
-import { DEFAULT_SCALE, parseScale, REFERENCE_WIDTH, SCREEN_SCALES, suggestScale } from "../scale";
+import {
+  DEFAULT_SCALE,
+  parseScale,
+  recommendScale,
+  REFERENCE_WIDTH,
+  SCREEN_SCALES,
+  suggestScale,
+} from "../scale";
 import {
   readScale,
   readViewport,
@@ -41,6 +48,8 @@ export function ScreenScaleCard() {
   const scale = parseScale(stored);
   const [, width = 0] = viewport.split("|").map(Number);
   const hint = suggestScale({ viewportWidth: width, hasChosen: stored !== null });
+  // ⚠️ 권한다면 **몇 %인지까지** 말한다. "줄여 보세요"만으로는 어디까지 줄일지 모른다
+  const recommended = recommendScale(width);
 
   /*
     ⚠️ **DOM을 맞추는 건 효과의 일이다.** 브라우저는 React 밖의 시스템이라, 고른 값이 바뀔 때마다
@@ -48,7 +57,16 @@ export function ScreenScaleCard() {
     ⚠️ 100%면 빈 값으로 돌려놓는다. `zoom: 1`을 남기면 브라우저가 계산을 한 단계 더 한다.
   */
   useEffect(() => {
-    document.documentElement.style.zoom = scale === DEFAULT_SCALE ? "" : String(scale / 100);
+    const root = document.documentElement;
+    const ratio = scale / DEFAULT_SCALE;
+
+    root.style.zoom = scale === DEFAULT_SCALE ? "" : String(ratio);
+    /*
+      ⚠️ **`zoom`만 걸면 아래가 빈다.** `100dvh`는 배율을 모르는 값이라, 그 높이를 가진
+         상자가 0.75배로 그려지면 화면 아래 25%가 남는다 — 셸이 중간에서 끝나 보인다.
+         `h-screen-z`가 이 변수로 나눠 주므로 **둘을 같이 세운다**(부트 스크립트도 같다).
+    */
+    root.style.setProperty("--app-zoom", String(ratio));
   }, [scale]);
 
   return (
@@ -106,19 +124,10 @@ export function ScreenScaleCard() {
           ⚠️ 색을 쓰지 않는다 — 잘못된 상태가 아니라 알려 주는 말이다(§디자인 토큰).
         */
         <p className="border-border bg-secondary mt-4 rounded-lg border px-3.5 py-3 text-[12px] leading-[18px] break-keep">
-          {hint === "smaller" ? (
-            <>
-              화면이 기준보다 좁아 다른 기기보다 <span className="font-medium">크게</span> 보입니다.
-              <span className="font-medium"> 90%</span>나 <span className="font-medium">75%</span>를
-              눌러 보세요.
-            </>
-          ) : (
-            <>
-              화면이 기준보다 넓어 다른 기기보다 <span className="font-medium">작게</span> 보입니다.
-              <span className="font-medium"> 125%</span>나 <span className="font-medium">150%</span>
-              를 눌러 보세요.
-            </>
-          )}
+          화면이 기준보다 {hint === "smaller" ? "좁아" : "넓어"} 다른 기기보다{" "}
+          <span className="font-medium">{hint === "smaller" ? "크게" : "작게"}</span> 보입니다.{" "}
+          <span className="text-foreground font-medium">{recommended}%</span>를 누르면 다른 기기와
+          같은 폭이 됩니다.
         </p>
       )}
     </section>
