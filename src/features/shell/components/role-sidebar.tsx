@@ -5,7 +5,8 @@ import { usePathname } from "next/navigation";
 import { toast } from "sonner";
 
 import { ZLogo } from "@/components/icons/z-logo";
-import { ROLE_BADGE_CLASS, ROLE_LABEL, ROLE_MARK_CLASS } from "@/constants/role";
+import { ROLE_BADGE_CLASS, ROLE_LABEL } from "@/constants/role";
+import { useProfileAvatar } from "@/hooks/use-profile-avatar";
 import { topicParticle } from "@/lib/korean";
 import { cn } from "@/lib/utils";
 
@@ -142,29 +143,22 @@ function SidebarLogo({ home }: { home: NavItem }) {
 }
 
 /**
- * 하단 계정 줄 — 이름 첫 글자 · 이름 · 역할 배지.
+ * 하단 계정 줄 — 프로필 아바타 · 이름 · 역할 배지.
  *
- * ⚠️ **색은 그 사람의 역할에서 온다.** 전에는 `bg-role-owner`가 박혀 있어서 팀장·사원으로
- *    로그인해도 배지 글자만 바뀌고 색은 Owner였다 — 색으로 역할을 알리는 자리인데
- *    색이 역할을 안 따라가면 배지가 거짓말을 한다.
+ * ⚠️ **아바타와 배지가 서로 다른 것을 말한다.** 아바타 색은 **그 사람**(id 해시)이고,
+ *    배지 색은 **역할**이다. 둘을 같은 색으로 묶으면 같은 역할인 사람이 전부 같은 표식을
+ *    달아, 목록에서 사람을 구분할 수 없다.
+ * ⚠️ 아바타는 `useProfileAvatar` 하나만 쓴다 — 팀원 현황·팀장 현황과 **같은 색**이어야
+ *    "그 파란 사람"으로 기억한 게 화면을 옮겨도 통한다.
+ * ⚠️ 배지 색은 전에 `bg-role-owner`가 박혀 있어서 팀장·사원으로 로그인해도 글자만 바뀌고
+ *    색은 Owner였다 — 색으로 역할을 알리는 자리인데 색이 역할을 안 따라갔다.
  */
 function AccountRow({ user }: { user: Viewer }) {
+  const avatar = useProfileAvatar(user.id, 21);
+
   return (
     <div className="border-border flex h-[49px] shrink-0 items-center gap-[7px] border-t px-[17.5px]">
-      {/*
-        ⚠️ 글자색은 `text-white`가 아니라 **`text-background`** 다. 역할 색은 테마에 따라
-           밝기가 뒤집혀서(라이트 `#c2410c` ↔ 다크 `#fb923c`), 흰 글자로 고정하면 다크에서
-           대비가 2.1~2.5:1까지 떨어진다 — 이름 첫 글자는 글자라 4.5:1이 필요하다.
-           `--background`를 쓰면 라이트에서 흰 글자, 다크에서 먹 글자가 되어 양쪽 다 5.2:1 위다.
-      */}
-      <span
-        className={cn(
-          ROLE_MARK_CLASS[user.role],
-          "text-background flex size-[21px] shrink-0 items-center justify-center rounded-full text-[10px] leading-none",
-        )}
-      >
-        {user.name.slice(0, 1)}
-      </span>
+      {avatar}
       <span className="min-w-0 flex-1 truncate text-xs leading-[18px]">{user.name}</span>
       <span
         className={cn(

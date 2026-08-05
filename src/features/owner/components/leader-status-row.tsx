@@ -12,11 +12,11 @@ interface LeaderStatusRowProps {
 
 /**
  * "팀장 현황" 테이블의 한 행. `<TableBody>` 안에서만 쓴다(루트가 `<tr>`).
- * ⚠️ 아바타 색은 하드코딩하지 않고 팀 공용 `useProfileAvatar`(이름+부서 해시)로 만든다 —
+ * ⚠️ 아바타 색은 하드코딩하지 않고 팀 공용 `useProfileAvatar`로 만든다 — 키는 **id 하나**다 —
  *    BE에 프로필 이미지 필드가 없어 FE가 일관 색을 생성한다(같은 사람은 늘 같은 색).
  */
 export function LeaderStatusRow({ leader }: LeaderStatusRowProps) {
-  const avatar = useProfileAvatar(leader.name, leader.department, 28);
+  const avatar = useProfileAvatar(leader.id, 28);
   const isOnVacation = leader.status === MEMBER_STATUS.VACATION;
 
   return (
