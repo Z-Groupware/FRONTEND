@@ -52,13 +52,15 @@ export function ProjectStorageTable({
         {/*
           ⚠️ 전체 건수를 적는다 — 끝이 안 보이는 목록은 얼마나 남았는지 알 수 없다.
           ⚠️ `/70`을 쓰지 않는다 — 12px 글자가 라이트에서 2.73:1로 4.5:1에 못 미친다(§a11y).
-          ⚠️ **아래 지우기 아이콘과 세로축을 맞춘다.** 머리의 여백(`px-7` = 28px)과 아이콘
-             자리(`pr-5` 안에서 32px 상자 가운데)가 달라 그냥 두면 8px 어긋난다 — 실측해
-             그만큼만 민다.
+          ⚠️ **아래 지우기 아이콘과 세로축(가운데)을 맞춘다.** 맞출 대상은 아이콘 상자의
+             가운데이고, 그건 `삭제` 머리글의 가운데와 같은 선이다.
+          ⚠️ 전에 여기를 **오른쪽으로 8px 밀어 뒀는데 방향이 반대였다** — 그래서 9px 어긋나
+             눈에 확 보였다. 실측하면 이 글자는 밀지 않은 자리에서 이미 1px 차이까지 맞는다.
+             남는 1px만 왼쪽으로 당긴다.
           ⚠️ **움직이는 건 이 글자다.** 표 쪽 `pr-*`를 건드리면 다섯 줄의 아이콘이 다 같이
              움직여 열 안에서 한쪽으로 쏠린다.
         */}
-        <p className="text-muted-foreground shrink-0 translate-x-[8px] text-[12px] leading-4 tabular-nums">
+        <p className="text-muted-foreground shrink-0 -translate-x-px text-[12px] leading-4 tabular-nums">
           전체 {projects.length}개
         </p>
       </div>
