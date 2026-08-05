@@ -57,7 +57,7 @@ const MOCK: BillingOverview = {
       meetingCount: 6,
     },
   },
-  methods: [{ id: "pm_1", brand: "VISA", last4: "4242", expiry: "09/27", isDefault: true }],
+  method: { id: "pm_1", brand: "VISA", last4: "4242", expiry: "09/27" },
   payments: [
     {
       id: "pay_7",

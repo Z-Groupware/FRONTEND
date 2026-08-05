@@ -50,45 +50,7 @@ export interface NavSection {
   items: NavItem[];
 }
 
-/**
- * OWNER 사이드바 구성.
- *
- * ⚠️ 역할마다 **레이아웃이 아니라 이 목록만** 달라진다(CLAUDE.md §라우트 그룹:
- *    레이아웃 1개 + 역할별 네비 구성). ADMIN·LEADER·MEMBER용은 각자 화면을 만들 때 추가한다.
- */
-export const OWNER_NAV: NavSection[] = [
-  {
-    items: [
-      { href: "/owner", label: "대시보드", icon: "dashboard" },
-      { href: "/app/projects", label: "프로젝트", icon: "project" },
-      { href: "/app/search", label: "검색", icon: "search" },
-      { href: "/app/calendar", label: "캘린더", icon: "calendar" },
-      { href: "/app/notice", label: "공지", icon: "notice", isReady: true },
-    ],
-  },
-  {
-    title: "워크벤치",
-    items: [
-      { href: "/app/meeting", label: "회의", icon: "meeting" },
-      { href: "/app/rooms", label: "회의실", icon: "room" },
-      { href: "/app/board", label: "보드", icon: "board" },
-      { href: "/app/people", label: "사람", icon: "people" },
-      { href: "/app/me", label: "마이페이지", icon: "me", isReady: true },
-    ],
-  },
-  {
-    title: "회사 운영",
-    items: [
-      /*
-        ⚠️ 관리 기능은 **`/manage/*` 하나**로 모은다(팀 URL 문서 2026-08-05).
-           OWNER와 Admin 겸직자가 같이 쓰는 화면이라 `/owner/*`에 두면 겸직자에게 주소가
-           거짓말을 하고, 두 곳에 나눠 두면 같은 화면이 두 벌이 된다.
-           가드는 `역할 === admin`이 아니라 **`role === "owner" || isAdmin`** 이다.
-      */
-      { href: "/manage/members", label: "사원 관리", icon: "members" },
-      { href: "/manage/billing", label: "구독·결제", icon: "billing", isReady: true },
-      { href: "/manage/storage", label: "녹음 용량", icon: "storage" },
-      { href: "/owner/setting", label: "기업 설정", icon: "setting" },
-    ],
-  },
-];
+/*
+  ⚠️ **구성은 `nav-config.ts`에 있다.** 이 파일은 모양(타입)만 정한다 —
+     전에는 여기 `OWNER_NAV` 하나뿐이라 역할이 늘 때마다 타입 파일이 같이 부풀었다.
+*/

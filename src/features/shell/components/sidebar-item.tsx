@@ -1,8 +1,11 @@
 "use client";
 
 import {
+  Activity,
+  Building2,
   CalendarDays,
   CalendarRange,
+  ClipboardCheck,
   Columns3,
   CreditCard,
   Folder,
@@ -20,6 +23,7 @@ import {
 import Link from "next/link";
 import { toast } from "sonner";
 
+import { topicParticle } from "@/lib/korean";
 import { cn } from "@/lib/utils";
 
 import type { NavIconName, NavItem } from "../nav";
@@ -27,12 +31,15 @@ import type { NavIconName, NavItem } from "../nav";
 /**
  * 이름 → 아이콘. 구성 파일은 서버에서 읽히므로 실제 컴포넌트는 여기서 붙인다.
  *
- * ⚠️ **역할 셸이 쓰는 이름만** 채운다. `approval`·`company`·`monitor`는 운영자 전용이라
- *    여기 없는 게 맞다 — 그 화면은 `system/components/system-sidebar.tsx`가 자기 맵으로 그린다.
- *    두 셸이 한 맵을 나눠 쓰면 역할 사이드바가 운영자 아이콘까지 번들에 끌고 온다.
+ * ⚠️ **역할 셸과 운영자 셸이 같이 쓴다.** 전에는 운영자 쪽이 자기 맵을 따로 들고 있어서,
+ *    같은 아이콘 이름이 두 곳에 적혀 있었다 — 한쪽만 고치면 두 사이드바가 다른 그림을 쓴다.
+ *    `approval`은 역할 셸에서도 인수인계에 쓴다.
  */
 const NAV_ICON: Partial<Record<NavIconName, LucideIcon>> = {
   dashboard: LayoutDashboard,
+  approval: ClipboardCheck,
+  company: Building2,
+  monitor: Activity,
   project: Folder,
   search: Search,
   calendar: CalendarDays,
@@ -70,7 +77,8 @@ export function SidebarItem({ item, isCurrent }: { item: NavItem; isCurrent: boo
         */
         aria-label={`${item.label} — 준비 중`}
         // ⚠️ 토스트는 한 줄(220px)이라 짧게 쓴다 — 길면 잘린다(`sonner.tsx`)
-        onClick={() => toast(`${item.label}은 준비 중입니다`)}
+        // ⚠️ 조사를 박아 두지 않는다 — 라벨 대부분이 모음으로 끝나 "프로젝트은"이 된다
+        onClick={() => toast(`${item.label}${topicParticle(item.label)} 준비 중입니다`)}
         // 색은 준비된 메뉴와 똑같이 — 평소 회색, 호버하면 글자가 진해진다
         className={cn(
           SHAPE,

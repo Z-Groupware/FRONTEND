@@ -86,6 +86,8 @@ export async function confirmSubscriptionAction(): Promise<ActionResult> {
  *
  * ⚠️ 빌링키는 **서버에만** 있다. 그 키로 결제가 일어나므로 브라우저로 내보내지 않는다.
  * ⚠️ 화면에는 표시용 정보(브랜드 · 뒤 4자리 · 만료월)만 돌려준다.
+ * ⚠️ **더하는 게 아니라 갈아 끼운다.** 카드는 회사당 한 장이라, 이미 있으면 그 자리를 덮는다 —
+ *    BE도 빌링키를 1:1로 들고 있어야 한다(§BE 전달 사항).
  */
 export async function registerCardAction(
   auth: CardAuthResult,
@@ -101,7 +103,6 @@ export async function registerCardAction(
         brand: "MASTER",
         last4: `${Math.floor(Math.random() * 9000) + 1000}`,
         expiry: "12/29",
-        isDefault: false,
       },
     };
   }
@@ -110,38 +111,11 @@ export async function registerCardAction(
   return { isSuccess: false, message: "결제 수단을 저장하지 못했습니다" };
 }
 
-/** 기본 결제 수단을 바꾼다 */
-export async function setDefaultMethodAction(methodId: string): Promise<ActionResult> {
-  if (!(await assertCanManage())) return FORBIDDEN;
-
-  if (isMock) {
-    revalidatePath("/manage/billing");
-    return { isSuccess: true };
-  }
-
-  // TODO(BE 협의): `PATCH /companies/me/payment-methods/{methodId}/default`
-  void methodId;
-  return { isSuccess: false, message: "기본 결제 수단을 바꾸지 못했습니다" };
-}
-
-/**
- * 결제 수단을 지운다.
- *
- * ⚠️ **마지막 하나는 서버가 막아야 한다.** 지울 수단이 없으면 다음 청구가 실패하는데,
- *    화면에서만 막으면 액션을 직접 불러 지울 수 있다.
- */
-export async function removeMethodAction(methodId: string): Promise<ActionResult> {
-  if (!(await assertCanManage())) return FORBIDDEN;
-
-  if (isMock) {
-    revalidatePath("/manage/billing");
-    return { isSuccess: true };
-  }
-
-  // TODO(BE 협의): `DELETE /companies/me/payment-methods/{methodId}`
-  void methodId;
-  return { isSuccess: false, message: "결제 수단을 지우지 못했습니다" };
-}
+/*
+  ⚠️ **기본 지정·삭제 액션을 두지 않는다.** 카드가 한 장뿐이라 기본을 고를 것도 없고,
+     지우면 다음 청구가 실패하는데 대신 올릴 카드도 없다 — 바꾸는 길은 `registerCardAction`
+     하나뿐이다. 그만두려면 카드를 지우는 게 아니라 **구독을 해지**한다.
+*/
 
 /**
  * 해지하거나, 해지를 되돌린다.

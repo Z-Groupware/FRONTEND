@@ -30,6 +30,10 @@ export type HandoverType = (typeof HANDOVER_TYPE)[keyof typeof HANDOVER_TYPE];
 
 export const HANDOVER_TYPE_LABEL: Record<HandoverType, string> = {
   VACATION: "휴가",
-  // ⚠️ "퇴사" 대체어는 팀 미확정 (DECISIONS.md)
+  /*
+    ⚠️ **흐름은 "오프보딩", 사람 상태는 "퇴사"다**(2026-08-05 확정, DECISIONS.md).
+       같은 일의 두 쪽이라 라벨을 섞어 쓰면 화면이 다른 말을 한다 — 신청·승인 화면에서는
+       여기 라벨을, 끝난 뒤 사원 목록에서는 `MEMBER_STATUS_LABEL.RESIGNED`를 쓴다.
+  */
   OFFBOARDING: "오프보딩",
 };

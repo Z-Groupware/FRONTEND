@@ -27,6 +27,15 @@ interface ResultDialogProps {
   children?: ReactNode;
   /** 다음 행동 — 링크든 버튼이든 하나만 둔다 */
   action?: ReactNode;
+  /**
+   * 닫을 수 있는가(기본 `true`).
+   *
+   * ⚠️ `false`면 X를 지운다. **뒤에 볼 것이 없는 창**에만 쓴다 — 닫아서 빈 화면이 남으면
+   *    막힌 게 아니라 고장 난 것처럼 보인다.
+   * ⚠️ Esc·바깥 클릭은 여기서 막지 않는다. 그 둘은 `onOpenChange`를 부를 뿐이라,
+   *    쓰는 쪽이 상태를 안 바꾸면(`isOpen`을 계속 참으로 두면) 열린 채로 남는다.
+   */
+  isDismissible?: boolean;
 }
 
 /**
@@ -50,6 +59,7 @@ export function ResultDialog({
   children,
   action,
   badge,
+  isDismissible = true,
 }: ResultDialogProps) {
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -57,7 +67,7 @@ export function ResultDialog({
         ⚠️ `gap-0` — DialogContent가 자체 `gap-4`를 갖고 있어 아래 `mt-*`와 겹쳐 간격이 두 배가 된다.
            여백은 여기서 한 곳으로만 준다.
       */}
-      <DialogContent className="gap-0 p-8 sm:max-w-[420px]">
+      <DialogContent showCloseButton={isDismissible} className="gap-0 p-8 sm:max-w-[420px]">
         <DialogHeader className="items-center gap-5 text-center">
           <DialogMark badge={badge} />
 

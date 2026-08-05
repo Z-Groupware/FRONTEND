@@ -2,17 +2,26 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { toast } from "sonner";
 
 import { ZLogo } from "@/components/icons/z-logo";
-import { ROLE_LABEL } from "@/constants/domain";
+import { ROLE_BADGE_CLASS, ROLE_LABEL, ROLE_MARK_CLASS } from "@/constants/role";
+import { topicParticle } from "@/lib/korean";
+import { cn } from "@/lib/utils";
 
-import { roleHome } from "../home";
-import type { NavSection } from "../nav";
+import type { NavItem, NavSection } from "../nav";
 import type { Viewer } from "../viewer";
 import { SidebarItem } from "./sidebar-item";
 
 interface RoleSidebarProps {
   sections: NavSection[];
+  /**
+   * 로고를 누르면 갈 곳 — 메뉴 [대시보드]와 **같은 항목**이다(`dashboardFor`).
+   *
+   * ⚠️ 경로만 받지 않는다. `isReady`가 같이 와야 화면이 아직 없을 때 로고도 메뉴와 똑같이
+   *    "준비 중"이라고 말한다 — 경로만 받으면 로고만 404로 데려간다.
+   */
+  home: NavItem;
   /**
    * 지금 보고 있는 사람 — 이름·역할 배지·로고 링크가 이 값에서 나온다.
    *
@@ -48,7 +57,7 @@ function findActiveHref(sections: NavSection[], pathname: string): string | unde
  *
  * ⚠️ 레이아웃은 하나다 — 역할마다 `sections`만 갈아 끼운다(CLAUDE.md §라우트 그룹).
  */
-export function RoleSidebar({ sections, user }: RoleSidebarProps) {
+export function RoleSidebar({ sections, home, user }: RoleSidebarProps) {
   const pathname = usePathname();
   const activeHref = findActiveHref(sections, pathname);
 
@@ -65,13 +74,7 @@ export function RoleSidebar({ sections, user }: RoleSidebarProps) {
       */}
       {/* 로고 아래 선을 두지 않는다 — 사이드바 안에서 또 나누면 조각나 보인다 */}
       <div className="flex h-[56px] shrink-0 items-center px-[18px]">
-        <Link
-          href={roleHome(user.role)}
-          aria-label="Z 홈으로"
-          className="focus-visible:ring-ring rounded transition-opacity hover:opacity-70 focus-visible:ring-2 focus-visible:outline-hidden"
-        >
-          <ZLogo className="text-foreground size-[22px]" title="Z" />
-        </Link>
+        <SidebarLogo home={home} />
       </div>
 
       <nav className="flex-1 overflow-y-auto p-[7px]">
@@ -102,15 +105,73 @@ export function RoleSidebar({ sections, user }: RoleSidebarProps) {
   );
 }
 
-/** 하단 계정 줄 — 이름 첫 글자 · 이름 · 역할 배지 */
+const LOGO_SHAPE =
+  "focus-visible:ring-ring rounded transition-opacity hover:opacity-70 focus-visible:ring-2 focus-visible:outline-hidden";
+
+/**
+ * 사이드바 로고 — 누르면 **자기 역할의 대시보드**로 간다.
+ *
+ * ⚠️ 랜딩(`/`)으로 보내지 않는다. 로그인 뒤 화면에서 로고를 누르는 건 "첫 화면으로"라는
+ *    뜻인데, 그 사람의 첫 화면은 로그인 전 소개 페이지가 아니라 자기 대시보드다.
+ *    (랜딩·로그인 화면의 로고는 그대로 `/`로 간다 — 거기선 랜딩이 첫 화면이다.)
+ * ⚠️ 화면이 아직 없으면 **링크로 두지 않는다.** 메뉴 [대시보드]는 "준비 중"이라고 말하는데
+ *    로고만 404로 데려가면 같은 곳을 가리키는 둘이 다른 말을 한다(§정직성).
+ *    `SidebarItem`과 같은 규칙이고, 문구도 같은 자리에서 나온다.
+ */
+function SidebarLogo({ home }: { home: NavItem }) {
+  const logo = <ZLogo className="text-foreground size-[22px]" title="Z" />;
+
+  if (!home.isReady) {
+    return (
+      <button
+        type="button"
+        aria-label={`Z ${home.label} — 준비 중`}
+        onClick={() => toast(`${home.label}${topicParticle(home.label)} 준비 중입니다`)}
+        className={LOGO_SHAPE}
+      >
+        {logo}
+      </button>
+    );
+  }
+
+  return (
+    <Link href={home.href} aria-label={`Z ${home.label}로`} className={LOGO_SHAPE}>
+      {logo}
+    </Link>
+  );
+}
+
+/**
+ * 하단 계정 줄 — 이름 첫 글자 · 이름 · 역할 배지.
+ *
+ * ⚠️ **색은 그 사람의 역할에서 온다.** 전에는 `bg-role-owner`가 박혀 있어서 팀장·사원으로
+ *    로그인해도 배지 글자만 바뀌고 색은 Owner였다 — 색으로 역할을 알리는 자리인데
+ *    색이 역할을 안 따라가면 배지가 거짓말을 한다.
+ */
 function AccountRow({ user }: { user: Viewer }) {
   return (
     <div className="border-border flex h-[49px] shrink-0 items-center gap-[7px] border-t px-[17.5px]">
-      <span className="bg-role-owner flex size-[21px] shrink-0 items-center justify-center rounded-full text-[10px] leading-none text-white">
+      {/*
+        ⚠️ 글자색은 `text-white`가 아니라 **`text-background`** 다. 역할 색은 테마에 따라
+           밝기가 뒤집혀서(라이트 `#c2410c` ↔ 다크 `#fb923c`), 흰 글자로 고정하면 다크에서
+           대비가 2.1~2.5:1까지 떨어진다 — 이름 첫 글자는 글자라 4.5:1이 필요하다.
+           `--background`를 쓰면 라이트에서 흰 글자, 다크에서 먹 글자가 되어 양쪽 다 5.2:1 위다.
+      */}
+      <span
+        className={cn(
+          ROLE_MARK_CLASS[user.role],
+          "text-background flex size-[21px] shrink-0 items-center justify-center rounded-full text-[10px] leading-none",
+        )}
+      >
         {user.name.slice(0, 1)}
       </span>
       <span className="min-w-0 flex-1 truncate text-xs leading-[18px]">{user.name}</span>
-      <span className="bg-role-owner-surface text-role-owner shrink-0 rounded px-[5.25px] py-[1.75px] text-[9px] leading-[14px]">
+      <span
+        className={cn(
+          ROLE_BADGE_CLASS[user.role],
+          "shrink-0 rounded px-[5.25px] py-[1.75px] text-[9px] leading-[14px]",
+        )}
+      >
         {ROLE_LABEL[user.role]}
       </span>
     </div>

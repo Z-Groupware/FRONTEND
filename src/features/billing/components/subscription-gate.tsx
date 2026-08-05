@@ -12,6 +12,7 @@ import { type Subscription, SUBSCRIPTION_STATUS } from "../subscription";
 import type { BillingConfig } from "../types";
 import { PaymentDoneDialog } from "./payment-done-dialog";
 import { SubscribeCard } from "./subscribe-card";
+import { SubscriptionBlockedDialog } from "./subscription-blocked-dialog";
 
 interface SubscriptionGateProps {
   config: BillingConfig;
@@ -29,8 +30,9 @@ interface SubscriptionGateProps {
  *    안 눌리는지 알 수 없다. 온보딩 4단계처럼 껍데기를 벗기고 결제 칸만 남긴다.
  * ⚠️ 결제 칸은 온보딩·구독 관리와 **같은 것**(`SubscribeCard`)을 쓴다. 돈을 내는 자리가
  *    화면마다 다르게 생기면 같은 서비스로 안 읽힌다(§컴포넌트 위생).
- * ⚠️ **결제 권한이 없는 사람에게는 결제 칸을 보여주지 않는다.** 눌러도 못 하는 버튼을 주는 건
- *    안내가 아니라 막다른 길이다 — 누구에게 말해야 하는지를 적는다(§정직성).
+ * ⚠️ **결제 권한이 없는 사람에게는 이 화면을 아예 안 준다.** 눌러도 못 하는 버튼은 물론이고,
+ *    결제하라는 안내 화면조차 그 사람에게는 할 일이 없는 화면이다 —
+ *    공통 결과 창(`SubscriptionBlockedDialog`)으로 막고 끝낸다(§정직성).
  * ⚠️ 결제를 마치면 **`/billing/checkout`과 같은 완료 창**(`PaymentDoneDialog`)이 뜬다.
  *    온보딩 완료 화면은 못 쓴다 — 거기는 부서·직급·초대 수를 요약하는 자리라, 이미 다 만들어
  *    놓고 결제만 끊긴 회사에게는 맞지 않는 말이다.
@@ -39,6 +41,46 @@ interface SubscriptionGateProps {
  */
 export function SubscriptionGate({ config, status, role, canManage }: SubscriptionGateProps) {
   const [isDone, setIsDone] = useState(false);
+
+  /*
+    결제할 수 없는 사람 — **창으로 막는다.** 뒤에는 브랜드 바만 남긴다.
+    ⚠️ 결제 칸을 감춘 화면을 대신 보여주지 않는다. 제목·안내·카드가 전부 "결제해라"는 말인데
+       정작 그럴 수 없는 사람이라, 읽을수록 무엇을 하라는 건지 알 수 없어진다.
+  */
+  if (!canManage) {
+    return (
+      <div className="bg-background bg-dot-grid min-h-screen-z flex flex-col">
+        <BrandBar />
+
+        {/*
+          ⚠️ **같은 말을 창 뒤에도 그대로 둔다.** 창은 포털이라 서버가 그린 HTML에 한 글자도
+             안 들어간다 — 이것만 두면 하이드레이션 전까지, 그리고 번들이 늦거나 실패하면
+             영영, 로고 한 줄만 있는 빈 화면이 남는다. 왜 못 들어오는지는 JS 없이도
+             읽혀야 한다(§정직성).
+          ⚠️ 이 페이지의 **`h1`도 여기 있다.** 창 제목은 `h2`로 나가서(Base UI `Dialog.Title`),
+             이게 없으면 권한 있는 사람의 화면에는 있는 제목이 권한 없는 사람에게만 사라진다.
+          ⚠️ **결제 칸은 여전히 안 그린다.** 눌러도 못 하는 버튼을 주는 건 안내가 아니라
+             막다른 길이다 — 말만 남기고 조작은 창이 준다.
+        */}
+        <main className="flex min-h-0 flex-1 flex-col overflow-y-auto px-[21px] py-6">
+          <div className="m-auto flex w-full max-w-[420px] flex-col gap-[7px] pb-16 text-center">
+            <h1 className="text-2xl leading-[30px] font-semibold tracking-[-0.48px] break-keep">
+              {status === SUBSCRIPTION_STATUS.UNPAID
+                ? "결제가 확인되지 않았습니다"
+                : "구독이 종료되었습니다"}
+            </h1>
+            <p className="text-muted-foreground text-[13px] leading-5 break-keep">
+              결제가 끝나야 워크스페이스가 열립니다. 결제는 대표 또는 Admin 권한을 가진 분만 할 수
+              있습니다.
+            </p>
+          </div>
+        </main>
+
+        <SubscriptionBlockedDialog status={status} />
+      </div>
+    );
+  }
+
   const isUnpaid = status === SUBSCRIPTION_STATUS.UNPAID;
 
   return (
@@ -64,24 +106,11 @@ export function SubscriptionGate({ config, status, role, canManage }: Subscripti
                  지금 말할 수 있는 건 "결제해야 다시 열린다"까지다.
             */}
             <p className="text-muted-foreground text-[13px] leading-5 break-keep">
-              {canManage
-                ? "결제를 마치면 워크스페이스가 다시 열립니다."
-                : "대표 또는 Admin 권한을 가진 분에게 결제를 요청해 주세요."}
+              결제를 마치면 워크스페이스가 다시 열립니다.
             </p>
           </div>
 
-          {canManage ? (
-            <SubscribeCard config={config} onSubscribe={() => setIsDone(true)} />
-          ) : (
-            /*
-              권한이 없는 사람 — 결제 칸 대신 **누구에게 말해야 하는지**를 준다.
-              ⚠️ 담당자 이름·연락처를 적고 싶지만 세션이 없어 모른다. 지어내지 않는다.
-            */
-            <p className="border-border bg-card text-muted-foreground rounded-2xl border p-7 text-[13px] leading-[21px] break-keep">
-              결제는 대표 또는 Admin 권한을 가진 분만 할 수 있습니다. 결제가 끝나면 이 화면 없이
-              바로 들어올 수 있습니다.
-            </p>
-          )}
+          <SubscribeCard config={config} onSubscribe={() => setIsDone(true)} />
         </div>
       </main>
 
