@@ -215,14 +215,16 @@ function Row({
         {/*
           ⚠️ **묶음을 가운데 두지 않는다**(`justify-center` 금지). `진행중`(3자)과 `완료`(2자)는
              폭이 달라서, 묶음 전체를 가운데 놓으면 **점이 줄마다 좌우로 어긋난다.**
-             **글자는 머리글(`상태`) 아래에 한 줄로 서고, 점은 그 왼쪽에 조금 떨어져 점끼리 선다.**
-             라벨 폭을 고정(`w-[42px] text-left`)해야 `완료`도 `진행중`과 같은 왼쪽에서 시작하고,
-             그래야 앞에 붙는 점도 저절로 한 세로선에 놓인다.
+             **점은 점끼리, 글자는 글자끼리 각각 한 세로선에 선다.**
+             라벨을 고정폭 상자에 넣고(`w-[42px]`) 그 안에서 **가운데 정렬**한다 —
+             그러면 `완료`(2자)와 `진행중`(3자)의 **가운데가 같은 세로선**에 놓이고,
+             상자 폭이 일정하니 앞에 붙는 점도 저절로 한 줄로 선다.
+             `text-left`로 두면 글자 시작점은 맞아도 짧은 `완료`의 가운데가 왼쪽으로 밀린다.
         */}
         <StatusDot
           tone={project.status}
           label={PROJECT_STATUS_LABEL[project.status]}
-          labelClassName="w-[42px] text-left"
+          labelClassName="w-[42px] text-center"
           className="mx-auto w-fit text-[12px] leading-4"
         />
       </td>

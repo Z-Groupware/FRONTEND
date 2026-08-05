@@ -3,7 +3,6 @@ import { CircleAlert } from "lucide-react";
 import { formatGb, formatWon } from "@/features/billing/pricing";
 
 import type { StorageTotals } from "../storage";
-import { StorageGauge } from "./storage-gauge";
 
 /**
  * 전체 용량 한 장.
@@ -32,6 +31,20 @@ export function StorageSummary({
   const percent = Math.round(totals.ratio * 100);
   const isOver = totals.overageGb > 0;
 
+  /*
+    ⚠️ 넘겼을 때는 **분모를 사용량으로 바꾼다.** 포함량으로 고정하면 막대가 100%에서 잘려
+       12GB를 넘겼는지 1GB를 넘겼는지 그림으로는 구분이 안 된다 — 넘긴 만큼까지 그리고
+       한도 자리에 선을 그어야 "어디까지가 포함량인지"와 "얼마나 넘었는지"가 같이 보인다.
+       링으로는 못 하던 일이다(한 바퀴를 넘어 그릴 수 없다).
+    ⚠️ 0으로 나누면 `NaN%`가 되어 막대가 아예 안 그려진다.
+  */
+  const denom = Math.max(totals.usedGb, totals.includedGb);
+  const toPercent = (gb: number) => (denom > 0 ? (gb / denom) * 100 : 0);
+  const voicePercent = toPercent(totals.voiceGb);
+  const sttPercent = toPercent(totals.sttGb);
+  /** 포함량이 끝나는 자리 — 넘겼을 때만 선으로 긋는다 */
+  const limitPercent = toPercent(totals.includedGb);
+
   return (
     <section className="border-border bg-card rounded-2xl border p-7">
       <h2 className="flex items-center gap-2 text-[17px] leading-7 font-semibold tracking-[-0.3px]">
@@ -41,132 +54,125 @@ export function StorageSummary({
       </h2>
 
       {/*
-        ⚠️ 링과 숫자를 **나란히** 둔다. 링만 있으면 정확한 값을 못 읽고, 숫자만 있으면
-           얼마나 남았는지가 안 느껴진다 — 둘이 같은 줄에 있어야 한 번에 읽힌다.
+        ⚠️ **가로 막대 하나로 그린다.** 링을 써 봤는데 이 화면에는 안 맞았다 —
+           원은 한 바퀴가 곧 전부라 "얼마나 찼나"는 잘 보이지만, **두 조각의 크기를
+           나란히 견주기**가 어렵다. 이 화면에서 판단할 것은 "음성이 자막·요약보다
+           얼마나 큰가"(= 지워서 얼마나 버나)라, 같은 축에 이어 놓는 막대가 맞다.
+        ⚠️ 조각은 **색이 아니라 명도**로 나눈다 — 색으로 알리는 건 에러뿐이고, 넘겼을
+           때만 빨강이 된다(§디자인 토큰).
+        ⚠️ 막대는 `aria-hidden`이 아니다. `role="progressbar"`로 값을 읽히게 한다.
       */}
-      {/*
-        ⚠️ **오른쪽을 비워 두지 않는다.** 전에는 링과 숫자가 왼쪽 절반만 쓰고 오른쪽이
-           통째로 비어, 넓은 카드에 보여 줄 게 없는 화면처럼 읽혔다.
-           그 자리에 **이 화면에 온 이유의 답**(지우면 얼마가 비나)을 세운다 —
-           `totalFreeableGb`는 이미 계산하고 있었는데 어디에도 안 보였다.
-        ⚠️ 세로선 하나로만 가른다. 오른쪽에 카드를 또 얹으면 카드 안에 카드가 생긴다.
-      */}
-      {/*
-        ⚠️ **세 칸을 똑같이 나누고, 칸마다 내용을 가운데로 모은다.** `flex-1`이나 `1.3fr`처럼
-           칸 폭을 다르게 주면 내용이 한쪽에 몰려 그 칸의 반대편만 빈다 — 셋을 같은 폭으로
-           두고 각 칸 안에서 가운데 정렬하면 어느 칸도 비어 보이지 않는다.
-        ⚠️ 칸은 **세로선**으로만 가른다. 오른쪽에 카드를 또 얹으면 카드 안에 카드가 생긴다.
-        ⚠️ 좁아지면 세로로 쌓는다(`grid` 기본 1열) — 세로선은 `lg:`에서만 붙는다.
-      */}
-      <div className="grid gap-7 pt-5 lg:grid-cols-3 lg:items-stretch lg:gap-0">
-        {/*
-          ⚠️ **세 칸이 같은 구조**다 — 위에서부터 그림/작은 라벨 → 큰 값 → 보조 문구.
-             전에는 링만 옆으로 눕혀 두어, 칸은 가운데인데 **링은 왼쪽**에 있어 혼자 밀려
-             보였다. 셋을 같은 세로 스택으로 두면 어느 칸이든 무게중심이 칸 가운데에 온다.
-        */}
-        <div className="flex flex-col items-center gap-3 lg:px-4">
-          <span className="relative shrink-0">
-            <StorageGauge totals={totals} />
-            {/*
-            ⚠️ 소진율은 **링 한가운데 글자로** 적는다. 그림만 두면 정확히 얼마인지 읽히지
-               않고, 색을 못 보는 사람에게는 링이 통째로 사라진다.
-          */}
-            <span className="absolute inset-0 flex flex-col items-center justify-center">
-              <span
-                className={
-                  isOver
-                    ? "text-destructive text-[24px] leading-8 font-semibold tabular-nums"
-                    : "text-[24px] leading-8 font-semibold tabular-nums"
-                }
-              >
-                {percent}%
-              </span>
-              <span className="text-muted-foreground/70 text-[11px] leading-4">
-                {isOver ? "초과" : "사용"}
-              </span>
+      <div className="pt-6">
+        <div className="flex items-baseline justify-between gap-4">
+          <p className="flex items-baseline gap-1.5 whitespace-nowrap tabular-nums">
+            <span className="text-[32px] leading-10 font-semibold tracking-[-0.9px]">
+              {formatGb(totals.usedGb)}
             </span>
-          </span>
-
-          <div className="min-w-0 flex-1">
-            <p
-              className="flex items-baseline gap-1.5 whitespace-nowrap tabular-nums"
-              role="progressbar"
-              aria-label="저장소 소진율"
-              aria-valuenow={Math.min(100, percent)}
-              aria-valuemin={0}
-              aria-valuemax={100}
-              aria-valuetext={`${formatGb(totals.includedGb)} 중 ${formatGb(totals.usedGb)}, ${percent}%. 음성 ${formatGb(totals.voiceGb)}, 자막·요약 ${formatGb(totals.sttGb)}`}
-            >
-              <span className="text-[30px] leading-9 font-semibold tracking-[-0.8px]">
-                {formatGb(totals.usedGb)}
-              </span>
-              <span className="text-muted-foreground text-[15px] leading-6">
-                / {formatGb(totals.includedGb)}
-              </span>
-            </p>
-
-            {/*
-            ⚠️ **남았는지 넘겼는지**를 글자로 적는다. 퍼센트만 있으면 63%가 여유인지
-               빠듯한지 판단할 기준이 없다.
-          */}
-            <p className="text-muted-foreground pt-1 text-[13px] leading-5 tabular-nums">
-              {isOver
-                ? `${formatGb(totals.overageGb)} 초과`
-                : `${formatGb(totals.includedGb - totals.usedGb)} 남음`}
-            </p>
-
-            {/*
-            ⚠️ 범례는 **링 조각과 같은 명도**를 쓴다. 다른 회색을 쓰면 어느 점이 어느 조각인지
-               맞춰 보게 된다.
-            ⚠️ 이름 옆에 **성격**을 적는다. 두 값의 크기만 알려 주면 어느 쪽을 지워야 하는지는
-               여전히 모른다 — 이 화면의 답이 거기 있다.
-            ⚠️ 자막·요약에 **"삭제 불가"라고 쓰지 않는다.** 이 화면이 안 지우는 것과 영영 못
-               지우는 것은 다른 말인데, 보관·삭제 정책은 팀이 아직 안 정했다(§정직성).
-               정해지면 그때 문구를 바꾼다.
-          */}
-          </div>
-        </div>
-
-        {/* 범례 — 어느 쪽이 지울 수 있는지가 이 화면의 답이라 자기 칸을 준다 */}
-        <div className="border-border flex min-w-0 flex-col items-center justify-center gap-3 lg:border-l lg:px-6">
-          <p className="text-muted-foreground text-[12px] leading-4">구성</p>
-          <dl className="flex flex-col gap-1.5">
-            <Legend
-              label="음성"
-              value={formatGb(totals.voiceGb)}
-              dotClassName={isOver ? "bg-destructive" : "bg-foreground"}
-              hint="삭제 가능"
-            />
-            <Legend
-              label="자막·요약"
-              value={formatGb(totals.sttGb)}
-              dotClassName={isOver ? "bg-destructive/45" : "bg-foreground/35"}
-              hint="회의 기록"
-            />
-          </dl>
-        </div>
-
-        {/*
-        ⚠️ **금액을 적지 않는다.** 초과 청구 안내는 넘겼을 때만 아래에 뜬다 — 여기서도
-           말하면 같은 숫자를 두 곳에서 관리하게 된다.
-      */}
-        <div className="border-border flex min-w-0 flex-col items-center justify-center gap-1 lg:border-l lg:px-6 lg:text-center">
-          <p className="text-muted-foreground text-[12px] leading-4">삭제 가능 용량</p>
-          <p className="flex items-baseline gap-1.5 pt-1.5 tabular-nums lg:justify-center">
-            <span className="text-[28px] leading-9 font-semibold tracking-[-0.6px]">
-              {formatGb(freeableGb)}
+            <span className="text-muted-foreground text-[15px] leading-6">
+              / {formatGb(totals.includedGb)}
             </span>
           </p>
+          <p
+            className={
+              isOver
+                ? "text-destructive shrink-0 text-[13px] leading-5 font-medium tabular-nums"
+                : "text-muted-foreground shrink-0 text-[13px] leading-5 tabular-nums"
+            }
+          >
+            {isOver
+              ? `${formatGb(totals.overageGb)} 초과 · ${percent}%`
+              : `${formatGb(totals.includedGb - totals.usedGb)} 남음 · ${percent}%`}
+          </p>
+        </div>
+
+        {/*
+          ⚠️ 두 조각을 **이어 붙인다**(`flex`). 겹쳐 그리면 뒤 조각의 시작점을 계산해야 하고,
+             지운 뒤 값이 바뀔 때 어긋난다.
+          ⚠️ 넘치면 `overflow-hidden`이 잘라 준다 — 초과분까지 그리면 막대가 칸을 뚫는다.
+        */}
+        <div
+          className="bg-secondary relative mt-3.5 flex h-2.5 overflow-hidden rounded-full"
+          role="progressbar"
+          aria-label="저장소 소진율"
+          aria-valuenow={Math.min(100, percent)}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuetext={`${formatGb(totals.includedGb)} 중 ${formatGb(totals.usedGb)}, ${percent}%. 음성 ${formatGb(totals.voiceGb)}, 자막·요약 ${formatGb(totals.sttGb)}`}
+        >
+          <span
+            className={isOver ? "bg-destructive block h-full" : "bg-foreground block h-full"}
+            style={{ width: `${Math.min(100, voicePercent)}%` }}
+          />
+          <span
+            className={isOver ? "bg-destructive/45 block h-full" : "bg-foreground/35 block h-full"}
+            style={{ width: `${Math.min(100 - Math.min(100, voicePercent), sttPercent)}%` }}
+          />
+
           {/*
-          ⚠️ **왜 이만큼뿐인지** 같이 적는다. 숫자만 두면 나머지는 왜 못 지우는지 몰라
-             표를 처음부터 다시 훑게 된다 — 끝난 프로젝트만 지울 수 있다는 게 답이다.
-        */}
-          <p className="text-muted-foreground mx-auto max-w-[240px] pt-2 text-[12px] leading-[18px] break-keep">
-            {deletableCount > 0
-              ? `완료 프로젝트 ${deletableCount}개의 음성. 진행 중인 프로젝트는 삭제할 수 없습니다.`
-              : "완료된 프로젝트가 없습니다."}
-          </p>
+            ⚠️ **한도 선** — 넘겼을 때만 긋는다. 안 넘겼으면 막대 끝이 곧 한도라 선을 또
+               그으면 같은 말이 두 번이다.
+            ⚠️ 선 색은 카드 바탕(`--card`)이다. 빨간 막대를 **가르는** 자국이라 어두운 선을
+               쓰면 조각이 하나 더 있는 것처럼 읽힌다.
+          */}
+          {isOver && (
+            <span
+              aria-hidden
+              className="bg-card absolute inset-y-0 w-[2px]"
+              style={{ left: `${limitPercent}%` }}
+            />
+          )}
         </div>
+
+        {/*
+          ⚠️ 한도 선이 무엇인지 **글자로 적는다.** 선만 그으면 왜 거기 있는지 알 수 없다.
+             선 자리에 맞춰 놓아야 눈이 옮겨 가지 않는다.
+        */}
+        {isOver && (
+          <p className="relative h-4">
+            <span
+              className="text-muted-foreground absolute -translate-x-1/2 text-[11px] leading-4 whitespace-nowrap tabular-nums"
+              style={{ left: `${limitPercent}%` }}
+            >
+              포함 {formatGb(totals.includedGb)}
+            </span>
+          </p>
+        )}
+
+        {/*
+          ⚠️ 범례를 **막대 바로 아래**에 둔다. 어느 조각이 어느 값인지는 막대와 붙어 있어야
+             눈이 옮겨 가지 않는다.
+          ⚠️ 이름 옆에 **성격**을 적는다. 크기만 알려 주면 어느 쪽을 지워야 하는지는 모른다 —
+             이 화면의 답이 거기 있다.
+          ⚠️ 자막·요약에 **"삭제 불가"라고 쓰지 않는다.** 이 화면이 안 지우는 것과 영영 못
+             지우는 것은 다른 말인데, 보관·삭제 정책은 팀이 아직 안 정했다(§정직성).
+        */}
+        <dl className="flex flex-wrap items-center gap-x-7 gap-y-2 pt-4">
+          <Legend
+            label="음성"
+            value={formatGb(totals.voiceGb)}
+            dotClassName={isOver ? "bg-destructive" : "bg-foreground"}
+            hint="삭제 가능"
+          />
+          <Legend
+            label="자막·요약"
+            value={formatGb(totals.sttGb)}
+            dotClassName={isOver ? "bg-destructive/45" : "bg-foreground/35"}
+            hint="회의 기록"
+          />
+          {/*
+            ⚠️ 삭제 가능 용량은 **같은 줄 오른쪽 끝**에 둔다(`ml-auto`). 이 화면에 온 이유의
+               답이라 눈에 들어와야 하는데, 따로 칸을 만들면 카드 안에 카드가 생긴다.
+          */}
+          <div className="border-border ml-auto flex items-baseline gap-2 border-l pl-7">
+            <dt className="text-muted-foreground text-[13px] leading-5">삭제 가능</dt>
+            <dd className="text-[15px] leading-6 font-semibold tabular-nums">
+              {formatGb(freeableGb)}
+            </dd>
+            <dd className="text-muted-foreground text-[12px] leading-4">
+              {deletableCount > 0 ? `완료 프로젝트 ${deletableCount}개` : "완료 프로젝트 없음"}
+            </dd>
+          </div>
+        </dl>
       </div>
 
       {isOver && (
