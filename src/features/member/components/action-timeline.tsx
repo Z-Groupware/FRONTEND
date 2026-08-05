@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 import type { StatusTone } from "@/components/common/status-dot";
-import { ACTION_STATUS, ACTION_STATUS_LABEL } from "@/constants/domain";
+import { ACTION_DELAYED_LABEL, ACTION_STATUS, ACTION_STATUS_LABEL } from "@/constants/domain";
 import {
   buildActionTimeline,
   type TimelineActionInput,
@@ -15,11 +15,8 @@ import { cn } from "@/lib/utils";
  * ⚠️ 상태는 색만으로 전하지 않는다 — 바의 `aria-label`에 상태·기간을 함께 넣는다(§a11y).
  */
 
-/** `지연`은 상태가 아니라 파생값이라 라벨맵에 없다 — 여기서만 문자열로 둔다(member-action-item 선례). */
-const DELAYED_LABEL = "지연";
-
 const TONE_LABEL: Record<StatusTone, string> = {
-  DELAYED: DELAYED_LABEL,
+  DELAYED: ACTION_DELAYED_LABEL,
   IN_PROGRESS: ACTION_STATUS_LABEL[ACTION_STATUS.IN_PROGRESS],
   TODO: ACTION_STATUS_LABEL[ACTION_STATUS.TODO],
   DONE: ACTION_STATUS_LABEL[ACTION_STATUS.DONE],
@@ -173,7 +170,7 @@ export function ActionTimeline({
 /** 축과 짝이 되는 범례 — 카드 헤더 우측에 둔다(색=상태 의미를 한 줄로). */
 export function ActionTimelineLegend() {
   const legend: { tone: StatusTone; label: string }[] = [
-    { tone: "DELAYED", label: DELAYED_LABEL },
+    { tone: "DELAYED", label: TONE_LABEL.DELAYED },
     { tone: "IN_PROGRESS", label: TONE_LABEL.IN_PROGRESS },
     { tone: "TODO", label: TONE_LABEL.TODO },
   ];

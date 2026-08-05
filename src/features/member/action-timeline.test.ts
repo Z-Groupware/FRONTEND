@@ -88,4 +88,19 @@ describe("buildActionTimeline", () => {
     expect(model?.bars[0]?.ddayLabel).toBe("D-day");
     expect(model?.todayLeftPct).toBeCloseTo(50);
   });
+
+  it("범위가 달을 넘으면 monthLabel에 두 달을 적는다", () => {
+    const crossMonth: TimelineActionInput = {
+      ...OVERDUE,
+      id: "a4",
+      startDate: "2026-07-31",
+      dueDate: "2026-08-05",
+      tone: "IN_PROGRESS",
+    };
+    const model = buildActionTimeline([crossMonth], TODAY);
+
+    // 07-31 ~ 08-05 = 6일
+    expect(model?.days).toHaveLength(6);
+    expect(model?.monthLabel).toBe("7~8월");
+  });
 });

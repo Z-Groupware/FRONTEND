@@ -5,7 +5,7 @@ import type { StatusTone } from "@/components/common/status-dot";
  * 나중에 프로젝트/팀 액션 상세의 로드맵으로 추출할 때 이 파일이 재사용 씨앗이다.
  */
 
-/** 타임라인 한 줄의 입력 계약(제네릭 — 멤버 액션에 종속되지 않는다). */
+/** 타임라인 한 줄의 입력 계약 — 멤버 액션 등 특정 도메인 타입에 묶이지 않는 범용 입력이다. */
 export interface TimelineActionInput {
   id: string;
   title: string;
@@ -97,6 +97,13 @@ function formatPeriod(start: Date, due: Date): string {
   return s === e ? s : `${s}~${e}`;
 }
 
+/** 축 머리 라벨 — 범위가 달을 넘으면 `7~8월`, 아니면 `8월`. */
+function formatMonthLabel(rangeStart: Date, rangeEnd: Date): string {
+  const startMonth = rangeStart.getMonth() + 1;
+  const endMonth = rangeEnd.getMonth() + 1;
+  return startMonth === endMonth ? `${startMonth}월` : `${startMonth}~${endMonth}월`;
+}
+
 /**
  * 액션들을 오늘 기준 기간 타임라인 모델로 만든다. 비면 `null`.
  * 축 범위 = `min(시작일, 오늘) ~ max(마감일, 오늘)` — 오늘선이 항상 보이도록 오늘을 포함한다.
@@ -149,6 +156,6 @@ export function buildActionTimeline(
     bars,
     // 오늘 칸의 왼쪽 끝이 아니라 **칸 중앙**(+0.5)에 선을 놓는다.
     todayLeftPct: (diffDays(rangeStart, todayMid) + 0.5) * dayPct,
-    monthLabel: `${rangeStart.getMonth() + 1}월`,
+    monthLabel: formatMonthLabel(rangeStart, rangeEnd),
   };
 }
