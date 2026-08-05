@@ -71,4 +71,18 @@ describe("findFaqCandidates", () => {
       expect(findFaqCandidates(entry.question).map((found) => found.id)).toContain(entry.id);
     }
   });
+
+  /*
+    ⚠️ **되돌릴 수 없는 일에 대한 질문은 반드시 그 항목에 닿아야 한다.** 답에만 적어 두고
+       키워드를 안 넣었더니 `임시저장 있나요`가 데이터 항목으로, `인수인계 취소`가 환불로
+       갔다 — 초안으로 저장된다고 잘못 알고 [생성]을 누르면 그 자리에서 결재가 올라간다.
+  */
+  it.each([
+    "임시저장 있나요",
+    "인수인계 초안으로 저장되나요",
+    "인수인계 취소할 수 있나요",
+    "인수인계 되돌릴 수 있나요",
+  ])("`%s`는 인수인계 절차 항목에 닿는다", (question) => {
+    expect(findFaqCandidates(question).map((found) => found.id)).toContain("handover-flow");
+  });
 });
