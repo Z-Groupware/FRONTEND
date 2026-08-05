@@ -23,7 +23,7 @@ export const START_ENTRIES: readonly FaqEntry[] = [
   {
     id: "company-code",
     category: FAQ_CATEGORY.START,
-    question: "기업 코드가 뭔갑니다?",
+    question: "기업 코드가 뭔가요?",
     keywords: ["기업코드", "기업 코드", "회사코드", "코드는 어디", "코드가 뭐"],
     answer:
       "회사를 가리키는 식별자입니다. 직접 지어 넣는 값이 아니라 등록이 승인되면 메일로 받습니다.\n\n한 번 입력하면 브라우저가 기억해서, 다음부터는 이메일과 비밀번호만 넣으면 됩니다.",
