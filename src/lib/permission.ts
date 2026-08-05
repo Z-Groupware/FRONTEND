@@ -63,10 +63,18 @@ export function canManageMembers(actor: Actor): boolean {
 }
 
 /**
+ * 사내 공지 작성·수정 — OWNER이거나 Admin을 겸한 사람.
+ * ⚠️ 열람은 전원 가능하다(공지는 다 같이 본다) — 작성·수정만 이 권한으로 막는다.
+ */
+export function canManageNotice(actor: Actor): boolean {
+  return actor.role === ROLE.OWNER || isAdmin(actor);
+}
+
+/**
  * 구독·결제 — OWNER이거나 Admin을 겸한 사람.
  *
- * ⚠️ 이 판정 때문에 결제 화면이 `/owner/billing`이 아니라 **`/billing`** 이다
- *    (DECISIONS §(shared)). 역할 경로에 두면 겸직자에게 주소가 거짓말을 한다.
+ * ⚠️ 이 판정 때문에 관리 기능이 `/owner/*`가 아니라 **`/manage/*`** 하나로 모여 있다
+ *    (DECISIONS §관리 기능). 역할 경로에 두면 겸직자에게 주소가 거짓말을 한다.
  * ⚠️ 화면에서 버튼을 감추는 건 UX일 뿐이다 — **Server Action에서 다시 본다**.
  */
 export function canManageBilling(actor: Actor): boolean {

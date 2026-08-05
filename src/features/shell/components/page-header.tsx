@@ -16,6 +16,11 @@ interface PageHeaderProps {
    * 목록에서 상세로 들어가는 것처럼 한 단계 더 깊은 화면에서만 쓴다.
    */
   backTo?: { href: string; label: string };
+  /**
+   * `backTo`가 없어도 뒤로가기 화살표 **자리만 비워 둔다**. 같은 헤더에서 목록↔상세를 오갈 때
+   * 화살표가 생겼다 사라지며 제목이 좌우로 밀리는 덜컥거림을 막는다 — 자리는 늘 같고 화살표만 토글된다.
+   */
+  reserveBack?: boolean;
   /** 오른쪽 액션 — 버튼 하나 또는 몇 개. 없으면 비워둔다 */
   action?: ReactNode;
 }
@@ -34,11 +39,18 @@ interface PageHeaderProps {
  * ⚠️ 높이(56px)는 **사이드바 로고 줄과 같은 값**이다. 한쪽만 고치면 두 경계선이 어긋나
  *    화면 왼쪽 위에 계단이 생긴다 — 바꿀 때 `role-sidebar`·`system-sidebar`를 같이 본다.
  */
-export function PageHeader({ title, icon: Icon, meta, backTo, action }: PageHeaderProps) {
+export function PageHeader({
+  title,
+  icon: Icon,
+  meta,
+  backTo,
+  reserveBack,
+  action,
+}: PageHeaderProps) {
   return (
     <header className="border-border bg-background flex h-[56px] shrink-0 items-center gap-3 border-b px-8">
       {/* 화살표는 제목 왼쪽에 나란히 둔다 — 제목 위에 경로를 한 줄 더 쓰지 않는다 */}
-      {backTo && (
+      {backTo ? (
         <Link
           href={backTo.href}
           aria-label={`${backTo.label}(으)로 돌아가기`}
@@ -46,7 +58,10 @@ export function PageHeader({ title, icon: Icon, meta, backTo, action }: PageHead
         >
           <ArrowLeft className="size-[18px]" />
         </Link>
-      )}
+      ) : reserveBack ? (
+        /* 화살표 없이 자리만 차지 — 제목이 밀리지 않게(위 reserveBack 주석). 크기는 위 Link와 같다 */
+        <span aria-hidden className="-ml-1.5 size-8 shrink-0" />
+      ) : null}
 
       {/*
         ⚠️ 표식과 제목을 **한 덩어리로 묶고 사이를 넉넉히**(16px) 준다. 헤더 기본 간격(12px)을

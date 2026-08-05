@@ -1,7 +1,7 @@
 // server.ts는 "server-only"를 import한다 — jest(기본 조건)에선 그 모듈이 던지므로 비운다.
 jest.mock("server-only", () => ({}));
 
-import { COMPANY_STATUS } from "@/constants/domain";
+import { COMPANY_SORT, COMPANY_STATUS } from "@/constants/domain";
 
 import { MOCK_BILLING_OVERVIEW } from "./mock/billing";
 import { listMockCompanies } from "./mock/companies";
@@ -71,22 +71,17 @@ describe("기업 관리 목록 — 검색·필터·페이지네이션", () => {
     expect(result.items.every((company) => company.status === COMPANY_STATUS.ACTIVE)).toBe(true);
   });
 
-  it("검색어·상태를 함께 걸면 둘 다 만족하는 것만 남는다", async () => {
+  it("상태 필터와 정렬을 함께 걸면 상태로 거르고 그 순서로 돌려준다", async () => {
     const result = await getManagedCompanies(
-      { keyword: "테크", status: COMPANY_STATUS.ACTIVE },
+      { status: COMPANY_STATUS.ACTIVE, sort: COMPANY_SORT.MEMBERS_DESC },
       1,
       100,
     );
 
-    expect(result.items.length).toBeGreaterThan(0);
-    expect(
-      result.items.every(
-        (company) =>
-          (company.name.toLowerCase().includes("테크") ||
-            company.code.toLowerCase().includes("테크")) &&
-          company.status === COMPANY_STATUS.ACTIVE,
-      ),
-    ).toBe(true);
+    expect(result.items.every((company) => company.status === COMPANY_STATUS.ACTIVE)).toBe(true);
+    // 구성원 많은순 정렬 — 내림차순으로 정렬돼 있어야 한다.
+    const memberCounts = result.items.map((company) => company.memberCount);
+    expect(memberCounts).toEqual([...memberCounts].sort((a, b) => b - a));
   });
 });
 
