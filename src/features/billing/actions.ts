@@ -66,11 +66,11 @@ export async function confirmSubscriptionAction(): Promise<ActionResult> {
          `return { isSuccess: false, message: toFailureMessage("EXCEED_MAX_CARD_LIMIT") }`
     */
     /*
-      ⚠️ **구독 상태를 읽는 화면을 전부 갱신한다.** `/billing`만 갱신하면, 결제로 상태가
+      ⚠️ **구독 상태를 읽는 화면을 전부 갱신한다.** `/manage/billing`만 갱신하면, 결제로 상태가
          바뀌었는데 구독 재개 화면(`/subscription`)은 여전히 끊긴 화면을 보여준다 —
          둘이 같은 값을 읽는다.
     */
-    revalidatePath("/billing");
+    revalidatePath("/manage/billing");
     revalidatePath("/subscription");
     return { isSuccess: true };
   }
@@ -93,7 +93,7 @@ export async function registerCardAction(
   if (!(await assertCanManage())) return FORBIDDEN;
 
   if (isMock) {
-    revalidatePath("/billing");
+    revalidatePath("/manage/billing");
     return {
       isSuccess: true,
       method: {
@@ -115,7 +115,7 @@ export async function setDefaultMethodAction(methodId: string): Promise<ActionRe
   if (!(await assertCanManage())) return FORBIDDEN;
 
   if (isMock) {
-    revalidatePath("/billing");
+    revalidatePath("/manage/billing");
     return { isSuccess: true };
   }
 
@@ -134,7 +134,7 @@ export async function removeMethodAction(methodId: string): Promise<ActionResult
   if (!(await assertCanManage())) return FORBIDDEN;
 
   if (isMock) {
-    revalidatePath("/billing");
+    revalidatePath("/manage/billing");
     return { isSuccess: true };
   }
 
@@ -153,7 +153,7 @@ export async function toggleCancelAction(isCanceling: boolean): Promise<ActionRe
 
   if (isMock) {
     // 해지·재개도 구독 상태를 바꾼다 — 재개 화면이 같은 값을 읽는다
-    revalidatePath("/billing");
+    revalidatePath("/manage/billing");
     revalidatePath("/subscription");
     return { isSuccess: true };
   }
