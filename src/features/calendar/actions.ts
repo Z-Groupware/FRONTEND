@@ -4,8 +4,13 @@ import { revalidatePath } from "next/cache";
 
 import { isMock } from "@/mocks/config";
 
-import { addMockTodo, toggleMockCompletion } from "./mock/events";
-import type { PersonalCalendarEvent, PersonalTodoDraft, PersonalTodoFormErrors } from "./types";
+import { addMockTodo, findMockEvent, toggleMockCompletion } from "./mock/events";
+import {
+  CALENDAR_ITEM_TAG,
+  type PersonalCalendarEvent,
+  type PersonalTodoDraft,
+  type PersonalTodoFormErrors,
+} from "./types";
 import { validatePersonalTodoDraft } from "./validate";
 
 const CALENDAR_PATH = "/app/calendar";
@@ -53,13 +58,18 @@ export async function createPersonalTodoAction(
 
 /**
  * Todo 완료 토글.
- * ⚠️ PERSONAL_ACTION의 완료 여부는 보드(액션 도메인)에서 상태를 바꿀 때 따라온다 —
- *    이 액션은 PERSONAL_TODO id만 받는다고 가정한다.
+ * ⚠️ PERSONAL_ACTION의 완료 여부는 보드(액션 도메인)에서 상태를 바꿀 때 따라온다 — 화면이
+ *    PERSONAL_TODO id만 보낸다고 가정하지 않고, **여기서도 다시 확인**한다(태그가 다르면 거부).
  */
 export async function toggleTodoCompletionAction(id: string): Promise<void> {
   if (!isMock) {
-    // ⚠️ 미구현 — API 스펙 확정 후 BFF 경로로 완료 처리 요청을 보낸다.
+    // ⚠️ 미구현 — API 스펙 확정 후 BFF 경로로 완료 처리 요청을 보낸다(같은 태그 검증을 거기서도 한다).
     throw new Error("완료 처리 API가 아직 연결되지 않았습니다.");
+  }
+
+  const target = findMockEvent(id);
+  if (!target || target.tag !== CALENDAR_ITEM_TAG.PERSONAL_TODO) {
+    throw new Error("개인 Todo만 완료 처리할 수 있어요.");
   }
 
   toggleMockCompletion(id);

@@ -101,21 +101,6 @@
   color: var(--primary);
 }
 
-.rbc-toolbar button {
-  color: var(--foreground);
-  border-color: var(--border);
-  background-color: var(--card);
-}
-
-.rbc-toolbar button:hover {
-  background-color: var(--accent);
-}
-
-.rbc-toolbar button.rbc-active {
-  background-color: var(--foreground);
-  color: var(--background);
-}
-
 .rbc-overlay {
   background-color: var(--popover);
   border-color: var(--border);

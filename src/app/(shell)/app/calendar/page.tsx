@@ -13,7 +13,10 @@ const MONTH_PARAM_PATTERN = /^\d{4}-\d{2}$/;
 function parseMonthParam(raw: string | undefined): Date {
   if (raw && MONTH_PARAM_PATTERN.test(raw)) {
     const [yearPart, monthPart] = raw.split("-");
-    return new Date(Number(yearPart), Number(monthPart) - 1, 1);
+    const month = Number(monthPart);
+    if (month >= 1 && month <= 12) {
+      return new Date(Number(yearPart), month - 1, 1);
+    }
   }
   return new Date();
 }
