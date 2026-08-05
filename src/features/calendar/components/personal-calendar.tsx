@@ -10,6 +10,7 @@ import { useCallback, useMemo } from "react";
 import { Calendar, dateFnsLocalizer, type EventPropGetter } from "react-big-calendar";
 
 import { CALENDAR_ITEM_TAG, CALENDAR_ITEM_TAG_LABEL, type PersonalCalendarEvent } from "../types";
+import { CalendarToolbar } from "./calendar-toolbar";
 
 const localizer = dateFnsLocalizer({
   format,
@@ -80,6 +81,7 @@ export function PersonalCalendar({ events, month }: PersonalCalendarProps) {
       date={currentDate}
       onNavigate={handleNavigate}
       eventPropGetter={eventPropGetter}
+      components={{ toolbar: CalendarToolbar }}
       popup
       style={{ height: "calc(100vh - 216px)" }}
       messages={{
