@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 
 import { DashboardMeetingItem } from "@/components/common/dashboard-meeting-item";
-import { MemberActionItem } from "@/features/member/components/member-action-item";
+import { isDelayed } from "@/constants/domain";
+import type { TimelineActionInput } from "@/features/member/action-timeline";
+import { ActionTimeline, ActionTimelineLegend } from "@/features/member/components/action-timeline";
 import { DUE_SOON_BOX_MIN_HEIGHT, MEETING_BOX_HEIGHT } from "@/features/member/lib";
 import { getMemberDashboardOverview } from "@/features/member/server";
 
@@ -12,29 +14,35 @@ export const metadata: Metadata = {
 export default async function MemberDashboardPage() {
   const { dueSoonActions, attendedMeetings } = await getMemberDashboardOverview();
 
+  // 지연은 상태가 아니라 마감 경과 파생값이라 여기서 계산해 tone으로 넘긴다(§도메인 상수).
+  const timelineItems: TimelineActionInput[] = dueSoonActions.map((action) => ({
+    id: action.id,
+    title: action.title,
+    tag: action.projectTag,
+    tagColor: action.color,
+    startDate: action.startDate,
+    dueDate: action.dueDate,
+    tone: isDelayed(action) ? "DELAYED" : action.status,
+    href: `/app/actions/${action.id}`,
+  }));
+
   return (
     <main className="scrollbar-hidden flex min-h-0 flex-1 flex-col overflow-y-auto px-8 py-7">
       <div className="mx-auto flex min-h-0 w-full max-w-[1080px] flex-1 flex-col gap-4">
-        {/* D-7 액션 — 남는 세로 공간을 채우고(최소 높이 보장) 넘치면 내부 스크롤 */}
+        {/* 처리할 액션 — 시작일→마감일 기간 타임라인. 남는 세로 공간을 채우고 넘치면 내부 스크롤 */}
         <section
           className="border-border bg-card flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border"
           style={{ minHeight: DUE_SOON_BOX_MIN_HEIGHT }}
         >
           <div className="border-border flex shrink-0 items-center justify-between border-b px-4 py-3">
-            <h2 className="text-sm font-semibold">D-7 액션</h2>
-            <span className="text-muted-foreground text-xs">마감 임박·연체</span>
+            <h2 className="text-sm font-semibold">처리할 액션</h2>
+            <ActionTimelineLegend />
           </div>
-          {dueSoonActions.length === 0 ? (
-            <p className="text-muted-foreground flex flex-1 items-center justify-center text-sm">
-              마감이 임박한 액션이 없습니다.
-            </p>
-          ) : (
-            <ul className="scrollbar-hidden flex-1 overflow-y-auto">
-              {dueSoonActions.map((action, index) => (
-                <MemberActionItem key={action.id} action={action} showDivider={index > 0} />
-              ))}
-            </ul>
-          )}
+          <ActionTimeline
+            items={timelineItems}
+            today={new Date()}
+            emptyLabel="처리할 액션이 없습니다."
+          />
         </section>
 
         {/* 참석 회의 — 최신 5건 고정 */}
