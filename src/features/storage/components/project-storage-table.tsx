@@ -87,12 +87,19 @@ export function ProjectStorageTable({
             </colgroup>
             <thead>
               {/*
-                ⚠️ **일곱 열 모두 가운데**다. 열 폭이 고정이라 머리와 칸을 같은 정렬로 두면
-                   두 글자의 **가운데가 한 세로선**에 놓인다 — 한쪽만 끝에 붙이면 글자 길이가
-                   달라 축이 어긋나 보인다.
+                ⚠️ **이름만 왼쪽이고 나머지는 가운데**다. 열 폭이 고정이라 머리와 칸에 같은
+                   정렬을 주면 두 글자의 **가운데가 한 세로선**에 놓인다 — 한쪽만 끝에 붙이면
+                   글자 길이가 달라 축이 어긋나 보인다.
+                ⚠️ 이름은 예외다. 길이가 제각각이라 가운데로 모으면 왼쪽 끝이 들쭉날쭉해져
+                   세로로 훑을 수가 없다 — 목록에서 사람이 가장 먼저 찾는 열이다.
               */}
-              <tr className="text-muted-foreground border-border border-b text-[12px] leading-4">
-                <th className="px-6 py-3 text-center font-normal">프로젝트</th>
+              {/*
+                ⚠️ 머리에 **섹션 띠**(`--secondary`)를 깐다. 보더 한 줄만으로는 머리와 본문이
+                   같은 면으로 읽혀서, 표가 카드 안에서 어디부터 시작하는지 흐리다 —
+                   색을 늘리는 게 아니라 §디자인 토큰이 정해 둔 표면을 쓰는 것이다.
+              */}
+              <tr className="text-muted-foreground bg-secondary/50 border-border border-b text-[12px] leading-4">
+                <th className="px-6 py-3 text-left font-normal">프로젝트</th>
                 {/*
                   ⚠️ 상태는 **자기 열**이다. 이름 옆에 붙여 두면 이름 길이에 따라 좌우로 밀려서
                      세로로 훑을 수가 없다 — 지울 수 있는 줄을 고르는 게 이 표의 일이라
@@ -152,7 +159,7 @@ function Row({
 
   return (
     <tr className="border-border hover:bg-secondary/40 transition-colors not-first:border-t">
-      <td className="px-6 py-3.5 text-center">
+      <td className="px-6 py-3.5">
         {/*
           ⚠️ 이름은 **프로젝트로 가는 링크**다. 지울지 판단하려면 무슨 프로젝트였는지 봐야 하는데,
              이름만 있으면 검색으로 다시 찾아 들어가야 한다.
