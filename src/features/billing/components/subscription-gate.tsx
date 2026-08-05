@@ -51,6 +51,31 @@ export function SubscriptionGate({ config, status, role, canManage }: Subscripti
     return (
       <div className="bg-background bg-dot-grid flex min-h-dvh flex-col">
         <BrandBar />
+
+        {/*
+          ⚠️ **같은 말을 창 뒤에도 그대로 둔다.** 창은 포털이라 서버가 그린 HTML에 한 글자도
+             안 들어간다 — 이것만 두면 하이드레이션 전까지, 그리고 번들이 늦거나 실패하면
+             영영, 로고 한 줄만 있는 빈 화면이 남는다. 왜 못 들어오는지는 JS 없이도
+             읽혀야 한다(§정직성).
+          ⚠️ 이 페이지의 **`h1`도 여기 있다.** 창 제목은 `h2`로 나가서(Base UI `Dialog.Title`),
+             이게 없으면 권한 있는 사람의 화면에는 있는 제목이 권한 없는 사람에게만 사라진다.
+          ⚠️ **결제 칸은 여전히 안 그린다.** 눌러도 못 하는 버튼을 주는 건 안내가 아니라
+             막다른 길이다 — 말만 남기고 조작은 창이 준다.
+        */}
+        <main className="flex min-h-0 flex-1 flex-col overflow-y-auto px-[21px] py-6">
+          <div className="m-auto flex w-full max-w-[420px] flex-col gap-[7px] pb-16 text-center">
+            <h1 className="text-2xl leading-[30px] font-semibold tracking-[-0.48px] break-keep">
+              {status === SUBSCRIPTION_STATUS.UNPAID
+                ? "결제가 확인되지 않았습니다"
+                : "구독이 종료되었습니다"}
+            </h1>
+            <p className="text-muted-foreground text-[13px] leading-5 break-keep">
+              결제가 끝나야 워크스페이스가 열립니다. 결제는 대표 또는 Admin 권한을 가진 분만 할 수
+              있습니다.
+            </p>
+          </div>
+        </main>
+
         <SubscriptionBlockedDialog status={status} />
       </div>
     );
