@@ -192,7 +192,9 @@ export function StorageSummary({
              하면 한쪽 문턱만 바뀌었을 때 서로 다른 숫자를 말하게 된다.
         */
         <p className="border-destructive/30 bg-destructive/5 mt-5 flex items-start gap-2 rounded-lg border px-3.5 py-3 text-[12px] leading-[18px] break-keep">
-          <CircleAlert className="text-destructive mt-px size-3.5 shrink-0" aria-hidden />
+          <span className="flex h-[18px] shrink-0 items-center">
+            <CircleAlert className="text-destructive size-3.5" aria-hidden />
+          </span>
           <span>
             <span className="font-semibold">{formatGb(totals.overageGb)} 초과</span> — 현재까지{" "}
             {formatWon(totals.overageAmount)}. 다음 결제일에 기본료와 합산 청구됩니다. 음성을

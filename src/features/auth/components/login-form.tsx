@@ -163,7 +163,9 @@ export function LoginForm() {
             role="status"
             className="border-border bg-secondary text-muted-foreground mt-3 flex items-start gap-2 rounded-lg border px-3.5 py-3 text-[12px] leading-[18px] break-keep"
           >
-            <Info className="mt-px size-3.5 shrink-0" aria-hidden />
+            <span className="flex h-[18px] shrink-0 items-center">
+              <Info className="size-3.5" aria-hidden />
+            </span>
             {state.notice}
           </p>
         )}

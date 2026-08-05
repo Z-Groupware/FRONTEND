@@ -84,7 +84,9 @@ function UsageBanner({ tokens, storage }: { tokens: UsageAxis; storage: UsageAxi
     return (
       /* ⚠️ 표식을 앞에 둔다 — 글자만 있으면 본문에 섞여 그냥 설명으로 읽힌다 */
       <p className="border-destructive/30 bg-destructive/5 mt-5 flex items-start gap-2 rounded-lg border px-3.5 py-3 text-[12px] leading-[18px] break-keep">
-        <CircleAlert className="text-destructive mt-px size-3.5 shrink-0" aria-hidden />
+        <span className="flex h-[18px] shrink-0 items-center">
+          <CircleAlert className="text-destructive size-3.5" aria-hidden />
+        </span>
         <span>
           <span className="font-semibold">
             {overAxes.map((axis) => axis.label).join(" · ")} 포함량 초과
@@ -111,7 +113,15 @@ function UsageBanner({ tokens, storage }: { tokens: UsageAxis; storage: UsageAxi
          이미 돈이 더 나가는 줄 읽힌다 — 색으로 알리는 건 에러뿐이다(§디자인 토큰).
     */
     <p className="border-border bg-secondary mt-5 flex items-start gap-2 rounded-lg border px-3.5 py-3 text-[12px] leading-[18px] break-keep">
-      <Info className="text-muted-foreground mt-px size-3.5 shrink-0" aria-hidden />
+      {/*
+        ⚠️ 아이콘을 **첫 줄 높이(18px) 상자에 넣어 가운데** 맞춘다. `mt-px`로 눈대중하면
+           14px 아이콘이 12px 글자보다 한 칸 떠 보인다 — 둘은 중심이 다르다.
+        ⚠️ `items-center`(부모)로 하면 안 된다. 문구가 두 줄이 되는 순간 아이콘이
+           가운데로 내려가 첫 줄과 안 맞는다.
+      */}
+      <span className="flex h-[18px] shrink-0 items-center">
+        <Info className="text-muted-foreground size-3.5" aria-hidden />
+      </span>
       <span>
         {/*
           ⚠️ 문턱은 **상수에서 읽는다.** `80%`라고 적어 두면 문턱을 조정할 때 띄우는 조건만
