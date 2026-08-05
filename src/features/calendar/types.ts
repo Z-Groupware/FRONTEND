@@ -19,6 +19,16 @@ export const CALENDAR_ITEM_TAG_LABEL: Record<CalendarItemTag, string> = {
   PERSONAL_ACTION: "개인 액션",
 };
 
+/** 완료 여부 배지 문구 — Todo·액션 공통(`calendar-event-list-item.tsx`). */
+export const CALENDAR_COMPLETION_LABEL = {
+  DONE: "완료",
+  IN_PROGRESS: "진행중",
+} as const;
+
+export function getCalendarCompletionLabel(isCompleted: boolean): string {
+  return isCompleted ? CALENDAR_COMPLETION_LABEL.DONE : CALENDAR_COMPLETION_LABEL.IN_PROGRESS;
+}
+
 /** 캘린더 한 칸에 그려지는 항목. react-big-calendar의 start/end 접근자가 그대로 이 필드명을 쓴다. */
 export interface PersonalCalendarEvent {
   id: string;

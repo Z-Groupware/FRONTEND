@@ -2,7 +2,12 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 
 import { CALENDAR_TAG_DOT_COLOR } from "../tag-colors";
-import { CALENDAR_ITEM_TAG, CALENDAR_ITEM_TAG_LABEL, type PersonalCalendarEvent } from "../types";
+import {
+  CALENDAR_ITEM_TAG,
+  CALENDAR_ITEM_TAG_LABEL,
+  getCalendarCompletionLabel,
+  type PersonalCalendarEvent,
+} from "../types";
 
 interface CalendarEventListItemProps {
   event: PersonalCalendarEvent;
@@ -61,7 +66,7 @@ export function CalendarEventListItem({ event, onToggleCompletion }: CalendarEve
                 : "bg-status-progress/12 text-status-progress",
             )}
           >
-            {event.isCompleted ? "완료" : "진행중"}
+            {getCalendarCompletionLabel(event.isCompleted)}
           </span>
         </div>
       </div>
