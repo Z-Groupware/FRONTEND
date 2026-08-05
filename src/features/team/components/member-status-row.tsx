@@ -12,10 +12,11 @@ interface MemberStatusRowProps {
 
 /**
  * "팀원 현황" 테이블의 한 행. `<TableBody>` 안에서만 쓴다(루트가 `<tr>`).
- * 아바타 색은 하드코딩하지 않고 팀 공용 `useProfileAvatar`(id 해시)로 만든다.
+ * 아바타 색은 하드코딩하지 않고 팀 공용 `useProfileAvatar`로 만든다 — 키는 **id 하나**라
+ * 이름이 바뀌어도, 다른 화면에서 봐도 같은 색이다.
  */
 export function MemberStatusRow({ member }: MemberStatusRowProps) {
-  const avatar = useProfileAvatar(member.name, member.id, 28);
+  const avatar = useProfileAvatar(member.id, 28);
   const isOnVacation = member.status === MEMBER_STATUS.VACATION;
 
   return (

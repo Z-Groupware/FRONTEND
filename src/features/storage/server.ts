@@ -34,7 +34,7 @@ const MOCK: StorageOverview = {
       meetingCount: 24,
       voiceGb: 9.1,
       sttGb: 1.4,
-      oldestRecordedAt: "2026-05-03",
+      lastRecordedAt: "2026-08-03",
       status: PROJECT_STATUS.IN_PROGRESS,
     },
     {
@@ -43,7 +43,7 @@ const MOCK: StorageOverview = {
       meetingCount: 31,
       voiceGb: 10.9,
       sttGb: 1.7,
-      oldestRecordedAt: "2026-03-08",
+      lastRecordedAt: "2026-07-29",
       status: PROJECT_STATUS.IN_PROGRESS,
     },
     {
@@ -52,7 +52,7 @@ const MOCK: StorageOverview = {
       meetingCount: 18,
       voiceGb: 6.8,
       sttGb: 1.1,
-      oldestRecordedAt: "2026-06-14",
+      lastRecordedAt: "2026-08-01",
       status: PROJECT_STATUS.IN_PROGRESS,
     },
     {
@@ -61,7 +61,7 @@ const MOCK: StorageOverview = {
       meetingCount: 12,
       voiceGb: 4.5,
       sttGb: 1.3,
-      oldestRecordedAt: "2026-02-20",
+      lastRecordedAt: "2026-03-27",
       status: PROJECT_STATUS.DONE,
     },
     {
@@ -70,7 +70,7 @@ const MOCK: StorageOverview = {
       meetingCount: 9,
       voiceGb: 3.6,
       sttGb: 1.3,
-      oldestRecordedAt: "2026-01-12",
+      lastRecordedAt: "2025-11-14",
       status: PROJECT_STATUS.DONE,
     },
   ],
@@ -80,5 +80,5 @@ export async function getStorageOverview(): Promise<StorageOverview> {
   if (isMock) return MOCK;
 
   // TODO(BE 협의): `GET /companies/me/storage` → { voiceGb, sttGb, projects[] }
-  throw new Error("녹음 용량을 불러오지 못했습니다");
+  throw new Error("저장소 정보를 불러오지 못했습니다");
 }

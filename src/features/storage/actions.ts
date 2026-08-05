@@ -1,7 +1,5 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
-
 import { getViewer } from "@/features/shell/viewer";
 import { canManageStorage } from "@/lib/permission";
 import { isMock } from "@/mocks/config";
@@ -46,10 +44,11 @@ async function assertCanManage(): Promise<boolean> {
 }
 
 /**
- * 한 프로젝트의 **음성 파일만** 지운다.
+ * 한 프로젝트의 저장 기록을 지운다 — **음성과 자막·요약 전부.**
  *
- * ⚠️ 자막·요약·액션은 그대로 둔다. 회의에서 남은 결과물이라, 같이 지우면 지식이 사라진다
- *    — 이 화면이 "녹음 용량"인 이유다(CLAUDE.md §브라우저 API: 음성=아카이브 자산).
+ * ⚠️ 자막·요약도 지운다(2026-08-05 팀 결정). 보관 기한이 없는데 이것만 남기면 저장량이
+ *    단조 증가해 포함량이 반드시 부족해지고 초과 요금만 계속 늘어난다.
+ *    대신 **무엇을 잃는지**(회의 기록·액션 출처 추적) 화면이 분명히 말하고 나서 지운다.
  * ⚠️ **끝난 프로젝트만** 지운다. 화면에서 버튼을 감추는 것만으로는 부족해서 여기서 다시 본다.
  */
 export async function deleteRecordingsAction(tag: string): Promise<StorageActionResult> {
@@ -64,15 +63,20 @@ export async function deleteRecordingsAction(tag: string): Promise<StorageAction
 
   if (!target) return { isSuccess: false, message: "프로젝트를 찾지 못했습니다" };
   if (!canDeleteRecordings(target)) {
-    return { isSuccess: false, message: "끝난 프로젝트의 녹음만 지울 수 있습니다" };
+    return { isSuccess: false, message: "끝난 프로젝트만 삭제할 수 있습니다" };
   }
 
   if (isMock) {
-    revalidatePath("/manage/storage");
-    // ⚠️ 목이라 실제로는 아무것도 안 지운다 — 화면은 지운 것처럼 움직인다(§정직성)
+    /*
+      ⚠️ **목에서는 `revalidatePath`를 부르지 않는다.** 목은 실제로 아무것도 안 지우므로,
+         다시 읽어 오면 방금 지운 줄이 그대로 돌아와 **화면이 되돌아간다** — 눌러도 아무
+         일도 안 일어난 것처럼 보인다. 지운 결과는 화면의 상태가 들고 있다.
+      ⚠️ 연동되면 여기서 `revalidatePath("/manage/storage")`를 부르고, 화면 쪽 `useState`를
+         지운다(`storage-view.tsx`) — 그때는 서버가 준 값이 정본이다.
+    */
     return { isSuccess: true };
   }
 
-  // TODO(BE 협의): `DELETE /companies/me/storage/projects/{tag}/recordings`
-  return { isSuccess: false, message: "녹음을 지우지 못했습니다" };
+  // TODO(BE 협의): `DELETE /companies/me/storage/projects/{tag}`
+  return { isSuccess: false, message: "삭제하지 못했습니다" };
 }

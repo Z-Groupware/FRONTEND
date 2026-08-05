@@ -19,7 +19,7 @@ const project = (patch: Partial<ProjectStorage> = {}): ProjectStorage => ({
   meetingCount: 10,
   voiceGb: 5,
   sttGb: 1,
-  oldestRecordedAt: "2026-01-01",
+  lastRecordedAt: "2026-01-01",
   status: PROJECT_STATUS.IN_PROGRESS,
   ...patch,
 });
@@ -99,42 +99,67 @@ describe("canDeleteRecordings", () => {
     expect(canDeleteRecordings(project({ status: PROJECT_STATUS.TODO }))).toBe(false);
   });
 
-  it("음성이 0이면 지울 게 없다 — 눌러도 아무 일이 없는 버튼은 두지 않는다", () => {
-    expect(canDeleteRecordings(project({ status: PROJECT_STATUS.DONE, voiceGb: 0 }))).toBe(false);
+  it("남은 게 하나도 없으면 지울 게 없다 — 눌러도 아무 일이 없는 버튼은 두지 않는다", () => {
+    expect(
+      canDeleteRecordings(project({ status: PROJECT_STATUS.DONE, voiceGb: 0, sttGb: 0 })),
+    ).toBe(false);
+  });
+
+  /* ⚠️ 음성을 이미 지웠어도 자막·요약이 남아 있으면 지울 게 있다 */
+  it("음성이 0이어도 자막·요약이 남아 있으면 지울 수 있다", () => {
+    expect(
+      canDeleteRecordings(project({ status: PROJECT_STATUS.DONE, voiceGb: 0, sttGb: 3 })),
+    ).toBe(true);
   });
 });
 
 describe("freedGb", () => {
-  it("**음성만** 센다 — 자막·요약은 지우지 않으므로 비지 않는다", () => {
-    expect(freedGb(project({ voiceGb: 7, sttGb: 3 }))).toBe(7);
+  /*
+    ⚠️ 자막·요약도 센다(2026-08-05 팀 결정). 보관 기한이 없는데 이것만 못 지우면 저장량이
+       단조 증가해 포함량이 반드시 부족해진다 — 그 구조를 막으려고 삭제 대상에 넣었다.
+  */
+  it("음성과 자막·요약을 **함께** 센다 — 줄 하나가 통째로 비워진다", () => {
+    expect(freedGb(project({ voiceGb: 7, sttGb: 3 }))).toBe(10);
   });
 });
 
 describe("totalFreeableGb", () => {
   it("지울 수 있는 줄만 더한다", () => {
     const projects = [
-      project({ tag: "a", status: PROJECT_STATUS.DONE, voiceGb: 4 }),
-      project({ tag: "b", status: PROJECT_STATUS.IN_PROGRESS, voiceGb: 9 }),
+      project({ tag: "a", status: PROJECT_STATUS.DONE, voiceGb: 4, sttGb: 1 }),
+      project({ tag: "b", status: PROJECT_STATUS.IN_PROGRESS, voiceGb: 9, sttGb: 3 }),
       project({ tag: "c", status: PROJECT_STATUS.DONE, voiceGb: 2, sttGb: 5 }),
     ];
 
-    // ⚠️ `c`의 자막·요약 5GB는 안 센다 — 지워도 안 비는 값이다
-    expect(totalFreeableGb(projects)).toBe(6);
+    // `a`(4+1) + `c`(2+5) = 12. `b`는 진행 중이라 안 센다
+    expect(totalFreeableGb(projects)).toBe(12);
   });
 });
 
 describe("formatRecordedDate", () => {
+  // 기준 연도는 서버가 정해 내려준다 — 함수가 `new Date()`를 부르지 않는다(하이드레이션)
+  const THIS_YEAR = 2026;
+
   it("ISO를 우리 날짜 표기로 바꾼다 — 2026-05-03 → 5월 3일(일)", () => {
-    expect(formatRecordedDate("2026-05-03")).toBe("5월 3일(일)");
+    expect(formatRecordedDate("2026-05-03", THIS_YEAR)).toBe("5월 3일(일)");
   });
 
   it("요일이 시간대에 밀리지 않는다 — 자정 UTC 파싱 함정", () => {
     // 2026-01-12는 월요일이다. new Date(iso)로 읽으면 지역 시간대에서 하루 밀릴 수 있다
-    expect(formatRecordedDate("2026-01-12")).toBe("1월 12일(월)");
+    expect(formatRecordedDate("2026-01-12", THIS_YEAR)).toBe("1월 12일(월)");
+  });
+
+  it("올해가 아니면 연도를 붙인다 — 얼마나 오래됐는지 알 수 있어야 한다", () => {
+    expect(formatRecordedDate("2025-12-03", THIS_YEAR)).toBe("2025년 12월 3일(수)");
+    expect(formatRecordedDate("2024-02-06", THIS_YEAR)).toBe("2024년 2월 6일(화)");
+  });
+
+  it("올해 날짜에는 연도를 안 붙인다 — 매 줄에 붙으면 옛 날짜가 안 튄다", () => {
+    expect(formatRecordedDate("2026-02-06", THIS_YEAR)).not.toContain("년");
   });
 
   it("형식이 아니면 원문을 그대로 둔다 — 지어내지 않는다", () => {
-    expect(formatRecordedDate("")).toBe("");
-    expect(formatRecordedDate("어제")).toBe("어제");
+    expect(formatRecordedDate("", THIS_YEAR)).toBe("");
+    expect(formatRecordedDate("어제", THIS_YEAR)).toBe("어제");
   });
 });

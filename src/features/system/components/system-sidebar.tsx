@@ -4,8 +4,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { ZLogo } from "@/components/icons/z-logo";
+import { ROLE, ROLE_MARK_CLASS } from "@/constants/role";
 import { SidebarItem } from "@/features/shell/components/sidebar-item";
 import type { NavSection } from "@/features/shell/nav";
+import { cn } from "@/lib/utils";
 
 interface SystemSidebarProps {
   sections: NavSection[];
@@ -84,7 +86,16 @@ export function SystemSidebar({ sections, account }: SystemSidebarProps) {
 
       {/* ⚠️ 높이·표식 크기는 역할 셸의 계정 줄과 같다. 다른 건 배지 대신 이메일이 오는 것뿐이다 */}
       <div className="border-border flex h-[49px] shrink-0 items-center gap-[7px] border-t px-[17.5px]">
-        <span className="bg-role-owner text-background flex size-[21px] shrink-0 items-center justify-center rounded-full text-[10px] leading-none">
+        {/*
+          ⚠️ 색을 박지 않는다. 전에는 `bg-role-owner`가 적혀 있어 **운영자인데 대표 색**이었다 —
+             `SYSTEM`은 기업 화면의 역할이 아니라 회색을 쓴다(`constants/role.ts`).
+        */}
+        <span
+          className={cn(
+            ROLE_MARK_CLASS[ROLE.SYSTEM],
+            "text-background flex size-[21px] shrink-0 items-center justify-center rounded-full text-[10px] leading-none",
+          )}
+        >
           운
         </span>
         <div className="min-w-0 flex-1">

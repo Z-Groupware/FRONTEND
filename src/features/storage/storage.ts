@@ -53,22 +53,25 @@ export function buildStorageTotals(
 /**
  * 지울 수 있는 줄인가 — **끝난 프로젝트만.**
  *
- * ⚠️ 진행 중인 프로젝트의 녹음은 아직 다시 들을 일이 남아 있다. 화면에서 버튼을 감추는 것만으로는
+ * ⚠️ 진행 중인 프로젝트의 기록은 아직 볼 일이 남아 있다. 화면에서 버튼을 감추는 것만으로는
  *    부족해서 **서버 액션에서도 같은 판정을 다시 한다**(CLAUDE.md §권한).
- * ⚠️ 음성이 0인 줄도 지울 게 없다 — 눌러도 아무 일이 없는 버튼은 두지 않는다.
+ * ⚠️ 남은 게 하나도 없는 줄은 지울 게 없다 — 눌러도 아무 일이 없는 버튼은 두지 않는다.
  */
 export function canDeleteRecordings(project: ProjectStorage): boolean {
-  return project.status === PROJECT_STATUS.DONE && project.voiceGb > 0;
+  return project.status === PROJECT_STATUS.DONE && project.voiceGb + project.sttGb > 0;
 }
 
 /**
- * 지우면 비는 용량(GB).
+ * 지우면 비는 용량(GB) — **음성 + 자막·요약 전부.**
  *
- * ⚠️ **음성만 센다.** 자막·요약은 지우지 않는다 — 회의에서 남은 결과물이라,
- *    그것까지 비는 것처럼 말하면 실제로 비는 양보다 크게 약속하는 셈이 된다(§정직성).
+ * ⚠️ 자막·요약도 센다(2026-08-05 팀 결정). 보관 기한이 없는데 이것만 못 지우면 저장량이
+ *    단조 증가해서 포함량은 반드시 부족해지고 초과 요금만 계속 늘어난다 — 그 구조를
+ *    막으려고 삭제 대상에 넣었다.
+ * ⚠️ 대신 **잃는 것을 화면에 명시한다.** 자막·요약이 사라지면 그 회의의 기록과 액션의
+ *    출처 추적이 끊긴다 — 확인 창이 그 말을 하고 나서 지운다(§정직성).
  */
 export function freedGb(project: ProjectStorage): number {
-  return project.voiceGb;
+  return project.voiceGb + project.sttGb;
 }
 
 /** 지울 수 있는 줄을 다 지우면 비는 용량(GB) — 안내 문구에 쓴다 */
@@ -81,13 +84,19 @@ const WEEKDAY_KO = ["일", "월", "화", "수", "목", "금", "토"] as const;
 /**
  * 녹음 날짜를 화면 표기로 — `2026-05-03` → `5월 3일(일)`(CLAUDE.md §카피).
  *
+ * ⚠️ **올해가 아니면 연도를 붙인다**(`2025년 12월 3일(수)`). 이 값이 답해야 하는 질문이
+ *    "마지막 녹음이 얼마나 오래됐나"로 바뀌었는데, 연도가 없으면 `2월 6일`이 올해인지
+ *    재작년인지 알 수 없어 판단 자체가 안 된다. 올해 날짜에는 안 붙인다 — 대부분이
+ *    올해라 매 줄에 `2026년`이 붙으면 표가 시끄러워지고 정작 옛 날짜가 안 튄다.
+ * ⚠️ 기준 연도를 **인자로 받는다.** 여기서 `new Date()`를 부르면 서버 렌더와 브라우저
+ *    렌더가 해가 바뀌는 순간 갈려 하이드레이션이 어긋난다 — 서버가 정한 값을 내려받는다.
  * ⚠️ ISO 문자열을 그대로 찍지 않는다. `2026-05-03`은 개발자용 표기라, 화면에는 우리 날짜
  *    규칙으로 보여 준다.
  * ⚠️ `new Date(iso)`로 파싱하지 않는다 — `"2026-05-03"`은 UTC 자정으로 읽혀 시간대에 따라
  *    하루가 밀린다. 조각을 직접 갈라 `Date.UTC`로 요일만 구한다.
  * ⚠️ 형식이 아니면(빈 값·깨진 값) **원문을 그대로** 돌려준다 — 지어내는 것보다 낫다.
  */
-export function formatRecordedDate(iso: string): string {
+export function formatRecordedDate(iso: string, currentYear: number): string {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
   if (!match) return iso;
 
@@ -95,5 +104,6 @@ export function formatRecordedDate(iso: string): string {
   const m = Number(match[2]);
   const d = Number(match[3]);
   const weekday = WEEKDAY_KO[new Date(Date.UTC(y, m - 1, d)).getUTCDay()];
-  return `${m}월 ${d}일(${weekday})`;
+  const day = `${m}월 ${d}일(${weekday})`;
+  return y === currentYear ? day : `${y}년 ${day}`;
 }
