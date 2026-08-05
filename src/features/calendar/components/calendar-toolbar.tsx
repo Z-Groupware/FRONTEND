@@ -36,7 +36,9 @@ export function CalendarToolbar({ date, onNavigate, action }: CalendarToolbarPro
         >
           <ChevronLeft />
         </Button>
-        <p className="w-28 text-center text-base font-semibold tabular-nums">{monthLabel}</p>
+        <p className="w-28 shrink-0 text-center text-base font-semibold tabular-nums">
+          {monthLabel}
+        </p>
         <Button
           type="button"
           variant="outline"
