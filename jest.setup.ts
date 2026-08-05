@@ -13,3 +13,35 @@ if (!Element.prototype.scrollTo) {
 if (!Element.prototype.scrollIntoView) {
   Element.prototype.scrollIntoView = () => {};
 }
+
+/*
+  ⚠️ jsdom엔 Pointer Events가 없다 — `@base-ui/react`의 Checkbox 등 여러 컴포넌트가 클릭 시
+     `new window.PointerEvent(...)`를 직접 만든다. 없으면 "PointerEvent is not a constructor"로
+     터진다. MouseEvent를 뼈대로 최소 필드만 얹는다(user-event가 실제로 채우는 값 정도).
+*/
+if (typeof window !== "undefined" && !window.PointerEvent) {
+  class PointerEventPolyfill extends MouseEvent {
+    public pointerId?: number;
+    public pointerType?: string;
+    public isPrimary?: boolean;
+
+    constructor(type: string, params: PointerEventInit = {}) {
+      super(type, params);
+      this.pointerId = params.pointerId;
+      this.pointerType = params.pointerType;
+      this.isPrimary = params.isPrimary;
+    }
+  }
+
+  // @ts-expect-error — jsdom 환경에 맞춘 최소 폴리필이라 lib.dom.d.ts와 완전히 같지 않다.
+  window.PointerEvent = PointerEventPolyfill;
+}
+if (!Element.prototype.hasPointerCapture) {
+  Element.prototype.hasPointerCapture = () => false;
+}
+if (!Element.prototype.setPointerCapture) {
+  Element.prototype.setPointerCapture = () => {};
+}
+if (!Element.prototype.releasePointerCapture) {
+  Element.prototype.releasePointerCapture = () => {};
+}
