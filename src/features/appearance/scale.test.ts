@@ -14,6 +14,7 @@ describe("parseScale", () => {
     ["100", 100],
     ["125", 125],
     ["150", 150],
+    ["200", 200],
   ])("저장된 값을 그대로 읽는다: %s", (raw, expected) => {
     expect(parseScale(raw)).toBe(expected);
   });
@@ -25,9 +26,10 @@ describe("parseScale", () => {
   /*
     ⚠️ **저장소는 사람이 고칠 수 있다.** 목록에 없는 값을 그대로 믿으면 `zoom: 9999`가 걸려
        화면을 통째로 못 쓰게 되고, 되돌릴 버튼도 안 보인다.
-    ⚠️ `200`도 여기 있다 — 예전 목록에 있던 값이라, 그때 골라 둔 사람의 저장소에 남아 있다.
+    ⚠️ `110`처럼 **그럴듯하지만 목록에 없는 값**도 걸러야 한다. 목록이 바뀌면 예전에 골라 둔
+       값이 저장소에 남아 있다.
   */
-  it.each(["9999", "0", "-1", "abc", "", "1e3", "200"])(
+  it.each(["9999", "0", "-1", "abc", "", "1e3", "110"])(
     "목록에 없는 값은 기본값으로 되돌린다: %s",
     (raw) => {
       expect(parseScale(raw)).toBe(DEFAULT_SCALE);
@@ -131,6 +133,7 @@ describe("recommendScale", () => {
     [1080, 75],
     [1800, 125],
     [2160, 150],
+    [2880, 200],
   ])("폭 %s에서는 %s%%를 권한다", (width, expected) => {
     expect(recommendScale(width)).toBe(expected);
   });
@@ -141,5 +144,13 @@ describe("recommendScale", () => {
 
   it("아주 넓어도 목록 밖으로 나가지 않는다 — 임의 배율을 허용하면 걸러낼 기준이 없어진다", () => {
     expect(SCREEN_SCALES).toContain(recommendScale(9999));
+  });
+
+  /*
+    ⚠️ **권하는 값은 반드시 목록에 있어야 한다.** 한때 200%를 목록에서 뺐더니, 배율 없이
+       2880을 쓰는 사람에게 150%를 권하게 됐다 — 눌러도 여전히 다른 기기보다 작다.
+  */
+  it.each([1152, 1440, 2880, 1080])("권하는 값은 언제나 고를 수 있다: 폭 %s", (width) => {
+    expect(SCREEN_SCALES).toContain(recommendScale(width));
   });
 });
