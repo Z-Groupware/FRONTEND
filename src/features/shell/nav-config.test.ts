@@ -1,3 +1,6 @@
+import fs from "node:fs";
+import path from "node:path";
+
 import { ROLE } from "@/constants/role";
 import type { Actor } from "@/lib/permission";
 
@@ -128,9 +131,13 @@ describe("dashboardFor", () => {
     expect(dashboardFor(role).href).not.toBe("/");
   });
 
-  it("사이드바 첫 항목과 **같은 객체**다 — 갈라지면 한쪽만 준비 상태를 본다", () => {
+  /*
+    ⚠️ 참조가 아니라 **값**을 본다. 둘 다 `isReady`를 입히며 새 객체를 만들기 때문이다.
+       지켜야 하는 건 "같은 객체"가 아니라 **로고와 메뉴가 같은 곳·같은 준비 상태**라는 것이다.
+  */
+  it("사이드바 첫 항목과 값이 같다 — 갈라지면 한쪽만 준비 상태를 본다", () => {
     for (const role of [ROLE.OWNER, ROLE.LEADER, ROLE.MEMBER] as const) {
-      expect(navFor(actor(role))[0]?.items[0]).toBe(dashboardFor(role));
+      expect(navFor(actor(role))[0]?.items[0]).toStrictEqual(dashboardFor(role));
     }
   });
 
@@ -152,3 +159,93 @@ describe("첫 화면은 한 곳이다", () => {
     },
   );
 });
+
+/**
+ * **화면을 만들면 자동으로 이어지는지** 본다.
+ *
+ * ⚠️ 전에는 항목마다 `isReady`를 손으로 켰다. 그래서 대시보드 3개와 캘린더가 머지됐는데도
+ *    플래그가 안 올라가, **화면은 멀쩡한데 눌러도 "준비 중"만 뜨고 안 넘어갔다.**
+ *    이제 `routes.ts`가 `src/app`을 읽어 자동으로 정한다 — 이 테스트는 그 자동 판정이
+ *    실제 라우트와 어긋나지 않는지 지킨다.
+ */
+describe("화면이 있으면 자동으로 이어진다", () => {
+  const everyItem = [ROLE.OWNER, ROLE.LEADER, ROLE.MEMBER, ROLE.SYSTEM].flatMap((role) => [
+    dashboardFor(role),
+    ...navFor(actor(role)).flatMap((section) => section.items),
+  ]);
+
+  it.each([
+    ["/owner", "대시보드"],
+    ["/team", "대시보드"],
+    ["/my", "대시보드"],
+    ["/app/calendar", "캘린더"],
+    ["/app/notice", "공지"],
+    ["/app/me", "마이페이지"],
+    ["/manage/billing", "구독·결제"],
+    ["/manage/storage", "녹음 용량"],
+  ])("만들어진 화면 `%s`(%s)는 링크가 된다", (href) => {
+    const item = everyItem.find((candidate) => candidate.href === href);
+
+    expect(item).toBeDefined();
+    expect(item?.isReady).toBe(true);
+  });
+
+  it.each([
+    ["/app/projects", "프로젝트"],
+    ["/app/meeting", "회의"],
+    ["/manage/members", "사원 관리"],
+    ["/owner/setting", "기업 설정"],
+  ])("아직 없는 화면 `%s`(%s)는 준비 중으로 남는다", (href) => {
+    expect(everyItem.find((candidate) => candidate.href === href)?.isReady).toBe(false);
+  });
+
+  /*
+    ⚠️ 자동 판정이 **양쪽 다** 맞아야 한다. 한쪽만 보면 "전부 true"로 만들어도 통과한다.
+  */
+  it("모든 항목의 판정이 실제 `page.tsx` 존재와 일치한다", () => {
+    const mismatched = everyItem
+      .filter((item) => {
+        const dir = path.join(process.cwd(), "src/app");
+        const exists = findPage(dir, item.href);
+        return Boolean(item.isReady) !== exists;
+      })
+      .map((item) => `${item.label} (${item.href}) — isReady=${item.isReady}`);
+
+    expect(mismatched).toEqual([]);
+  });
+});
+
+/** 괄호 그룹을 건너뛰며 그 주소의 `page.tsx`를 찾는다 */
+function findPage(root: string, href: string): boolean {
+  const wanted = href.split("/").filter(Boolean);
+
+  const walk = (dir: string, matched: number): boolean => {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      if (!entry.isDirectory()) continue;
+      const full = path.join(dir, entry.name);
+      const isGroup = entry.name.startsWith("(") && entry.name.endsWith(")");
+
+      if (isGroup) {
+        if (walk(full, matched)) return true;
+        continue;
+      }
+      if (entry.name !== wanted[matched]) continue;
+
+      const next = matched + 1;
+      if (next === wanted.length) {
+        if (fs.existsSync(path.join(full, "page.tsx"))) return true;
+        // 다음 칸이 괄호 그룹일 수 있다 — `/owner/(dashboard)/page.tsx`
+        for (const inner of fs.readdirSync(full, { withFileTypes: true })) {
+          if (!inner.isDirectory()) continue;
+          if (!inner.name.startsWith("(")) continue;
+          if (fs.existsSync(path.join(full, inner.name, "page.tsx"))) return true;
+        }
+        continue;
+      }
+      if (walk(full, next)) return true;
+    }
+    return false;
+  };
+
+  return walk(root, 0);
+}
