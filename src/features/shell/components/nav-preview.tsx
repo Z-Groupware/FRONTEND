@@ -99,7 +99,7 @@ export function NavPreview() {
 function PreviewColumn({ item }: { item: PreviewCase }) {
   return (
     <section className="flex w-[220px] shrink-0 flex-col gap-2.5">
-      <div className="min-h-[62px]">
+      <div className="min-h-[72px]">
         <h2 className="text-[15px] leading-6 font-semibold tracking-[-0.2px]">{item.title}</h2>
         <p className="text-muted-foreground/80 pt-1 text-[12px] leading-[18px] break-keep">
           {item.note}
@@ -107,10 +107,13 @@ function PreviewColumn({ item }: { item: PreviewCase }) {
       </div>
 
       {/*
-        ⚠️ 사이드바는 `h-full`을 전제로 만들어졌다 — 여기서는 **높이를 정해** 담는다.
-           안 그러면 내용만큼만 커져서 아래 테두리가 항목에 붙는다.
+        ⚠️ **높이를 고정하지 않는다.** 620px으로 묶었더니 항목이 많은 역할(Leader + Admin은
+           구역 넷·항목 스물)에서 아래가 잘렸다 — 배치를 비교하려고 만든 화면인데 정작
+           비교할 항목이 안 보였다.
+        ⚠️ 사이드바 안의 `nav`는 `flex-1 overflow-y-auto`라, 높이를 안 주면 내용만큼 늘어나
+           스크롤이 안 생긴다. 열마다 높이가 달라지는 건 의도다 — 그 차이가 곧 정보다.
       */}
-      <div className="border-border h-[620px] overflow-hidden rounded-xl border">
+      <div className="border-border overflow-hidden rounded-xl border">
         <RoleSidebar sections={navFor(item.viewer as Actor)} user={item.viewer} />
       </div>
     </section>
