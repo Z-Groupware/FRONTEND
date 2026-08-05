@@ -1,7 +1,5 @@
 "use client";
 
-import { ChevronDownIcon } from "lucide-react";
-
 import {
   Select,
   SelectContent,
@@ -10,6 +8,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+
+import { EmptySelect, LockedSelect } from "./option-select-locked";
 
 export interface SelectOption {
   id: string;
@@ -80,42 +80,12 @@ export function OptionSelect({
       리더 직급이라 잠긴 역할 칸은 `없음`이 보여야 무엇으로 정해졌는지 알 수 있다.
     */
     const settledText = value ? (nameOf(value) ?? emptyText) : (placeholder ?? emptyText);
-
-    return (
-      /*
-        ⚠️ 고를 수 있는 칸과 **폭·높이·반지름·테두리·꺽쇠까지 똑같이** 맞추고 흐리기만 한다.
-           모양이 달라지면 "왜 이 칸만 다르지"가 되고, 흐린 것만으로 못 누른다는 건 충분히 읽힌다.
-      */
-      <span
-        style={{ width }}
-        aria-disabled
-        aria-label={`${label} — ${settledText}, 고칠 수 없습니다`}
-        className={cn(
-          // ⚠️ `opacity`로 흐리지 않는다 — 테두리까지 같이 흐려져 옆 칸과 세기가 어긋난다.
-          //    잠겼다는 건 **글자 색**만으로 말하고, 테두리는 옆 칸과 똑같이 둔다.
-          "text-muted-foreground/60 border-input flex h-8 cursor-not-allowed items-center justify-center gap-1 rounded-lg border pr-1.5 pl-2.5 text-[14px]",
-          className,
-        )}
-      >
-        <span className="truncate">{settledText}</span>
-        <ChevronDownIcon className="size-3.5 shrink-0" aria-hidden />
-      </span>
-    );
+    return <LockedSelect text={settledText} label={label} width={width} className={className} />;
   }
 
   // 고를 게 아무것도 없고 "없음"조차 못 쓰면 칸을 잠근다
   if (options.length === 0) {
-    return (
-      <span
-        style={{ width }}
-        className={cn(
-          "text-muted-foreground border-input flex h-8 items-center justify-center rounded-lg border px-2.5 text-[14px]",
-          className,
-        )}
-      >
-        {emptyText}
-      </span>
-    );
+    return <EmptySelect text={emptyText} width={width} className={className} />;
   }
 
   return (
