@@ -40,9 +40,11 @@ export function buildStorageTotals(
     includedGb,
     /*
       ⚠️ 포함량이 0이면 나눗셈이 무한대가 된다. BE 값이라 0이 올 수도 있으니 막아 둔다 —
-         게이지 폭이 `Infinity%`가 되면 막대가 칸을 뚫고 나간다.
+         게이지가 `Infinity%`가 되면 칸을 뚫고 나간다.
+      ⚠️ 그렇다고 **0으로 두면 안 된다.** 포함량 0에 쓴 게 있으면 전부가 초과인데
+         화면은 `0% · 초과`라는 앞뒤 안 맞는 말을 하게 된다 — 그때는 꽉 찬 것으로 본다.
     */
-    ratio: includedGb > 0 ? usedGb / includedGb : 0,
+    ratio: includedGb > 0 ? usedGb / includedGb : usedGb > 0 ? 1 : 0,
     overageGb,
     overageAmount: Math.round(overageGb * config.overagePerGbMonth),
   };

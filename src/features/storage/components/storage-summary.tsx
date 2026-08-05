@@ -62,7 +62,7 @@ export function StorageSummary({ totals }: { totals: StorageTotals }) {
             className="flex items-baseline gap-1.5 tabular-nums"
             role="progressbar"
             aria-label="녹음 용량 소진율"
-            aria-valuenow={percent}
+            aria-valuenow={Math.min(100, percent)}
             aria-valuemin={0}
             aria-valuemax={100}
             aria-valuetext={`${formatGb(totals.includedGb)} 중 ${formatGb(totals.usedGb)}, ${percent}%. 음성 ${formatGb(totals.voiceGb)}, 자막·요약 ${formatGb(totals.sttGb)}`}

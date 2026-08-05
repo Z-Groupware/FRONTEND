@@ -47,13 +47,28 @@ describe("buildStorageTotals", () => {
     expect(totals.overageAmount).toBe(2000);
   });
 
-  it("포함량이 0이어도 나눗셈이 터지지 않는다 — 게이지가 칸을 뚫고 나가면 안 된다", () => {
+  /*
+    ⚠️ 포함량 0은 BE가 줄 수 있는 값이다. 나눗셈이 무한대가 되면 게이지가 칸을 뚫고 나간다.
+    ⚠️ 그렇다고 0으로 두면 **`0% · 초과`** 라는 앞뒤 안 맞는 화면이 된다 — 포함량이 없는데
+       쓴 게 있으면 전부가 초과다.
+  */
+  it("포함량이 0인데 쓴 게 있으면 꽉 찬 것으로 본다", () => {
     const totals = buildStorageTotals(overview([project({ voiceGb: 5, sttGb: 0 })]), {
       ...config,
       includedStorageGb: 0,
     } as BillingConfig);
 
     expect(Number.isFinite(totals.ratio)).toBe(true);
+    expect(totals.ratio).toBe(1);
+    expect(totals.overageGb).toBe(5);
+  });
+
+  it("포함량도 0이고 쓴 것도 없으면 0%다", () => {
+    const totals = buildStorageTotals(overview([project({ voiceGb: 0, sttGb: 0 })]), {
+      ...config,
+      includedStorageGb: 0,
+    } as BillingConfig);
+
     expect(totals.ratio).toBe(0);
   });
 
