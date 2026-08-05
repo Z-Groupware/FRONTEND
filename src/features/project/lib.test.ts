@@ -86,14 +86,6 @@ describe("sortProjects", () => {
     expect(sortProjects([a, b, c], PROJECT_SORT.DUE_ASC).map((p) => p.id)).toEqual(["b", "a", "c"]);
   });
 
-  it("마감 늦은순은 내림차순", () => {
-    expect(sortProjects([a, b, c], PROJECT_SORT.DUE_DESC).map((p) => p.id)).toEqual([
-      "c",
-      "a",
-      "b",
-    ]);
-  });
-
   it("이름순은 한글 가나다", () => {
     expect(sortProjects([a, b, c], PROJECT_SORT.NAME).map((p) => p.id)).toEqual(["a", "c", "b"]);
   });

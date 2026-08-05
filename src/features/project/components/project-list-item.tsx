@@ -12,7 +12,9 @@ const OWNER_LABEL = "Owner";
 
 /**
  * 프로젝트 한 줄 — 회의 아이템과 같은 결.
- * 좌: 태그 · 프로젝트명 + Owner 라벨 / 우: 진척 바 · 마감일 · 참여 팀(2개+`+N`, hover 시 전체).
+ * 좌(클릭 시 프로젝트 상세): 태그 · 프로젝트명 + Owner 라벨 · 세부 설명 첫 줄 / 우: 진척 · 마감일.
+ * 맨 오른쪽 참여 팀은 **링크 밖**이라 눌러도 이동하지 않는다 — 팀 상세는 없고, 팀 액션은 추후
+ * 프로젝트 상세 타임라인에서 보여준다. 2개까지 + `+N`, hover 시 전체 목록.
  */
 export function ProjectListItem({ project }: { project: ProjectListItemModel }) {
   const percent = getProgressPercent(project.actionDone, project.actionTotal);
@@ -26,7 +28,7 @@ export function ProjectListItem({ project }: { project: ProjectListItemModel }) 
   ));
 
   return (
-    <li className="relative">
+    <li className="hover:bg-muted relative flex items-center gap-3 py-3.5 pr-4 pl-5 transition-colors">
       {/* 태그색 스트립 — 행 왼쪽 끝 */}
       <span
         className="absolute inset-y-0 left-0 w-1"
@@ -34,11 +36,11 @@ export function ProjectListItem({ project }: { project: ProjectListItemModel }) 
         aria-hidden
       />
 
+      {/* 클릭 영역 = 프로젝트 상세로 */}
       <Link
         href={`/app/projects/${project.tag}`}
-        className="hover:bg-muted flex items-center gap-3 py-3.5 pr-4 pl-5 transition-colors"
+        className="flex min-w-0 flex-1 items-center gap-3"
       >
-        {/* 좌: (상단) 태그 / (하단) 프로젝트명 + Owner 라벨 */}
         <div className="flex min-w-0 flex-1 flex-col gap-1">
           <span
             className="w-fit rounded px-1.5 py-0.5 font-mono text-[10px] font-semibold"
@@ -56,37 +58,37 @@ export function ProjectListItem({ project }: { project: ProjectListItemModel }) 
           <p className="text-muted-foreground line-clamp-1 text-xs">{project.description}</p>
         </div>
 
-        {/* 우: 진척 바 · 마감일 · 참여 팀 */}
         <div className="flex shrink-0 items-center gap-4">
           <div className="flex items-center gap-2">
             <Progress value={percent} className="w-32" />
             <span className="text-foreground text-xs font-medium tabular-nums">{percent}%</span>
           </div>
-
           <span className="text-muted-foreground text-sm tabular-nums">{due}</span>
-
-          {/* 참여 팀 — 2개까지 + 나머지 +N. 초과가 있으면 영역 전체 hover 시 전체 팀 목록 */}
-          {overflow > 0 ? (
-            <Tooltip>
-              <TooltipTrigger render={<span className="flex items-center gap-1" />}>
-                {visibleTeamBadges}
-                <Badge variant="secondary" className="shrink-0">
-                  +{overflow}
-                </Badge>
-              </TooltipTrigger>
-              <TooltipContent>
-                <ul className="space-y-0.5">
-                  {project.departments.map((team) => (
-                    <li key={team}>{team}</li>
-                  ))}
-                </ul>
-              </TooltipContent>
-            </Tooltip>
-          ) : (
-            <span className="flex items-center gap-1">{visibleTeamBadges}</span>
-          )}
         </div>
       </Link>
+
+      {/* 참여 팀 — 링크 밖(이동 없음). 초과가 있으면 영역 전체 hover 시 전체 목록 */}
+      <div className="shrink-0" aria-label={`참여 팀: ${project.departments.join(", ")}`}>
+        {overflow > 0 ? (
+          <Tooltip>
+            <TooltipTrigger render={<span className="flex items-center gap-1" />}>
+              {visibleTeamBadges}
+              <Badge variant="secondary" className="shrink-0">
+                +{overflow}
+              </Badge>
+            </TooltipTrigger>
+            <TooltipContent>
+              <ul className="space-y-0.5">
+                {project.departments.map((team) => (
+                  <li key={team}>{team}</li>
+                ))}
+              </ul>
+            </TooltipContent>
+          </Tooltip>
+        ) : (
+          <span className="flex items-center gap-1">{visibleTeamBadges}</span>
+        )}
+      </div>
     </li>
   );
 }

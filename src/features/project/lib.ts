@@ -15,17 +15,15 @@ export const DEFAULT_PROJECT_STATUS: ProjectStatus = PROJECT_STATUS.IN_PROGRESS;
 /** 담당 부서 라벨을 몇 개까지 노출하는지 — 나머지는 `+N`. */
 export const MAX_VISIBLE_DEPARTMENTS = 2;
 
-/** 정렬 기준 — 마감 임박순이 기본(스펙). */
+/** 정렬 기준 — 마감 임박순이 기본(스펙). '마감 늦은순'은 임박순과 결이 겹쳐 두지 않는다. */
 export const PROJECT_SORT = {
   DUE_ASC: "DUE_ASC",
-  DUE_DESC: "DUE_DESC",
   NAME: "NAME",
 } as const;
 export type ProjectSort = (typeof PROJECT_SORT)[keyof typeof PROJECT_SORT];
 
 export const PROJECT_SORT_LABEL: Record<ProjectSort, string> = {
   DUE_ASC: "마감 임박순",
-  DUE_DESC: "마감 늦은순",
   NAME: "이름순",
 };
 
@@ -45,8 +43,6 @@ export function parseProjectSort(value: string | undefined): ProjectSort {
 export function sortProjects(list: ProjectListItem[], sort: ProjectSort): ProjectListItem[] {
   const sorted = [...list];
   switch (sort) {
-    case PROJECT_SORT.DUE_DESC:
-      return sorted.sort((a, b) => b.dueDate.localeCompare(a.dueDate));
     case PROJECT_SORT.NAME:
       return sorted.sort((a, b) => a.name.localeCompare(b.name, "ko"));
     case PROJECT_SORT.DUE_ASC:

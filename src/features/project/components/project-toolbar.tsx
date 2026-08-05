@@ -61,7 +61,7 @@ export function ProjectToolbar() {
           pushWith({ sort: value === DEFAULT_PROJECT_SORT ? "" : (value ?? "") })
         }
       >
-        <SelectTrigger aria-label="정렬 기준" className="w-32">
+        <SelectTrigger aria-label="정렬 기준" className="w-36">
           <SelectValue />
         </SelectTrigger>
         <SelectContent side="bottom" alignItemWithTrigger={false}>
