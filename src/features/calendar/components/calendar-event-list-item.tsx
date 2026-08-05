@@ -2,7 +2,12 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 
 import { CALENDAR_TAG_DOT_COLOR } from "../tag-colors";
-import { CALENDAR_ITEM_TAG, CALENDAR_ITEM_TAG_LABEL, type PersonalCalendarEvent } from "../types";
+import {
+  CALENDAR_ITEM_TAG,
+  CALENDAR_ITEM_TAG_LABEL,
+  getCalendarCompletionLabel,
+  type PersonalCalendarEvent,
+} from "../types";
 
 interface CalendarEventListItemProps {
   event: PersonalCalendarEvent;
@@ -19,21 +24,28 @@ export function CalendarEventListItem({ event, onToggleCompletion }: CalendarEve
 
   return (
     <li className="border-border bg-card flex items-start gap-2 rounded-lg border p-3">
-      {isTodo ? (
-        <Checkbox
-          checked={event.isCompleted}
-          onCheckedChange={() => onToggleCompletion?.(event.id)}
-          aria-label={`${event.title} 완료 처리`}
-          className="mt-0.5 shrink-0"
-        />
-      ) : (
-        <span
-          aria-hidden
-          className="mt-1 size-2 shrink-0 rounded-full"
-          style={{ backgroundColor: event.color ?? CALENDAR_TAG_DOT_COLOR[event.tag] }}
-        />
-      )}
-      <div className="flex min-w-0 flex-col gap-0.5">
+      {/*
+        ⚠️ 체크박스(16px)와 색점(8px)의 실제 크기가 달라서, 이 자리를 고정폭(size-4)으로
+        감싸지 않으면 제목 시작 x좌표가 항목 종류에 따라 흔들린다 — 둘 다 이 상자 안에서
+        가운데 정렬해 시작점을 맞춘다.
+      */}
+      <div className="mt-0.5 flex size-4 shrink-0 items-center justify-center">
+        {isTodo ? (
+          <Checkbox
+            checked={event.isCompleted}
+            onCheckedChange={() => onToggleCompletion?.(event.id)}
+            aria-label={`${event.title} 완료 처리`}
+          />
+        ) : (
+          <span
+            aria-hidden
+            className="size-2 rounded-full"
+            style={{ backgroundColor: event.color ?? CALENDAR_TAG_DOT_COLOR[event.tag] }}
+          />
+        )}
+      </div>
+
+      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
         <p
           className={cn(
             "truncate text-sm font-medium",
@@ -42,7 +54,21 @@ export function CalendarEventListItem({ event, onToggleCompletion }: CalendarEve
         >
           {event.title}
         </p>
-        <p className="text-muted-foreground text-xs">{CALENDAR_ITEM_TAG_LABEL[event.tag]}</p>
+
+        {/* 태그 라벨과 같은 줄, 오른쪽 끝 — 진행중=초록 · 완료=보라(globals.css 상태점 색 재사용). */}
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-muted-foreground text-xs">{CALENDAR_ITEM_TAG_LABEL[event.tag]}</p>
+          <span
+            className={cn(
+              "inline-flex h-5 shrink-0 items-center rounded-full px-2 text-xs font-medium whitespace-nowrap",
+              event.isCompleted
+                ? "bg-status-done/12 text-status-done"
+                : "bg-status-progress/12 text-status-progress",
+            )}
+          >
+            {getCalendarCompletionLabel(event.isCompleted)}
+          </span>
+        </div>
       </div>
     </li>
   );

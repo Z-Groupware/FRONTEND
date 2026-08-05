@@ -89,8 +89,13 @@
   cursor: default;
 }
 
+/*
+  ⚠️ 좌우 padding을 두면 막대가 셀 폭을 다 못 채운다 — 세그먼트 폭 자체가 RBC가 계산한
+  퍼센트(`flexBasis`/`maxWidth`)라서, 옆에 여백을 주는 순간 막대 우측 끝이 셀 경계까지
+  못 닿는다(브라우저별 서브픽셀 반올림이 겹치면 더 도드라진다). 위아래 간격만 남긴다.
+*/
 .rbc-row-segment {
-  padding: 0 2px 4px;
+  padding: 0 0 4px;
 }
 
 .rbc-event.rbc-selected,
