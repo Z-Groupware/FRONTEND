@@ -1,3 +1,5 @@
+import { CalendarDays, type LucideIcon, ReceiptText, Sparkles, Wallet } from "lucide-react";
+
 import { formatWon } from "../pricing";
 import { canUseWorkspace, type Subscription, SUBSCRIPTION_STATUS_LABEL } from "../subscription";
 import type { BillingConfig } from "../types";
@@ -29,18 +31,23 @@ export function PlanPanel({ subscription, config, today }: PlanPanelProps) {
     <div className="flex flex-col gap-5">
       <section className="border-border bg-card rounded-2xl border">
         {/*
-          ⚠️ 결제 화면처럼 **큰 표식을 두지 않는다.** 저기는 이름 아래 금액이 한 줄 더 있어
-             40px 사각형과 균형이 맞지만, 여기는 이름 한 줄뿐이라 표식이 글자를 눌러 버린다.
-             대신 다른 카드들과 **같은 점 표식**을 써서 결을 맞춘다.
+          ⚠️ 표식은 **결제 화면(`PlanSummaryCard`)과 같은 것**이다. 랜딩에서 보고, 결제할 때 보고,
+             관리 화면에서 다시 보는 게 같은 물건이라 표식도 같아야 한다.
+          ⚠️ 이름 아래 한 줄을 같이 둔다 — 이름만 있으면 40px 사각형이 글자를 눌러 버린다.
+             단 **금액을 적지 않는다.** 바로 아래 `월 기본료` 칸과 같은 말이 두 번이 된다.
         */}
         <div className="flex items-center gap-3 p-7 pb-6">
+          <span className="bg-foreground text-background flex size-10 shrink-0 items-center justify-center rounded-xl">
+            <Sparkles className="size-[18px]" aria-hidden />
+          </span>
+
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2">
-              <h2 className="flex items-center gap-2 text-[17px] leading-7 font-semibold tracking-[-0.3px]">
-                <span className="bg-foreground size-2 rounded-full" aria-hidden />
-                {subscription.planName} 플랜
-              </h2>
-            </div>
+            <h2 className="text-[17px] leading-7 font-semibold tracking-[-0.3px]">
+              {subscription.planName} 플랜
+            </h2>
+            <p className="text-muted-foreground text-[13px] leading-5">
+              인원 제한 없이 회사당 하나
+            </p>
             {/*
               ⚠️ **기능을 나열하지 않는다.** 아홉 개를 가운뎃점으로 이으면 한 줄짜리 글자
                  덩어리가 되어 아무도 안 읽는다. 여기는 이미 쓰고 있는 사람이 보는 관리 화면이라
@@ -78,13 +85,15 @@ export function PlanPanel({ subscription, config, today }: PlanPanelProps) {
              남은 셋은 전부 **돈과 직접 이어지는 값**이다.
         */}
         <dl className="grid grid-cols-2 gap-3 px-7 pb-7 md:grid-cols-3">
-          <Metric label="월 기본료" value={formatWon(config.baseFee)} />
+          <Metric icon={Wallet} label="월 기본료" value={formatWon(config.baseFee)} />
           <Metric
+            icon={CalendarDays}
             label="다음 결제일"
             value={subscription.nextBillingDate ?? "—"}
             hint={isUnpaid ? "결제 후 확정됩니다" : undefined}
           />
           <Metric
+            icon={ReceiptText}
             label="다음 청구 예상"
             value={formatWon(subscription.estimatedAmount)}
             hint={
@@ -106,16 +115,34 @@ export function PlanPanel({ subscription, config, today }: PlanPanelProps) {
 }
 
 /**
- * 지표 한 칸.
+ * 지표 한 칸 — 결제 화면의 포함량 칸(`Included`)과 **같은 모양**이다.
  *
- * ⚠️ 테두리 격자가 아니라 **연한 카드**다 — 결제 화면의 포함량 칸(`Included`)과 같은 모양이라,
- *    두 화면을 오갈 때 같은 종류의 값으로 읽힌다.
+ * ⚠️ 세 줄을 칸 **가운데**로 모은다. 왼쪽에 붙여 두면 숫자 오른쪽이 비어 칸이 헐거워 보이고,
+ *    세 칸이 나란히 설 때 값의 눈높이가 안 맞는다.
+ * ⚠️ **테두리를 같이 준다.** 라이트에서 `--secondary`는 흰 카드와 2%밖에 차이가 없어서
+ *    옅게만 깔면 칸이 있는지조차 안 보인다 — 이 서비스의 라이트 층은 색이 아니라 보더로 나뉜다.
+ * ⚠️ 라벨에 **아이콘**을 붙인다. 셋 다 금액·날짜라 글자만으로는 어느 칸인지 훑어서 안 잡힌다 —
+ *    색을 못 쓰는 자리라(색은 에러뿐) 구분은 아이콘과 명도가 맡는다(§디자인 토큰).
  */
-function Metric({ label, value, hint }: { label: string; value: string; hint?: string }) {
+function Metric({
+  icon: Icon,
+  label,
+  value,
+  hint,
+}: {
+  icon: LucideIcon;
+  label: string;
+  value: string;
+  hint?: string;
+}) {
   return (
-    <div className="bg-secondary/40 rounded-xl px-5 py-4">
-      <dt className="text-muted-foreground text-[12px] leading-4">{label}</dt>
-      <dd className="pt-1.5 text-[20px] leading-7 font-semibold tracking-[-0.4px] tabular-nums">
+    <div className="border-border bg-secondary/60 rounded-xl border px-5 py-4 text-center">
+      <dt className="text-muted-foreground flex items-center justify-center gap-1.5 text-[12px] leading-4">
+        <Icon className="size-3.5 shrink-0" aria-hidden />
+        {/* 한글 글자가 아이콘보다 떠 보인다 — 1px 내려 맞춘다 */}
+        <span className="translate-y-px">{label}</span>
+      </dt>
+      <dd className="pt-2 text-[20px] leading-7 font-semibold tracking-[-0.4px] tabular-nums">
         {value}
       </dd>
       {hint && <p className="text-muted-foreground/70 pt-0.5 text-[11px] leading-4">{hint}</p>}
