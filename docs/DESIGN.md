@@ -22,6 +22,9 @@
 | 5   | 화면이 말하는 값이 **BE가 준 사실인가**                 | §6 값   |
 | 6   | `loading` · `error` · `empty` 세 장을 **같이 만드는가** | §5 상태 |
 
+> 🧱 **새 화면은 §11(구독·저장소 화면)에서 골격을 베껴 시작한다.** 카드 껍데기·머리·글자
+> 크기·여백·표가 다 거기 있다 — 처음부터 다시 정하면 팀원끼리 생김새가 갈린다.
+
 ---
 
 ## 1. 폭 — 새 숫자를 만들지 않는다
@@ -226,6 +229,144 @@
 - [ ] 화면에 적힌 숫자가 **BE가 준 값인지**(§6)
 - [ ] 버튼 문구가 **한 낱말인지**, 날짜가 **우리 표기인지**(§8)
 - [ ] `npx jest` · `npm run build`
+
+---
+
+## 11. 만들 때 그대로 베끼는 것 — 구독 · 저장소 화면
+
+> 이 두 화면(`/manage/billing` · `/manage/storage`)이 **양식의 기준**이다. 새 화면을 만들 때
+> 여기서 골격을 가져다 쓰면 팀원끼리 화면 생김새가 갈리지 않는다.
+> 실제 파일: `features/billing/components/*` · `features/storage/components/*`
+
+### 11-1. 화면 골격
+
+```tsx
+// page.tsx — 조회는 Server Component가 한다
+export default async function Page() {
+  const [data, config, viewer] = await Promise.all([...]);
+  return <View data={data} config={config} canManage={canX(viewer)} />;
+}
+
+// layout.tsx — 상단바는 여기서 그린다(본문이 아니라)
+<PageHeader title="저장소 관리" icon={HardDrive} />
+```
+
+```tsx
+// View — 스크롤은 여기서, 폭도 여기서
+<div className="flex-1 overflow-y-auto px-8 py-7">
+  <div className="mx-auto w-full max-w-[1440px]">
+    <div className="flex flex-col gap-7">
+      <SummaryCard /> {/* 요약 한 장 */}
+      <DetailTable /> {/* 내역 한 장 */}
+    </div>
+  </div>
+</div>
+```
+
+**⚠️ 카드를 세 장 이상 쌓지 않는다.** 두 화면 다 **요약 → 내역** 두 장이다.
+카드가 늘면 무엇을 먼저 봐야 하는지 흐려진다 — 늘리기 전에 위 카드에 넣을 수 있는지 본다.
+
+### 11-2. 카드 껍데기
+
+```tsx
+<section className="border-border bg-card rounded-2xl border">
+  {" "}
+  {/* 표가 들어가면 + overflow-hidden */}
+  <div className="flex items-baseline justify-between gap-3 px-7 pt-6 pb-3">
+    <h2 className="flex items-center gap-2 text-[17px] leading-7 font-semibold tracking-[-0.3px]">
+      <span className="bg-foreground size-2 rounded-full" aria-hidden /> {/* 머리 표식 */}
+      프로젝트별 사용량
+    </h2>
+    <p className="text-muted-foreground text-[12px] leading-4 tabular-nums">전체 5개</p>
+  </div>
+  {/* 본문 */}
+</section>
+```
+
+- **머리 표식(`size-2` 먹색 점)** 은 모든 카드 제목에 붙는다 — 화면이 달라도 같은 서비스로 읽힌다.
+- **오른쪽 끝에 보조 정보 한 줄**(전체 건수 · 주기 범위). 버튼을 두지 않는다.
+- 제목과 안내 문구 **사이에 선을 긋지 않는다**(§9).
+
+### 11-3. 요약 카드 — 세 칸 균등
+
+```tsx
+<div className="grid gap-6 pt-6 lg:grid-cols-3 lg:items-center lg:gap-0">
+  <div className="flex flex-col items-center gap-3 lg:px-4">…</div>
+  <div className="border-border lg:border-l lg:px-6 …">…</div>
+  <div className="border-border lg:border-l lg:px-6 …">…</div>
+</div>
+```
+
+- **칸은 세로선으로만** 가른다. 카드 안에 카드를 얹지 않는다.
+- 칸마다 구조가 같다 — `작은 라벨 → 큰 값 → 보조 문구`.
+- 좁아지면 세로로 쌓는다(`grid` 기본 1열, 세로선은 `lg:`에서만).
+
+**라벨·값 한 쌍**은 이 모양이다(`Metric`):
+
+```tsx
+<dt className="text-muted-foreground text-[12px] leading-4">월 기본료</dt>
+<dd className="pt-1.5 text-[20px] leading-7 font-semibold tracking-[-0.4px] tabular-nums">₩150,000</dd>
+<p className="text-muted-foreground/70 pt-0.5 text-[11px] leading-4">보조 설명</p>
+```
+
+### 11-4. 글자 크기 — 다섯 개만 쓴다
+
+| 쓰임         | 크기                                                          |
+| ------------ | ------------------------------------------------------------- |
+| 카드 제목    | `text-[17px] leading-7 font-semibold tracking-[-0.3px]`       |
+| 큰 숫자      | `text-[30~32px] leading-9/10 font-semibold tracking-[-0.8px]` |
+| 본문         | `text-[13px] leading-5`                                       |
+| 라벨·보조    | `text-[12px] leading-4`                                       |
+| 더 작은 힌트 | `text-[11px] leading-4`                                       |
+
+- **숫자에는 `tabular-nums`** 를 붙인다 — 안 붙이면 자릿수가 바뀔 때 좌우로 흔들린다.
+- 새 크기를 만들지 않는다. 위 다섯으로 안 되면 그 자리 구조가 잘못된 것이다.
+
+### 11-5. 여백
+
+```
+카드 안쪽     px-7 (28px)      ·  세로는 pt-6 pb-3(머리) / p-7(단일)
+카드 사이     gap-7 (28px)
+표 셀         px-4 py-3.5      ·  첫 열만 px-6
+본문 바깥     px-8 py-7
+```
+
+### 11-6. 표
+
+§3이 정렬을 다루고, 여기는 **골격**이다.
+
+```tsx
+<div className="border-border overflow-x-auto border-t">
+  {" "}
+  {/* 표 시작 = 카드 안 유일한 선 */}
+  <table className="w-full min-w-[760px] table-fixed text-[13px]">
+    <colgroup>{/* 폭은 % 로 */}</colgroup>
+    <thead>
+      <tr className="text-muted-foreground bg-secondary/50 border-border border-b text-[12px] leading-4">
+        <th className="px-6 py-3 text-left font-normal">프로젝트</th> {/* 이름만 왼쪽 */}
+        <th className="px-4 py-3 text-center font-normal">상태</th> {/* 나머지 가운데 */}
+      </tr>
+    </thead>
+    <tbody>{/* 줄: group border-t hover:bg-foreground/[0.04] */}</tbody>
+  </table>
+</div>
+```
+
+- **머리에 섹션 띠**(`bg-secondary/50`) — 보더 한 줄만으로는 머리와 본문이 같은 면으로 읽힌다.
+- **줄 강조는 `hover:bg-foreground/[0.04]`** 다. `--secondary`는 흰 카드와 2%밖에 차이가 없어
+  손이 어느 줄에 있는지 안 보인다.
+- **이름 열만 왼쪽, 나머지는 가운데.** 이름은 길이가 제각각이라 가운데로 모으면 왼쪽 끝이
+  들쭉날쭉해져 세로로 훑을 수가 없다.
+
+### 11-7. 이 두 화면이 지키는 것
+
+|                             |                                |
+| --------------------------- | ------------------------------ |
+| 상단바에 버튼을 두지 않는다 | 액션은 카드 안에 둔다          |
+| 카드는 두 장                | 요약 → 내역                    |
+| 색은 뜻이 있는 자리만       | 상태점 · 프로젝트 띠 · 초과    |
+| 파괴적 작업은 창으로 확인   | 무엇을 잃는지 먼저 적는다      |
+| 넘겨도 막지 않는다          | 얼마가 더 나가는지 적고 보낸다 |
 
 ---
 
