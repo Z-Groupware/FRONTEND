@@ -79,6 +79,37 @@ export function recommendScale(viewportWidth: number): ScreenScale {
   );
 }
 
+/**
+ * 방향키로 옮겨 갈 **다음 배율.**
+ *
+ * ⚠️ 라디오 그룹의 키보드 계약이다 — 좌/상은 이전, 우/하는 다음, Home·End는 양 끝.
+ *    UI가 아니라 여기서 정하는 건 순서 계산이 로직이라 테스트가 붙기 때문이다(§테스트).
+ * ⚠️ **끝에서 돌지 않는다(clamp).** 배율은 크기 순서라, 200%에서 오른쪽을 눌러 75%로 튀면
+ *    "가장 크게"의 다음이 "가장 작게"가 되어 방향 감각이 깨진다. 목록·달력의 순환과 다르다.
+ * ⚠️ 방향키가 아니면 `null` — 부르는 쪽이 기본 동작(스크롤 등)을 막지 않게 한다.
+ */
+export function nextScaleByKey(current: ScreenScale, key: string): ScreenScale | null {
+  const index = SCREEN_SCALES.indexOf(current);
+  const last = SCREEN_SCALES.length - 1;
+
+  const at = (i: number): ScreenScale => SCREEN_SCALES[Math.min(Math.max(i, 0), last)] ?? current;
+
+  switch (key) {
+    case "ArrowRight":
+    case "ArrowDown":
+      return at(index + 1);
+    case "ArrowLeft":
+    case "ArrowUp":
+      return at(index - 1);
+    case "Home":
+      return at(0);
+    case "End":
+      return at(last);
+    default:
+      return null;
+  }
+}
+
 export function suggestScale(input: { viewportWidth: number; hasChosen: boolean }): ScaleHint {
   if (input.hasChosen || input.viewportWidth === 0) return "none";
   // ⚠️ 경계를 포함한다. 2880을 250%로 쓰면 정확히 1152(= 1440 × 0.8)라 딱 걸린다

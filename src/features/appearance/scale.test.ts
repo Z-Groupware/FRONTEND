@@ -1,5 +1,6 @@
 import {
   DEFAULT_SCALE,
+  nextScaleByKey,
   parseScale,
   recommendScale,
   SCALE_BOOT_SCRIPT,
@@ -152,5 +153,33 @@ describe("recommendScale", () => {
   */
   it.each([1152, 1440, 2880, 1080])("권하는 값은 언제나 고를 수 있다: 폭 %s", (width) => {
     expect(SCREEN_SCALES).toContain(recommendScale(width));
+  });
+});
+
+describe("nextScaleByKey", () => {
+  it("오른쪽·아래는 다음 배율", () => {
+    expect(nextScaleByKey(100, "ArrowRight")).toBe(125);
+    expect(nextScaleByKey(100, "ArrowDown")).toBe(125);
+  });
+
+  it("왼쪽·위는 이전 배율", () => {
+    expect(nextScaleByKey(100, "ArrowLeft")).toBe(90);
+    expect(nextScaleByKey(100, "ArrowUp")).toBe(90);
+  });
+
+  it("Home·End는 양 끝", () => {
+    expect(nextScaleByKey(100, "Home")).toBe(SCREEN_SCALES[0]);
+    expect(nextScaleByKey(100, "End")).toBe(SCREEN_SCALES.at(-1));
+  });
+
+  /* ⚠️ 끝에서 돌지 않는다 — 크기 순서라 가장 큰 값의 다음이 가장 작은 값이 되면 방향이 깨진다 */
+  it("양 끝에서는 제자리에 머문다(순환하지 않는다)", () => {
+    expect(nextScaleByKey(SCREEN_SCALES.at(-1)!, "ArrowRight")).toBe(SCREEN_SCALES.at(-1));
+    expect(nextScaleByKey(SCREEN_SCALES[0], "ArrowLeft")).toBe(SCREEN_SCALES[0]);
+  });
+
+  it("방향키가 아니면 null — 부르는 쪽이 기본 동작을 막지 않게", () => {
+    expect(nextScaleByKey(100, "Enter")).toBeNull();
+    expect(nextScaleByKey(100, "a")).toBeNull();
   });
 });
