@@ -44,14 +44,21 @@ export function ProjectStorageTable({
   */
   return (
     <section className="border-border bg-card overflow-hidden rounded-2xl border">
-      <div className="flex items-baseline justify-between gap-3 px-7 py-6">
+      <div className="flex items-baseline justify-between gap-3 px-7 pt-6 pb-3">
         <h2 className="flex items-center gap-2 text-[17px] leading-7 font-semibold tracking-[-0.3px]">
           <span className="bg-foreground size-2 rounded-full" aria-hidden />
           프로젝트별 사용량
         </h2>
-        {/* ⚠️ 전체 건수를 적는다 — 끝이 안 보이는 목록은 얼마나 남았는지 알 수 없다 */}
-        {/* ⚠️ `/70`을 쓰지 않는다 — 12px 글자가 라이트에서 2.73:1로 4.5:1에 못 미친다(§a11y) */}
-        <p className="text-muted-foreground shrink-0 text-[12px] leading-4 tabular-nums">
+        {/*
+          ⚠️ 전체 건수를 적는다 — 끝이 안 보이는 목록은 얼마나 남았는지 알 수 없다.
+          ⚠️ `/70`을 쓰지 않는다 — 12px 글자가 라이트에서 2.73:1로 4.5:1에 못 미친다(§a11y).
+          ⚠️ **아래 지우기 아이콘과 세로축을 맞춘다.** 머리의 여백(`px-7` = 28px)과 아이콘
+             자리(`pr-5` 안에서 32px 상자 가운데)가 달라 그냥 두면 8px 어긋난다 — 실측해
+             그만큼만 민다.
+          ⚠️ **움직이는 건 이 글자다.** 표 쪽 `pr-*`를 건드리면 다섯 줄의 아이콘이 다 같이
+             움직여 열 안에서 한쪽으로 쏠린다.
+        */}
+        <p className="text-muted-foreground shrink-0 translate-x-[8px] text-[12px] leading-4 tabular-nums">
           전체 {projects.length}개
         </p>
       </div>
@@ -61,8 +68,11 @@ export function ProjectStorageTable({
            이미 화면 밖이라, 정작 버튼을 누르는 순간에는 안 읽힌다.
         ⚠️ 자막·요약까지 지우는 게 **되돌릴 수 없고 추적이 끊기는 일**이라, 다 남는 줄 알고
            눌렀다가 나중에 회의 기록을 못 찾는 일이 없어야 한다(§정직성).
+        ⚠️ **제목과 이 문구 사이에 선을 긋지 않는다.** 둘은 한 덩어리(무엇을 보는 표인지 +
+           지우면 어떻게 되는지)라, 선을 그으면 층이 하나 더 생겨 카드가 늘어나 보인다 —
+           카드 안에서 선은 **표가 시작하는 자리** 한 곳만 긋는다.
       */}
-      <p className="text-muted-foreground border-border border-t px-7 py-3.5 text-[12px] leading-[18px] break-keep">
+      <p className="text-muted-foreground px-7 pb-5 text-[12px] leading-[18px] break-keep">
         삭제 시 <span className="text-foreground font-medium">음성과 자막·요약이 함께</span>{" "}
         제거되고 목록에서 빠집니다. 그 회의의 기록과 액션의 출처 추적이 끊기며 되돌릴 수 없습니다.
       </p>
@@ -125,9 +135,12 @@ export function ProjectStorageTable({
                 <th className="px-4 py-3 text-center font-normal">음성</th>
                 <th className="px-4 py-3 text-center font-normal">자막·요약</th>
                 <th className="px-4 py-3 text-center font-normal">가장 오래된 녹음</th>
-                <th className="py-3 pr-5 pl-0 text-center font-normal">
-                  <span className="sr-only">기록 삭제</span>
-                </th>
+                {/*
+                  ⚠️ **이 열에도 이름을 준다.** 다른 여섯 열은 다 머리글이 있는데 여기만 비어
+                     있으면 표가 한 칸 덜 끝난 것처럼 보이고, 아이콘이 무엇을 하는 것인지도
+                     머리에서 안 읽힌다. 전에는 `sr-only`라 스크린 리더에만 있었다.
+                */}
+                <th className="py-3 pr-5 pl-0 text-center font-normal">삭제</th>
               </tr>
             </thead>
             <tbody>
@@ -235,9 +248,11 @@ function Row({
         {/*
           ⚠️ 막대는 **전체 음성 대비 비중**이다. 포함량(50GB) 기준으로 그리면 한 프로젝트가
              차지하는 조각이 너무 작아 다섯 줄이 전부 비슷해 보인다.
-          ⚠️ 막대와 숫자를 **한 덩어리로 묶어 가운데**에 둔다. 숫자만 오른쪽 끝에 붙이면
-             머리(`음성`)의 가운데와 축이 어긋난다 — 막대 폭을 고정해야 덩어리 폭이 일정해서
-             다섯 줄의 숫자가 세로로 나란히 선다.
+          ⚠️ **막대는 막대끼리, 숫자는 숫자끼리 선다.** 묶음만 가운데 두면 `10.9GB`(4자리)가
+             `9.1GB`(3자리)보다 넓어서 그 줄만 막대가 왼쪽으로 밀린다 — 상태 칸의 점과 같은
+             문제다. 숫자 상자의 **폭을 고정**해야 덩어리 폭이 일정해지고 둘 다 한 줄로 선다.
+          ⚠️ 숫자는 상자 안에서 **오른쪽 정렬**이다. 자릿수가 다른 값은 오른쪽 끝을 맞춰야
+             크기를 견줄 수 있다(`tabular-nums`와 같은 이유).
         */}
         <span className="flex items-center justify-center gap-2.5">
           <span
@@ -256,7 +271,9 @@ function Row({
               style={{ width: `${share}%`, backgroundColor: tagColor.solidColor }}
             />
           </span>
-          <span className="shrink-0 tabular-nums">{formatGb(project.voiceGb)}</span>
+          <span className="w-[58px] shrink-0 text-right tabular-nums">
+            {formatGb(project.voiceGb)}
+          </span>
         </span>
       </td>
       <td className="text-muted-foreground px-4 py-3.5 text-center tabular-nums">
@@ -276,6 +293,7 @@ function Row({
            **자리는 늘 두고, 못 지우는 줄은 잠근다.** 이유는 `title`이 말한다(§정직성).
         ⚠️ 오른쪽에 여백(`pr-5`)을 줘 **안쪽으로 당긴다.** 표 맨 끝에 붙이면 카드 모서리에
            닿아 혼자 밀려난 것처럼 보인다.
+        ⚠️ 머리의 `전체 N개`가 **이 아이콘에 세로축을 맞춘다** — 움직이는 쪽은 그쪽이다.
         ⚠️ 뜻은 `aria-label`이 말한다 — 휴지통 그림만으로는 **무엇을** 지우는지 알 수 없다.
       */}
       <td className="py-3.5 pr-5 pl-0 text-center">
