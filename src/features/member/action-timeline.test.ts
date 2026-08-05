@@ -40,10 +40,10 @@ describe("buildActionTimeline", () => {
     expect(model?.monthLabel).toBe("8월");
   });
 
-  it("오늘선은 오늘 칸(08-05, index 4)의 왼쪽 끝에 놓인다", () => {
+  it("오늘선은 오늘 칸(08-05, index 4)의 중앙에 놓인다", () => {
     const model = buildActionTimeline([OVERDUE, UPCOMING], TODAY);
 
-    expect(model?.todayLeftPct).toBeCloseTo((4 * 100) / 11);
+    expect(model?.todayLeftPct).toBeCloseTo((4.5 * 100) / 11);
     expect(model?.days[4]?.isToday).toBe(true);
   });
 
@@ -82,10 +82,10 @@ describe("buildActionTimeline", () => {
     };
     const model = buildActionTimeline([sameDay], TODAY);
 
-    // 08-05 하루만 → 1칸(100%), 오늘선은 왼쪽 끝(0%)
+    // 08-05 하루만 → 1칸(100%), 오늘선은 그 칸 중앙(50%)
     expect(model?.days).toHaveLength(1);
     expect(model?.bars[0]?.widthPct).toBeCloseTo(100);
     expect(model?.bars[0]?.ddayLabel).toBe("D-day");
-    expect(model?.todayLeftPct).toBeCloseTo(0);
+    expect(model?.todayLeftPct).toBeCloseTo(50);
   });
 });

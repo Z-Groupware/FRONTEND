@@ -147,7 +147,8 @@ export function buildActionTimeline(
   return {
     days,
     bars,
-    todayLeftPct: diffDays(rangeStart, todayMid) * dayPct,
+    // 오늘 칸의 왼쪽 끝이 아니라 **칸 중앙**(+0.5)에 선을 놓는다.
+    todayLeftPct: (diffDays(rangeStart, todayMid) + 0.5) * dayPct,
     monthLabel: `${rangeStart.getMonth() + 1}월`,
   };
 }
