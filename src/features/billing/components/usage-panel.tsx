@@ -1,5 +1,7 @@
 import { CircleAlert, Info } from "lucide-react";
 
+import { formatDate } from "@/lib/date";
+
 import { formatGb, formatTokens, formatWon } from "../pricing";
 import type { Subscription } from "../subscription";
 import type { BillingConfig } from "../types";
@@ -32,7 +34,8 @@ export function UsagePanel({ subscription, config }: UsagePanelProps) {
           이번 주기 사용량
         </h2>
         <p className="text-muted-foreground/70 text-[12px] leading-4 tabular-nums">
-          {subscription.currentPeriodStart} ~ {subscription.currentPeriodEnd}
+          {formatDate(subscription.currentPeriodStart)} ~{" "}
+          {formatDate(subscription.currentPeriodEnd)}
         </p>
       </div>
 

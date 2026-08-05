@@ -4,9 +4,15 @@ import { useState } from "react";
 
 import { ConfirmDialog } from "@/components/common/confirm-dialog";
 import { Button } from "@/components/ui/button";
+import { formatDate } from "@/lib/date";
 
 interface CancelSubscriptionProps {
-  /** 이번 결제 주기가 끝나는 날 — 언제까지 쓸 수 있는지 말할 때 쓴다 */
+  /**
+   * 이번 결제 주기가 끝나는 날 `YYYY-MM-DD` — 언제까지 쓸 수 있는지 말할 때 쓴다.
+   *
+   * ⚠️ 화면에는 **`formatDate`를 거쳐** 내보낸다. `2026-09-01`을 그대로 찍으면 읽는 사람이
+   *    날짜를 한 번 더 해석해야 한다(CLAUDE.md §카피 — `9월 1일(화)`).
+   */
   periodEnd: string;
   isCanceling: boolean;
   canManage: boolean;
@@ -62,14 +68,14 @@ export function CancelSubscription({
         <p className="text-muted-foreground pt-1 text-[13px] leading-5 break-keep">
           {isCanceling ? (
             <>
-              <span className="text-foreground font-medium">{periodEnd}</span>까지 이용할 수
-              있습니다. 계속 이용하시려면 해지를 취소해 주세요.
+              <span className="text-foreground font-medium">{formatDate(periodEnd)}</span>까지
+              이용할 수 있습니다. 계속 이용하시려면 해지를 취소해 주세요.
             </>
           ) : (
             <>
               해지 시 현재 결제 주기(
-              <span className="text-foreground font-medium">{periodEnd}</span>)가 끝난 뒤 구독이
-              종료됩니다. {DOWNGRADE_NOTE}
+              <span className="text-foreground font-medium">{formatDate(periodEnd)}</span>)가 끝난
+              뒤 구독이 종료됩니다. {DOWNGRADE_NOTE}
             </>
           )}
         </p>
@@ -100,13 +106,29 @@ export function CancelSubscription({
         isOpen={isOpen}
         onOpenChange={setIsOpen}
         title={isCanceling ? "해지를 취소할까요?" : "구독을 해지할까요?"}
+        /*
+          ⚠️ **두 문장을 줄로 나눈다.** 한 줄로 이어 두면 창 폭에서 아무 데나 접혀
+             `워크스페이스에` / `접근할 수 없습니다`처럼 끊긴다 — 뜻 단위로 끊어야 읽힌다.
+          ⚠️ 날짜는 `formatDate`를 거친다(`2026-09-01` → `9월 1일(화)`).
+        */
         description={
-          isCanceling
-            ? `${periodEnd} 이후에도 구독이 유지되고 다음 결제일에 정상 청구됩니다.`
-            : `${periodEnd}까지 이용할 수 있습니다. ${DOWNGRADE_NOTE}`
+          isCanceling ? (
+            <>
+              {formatDate(periodEnd)} 이후에도 구독이 유지됩니다.
+              <br />
+              다음 결제일에 정상 청구됩니다.
+            </>
+          ) : (
+            <>
+              {formatDate(periodEnd)}까지 이용할 수 있습니다.
+              <br />
+              {DOWNGRADE_NOTE}
+            </>
+          )
         }
-        confirmLabel={isCanceling ? "계속 쓸게요" : "해지할게요"}
-        cancelLabel={isCanceling ? "닫기" : "그대로 둘게요"}
+        /* ⚠️ 버튼도 **합니다체**다(2026-08-04 변경). `해지할게요`는 그 전 말투다 */
+        confirmLabel={isCanceling ? "해지 취소" : "해지합니다"}
+        cancelLabel={isCanceling ? "닫기" : "그대로 둡니다"}
         isDestructive={!isCanceling}
         onConfirm={handleConfirm}
       />

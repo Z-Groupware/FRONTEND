@@ -1,5 +1,7 @@
 import { Sparkles } from "lucide-react";
 
+import { formatDate } from "@/lib/date";
+
 import { formatWon } from "../pricing";
 import { canUseWorkspace, type Subscription, SUBSCRIPTION_STATUS_LABEL } from "../subscription";
 import type { BillingConfig } from "../types";
@@ -86,7 +88,7 @@ export function PlanPanel({ subscription, config }: PlanPanelProps) {
           <Metric label="월 기본료" value={formatWon(config.baseFee)} />
           <Metric
             label="다음 결제일"
-            value={subscription.nextBillingDate ?? "—"}
+            value={subscription.nextBillingDate ? formatDate(subscription.nextBillingDate) : "—"}
             hint={isUnpaid ? "결제 후 확정됩니다" : undefined}
           />
           <Metric

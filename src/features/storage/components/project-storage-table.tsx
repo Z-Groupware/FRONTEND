@@ -7,9 +7,10 @@ import { StatusDot } from "@/components/common/status-dot";
 import { PROJECT_STATUS_LABEL } from "@/constants/project";
 import { formatGb } from "@/features/billing/pricing";
 import { formatElapsed } from "@/lib/date";
+import { formatDateWithYear } from "@/lib/date";
 import { pickPaletteColor } from "@/lib/palette";
 
-import { canDeleteRecordings, formatRecordedDate } from "../storage";
+import { canDeleteRecordings } from "../storage";
 import type { ProjectStorage } from "../types";
 
 interface ProjectStorageTableProps {
@@ -199,7 +200,7 @@ function Row({
 }) {
   const isDeletable = canDeleteRecordings(project);
   // 툴팁에 넣을 정확한 날짜. 기준 연도는 서버가 준 `today`에서 뽑는다(여기서 `new Date()` 금지)
-  const recordedOn = formatRecordedDate(project.lastRecordedAt, Number(today.slice(0, 4)));
+  const recordedOn = formatDateWithYear(project.lastRecordedAt, Number(today.slice(0, 4)));
   const tagColor = pickPaletteColor(project.tag);
   // ⚠️ 0으로 나누면 `NaN%`가 되어 막대가 아예 안 그려진다
   const share = totalVoiceGb > 0 ? (project.voiceGb / totalVoiceGb) * 100 : 0;

@@ -84,3 +84,43 @@ export function formatElapsed(iso: string, today: string): string | null {
 
   return `${Math.floor(months / 12)}년 전`;
 }
+
+const WEEKDAY_KO = ["일", "월", "화", "수", "목", "금", "토"] as const;
+
+const ISO_DATE = /^(\d{4})-(\d{2})-(\d{2})$/;
+
+/**
+ * 화면 표기 — `2026-05-03` → `5월 3일(일)`(CLAUDE.md §카피).
+ *
+ * ⚠️ **ISO 문자열을 화면에 그대로 찍지 않는다.** `2026-09-01`은 개발자용 표기다 —
+ *    구독 해지 창이 실제로 그러고 있어서 읽는 사람이 날짜를 한 번 더 해석해야 했다.
+ * ⚠️ **`new Date(iso)`로 파싱하지 않는다.** `"2026-05-03"`은 UTC 자정으로 읽혀 시간대에
+ *    따라 하루가 밀린다 — 조각을 직접 갈라 `Date.UTC`로 요일만 구한다.
+ * ⚠️ 형식이 아니면(빈 값·깨진 값) **원문을 그대로** 돌려준다 — 지어내는 것보다 낫다.
+ */
+export function formatDate(iso: string): string {
+  const match = ISO_DATE.exec(iso);
+  if (!match) return iso;
+
+  const y = Number(match[1]);
+  const m = Number(match[2]);
+  const d = Number(match[3]);
+  const weekday = WEEKDAY_KO[new Date(Date.UTC(y, m - 1, d)).getUTCDay()];
+
+  return `${m}월 ${d}일(${weekday})`;
+}
+
+/**
+ * 올해가 아니면 연도를 붙인다 — `2025년 12월 3일(수)`.
+ *
+ * ⚠️ **올해 날짜에는 안 붙인다.** 대부분이 올해라 매 줄에 `2026년`이 붙으면 목록이
+ *    시끄러워지고 정작 옛 날짜가 안 튄다.
+ * ⚠️ 기준 연도를 **인자로 받는다.** 여기서 `new Date()`를 부르면 서버 렌더와 브라우저
+ *    렌더가 해가 바뀌는 순간 갈려 하이드레이션이 어긋난다.
+ */
+export function formatDateWithYear(iso: string, currentYear: number): string {
+  const match = ISO_DATE.exec(iso);
+  if (!match) return iso;
+
+  return Number(match[1]) === currentYear ? formatDate(iso) : `${match[1]}년 ${formatDate(iso)}`;
+}

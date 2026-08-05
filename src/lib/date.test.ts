@@ -1,4 +1,4 @@
-import { formatElapsed } from "./date";
+import { formatDate, formatDateWithYear, formatElapsed } from "./date";
 
 /**
  * ⚠️ `todayIso()`는 테스트하지 않는다 — 실제 시계를 읽는 함수라 시각을 고정하지 않으면
@@ -45,5 +45,58 @@ describe("formatElapsed", () => {
   it("형식이 아니면 null이다", () => {
     expect(formatElapsed("", TODAY)).toBeNull();
     expect(formatElapsed("어제", TODAY)).toBeNull();
+  });
+});
+
+const THIS_YEAR = 2026;
+
+describe("formatDateWithYear", () => {
+  // 기준 연도는 서버가 정해 내려준다 — 함수가 `new Date()`를 부르지 않는다(하이드레이션)
+  it("ISO를 우리 날짜 표기로 바꾼다 — 2026-05-03 → 5월 3일(일)", () => {
+    expect(formatDateWithYear("2026-05-03", THIS_YEAR)).toBe("5월 3일(일)");
+  });
+
+  it("요일이 시간대에 밀리지 않는다 — 자정 UTC 파싱 함정", () => {
+    // 2026-01-12는 월요일이다. new Date(iso)로 읽으면 지역 시간대에서 하루 밀릴 수 있다
+    expect(formatDateWithYear("2026-01-12", THIS_YEAR)).toBe("1월 12일(월)");
+  });
+
+  it("올해가 아니면 연도를 붙인다 — 얼마나 오래됐는지 알 수 있어야 한다", () => {
+    expect(formatDateWithYear("2025-12-03", THIS_YEAR)).toBe("2025년 12월 3일(수)");
+    expect(formatDateWithYear("2024-02-06", THIS_YEAR)).toBe("2024년 2월 6일(화)");
+  });
+
+  it("올해 날짜에는 연도를 안 붙인다 — 매 줄에 붙으면 옛 날짜가 안 튄다", () => {
+    expect(formatDateWithYear("2026-02-06", THIS_YEAR)).not.toContain("년");
+  });
+
+  it("형식이 아니면 원문을 그대로 둔다 — 지어내지 않는다", () => {
+    expect(formatDateWithYear("", THIS_YEAR)).toBe("");
+    expect(formatDateWithYear("어제", THIS_YEAR)).toBe("어제");
+  });
+});
+
+/**
+ * ⚠️ **ISO를 화면에 그대로 찍지 않는다.** 구독 해지 창이 `2026-09-01`을 그대로 보여 줘서
+ *    읽는 사람이 날짜를 한 번 더 해석해야 했다 — 그 회귀를 막는다.
+ */
+describe("formatDate", () => {
+  it("우리 표기로 바꾼다 — 2026-09-01 → 9월 1일(화)", () => {
+    expect(formatDate("2026-09-01")).toBe("9월 1일(화)");
+  });
+
+  /* ⚠️ `new Date(iso)`로 파싱하면 UTC 자정이라 시간대에 따라 하루가 밀린다 */
+  it("요일이 시간대에 안 밀린다", () => {
+    expect(formatDate("2026-05-03")).toBe("5월 3일(일)");
+    expect(formatDate("2026-01-12")).toBe("1월 12일(월)");
+  });
+
+  it("연도를 붙이지 않는다 — 붙이려면 `formatDateWithYear`를 쓴다", () => {
+    expect(formatDate("2024-02-06")).not.toContain("년");
+  });
+
+  it("형식이 아니면 원문을 그대로 둔다 — 지어내지 않는다", () => {
+    expect(formatDate("")).toBe("");
+    expect(formatDate("내일")).toBe("내일");
   });
 });
