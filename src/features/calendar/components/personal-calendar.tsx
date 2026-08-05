@@ -16,7 +16,8 @@ import {
 } from "react-big-calendar";
 
 import { getCalendarHeight } from "../calendar-height";
-import { CALENDAR_ITEM_TAG, CALENDAR_ITEM_TAG_LABEL, type PersonalCalendarEvent } from "../types";
+import { CALENDAR_TAG_DOT_COLOR } from "../tag-colors";
+import { CALENDAR_ITEM_TAG_LABEL, type PersonalCalendarEvent } from "../types";
 import { CalendarToolbar } from "./calendar-toolbar";
 
 const localizer = dateFnsLocalizer({
@@ -26,18 +27,6 @@ const localizer = dateFnsLocalizer({
   getDay,
   locales: { ko },
 });
-
-/** 태그별 기본 배경/글자색 — 항목에 `color`가 없을 때만 쓴다(§도메인 상수: 항목별 커스텀 색상). */
-const TAG_SURFACE: Record<PersonalCalendarEvent["tag"], { bg: string; fg: string }> = {
-  [CALENDAR_ITEM_TAG.PERSONAL_TODO]: {
-    bg: "var(--calendar-todo-surface)",
-    fg: "var(--calendar-todo)",
-  },
-  [CALENDAR_ITEM_TAG.PERSONAL_ACTION]: {
-    bg: "var(--calendar-action-surface)",
-    fg: "var(--calendar-action)",
-  },
-};
 
 function toMonthParam(date: Date): string {
   return format(date, "yyyy-MM");
@@ -107,12 +96,10 @@ export function PersonalCalendar({
   );
 
   const eventPropGetter = useCallback<EventPropGetter<PersonalCalendarEvent>>((event) => {
-    const surface = TAG_SURFACE[event.tag];
     return {
       style: {
-        // 범례(`calendar-legend.tsx`)·리스트(`calendar-event-list-item.tsx`)와 같은 진한 색을 쓴다.
-        // 옅은 surface색은 셀 배경(`--card`)과 대비가 거의 없어서 안 보였다.
-        backgroundColor: event.color ?? surface.fg,
+        // 범례(`calendar-legend.tsx`)·리스트(`calendar-event-list-item.tsx`)와 같은 색 하나를 공유한다.
+        backgroundColor: event.color ?? CALENDAR_TAG_DOT_COLOR[event.tag],
         opacity: event.isCompleted ? 0.55 : 1,
       },
       title: `${event.title} (${CALENDAR_ITEM_TAG_LABEL[event.tag]})`,

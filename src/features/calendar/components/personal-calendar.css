@@ -85,6 +85,8 @@
   min-height: 10px;
   padding: 0;
   font-size: 0;
+  /* 클릭하면 그 날짜가 선택되긴 하지만, 개별 항목처럼 보이면 안 된다(막대일 뿐) — 포인터 커서를 뗀다. */
+  cursor: default;
 }
 
 .rbc-row-segment {

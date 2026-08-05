@@ -1,6 +1,6 @@
 "use client";
 
-import { isSameDay, isSameMonth, parse } from "date-fns";
+import { endOfDay, isSameMonth, parse, startOfDay, startOfMonth } from "date-fns";
 import { useMemo, useState } from "react";
 
 import { getCalendarHeight } from "../calendar-height";
@@ -15,9 +15,17 @@ interface CalendarBoardProps {
   month: string;
 }
 
+/** "YYYY-MM"을 그 달의 1일로 — 월이 1~12를 벗어나면(방어적으로) 오늘이 속한 달로 대신한다. */
+function parseMonth(month: string): Date {
+  const [, monthPart] = month.split("-");
+  const monthNumber = Number(monthPart);
+  if (monthNumber < 1 || monthNumber > 12) return startOfMonth(new Date());
+  return parse(`${month}-01`, "yyyy-MM-dd", new Date());
+}
+
 /** 기본 선택 날짜 — 지금 보는 달에 오늘이 있으면 오늘, 아니면 1일. */
 function defaultSelectedDate(month: string): Date {
-  const firstDay = parse(`${month}-01`, "yyyy-MM-dd", new Date());
+  const firstDay = parseMonth(month);
   const today = new Date();
   return isSameMonth(firstDay, today) ? today : firstDay;
 }
@@ -41,15 +49,15 @@ export function CalendarBoard({ initialEvents, month }: CalendarBoardProps) {
   const [events, setEvents] = useState(initialEvents);
   const [selectedDate, setSelectedDate] = useState(() => defaultSelectedDate(month));
 
-  const dayEvents = useMemo(
-    () => events.filter((event) => isSameDay(event.start, selectedDate)),
-    [events, selectedDate],
-  );
+  // 하루짜리 항목뿐이라 지금은 `isSameDay`와 결과가 같지만, 여러 날에 걸치는 항목이 와도
+  // 그 구간이 선택한 날짜와 겹치면 보이도록 구간 비교로 본다(`server.ts`의 월 필터와 같은 이유).
+  const dayEvents = useMemo(() => {
+    const dayStart = startOfDay(selectedDate);
+    const dayEnd = endOfDay(selectedDate);
+    return events.filter((event) => event.start <= dayEnd && event.end >= dayStart);
+  }, [events, selectedDate]);
 
-  const calendarHeight = useMemo(
-    () => getCalendarHeight(parse(`${month}-01`, "yyyy-MM-dd", new Date())),
-    [month],
-  );
+  const calendarHeight = useMemo(() => getCalendarHeight(parseMonth(month)), [month]);
 
   return (
     <div className="flex items-stretch gap-6" style={{ height: calendarHeight }}>
@@ -60,7 +68,7 @@ export function CalendarBoard({ initialEvents, month }: CalendarBoardProps) {
           onSelectDate={setSelectedDate}
           toolbarAction={
             <AddTodoDialog
-              month={month}
+              defaultDate={selectedDate}
               onCreated={(created) => setEvents((prev) => [...prev, created])}
             />
           }

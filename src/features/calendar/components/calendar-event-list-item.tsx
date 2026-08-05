@@ -1,12 +1,7 @@
 import { cn } from "@/lib/utils";
 
-import { CALENDAR_ITEM_TAG, CALENDAR_ITEM_TAG_LABEL, type PersonalCalendarEvent } from "../types";
-
-/** 태그별 기본 점 색 — 항목에 `color`가 없을 때만 쓴다(`personal-calendar.tsx`의 `TAG_SURFACE`와 같은 값). */
-const DOT_COLOR: Record<PersonalCalendarEvent["tag"], string> = {
-  [CALENDAR_ITEM_TAG.PERSONAL_TODO]: "var(--calendar-todo)",
-  [CALENDAR_ITEM_TAG.PERSONAL_ACTION]: "var(--calendar-action)",
-};
+import { CALENDAR_TAG_DOT_COLOR } from "../tag-colors";
+import { CALENDAR_ITEM_TAG_LABEL, type PersonalCalendarEvent } from "../types";
 
 interface CalendarEventListItemProps {
   event: PersonalCalendarEvent;
@@ -19,7 +14,7 @@ export function CalendarEventListItem({ event }: CalendarEventListItemProps) {
       <span
         aria-hidden
         className="mt-1 size-2 shrink-0 rounded-full"
-        style={{ backgroundColor: event.color ?? DOT_COLOR[event.tag] }}
+        style={{ backgroundColor: event.color ?? CALENDAR_TAG_DOT_COLOR[event.tag] }}
       />
       <div className="flex min-w-0 flex-col gap-0.5">
         <p

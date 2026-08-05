@@ -1,9 +1,10 @@
 "use client";
 
-import { format, parse } from "date-fns";
+import { format } from "date-fns";
 import { ko } from "date-fns/locale";
 import { CalendarIcon, Plus } from "lucide-react";
 import { useActionState, useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 
 import { ConfirmDialog } from "@/components/common/confirm-dialog";
 import { Button } from "@/components/ui/button";
@@ -16,8 +17,8 @@ import { createPersonalTodoAction, type PersonalTodoFormState } from "../actions
 import type { PersonalCalendarEvent } from "../types";
 
 interface AddTodoDialogProps {
-  /** 지금 보고 있는 달의 1일 — 기본 날짜값으로 쓴다("YYYY-MM"). */
-  month: string;
+  /** 지금 오른쪽 상세조회 패널이 보고 있는 날짜 — 모달을 열 때 이 날짜로 기본값을 맞춘다. */
+  defaultDate: Date;
   /** 생성 성공 시 호출 — 재조회 없이 부모 화면에 바로 얹는다(§최적화: action 리턴값 그대로 반영). */
   onCreated: (created: PersonalCalendarEvent) => void;
 }
@@ -26,10 +27,6 @@ const DATE_FORMAT = "yyyy-MM-dd";
 
 const INITIAL_STATE: PersonalTodoFormState = { errors: {} };
 
-function firstDayOf(month: string): Date {
-  return parse(`${month}-01`, DATE_FORMAT, new Date());
-}
-
 /**
  * 개인 Todo 추가 — `ConfirmDialog`와 같은 모양(표식 → 제목 → 설명 → 버튼)으로 간다.
  * ⚠️ 색상 선택 입력은 두지 않는다 — 색은 팀 디자인 컨벤션으로 하드코딩한다(2026-08-05 확정).
@@ -37,12 +34,12 @@ function firstDayOf(month: string): Date {
  *    바로 로컬에 얹어 즉시 반영한다(§최적화).
  * ⚠️ `ConfirmDialog`엔 `<form>`이 없다 — 확인 버튼 클릭 시 `formAction`을 직접 호출해 넘긴다.
  */
-export function AddTodoDialog({ month, onCreated }: AddTodoDialogProps) {
+export function AddTodoDialog({ defaultDate, onCreated }: AddTodoDialogProps) {
   const [open, setOpen] = useState(false);
   const [datePopoverOpen, setDatePopoverOpen] = useState(false);
   const [state, formAction, isPending] = useActionState(createPersonalTodoAction, INITIAL_STATE);
   const [title, setTitle] = useState("");
-  const [date, setDate] = useState<Date>(() => firstDayOf(month));
+  const [date, setDate] = useState<Date>(defaultDate);
   const handledCreatedId = useRef<string | null>(null);
 
   useEffect(() => {
@@ -51,9 +48,15 @@ export function AddTodoDialog({ month, onCreated }: AddTodoDialogProps) {
       onCreated(state.created);
       setOpen(false);
       setTitle("");
-      setDate(firstDayOf(month));
+      toast.success(`'${state.created.title}' Todo를 추가했습니다`);
     }
-  }, [state.created, onCreated, month]);
+  }, [state.created, onCreated]);
+
+  function handleOpen() {
+    // 모달을 열 때마다 지금 상세조회 중인 날짜로 다시 맞춘다 — 며칠 전에 열었던 값이 남아있지 않게.
+    setDate(defaultDate);
+    setOpen(true);
+  }
 
   function handleConfirm() {
     const formData = new FormData();
@@ -68,7 +71,7 @@ export function AddTodoDialog({ month, onCreated }: AddTodoDialogProps) {
         type="button"
         size="sm"
         className="bg-foreground text-background hover:bg-foreground/90"
-        onClick={() => setOpen(true)}
+        onClick={handleOpen}
       >
         <Plus aria-hidden />
         Todo 추가

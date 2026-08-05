@@ -13,7 +13,7 @@ interface CalendarDayDetailPanelProps {
 /** 캘린더 오른쪽에 고정으로 붙는 날짜 상세조회 패널. 셀 클릭마다 `calendar-board.tsx`가 이 props를 갈아 끼운다. */
 export function CalendarDayDetailPanel({ selectedDate, events }: CalendarDayDetailPanelProps) {
   return (
-    <aside className="border-border flex h-full w-[230px] shrink-0 flex-col border-l pl-6">
+    <aside className="border-border flex h-full w-full max-w-[230px] shrink-0 flex-col border-l pl-6 lg:w-[230px]">
       <div className="flex items-baseline justify-between gap-2 pb-4">
         <h2 className="text-base font-semibold">
           {format(selectedDate, "yyyy년 M월 d일(EEE)", { locale: ko })}
