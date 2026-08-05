@@ -70,7 +70,7 @@ const MOCK: StorageOverview = {
       meetingCount: 9,
       voiceGb: 3.6,
       sttGb: 1.3,
-      lastRecordedAt: "2026-02-06",
+      lastRecordedAt: "2025-11-14",
       status: PROJECT_STATUS.DONE,
     },
   ],

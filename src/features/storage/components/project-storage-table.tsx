@@ -17,6 +17,11 @@ interface ProjectStorageTableProps {
   totalVoiceGb: number;
   /** 지울 수 있는 사람인지 — 대표이거나 Admin을 겸한 사람 */
   canManage: boolean;
+  /**
+   * 날짜에 연도를 붙일지 가르는 기준 연도 — **서버가 정한다.**
+   * ⚠️ 여기서 `new Date()`를 부르면 해가 바뀌는 순간 서버 렌더와 갈린다(하이드레이션).
+   */
+  currentYear: number;
   onDelete: (project: ProjectStorage) => void;
 }
 
@@ -36,6 +41,7 @@ export function ProjectStorageTable({
   projects,
   totalVoiceGb,
   canManage,
+  currentYear,
   onDelete,
 }: ProjectStorageTableProps) {
   /*
@@ -162,6 +168,7 @@ export function ProjectStorageTable({
                   project={project}
                   totalVoiceGb={totalVoiceGb}
                   canManage={canManage}
+                  currentYear={currentYear}
                   onDelete={onDelete}
                 />
               ))}
@@ -177,11 +184,13 @@ function Row({
   project,
   totalVoiceGb,
   canManage,
+  currentYear,
   onDelete,
 }: {
   project: ProjectStorage;
   totalVoiceGb: number;
   canManage: boolean;
+  currentYear: number;
   onDelete: (project: ProjectStorage) => void;
 }) {
   const isDeletable = canDeleteRecordings(project);
@@ -302,7 +311,7 @@ function Row({
            `마지막 녹음` 칸에 옛 날짜가 남아 있으면 없는 녹음의 날짜를 말하는 셈이다.
       */}
       <td className="text-muted-foreground px-4 py-3.5 text-center tabular-nums">
-        {project.voiceGb > 0 ? formatRecordedDate(project.lastRecordedAt) : "—"}
+        {project.voiceGb > 0 ? formatRecordedDate(project.lastRecordedAt, currentYear) : "—"}
       </td>
       {/*
         ⚠️ **줄마다 버튼이 있다 없다 하지 않는다.** 전에는 지울 수 있는 줄에만 그려서, 다섯

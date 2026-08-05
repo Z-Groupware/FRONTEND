@@ -18,6 +18,9 @@ export const metadata: Metadata = {
  *    구독 화면과 다른 숫자를 말하게 된다(§요금제: 정본은 하나다).
  * ⚠️ **OWNER 또는 Admin 겸직자만** 지울 수 있다. 화면 가드는 UX일 뿐이고,
  *    삭제 액션이 `canManageStorage`로 서버에서 다시 본다(§권한).
+ * ⚠️ **기준 연도(`currentYear`)는 여기서 정해 내려보낸다.** 표는 클라이언트 컴포넌트라
+ *    거기서 `new Date()`를 부르면 해가 바뀌는 순간 서버 렌더와 갈려 하이드레이션이
+ *    어긋난다 — 날짜에 연도를 붙일지 말지는 이 값 하나로 결정된다.
  */
 export default async function ManageStoragePage() {
   const [overview, config, viewer] = await Promise.all([
@@ -26,5 +29,12 @@ export default async function ManageStoragePage() {
     getViewer(),
   ]);
 
-  return <StorageView overview={overview} config={config} canManage={canManageStorage(viewer)} />;
+  return (
+    <StorageView
+      overview={overview}
+      config={config}
+      canManage={canManageStorage(viewer)}
+      currentYear={new Date().getFullYear()}
+    />
+  );
 }

@@ -1,5 +1,6 @@
 import { CircleAlert } from "lucide-react";
 
+import { PROJECT_STATUS, PROJECT_STATUS_LABEL } from "@/constants/project";
 import { formatGb, formatWon } from "@/features/billing/pricing";
 
 import type { StorageTotals } from "../storage";
@@ -17,6 +18,9 @@ import type { StorageTotals } from "../storage";
  * ⚠️ **막지 않는다.** 넘겨도 "이만큼 넘었고 금액이면 ₩X"까지만 말하고 결제로 몰지 않는다
  *    (§요금제: 초과분은 다음 결제일에 기본료와 합산 청구).
  */
+/** 지울 수 있는 건 끝난 프로젝트뿐이라 이 화면 문구에 `완료` 라벨이 두 번 들어간다 */
+const DONE_LABEL = PROJECT_STATUS_LABEL[PROJECT_STATUS.DONE];
+
 export function StorageSummary({
   totals,
   freeableGb,
@@ -170,7 +174,13 @@ export function StorageSummary({
               {formatGb(freeableGb)}
             </dd>
             <dd className="text-muted-foreground text-[12px] leading-4">
-              {deletableCount > 0 ? `완료 프로젝트 ${deletableCount}개` : "완료 프로젝트 없음"}
+              {/*
+                ⚠️ `완료`를 손으로 적지 않는다 — `PROJECT_STATUS_LABEL`이 정본이다(§도메인 상수).
+                   라벨이 `완료`에서 다른 말로 바뀌면 이 문장만 옛말을 하게 된다.
+              */}
+              {deletableCount > 0
+                ? `${DONE_LABEL} 프로젝트 ${deletableCount}개`
+                : `${DONE_LABEL} 프로젝트 없음`}
             </dd>
           </div>
         </dl>

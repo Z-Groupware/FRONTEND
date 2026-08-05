@@ -27,6 +27,7 @@ const renderTable = (projects: ProjectStorage[]) =>
       projects={projects}
       totalVoiceGb={projects.reduce((sum, p) => sum + p.voiceGb, 0)}
       canManage
+      currentYear={2026}
       onDelete={() => {}}
     />,
   );
