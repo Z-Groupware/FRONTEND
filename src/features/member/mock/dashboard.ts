@@ -7,9 +7,14 @@ import type { MemberAction } from "../types";
  * ⚠️ 목 데이터 — BE 연동 전(ERD·API 스펙 미확정, DECISIONS.md).
  * 로그인 사원 = 이하윤(개발팀·프론트엔드) 기준. 아래는 이하윤 본인의 액션·참석 회의다.
  * 오늘(2026-08-05) 기준으로 마감 임박·연체가 섞이도록 날짜를 잡았다.
+ *
+ * 시작일은 타임라인 기간 바의 왼쪽 끝이라 상태와 아귀가 맞게 잡았다:
+ *  - 지연(마감 경과) = 시작·마감 모두 과거
+ *  - 진행중 = 시작이 오늘 이전(오늘선을 가로지름)
+ *  - 할일(미착수) = 시작이 오늘 이후(오늘선 오른쪽에만)
  */
 
-/** 내 액션 전체 — 서버가 D-7 필터·정렬을 얹는다 */
+/** 내 액션 전체 — 서버가 처리할 액션(마감 7일·연체) 필터·정렬을 얹는다 */
 export const MEMBER_ACTIONS_MOCK: MemberAction[] = [
   {
     id: "ma1",
@@ -17,6 +22,7 @@ export const MEMBER_ACTIONS_MOCK: MemberAction[] = [
     projectTag: "GOODS",
     color: "#7C3AED",
     status: ACTION_STATUS.IN_PROGRESS,
+    startDate: "2026-08-01",
     dueDate: "2026-08-03", // 연체(D+2)
   },
   {
@@ -25,6 +31,7 @@ export const MEMBER_ACTIONS_MOCK: MemberAction[] = [
     projectTag: "COLLAB",
     color: "#2563EB",
     status: ACTION_STATUS.IN_PROGRESS,
+    startDate: "2026-08-01",
     dueDate: "2026-08-04", // 연체(D+1)
   },
   {
@@ -33,6 +40,7 @@ export const MEMBER_ACTIONS_MOCK: MemberAction[] = [
     projectTag: "GOODS",
     color: "#7C3AED",
     status: ACTION_STATUS.TODO,
+    startDate: "2026-08-05",
     dueDate: "2026-08-06", // D-1
   },
   {
@@ -41,7 +49,8 @@ export const MEMBER_ACTIONS_MOCK: MemberAction[] = [
     projectTag: "GOODS",
     color: "#7C3AED",
     status: ACTION_STATUS.IN_PROGRESS,
-    dueDate: "2026-08-08", // D-3
+    startDate: "2026-08-04",
+    dueDate: "2026-08-08", // D-3 (오늘 걸침)
   },
   {
     id: "ma5",
@@ -49,6 +58,7 @@ export const MEMBER_ACTIONS_MOCK: MemberAction[] = [
     projectTag: "GOODS",
     color: "#7C3AED",
     status: ACTION_STATUS.TODO,
+    startDate: "2026-08-09",
     dueDate: "2026-08-11", // D-6
   },
   {
@@ -57,6 +67,7 @@ export const MEMBER_ACTIONS_MOCK: MemberAction[] = [
     projectTag: "GOODS",
     color: "#7C3AED",
     status: ACTION_STATUS.TODO,
+    startDate: "2026-08-10",
     dueDate: "2026-08-12", // D-7
   },
   {
@@ -65,7 +76,8 @@ export const MEMBER_ACTIONS_MOCK: MemberAction[] = [
     projectTag: "COLLAB",
     color: "#2563EB",
     status: ACTION_STATUS.TODO,
-    dueDate: "2026-08-30", // D-25 (D-7 박스 제외)
+    startDate: "2026-08-25",
+    dueDate: "2026-08-30", // D-25 (처리할 액션 제외)
   },
   {
     id: "ma8",
@@ -73,7 +85,8 @@ export const MEMBER_ACTIONS_MOCK: MemberAction[] = [
     projectTag: "COLLAB",
     color: "#2563EB",
     status: ACTION_STATUS.TODO,
-    dueDate: "2026-09-21", // D-47 (D-7 박스 제외)
+    startDate: "2026-09-15",
+    dueDate: "2026-09-21", // D-47 (처리할 액션 제외)
   },
 ];
 

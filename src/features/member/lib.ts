@@ -2,7 +2,7 @@ import { MEETING_ITEM_HEIGHT } from "@/components/common/dashboard-meeting-item"
 import { ACTION_STATUS, type ActionStatus } from "@/constants/domain";
 
 /**
- * D-7 박스 최소 높이(px). 뷰포트를 채우도록 flex로 늘어나되, 짧은 화면에서도 이 높이는 보장한다.
+ * 처리할 액션(타임라인) 박스 최소 높이(px). 뷰포트를 채우도록 flex로 늘어나되, 짧은 화면에서도 이 높이는 보장한다.
  * 회의 박스는 아래에 고정으로 붙고, 이 박스가 남는 세로 공간을 채운 뒤 내부 스크롤한다.
  */
 export const DUE_SOON_BOX_MIN_HEIGHT = 280;
@@ -27,15 +27,8 @@ export function getDaysUntilDue(dateIso: string): number {
   return Math.round((due.getTime() - today.getTime()) / 86_400_000);
 }
 
-/** D-day 라벨 — 오늘=`D-day`, 미래=`D-n`, 연체=`D+n`. */
-export function formatDday(dateIso: string): string {
-  const days = getDaysUntilDue(dateIso);
-  if (days === 0) return "D-day";
-  return days > 0 ? `D-${days}` : `D+${-days}`;
-}
-
 /**
- * D-7 박스 대상 여부 — **미완료이면서 마감이 7일 이내(연체 포함)**.
+ * 처리할 액션 대상 여부 — **미완료이면서 마감이 7일 이내(연체 포함)**.
  * 연체(음수)도 가장 급하므로 포함한다.
  */
 export function isDueSoon(action: { status: ActionStatus; dueDate: string }): boolean {
