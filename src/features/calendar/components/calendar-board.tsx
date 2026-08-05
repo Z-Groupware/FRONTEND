@@ -46,6 +46,9 @@ function defaultSelectedDate(month: string): Date {
  *    (`items-stretch`) 오른쪽 패널의 `border-l`이 캘린더가 아니라 안쪽 콘텐츠 높이만큼만
  *    그려지는 문제가 있었다. 캘린더(`personal-calendar.tsx`)도 같은 계산 함수로 같은 값을
  *    쓰니 항상 일치한다.
+ * ⚠️ 이 고정 높이·좌우 배치는 **`lg` 이상에서만** 켠다. 좁은 화면에서 캘린더와 패널을
+ *    나란히 두면 둘 다 찌그러진다 — 그 아래에서는 위아래로 쌓고 높이도 내용에 맞춘다
+ *    (`--calendar-total-height`는 CSS 변수로만 내려두고, `lg:` 접두사가 붙은 높이 클래스로 그 폭에서만 켠다).
  */
 export function CalendarBoard({ initialEvents, month }: CalendarBoardProps) {
   const [events, setEvents] = useState(initialEvents);
@@ -84,7 +87,10 @@ export function CalendarBoard({ initialEvents, month }: CalendarBoardProps) {
   }
 
   return (
-    <div className="flex items-stretch gap-6" style={{ height: calendarHeight }}>
+    <div
+      className="flex flex-col gap-6 lg:h-[var(--calendar-total-height)] lg:flex-row lg:items-stretch"
+      style={{ "--calendar-total-height": calendarHeight } as React.CSSProperties}
+    >
       <div className="min-w-0 flex-1">
         <PersonalCalendarLoader
           events={events}
