@@ -58,7 +58,7 @@ export const OWNER_NAV: NavSection[] = [
       { href: "/app/projects", label: "프로젝트", icon: "project" },
       { href: "/app/search", label: "검색", icon: "search" },
       { href: "/app/calendar", label: "캘린더", icon: "calendar" },
-      { href: "/app/notice", label: "공지사항", icon: "notice" },
+      { href: "/app/notice", label: "공지", icon: "notice", isReady: true },
     ],
   },
   {
