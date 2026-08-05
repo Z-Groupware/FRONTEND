@@ -78,7 +78,7 @@ export function OptionSelect({
 
   // 고를 게 아무것도 없고 "없음"조차 못 쓰면 칸을 잠근다
   if (options.length === 0) {
-    return <EmptySelect text={emptyText} width={width} className={className} />;
+    return <EmptySelect text={emptyText} label={label} width={width} className={className} />;
   }
 
   return (

@@ -26,7 +26,10 @@ import type { NavIconName, NavItem } from "../nav";
 
 /**
  * 이름 → 아이콘. 구성 파일은 서버에서 읽히므로 실제 컴포넌트는 여기서 붙인다.
- * OWNER_NAV가 쓰는 이름만 채운다 — `Partial`이라 나머지(SYSTEM 전용 등)는 없어도 된다.
+ *
+ * ⚠️ **역할 셸이 쓰는 이름만** 채운다. `approval`·`company`·`monitor`는 운영자 전용이라
+ *    여기 없는 게 맞다 — 그 화면은 `system/components/system-sidebar.tsx`가 자기 맵으로 그린다.
+ *    두 셸이 한 맵을 나눠 쓰면 역할 사이드바가 운영자 아이콘까지 번들에 끌고 온다.
  */
 const NAV_ICON: Partial<Record<NavIconName, LucideIcon>> = {
   dashboard: LayoutDashboard,
@@ -61,7 +64,11 @@ export function SidebarItem({ item, isCurrent }: { item: NavItem; isCurrent: boo
     return (
       <button
         type="button"
-        aria-disabled
+        /*
+          ⚠️ `aria-disabled`를 붙이지 않는다. 눌리고 토스트도 뜨는데 "못 쓴다"고 알리면
+             상태와 동작이 어긋난다 — 준비 중이라는 건 **이름에** 담는다.
+        */
+        aria-label={`${item.label} — 준비 중`}
         // ⚠️ 토스트는 한 줄(220px)이라 짧게 쓴다 — 길면 잘린다(`sonner.tsx`)
         onClick={() => toast(`${item.label}은 준비 중입니다`)}
         // 색은 준비된 메뉴와 똑같이 — 평소 회색, 호버하면 글자가 진해진다
