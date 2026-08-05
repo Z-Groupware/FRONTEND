@@ -1,11 +1,13 @@
 "use client";
 
+import { Trash2 } from "lucide-react";
 import Link from "next/link";
 
 import { StatusDot } from "@/components/common/status-dot";
-import { Button } from "@/components/ui/button";
 import { PROJECT_STATUS_LABEL } from "@/constants/project";
 import { formatGb } from "@/features/billing/pricing";
+import { pickPaletteColor } from "@/lib/palette";
+import { cn } from "@/lib/utils";
 
 import { canDeleteRecordings } from "../storage";
 import type { ProjectStorage } from "../types";
@@ -154,11 +156,17 @@ function Row({
   onDelete: (project: ProjectStorage) => void;
 }) {
   const isDeletable = canDeleteRecordings(project);
+  const tagColor = pickPaletteColor(project.tag);
   // ⚠️ 0으로 나누면 `NaN%`가 되어 막대가 아예 안 그려진다
   const share = totalVoiceGb > 0 ? (project.voiceGb / totalVoiceGb) * 100 : 0;
 
+  /*
+    ⚠️ 줄 강조는 `--secondary`가 아니라 **먹색 옅게**(`foreground/[0.04]`)다. 라이트에서
+       `--secondary`(#fafaf9)는 흰 카드와 2%밖에 차이가 없어서 손이 어느 줄에 있는지
+       전혀 안 보인다 — 사이드바 항목이 같은 방식을 쓴다.
+  */
   return (
-    <tr className="border-border hover:bg-secondary/40 transition-colors not-first:border-t">
+    <tr className="group border-border hover:bg-foreground/[0.04] transition-colors not-first:border-t">
       <td className="px-6 py-3.5">
         {/*
           ⚠️ 이름은 **프로젝트로 가는 링크**다. 지울지 판단하려면 무슨 프로젝트였는지 봐야 하는데,
@@ -166,13 +174,32 @@ function Row({
           ⚠️ `inline-block`이라야 밑줄과 포커스 링이 **글자 폭에만** 걸린다. `block`이면 칸
              전체가 링크로 보여서, 빈 자리를 눌러도 눌리는 것처럼 읽힌다.
         */}
-        <Link
-          href={`/app/projects/${project.tag}`}
-          title={project.name}
-          className="focus-visible:ring-ring inline-block max-w-full truncate rounded align-middle hover:underline focus-visible:ring-2 focus-visible:outline-hidden"
-        >
-          {project.name}
-        </Link>
+        <span className="flex min-w-0 items-center gap-2">
+          <Link
+            href={`/app/projects/${project.tag}`}
+            title={project.name}
+            className="focus-visible:ring-ring min-w-0 truncate rounded hover:underline focus-visible:ring-2 focus-visible:outline-hidden"
+          >
+            {project.name}
+          </Link>
+          {/*
+            ⚠️ **프로젝트 태그는 화면에 내보내도 되는 유일한 태그**다(§도메인 상수).
+               내부 식별자나 임의 해시태그와 달리, 이건 회의·액션을 잇는 실제 이동 수단이다.
+            ⚠️ 색은 **태그 이름에서 뽑는다**(`lib/palette`) — 같은 프로젝트는 어느 화면에서든
+               같은 색이라 "그 초록 프로젝트"로 기억할 수 있다. 무작위였다면 새로고침마다 바뀐다.
+            ⚠️ 이 색은 **구분용이지 알림용이 아니다.** 빨간 태그가 위험하다는 뜻이 아니다 —
+               뜻을 담는 색은 §디자인 토큰이 정한 것(에러·상태점)뿐이다.
+            ⚠️ 이름과 같은 곳으로 가지만 링크를 따로 둔다. 태그로 옮겨 다니는 사람은 이름이
+               아니라 태그를 누른다(WORKFLOW §2 순환 추적).
+          */}
+          <Link
+            href={`/app/projects/${project.tag}`}
+            style={{ backgroundColor: tagColor.bgColor, color: tagColor.textColor }}
+            className="focus-visible:ring-ring shrink-0 rounded px-1.5 py-0.5 text-[11px] leading-4 transition-opacity hover:opacity-80 focus-visible:ring-2 focus-visible:outline-hidden"
+          >
+            #{project.tag}
+          </Link>
+        </span>
       </td>
       <td className="px-6 py-3.5">
         {/*
@@ -221,16 +248,28 @@ function Row({
           ⚠️ 지울 수 없는 줄에는 **버튼을 두지 않는다.** 흐린 버튼을 남기면 왜 못 누르는지
              설명할 자리가 필요해지는데, 그 이유(진행 중이다)는 이미 왼쪽에 적혀 있다.
         */}
+        {/*
+          ⚠️ 평소에는 **흐리게** 두고 그 줄에 손이 닿을 때 진해진다(`group-hover`). 다섯 줄에
+             윤곽 있는 버튼이 서 있으면 표에서 제일 먼저 눈에 들어오는 게 "지우기"가 된다 —
+             이 화면은 지우러 오는 곳이지만, 먼저 읽어야 할 건 용량이다.
+          ⚠️ **아예 감추지는 않는다.** 마우스가 없는 사람은 손이 닿는다는 걸 알 수 없다 —
+             키보드로 탭하면 `group-focus-within`으로 같이 드러난다(§a11y).
+          ⚠️ 뜻은 `aria-label`이 말한다. 휴지통 그림만으로는 **무엇을** 지우는지 알 수 없다.
+        */}
         {canManage && isDeletable && (
-          <Button
+          <button
             type="button"
-            variant="outline"
             onClick={() => onDelete(project)}
             aria-label={`${project.name} 녹음 지우기`}
-            className="h-8 shrink-0 px-3 text-[12px] leading-none"
+            title="녹음 지우기"
+            className={cn(
+              "text-muted-foreground hover:text-destructive hover:bg-destructive/10 focus-visible:ring-ring",
+              "inline-flex size-8 items-center justify-center rounded-md opacity-0 transition-[color,background-color,opacity]",
+              "group-focus-within:opacity-100 group-hover:opacity-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:outline-hidden",
+            )}
           >
-            <span className="translate-y-px">녹음 지우기</span>
-          </Button>
+            <Trash2 className="size-4" aria-hidden />
+          </button>
         )}
       </td>
     </tr>
