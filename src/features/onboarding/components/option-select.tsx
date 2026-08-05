@@ -9,18 +9,11 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 
+import type { SelectOption } from "../types";
 import { EmptySelect, LockedSelect } from "./option-select-locked";
 
-export interface SelectOption {
-  id: string;
-  name: string;
-  /**
-   * 고를 수 없는 항목.
-   * ⚠️ **왜 못 고르는지 항목 옆에 적지 않는다.** 좁은 목록에 설명이 붙으면 이름이 밀리고
-   *    글자 크기도 섞여 무엇을 고를 수 있는지가 더 안 보인다 — 흐린 것으로 충분하다.
-   */
-  disabled?: boolean;
-}
+// 쓰던 곳이 많아 여기서 그대로 다시 내보낸다 — 정본은 `types.ts`다
+export type { SelectOption };
 
 interface OptionSelectProps {
   value: string;

@@ -1,5 +1,5 @@
 import { departmentsWithLeader, fitsRoleAndPosition, type InviteRules } from "./invite-rules";
-import type { Invite } from "./types";
+import type { Invite, SelectOption } from "./types";
 import { NO_ROLE_ID, NO_ROLE_LABEL } from "./types";
 
 /**
@@ -8,11 +8,6 @@ import { NO_ROLE_ID, NO_ROLE_LABEL } from "./types";
  * ⚠️ 판정 자체는 `invite-rules.ts`가 한다. 여기는 그 판정으로 **목록을 걸러** 화면에 넘긴다 —
  *    화면이 직접 거르면 규칙이 두 벌이 된다.
  */
-
-interface SelectOption {
-  id: string;
-  name: string;
-}
 
 interface ChoiceSources {
   invites: Invite[];
