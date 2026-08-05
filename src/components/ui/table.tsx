@@ -6,9 +6,18 @@ import { cn } from "@/lib/utils"
 
 function Table({ className, ...props }: React.ComponentProps<"table">) {
   return (
+    /*
+      ⚠️ `tabIndex={0}` — 가로로 넘치는 표는 **포커스를 받을 수 있어야 한다.** 스크롤 막대를
+         사이트 전역에서 감췄기 때문에(globals.css §스크롤바), 이게 없으면 키보드만 쓰는
+         사람은 잘려 나간 오른쪽 칸에 닿을 방법이 아예 없다 — 끌 막대도, 포커스도 없다.
+         `SupportThread`가 같은 이유로 같은 처리를 한다(§a11y).
+      ⚠️ 넘치지 않는 표에도 붙지만, 그때는 스크롤이 없어 탭 한 번이 더 필요할 뿐이다.
+         넘치는지를 렌더 시점에 알 수 없어 조건부로 둘 수 없다.
+    */
     <div
       data-slot="table-container"
-      className="relative w-full overflow-x-auto"
+      tabIndex={0}
+      className="focus-visible:ring-ring relative w-full overflow-x-auto focus-visible:ring-2 focus-visible:outline-hidden"
     >
       <table
         data-slot="table"
