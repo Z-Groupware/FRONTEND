@@ -7,7 +7,6 @@ import { StatusDot } from "@/components/common/status-dot";
 import { PROJECT_STATUS_LABEL } from "@/constants/project";
 import { formatGb } from "@/features/billing/pricing";
 import { pickPaletteColor } from "@/lib/palette";
-import { cn } from "@/lib/utils";
 
 import { canDeleteRecordings, formatRecordedDate } from "../storage";
 import type { ProjectStorage } from "../types";
@@ -48,7 +47,7 @@ export function ProjectStorageTable({
       <div className="flex items-baseline justify-between gap-3 px-7 py-6">
         <h2 className="flex items-center gap-2 text-[17px] leading-7 font-semibold tracking-[-0.3px]">
           <span className="bg-foreground size-2 rounded-full" aria-hidden />
-          프로젝트별 녹음 용량
+          프로젝트별 사용량
         </h2>
         {/* ⚠️ 전체 건수를 적는다 — 끝이 안 보이는 목록은 얼마나 남았는지 알 수 없다 */}
         {/* ⚠️ `/70`을 쓰지 않는다 — 12px 글자가 라이트에서 2.73:1로 4.5:1에 못 미친다(§a11y) */}
@@ -64,14 +63,14 @@ export function ProjectStorageTable({
            줄 알고 지웠다가 다시듣기가 안 되는 것도 마찬가지로 나쁘다(§정직성).
       */}
       <p className="text-muted-foreground border-border border-t px-7 py-3.5 text-[12px] leading-[18px] break-keep">
-        녹음을 지우면 <span className="text-foreground font-medium">음성 파일만</span> 사라집니다.
-        자막·요약과 액션은 그대로 남고, 다시 들을 수 없게 될 뿐입니다.
+        삭제 시 <span className="text-foreground font-medium">음성 파일만</span> 제거됩니다.
+        자막·요약과 액션은 유지되며, 다시 재생할 수 없습니다.
       </p>
 
       {projects.length === 0 ? (
         /* ⚠️ 빈 상태 — 무엇이 없는지 적는다(§3상태) */
         <p className="text-muted-foreground border-border border-t px-6 py-12 text-center text-[13px] leading-5 break-keep">
-          아직 녹음이 남은 프로젝트가 없습니다
+          녹음이 있는 프로젝트가 없습니다
         </p>
       ) : (
         <div className="border-border overflow-x-auto border-t">
@@ -96,7 +95,11 @@ export function ProjectStorageTable({
               <col className="w-[150px]" />
               <col className="w-[92px]" />
               <col className="w-[128px]" />
-              <col className="w-[64px]" />
+              {/*
+                ⚠️ 지우기 열은 **아이콘(32px)에 오른쪽 여백을 더해** 잡는다. 아이콘을 표
+                   맨 끝에 붙이면 카드 모서리에 닿아 밀려난 것처럼 보인다 — 안쪽으로 당긴다.
+              */}
+              <col className="w-[76px]" />
             </colgroup>
             <thead>
               {/*
@@ -132,7 +135,7 @@ export function ProjectStorageTable({
                 <th className="px-4 py-3 text-center font-normal">음성</th>
                 <th className="px-4 py-3 text-center font-normal">자막·요약</th>
                 <th className="px-4 py-3 text-center font-normal">가장 오래된 녹음</th>
-                <th className="px-4 py-3 text-center font-normal">
+                <th className="py-3 pr-5 pl-0 text-center font-normal">
                   <span className="sr-only">녹음 지우기</span>
                 </th>
               </tr>
@@ -198,6 +201,11 @@ function Row({
           ⚠️ `inline-block`이라야 밑줄과 포커스 링이 **글자 폭에만** 걸린다. `block`이면 칸
              전체가 링크로 보여서, 빈 자리를 눌러도 눌리는 것처럼 읽힌다.
         */}
+        {/*
+          ⚠️ **영문 태그 칩(`#product-v2`)을 붙이지 않는다.** 한글 이름 옆에 영문 슬러그가
+             나란히 서면 같은 것을 두 번 말하는 데다, 표에서 눈이 먼저 닿는 열이 영어로 시작한다.
+             태그는 **줄 왼쪽 색 띠**가 대신 말하고, 이동은 이름 링크가 같은 곳으로 데려간다.
+        */}
         <span className="flex min-w-0 items-center gap-2">
           <Link
             href={`/app/projects/${project.tag}`}
@@ -205,20 +213,6 @@ function Row({
             className="focus-visible:ring-ring min-w-0 truncate rounded hover:underline focus-visible:ring-2 focus-visible:outline-hidden"
           >
             {project.name}
-          </Link>
-          {/*
-            ⚠️ **프로젝트 태그는 화면에 내보내도 되는 유일한 태그**다(§도메인 상수).
-               내부 식별자나 임의 해시태그와 달리, 이건 회의·액션을 잇는 실제 이동 수단이다.
-            ⚠️ 칩은 **색을 쓰지 않는다.** 색은 줄 왼쪽 띠가 맡는다 — 같은 정보를 두 곳에서
-               색으로 말하면 어느 쪽이 기준인지 흐려지고, 표에 색 덩어리가 두 개씩 생긴다.
-            ⚠️ 이름과 같은 곳으로 가지만 링크를 따로 둔다. 태그로 옮겨 다니는 사람은 이름이
-               아니라 태그를 누른다(WORKFLOW §2 순환 추적).
-          */}
-          <Link
-            href={`/app/projects/${project.tag}`}
-            className="bg-secondary text-muted-foreground focus-visible:ring-ring hover:text-foreground shrink-0 rounded px-1.5 py-0.5 text-[11px] leading-4 transition-colors focus-visible:ring-2 focus-visible:outline-hidden"
-          >
-            #{project.tag}
           </Link>
         </span>
       </td>
@@ -231,7 +225,9 @@ function Row({
         {/*
           ⚠️ **묶음을 가운데 두지 않는다**(`justify-center` 금지). `진행중`(3자)과 `완료`(2자)는
              폭이 달라서, 묶음 전체를 가운데 놓으면 **점이 줄마다 좌우로 어긋난다.**
-             칸 안에서 묶음을 가운데 두되 **라벨 폭을 고정**해 점이 한 줄로 서게 한다.
+             **글자는 머리글(`상태`) 아래에 한 줄로 서고, 점은 그 왼쪽에 조금 떨어져 점끼리 선다.**
+             라벨 폭을 고정(`w-[42px] text-left`)해야 `완료`도 `진행중`과 같은 왼쪽에서 시작하고,
+             그래야 앞에 붙는 점도 저절로 한 세로선에 놓인다.
         */}
         <StatusDot
           tone={project.status}
@@ -281,33 +277,28 @@ function Row({
       <td className="text-muted-foreground px-4 py-3.5 text-center tabular-nums">
         {project.voiceGb > 0 ? formatRecordedDate(project.oldestRecordedAt) : "—"}
       </td>
-      <td className="px-6 py-3.5 text-center">
-        {/*
-          ⚠️ 지울 수 없는 줄에는 **버튼을 두지 않는다.** 흐린 버튼을 남기면 왜 못 누르는지
-             설명할 자리가 필요해지는데, 그 이유(진행 중이다)는 이미 왼쪽에 적혀 있다.
-        */}
-        {/*
-          ⚠️ 평소에는 **숨겨 두고** 그 줄에 손이 닿을 때 드러난다(`group-hover`). 다섯 줄에
-             윤곽 있는 버튼이 서 있으면 표에서 제일 먼저 눈에 들어오는 게 "지우기"가 된다 —
-             이 화면은 지우러 오는 곳이지만, 먼저 읽어야 할 건 용량이다.
-          ⚠️ **터치 기기에서는 늘 보인다**(`hover: none`). 손가락에는 hover가 없어서, 숨겨 두면
-             지우는 기능이 아예 없는 화면이 된다 — 마우스가 있는 기기에서만 숨기는 것이다.
-          ⚠️ 키보드로 탭해도 드러난다(`group-focus-within`) — 마우스가 없는 사람도 닿아야 한다.
-          ⚠️ 뜻은 `aria-label`이 말한다. 휴지통 그림만으로는 **무엇을** 지우는지 알 수 없다.
-        */}
-        {canManage && isDeletable && (
+      {/*
+        ⚠️ **줄마다 버튼이 있다 없다 하지 않는다.** 전에는 지울 수 있는 줄에만 그려서, 다섯
+           줄 중 둘에만 아이콘이 떠 있어 왜 어떤 줄엔 없는지 알 수 없었다 — 열이 비면
+           기능이 없는 건지 이 줄만 안 되는 건지 구분이 안 된다.
+           **자리는 늘 두고, 못 지우는 줄은 잠근다.** 이유는 `title`이 말한다(§정직성).
+        ⚠️ 오른쪽에 여백(`pr-5`)을 줘 **안쪽으로 당긴다.** 표 맨 끝에 붙이면 카드 모서리에
+           닿아 혼자 밀려난 것처럼 보인다.
+        ⚠️ 뜻은 `aria-label`이 말한다 — 휴지통 그림만으로는 **무엇을** 지우는지 알 수 없다.
+      */}
+      <td className="py-3.5 pr-5 pl-0 text-center">
+        {canManage && (
           <button
             type="button"
+            disabled={!isDeletable}
             onClick={() => onDelete(project)}
-            aria-label={`${project.name} 녹음 지우기`}
-            title="녹음 지우기"
-            className={cn(
-              "text-muted-foreground hover:text-destructive hover:bg-destructive/10 focus-visible:ring-ring",
-              "inline-flex size-8 items-center justify-center rounded-md opacity-0 transition-[color,background-color,opacity]",
-              "group-focus-within:opacity-100 group-hover:opacity-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:outline-hidden",
-              // 손가락에는 hover가 없다 — 이게 없으면 터치 기기에서 지우기가 아예 없는 화면이 된다
-              "[@media(hover:none)]:opacity-100",
-            )}
+            aria-label={
+              isDeletable
+                ? `${project.name} 녹음 지우기`
+                : `${project.name} — 진행 중이라 녹음을 지울 수 없습니다`
+            }
+            title={isDeletable ? "녹음 지우기" : "진행 중인 프로젝트는 녹음을 지울 수 없습니다"}
+            className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 focus-visible:ring-ring inline-flex size-8 items-center justify-center rounded-md transition-colors focus-visible:ring-2 focus-visible:outline-hidden disabled:pointer-events-none disabled:opacity-25"
           >
             <Trash2 className="size-4" aria-hidden />
           </button>

@@ -7,7 +7,7 @@ import { getStorageOverview } from "@/features/storage/server";
 import { canManageStorage } from "@/lib/permission";
 
 export const metadata: Metadata = {
-  title: "녹음 용량",
+  title: "저장소 관리",
 };
 
 /**

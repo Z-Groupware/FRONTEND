@@ -195,17 +195,23 @@
         노랑·연두는 라이트에서 1.8:1로 거의 안 보였다.
      ⚠️ 기준은 3:1이다(WCAG 1.4.11 비텍스트 대비). 글자가 안 얹히니 4.5:1까지는 필요 없다.
         지금 값은 전부 4.7:1 이상이다. */
+  /*
+   * ⚠️ **600단계다(전에는 700).** 700은 전부 명도 0.08~0.16이라 막대가 다섯 줄 모두
+   *    시커멓게 보여 색이 몇 개 없는 것처럼 읽혔다. 600으로 올리면 색끼리 구분된다.
+   * ⚠️ **`yellow`·`lime`만 700을 유지한다.** 이 둘은 600에서 트랙(`#f5f5f4`) 대비가
+   *    2.7:1 · 2.8:1로 비문자 그래픽 기준 3:1에 못 미친다 — 막대가 바탕에 묻힌다.
+   */
   --tag-slate-solid: #475569;
   --tag-yellow-solid: #a16207;
   --tag-lime-solid: #4d7c0f;
-  --tag-emerald-solid: #047857;
-  --tag-teal-solid: #0f766e;
-  --tag-cyan-solid: #0e7490;
-  --tag-sky-solid: #0369a1;
-  --tag-indigo-solid: #4338ca;
-  --tag-purple-solid: #7e22ce;
-  --tag-fuchsia-solid: #a21caf;
-  --tag-pink-solid: #be185d;
+  --tag-emerald-solid: #059669;
+  --tag-teal-solid: #0d9488;
+  --tag-cyan-solid: #0891b2;
+  --tag-sky-solid: #0284c7;
+  --tag-indigo-solid: #4f46e5;
+  --tag-purple-solid: #9333ea;
+  --tag-fuchsia-solid: #c026d3;
+  --tag-pink-solid: #db2777;
   /* 랜딩 검정 섹션 — 로그인 전 화면이라 **테마와 무관하게 어둡다**(도움말 패널과 같은 규칙) */
   --landing-dark: #0a0a0a;
   --landing-dark-foreground: #ffffff;

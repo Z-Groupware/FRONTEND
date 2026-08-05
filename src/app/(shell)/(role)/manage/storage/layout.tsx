@@ -11,7 +11,7 @@ import { PageHeader } from "@/features/shell/components/page-header";
 export default function ManageStorageLayout({ children }: { children: ReactNode }) {
   return (
     <>
-      <PageHeader title="녹음 용량" icon={HardDrive} />
+      <PageHeader title="저장소 관리" icon={HardDrive} />
       {children}
     </>
   );

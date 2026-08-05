@@ -59,7 +59,7 @@ const MANAGE_SHARED: NavItem[] = [
   { href: "/manage/members", label: "사원 관리", icon: "members" },
   { href: "/manage/rooms", label: "회의실 관리", icon: "room" },
   { href: "/manage/billing", label: "구독·결제", icon: "billing" },
-  { href: "/manage/storage", label: "녹음 용량", icon: "storage" },
+  { href: "/manage/storage", label: "저장소 관리", icon: "storage" },
 ];
 
 const ISSUE_ACCOUNT: NavItem = { href: "/manage/new", label: "계정 발급", icon: "members" };

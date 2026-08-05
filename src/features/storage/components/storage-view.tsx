@@ -8,7 +8,7 @@ import { formatGb } from "@/features/billing/pricing";
 import type { BillingConfig } from "@/features/billing/types";
 
 import { deleteRecordingsAction } from "../actions";
-import { buildStorageTotals, freedGb } from "../storage";
+import { buildStorageTotals, canDeleteRecordings, freedGb, totalFreeableGb } from "../storage";
 import type { ProjectStorage, StorageOverview } from "../types";
 import { ProjectStorageTable } from "./project-storage-table";
 import { StorageSummary } from "./storage-summary";
@@ -67,7 +67,7 @@ export function StorageView({ overview, config, canManage }: StorageViewProps) {
 
       if (!result.isSuccess) {
         // ⚠️ 토스트는 한 줄(220px)이라 짧게 쓴다 — 길면 잘린다(`sonner.tsx`)
-        toast(result.message ?? "녹음을 지우지 못했습니다");
+        toast(result.message ?? "삭제하지 못했습니다");
         return;
       }
 
@@ -78,9 +78,9 @@ export function StorageView({ overview, config, canManage }: StorageViewProps) {
         ),
       );
       setTarget(null);
-      toast(`${formatGb(freed)}를 비웠습니다`);
+      toast(`${formatGb(freed)} 삭제됨`);
     } catch {
-      toast("녹음을 지우지 못했습니다");
+      toast("삭제하지 못했습니다");
     } finally {
       setIsPending(false);
     }
@@ -91,7 +91,11 @@ export function StorageView({ overview, config, canManage }: StorageViewProps) {
       {/* ⚠️ 목록 화면 규격은 1440이다(CLAUDE.md §디자인 토큰 — PageLayout `list`) */}
       <div className="mx-auto w-full max-w-[1440px]">
         <div className="flex flex-col gap-7">
-          <StorageSummary totals={totals} />
+          <StorageSummary
+            totals={totals}
+            freeableGb={totalFreeableGb(projects)}
+            deletableCount={projects.filter(canDeleteRecordings).length}
+          />
 
           <ProjectStorageTable
             projects={projects}
@@ -109,19 +113,19 @@ export function StorageView({ overview, config, canManage }: StorageViewProps) {
       <ConfirmDialog
         isOpen={target !== null}
         onOpenChange={(open) => !open && setTarget(null)}
-        title="이 프로젝트의 녹음을 지울까요?"
+        title="녹음을 삭제할까요?"
         description={
           target ? (
             <>
               <span className="font-medium">{target.name}</span>의 음성 {formatGb(target.voiceGb)}
-              가 사라지고 다시 들을 수 없습니다.
+              가 삭제되며 다시 재생할 수 없습니다.
               <br />
-              자막·요약과 액션은 그대로 남습니다.
+              자막·요약과 액션은 유지됩니다.
             </>
           ) : null
         }
-        confirmLabel="녹음 지우기"
-        pendingLabel="지우는 중"
+        confirmLabel="삭제"
+        pendingLabel="삭제 중"
         isPending={isPending}
         isDestructive
         onConfirm={handleDelete}

@@ -80,5 +80,5 @@ export async function getStorageOverview(): Promise<StorageOverview> {
   if (isMock) return MOCK;
 
   // TODO(BE 협의): `GET /companies/me/storage` → { voiceGb, sttGb, projects[] }
-  throw new Error("녹음 용량을 불러오지 못했습니다");
+  throw new Error("저장소 정보를 불러오지 못했습니다");
 }
