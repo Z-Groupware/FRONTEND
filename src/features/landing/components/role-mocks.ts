@@ -91,7 +91,7 @@ export const ROLE_MOCKS: Record<RoleName, RoleMock> = {
     ],
     listLabel: "내 액션",
     rows: [
-      { title: "KPI 문서 업데이트", detail: "8월 2일(토) 마감", state: "진행중" },
+      { title: "KPI 문서 업데이트", detail: "8월 2일(일) 마감", state: "진행중" },
       { title: "회의록 확인", detail: "오늘 마감", state: "완료", isDone: true },
     ],
     banner: { title: "오늘 회의", detail: "스프린트 킥오프 · 14:00" },

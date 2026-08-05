@@ -1,6 +1,6 @@
 "use client";
 
-import type { PaymentMethod } from "./subscription";
+import { isMock } from "@/mocks/config";
 
 /**
  * 결제 수단 등록 — **카드 정보는 우리 화면을 지나가지 않는다.**
@@ -14,11 +14,11 @@ import type { PaymentMethod } from "./subscription";
  * ⚠️ **프론트는 카드 번호를 받지도 보내지도 않는다.** 우리가 만지면 PCI-DSS 대상이 된다.
  *    `PaymentMethod`에 `last4`만 있는 이유다.
  * ⚠️ **빌링키를 프론트가 들고 있지 않는다.** 그 키로 결제가 일어나므로 서버에만 있어야 한다.
+ * ⚠️ **이 파일만 브라우저에서 돈다.** 결제사 창을 여는 일이라 서버로 옮길 수 없다 —
+ *    빌링키 발급·저장은 서버(`actions.ts`)가 한다.
  * ⚠️ 지금은 목이다 — `isMock`만 내리면 아래 주석대로 이어 붙일 수 있게 자리를 만들어 뒀다.
  *    PG는 아직 팀 미확정이다(CLAUDE.md §팀확정 — 결제 실연동 여부).
  */
-
-const isMock = true;
 
 /**
  * 결제사 창에서 카드 등록을 받고 **인증 결과**를 돌려준다.
@@ -58,26 +58,4 @@ export async function requestCardAuth(customerKey: string): Promise<CardAuthResu
 
   // TODO(PG 확정): 위 주석의 Toss 호출로 바꾼다.
   throw new Error("결제사가 연결되지 않았습니다");
-}
-
-/**
- * 서버에 등록을 요청하고, 화면에 그릴 결제 수단을 돌려받는다.
- *
- * ⚠️ **엔드포인트는 아직 가정이다**(BE 미협의). BE 레포 실코드로 확인한 뒤 확정한다
- *    (CLAUDE.md §연동 검증).
- */
-export async function registerCardMethod(auth: CardAuthResult): Promise<PaymentMethod> {
-  if (isMock) {
-    // 목 — 실제로는 서버가 결제사에서 받은 카드 정보를 내려 준다
-    return {
-      id: auth.authKey,
-      brand: "MASTER",
-      last4: `${Math.floor(Math.random() * 9000) + 1000}`,
-      expiry: "12/29",
-      isDefault: false,
-    };
-  }
-
-  // TODO(BE 협의): `POST /companies/me/payment-methods` { authKey, customerKey } → PaymentMethod
-  throw new Error("결제 수단을 저장할 수 없습니다");
 }

@@ -1,12 +1,14 @@
 import "server-only";
 
-import type { BillingConfig } from "./config";
+import { isMock } from "@/mocks/config";
+
 import {
   type BillingOverview,
   PAYMENT_STATUS,
   type Subscription,
   SUBSCRIPTION_STATUS,
 } from "./subscription";
+import type { BillingConfig } from "./types";
 import { PLAN } from "./types";
 
 /**
@@ -18,7 +20,6 @@ import { PLAN } from "./types";
  *    이 값들은 "그럴듯한 예시"가 아니라 **가정한 shape**이다 — 연동 시 매퍼로 맞춘다.
  * ⚠️ 결제 실연동(Toss)이 미정이라 카드 등록·해지는 **화면에서 목이라고 밝힌다**(§정직성).
  */
-const isMock = true;
 
 /** 목 — 12명이 Team을 쓰는 회사 */
 const MOCK: BillingOverview = {

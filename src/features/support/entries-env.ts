@@ -77,7 +77,7 @@ export const ENV_ENTRIES: readonly FaqEntry[] = [
     id: "location",
     category: FAQ_CATEGORY.ENV,
     // ⚠️ 질문을 "위치"가 들어가게 적는다 — "어디"만으로 잡으면 "화장실이 어디"까지 걸린다
-    question: "회사 위치가 어디인갑니다?",
+    question: "회사 위치가 어디인가요?",
     keywords: ["위치", "주소", "오시는", "찾아가", "지도", "사무실"],
     answer:
       "을지대학교 박애관 421호에 있습니다.\n\n지도와 대중교통 안내는 오시는 길에서 볼 수 있습니다.",

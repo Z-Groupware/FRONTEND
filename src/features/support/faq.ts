@@ -64,10 +64,10 @@ export interface FaqEntry {
  * 첫 화면에서 갈래를 고르라고 물을 때.
  * ⚠️ 인사는 **위쪽 안내 블록**이 한다 — 여기서 또 인사하면 같은 말이 두 번이다.
  */
-export const FAQ_GREETING = "어떤 게 궁금하신갑니다?";
+export const FAQ_GREETING = "어떤 게 궁금하신가요?";
 
 /** 여러 개가 걸렸을 때 — 바로 답하지 않고 되묻는다 */
-export const FAQ_NARROW = "이 중에 어떤 게 궁금하신갑니다?";
+export const FAQ_NARROW = "이 중에 어떤 게 궁금하신가요?";
 
 /**
  * 답을 못 찾았을 때.

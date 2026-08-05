@@ -22,7 +22,7 @@ export const PRODUCT_ENTRIES: readonly FaqEntry[] = [
   {
     id: "product",
     category: FAQ_CATEGORY.SERVICE,
-    question: "Z는 어떤 서비스인갑니다?",
+    question: "Z는 어떤 서비스인가요?",
     keywords: ["서비스", "제품", "소개", "뭐하는", "뭐 하는", "무슨 서비스", "어떤 서비스"],
     answer:
       "회의를 캡처하면 그게 조직의 기억이 되는 그룹웨어입니다.\n\n회의 중 자막이 쌓이고, 끝나면 결정과 할 일이 정리돼 담당자에게 배정됩니다.\n\n10~50명 규모 팀을 염두에 두고 만들었습니다.",
@@ -80,7 +80,7 @@ export const PRODUCT_ENTRIES: readonly FaqEntry[] = [
   {
     id: "action-split",
     category: FAQ_CATEGORY.SERVICE,
-    question: "팀 액션과 개인 액션은 뭐가 다른갑니다?",
+    question: "팀 액션과 개인 액션은 뭐가 다른가요?",
     keywords: ["팀 액션", "개인 액션", "쪼개", "하위 액션", "나눠서"],
     answer:
       "팀 액션은 팀장이 받아서 개인에게 쪼개는 단위입니다.\n\n쪼개진 개인 액션은 원래 팀 액션을 부모로 물고 있어서, 어디서 나온 일인지 따라갈 수 있습니다.",

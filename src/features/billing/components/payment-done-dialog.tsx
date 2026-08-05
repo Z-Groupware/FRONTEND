@@ -6,8 +6,8 @@ import { ResultDialog } from "@/components/common/result-dialog";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-import type { BillingConfig } from "../config";
 import { calculatePrice, formatGb, formatTokens, formatWon } from "../pricing";
+import type { BillingConfig } from "../types";
 
 interface PaymentDoneDialogProps {
   isOpen: boolean;

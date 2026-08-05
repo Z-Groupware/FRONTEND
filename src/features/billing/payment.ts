@@ -1,15 +1,14 @@
-"use client";
-
 /**
  * 결제 요청 — **성공만 있는 게 아니다.**
  *
  * ⚠️ 실패가 흔한 흐름이다. 한도 초과·정지된 카드·해외결제 차단·인증 취소가 전부 여기로 온다 —
  *    화면이 성공 한 갈래만 들고 있으면 **아무 일도 안 일어난 것처럼** 보인다(§정직성).
- * ⚠️ 지금은 목이다 — `isMock`만 내리면 이어 붙일 수 있게 자리를 만들어 뒀다.
- *    PG는 아직 팀 미확정이다(CLAUDE.md §팀확정).
+ * ⚠️ **여기에는 요청하는 코드가 없다.** 결제를 확정하는 일은 서버에서 돈다(`actions.ts`) —
+ *    이 파일은 결제사가 준 **코드를 화면 문구로 옮기는 표**만 갖는다.
+ * ⚠️ 어느 쪽에서도 읽을 수 있게 `"use client"`도 `"use server"`도 붙이지 않는다.
+ *    지금은 액션(서버)만 쓰지만, 결제사 창에서 바로 사유가 오는 경로가 생기면
+ *    화면도 같은 표를 읽어야 한다 — 표가 두 벌이 되면 반드시 어긋난다.
  */
-
-const isMock = true;
 
 /**
  * 우리가 아는 실패 사유 — **코드를 짧은 한국어 한 줄로 바꾼다.**
@@ -32,33 +31,7 @@ const FAILURE_MESSAGE: Record<string, string> = {
 
 const DEFAULT_FAILURE_MESSAGE = "카드사에서 결제를 처리하지 못했습니다";
 
-export interface PaymentResult {
-  isSuccess: boolean;
-  /** 실패 사유 한 줄 — 성공이면 없다 */
-  message?: string;
-}
-
 /** 결제사 코드를 화면 문구로. 모르는 코드는 기본 문구다 */
-function toMessage(code?: string): string {
+export function toFailureMessage(code?: string): string {
   return (code && FAILURE_MESSAGE[code]) || DEFAULT_FAILURE_MESSAGE;
-}
-
-/**
- * 구독 결제를 요청한다.
- *
- * ⚠️ **프론트가 청구를 확정하지 않는다.** 결제 성공 판정은 서버가 결제사 응답을 받아서 한다 —
- *    화면 값을 믿으면 결제 안 하고 성공 화면을 띄울 수 있다.
- */
-export async function requestSubscriptionPayment(): Promise<PaymentResult> {
-  if (isMock) {
-    /*
-      ⚠️ 목은 항상 성공한다. **실패 화면을 보려면 여기를 잠깐 뒤집는다** —
-         `return { isSuccess: false, message: toMessage("EXCEED_MAX_CARD_LIMIT") }`
-    */
-    return { isSuccess: true };
-  }
-
-  // TODO(BE 협의): `POST /companies/me/subscription/pay` → { isSuccess, failureCode }
-  //   ⚠️ 받는 건 **코드**다. 화면 문구는 우리가 정한다 — 위 `FAILURE_MESSAGE`가 그 표다.
-  return { isSuccess: false, message: toMessage() };
 }

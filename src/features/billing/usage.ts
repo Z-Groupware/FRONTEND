@@ -1,6 +1,6 @@
-import type { BillingConfig } from "./config";
 import { daysBetween } from "./pricing";
 import type { UsageCounters } from "./subscription";
+import type { BillingConfig } from "./types";
 
 /**
  * 사용량 — **청구 지표**다.

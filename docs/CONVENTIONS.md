@@ -41,14 +41,15 @@ npm run typecheck
 
 ## 2. 디렉터리 구조
 
-```
+```text
 src/
 ├─ app/
 │  ├─ (public)/       /  /login  /register  /plans
 │  ├─ (onboarding)/   /onboarding/*                  ← OWNER 초기설정
-│  ├─ (role)/         /owner  /manage  /team  /my    ← 역할 전용 대시보드·관리
-│  ├─ (shared)/       /billing  /members             ← 권한으로 들어오는 공용 화면
-│  ├─ (app)/          /app/*                         ← 공용 워크벤치(권한 차등)
+│  ├─ (shell)/        (role)/ · (app)/               ← 사이드바 셸 하나를 공유한다
+│  │   ├─ (role)/     /owner  /manage  /team  /my    ← 역할 전용 대시보드·관리
+│  │   └─ (app)/      /app/*                         ← 공용 워크벤치(권한 차등)
+│  ├─ (gate)/         /subscription                  ← 구독이 끊긴 회사의 재개 화면(셸 밖)
 │  ├─ (system)/       /system/*                      ← 확장(데모 제외)
 │  ├─ api/[...path]/  BFF 프록시
 │  └─ layout.tsx · globals.css · middleware.ts       ← ⚠️ 셸 담당 1인 단독 소유
@@ -61,7 +62,8 @@ src/
 **규칙**
 
 - `(role)` 하위 4개는 **같은 셸(사이드바 220px)** 을 쓰고 **네비 항목만 역할별로** 다르다 → 레이아웃 1개 + 역할별 네비 구성.
-- `/owner`와 `/manage`는 **사원관리 권한이 사실상 동일** → 화면 복붙 금지, **공용 컴포넌트 + 권한 prop**.
+- **관리 화면은 `/manage/*` 한 곳이다**(2026-08-05). 사원 관리·구독·결제는 대표와 Admin 겸직자가 같이 쓰므로
+  역할 경로(`/owner/*`)에 두지 않는다 — 주소가 거짓말을 하게 된다. 판정은 `lib/permission.ts` 한 곳.
 - `/app/*`은 공용 화면에서 권한만 다르다 → 라우트를 쪼개지 말고 **컴포넌트 레벨 가드**.
 - 한 화면에서만 쓰는 컴포넌트는 그 도메인 폴더에, 여러 곳에서 쓰면 `components/common/`.
 - **빈(0바이트) 파일은 의도된 스캐폴딩**이다. 단 활성 라우트의 `page.tsx`가 비면 빌드가 실패하므로 빌드 전엔 채운다.
@@ -121,7 +123,7 @@ export const ACTION_STATUS = {
 export type ActionStatus = (typeof ACTION_STATUS)[keyof typeof ACTION_STATUS];
 
 export const ACTION_STATUS_LABEL: Record<ActionStatus, string> = {
-  TODO: "대기",
+  TODO: "할일",
   IN_PROGRESS: "진행중",
   DONE: "완료",
 };
@@ -184,7 +186,7 @@ export const isDelayed = (a: { status: ActionStatus; dueDate: string }) =>
 
 - **시맨틱:** 액센트 `#3B82F6` · 성공 `#22C55E` · 경고 `#F59E0B` · 에러 `#EF4444`
 - **포커스 링(`--ring`)은 먹색**이다. 색으로 알리는 건 **에러(빨강)뿐** — 나머지 상태는 명도·아이콘·문구로 구분한다(DECISIONS 2026-07-31).
-- **상태점:** 대기=회색 · 진행중=초록 · 완료=보라
+- **상태점:** 할일=회색 · 진행중=초록 · 완료=보라 · **지연=빨강**(마감일로 계산, 저장하지 않음)
 - `globals.css`에 CSS 변수로 정의하고 Tailwind는 그 변수를 참조한다. 컴포넌트에 생 hex 금지.
 - ⚠️ **다크 배경에 순검정(`#000`·`#0C0A09`)을 쓰지 않는다.** 흰 텍스트가 번져 보이고(halation) 층이 사라진다. 다크 최저값은 `#1A1715`.
 - **셸 표면:** 사이드바·상단바는 `--background` **한 색**, 본문은 같은 색 + `.bg-dot-grid`, 카드만 `--card`.
@@ -270,7 +272,7 @@ export const isDelayed = (a: { status: ActionStatus; dueDate: string }) =>
 - **이미지:** `<img>` 금지 → `next/image`. `fill` 시 부모 `relative`+`sizes` 필수. `alt` 필수(장식은 `""`).
 - **폰트:** `next/font`(빌드타임 self-host, CLS 0). `display:'swap'`.
 - **번들:** 무거운 것(차트·에디터·캘린더·**STT/녹음**)은 `next/dynamic`. tree-shaking은 개별 import. moment 금지 → date-fns/dayjs.
-- **고밀도 목록(액션·회의·사원)은 페이지네이션 우선.** 수백 행을 넘어가면 그때 가상화를 검토한다(미리 하지 않는다).
+- **고밀도 목록(액션·회의·사원)은 한 번에 다 그리지 않는다** — 다음 페이지는 스크롤로 이어 붙인다(CLAUDE.md §목록·페이지네이션). 수백 행을 넘어가면 그때 가상화를 검토한다(미리 하지 않는다).
 
 ---
 
@@ -335,7 +337,7 @@ export const isDelayed = (a: { status: ActionStatus; dueDate: string }) =>
 
 ## 19. Mock → Live 격리막
 
-```
+```text
 컴포넌트 ──props── UI계약 타입(types.ts) 에만 의존
      ▲
 server.ts / actions.ts ── isMock 분기:  mock → mocks/*  |  live → serverApi(BFF)
@@ -357,10 +359,26 @@ server.ts / actions.ts ── isMock 분기:  mock → mocks/*  |  live → serv
 
 ---
 
-## 21. 연동 시 BE 실코드 검증
+## 21. 연동 검증 — 두 단계다
 
-- 연동 전 **BE 레포에서 컨트롤러·DTO 직접 확인**: 실제 **경로 · HTTP 메서드 · 요청 바디 · 응답 shape.**
-- ⚠️ **Swagger·계약문서·구두 설명 추측 금지** — 실코드와 다른 경우가 잦다. 못 하면 "가정 shape·미검증" 주석.
+### ① 담당자 도메인 문서로 정합성부터 맞춘다
+
+BE는 **도메인별로 담당자가 문서를 따로 관리**한다. 화면을 짜기 전에 그 도메인 문서를 받아
+정책 · Enum 이름·값 · 에러코드를 맞춘다. 문서에 없으면 물어보고, 답을 받으면 **그 자리에 근거를 남긴다**
+(`// 2026-08-05 billing 담당 확인`). 근거 없이 맞춘 값은 나중에 왜 그런지 아무도 모른다.
+
+| 우리 코드                              | BE 도메인 | 받아야 하는 것                                     |
+| -------------------------------------- | --------- | -------------------------------------------------- |
+| `features/billing/*`                   | billing   | 구독 상태 전이 · 결제 실패 코드 · 초과분 청구 시점 |
+| `features/onboarding/*`                | company   | 온보딩 커밋 엔드포인트 · 계정 생성/메일 순서       |
+| `features/shell/viewer` · `permission` | identity  | 세션 응답 필드(`isAdmin` · `departmentId`)         |
+| `constants/domain.ts`                  | 각 도메인 | Enum 이름·값 — 지금은 추정으로 맞춰 둔 것이 있다   |
+
+### ② 구현할 때 BE 레포 실코드로 재확인한다
+
+- **컨트롤러·DTO를 직접 확인**: 실제 **경로 · HTTP 메서드 · 요청 바디 · 응답 shape.**
+- ⚠️ **문서와 코드가 다르면 코드가 맞다.** 문서는 합의된 규약이지 배포된 스펙이 아니다.
+- ⚠️ **Swagger·구두 설명 추측 금지** — 실코드와 다른 경우가 잦다. 둘 다 못 하면 "가정 shape·미검증" 주석.
 - 실패(4xx/5xx)는 빈 화면으로 숨기지 말고 throw → `error.tsx`.
 
 ---

@@ -35,8 +35,15 @@ export default async function ShellLayout({ children }: { children: ReactNode })
     ⚠️ 둘을 **같이 기다린다.** 앞뒤로 세우면 사이드바 하나 그리는 데 두 번 기다린다.
     ⚠️ 사용자는 `getViewer()`가 준다 — 전에는 여기에 `{ name: "대표 계정", role: OWNER }`를
        손으로 적고 있었다. 로그인이 붙으면 그 파일 하나만 바뀐다(#67).
+    ⚠️ **공지 수는 실패해도 셸을 죽이지 않는다.** 빨간 점 하나 때문에 로그인 뒤 화면 전체가
+       안 뜨면 안 된다 — 못 읽으면 0으로 본다(점만 안 붙는다).
+       반대로 **사용자를 못 읽으면 그건 터뜨린다.** 누군지 모르는 채로 그린 사이드바는
+       메뉴·권한이 틀린 화면이라, 조용히 넘기면 더 나쁘다.
   */
-  const [viewer, unreadNoticeCount] = await Promise.all([getViewer(), getUnreadNoticeCount()]);
+  const [viewer, unreadNoticeCount] = await Promise.all([
+    getViewer(),
+    getUnreadNoticeCount().catch(() => 0),
+  ]);
   const sections = withNoticeDot(OWNER_NAV, unreadNoticeCount > 0);
 
   return (

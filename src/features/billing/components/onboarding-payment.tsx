@@ -6,8 +6,8 @@ import { OnboardingShell } from "@/features/onboarding/components/onboarding-she
 import { ONBOARDING_STEP } from "@/features/onboarding/types";
 import { cn } from "@/lib/utils";
 
-import type { BillingConfig } from "../config";
 import { PAYMENT_WIDTH } from "../layout";
+import type { BillingConfig } from "../types";
 import { SubscribeCard } from "./subscribe-card";
 
 interface OnboardingPaymentProps {
