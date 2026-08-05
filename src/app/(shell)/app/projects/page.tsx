@@ -54,9 +54,10 @@ export default async function ProjectsPage({ searchParams }: ProjectsPageProps) 
           </span>
         </div>
 
-        <section className="border-border bg-card overflow-hidden rounded-xl border">
+        {/* 최소 높이를 둬서 목록이 짧거나 비어도 화면에 안정적으로 자리잡게 한다(탭 전환 시 높이 안 튐) */}
+        <section className="border-border bg-card flex min-h-[360px] flex-col overflow-hidden rounded-xl border">
           {projects.length === 0 ? (
-            <p className="text-muted-foreground flex items-center justify-center px-4 py-16 text-sm">
+            <p className="text-muted-foreground flex flex-1 items-center justify-center px-4 text-sm">
               {q?.trim() ? "검색 결과가 없습니다." : "해당 상태의 프로젝트가 없습니다."}
             </p>
           ) : (

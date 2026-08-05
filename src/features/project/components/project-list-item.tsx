@@ -63,7 +63,10 @@ export function ProjectListItem({ project }: { project: ProjectListItemModel }) 
             <Progress value={percent} className="w-32" />
             <span className="text-foreground text-xs font-medium tabular-nums">{percent}%</span>
           </div>
-          <span className="text-muted-foreground text-sm tabular-nums">{due}</span>
+          {/* 날짜만 두면 마감으로 안 읽혀 '까지'를 붙인다 */}
+          <span className="text-muted-foreground text-sm tabular-nums">
+            {due ? `${due}까지` : "-"}
+          </span>
         </div>
       </Link>
 
@@ -77,12 +80,9 @@ export function ProjectListItem({ project }: { project: ProjectListItemModel }) 
                 +{overflow}
               </Badge>
             </TooltipTrigger>
-            <TooltipContent>
-              <ul className="space-y-0.5">
-                {project.departments.map((team) => (
-                  <li key={team}>{team}</li>
-                ))}
-              </ul>
+            {/* 아래쪽·가로 나열 — 세로 목록은 선택형 드롭다운처럼 보인다 */}
+            <TooltipContent side="bottom" className="max-w-none">
+              <span className="whitespace-nowrap">{project.departments.join(" · ")}</span>
             </TooltipContent>
           </Tooltip>
         ) : (

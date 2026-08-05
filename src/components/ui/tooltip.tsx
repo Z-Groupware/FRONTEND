@@ -30,12 +30,16 @@ function TooltipTrigger(props: ComponentProps<typeof TooltipPrimitive.Trigger>) 
 function TooltipContent({
   className,
   sideOffset = 6,
+  side = "top",
   children,
   ...props
-}: ComponentProps<typeof TooltipPrimitive.Popup> & { sideOffset?: number }) {
+}: ComponentProps<typeof TooltipPrimitive.Popup> & {
+  sideOffset?: number;
+  side?: ComponentProps<typeof TooltipPrimitive.Positioner>["side"];
+}) {
   return (
     <TooltipPrimitive.Portal>
-      <TooltipPrimitive.Positioner sideOffset={sideOffset}>
+      <TooltipPrimitive.Positioner side={side} sideOffset={sideOffset}>
         <TooltipPrimitive.Popup
           data-slot="tooltip-content"
           className={cn(
