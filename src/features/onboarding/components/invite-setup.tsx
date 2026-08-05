@@ -15,7 +15,7 @@ import {
   duplicatedLeaderIds,
   fitsRoleAndPosition,
   type InviteRules,
-} from "../invites";
+} from "../invite-rules";
 import type { DepartmentNode, Invite, Position } from "../types";
 import { NO_ROLE_ID, NO_ROLE_LABEL } from "../types";
 import { useCommittedRedirect } from "../use-committed-redirect";

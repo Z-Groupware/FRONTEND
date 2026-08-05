@@ -5,7 +5,7 @@ import { CircleAlert, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
-import { isValidEmail } from "../invites";
+import { isValidEmail } from "../invite-rules";
 import type { Invite } from "../types";
 import { NO_ROLE_LABEL } from "../types";
 import { InviteAdminToggle } from "./invite-admin-toggle";

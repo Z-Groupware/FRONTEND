@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 
+import { duplicateEmails, type InviteRules, normalizeEmail } from "./invite-rules";
 import {
   changeInviteDepartment,
   changeInviteEmail,
@@ -9,11 +10,8 @@ import {
   changeInvitePosition,
   changeInviteRole,
   createInvite,
-  duplicateEmails,
-  type InviteRules,
   markInvitesSent,
   nextInviteId,
-  normalizeEmail,
   removeInvite,
   sendableInvites,
   toggleInviteAdmin,
