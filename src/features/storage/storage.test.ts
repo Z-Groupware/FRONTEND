@@ -99,27 +99,40 @@ describe("canDeleteRecordings", () => {
     expect(canDeleteRecordings(project({ status: PROJECT_STATUS.TODO }))).toBe(false);
   });
 
-  it("음성이 0이면 지울 게 없다 — 눌러도 아무 일이 없는 버튼은 두지 않는다", () => {
-    expect(canDeleteRecordings(project({ status: PROJECT_STATUS.DONE, voiceGb: 0 }))).toBe(false);
+  it("남은 게 하나도 없으면 지울 게 없다 — 눌러도 아무 일이 없는 버튼은 두지 않는다", () => {
+    expect(
+      canDeleteRecordings(project({ status: PROJECT_STATUS.DONE, voiceGb: 0, sttGb: 0 })),
+    ).toBe(false);
+  });
+
+  /* ⚠️ 음성을 이미 지웠어도 자막·요약이 남아 있으면 지울 게 있다 */
+  it("음성이 0이어도 자막·요약이 남아 있으면 지울 수 있다", () => {
+    expect(
+      canDeleteRecordings(project({ status: PROJECT_STATUS.DONE, voiceGb: 0, sttGb: 3 })),
+    ).toBe(true);
   });
 });
 
 describe("freedGb", () => {
-  it("**음성만** 센다 — 자막·요약은 지우지 않으므로 비지 않는다", () => {
-    expect(freedGb(project({ voiceGb: 7, sttGb: 3 }))).toBe(7);
+  /*
+    ⚠️ 자막·요약도 센다(2026-08-05 팀 결정). 보관 기한이 없는데 이것만 못 지우면 저장량이
+       단조 증가해 포함량이 반드시 부족해진다 — 그 구조를 막으려고 삭제 대상에 넣었다.
+  */
+  it("음성과 자막·요약을 **함께** 센다 — 줄 하나가 통째로 비워진다", () => {
+    expect(freedGb(project({ voiceGb: 7, sttGb: 3 }))).toBe(10);
   });
 });
 
 describe("totalFreeableGb", () => {
   it("지울 수 있는 줄만 더한다", () => {
     const projects = [
-      project({ tag: "a", status: PROJECT_STATUS.DONE, voiceGb: 4 }),
-      project({ tag: "b", status: PROJECT_STATUS.IN_PROGRESS, voiceGb: 9 }),
+      project({ tag: "a", status: PROJECT_STATUS.DONE, voiceGb: 4, sttGb: 1 }),
+      project({ tag: "b", status: PROJECT_STATUS.IN_PROGRESS, voiceGb: 9, sttGb: 3 }),
       project({ tag: "c", status: PROJECT_STATUS.DONE, voiceGb: 2, sttGb: 5 }),
     ];
 
-    // ⚠️ `c`의 자막·요약 5GB는 안 센다 — 지워도 안 비는 값이다
-    expect(totalFreeableGb(projects)).toBe(6);
+    // `a`(4+1) + `c`(2+5) = 12. `b`는 진행 중이라 안 센다
+    expect(totalFreeableGb(projects)).toBe(12);
   });
 });
 

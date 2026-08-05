@@ -143,8 +143,9 @@ export function StorageSummary({
              눈이 옮겨 가지 않는다.
           ⚠️ 이름 옆에 **성격**을 적는다. 크기만 알려 주면 어느 쪽을 지워야 하는지는 모른다 —
              이 화면의 답이 거기 있다.
-          ⚠️ 자막·요약에 **"삭제 불가"라고 쓰지 않는다.** 이 화면이 안 지우는 것과 영영 못
-             지우는 것은 다른 말인데, 보관·삭제 정책은 팀이 아직 안 정했다(§정직성).
+          ⚠️ **둘 다 삭제 가능**이다(2026-08-05 팀 결정). 보관 기한이 없는데 자막·요약만
+             못 지우면 저장량이 단조 증가해 포함량이 반드시 부족해진다 — 그 구조를 막았다.
+             대신 잃는 것(회의 기록·액션 출처 추적)은 표와 확인 창이 분명히 말한다.
         */}
         <dl className="flex flex-wrap items-center gap-x-7 gap-y-2 pt-4">
           <Legend
@@ -157,7 +158,7 @@ export function StorageSummary({
             label="자막·요약"
             value={formatGb(totals.sttGb)}
             dotClassName={isOver ? "bg-destructive/45" : "bg-foreground/35"}
-            hint="회의 기록"
+            hint="삭제 가능"
           />
           {/*
             ⚠️ 삭제 가능 용량은 **같은 줄 오른쪽 끝**에 둔다(`ml-auto`). 이 화면에 온 이유의

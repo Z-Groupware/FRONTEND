@@ -53,22 +53,25 @@ export function buildStorageTotals(
 /**
  * 지울 수 있는 줄인가 — **끝난 프로젝트만.**
  *
- * ⚠️ 진행 중인 프로젝트의 녹음은 아직 다시 들을 일이 남아 있다. 화면에서 버튼을 감추는 것만으로는
+ * ⚠️ 진행 중인 프로젝트의 기록은 아직 볼 일이 남아 있다. 화면에서 버튼을 감추는 것만으로는
  *    부족해서 **서버 액션에서도 같은 판정을 다시 한다**(CLAUDE.md §권한).
- * ⚠️ 음성이 0인 줄도 지울 게 없다 — 눌러도 아무 일이 없는 버튼은 두지 않는다.
+ * ⚠️ 남은 게 하나도 없는 줄은 지울 게 없다 — 눌러도 아무 일이 없는 버튼은 두지 않는다.
  */
 export function canDeleteRecordings(project: ProjectStorage): boolean {
-  return project.status === PROJECT_STATUS.DONE && project.voiceGb > 0;
+  return project.status === PROJECT_STATUS.DONE && project.voiceGb + project.sttGb > 0;
 }
 
 /**
- * 지우면 비는 용량(GB).
+ * 지우면 비는 용량(GB) — **음성 + 자막·요약 전부.**
  *
- * ⚠️ **음성만 센다.** 자막·요약은 지우지 않는다 — 회의에서 남은 결과물이라,
- *    그것까지 비는 것처럼 말하면 실제로 비는 양보다 크게 약속하는 셈이 된다(§정직성).
+ * ⚠️ 자막·요약도 센다(2026-08-05 팀 결정). 보관 기한이 없는데 이것만 못 지우면 저장량이
+ *    단조 증가해서 포함량은 반드시 부족해지고 초과 요금만 계속 늘어난다 — 그 구조를
+ *    막으려고 삭제 대상에 넣었다.
+ * ⚠️ 대신 **잃는 것을 화면에 명시한다.** 자막·요약이 사라지면 그 회의의 기록과 액션의
+ *    출처 추적이 끊긴다 — 확인 창이 그 말을 하고 나서 지운다(§정직성).
  */
 export function freedGb(project: ProjectStorage): number {
-  return project.voiceGb;
+  return project.voiceGb + project.sttGb;
 }
 
 /** 지울 수 있는 줄을 다 지우면 비는 용량(GB) — 안내 문구에 쓴다 */

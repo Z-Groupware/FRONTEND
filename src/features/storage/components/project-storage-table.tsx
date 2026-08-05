@@ -59,18 +59,18 @@ export function ProjectStorageTable({
       {/*
         ⚠️ **무엇이 사라지는지 지우는 자리에서 말한다.** 따로 떨어진 안내 상자로 두면 표를 볼 때는
            이미 화면 밖이라, 정작 버튼을 누르는 순간에는 안 읽힌다.
-        ⚠️ 이 한 줄이 없으면 요약·액션까지 사라지는 줄 알고 아무도 손을 못 댄다 — 반대로 다 남는
-           줄 알고 지웠다가 다시듣기가 안 되는 것도 마찬가지로 나쁘다(§정직성).
+        ⚠️ 자막·요약까지 지우는 게 **되돌릴 수 없고 추적이 끊기는 일**이라, 다 남는 줄 알고
+           눌렀다가 나중에 회의 기록을 못 찾는 일이 없어야 한다(§정직성).
       */}
       <p className="text-muted-foreground border-border border-t px-7 py-3.5 text-[12px] leading-[18px] break-keep">
-        삭제 시 <span className="text-foreground font-medium">음성 파일만</span> 제거됩니다.
-        자막·요약과 액션은 유지되며, 다시 재생할 수 없습니다.
+        삭제 시 <span className="text-foreground font-medium">음성과 자막·요약이 함께</span>{" "}
+        제거되고 목록에서 빠집니다. 그 회의의 기록과 액션의 출처 추적이 끊기며 되돌릴 수 없습니다.
       </p>
 
       {projects.length === 0 ? (
         /* ⚠️ 빈 상태 — 무엇이 없는지 적는다(§3상태) */
         <p className="text-muted-foreground border-border border-t px-6 py-12 text-center text-[13px] leading-5 break-keep">
-          녹음이 있는 프로젝트가 없습니다
+          저장소를 쓰는 프로젝트가 없습니다
         </p>
       ) : (
         <div className="border-border overflow-x-auto border-t">
@@ -126,7 +126,7 @@ export function ProjectStorageTable({
                 <th className="px-4 py-3 text-center font-normal">자막·요약</th>
                 <th className="px-4 py-3 text-center font-normal">가장 오래된 녹음</th>
                 <th className="py-3 pr-5 pl-0 text-center font-normal">
-                  <span className="sr-only">녹음 지우기</span>
+                  <span className="sr-only">기록 삭제</span>
                 </th>
               </tr>
             </thead>
@@ -286,10 +286,10 @@ function Row({
             onClick={() => onDelete(project)}
             aria-label={
               isDeletable
-                ? `${project.name} 녹음 지우기`
-                : `${project.name} — 진행 중이라 녹음을 지울 수 없습니다`
+                ? `${project.name} 기록 삭제`
+                : `${project.name} — 진행 중이라 삭제할 수 없습니다`
             }
-            title={isDeletable ? "녹음 지우기" : "진행 중인 프로젝트는 녹음을 지울 수 없습니다"}
+            title={isDeletable ? "기록 삭제" : "진행 중인 프로젝트는 삭제할 수 없습니다"}
             className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 focus-visible:ring-ring inline-flex size-8 items-center justify-center rounded-md transition-colors focus-visible:ring-2 focus-visible:outline-hidden disabled:pointer-events-none disabled:opacity-25"
           >
             <Trash2 className="size-4" aria-hidden />
