@@ -16,14 +16,14 @@ export default async function SystemBillingPage() {
   const { summary, monthlyMrr, subscriptions } = await getBillingOverview();
 
   return (
-    <main className="min-h-0 flex-1 overflow-y-auto p-8">
-      <div className="mx-auto flex max-w-[1440px] flex-col gap-6">
-        <div className="grid grid-cols-4 gap-4">
+    <main className="min-h-0 flex-1 overflow-y-auto p-6">
+      <div className="mx-auto flex max-w-[1440px] flex-col gap-4">
+        <div className="grid grid-cols-4 gap-3">
           <StatCard
             label="이번 달 MRR"
             value={formatCompactKrw(summary.mrr)}
             meta={`전월 대비 +${summary.mrrDeltaPercent}%`}
-            isHighlighted
+            tone="accent"
           />
           <StatCard
             label="결제 완료"
@@ -34,22 +34,22 @@ export default async function SystemBillingPage() {
             label="미납"
             value={`${summary.unpaidCount}건`}
             meta="안내 발송 필요"
-            isHighlighted
+            tone="warning"
           />
           <StatCard label="해지" value={`${summary.canceledCountThisMonth}건`} meta="이번 달" />
         </div>
 
         <MrrChartCard data={monthlyMrr} />
 
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-2">
           <SubscriptionTable subscriptions={subscriptions} />
 
           <Link
             href="/system/companies"
-            className="text-muted-foreground hover:text-foreground focus-visible:ring-ring inline-flex items-center gap-1 self-end rounded text-sm transition-colors focus-visible:ring-2 focus-visible:outline-none"
+            className="text-muted-foreground hover:text-foreground focus-visible:ring-ring inline-flex items-center gap-1 self-end rounded text-xs transition-colors focus-visible:ring-2 focus-visible:outline-none"
           >
             전체 기업 목록 보기
-            <ArrowRight className="size-3.5" aria-hidden />
+            <ArrowRight className="size-3" aria-hidden />
           </Link>
         </div>
       </div>

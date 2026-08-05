@@ -13,7 +13,7 @@ import type { MonthlySignup } from "../types";
  */
 const SignupChart = dynamic(() => import("./signup-chart").then((m) => m.SignupChart), {
   ssr: false,
-  loading: () => <Skeleton className="h-[280px] w-full" />,
+  loading: () => <Skeleton className="h-56 w-full" />,
 });
 
 export function SignupChartLoader({ data }: { data: MonthlySignup[] }) {

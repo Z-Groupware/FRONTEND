@@ -16,7 +16,8 @@ export const ACTION_STATUS = {
 export type ActionStatus = (typeof ACTION_STATUS)[keyof typeof ACTION_STATUS];
 
 export const ACTION_STATUS_LABEL: Record<ActionStatus, string> = {
-  TODO: "대기",
+  /* ⚠️ `대기`가 아니라 **`할일`**이다(팀 워크플로우 2026-08-05). 보드 첫 열과 같은 말이어야 한다 */
+  TODO: "할일",
   IN_PROGRESS: "진행중",
   DONE: "완료",
 };
@@ -162,6 +163,42 @@ export {
   ROLE_SCOPE_LABEL,
 } from "./role";
 
+/* ───────── AI 파이프라인 (시스템 모니터링) ───────── */
+/**
+ * 회의 캡처 → 액션 하달까지의 처리 단계. SYSTEM 운영자가 큐·실패를 이 단계 기준으로 본다.
+ * ⚠️ STT(자막 변환)는 브라우저 기능이지만, 여기 단계는 **서버 파이프라인의 재처리 단위**라
+ *    별개다 — 운영자가 실패를 재처리하는 대상은 서버 잡이다(CLAUDE.md §AI: STT 표기 주의).
+ */
+export const PIPELINE_STAGE = {
+  UPLOAD: "UPLOAD",
+  TRANSCRIBE: "TRANSCRIBE",
+  SUMMARIZE: "SUMMARIZE",
+  EXTRACT_ACTION: "EXTRACT_ACTION",
+} as const;
+export type PipelineStage = (typeof PIPELINE_STAGE)[keyof typeof PIPELINE_STAGE];
+
+export const PIPELINE_STAGE_LABEL: Record<PipelineStage, string> = {
+  UPLOAD: "업로드",
+  TRANSCRIBE: "자막 변환",
+  SUMMARIZE: "요약 생성",
+  EXTRACT_ACTION: "액션 추출",
+};
+
+/* ───────── 공지 (시스템 운영자 발행) ───────── */
+/** 공지 발행 대상. SYSTEM 운영자가 어느 기업군에 공지를 뿌릴지 고른다. */
+export const NOTICE_TARGET = {
+  ALL: "ALL",
+  SPECIFIC: "SPECIFIC",
+  UNPAID: "UNPAID",
+} as const;
+export type NoticeTarget = (typeof NOTICE_TARGET)[keyof typeof NOTICE_TARGET];
+
+export const NOTICE_TARGET_LABEL: Record<NoticeTarget, string> = {
+  ALL: "전체 기업",
+  SPECIFIC: "특정 기업",
+  UNPAID: "미납 기업",
+};
+
 /* ───────── 구독 · 기업 ───────── */
 export const PLAN = { FREE: "FREE", TEAM: "TEAM" } as const;
 export type Plan = (typeof PLAN)[keyof typeof PLAN];
@@ -197,6 +234,22 @@ export const COMPANY_STATUS_LABEL: Record<CompanyStatus, string> = {
   ACTIVE: "활성",
   SUSPENDED: "정지",
   UNPAID: "미납",
+};
+
+/** "기업 관리" 목록 정렬 기준 — 규모·플랜 필터를 대신한다(구성원수·가입일 기준). */
+export const COMPANY_SORT = {
+  MEMBERS_DESC: "MEMBERS_DESC",
+  MEMBERS_ASC: "MEMBERS_ASC",
+  JOINED_DESC: "JOINED_DESC",
+  JOINED_ASC: "JOINED_ASC",
+} as const;
+export type CompanySort = (typeof COMPANY_SORT)[keyof typeof COMPANY_SORT];
+
+export const COMPANY_SORT_LABEL: Record<CompanySort, string> = {
+  MEMBERS_DESC: "구성원 많은순",
+  MEMBERS_ASC: "구성원 적은순",
+  JOINED_DESC: "최신 가입순",
+  JOINED_ASC: "오래된 가입순",
 };
 
 /** 기업 가입 신청서의 직원 규모 구간. */

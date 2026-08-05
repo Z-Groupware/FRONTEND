@@ -1,0 +1,104 @@
+"use client";
+
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { PIPELINE_STAGE_LABEL } from "@/constants/domain";
+import { cn } from "@/lib/utils";
+
+import type { FailedPipelineItem } from "../types";
+import { PipelineRetryButton } from "./pipeline-retry-button";
+
+/** 행/헤더 높이 — 다른 SYSTEM 표(구독·매출·기업 관리)와 같은 값으로 못박는다. */
+const ROW_HEIGHT_CLASS = "h-[42px]";
+const HEADER_HEIGHT_CLASS = "h-[34px]";
+
+/**
+ * 컬럼 폭 — %로 고정(합 100). `table-fixed` + `colgroup`과 짝을 이뤄 회의 ID·오류 문구
+ * 길이가 달라져도 다른 컬럼이 밀리지 않게 한다(`subscription-table.tsx`와 같은 이유).
+ */
+const COLUMN_WIDTH = {
+  meetingId: "26%",
+  company: "16%",
+  stage: "14%",
+  failedAt: "18%",
+  error: "14%",
+  action: "12%",
+} as const;
+
+/**
+ * "실패 목록" 표 — 재처리가 필요한 회의를 보여준다.
+ *
+ * ⚠️ 재처리 버튼이 붙어 상호작용이 있어 클라이언트 컴포넌트다 — 첫 로드 번들에서 빼려고
+ *    `failed-pipeline-table-loader.tsx`가 `next/dynamic`으로 감싼다(CLAUDE.md §최적화).
+ */
+export function FailedPipelineTable({ items }: { items: FailedPipelineItem[] }) {
+  if (items.length === 0) {
+    return (
+      <div className="border-border bg-card flex items-center justify-center rounded-xl border p-10 text-center">
+        <p className="text-muted-foreground text-sm">재처리할 실패 건이 없어요</p>
+      </div>
+    );
+  }
+
+  return (
+    <section className="border-border bg-card overflow-hidden rounded-xl border">
+      <h2 className="text-foreground px-5 pt-5 pb-3 text-sm font-semibold">실패 목록</h2>
+
+      <div className="overflow-x-auto">
+        <Table className="table-fixed text-xs">
+          <colgroup>
+            <col style={{ width: COLUMN_WIDTH.meetingId }} />
+            <col style={{ width: COLUMN_WIDTH.company }} />
+            <col style={{ width: COLUMN_WIDTH.stage }} />
+            <col style={{ width: COLUMN_WIDTH.failedAt }} />
+            <col style={{ width: COLUMN_WIDTH.error }} />
+            <col style={{ width: COLUMN_WIDTH.action }} />
+          </colgroup>
+          <TableHeader>
+            <TableRow className={cn(HEADER_HEIGHT_CLASS, "hover:bg-transparent")}>
+              <TableHead className="pl-4 text-xs">회의 ID</TableHead>
+              <TableHead className="text-xs">기업</TableHead>
+              <TableHead className="text-xs">실패 단계</TableHead>
+              <TableHead className="text-xs">시각</TableHead>
+              <TableHead className="text-xs">오류</TableHead>
+              <TableHead className="pr-4 text-center text-xs">액션</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {items.map((item) => (
+              <TableRow key={item.meetingId} className={ROW_HEIGHT_CLASS}>
+                <TableCell className="text-muted-foreground pl-4 font-mono">
+                  {item.meetingId}
+                </TableCell>
+                <TableCell className="text-foreground max-w-0 truncate" title={item.companyName}>
+                  {item.companyName}
+                </TableCell>
+                <TableCell className="text-destructive">
+                  {PIPELINE_STAGE_LABEL[item.stage]}
+                </TableCell>
+                <TableCell className="text-muted-foreground font-mono tabular-nums">
+                  {item.failedAt}
+                </TableCell>
+                <TableCell
+                  className="text-muted-foreground max-w-0 truncate"
+                  title={item.errorMessage}
+                >
+                  {item.errorMessage}
+                </TableCell>
+                <TableCell className="pr-4 text-center">
+                  <PipelineRetryButton meetingId={item.meetingId} companyName={item.companyName} />
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+    </section>
+  );
+}

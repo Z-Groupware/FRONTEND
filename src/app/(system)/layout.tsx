@@ -14,7 +14,9 @@ export default function SystemLayout({ children }: { children: ReactNode }) {
   return (
     <div className="bg-background flex h-dvh overflow-hidden">
       <SystemSidebar sections={SYSTEM_NAV} account={{ email: "admin@getz.kr" }} />
-      <div className="bg-dot-grid flex min-w-0 flex-1 flex-col overflow-hidden">{children}</div>
+      <div className="bg-dot-grid-system flex min-w-0 flex-1 flex-col overflow-hidden">
+        {children}
+      </div>
     </div>
   );
 }

@@ -1,5 +1,3 @@
-import { COMPANY_SIZE } from "@/constants/domain";
-
 import type { PendingCompanyApproval } from "../types";
 
 /**
@@ -13,7 +11,7 @@ let mockPendingApprovals: PendingCompanyApproval[] = [
     businessRegistrationNumber: "123-45-67890",
     representativeName: "이지훈",
     contactEmail: "contact@nextwave.kr",
-    size: COMPANY_SIZE.MEDIUM,
+    memberCount: 42,
     appliedAt: "2025-07-28",
   },
   {
@@ -22,7 +20,7 @@ let mockPendingApprovals: PendingCompanyApproval[] = [
     businessRegistrationNumber: "234-56-78901",
     representativeName: "박서현",
     contactEmail: "admin@solomonai.io",
-    size: COMPANY_SIZE.SMALL,
+    memberCount: 12,
     appliedAt: "2025-07-27",
   },
   {
@@ -31,7 +29,7 @@ let mockPendingApprovals: PendingCompanyApproval[] = [
     businessRegistrationNumber: "345-67-89012",
     representativeName: "김도현",
     contactEmail: "ceo@realtlabs.kr",
-    size: COMPANY_SIZE.MICRO,
+    memberCount: 4,
     appliedAt: "2025-07-26",
   },
   {
@@ -40,7 +38,7 @@ let mockPendingApprovals: PendingCompanyApproval[] = [
     businessRegistrationNumber: "456-78-90123",
     representativeName: "정유나",
     contactEmail: "hello@bridgeptn.com",
-    size: COMPANY_SIZE.LARGE,
+    memberCount: 130,
     appliedAt: "2025-07-25",
   },
   {
@@ -49,7 +47,7 @@ let mockPendingApprovals: PendingCompanyApproval[] = [
     businessRegistrationNumber: "567-89-01234",
     representativeName: "한승우",
     contactEmail: "team@clearworks.kr",
-    size: COMPANY_SIZE.SMALL,
+    memberCount: 9,
     appliedAt: "2025-07-24",
   },
   {
@@ -58,7 +56,7 @@ let mockPendingApprovals: PendingCompanyApproval[] = [
     businessRegistrationNumber: "678-90-12345",
     representativeName: "오세연",
     contactEmail: "info@pineapplestudio.kr",
-    size: COMPANY_SIZE.MEDIUM,
+    memberCount: 55,
     appliedAt: "2025-07-23",
   },
   {
@@ -67,7 +65,7 @@ let mockPendingApprovals: PendingCompanyApproval[] = [
     businessRegistrationNumber: "789-01-23456",
     representativeName: "최민재",
     contactEmail: "contact@nodeforge.dev",
-    size: COMPANY_SIZE.MICRO,
+    memberCount: 3,
     appliedAt: "2025-07-22",
   },
   {
@@ -76,7 +74,7 @@ let mockPendingApprovals: PendingCompanyApproval[] = [
     businessRegistrationNumber: "890-12-34567",
     representativeName: "송지원",
     contactEmail: "admin@grayscale.kr",
-    size: COMPANY_SIZE.SMALL,
+    memberCount: 14,
     appliedAt: "2025-07-21",
   },
   {
@@ -85,7 +83,7 @@ let mockPendingApprovals: PendingCompanyApproval[] = [
     businessRegistrationNumber: "901-23-45678",
     representativeName: "장하은",
     contactEmail: "hi@bloomingworks.io",
-    size: COMPANY_SIZE.MICRO,
+    memberCount: 5,
     appliedAt: "2025-07-20",
   },
   {
@@ -94,7 +92,7 @@ let mockPendingApprovals: PendingCompanyApproval[] = [
     businessRegistrationNumber: "012-34-56789",
     representativeName: "윤태호",
     contactEmail: "biz@coresquare.co.kr",
-    size: COMPANY_SIZE.MEDIUM,
+    memberCount: 38,
     appliedAt: "2025-07-19",
   },
   {
@@ -103,7 +101,7 @@ let mockPendingApprovals: PendingCompanyApproval[] = [
     businessRegistrationNumber: "111-22-33445",
     representativeName: "임소율",
     contactEmail: "contact@musttech.kr",
-    size: COMPANY_SIZE.SMALL,
+    memberCount: 11,
     appliedAt: "2025-07-18",
   },
   {
@@ -112,7 +110,7 @@ let mockPendingApprovals: PendingCompanyApproval[] = [
     businessRegistrationNumber: "222-33-44556",
     representativeName: "배준영",
     contactEmail: "hello@beaconlabs.kr",
-    size: COMPANY_SIZE.LARGE,
+    memberCount: 145,
     appliedAt: "2025-07-17",
   },
   {
@@ -121,7 +119,7 @@ let mockPendingApprovals: PendingCompanyApproval[] = [
     businessRegistrationNumber: "333-44-55667",
     representativeName: "구예린",
     contactEmail: "team@lighthouselab.io",
-    size: COMPANY_SIZE.MICRO,
+    memberCount: 4,
     appliedAt: "2025-07-16",
   },
 ];

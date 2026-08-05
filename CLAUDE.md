@@ -25,22 +25,42 @@
 
 ## 라우트 그룹
 
-```
 app/
-├─ (public)/     /  /login  /register  /plans
-├─ (onboarding)/ /onboarding/1~3 · /payment · /done ← OWNER 초기설정 + **결제 관문**
-├─ (role)/       /owner  /manage  /team  /my       ← 역할 전용 대시보드·관리
-├─ (shared)/     /billing  /members                 ← 권한으로 들어오는 공용 화면(OWNER+Admin)
-├─ (app)/        /app/*                            ← 공용 워크벤치(권한 차등, ADMIN 제외)
-└─ (system)/     /system/*                         ← 목업(더미), 향후 개선
-```
+├─ (public)/ / /login /register /plans /roles /location /terms /privacy
+│ ← 로그인 전. 기업 코드는 여기서만.
+├─ (onboarding)/ /onboarding/1~3 · /payment · /done ← OWNER 초기설정 **4단계**(결제가 개통 관문)
+│
+├─ (role)/ ← 같은 셸(사이드바 220px), 네비 항목만 역할/권한별로 다름
+│ ├─ /owner **base role = Owner 전용** : 대시보드 · /owner/setting(기업설정)
+│ │ · /owner/leader-handovers(+/:id) — 팀장급 **오프보딩** 인수인계
+│ ├─ /manage **Owner ‖ is_admin — 관리 기능 전부가 여기 하나로** :
+│ │ /manage/members(+/:id) · /manage/new(계정발급) · /manage/rooms
+│ │ · /manage/billing(구독·결제) · /manage/storage(용량)
+│ ├─ /team **base role = Leader**(본인 부서 스코프) : 대시보드 · /team/members(+/:id)
+│ │ · /team/action · /team/handover(+/:id)
+│ └─ /my **base role = Member** 대시보드
+│
+├─ (app)/ /app/* ← 공용 워크벤치(로그인 전원, 컴포넌트 레벨 권한 차등)
+│ projects(+/new·/:tag·/:tag/team/:teamId) · actions/:id · my/actions
+│ · meeting(+/:id·/:id/capture·/:id/review) · rooms · board · calendar
+│ · notice(+/:id·/new·/:id/edit) · people · me · search · handover
+│
+├─ (gate)/ /subscription ← 구독이 끊긴 회사의 재개 화면
+└─ (system)/ /system/* ← 목업(더미), 향후 개선
 
-- **기업 코드를 URL에 붙이지 않는다.** 기업 식별은 세션(httpOnly 쿠키의 `companyId`)이 한다 — 주소창 값은 사용자가 고칠 수 있어 어차피 서버가 세션과 대조해야 한다. 기업 코드는 **로그인 전 화면**(`/login`·`/register`)에만 등장.
-- `(role)` 하위 4개는 **같은 셸(사이드바 220px)** 을 쓰고 네비 항목만 역할별로 달라진다 → 레이아웃 1개 + 역할별 네비 구성.
-- `/owner`와 `/manage`는 **사원관리 권한이 사실상 동일** → 화면을 복붙하지 말고 **공용 컴포넌트 + 권한 prop**으로.
-- **구독·결제와 사원 관리는 역할 경로에 두지 않는다** — OWNER와 Admin 겸직자가 같이 쓰므로 `/billing`·`/members`다. `/owner/billing`으로 두면 겸직자에게 주소가 거짓말을 한다(DECISIONS §(shared)).
-- `/app/*`은 공용 화면에서 권한만 다르다 → 라우트를 나누지 말고 **컴포넌트 레벨 가드**.
-- ⛔ **팀 명세에 없는 화면·기능은 만들지 않는다.** 화면 안 항목 배치도 명세 순서를 따른다.
+- **기업 코드는 URL에 안 붙인다.** 기업 식별은 세션 쿠키(`companyId`). 코드는 로그인 전 화면(`/login`·`/register`)에만.
+- `(role)` 4개는 **같은 셸(사이드바 220px)**, 네비만 역할별 → 레이아웃 1개 + 역할별 네비.
+- :star: **ADMIN은 역할 아닌 플래그(`is_admin`).** 전용 대시보드 없이 base role 대시보드 사용, `/manage/*` 메뉴만 추가. 가드 = `role==="owner" || is_admin`. 관리 기능은 `/manage`로 단일화(중복 금지). 관리자 권한 부여 토글도 admin 조작 가능.
+- :no_entry: 단 **`/owner/leader-handovers`(팀장 오프보딩 인수인계)는 OWNER 전용**(위계상 admin 불가). 팀장 휴직은 여기 말고 `/manage/members/:id`에서 승인.
+- `/app/*`은 라우트 분리 대신 **컴포넌트 레벨 가드**. (`/app/my/actions`=OWNER 접근 불가 / `/app/projects/new`·기획 편집=OWNER만 / `/app/handover`=OWNER 제외)
+- 진입 스코프만 다르고 데이터 같으면 라우트는 나누되 **상세 컴포넌트 재사용** (`/team/action` vs `/app/projects/:tag/team/:teamId`).
+- 회의 생성 진입점 없음 → `/app/rooms` 예약 = 회의 개설.
+- :no_entry: **명세에 없는 화면·기능은 안 만든다.** 화면 내 항목 순서도 명세 따름.
+- ⚠️ **관리 기능은 `/manage/*` 하나로 모은다**(팀 URL 문서 2026-08-05). `/owner/*`에 두면 겸직자에게
+  주소가 거짓말을 하고, 두 곳에 나눠 두면 같은 화면이 두 벌이 된다. 판정은
+  `canManageBilling(actor)` 한 곳(`lib/permission.ts`)에서 한다.
+- 📄 **화면별 동작·라벨·예외는 [`docs/WORKFLOW.md`](docs/WORKFLOW.md)** 를 본다(팀 정본).
+  **정책·기능은 그 문서**, **라우트 경로 최신값은 위 트리**가 정본이다 — 어긋나면 각자 자기 몫을 따른다.
 
 ## 폴더·네이밍
 
@@ -69,6 +89,9 @@ app/
 - **`as const` + 라벨맵**으로 정의(`enum` 금지). 코드엔 영문 상수, 화면엔 한글 라벨 — **라벨 하드코딩 금지.**
 - 값 목록은 **ERD 확정 후 `constants/`에 정의**한다. 문서에 옮겨 적지 않는다(바뀌면 두 벌이 어긋난다).
 - 마감 경과 같은 **파생값은 상태 필드에 넣지 말고 계산**한다.
+  예) 액션 상태는 **저장 3개**(`할일`·`진행중`·`완료`), **`지연`은 마감일로 계산해 표시**한다.
+- 🚫 **화면에 안 내보내는 것:** 내부 식별자(`GOODS-01`)·임의 해시태그(`#OKR`). 태그는
+  **프로젝트 태그 하나뿐**이다 — 없는 걸 금지 문장으로만 두면 나중에 누가 만든다(§CONVENTIONS 6).
 
 ## Mock → Live 격리막
 

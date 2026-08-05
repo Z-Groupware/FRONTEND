@@ -19,14 +19,14 @@ interface PlanDonutChartProps {
 /** 플랜 분포 도넛차트. 조각 이름·범례는 카드(`PlanDistributionCard`)가 따로 그린다. */
 export function PlanDonutChart({ data }: PlanDonutChartProps) {
   return (
-    <ResponsiveContainer width="100%" height={160}>
+    <ResponsiveContainer width="100%" height={128}>
       <PieChart>
         <Pie
           data={data}
           dataKey="companyCount"
           nameKey="plan"
-          innerRadius={48}
-          outerRadius={72}
+          innerRadius={38}
+          outerRadius={58}
           paddingAngle={2}
           stroke="var(--card)"
           strokeWidth={2}
@@ -41,7 +41,7 @@ export function PlanDonutChart({ data }: PlanDonutChartProps) {
             border: "1px solid var(--border)",
             borderRadius: "var(--radius-md)",
             color: "var(--popover-foreground)",
-            fontSize: 12,
+            fontSize: 11,
           }}
           formatter={(value, name) => [`${value}개사`, PLAN_LABEL[name as Plan]]}
         />

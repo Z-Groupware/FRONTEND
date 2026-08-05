@@ -16,7 +16,10 @@ export const MOCK_BILLING_OVERVIEW: BillingOverview = {
     mrrDeltaPercent: 11.8,
     paidCount: 37,
     paidAmount: 8_400_000,
-    unpaidCount: 1,
+    // ⚠️ 하드코딩하지 않는다 — "기업 관리" mock(`mock/companies.ts`)에서 실제로 몇 곳이
+    //    미납인지 세어서 쓴다. 하드코딩된 값과 실제 목록이 어긋나면 요약 카드("미납 N건")와
+    //    아래 구독 목록(미납 우선 채움)이 서로 다른 숫자를 말하게 된다.
+    unpaidCount: countMockUnpaidCompanies(),
     canceledCountThisMonth: 2,
   },
   monthlyMrr: [
@@ -29,6 +32,11 @@ export const MOCK_BILLING_OVERVIEW: BillingOverview = {
   ],
   subscriptions: buildMockSubscriptions(),
 };
+
+/** 요약 카드의 "미납" 건수 — 목록과 항상 같은 소스(`listMockCompanies`)에서 센다. */
+function countMockUnpaidCompanies(): number {
+  return listMockCompanies().filter((company) => company.status === COMPANY_STATUS.UNPAID).length;
+}
 
 /**
  * 구독 목록 = 기업 관리 목 데이터에서 파생한다 — 두 화면이 같은 기업을 다르게 보여줄 뿐이라

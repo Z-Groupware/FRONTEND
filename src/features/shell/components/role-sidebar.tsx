@@ -66,7 +66,7 @@ interface RoleSidebarProps {
 /**
  * 지금 경로와 **가장 길게 일치하는 href 하나**를 고른다.
  *
- * ⚠️ 단순 `pathname.startsWith(item.href)`는 안 된다 — `/billing`(구독·결제)이
+ * ⚠️ 단순 `pathname.startsWith(item.href)`는 안 된다 — `/manage/billing`(구독·결제)이
  *    `/billing/checkout`(결제)의 접두사라서 결제 화면에서 두 곳이 같이 켜진다.
  *    후보 중 가장 구체적인(긴) href만 켜지게 골라야 한 곳만 켜진다.
  */

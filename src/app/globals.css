@@ -493,6 +493,25 @@
   }
 
   /*
+   * SYSTEM(운영자) 전용 점 그리드 — 일반 `.bg-dot-grid`보다 더 은은하다.
+   * ⚠️ 라이트: `--border`를 그대로 쓰지 않고 배경(`--background`)과 섞어 더 옅게 낮춘다
+   *    (하드코딩 금지 — 생 rgba 대신 토큰끼리 `color-mix`한다. `button.tsx`의 hover 처리와 같은 방식).
+   * ⚠️ 다크: 아예 지운다(`background-image: none`) — 운영 도구 화면이라 점이 없는 쪽이
+   *    더 차분하다는 판단. `.dark` 쪽에서 `none`으로 덮어써 라이트 값을 무효화한다.
+   */
+  .bg-dot-grid-system {
+    background-image: radial-gradient(
+      color-mix(in oklch, var(--border), var(--background) 60%) 1px,
+      transparent 1px
+    );
+    background-size: 18px 18px;
+  }
+
+  .dark .bg-dot-grid-system {
+    background-image: none;
+  }
+
+  /*
    * 살랑이는 움직임 — 완료 표시처럼 "여기 다 됐다"를 눈으로 잡아둘 때만 쓴다.
    * ⚠️ 모션 규칙(100/150/250ms)은 상태 전환용이다. 이건 계속 도는 장식이라 느리게 간다.
    */
