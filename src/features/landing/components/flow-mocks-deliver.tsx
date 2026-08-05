@@ -10,9 +10,9 @@ import { MockHead } from "./flow-mock-head";
  */
 const ASSIGNED = [
   { role: "개발 담당", what: "API 문서 최신화", due: "8월 7일(금)", state: "진행중" },
-  { role: "디자인 담당", what: "디자인 기준 작성", due: "8월 5일(수)", state: "대기" },
-  { role: "기획 담당", what: "KPI 문서 업데이트", due: "8월 2일(일)", state: "대기" },
-  { role: "QA 담당", what: "회귀 테스트 시나리오", due: "8월 8일(토)", state: "대기" },
+  { role: "디자인 담당", what: "디자인 기준 작성", due: "8월 5일(수)", state: "할일" },
+  { role: "기획 담당", what: "KPI 문서 업데이트", due: "8월 2일(일)", state: "할일" },
+  { role: "QA 담당", what: "회귀 테스트 시나리오", due: "8월 8일(토)", state: "할일" },
 ] as const;
 
 const HANDOVER_ITEMS = [

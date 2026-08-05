@@ -69,7 +69,7 @@ export const ROLE_MOCKS: Record<RoleName, RoleMock> = {
     progress: { label: "이번 스프린트 완료", value: "9 / 16", ratio: 0.56 },
     summaryLabel: "팀 현황",
     metrics: [
-      { label: "대기", value: "3" },
+      { label: "할일", value: "3" },
       { label: "진행중", value: "4" },
       { label: "완료", value: "9" },
     ],

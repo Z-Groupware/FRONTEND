@@ -1,7 +1,7 @@
 import type { PlanCode } from "./types";
 
 /**
- * 구독 현황 화면(`/billing`)의 **UI 계약**.
+ * 구독 현황 화면(`/manage/billing`)의 **UI 계약**.
  *
  * ⚠️ 컴포넌트는 이 타입만 본다. BE 응답 모양이 정해지면 매퍼가 여기에 맞춰 흡수한다 —
  *    연동할 때 `server.ts`와 매퍼만 고치고 컴포넌트는 0줄 바꾼다(CLAUDE.md §격리막).

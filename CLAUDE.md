@@ -27,27 +27,26 @@
 
 app/
 ├─ (public)/ / /login /register /plans /roles /location /terms /privacy
-│                                                  ← 로그인 전. 기업 코드는 여기서만.
-├─ (onboarding)/ /onboarding/1~3 · /payment · /done ← OWNER 초기설정 + **결제 관문**
+│ ← 로그인 전. 기업 코드는 여기서만.
+├─ (onboarding)/ /onboarding/1~3 · /payment · /done ← OWNER 초기설정 **4단계**(결제가 개통 관문)
 │
-├─ (role)/       ← 같은 셸(사이드바 220px), 네비 항목만 역할/권한별로 다름
-│   ├─ /owner        OWNER 전용 : 대시보드 · /owner/setting(기업설정)
-│   │                            · /owner/leader-handovers(팀장급 오프보딩 인수인계, :no_entry:OWNER 전용)
-│   ├─ /manage       OWNER ‖ is_admin : /manage/members(+/:id) · /manage/new(계정발급)
-│   │                            · /manage/rooms · /manage/storage
-│   ├─ /team         LEADER 전용(본인 부서 스코프) : 대시보드 · /team/members(+/:id)
-│   │                            · /team/action · /team/handover(+/:id)
-│   └─ /my           MEMBER 대시보드
+├─ (role)/ ← 같은 셸(사이드바 220px), 네비 항목만 역할/권한별로 다름
+│ ├─ /owner **base role = Owner 전용** : 대시보드 · /owner/setting(기업설정)
+│ │ · /owner/leader-handovers(+/:id) — 팀장급 **오프보딩** 인수인계
+│ ├─ /manage **Owner ‖ is_admin — 관리 기능 전부가 여기 하나로** :
+│ │ /manage/members(+/:id) · /manage/new(계정발급) · /manage/rooms
+│ │ · /manage/billing(구독·결제) · /manage/storage(용량)
+│ ├─ /team **base role = Leader**(본인 부서 스코프) : 대시보드 · /team/members(+/:id)
+│ │ · /team/action · /team/handover(+/:id)
+│ └─ /my **base role = Member** 대시보드
 │
-├─ (app)/        /app/*   ← 공용 워크벤치(로그인 전원, 컴포넌트 레벨 권한 차등)
-│                 projects(+/new·/:tag·/:tag/team/:teamId) · actions/:id · my/actions
-│                 · meeting(+/:id·/:id/capture·/:id/review) · rooms · board · calendar
-│                 · notice(+/:id·/new·/:id/edit) · people · me · search · handover
+├─ (app)/ /app/* ← 공용 워크벤치(로그인 전원, 컴포넌트 레벨 권한 차등)
+│ projects(+/new·/:tag·/:tag/team/:teamId) · actions/:id · my/actions
+│ · meeting(+/:id·/:id/capture·/:id/review) · rooms · board · calendar
+│ · notice(+/:id·/new·/:id/edit) · people · me · search · handover
 │
-├─ (shared)/ /billing /members ← **권한**으로 들어오는 공용 화면
-│ (OWNER ‖ is_admin)
 ├─ (gate)/ /subscription ← 구독이 끊긴 회사의 재개 화면
-└─ (system)/     /system/*                          ← 목업(더미), 향후 개선
+└─ (system)/ /system/* ← 목업(더미), 향후 개선
 
 - **기업 코드는 URL에 안 붙인다.** 기업 식별은 세션 쿠키(`companyId`). 코드는 로그인 전 화면(`/login`·`/register`)에만.
 - `(role)` 4개는 **같은 셸(사이드바 220px)**, 네비만 역할별 → 레이아웃 1개 + 역할별 네비.
@@ -57,9 +56,11 @@ app/
 - 진입 스코프만 다르고 데이터 같으면 라우트는 나누되 **상세 컴포넌트 재사용** (`/team/action` vs `/app/projects/:tag/team/:teamId`).
 - 회의 생성 진입점 없음 → `/app/rooms` 예약 = 회의 개설.
 - :no_entry: **명세에 없는 화면·기능은 안 만든다.** 화면 내 항목 순서도 명세 따름.
-- ⚠️ **구독·결제는 `/manage/billing`이 아니라 `/billing`이다**(2026-08-04, #67). `is_admin` 겸직자와
-  OWNER가 같이 쓰는 화면이라 역할 경로에 두면 주소가 거짓말을 한다 — 사원 관리(`/members`)도 같다.
-  판정은 `canManageBilling(actor)` 한 곳(`lib/permission.ts`)에서 한다.
+- ⚠️ **관리 기능은 `/manage/*` 하나로 모은다**(팀 URL 문서 2026-08-05). `/owner/*`에 두면 겸직자에게
+  주소가 거짓말을 하고, 두 곳에 나눠 두면 같은 화면이 두 벌이 된다. 판정은
+  `canManageBilling(actor)` 한 곳(`lib/permission.ts`)에서 한다.
+- 📄 **화면별 동작·라벨·예외는 [`docs/WORKFLOW.md`](docs/WORKFLOW.md)** 를 본다(팀 정본).
+  **정책·기능은 그 문서**, **라우트 경로 최신값은 위 트리**가 정본이다 — 어긋나면 각자 자기 몫을 따른다.
 
 ## 폴더·네이밍
 
@@ -88,6 +89,9 @@ app/
 - **`as const` + 라벨맵**으로 정의(`enum` 금지). 코드엔 영문 상수, 화면엔 한글 라벨 — **라벨 하드코딩 금지.**
 - 값 목록은 **ERD 확정 후 `constants/`에 정의**한다. 문서에 옮겨 적지 않는다(바뀌면 두 벌이 어긋난다).
 - 마감 경과 같은 **파생값은 상태 필드에 넣지 말고 계산**한다.
+  예) 액션 상태는 **저장 3개**(`할일`·`진행중`·`완료`), **`지연`은 마감일로 계산해 표시**한다.
+- 🚫 **화면에 안 내보내는 것:** 내부 식별자(`GOODS-01`)·임의 해시태그(`#OKR`). 태그는
+  **프로젝트 태그 하나뿐**이다 — 없는 걸 금지 문장으로만 두면 나중에 누가 만든다(§CONVENTIONS 6).
 
 ## Mock → Live 격리막
 
