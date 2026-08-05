@@ -103,6 +103,14 @@ export interface Subscription {
 
 /* ───────── 결제 수단 ───────── */
 
+/**
+ * 등록된 카드 — **회사당 한 장뿐이다**(2026-08-05 확정).
+ *
+ * ⚠️ 목록이 아니다. 구독이 회사당 하나이고 청구도 한 번이라 **두 번째 카드가 나갈 자리가 없다** —
+ *    여러 장을 두면 `기본` 지정·삭제 금지 규칙이 따라붙는데, 정작 결제는 한 장으로만 나간다.
+ * ⚠️ 그래서 `isDefault`가 없다. 한 장뿐이면 늘 그 장이다.
+ * ⚠️ 카드를 바꾸는 건 **더하는 게 아니라 갈아 끼우는 일**이다(BE도 빌링키 1:1).
+ */
 export interface PaymentMethod {
   id: string;
   /** 카드 브랜드 표기 — `VISA` 처럼 그대로 나간다 */
@@ -111,7 +119,6 @@ export interface PaymentMethod {
   last4: string;
   /** `09/27` */
   expiry: string;
-  isDefault: boolean;
 }
 
 /* ───────── 결제 내역 ───────── */
@@ -143,6 +150,7 @@ export interface PaymentRecord {
 /** 화면 한 장이 필요로 하는 전부 — 세 탭이 같은 요청 하나로 채워진다 */
 export interface BillingOverview {
   subscription: Subscription;
-  methods: readonly PaymentMethod[];
+  /** 등록된 카드 — 아직 없으면 `null` */
+  method: PaymentMethod | null;
   payments: readonly PaymentRecord[];
 }

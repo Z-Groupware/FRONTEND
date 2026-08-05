@@ -1,14 +1,16 @@
 import {
-  changeInviteDepartment,
-  changeInviteEmail,
-  changeInvitePosition,
-  changeInviteRole,
-  createInvite,
   departmentsWithLeader,
   duplicatedLeaderIds,
   duplicateEmails,
   type InviteRules,
   isValidEmail,
+} from "./invite-rules";
+import {
+  changeInviteDepartment,
+  changeInviteEmail,
+  changeInvitePosition,
+  changeInviteRole,
+  createInvite,
   markInvitesSent,
   removeInvite,
   sendableInvites,

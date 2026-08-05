@@ -2,52 +2,17 @@
 
 import { type ReactElement, useMemo } from "react";
 
-/**
- * ⚠️ 디자인 수정 지점 — 팔레트 교체 시 각 항목의 bg/text hex 값만 바꾼다.
- *    배열 순서·개수를 바꾸면 기존 인물들의 색 배정이 전부 밀려서 바뀐다.
- */
-const AVATAR_PALETTE = [
-  { bg: "#DCFCE7", text: "#166534" }, // 그린
-  { bg: "#DBEAFE", text: "#1E40AF" }, // 블루
-  { bg: "#FCE7F3", text: "#9D174D" }, // 핑크
-  { bg: "#FEF3C7", text: "#92400E" }, // 앰버
-  { bg: "#EDE9FE", text: "#5B21B6" }, // 바이올렛
-  { bg: "#E0F2FE", text: "#075985" }, // 스카이
-  { bg: "#FFEDD5", text: "#9A3412" }, // 오렌지
-  { bg: "#F1F5F9", text: "#334155" }, // 슬레이트
-  { bg: "#CCFBF1", text: "#115E59" }, // 틸
-  { bg: "#FAE8FF", text: "#86198F" }, // 퍼플핑크
-  { bg: "#FEF9C3", text: "#854D0E" }, // 옐로우
-  { bg: "#E7E5E4", text: "#44403C" }, // 웜그레이
-  { bg: "#D1FAE5", text: "#065F46" }, // 에메랄드
-  { bg: "#DDD6FE", text: "#4C1D95" }, // 인디고
-  { bg: "#FFE4E6", text: "#9F1239" }, // 로즈
-  { bg: "#CFFAFE", text: "#155E75" }, // 시안
-] as const;
-
-function hashString(value: string): number {
-  let hash = 0;
-  for (let i = 0; i < value.length; i++) {
-    hash = (hash << 5) - hash + value.charCodeAt(i);
-    hash |= 0;
-  }
-  return Math.abs(hash);
-}
-
-interface ProfileAvatarColor {
-  bgColor: string;
-  textColor: string;
-}
+import { type PaletteColor, pickPaletteColor } from "@/lib/palette";
 
 /**
  * 이름+직급을 해싱해 항상 같은 파스텔 색을 돌려준다(BE에 프로필 필드가 없어 FE에서 결정).
  * 동명이인은 role까지 키에 포함해 구분한다 — role이 바뀌면 색도 바뀐다(트레이드오프 감수).
+ *
+ * ⚠️ 팔레트는 `lib/palette`가 정본이다. 프로젝트 태그도 같은 것을 쓴다 — 두 벌로 들고 있으면
+ *    같은 화면에 두 가지 초록이 뜬다.
  */
-function getProfileAvatarColor(name: string, role: string): ProfileAvatarColor {
-  const key = `${name}-${role}`;
-  const index = hashString(key) % AVATAR_PALETTE.length;
-  const palette = AVATAR_PALETTE[index] ?? AVATAR_PALETTE[0];
-  return { bgColor: palette.bg, textColor: palette.text };
+function getProfileAvatarColor(name: string, role: string): PaletteColor {
+  return pickPaletteColor(`${name}-${role}`);
 }
 
 /** 원형 배경 안에 꽉 채워 그리는 사람 실루엣. 하단은 원 밖으로 잘리도록 slice 처리한다. */

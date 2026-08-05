@@ -3,12 +3,7 @@
 import { useState } from "react";
 import { toast } from "sonner";
 
-import {
-  registerCardAction,
-  removeMethodAction,
-  setDefaultMethodAction,
-  toggleCancelAction,
-} from "../actions";
+import { registerCardAction, toggleCancelAction } from "../actions";
 import { requestCardAuth } from "../payment-method";
 import {
   type BillingOverview,
@@ -50,7 +45,7 @@ interface BillingViewProps {
  */
 export function BillingView({ overview, config, today, canManage }: BillingViewProps) {
   const [subscription, setSubscription] = useState(overview.subscription);
-  const [methods, setMethods] = useState<readonly PaymentMethod[]>(overview.methods);
+  const [method, setMethod] = useState<PaymentMethod | null>(overview.method);
 
   const isCanceling = subscription.status === SUBSCRIPTION_STATUS.CANCELING;
 
@@ -77,19 +72,19 @@ export function BillingView({ overview, config, today, canManage }: BillingViewP
   };
 
   /*
-    결제 수단 추가 — **연동 자리를 미리 갈라 뒀다**(`payment-method.ts`).
+    결제 수단 변경 — **연동 자리를 미리 갈라 뒀다**(`payment-method.ts`).
     ⚠️ 카드 정보는 이 화면을 지나가지 않는다. 결제사 창에서 인증만 받고, 빌링키는 서버가
        발급·보관한다 — 프론트가 만지면 PCI-DSS 대상이 된다.
     ⚠️ PG가 정해지면 `requestCardAuth` 한 함수만 바꾸면 되고 여기는 그대로다.
-  */
-  /*
-    ⚠️ **던질 수 있는 호출이다.** 결제사 창을 닫거나 서버가 거절하면 `requestCardAuth`·
-       `registerCardMethod`가 예외를 낸다 — 잡지 않으면 아무 일도 안 일어난 것처럼 보이고
-       콘솔에만 남는다(§정직성).
+    ⚠️ **더하는 게 아니라 갈아 끼운다.** 카드는 회사당 한 장이라 이미 있으면 그 자리를 덮는다.
+    ⚠️ **던질 수 있는 호출이다.** 결제사 창을 닫거나 서버가 거절하면 예외가 난다 —
+       잡지 않으면 아무 일도 안 일어난 것처럼 보이고 콘솔에만 남는다(§정직성).
     ⚠️ 여기서는 창이 아니라 토스트다. 카드 등록은 결제와 달리 **돈이 빠지지 않아서**,
        멈춰 세울 만큼의 일이 아니다(DECISIONS §토스트).
   */
-  const handleAddMethod = async () => {
+  const handleChangeMethod = async () => {
+    const isFirst = method === null;
+
     try {
       /*
         ⚠️ **결제사 창만 브라우저에서 연다.** 카드 번호는 그 창에서만 입력되고, 우리는
@@ -101,36 +96,16 @@ export function BillingView({ overview, config, today, canManage }: BillingViewP
 
       if (!result.isSuccess || !result.method) {
         // ⚠️ 토스트는 한 줄(220px)이라 짧게 쓴다 — 길면 잘린다(`sonner.tsx`)
-        toast(result.message ?? "결제 수단을 추가하지 못했습니다");
+        toast(result.message ?? "결제 수단을 바꾸지 못했습니다");
         return;
       }
-      const added = result.method;
-      setMethods((prev) => [...prev, { ...added, isDefault: prev.length === 0 }]);
-      toast("결제 수단을 추가했습니다");
+
+      setMethod(result.method);
+      toast(isFirst ? "결제 수단을 등록했습니다" : "결제 수단을 변경했습니다");
     } catch {
       // 결제사 창을 닫은 경우 — 여기서만 예외로 온다
-      toast("결제 수단을 추가하지 못했습니다");
+      toast("결제 수단을 바꾸지 못했습니다");
     }
-  };
-
-  const handleSetDefault = async (id: string) => {
-    const result = await setDefaultMethodAction(id).catch(() => null);
-    if (!result?.isSuccess) {
-      toast(result?.message ?? "기본 결제 수단을 바꾸지 못했습니다");
-      return;
-    }
-    setMethods((prev) => prev.map((method) => ({ ...method, isDefault: method.id === id })));
-    toast("기본 결제 수단을 변경했습니다");
-  };
-
-  const handleRemoveMethod = async (id: string) => {
-    const result = await removeMethodAction(id).catch(() => null);
-    if (!result?.isSuccess) {
-      toast(result?.message ?? "결제 수단을 지우지 못했습니다");
-      return;
-    }
-    setMethods((prev) => prev.filter((method) => method.id !== id));
-    toast("결제 수단을 삭제했습니다");
   };
 
   return (
@@ -139,11 +114,9 @@ export function BillingView({ overview, config, today, canManage }: BillingViewP
         <div className="flex flex-col gap-7">
           <PlanPanel subscription={subscription} config={config} today={today} />
           <PaymentMethodsPanel
-            methods={methods}
+            method={method}
             canManage={canManage}
-            onAdd={handleAddMethod}
-            onSetDefault={handleSetDefault}
-            onRemove={handleRemoveMethod}
+            onChange={handleChangeMethod}
           />
           <PaymentHistoryPanel payments={overview.payments} />
           {/* ⚠️ 아직 못 쓰는 상태(결제 전·만료)에는 해지할 게 없으니 두지 않는다 */}

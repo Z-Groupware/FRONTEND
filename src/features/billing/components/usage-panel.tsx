@@ -1,3 +1,5 @@
+import { CircleAlert, Info } from "lucide-react";
+
 import { formatGb, formatTokens, formatWon } from "../pricing";
 import type { Subscription } from "../subscription";
 import type { BillingConfig } from "../types";
@@ -85,11 +87,15 @@ function UsageBanner({ tokens, storage }: { tokens: UsageAxis; storage: UsageAxi
   if (overAxes.length > 0) {
     const total = overAxes.reduce((sum, axis) => sum + axis.overageAmount, 0);
     return (
-      <p className="border-destructive/30 bg-destructive/5 mt-5 rounded-lg border px-3.5 py-3 text-[12px] leading-[18px] break-keep">
-        <span className="font-semibold">
-          {overAxes.map((axis) => axis.label).join(" · ")} 포함량 초과
-        </span>{" "}
-        지금까지 {formatWon(total)}이며, 다음 결제일에 기본료와 함께 청구됩니다.
+      /* ⚠️ 표식을 앞에 둔다 — 글자만 있으면 본문에 섞여 그냥 설명으로 읽힌다 */
+      <p className="border-destructive/30 bg-destructive/5 mt-5 flex items-start gap-2 rounded-lg border px-3.5 py-3 text-[12px] leading-[18px] break-keep">
+        <CircleAlert className="text-destructive mt-px size-3.5 shrink-0" aria-hidden />
+        <span>
+          <span className="font-semibold">
+            {overAxes.map((axis) => axis.label).join(" · ")} 포함량 초과
+          </span>{" "}
+          지금까지 {formatWon(total)}이며, 다음 결제일에 기본료와 함께 청구됩니다.
+        </span>
       </p>
     );
   }
@@ -105,13 +111,20 @@ function UsageBanner({ tokens, storage }: { tokens: UsageAxis; storage: UsageAxi
   if (nearAxes.length === 0) return null;
 
   return (
-    <p className="border-border bg-secondary mt-5 rounded-lg border px-3.5 py-3 text-[12px] leading-[18px] break-keep">
-      {/*
-        ⚠️ 문턱은 **상수에서 읽는다.** `80%`라고 적어 두면 문턱을 조정할 때 띄우는 조건만
-           바뀌고 문구는 옛 숫자를 말한다 — 화면이 거짓말을 하게 된다.
-      */}
-      {nearAxes.map((axis) => axis.label).join(" · ")} 사용량이 {USAGE_WARN_RATIO * 100}%를
-      넘었습니다. 포함량을 넘기면 초과분이 다음 결제일에 기본료와 함께 추가로 청구됩니다.
+    /*
+      ⚠️ 표식은 두되 **색은 안 쓴다.** 아직 넘긴 게 아니라 알려 주는 말이라, 빨갛게 하면
+         이미 돈이 더 나가는 줄 읽힌다 — 색으로 알리는 건 에러뿐이다(§디자인 토큰).
+    */
+    <p className="border-border bg-secondary mt-5 flex items-start gap-2 rounded-lg border px-3.5 py-3 text-[12px] leading-[18px] break-keep">
+      <Info className="text-muted-foreground mt-px size-3.5 shrink-0" aria-hidden />
+      <span>
+        {/*
+          ⚠️ 문턱은 **상수에서 읽는다.** `80%`라고 적어 두면 문턱을 조정할 때 띄우는 조건만
+             바뀌고 문구는 옛 숫자를 말한다 — 화면이 거짓말을 하게 된다.
+        */}
+        {nearAxes.map((axis) => axis.label).join(" · ")} 사용량이 {USAGE_WARN_RATIO * 100}%를
+        넘었습니다. 포함량을 넘기면 초과분이 다음 결제일에 기본료와 함께 추가로 청구됩니다.
+      </span>
     </p>
   );
 }
