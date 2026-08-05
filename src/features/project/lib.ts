@@ -1,5 +1,7 @@
 import { PROJECT_STATUS, PROJECT_STATUS_LABEL, type ProjectStatus } from "@/constants/domain";
 
+import type { ProjectListItem } from "./types";
+
 /** 목록 위에 오는 상태 필터 탭 — 값·라벨은 도메인 상수에서 온다(라벨 하드코딩 금지). */
 export const PROJECT_FILTER_TABS: { status: ProjectStatus; label: string }[] = [
   { status: PROJECT_STATUS.TODO, label: PROJECT_STATUS_LABEL[PROJECT_STATUS.TODO] },
@@ -13,9 +15,44 @@ export const DEFAULT_PROJECT_STATUS: ProjectStatus = PROJECT_STATUS.IN_PROGRESS;
 /** 담당 부서 라벨을 몇 개까지 노출하는지 — 나머지는 `+N`. */
 export const MAX_VISIBLE_DEPARTMENTS = 2;
 
+/** 정렬 기준 — 마감 임박순이 기본(스펙). */
+export const PROJECT_SORT = {
+  DUE_ASC: "DUE_ASC",
+  DUE_DESC: "DUE_DESC",
+  NAME: "NAME",
+} as const;
+export type ProjectSort = (typeof PROJECT_SORT)[keyof typeof PROJECT_SORT];
+
+export const PROJECT_SORT_LABEL: Record<ProjectSort, string> = {
+  DUE_ASC: "마감 임박순",
+  DUE_DESC: "마감 늦은순",
+  NAME: "이름순",
+};
+
+export const DEFAULT_PROJECT_SORT: ProjectSort = PROJECT_SORT.DUE_ASC;
+
 /** URL의 `?status=` 값을 안전하게 상태로 — 모르는 값이면 기본 탭. */
 export function parseProjectStatus(value: string | undefined): ProjectStatus {
   return PROJECT_FILTER_TABS.find((tab) => tab.status === value)?.status ?? DEFAULT_PROJECT_STATUS;
+}
+
+/** URL의 `?sort=` 값을 안전하게 정렬 기준으로 — 모르는 값이면 기본(마감 임박순). */
+export function parseProjectSort(value: string | undefined): ProjectSort {
+  return Object.values(PROJECT_SORT).find((sort) => sort === value) ?? DEFAULT_PROJECT_SORT;
+}
+
+/** 정렬 적용(불변) — 서버가 목록에 얹는다. 순수 함수라 그대로 테스트한다. */
+export function sortProjects(list: ProjectListItem[], sort: ProjectSort): ProjectListItem[] {
+  const sorted = [...list];
+  switch (sort) {
+    case PROJECT_SORT.DUE_DESC:
+      return sorted.sort((a, b) => b.dueDate.localeCompare(a.dueDate));
+    case PROJECT_SORT.NAME:
+      return sorted.sort((a, b) => a.name.localeCompare(b.name, "ko"));
+    case PROJECT_SORT.DUE_ASC:
+    default:
+      return sorted.sort((a, b) => a.dueDate.localeCompare(b.dueDate));
+  }
 }
 
 /** 진척율(%) — 액션이 없으면 0. 파생값이라 저장하지 않고 계산한다. */

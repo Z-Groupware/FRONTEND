@@ -52,6 +52,8 @@ export function ProjectListItem({ project }: { project: ProjectListItemModel }) 
               {OWNER_LABEL}
             </Badge>
           </div>
+          {/* 세부 설명은 본문이 길 수 있어 첫 줄만 자른다(뒤는 …) */}
+          <p className="text-muted-foreground line-clamp-1 text-xs">{project.description}</p>
         </div>
 
         {/* 우: 진척 바 · 마감일 · 참여 팀 */}

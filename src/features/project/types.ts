@@ -7,6 +7,11 @@ import type { ProjectStatus } from "@/constants/domain";
 export interface ProjectListItem {
   id: string;
   name: string;
+  /**
+   * 세부 설명(기획). 실제로는 Owner가 길게 쓸 수 있는 본문이라 목록에선 **첫 줄만** 잘라 보여준다.
+   * ⚠️ 목록 카드에는 요약이 아니라 원문을 그대로 내려보내고, 자르기는 화면이 `line-clamp`로 한다.
+   */
+  description: string;
   /** 프로젝트 태그(프로젝트당 1개 고정) */
   tag: string;
   /** 자유 HEX(프로젝트 태그 색) */

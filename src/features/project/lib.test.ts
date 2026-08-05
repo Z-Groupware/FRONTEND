@@ -1,11 +1,33 @@
 import { PROJECT_STATUS } from "@/constants/domain";
 
 import {
+  DEFAULT_PROJECT_SORT,
   DEFAULT_PROJECT_STATUS,
   getProgressPercent,
+  parseProjectSort,
   parseProjectStatus,
+  PROJECT_SORT,
+  sortProjects,
   splitDepartments,
 } from "./lib";
+import type { ProjectListItem } from "./types";
+
+/** 정렬 검증용 최소 프로젝트 — 이름·마감일만 다르게 둔다. */
+function project(overrides: Partial<ProjectListItem>): ProjectListItem {
+  return {
+    id: "p",
+    name: "프로젝트",
+    description: "",
+    tag: "TAG",
+    color: "#000000",
+    departments: [],
+    actionTotal: 0,
+    actionDone: 0,
+    dueDate: "2026-09-01",
+    status: PROJECT_STATUS.IN_PROGRESS,
+    ...overrides,
+  };
+}
 
 describe("getProgressPercent", () => {
   it("완료/전체를 반올림한 백분율로 준다", () => {
@@ -44,5 +66,41 @@ describe("parseProjectStatus", () => {
   it("모르는 값·빈 값은 기본 탭(진행중)으로", () => {
     expect(parseProjectStatus("nonsense")).toBe(DEFAULT_PROJECT_STATUS);
     expect(parseProjectStatus(undefined)).toBe(PROJECT_STATUS.IN_PROGRESS);
+  });
+});
+
+describe("parseProjectSort", () => {
+  it("아는 정렬 값은 통과, 모르면 기본(마감 임박순)", () => {
+    expect(parseProjectSort("NAME")).toBe(PROJECT_SORT.NAME);
+    expect(parseProjectSort("nonsense")).toBe(DEFAULT_PROJECT_SORT);
+    expect(parseProjectSort(undefined)).toBe(PROJECT_SORT.DUE_ASC);
+  });
+});
+
+describe("sortProjects", () => {
+  const a = project({ id: "a", name: "가나다", dueDate: "2026-09-05" });
+  const b = project({ id: "b", name: "다라마", dueDate: "2026-09-01" });
+  const c = project({ id: "c", name: "나다라", dueDate: "2026-09-12" });
+
+  it("마감 임박순은 오름차순", () => {
+    expect(sortProjects([a, b, c], PROJECT_SORT.DUE_ASC).map((p) => p.id)).toEqual(["b", "a", "c"]);
+  });
+
+  it("마감 늦은순은 내림차순", () => {
+    expect(sortProjects([a, b, c], PROJECT_SORT.DUE_DESC).map((p) => p.id)).toEqual([
+      "c",
+      "a",
+      "b",
+    ]);
+  });
+
+  it("이름순은 한글 가나다", () => {
+    expect(sortProjects([a, b, c], PROJECT_SORT.NAME).map((p) => p.id)).toEqual(["a", "c", "b"]);
+  });
+
+  it("입력 배열을 건드리지 않는다(불변)", () => {
+    const input = [a, b, c];
+    sortProjects(input, PROJECT_SORT.NAME);
+    expect(input.map((p) => p.id)).toEqual(["a", "b", "c"]);
   });
 });
