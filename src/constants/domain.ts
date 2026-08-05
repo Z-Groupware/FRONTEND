@@ -61,18 +61,14 @@ export const PROJECT_STATUS_LABEL: Record<ProjectStatus, string> = {
 export const MEETING_STATUS = {
   SCHEDULED: "SCHEDULED",
   IN_PROGRESS: "IN_PROGRESS",
-  /**
-   * ⚠️ **미검증.** 한 번 돈 BE 컨벤션 문서가 `COMPLETED`라 맞춰 뒀는데 그 문서는 최신이 아니다
-   *    (2026-08-05) — 회의 도메인 담당자 문서로 확인한 뒤 확정한다. 화면 라벨은 `완료`로 같다.
-   */
-  COMPLETED: "COMPLETED",
+  DONE: "DONE",
 } as const;
 export type MeetingStatus = (typeof MEETING_STATUS)[keyof typeof MEETING_STATUS];
 
 export const MEETING_STATUS_LABEL: Record<MeetingStatus, string> = {
   SCHEDULED: "예정",
   IN_PROGRESS: "진행중",
-  COMPLETED: "완료",
+  DONE: "완료",
 };
 
 /** 캡처 세션 — 담당자만 조작 가능(권한 2축, lib/permission.ts) */

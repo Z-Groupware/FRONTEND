@@ -374,8 +374,6 @@ BE는 **도메인별로 담당자가 문서를 따로 관리**한다. 화면을 
 | `features/shell/viewer` · `permission` | identity  | 세션 응답 필드(`isAdmin` · `departmentId`)         |
 | `constants/domain.ts`                  | 각 도메인 | Enum 이름·값 — 지금은 추정으로 맞춰 둔 것이 있다   |
 
-> ⚠️ 한 번 돌았던 **BE 코드 컨벤션 문서는 최신이 아니다**(2026-08-05 확인). 그 문서를 근거로 삼지 않는다.
-
 ### ② 구현할 때 BE 레포 실코드로 재확인한다
 
 - **컨트롤러·DTO를 직접 확인**: 실제 **경로 · HTTP 메서드 · 요청 바디 · 응답 shape.**
