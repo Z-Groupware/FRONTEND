@@ -46,7 +46,7 @@ export function ScreenScaleCard() {
   useEffect(() => subscribeViewport(() => setViewport(readViewport())), []);
 
   const scale = parseScale(stored);
-  const [, width = 0] = viewport.split("|").map(Number);
+  const width = Number(viewport) || 0;
   const hint = suggestScale({ viewportWidth: width, hasChosen: stored !== null });
   // ⚠️ 권한다면 **몇 %인지까지** 말한다. "줄여 보세요"만으로는 어디까지 줄일지 모른다
   const recommended = recommendScale(width);
