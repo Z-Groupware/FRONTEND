@@ -36,7 +36,7 @@ export default async function TeamDashboardPage() {
 
   return (
     <main className="scrollbar-hidden min-h-0 flex-1 overflow-y-auto px-8 py-7">
-      <div className="mx-auto flex w-full max-w-[1080px] flex-col gap-4">
+      <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-4">
         <div className="grid grid-cols-4 gap-3">
           {kpis.map((kpi) => (
             <KpiCard key={kpi.label} {...kpi} />

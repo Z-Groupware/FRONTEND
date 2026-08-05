@@ -42,7 +42,7 @@ export function InviteCommitDialog({
           ? `확인을 누르면 ${inviteCount}명에게 초대장이 나갑니다. 보낸 초대장은 취소할 수 없고, 이 단계로 돌아올 수 없습니다.`
           : "확인을 누르면 조직 구성이 확정됩니다. 이 단계로 돌아올 수 없고, 사원 초대는 워크스페이스에 들어간 뒤 기업 설정에서 합니다."
       }
-      confirmLabel="등록하기"
+      confirmLabel="등록"
       onConfirm={onConfirm}
     >
       {/*

@@ -126,9 +126,12 @@ export function CancelSubscription({
             </>
           )
         }
-        /* ⚠️ 버튼도 **합니다체**다(2026-08-04 변경). `해지할게요`는 그 전 말투다 */
-        confirmLabel={isCanceling ? "해지 취소" : "해지합니다"}
-        cancelLabel={isCanceling ? "닫기" : "그대로 둡니다"}
+        /*
+          ⚠️ **한 낱말로 적는다.** `해지할게요`(해요체)도 `그대로 둡니다`(장황)도 아니다 —
+             버튼은 **하는 일**만 짧게 말한다(§카피).
+          ⚠️ `cancelLabel`은 안 넘긴다. 기본값이 `취소`라 창마다 다른 말을 안 쓰게 된다.
+        */
+        confirmLabel={isCanceling ? "해지 취소" : "해지"}
         isDestructive={!isCanceling}
         onConfirm={handleConfirm}
       />
