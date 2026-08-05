@@ -59,8 +59,11 @@ export default async function OwnerDashboardPage() {
               아직 등록된 팀장이 없습니다.
             </p>
           ) : (
-            <div className="scrollbar-hidden flex-1 overflow-y-auto">
-              <Table className="table-fixed">
+            // 가로·세로 스크롤을 모두 이 컨테이너가 갖고(스크롤바 숨김), 좁은 화면에서 컬럼이
+            // 과도하게 줄지 않게 테이블에 최소 폭을 준다. shadcn Table이 자체적으로 두는
+            // table-container(overflow-x-auto)를 visible로 눌러 스크롤 소유권을 여기로 넘긴다.
+            <div className="scrollbar-hidden flex-1 overflow-auto [&_[data-slot=table-container]]:overflow-visible">
+              <Table className="min-w-[560px] table-fixed">
                 <TableHeader>
                   <TableRow>
                     <TableHead className="text-muted-foreground pl-4 text-xs">이름</TableHead>
