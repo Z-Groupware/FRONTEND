@@ -86,28 +86,33 @@ export function ProjectStorageTable({
               <col className="w-[132px]" />
             </colgroup>
             <thead>
+              {/*
+                ⚠️ **일곱 열 모두 가운데**다. 열 폭이 고정이라 머리와 칸을 같은 정렬로 두면
+                   두 글자의 **가운데가 한 세로선**에 놓인다 — 한쪽만 끝에 붙이면 글자 길이가
+                   달라 축이 어긋나 보인다.
+              */}
               <tr className="text-muted-foreground border-border border-b text-[12px] leading-4">
-                <th className="px-6 py-3 text-left font-normal">프로젝트</th>
+                <th className="px-6 py-3 text-center font-normal">프로젝트</th>
                 {/*
                   ⚠️ 상태는 **자기 열**이다. 이름 옆에 붙여 두면 이름 길이에 따라 좌우로 밀려서
                      세로로 훑을 수가 없다 — 지울 수 있는 줄을 고르는 게 이 표의 일이라
                      상태가 한 줄로 서 있어야 한다.
                 */}
-                <th className="px-6 py-3 text-left font-normal">상태</th>
+                <th className="px-6 py-3 text-center font-normal">상태</th>
                 {/*
                   ⚠️ **`회의`가 아니라 `녹음 회의`** 다. 지우고 나면 이 값이 0이 되는데,
                      `회의`라고만 적으면 회의 자체가 사라진 것으로 읽힌다 — 사라진 건 녹음뿐이다.
                 */}
-                <th className="px-6 py-3 text-right font-normal">녹음 회의</th>
+                <th className="px-6 py-3 text-center font-normal">녹음 회의</th>
                 {/*
                   ⚠️ 음성 열에만 **비중 막대**를 붙인다. 어느 프로젝트가 자리를 많이 먹는지가
                      이 표를 보는 이유인데, 숫자만 늘어놓으면 다섯 줄을 다 읽고 비교해야 한다.
                      자막·요약은 지울 수 없어 비교할 이유가 없으므로 숫자만 둔다.
                 */}
-                <th className="px-6 py-3 text-right font-normal">음성</th>
-                <th className="px-6 py-3 text-right font-normal">자막·요약</th>
-                <th className="px-6 py-3 text-right font-normal">가장 오래된 녹음</th>
-                <th className="px-6 py-3 text-right font-normal">
+                <th className="px-6 py-3 text-center font-normal">음성</th>
+                <th className="px-6 py-3 text-center font-normal">자막·요약</th>
+                <th className="px-6 py-3 text-center font-normal">가장 오래된 녹음</th>
+                <th className="px-6 py-3 text-center font-normal">
                   <span className="sr-only">녹음 지우기</span>
                 </th>
               </tr>
@@ -147,15 +152,17 @@ function Row({
 
   return (
     <tr className="border-border hover:bg-secondary/40 transition-colors not-first:border-t">
-      <td className="px-6 py-3.5">
+      <td className="px-6 py-3.5 text-center">
         {/*
           ⚠️ 이름은 **프로젝트로 가는 링크**다. 지울지 판단하려면 무슨 프로젝트였는지 봐야 하는데,
              이름만 있으면 검색으로 다시 찾아 들어가야 한다.
+          ⚠️ `inline-block`이라야 밑줄과 포커스 링이 **글자 폭에만** 걸린다. `block`이면 칸
+             전체가 링크로 보여서, 빈 자리를 눌러도 눌리는 것처럼 읽힌다.
         */}
         <Link
           href={`/app/projects/${project.tag}`}
           title={project.name}
-          className="focus-visible:ring-ring block truncate rounded hover:underline focus-visible:ring-2 focus-visible:outline-hidden"
+          className="focus-visible:ring-ring inline-block max-w-full truncate rounded align-middle hover:underline focus-visible:ring-2 focus-visible:outline-hidden"
         >
           {project.name}
         </Link>
@@ -169,22 +176,23 @@ function Row({
         <StatusDot
           tone={project.status}
           label={PROJECT_STATUS_LABEL[project.status]}
-          className="text-[12px] leading-4"
+          className="justify-center text-[12px] leading-4"
         />
       </td>
-      <td className="text-muted-foreground px-6 py-3.5 text-right tabular-nums">
+      <td className="text-muted-foreground px-6 py-3.5 text-center tabular-nums">
         {project.meetingCount}개
       </td>
       <td className="px-6 py-3.5">
         {/*
           ⚠️ 막대는 **전체 음성 대비 비중**이다. 포함량(50GB) 기준으로 그리면 한 프로젝트가
              차지하는 조각이 너무 작아 다섯 줄이 전부 비슷해 보인다.
-          ⚠️ 숫자는 **오른쪽 끝에 세운다.** 옆 열들과 같은 축이라야 자릿수가 나란히 읽힌다 —
-             막대는 그 왼쪽에 붙고, 남는 자리는 막대가 먹는다.
+          ⚠️ 막대와 숫자를 **한 덩어리로 묶어 가운데**에 둔다. 숫자만 오른쪽 끝에 붙이면
+             머리(`음성`)의 가운데와 축이 어긋난다 — 막대 폭을 고정해야 덩어리 폭이 일정해서
+             다섯 줄의 숫자가 세로로 나란히 선다.
         */}
-        <span className="flex items-center justify-end gap-2.5">
+        <span className="flex items-center justify-center gap-2.5">
           <span
-            className="bg-secondary h-1.5 min-w-0 flex-1 overflow-hidden rounded-full"
+            className="bg-secondary h-1.5 w-[68px] shrink-0 overflow-hidden rounded-full"
             aria-hidden
           >
             <span
@@ -195,13 +203,13 @@ function Row({
           <span className="shrink-0 tabular-nums">{formatGb(project.voiceGb)}</span>
         </span>
       </td>
-      <td className="text-muted-foreground px-6 py-3.5 text-right tabular-nums">
+      <td className="text-muted-foreground px-6 py-3.5 text-center tabular-nums">
         {formatGb(project.sttGb)}
       </td>
-      <td className="text-muted-foreground px-6 py-3.5 text-right tabular-nums">
+      <td className="text-muted-foreground px-6 py-3.5 text-center tabular-nums">
         {project.oldestRecordedAt}
       </td>
-      <td className="px-6 py-3.5 text-right">
+      <td className="px-6 py-3.5 text-center">
         {/*
           ⚠️ 지울 수 없는 줄에는 **버튼을 두지 않는다.** 흐린 버튼을 남기면 왜 못 누르는지
              설명할 자리가 필요해지는데, 그 이유(진행 중이다)는 이미 왼쪽에 적혀 있다.
