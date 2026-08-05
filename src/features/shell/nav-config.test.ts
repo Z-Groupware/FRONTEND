@@ -181,7 +181,7 @@ describe("화면이 있으면 자동으로 이어진다", () => {
     ["/app/calendar", "캘린더"],
     ["/app/notice", "공지"],
     ["/app/me", "마이페이지"],
-    ["/manage/billing", "구독·결제"],
+    ["/manage/billing", "구독"],
     ["/manage/storage", "녹음 용량"],
   ])("만들어진 화면 `%s`(%s)는 링크가 된다", (href) => {
     const item = everyItem.find((candidate) => candidate.href === href);

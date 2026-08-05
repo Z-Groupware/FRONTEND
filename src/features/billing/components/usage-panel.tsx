@@ -8,8 +8,6 @@ import { buildUsage, shouldWarnUsage, USAGE_WARN_RATIO, type UsageAxis } from ".
 interface UsagePanelProps {
   subscription: Subscription;
   config: BillingConfig;
-  /** 오늘 `YYYY-MM-DD` — 월말 예측에 쓴다. 서버가 내려준다 */
-  today: string;
 }
 
 /**
@@ -18,18 +16,12 @@ interface UsagePanelProps {
  * ⚠️ 축은 **AI 사용량과 저장 공간 둘뿐**이다. 회의 건수는 청구와 무관해서 아래 참고 줄로 내렸다 —
  *    과금과 상관없는 숫자를 같은 크기로 놓으면 무엇 때문에 돈이 나가는지 흐려진다.
  * ⚠️ **넘겨도 막지 않는다**(팀 결정). 대신 얼마가 더 나가는지 금액으로 적는다(§정직성).
- * ⚠️ 월말 예측은 **예측이라고 밝힌다.** 단정하면 안 넘겼는데 넘긴다고 말한 셈이 된다.
+ * ⚠️ **월말 예측을 적지 않는다**(2026-08-05 제거). 프론트가 며칠치를 늘려 잡은 추정이라
+ *    주기 초반일수록 크게 흔들렸고, BE 스펙에 없는 값을 화면이 지어낸 셈이었다.
+ *    BE가 예측을 내려 주면 그 값을 받아 쓴다(§연동 검증).
  */
-export function UsagePanel({ subscription, config, today }: UsagePanelProps) {
-  const usage = buildUsage({
-    config,
-    usage: subscription.usage,
-    period: {
-      periodStart: subscription.currentPeriodStart,
-      periodEnd: subscription.currentPeriodEnd,
-      today,
-    },
-  });
+export function UsagePanel({ subscription, config }: UsagePanelProps) {
+  const usage = buildUsage({ config, usage: subscription.usage });
 
   return (
     <section className="border-border bg-card rounded-2xl border p-6">
@@ -173,16 +165,17 @@ function Axis({ axis, format }: { axis: UsageAxis; format: (value: number) => st
       </div>
 
       {/*
-        ⚠️ 예측에는 **금액을 적지 않는다.** 예측은 프론트가 사흘치로 늘려 잡은 추정이라
-           초반일수록 크게 흔들리고, 서버가 실제로 청구하는 값과 다를 수 있다 —
-           틀릴 수 있는 금액을 먼저 말하면 그게 약속이 된다(§정직성).
-           **돈은 실제로 넘긴 뒤에만** 말한다(그 값은 서버가 안다).
+        ⚠️ **예상 사용량을 적지 않는다.** 한때 `주기 종료 시 N 예상`을 띄웠는데,
+           그건 프론트가 며칠치를 늘려 잡은 추정이라 주기 초반일수록 크게 흔들렸다 —
+           회의가 주중에 몰리는데 "매일 똑같이 쓴다"고 가정한 식이었다.
+           BE 스펙에 없는 값을 화면이 지어낸 셈이라 뺐다(§연동 검증 · §정직성).
+        ⚠️ **넘긴 뒤에만 말한다.** 그 값은 서버가 아는 사실이다.
       */}
-      <p className="text-muted-foreground/70 pt-1.5 text-[11px] leading-4 tabular-nums">
-        {isOver
-          ? `${format(axis.overage)} 초과 · ${formatWon(axis.overageAmount)}`
-          : `주기 종료 시 ${format(axis.forecast)} 예상`}
-      </p>
+      {isOver && (
+        <p className="text-muted-foreground/70 pt-1.5 text-[11px] leading-4 tabular-nums">
+          {`${format(axis.overage)} 초과 · ${formatWon(axis.overageAmount)}`}
+        </p>
+      )}
     </>
   );
 }

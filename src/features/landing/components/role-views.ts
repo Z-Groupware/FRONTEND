@@ -19,7 +19,7 @@ export const ROLE_VIEWS = [
     activeTab: "bg-role-owner text-background",
     body: "조직 전체 현황을 한눈에 보고, 인수인계를 최종 승인합니다.",
     screen: "대시보드",
-    nav: ["대시보드", "사원 관리", "구독·결제"],
+    nav: ["대시보드", "사원 관리", "구독"],
   },
   {
     name: "Leader",
@@ -57,7 +57,7 @@ export const ROLE_VIEWS = [
     */
     body: "역할 위에 얹는 권한입니다. 계정·회의실·결제를 맡습니다.",
     screen: "사원 관리",
-    nav: ["사원 관리", "회의실", "구독·결제"],
+    nav: ["사원 관리", "회의실", "구독"],
   },
 ] as const;
 

@@ -13,7 +13,7 @@ import { PageHeader } from "@/features/shell/components/page-header";
 export default function BillingOverviewLayout({ children }: { children: ReactNode }) {
   return (
     <>
-      <PageHeader title="구독·결제" icon={CreditCard} />
+      <PageHeader title="구독" icon={CreditCard} />
       {children}
     </>
   );
