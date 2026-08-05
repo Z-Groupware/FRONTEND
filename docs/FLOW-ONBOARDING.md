@@ -10,7 +10,7 @@
 
 ## 0. 한눈에
 
-```
+```text
 [1] 기업 등록 신청        (비로그인)  POST 신청서
       ↓  BE·운영자 검토 → 승인
 [2] 승인 메일             (BE 발송)   기업 코드 + 대표 계정(ID/첫 비밀번호)
@@ -64,7 +64,7 @@
 
 ### 필요한 엔드포인트
 
-```
+```text
 POST /companies/registrations
   req  : 위 표 그대로
   res  : 201 { registrationId }        // 프론트는 지금 아무것도 안 쓴다. 접수만 되면 된다.
@@ -100,7 +100,7 @@ POST /companies/registrations
 
 ### 1단계 · 기업 코드로 회사 확인
 
-```
+```text
 GET /companies/by-code?code=NOVA-7K3D      (또는 POST /companies/lookup)
   res  : 200 { code, name }                 // name을 화면에 보여준다("노바랩스에 연결됐어요")
   err  : 404 코드 없음
@@ -112,7 +112,7 @@ GET /companies/by-code?code=NOVA-7K3D      (또는 POST /companies/lookup)
 
 ### 2단계 · 이메일 + 비밀번호
 
-```
+```text
 POST /auth/login
   req  : { companyCode, email, password, keepSignedIn }
   res  : 200 + Set-Cookie(httpOnly)  또는  토큰 (BFF가 쿠키로 굽는다)
@@ -152,7 +152,7 @@ POST /auth/login
 
 ### 온보딩 진입 시 필요한 조회
 
-```
+```text
 GET /companies/me/departments     → 부서 트리
 GET /companies/me/positions       → 직급 목록
 ```
@@ -163,7 +163,7 @@ GET /companies/me/positions       → 직급 목록
 
 **2계층 고정 트리**다.
 
-```
+```text
 개발팀            ← 윗단 = 부서
  ├ 프론트엔드     ← 아랫단 = 그 부서 안의 "역할"
  └ 백엔드
@@ -183,7 +183,7 @@ BE 스키마도 **깊이 2를 강제**해 주면 좋다. 무제한 트리로 열
 
 **직급명과 권한(role)은 분리**된다. 이름은 회사마다 다르게 쓰고, 권한은 이름과 무관하게 직접 고른다.
 
-```
+```text
 { id, name: "책임", role: "LEADER" }
 { id, name: "사원", role: "MEMBER" }
 ```
@@ -196,7 +196,7 @@ BE 스키마도 **깊이 2를 강제**해 주면 좋다. 무제한 트리로 열
 
 **한 줄이 곧 계정 하나**다.
 
-```
+```text
 { email, departmentId, roleId, positionId, isAdmin }
 ```
 
@@ -219,7 +219,7 @@ BE 스키마도 **깊이 2를 강제**해 주면 좋다. 무제한 트리로 열
 
 프론트가 필요로 하는 것은 **하나의 커밋 엔드포인트**다. 단계별로 나누면 중간에 이탈했을 때 반쪽짜리 조직이 남는다.
 
-```
+```text
 POST /companies/me/onboarding
   req  : {
            departments: [{ name, children: [{ name }] }],
@@ -248,7 +248,7 @@ POST /companies/me/onboarding
   **다음 결제일에 기본료와 함께** 청구한다.
 - **순서 한 줄기**(2026-08-05 확정) — 문서 안에서 이 순서 말고 다른 설명을 두지 않는다.
 
-  ```
+  ```text
   3단계 [완료] → 조직·계정 저장(구독 UNPAID, 초대 메일 아직 안 감)
   4단계 결제 성공 → 구독 ACTIVE → **그때 초대 메일 발송**
   결제 실패      → 계정은 그대로, 구독 UNPAID 유지 → 다시 시도

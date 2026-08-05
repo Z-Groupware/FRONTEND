@@ -41,7 +41,7 @@ npm run typecheck
 
 ## 2. 디렉터리 구조
 
-```
+```text
 src/
 ├─ app/
 │  ├─ (public)/       /  /login  /register  /plans
@@ -337,7 +337,7 @@ export const isDelayed = (a: { status: ActionStatus; dueDate: string }) =>
 
 ## 19. Mock → Live 격리막
 
-```
+```text
 컴포넌트 ──props── UI계약 타입(types.ts) 에만 의존
      ▲
 server.ts / actions.ts ── isMock 분기:  mock → mocks/*  |  live → serverApi(BFF)
