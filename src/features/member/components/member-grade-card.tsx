@@ -1,5 +1,6 @@
 "use client";
 
+import { ShieldCheck } from "lucide-react";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 
@@ -122,32 +123,6 @@ export function MemberGradeCard({ member, canEdit }: { member: ManagedMember; ca
         <div className="flex max-w-[640px] flex-col gap-4">
           <>
             {/*
-              ⚠️ **셀렉트가 아니라 토글이다.** 켜고 끄는 값 하나에 목록을 열게 하면 두 번 눌러야
-                 하고, 닫힌 칸에 "관리자 권한 없음"이라 적혀 있으면 그게 현재 상태인지 고를 수
-                 있는 항목인지 헷갈린다(WORKFLOW §11도 "토글"이라 부른다).
-            */}
-            {showsAdmin && (
-              <label
-                htmlFor="member-admin"
-                className="border-border bg-secondary/40 flex cursor-pointer items-start gap-3 rounded-lg border px-3.5 py-3"
-              >
-                <Checkbox
-                  id="member-admin"
-                  checked={isAdmin}
-                  onCheckedChange={(checked) => setIsAdmin(checked === true)}
-                  disabled={!canEdit || isPending}
-                  className="mt-0.5"
-                />
-                <span className="flex flex-col gap-0.5">
-                  <span className="text-[13px] leading-5 font-medium">관리자 권한 부여</span>
-                  <span className="text-muted-foreground text-[12px] leading-4 break-keep">
-                    사원·회의실 관리와 구독·저장소 화면에 들어갈 수 있습니다.
-                  </span>
-                </span>
-              </label>
-            )}
-
-            {/*
                 ⚠️ **권한·직급을 두 열로** 놓는다(§디자인 토큰: 폼 2열). 한 줄에 하나씩 쌓으면
                    카드는 넓은데 칸은 상한에 묶여 오른쪽 절반이 통째로 비고, 카드만 길어져
                    왼쪽 프로필 칸과 높이가 안 맞는다. 좁아지면 한 열로 접힌다.
@@ -190,6 +165,35 @@ export function MemberGradeCard({ member, canEdit }: { member: ManagedMember; ca
                 />
               </div>
             </div>
+
+            {/*
+              ⚠️ **덧붙는 것은 아래다.** 전에는 이 칸이 맨 위에 있었는데, 카드 이름이
+                 `직급·권한 변경`인데 정작 그 두 칸이 아래로 밀리고 큰 테두리 상자가 머리를
+                 차지했다 — 설명문이 말하는 순서(권한 → 그 위에 덧붙는 관리자)와도 반대였다.
+              ⚠️ **테두리 상자를 두르지 않는다.** 값 하나짜리 체크박스에 상자를 씌우면 위의
+                 두 입력칸보다 무겁게 보여, 곁가지가 본 줄기보다 커진다.
+              ⚠️ 표식은 **방패**다 — 목록 표·온보딩 초대 줄과 같은 것을 같게 그린다.
+            */}
+            {showsAdmin && (
+              <div className="border-border mt-1 flex items-start gap-3 border-t pt-4">
+                <Checkbox
+                  id="member-admin"
+                  checked={isAdmin}
+                  onCheckedChange={(checked) => setIsAdmin(checked === true)}
+                  disabled={!canEdit || isPending}
+                  className="mt-0.5"
+                />
+                <label htmlFor="member-admin" className="flex cursor-pointer flex-col gap-0.5">
+                  <span className="flex items-center gap-1.5 text-[13px] leading-5 font-medium">
+                    <ShieldCheck className="size-3.5 shrink-0" aria-hidden />
+                    관리자 권한 부여
+                  </span>
+                  <span className="text-muted-foreground text-[12px] leading-4 break-keep">
+                    사원·회의실 관리와 구독·저장소 화면에 들어갈 수 있습니다.
+                  </span>
+                </label>
+              </div>
+            )}
           </>
         </div>
       </div>

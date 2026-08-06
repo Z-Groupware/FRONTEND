@@ -1,3 +1,4 @@
+import { ShieldCheck } from "lucide-react";
 import Link from "next/link";
 
 import { ProfileAvatar } from "@/components/common/profile-avatar";
@@ -22,10 +23,18 @@ import type { ManagedMember } from "../manage-types";
  *    줘서 어디를 눌러야 하는지 보이게 한다. 키보드는 한 줄에 한 번만 걸린다(§a11y).
  */
 
-/** 권한 칸 — Admin 겸직이면 배지를 하나 더 붙인다(권한을 대체하지 않는다) */
+/**
+ * 권한 칸 — 배지 하나와, 겸직이면 그 옆에 **방패 표식**.
+ *
+ * ⚠️ **Admin을 배지로 하나 더 붙이지 않는다.** `Member` `Admin`이 나란히 서면 크기·모양이
+ *    같아 **둘 중 하나를 고른 것**처럼 읽힌다 — 실제로는 Member **이면서** Admin이다.
+ *    온보딩 초대 줄이 이미 같은 이유로 방패 아이콘을 쓴다(`InviteAdminToggle`) —
+ *    화면이 달라도 같은 것은 같게 보여야 한다.
+ * ⚠️ 아이콘만 두면 뜻이 안 남는다 — 표에서 훑을 땐 `title`, 스크린 리더에는 글자로 준다(§a11y).
+ */
 function AuthorityCell({ member }: { member: ManagedMember }) {
   return (
-    <span className="inline-flex items-center justify-center gap-1">
+    <span className="inline-flex items-center justify-center gap-1.5">
       <span
         className={cn(
           "inline-flex shrink-0 items-center rounded px-1.5 py-0.5 text-[11px] leading-none",
@@ -35,8 +44,9 @@ function AuthorityCell({ member }: { member: ManagedMember }) {
         {AUTHORITY_LABEL[member.authority]}
       </span>
       {member.isAdmin && (
-        <span className="border-border text-muted-foreground shrink-0 rounded border px-1.5 py-0.5 text-[11px] leading-none">
-          Admin
+        <span className="text-foreground/70 inline-flex shrink-0 items-center" title="관리자 겸직">
+          <ShieldCheck className="size-3.5" aria-hidden />
+          <span className="sr-only">관리자 겸직</span>
         </span>
       )}
     </span>

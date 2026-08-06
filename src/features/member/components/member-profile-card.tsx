@@ -1,3 +1,5 @@
+import { ShieldCheck } from "lucide-react";
+
 import { ProfileAvatar } from "@/components/common/profile-avatar";
 import { AUTHORITY_BADGE_CLASS, AUTHORITY_LABEL } from "@/constants/authority";
 import { MEMBER_STATUS_LABEL } from "@/constants/member";
@@ -53,9 +55,15 @@ export function MemberProfileCard({ member, phone }: { member: ManagedMember; ph
           >
             {AUTHORITY_LABEL[member.authority]}
           </span>
+          {/* ⚠️ 목록 표·온보딩과 **같은 방패 표식**이다 — 배지를 하나 더 붙이면 둘 중 하나를
+              고른 것처럼 읽힌다(Member **이면서** Admin이다) */}
           {member.isAdmin && (
-            <span className="border-border text-muted-foreground shrink-0 rounded border px-1.5 py-0.5 text-[11px] leading-none">
-              Admin
+            <span
+              className="text-foreground/70 inline-flex shrink-0 items-center gap-1 text-[11px] leading-none"
+              title="관리자 겸직"
+            >
+              <ShieldCheck className="size-3.5" aria-hidden />
+              관리자 겸직
             </span>
           )}
           <span className="border-border text-muted-foreground shrink-0 rounded border px-1.5 py-0.5 text-[11px] leading-none">
