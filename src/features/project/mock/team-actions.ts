@@ -11,7 +11,7 @@ import type { ProjectTeamAction } from "../types";
 export const PROJECT_TEAM_ACTIONS_MOCK: Record<string, ProjectTeamAction[]> = {
   GOODS: [
     {
-      id: "ta-goods-1",
+      id: 1,
       name: "앱 개발 착수",
       team: "개발팀",
       startDate: "2026-07-21",
@@ -19,7 +19,7 @@ export const PROJECT_TEAM_ACTIONS_MOCK: Record<string, ProjectTeamAction[]> = {
       status: ACTION_STATUS.IN_PROGRESS,
     },
     {
-      id: "ta-goods-2",
+      id: 2,
       name: "결제 시스템 연동",
       team: "개발팀",
       startDate: "2026-08-11",
@@ -27,7 +27,7 @@ export const PROJECT_TEAM_ACTIONS_MOCK: Record<string, ProjectTeamAction[]> = {
       status: ACTION_STATUS.TODO,
     },
     {
-      id: "ta-goods-3",
+      id: 3,
       name: "TV 광고 계약 및 모델 섭외",
       team: "마케팅팀",
       startDate: "2026-08-11",
@@ -35,7 +35,7 @@ export const PROJECT_TEAM_ACTIONS_MOCK: Record<string, ProjectTeamAction[]> = {
       status: ACTION_STATUS.TODO,
     },
     {
-      id: "ta-goods-4",
+      id: 4,
       name: "굿즈 디자인 시안 제작",
       team: "디자인팀",
       startDate: "2026-07-21",
@@ -45,7 +45,7 @@ export const PROJECT_TEAM_ACTIONS_MOCK: Record<string, ProjectTeamAction[]> = {
   ],
   BRAND: [
     {
-      id: "ta-brand-1",
+      id: 5,
       name: "로고·가이드라인 개편",
       team: "디자인팀",
       startDate: "2026-08-01",
@@ -53,7 +53,7 @@ export const PROJECT_TEAM_ACTIONS_MOCK: Record<string, ProjectTeamAction[]> = {
       status: ACTION_STATUS.IN_PROGRESS,
     },
     {
-      id: "ta-brand-2",
+      id: 6,
       name: "캠페인 자산 제작",
       team: "마케팅팀",
       startDate: "2026-08-15",
@@ -63,7 +63,7 @@ export const PROJECT_TEAM_ACTIONS_MOCK: Record<string, ProjectTeamAction[]> = {
   ],
   COLLAB: [
     {
-      id: "ta-collab-1",
+      id: 7,
       name: "협업툴 리뉴얼 착수",
       team: "개발팀",
       startDate: "2026-07-25",
@@ -71,7 +71,7 @@ export const PROJECT_TEAM_ACTIONS_MOCK: Record<string, ProjectTeamAction[]> = {
       status: ACTION_STATUS.IN_PROGRESS,
     },
     {
-      id: "ta-collab-2",
+      id: 8,
       name: "회의·문서·일정 흐름 통합 설계",
       team: "전략기획팀",
       startDate: "2026-08-10",

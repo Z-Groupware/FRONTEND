@@ -3,6 +3,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { isDelayed } from "@/constants/domain";
 import type { TimelineActionInput } from "@/features/member/action-timeline";
 import { ActionTimeline, ActionTimelineLegend } from "@/features/member/components/action-timeline";
@@ -10,6 +12,7 @@ import {
   parseProjectDetailTab,
   PROJECT_DETAIL_TABS,
   PROJECT_TIMELINE_BOX_HEIGHT,
+  splitDepartments,
 } from "@/features/project/lib";
 import { getProjectDetail, getProjectTeamActions } from "@/features/project/server";
 import { formatMonthDayWeekday } from "@/lib/date";
@@ -35,6 +38,12 @@ export default async function ProjectDetailPage({ params, searchParams }: Projec
   const activeTab = parseProjectDetailTab((await searchParams).tab);
   const tagColor = pickPaletteColor(project.tag);
   const due = formatMonthDayWeekday(project.dueDate);
+  const { visible: visibleTeamNames, overflow: teamOverflow } = splitDepartments(project.teamNames);
+  const visibleTeamBadges = visibleTeamNames.map((team) => (
+    <Badge key={team} variant="outline" className="shrink-0">
+      {team}
+    </Badge>
+  ));
 
   const teamActions =
     activeTab === "timeline" ? await getProjectTeamActions(String(project.id)) : [];
@@ -42,7 +51,7 @@ export default async function ProjectDetailPage({ params, searchParams }: Projec
     // ⚠️ 이 화면은 이미 프로젝트 하나로 좁혀져 있어 태그 칩은 노이즈다 — 대신 팀명을 단다.
     // ⚠️ 팀명은 무색이다(다른 대시보드의 팀명 라벨과 같은 결) — 팔레트는 프로젝트 태그 전용.
     return {
-      id: action.id,
+      id: String(action.id),
       title: action.name,
       tag: action.team,
       tagBgColor: "var(--muted)",
@@ -50,10 +59,9 @@ export default async function ProjectDetailPage({ params, searchParams }: Projec
       startDate: action.startDate,
       dueDate: action.dueDate,
       tone: isDelayed(action) ? "DELAYED" : action.status,
-      // ⚠️ 팀 액션 상세(`/app/projects/:projectId/team/:teamActionId`)는 아직 없다 — 생기면 href를 채운다.
-      //    식별자는 action.team(팀명)이 아니라 action.id(팀 액션 ID)를 써야 한다 — 팀명으로
-      //    임시 경로를 만들면 404 링크가 된다(코드리뷰 지적) — href 없이 두면 컴포넌트가
-      //    클릭 안 되는 막대로 표시한다.
+      // ⚠️ 식별자는 action.id(팀 액션 ID)를 쓴다 — action.team(팀명)으로 경로를 만들면
+      //    같은 팀에 팀 액션이 여러 개일 때 서로 구분이 안 된다.
+      href: `/app/projects/${project.id}/team/${action.id}`,
     };
   });
 
@@ -67,9 +75,17 @@ export default async function ProjectDetailPage({ params, searchParams }: Projec
             </Link>{" "}
             &gt; {project.name}
           </p>
-          <h2 className="text-foreground text-xl leading-7 font-semibold tracking-[-0.4px]">
-            {project.name}
-          </h2>
+          <div className="flex items-center gap-2">
+            <h2 className="text-foreground text-xl leading-7 font-semibold tracking-[-0.4px]">
+              {project.name}
+            </h2>
+            <span
+              className="rounded px-1.5 py-0.5 font-mono text-xs leading-none font-semibold"
+              style={{ backgroundColor: tagColor.bgColor, color: tagColor.textColor }}
+            >
+              {project.tag}
+            </span>
+          </div>
         </div>
 
         <nav aria-label="프로젝트 상세 탭" className="border-border flex gap-4 border-b">
@@ -95,35 +111,47 @@ export default async function ProjectDetailPage({ params, searchParams }: Projec
         </nav>
 
         {activeTab === "plan" ? (
-          <section className="border-border bg-card flex flex-col rounded-2xl border">
-            <div className="flex items-baseline justify-between gap-3 px-7 pt-6 pb-3">
-              <h3 className="flex items-center gap-2 text-[17px] leading-7 font-semibold tracking-[-0.3px]">
-                <span className="bg-foreground size-2 rounded-full" aria-hidden />
-                {project.name}
-              </h3>
-              <p className="text-muted-foreground text-[12px] leading-4">
-                마감 {due ? `${due}까지` : "-"}
-              </p>
-            </div>
-            <div className="flex flex-col gap-3 px-7 pb-7">
-              <span
-                className="w-fit rounded px-1.5 py-0.5 font-mono text-xs font-semibold"
-                style={{ backgroundColor: tagColor.bgColor, color: tagColor.textColor }}
-              >
-                {project.tag}
-              </span>
-              <p className="text-muted-foreground text-sm whitespace-pre-wrap">
-                {project.description}
-              </p>
-              {project.attachmentName && (
-                // ⚠️ 목 단계라 다운로드 URL이 없다(§9 화면은 사실만 말한다) — 죽은 링크(href="#") 대신
-                //    지금 있는 파일명만 정직하게 보여준다. API 스펙 확정 후 실제 다운로드 링크로 바꾼다.
-                <span className="text-muted-foreground inline-flex w-fit items-center gap-1.5 text-sm">
-                  <Paperclip className="size-3.5" />
-                  {project.attachmentName}
+          // ⚠️ 헤더에 제목을 또 안 둔다 — 위 페이지 헤더가 이미 제목+태그를 보여준다(팀 액션
+          //    상세와 같은 결). 그래서 머리 표식(dot)도 없다 — 단일 카드라 §4 "단일 카드 p-7".
+          <section className="border-border bg-card flex flex-col gap-3 rounded-2xl border p-7">
+            <div className="flex justify-end">
+              <div className="flex flex-col items-end gap-1.5">
+                <span className="text-muted-foreground text-xs tabular-nums">
+                  {due ? `${due}까지` : "-"}
                 </span>
-              )}
+                <div
+                  className="flex items-center gap-1"
+                  aria-label={`참여 팀: ${project.teamNames.join(", ")}`}
+                >
+                  {teamOverflow > 0 ? (
+                    <Tooltip>
+                      <TooltipTrigger render={<span className="flex items-center gap-1" />}>
+                        {visibleTeamBadges}
+                        <Badge variant="secondary" className="shrink-0">
+                          +{teamOverflow}
+                        </Badge>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom" className="max-w-none">
+                        <span className="whitespace-nowrap">{project.teamNames.join(" · ")}</span>
+                      </TooltipContent>
+                    </Tooltip>
+                  ) : (
+                    visibleTeamBadges
+                  )}
+                </div>
+              </div>
             </div>
+            <p className="text-muted-foreground text-sm whitespace-pre-wrap">
+              {project.description}
+            </p>
+            {project.attachmentName && (
+              // ⚠️ 목 단계라 다운로드 URL이 없다(§9 화면은 사실만 말한다) — 죽은 링크(href="#") 대신
+              //    지금 있는 파일명만 정직하게 보여준다. API 스펙 확정 후 실제 다운로드 링크로 바꾼다.
+              <span className="text-muted-foreground inline-flex w-fit items-center gap-1.5 text-sm">
+                <Paperclip className="size-3.5" />
+                {project.attachmentName}
+              </span>
+            )}
           </section>
         ) : (
           <section

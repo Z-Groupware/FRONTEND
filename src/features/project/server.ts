@@ -4,8 +4,18 @@ import { isMock } from "@/mocks/config";
 
 import { sortProjects } from "./lib";
 import { TOP_LEVEL_PROJECTS } from "./mock/projects";
+import {
+  TEAM_ACTION_DETAIL_MOCK,
+  TEAM_ACTION_PERSONAL_ITEMS_MOCK,
+} from "./mock/team-action-detail";
 import { PROJECT_ATTACHMENT_MOCK, PROJECT_TEAM_ACTIONS_MOCK } from "./mock/team-actions";
-import type { ProjectDetail, ProjectListItem, ProjectTeamAction } from "./types";
+import type {
+  ProjectDetail,
+  ProjectListItem,
+  ProjectTeamAction,
+  TeamActionDetail,
+  TeamActionPersonalItem,
+} from "./types";
 
 /** 이름에 검색어가 들어가는지(대소문자·공백 무시). 검색어가 없으면 항상 통과. */
 function matchesKeyword(project: ProjectListItem, keyword?: string): boolean {
@@ -74,6 +84,30 @@ export async function getProjectTeamActions(id: string): Promise<ProjectTeamActi
   if (isMock) {
     const project = findProjectById(id);
     return project ? (PROJECT_TEAM_ACTIONS_MOCK[project.tag] ?? []) : [];
+  }
+
+  throw new Error("서버 연동 미구현 — ERD·API 스펙 확정 후 매퍼 작성");
+}
+
+/** 팀 액션 상세(`/app/projects/:projectId/team/:teamActionId`)의 상세 탭. 못 찾으면 `null`(호출부가 404). */
+export async function getTeamActionDetail(teamActionId: string): Promise<TeamActionDetail | null> {
+  if (isMock) {
+    const numericId = Number(teamActionId);
+    if (!Number.isInteger(numericId)) return null;
+    return TEAM_ACTION_DETAIL_MOCK[numericId] ?? null;
+  }
+
+  throw new Error("서버 연동 미구현 — ERD·API 스펙 확정 후 매퍼 작성");
+}
+
+/** 팀 액션 상세의 타임라인 탭 — 이 팀 액션에 속한 개인 액션 전체(담당자별 한 행). */
+export async function getTeamActionPersonalItems(
+  teamActionId: string,
+): Promise<TeamActionPersonalItem[]> {
+  if (isMock) {
+    const numericId = Number(teamActionId);
+    if (!Number.isInteger(numericId)) return [];
+    return TEAM_ACTION_PERSONAL_ITEMS_MOCK[numericId] ?? [];
   }
 
   throw new Error("서버 연동 미구현 — ERD·API 스펙 확정 후 매퍼 작성");

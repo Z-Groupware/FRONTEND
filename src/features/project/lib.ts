@@ -1,6 +1,7 @@
 import {
   DEFAULT_PROJECT_DETAIL_TAB,
   DEFAULT_PROJECT_SORT,
+  DEFAULT_TEAM_ACTION_DETAIL_TAB,
   PROJECT_DETAIL_TAB,
   PROJECT_DETAIL_TAB_LABEL,
   PROJECT_SORT,
@@ -9,6 +10,9 @@ import {
   type ProjectDetailTab,
   type ProjectSort,
   type ProjectStatus,
+  TEAM_ACTION_DETAIL_TAB,
+  TEAM_ACTION_DETAIL_TAB_LABEL,
+  type TeamActionDetailTab,
 } from "@/constants/domain";
 
 import type { ProjectListItem } from "./types";
@@ -81,3 +85,25 @@ export function parseProjectDetailTab(value: string | undefined): ProjectDetailT
  * 재사용하되, 여기는 다른 섹션과 경합하지 않는 전용 화면이라 더 크게 둔다.
  */
 export const PROJECT_TIMELINE_BOX_HEIGHT = 480;
+
+/** 팀 액션 상세 탭 목록 — 값·라벨은 도메인 상수에서 온다(라벨 하드코딩 금지). */
+export const TEAM_ACTION_DETAIL_TABS: { tab: TeamActionDetailTab; label: string }[] = [
+  {
+    tab: TEAM_ACTION_DETAIL_TAB.DETAIL,
+    label: TEAM_ACTION_DETAIL_TAB_LABEL[TEAM_ACTION_DETAIL_TAB.DETAIL],
+  },
+  {
+    tab: TEAM_ACTION_DETAIL_TAB.TIMELINE,
+    label: TEAM_ACTION_DETAIL_TAB_LABEL[TEAM_ACTION_DETAIL_TAB.TIMELINE],
+  },
+];
+
+/** URL의 `?tab=` 값을 안전하게 탭으로 — 모르는 값이면 기본(상세). */
+export function parseTeamActionDetailTab(value: string | undefined): TeamActionDetailTab {
+  return (
+    TEAM_ACTION_DETAIL_TABS.find((t) => t.tab === value)?.tab ?? DEFAULT_TEAM_ACTION_DETAIL_TAB
+  );
+}
+
+/** 팀 액션 상세의 타임라인 탭 박스 높이 — 프로젝트 상세와 같은 값(같은 컴포넌트, 같은 결). */
+export const TEAM_ACTION_TIMELINE_BOX_HEIGHT = PROJECT_TIMELINE_BOX_HEIGHT;

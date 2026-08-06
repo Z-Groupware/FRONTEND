@@ -52,6 +52,22 @@ export const PROJECT_DETAIL_TAB_LABEL: Record<ProjectDetailTab, string> = {
 /** 기본 탭 — 기획은 쿼리 없이도 기본으로 뜬다(`?tab=` 안 실림). */
 export const DEFAULT_PROJECT_DETAIL_TAB: ProjectDetailTab = PROJECT_DETAIL_TAB.PLAN;
 
+/** 팀 액션 상세(`/app/projects/:projectId/team/:teamActionId`) 탭. */
+export const TEAM_ACTION_DETAIL_TAB = {
+  DETAIL: "detail",
+  TIMELINE: "timeline",
+} as const;
+export type TeamActionDetailTab =
+  (typeof TEAM_ACTION_DETAIL_TAB)[keyof typeof TEAM_ACTION_DETAIL_TAB];
+
+export const TEAM_ACTION_DETAIL_TAB_LABEL: Record<TeamActionDetailTab, string> = {
+  detail: "상세",
+  timeline: "타임라인",
+};
+
+/** 기본 탭 — 상세는 쿼리 없이도 기본으로 뜬다(`?tab=` 안 실림). */
+export const DEFAULT_TEAM_ACTION_DETAIL_TAB: TeamActionDetailTab = TEAM_ACTION_DETAIL_TAB.DETAIL;
+
 /** ProjectTag 최대 길이(백엔드 협의 확정) — 영문 대문자만 허용. */
 export const PROJECT_TAG_MAX_LENGTH = 6;
 
