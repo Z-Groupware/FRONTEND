@@ -12,6 +12,7 @@ import {
   changeInviteRole,
   createInvite,
   markInvitesSent,
+  remapInvite,
   removeInvite,
   sendableInvites,
   toggleInviteAdmin,
@@ -131,6 +132,35 @@ describe("changeInvite*", () => {
     ⚠️ **리더에서 내려오면 역할을 비운다.** `리더`는 리더 직급만 가질 수 있는 값이라 그대로
        두면 `과장 + 리더`처럼 짝이 어긋난 줄이 남는다.
   */
+  /*
+    ⚠️ **팀 칸은 `positionsFor` 필터를 지나가지 않는 유일한 경로다.** 여기서 안 막으면 한 팀에
+       리더가 둘이 된다. 리더를 자동으로 채우기 전에는 옮기면 역할이 빈 값이 돼서 발송에서
+       저절로 걸렸는데, 이제 세 칸이 다 찬 완전한 줄이 되기 때문에 여기서 막아야 한다
+       (적대적 검토 #163).
+  */
+  it("이미 리더가 있는 팀으로 리더 줄을 옮기면 역할과 직급을 비운다", () => {
+    const first = changeInvitePosition(makeList(), "a", "lead", isLeader);
+    const moved = changeInviteDepartment(first, "b", "dev", isLeader);
+    const asLeader = changeInvitePosition(moved, "b", "lead", isLeader);
+
+    // b가 리더가 된 뒤 a와 같은 팀으로 옮기면 — 자리가 이미 찼다
+    const clash = changeInviteDepartment(asLeader, "b", "dev", isLeader);
+
+    expect(clash[1]?.departmentId).toBe("dev");
+    expect(clash[1]?.roleId).toBe("");
+    expect(clash[1]?.positionId).toBe("");
+    // 세 칸이 다 차 있지 않으니 발송에서 빠진다
+    expect(sendableInvites(clash).map((invite) => invite.id)).not.toContain("b");
+  });
+
+  it("리더가 없는 팀으로 옮기면 `리더`가 그대로 따라간다", () => {
+    const asLeader = changeInvitePosition(makeList(), "a", "lead", isLeader);
+    const moved = changeInviteDepartment(asLeader, "a", "biz", isLeader);
+
+    expect(moved[0]?.roleId).toBe(LEADER_ROLE_ID);
+    expect(moved[0]?.positionId).toBe("lead");
+  });
+
   it("리더에서 내려오면 `리더` 역할을 비운다 — 짝이 어긋난 줄을 남기지 않는다", () => {
     const asLeader = changeInvitePosition(makeList(), "a", "lead", isLeader);
     const next = changeInvitePosition(asLeader, "a", "staff", isLeader);
@@ -471,5 +501,77 @@ describe("Admin 겸직 토글", () => {
 
     expect(next?.positionId).toBe("staff");
     expect(next?.roleId).toBe(NO_ROLE_ID);
+  });
+});
+
+/**
+ * 1·2단계로 돌아가 전제를 바꾸면 예약값의 뜻이 사라진다 — 그때 값도 같이 비워야 한다.
+ *
+ * ⚠️ 전에는 `리더`·`없음`을 검사 없이 통과시켰다. 그래서 규칙이 금지한 조합이 **세 칸이 다 찬
+ *    채로** 발송됐고, 역할 칸은 목록에 없는 값이라 `선택`으로 보여 화면과 발송이 다른 말을 했다
+ *    (적대적 검토 #163).
+ */
+describe("remapInvite — 1·2단계 편집분 반영", () => {
+  const options = {
+    departmentIds: new Set(["dev"]),
+    positionIds: new Set(["lead", "staff"]),
+    roleIdsOf: (departmentId: string) =>
+      departmentId === "dev" ? new Set(["fe"]) : new Set<string>(),
+  };
+  const row = (patch: Partial<Invite>): Invite => ({
+    id: "a",
+    name: "",
+    email: "a@x.com",
+    departmentId: "dev",
+    roleId: "",
+    positionId: "",
+    isAdmin: false,
+    isSent: false,
+    ...patch,
+  });
+
+  it("직급이 리더 권한이면 `리더`가 남는다", () => {
+    const next = remapInvite(
+      row({ roleId: LEADER_ROLE_ID, positionId: "lead" }),
+      options,
+      isLeader,
+    );
+    expect(next.roleId).toBe(LEADER_ROLE_ID);
+  });
+
+  it("그 직급이 리더가 아니게 되면 `리더`를 비운다 — `과장 + 리더`가 남지 않는다", () => {
+    const notLeader: InviteRules = { isLeaderPosition: () => false, hasRoles: () => true };
+    const next = remapInvite(
+      row({ roleId: LEADER_ROLE_ID, positionId: "lead" }),
+      options,
+      notLeader,
+    );
+
+    expect(next.roleId).toBe("");
+    expect(sendableInvites([next])).toEqual([]);
+  });
+
+  it("팀에 역할이 생기면 `없음`을 비운다 — 고를 수 있는데 안 고른 셈이다", () => {
+    const hasRoles: InviteRules = { isLeaderPosition: () => false, hasRoles: () => true };
+    const next = remapInvite(row({ roleId: NO_ROLE_ID, positionId: "staff" }), options, hasRoles);
+
+    expect(next.roleId).toBe("");
+  });
+
+  it("팀에 역할이 없으면 `없음`이 남는다", () => {
+    const noRoles: InviteRules = { isLeaderPosition: () => false, hasRoles: () => false };
+    const next = remapInvite(row({ roleId: NO_ROLE_ID, positionId: "staff" }), options, noRoles);
+
+    expect(next.roleId).toBe(NO_ROLE_ID);
+  });
+
+  it("이미 나간 줄은 건드리지 않는다 — 보낸 내용과 화면이 달라지면 안 된다", () => {
+    const sent = row({
+      roleId: LEADER_ROLE_ID,
+      positionId: "gone",
+      departmentId: "gone",
+      isSent: true,
+    });
+    expect(remapInvite(sent, options, isLeader)).toEqual(sent);
   });
 });

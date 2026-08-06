@@ -21,6 +21,20 @@ describe("findFaqCandidates", () => {
     expect(findFaqCandidates(input)[0]?.id).toBe(expected);
   });
 
+  /*
+    ⚠️ **새 용어로도 찾아져야 한다.** 화면이 `팀`이라 가르쳐 놓고 `팀`으로 물으면 못 찾으면
+       안 된다 — 점수가 키워드 **길이의 합**이고 문턱이 2라, 한 글자 `팀`은 혼자서 절대
+       문턱을 못 넘는다(`match.ts`). 두 글자 이상으로 넣어야 걸린다(적대적 검토 #163).
+    ⚠️ **옛말도 남긴다.** 용어가 바뀐 걸 모르는 사람이 `부서`로 묻는다 — 빼면 그 사람이 못 찾는다.
+  */
+  it.each([
+    ["팀 체계는 어떻게 만드나요", "org-structure"],
+    ["팀과 직급이 궁금해요", "org-structure"],
+    ["부서와 직급은 어떻게 구성되나요", "org-structure"],
+  ])("'%s' → 조직 구성 항목을 찾는다", (input, expected) => {
+    expect(findFaqCandidates(input).map((row) => row.id)).toContain(expected);
+  });
+
   it("모르는 질문은 후보가 없다 — 억지로 답하지 않는다", () => {
     expect(findFaqCandidates("오늘 점심 뭐 먹지")).toHaveLength(0);
     expect(findFaqCandidates("주차장 있나요")).toHaveLength(0);

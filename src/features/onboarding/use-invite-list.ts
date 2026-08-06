@@ -12,12 +12,12 @@ import {
   createInvite,
   markInvitesSent,
   nextInviteId,
+  remapInvite,
   removeInvite,
   sendableInvites,
   toggleInviteAdmin,
 } from "./invites";
 import type { Invite } from "./types";
-import { LEADER_ROLE_ID, NO_ROLE_ID } from "./types";
 
 /**
  * 초대 목록 편집 상태.
@@ -71,28 +71,7 @@ export function useInviteList(rules: InviteRules) {
       roleIdsOf: (departmentId: string) => Set<string>,
     ) =>
       setInvites((prev) =>
-        prev.map((invite) => {
-          if (invite.isSent) return invite;
-
-          // 사라진 부서·직급은 **비운다**. 다른 값으로 바꿔 놓으면 고른 적 없는 곳으로 초대장이 간다
-          const departmentId = departmentIds.has(invite.departmentId) ? invite.departmentId : "";
-          return {
-            ...invite,
-            departmentId,
-            /*
-              부서가 바뀌었거나 그 역할이 사라졌으면 비운다.
-              ⚠️ **예약값 둘(`리더`·`없음`)은 살아남는다** — 어느 부서에서나 뜻이 같다.
-                 `리더`를 여기서 지우면 부서만 옮겼는데 팀장 표시가 사라진다.
-            */
-            roleId:
-              invite.roleId === LEADER_ROLE_ID ||
-              invite.roleId === NO_ROLE_ID ||
-              roleIdsOf(departmentId).has(invite.roleId)
-                ? invite.roleId
-                : "",
-            positionId: positionIds.has(invite.positionId) ? invite.positionId : "",
-          };
-        }),
+        prev.map((invite) => remapInvite(invite, { departmentIds, positionIds, roleIdsOf }, rules)),
       ),
   };
 }

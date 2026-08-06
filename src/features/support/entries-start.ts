@@ -41,7 +41,7 @@ export const START_ENTRIES: readonly FaqEntry[] = [
     id: "onboarding",
     category: FAQ_CATEGORY.START,
     question: "처음 들어가면 뭘 하나요?",
-    keywords: ["온보딩", "초기 설정", "처음", "세팅", "설정부터"],
+    keywords: ["온보딩", "초기 설정", "처음", "세팅", "설정부터", "팀 체계", "부서 체계"],
     answer:
       "관리자가 초기 설정을 세 단계로 마칩니다.\n\n1. 팀 체계 만들기\n2. 직급 체계와 권한 정하기\n3. 사원 초대하기\n\n다 하면 바로 회의를 시작할 수 있습니다.",
   },

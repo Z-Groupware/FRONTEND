@@ -1,4 +1,5 @@
 import {
+  departmentsWithLeader,
   fitsRoleAndPosition,
   type InviteRules,
   isValidEmail,
@@ -108,13 +109,22 @@ export function changeInviteDepartment(
   rules: InviteRules,
 ): Invite[] {
   const target = invites.find((invite) => invite.id === id);
+  const isLeaderRow = rules.isLeaderPosition(target?.positionId ?? "");
+
+  /*
+    ⚠️ **이미 리더가 있는 팀으로 옮기면 직급까지 비운다.** 팀 칸은 `positionsFor` 필터를
+       지나가지 않는 유일한 경로라, 여기서 안 막으면 한 팀에 리더가 둘이 된다.
+       전에는 옮기면 역할이 빈 값이 돼서 발송에서 저절로 걸렸는데, 리더를 자동으로 채우면서
+       **세 칸이 다 찬 완전한 줄**이 됐다 — 규칙 위반이 그대로 나간다.
+    ⚠️ 비우는 게 맞다. 잠긴 역할 칸은 손으로 못 고치니 직급을 남겨 두면 빠져나갈 길이 없다.
+       빈 칸이 되면 확인 창이 "고르지 않은 줄"로 세어 준다(`useInviteCommit`).
+  */
+  if (isLeaderRow && departmentsWithLeader(invites, rules.isLeaderPosition, id).has(departmentId)) {
+    return updateInvite(invites, id, { departmentId, roleId: "", positionId: "" });
+  }
 
   // 부서가 바뀌면 역할은 비운다 — 다른 부서의 역할이 남아 있으면 안 된다
-  const roleId = rules.isLeaderPosition(target?.positionId ?? "")
-    ? LEADER_ROLE_ID
-    : rules.hasRoles(departmentId)
-      ? ""
-      : NO_ROLE_ID;
+  const roleId = isLeaderRow ? LEADER_ROLE_ID : rules.hasRoles(departmentId) ? "" : NO_ROLE_ID;
 
   return updateInvite(invites, id, { departmentId, roleId });
 }
@@ -169,6 +179,45 @@ export function toggleInviteAdmin(invites: Invite[], id: string): Invite[] {
 
 export function removeInvite(invites: Invite[], id: string): Invite[] {
   return invites.filter((invite) => invite.id !== id);
+}
+
+/**
+ * 1·2단계 편집분을 초대 한 줄에 다시 맞춘다 — **사라진 값은 비운다.**
+ *
+ * ⚠️ 다른 값으로 바꿔 놓지 않는다. 고른 적 없는 곳으로 초대장이 간다.
+ * ⚠️ **예약값 둘(`리더`·`없음`)도 전제가 살아 있을 때만 남긴다.** 두 값은 스스로 뜻을 갖지
+ *    않고 다른 칸의 상태에 매여 있다 — `리더`는 "이 직급이 리더 권한이다", `없음`은
+ *    "이 팀에 역할이 하나도 없다". 1·2단계로 돌아가 그 전제를 바꾸면 값만 남고 뜻이 사라진다.
+ *    전에는 검사 없이 통과시켜서, 직급 권한을 Leader에서 Member로 내리면 `과장 + 리더`처럼
+ *    규칙이 금지한 조합이 **세 칸이 다 찬 채로** 발송됐다. 역할 칸은 목록에 없는 값이라
+ *    `선택`으로 보이는데 상태에는 남아 있어, 화면과 발송이 서로 다른 말을 했다.
+ * ⚠️ 비우면 확인 창이 "고르지 않은 줄"로 세어 준다(`useInviteCommit`) — 조용히 안 나간다.
+ */
+export function remapInvite(
+  invite: Invite,
+  options: {
+    departmentIds: Set<string>;
+    positionIds: Set<string>;
+    roleIdsOf: (departmentId: string) => Set<string>;
+  },
+  rules: InviteRules,
+): Invite {
+  if (invite.isSent) return invite;
+
+  const departmentId = options.departmentIds.has(invite.departmentId) ? invite.departmentId : "";
+  const positionId = options.positionIds.has(invite.positionId) ? invite.positionId : "";
+
+  const keepsReserved =
+    (invite.roleId === LEADER_ROLE_ID && rules.isLeaderPosition(positionId)) ||
+    (invite.roleId === NO_ROLE_ID && departmentId !== "" && !rules.hasRoles(departmentId));
+
+  return {
+    ...invite,
+    departmentId,
+    positionId,
+    roleId:
+      keepsReserved || options.roleIdsOf(departmentId).has(invite.roleId) ? invite.roleId : "",
+  };
 }
 
 /**
