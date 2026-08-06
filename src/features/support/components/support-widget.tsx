@@ -1,6 +1,6 @@
 "use client";
 
-import { RotateCcw, X } from "lucide-react";
+import { RotateCcw, Search, X } from "lucide-react";
 import { useState } from "react";
 
 import { ZLogo } from "@/components/icons/z-logo";
@@ -130,17 +130,18 @@ export function SupportWidget() {
         >
           <div className="border-border flex items-center gap-2.5 border-b px-4 py-3.5">
             {/*
-              ⚠️ **Z 표식**이다. 눌러서 연 우하단 버튼과 같은 표식이라 그 물건이 열렸다는 게
-                 이어진다 — 머리에서 표식이 바뀌면 다른 창으로 넘어온 것처럼 읽힌다.
+              ⚠️ **돋보기**다. 이 위젯이 실제로 하는 일은 정해진 답을 **찾아 주는 것**이라
+                 표식도 그렇게 읽혀야 한다.
+              ⚠️ **여기에 Z를 두지 않는다.** 아래 인사 블록에 이미 Z가 있어서, 열자마자
+                 같은 표식이 두 개 겹쳐 보였다 — 브랜드는 **런처 버튼**이 맡고
+                 창 머리는 이 창이 무엇을 하는 곳인지를 맡는다.
               ⚠️ 말풍선·헤드셋은 쓰지 않는다 — 사람이나 AI가 답해 주는 것처럼 읽히는데
                  여기엔 사람도 AI도 없다(§정직성). 반짝이는 AI 표식이라 더 안 된다.
-                 무엇을 하는 곳인지는 아래 **글**이 말한다(`자주 묻는 질문에서 찾아드립니다`).
-              ⚠️ 로고는 `currentColor`라 이 칸의 글자색을 따라간다 — 어두울 땐 회색,
-                 밝을 땐 먹색을 한 단 눌러서. 밝은 바탕의 회색은 흐리멍덩하고,
+              ⚠️ 어두울 땐 회색, 밝을 땐 먹색을 한 단 눌러서. 밝은 바탕의 회색은 흐리멍덩하고,
                  진한 먹색은 머리글보다 먼저 튄다.
             */}
             <span className="bg-secondary text-muted-foreground landing-light:text-foreground/70 border-border flex size-8 shrink-0 items-center justify-center rounded-full border">
-              <ZLogo className="size-[14px]" aria-hidden />
+              <Search className="size-[18px]" aria-hidden />
             </span>
 
             <span>

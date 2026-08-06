@@ -1,6 +1,6 @@
 "use client";
 
-import { X } from "lucide-react";
+import { Lightbulb, X } from "lucide-react";
 
 import { ZLogo } from "@/components/icons/z-logo";
 import { cn } from "@/lib/utils";
@@ -79,7 +79,12 @@ export function OnboardingGuide({ step, isOpen, onToggle }: OnboardingGuideProps
         )}
       >
         <header className="border-guide-border flex shrink-0 items-center gap-2 border-b px-4 py-3">
-          <span className="bg-guide-foreground size-2 rounded-full" aria-hidden />
+          {/*
+            ⚠️ **전구**다. 여기는 찾아보는 곳이 아니라 지금 단계에서 알아둘 것을 짚어 주는
+               곳이라, 랜딩 도움말(돋보기)과 표식을 일부러 다르게 쓴다.
+            ⚠️ 브랜드(Z)는 **런처 버튼**이 맡는다. 머리까지 Z로 두면 같은 표식이 두 번 나온다.
+          */}
+          <Lightbulb className="size-4 shrink-0" aria-hidden />
           <h2 className="text-[13px] font-semibold">온보딩 가이드</h2>
           <span className="text-guide-muted ml-auto text-[11px]">
             {step}단계 · {ONBOARDING_STEP_LABEL[step]}
