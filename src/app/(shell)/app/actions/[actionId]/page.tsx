@@ -72,6 +72,12 @@ export default async function PersonalActionDetailPage({ params }: PersonalActio
         <>
           <div className="flex items-center gap-1.5">
             <p className="truncate">{action.parentTeamAction.name}</p>
+            <span
+              className="shrink-0 rounded px-1.5 py-0.5 font-mono text-[10px] leading-none font-semibold"
+              style={{ backgroundColor: tagColor.bgColor, color: tagColor.textColor }}
+            >
+              {action.projectTag}
+            </span>
             <span className="bg-muted text-muted-foreground shrink-0 rounded px-1.5 py-0.5 text-[10px] leading-none font-semibold">
               {action.parentTeamAction.team}
             </span>
