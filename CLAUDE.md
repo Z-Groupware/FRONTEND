@@ -34,8 +34,8 @@ app/
 │ ├─ /owner **base role = Owner 전용** : 대시보드 · /owner/setting(기업설정)
 │ │ · /owner/leader-handovers(+/:id) — 팀장급 **오프보딩** 인수인계
 │ ├─ /manage **Owner ‖ is_admin — 관리 기능 전부가 여기 하나로** :
-│ │ /manage/members(+/:id) · /manage/new(계정발급) · /manage/rooms
-│ │ · /manage/billing(구독) · /manage/storage(저장소 관리)
+│ │ /manage/members(+/:id) · /manage/members/new(계정발급, 사원 관리 화면 안 버튼으로 진입) · /manage/rooms
+│ │ · /manage/billing(구독·결제) · /manage/storage(저장소 관리)
 │ ├─ /team **base role = Leader**(본인 부서 스코프) : 대시보드 · /team/members(+/:id)
 │ │ · /team/action · /team/handover(+/:id)
 │ └─ /my **base role = Member** 대시보드

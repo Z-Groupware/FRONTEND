@@ -40,7 +40,7 @@ const CASES: PreviewCase[] = [
   {
     key: "owner",
     title: ROLE_LABEL[ROLE.OWNER],
-    note: "회사 운영이 늘 보인다. 계정 발급은 없다 — 발급은 Admin의 일이다",
+    note: "회사 운영이 늘 보인다. 계정 발급은 사원 관리 화면 안 버튼이다",
     viewer: person(ROLE.OWNER, "박대표"),
   },
   {

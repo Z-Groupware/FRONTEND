@@ -57,17 +57,22 @@ function isAdmin(actor: Actor): boolean {
   return actor.isAdmin === true && canGrantAdmin(actor);
 }
 
-/** 사원 최종 승인·직급/권한 변경 — OWNER이거나 Admin을 겸한 사람 */
+/**
+ * 사원 관리 화면(`/manage/members`) 접근 — 계정 발급·직급/권한 변경. OWNER이거나 Admin을 겸한 사람.
+ * ⚠️ **인수인계 최종 승인/반려 버튼은 이 권한과 별개**다(`canApproveFinal`, OWNER 전용) —
+ *    같은 화면 안에 있어도 화면 접근과 그 버튼의 권한이 갈린다.
+ */
 export function canManageMembers(actor: Actor): boolean {
   return actor.role === ROLE.OWNER || isAdmin(actor);
 }
 
 /**
- * 사내 공지 작성·수정 — OWNER이거나 Admin을 겸한 사람.
+ * 사내 공지 작성·수정 — **OWNER 전용**(2026-08-06 확정: Admin 제외).
+ * ⚠️ 회사 대표가 회사 전체에 알리는 공지라는 성격이라 Admin 겸직으로는 안 연다.
  * ⚠️ 열람은 전원 가능하다(공지는 다 같이 본다) — 작성·수정만 이 권한으로 막는다.
  */
 export function canManageNotice(actor: Actor): boolean {
-  return actor.role === ROLE.OWNER || isAdmin(actor);
+  return actor.role === ROLE.OWNER;
 }
 
 /**
@@ -93,10 +98,13 @@ export function canManageStorage(actor: Actor): boolean {
   return actor.role === ROLE.OWNER || isAdmin(actor);
 }
 
-/** 계정 발급 — Admin 겸직자만. OWNER는 발급 대상도 발급자도 아니다. */
-export function canIssueAccount(actor: Actor): boolean {
-  return isAdmin(actor);
-}
+/**
+ * 계정 발급 — **OWNER 또는 Admin 겸직자**(2026-08-06 확정: Owner도 가능).
+ * ⚠️ 전용 화면·사이드바 탭을 따로 두지 않는다 — **사원 관리(`/manage/members`) 화면 안
+ *    버튼**으로 둔다. 그 화면 접근 권한(`canManageMembers`)과 발급 권한이 항상 같은 사람이라
+ *    별도 함수를 만들면 두 판정이 갈릴 여지만 생긴다 — `canManageMembers`를 그대로 쓴다.
+ */
+export const canIssueAccount = canManageMembers;
 
 /**
  * Admin을 켤 수 있는 대상인가 — **Owner는 겸할 수 없다**(팀 확정).
@@ -107,11 +115,14 @@ export function canGrantAdmin(target: { role: Role }): boolean {
 }
 
 /**
- * 인수인계 **최종** 승인 — OWNER이거나 Admin을 겸한 사람.
+ * 인수인계 **최종** 승인 — **OWNER 전용**(2026-08-06 확정: Admin 제외).
+ * ⚠️ 이전엔 Admin도 됐지만, 최종 승인은 인사·조직 결정이라 대표만 하기로 정정했다.
+ *    Admin은 사원 관리 화면(`canManageMembers`)엔 계속 들어가 계정 발급·직급 변경은 하되,
+ *    그 화면 안의 [최종 승인/반려] 버튼만 OWNER에게만 보인다 — 화면 접근과 액션 권한이 갈린다.
  * ⚠️ 중간 승인(`canApproveMid`)은 LEADER다. 둘을 한 함수로 합치지 않는다 — 단계가 다르다.
  */
 export function canApproveFinal(actor: Actor): boolean {
-  return actor.role === ROLE.OWNER || isAdmin(actor);
+  return actor.role === ROLE.OWNER;
 }
 
 /**
@@ -159,6 +170,33 @@ export function canOperateMeeting(actor: Actor, meeting: { ownerId: number }): b
 /** 액션 수행 — 배정된 본인만 */
 export function canCompleteAction(actor: Actor, action: { assigneeId: number }): boolean {
   return actor.id === action.assigneeId;
+}
+
+/**
+ * 회의 상세(내용·스크립트) 열람 판정에 필요한 최소 정보.
+ * ⚠️ **목록과 상세는 권한이 다르다.** 목록(제목·개설 부서·프로젝트 태그)은 전 구성원 공개라
+ *    통합검색 등에서 그대로 노출해도 된다 — 이 함수는 **내용(발화 기록·산출물)** 을 열 때만 쓴다.
+ */
+export interface MeetingVisibility {
+  /** Owner가 개설한 프로젝트 회의인지(2절) — true면 팀장급 이상 전체 공개 */
+  isOwnerHosted: boolean;
+  /** 참석자로 지정된 사용자 id */
+  attendeeIds: number[];
+  /** 이 회의를 개설한 부서(팀 액션 회의) — Owner 개설 회의는 없음 */
+  hostDepartmentId?: number;
+}
+
+/**
+ * 회의 **상세** 열람 — Member는 참석자인 회의만, Leader는 참석자인 회의 + 자기 부서가 연 회의
+ * + Owner가 개설한 회의(타 부서 회의는 불가), Owner는 전체(2026-08-06 확정).
+ * ⚠️ 액션 상세의 "출처 회의" 링크도 이 함수로 판정한다 — 권한 없으면 잠금 표시(에러 아님).
+ */
+export function canViewMeetingDetail(actor: Actor, meeting: MeetingVisibility): boolean {
+  if (actor.role === ROLE.OWNER) return true;
+  if (meeting.attendeeIds.includes(actor.id)) return true;
+  if (actor.role !== ROLE.LEADER) return false;
+  if (meeting.isOwnerHosted) return true;
+  return meeting.hostDepartmentId !== undefined && meeting.hostDepartmentId === actor.departmentId;
 }
 
 /* ───────── 가드 ───────── */
