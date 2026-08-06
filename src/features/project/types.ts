@@ -6,7 +6,8 @@ import type { TagColorName } from "@/lib/palette";
  * ⚠️ 프로젝트는 전부 Owner가 개설하므로 개설자 라벨은 항상 "Owner"라 필드로 두지 않는다(상수 표시).
  */
 export interface ProjectListItem {
-  id: string;
+  /** BE 자동증가 정수 PK. URL(`/app/projects/:projectId`)에는 이 값이 그대로 실린다(태그 아님). */
+  id: number;
   name: string;
   /**
    * 세부 설명(기획). 실제로는 Owner가 길게 쓸 수 있는 본문이라 목록에선 **첫 줄만** 잘라 보여준다.
@@ -53,10 +54,13 @@ export type ProjectFormErrors = Partial<
 >;
 
 /**
- * 프로젝트 상세(`/app/projects/:projectTag`)의 기획 탭. `ProjectListItem`과 필드가 겹치지만
+ * 프로젝트 상세(`/app/projects/:projectId`)의 기획 탭. `ProjectListItem`과 필드가 겹치지만
  * 목록에 없는 첨부파일이 있어 별도 타입으로 둔다 — 목록 카드에 첨부파일까지 끌고 오지 않는다.
+ * ⚠️ URL은 `id`로 다닌다(태그를 그대로 노출하지 않는다, 2026-08-06 확정) — `tag`는 화면 표시용.
  */
 export interface ProjectDetail {
+  /** BE 자동증가 정수 PK — `ProjectListItem.id`와 같은 값. */
+  id: number;
   tag: string;
   name: string;
   description: string;

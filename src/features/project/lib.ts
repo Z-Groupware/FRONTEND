@@ -58,7 +58,7 @@ export function splitDepartments(
   return { visible: departments.slice(0, max), overflow: Math.max(0, departments.length - max) };
 }
 
-/** 프로젝트 상세(`/app/projects/:tag`) 탭 — 값이 곧 `?tab=` 값이다(기획은 기본이라 쿼리에 안 실린다). */
+/** 프로젝트 상세(`/app/projects/:projectId`) 탭 — 값이 곧 `?tab=` 값이다(기획은 기본이라 쿼리에 안 실린다). */
 export const PROJECT_DETAIL_TABS = [
   { tab: "plan", label: "기획" },
   { tab: "timeline", label: "타임라인" },

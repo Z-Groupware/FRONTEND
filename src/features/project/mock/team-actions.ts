@@ -3,8 +3,10 @@ import { ACTION_STATUS } from "@/constants/domain";
 import type { ProjectTeamAction } from "../types";
 
 /**
- * ⚠️ 목 데이터 — BE 연동 전(ERD·API 스펙 미확정). 프로젝트 상세(`/app/projects/:tag`)의
+ * ⚠️ 목 데이터 — BE 연동 전(ERD·API 스펙 미확정). 프로젝트 상세(`/app/projects/:projectId`)의
  * 타임라인 탭에 쓴다. 프로젝트 태그별로 참여 팀들이 받은 팀 액션 목록이다.
+ * ⚠️ 오늘(2026-08-06) 기준 — **할일(TODO) 상태는 시작일이 오늘보다 뒤여야 한다**(오늘선을
+ *    가로지르면 안 됨, `member/mock/dashboard.ts`와 같은 규칙). 진행중은 오늘을 가로질러도 된다.
  */
 export const PROJECT_TEAM_ACTIONS_MOCK: Record<string, ProjectTeamAction[]> = {
   GOODS: [
@@ -28,7 +30,7 @@ export const PROJECT_TEAM_ACTIONS_MOCK: Record<string, ProjectTeamAction[]> = {
       id: "ta-goods-3",
       name: "TV 광고 계약 및 모델 섭외",
       team: "마케팅팀",
-      startDate: "2026-07-28",
+      startDate: "2026-08-11",
       dueDate: "2026-08-22",
       status: ACTION_STATUS.TODO,
     },
@@ -72,7 +74,7 @@ export const PROJECT_TEAM_ACTIONS_MOCK: Record<string, ProjectTeamAction[]> = {
       id: "ta-collab-2",
       name: "회의·문서·일정 흐름 통합 설계",
       team: "전략기획팀",
-      startDate: "2026-08-05",
+      startDate: "2026-08-10",
       dueDate: "2026-09-19",
       status: ACTION_STATUS.TODO,
     },

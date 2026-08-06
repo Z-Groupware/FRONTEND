@@ -13,7 +13,7 @@ import type { ProjectListItem } from "./types";
 /** 정렬 검증용 최소 프로젝트 — 이름·마감일만 다르게 둔다. */
 function project(overrides: Partial<ProjectListItem>): ProjectListItem {
   return {
-    id: "p",
+    id: 1,
     name: "프로젝트",
     description: "",
     tag: "TAG",
@@ -75,21 +75,21 @@ describe("parseProjectSort", () => {
 });
 
 describe("sortProjects", () => {
-  const a = project({ id: "a", name: "가나다", dueDate: "2026-09-05" });
-  const b = project({ id: "b", name: "다라마", dueDate: "2026-09-01" });
-  const c = project({ id: "c", name: "나다라", dueDate: "2026-09-12" });
+  const a = project({ id: 1, name: "가나다", dueDate: "2026-09-05" });
+  const b = project({ id: 2, name: "다라마", dueDate: "2026-09-01" });
+  const c = project({ id: 3, name: "나다라", dueDate: "2026-09-12" });
 
   it("마감 임박순은 오름차순", () => {
-    expect(sortProjects([a, b, c], PROJECT_SORT.DUE_ASC).map((p) => p.id)).toEqual(["b", "a", "c"]);
+    expect(sortProjects([a, b, c], PROJECT_SORT.DUE_ASC).map((p) => p.id)).toEqual([2, 1, 3]);
   });
 
   it("이름순은 한글 가나다", () => {
-    expect(sortProjects([a, b, c], PROJECT_SORT.NAME).map((p) => p.id)).toEqual(["a", "c", "b"]);
+    expect(sortProjects([a, b, c], PROJECT_SORT.NAME).map((p) => p.id)).toEqual([1, 3, 2]);
   });
 
   it("입력 배열을 건드리지 않는다(불변)", () => {
     const input = [a, b, c];
     sortProjects(input, PROJECT_SORT.NAME);
-    expect(input.map((p) => p.id)).toEqual(["a", "b", "c"]);
+    expect(input.map((p) => p.id)).toEqual([1, 2, 3]);
   });
 });
