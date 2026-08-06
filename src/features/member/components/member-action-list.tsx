@@ -27,7 +27,7 @@ export function MemberActionList({ actions }: { actions: ManagedMemberAction[] }
       </div>
 
       {actions.length === 0 ? (
-        <p className="text-muted-foreground border-border border-t px-6 py-10 text-center text-[13px] leading-5">
+        <p className="text-muted-foreground border-border border-t px-6 py-8 text-center text-[13px] leading-5">
           맡고 있는 액션이 없습니다
         </p>
       ) : (

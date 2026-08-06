@@ -23,6 +23,7 @@ import {
   POSITION_AUTHORITIES,
 } from "@/constants/authority";
 
+import { canChangeGradeOf } from "../grade";
 import { changeMemberGradeAction } from "../manage-actions";
 import type { ManagedMember } from "../manage-types";
 
@@ -90,10 +91,14 @@ export function MemberGradeCard({ member, canEdit }: { member: ManagedMember; ca
     });
 
   /*
-    ⚠️ Owner는 여기서 못 고친다. 회사에 하나뿐인 자리라 옮기는 일이 "권한 변경"이 아니라
-       **대표 교체**이고, 그건 이 화면이 다루는 일이 아니다(§명세에 없는 기능은 안 만든다).
+    ⚠️ **대표에게는 이 카드를 아예 안 그린다.** 전에는 카드를 세워 놓고 안에
+       "대표 계정은 이 화면에서 바꿀 수 없습니다" 한 줄만 넣었는데, 제목·설명까지 갖춘
+       카드가 통째로 아무 일도 안 하는 자리가 됐다 — 오른쪽 칸이 빈 상자 둘로 남았다.
+       못 고친다는 사실은 **사람 카드**가 한 줄로 말한다(`MemberProfileCard`).
+    ⚠️ 판정은 `canChangeGradeOf` 한 곳이 한다 — 두 카드가 각자 세면 한쪽은 폼을 감추고
+       다른 쪽은 이유를 안 적는 상태가 조용히 생긴다.
   */
-  const isOwner = !eligible.includes(member.authority);
+  if (!canChangeGradeOf(member)) return null;
 
   return (
     <section className="border-border bg-card overflow-hidden rounded-2xl border">
@@ -115,83 +120,77 @@ export function MemberGradeCard({ member, canEdit }: { member: ManagedMember; ca
       */}
       <div className="border-border border-t px-7 py-5">
         <div className="flex max-w-[640px] flex-col gap-4">
-          {isOwner ? (
-            <p className="text-muted-foreground text-[13px] leading-5 break-keep">
-              대표 계정은 이 화면에서 바꿀 수 없습니다.
-            </p>
-          ) : (
-            <>
-              {/*
+          <>
+            {/*
               ⚠️ **셀렉트가 아니라 토글이다.** 켜고 끄는 값 하나에 목록을 열게 하면 두 번 눌러야
                  하고, 닫힌 칸에 "관리자 권한 없음"이라 적혀 있으면 그게 현재 상태인지 고를 수
                  있는 항목인지 헷갈린다(WORKFLOW §11도 "토글"이라 부른다).
             */}
-              {showsAdmin && (
-                <label
-                  htmlFor="member-admin"
-                  className="border-border bg-secondary/40 flex cursor-pointer items-start gap-3 rounded-lg border px-3.5 py-3"
-                >
-                  <Checkbox
-                    id="member-admin"
-                    checked={isAdmin}
-                    onCheckedChange={(checked) => setIsAdmin(checked === true)}
-                    disabled={!canEdit || isPending}
-                    className="mt-0.5"
-                  />
-                  <span className="flex flex-col gap-0.5">
-                    <span className="text-[13px] leading-5 font-medium">관리자 권한 부여</span>
-                    <span className="text-muted-foreground text-[12px] leading-4 break-keep">
-                      사원·회의실 관리와 구독·저장소 화면에 들어갈 수 있습니다.
-                    </span>
+            {showsAdmin && (
+              <label
+                htmlFor="member-admin"
+                className="border-border bg-secondary/40 flex cursor-pointer items-start gap-3 rounded-lg border px-3.5 py-3"
+              >
+                <Checkbox
+                  id="member-admin"
+                  checked={isAdmin}
+                  onCheckedChange={(checked) => setIsAdmin(checked === true)}
+                  disabled={!canEdit || isPending}
+                  className="mt-0.5"
+                />
+                <span className="flex flex-col gap-0.5">
+                  <span className="text-[13px] leading-5 font-medium">관리자 권한 부여</span>
+                  <span className="text-muted-foreground text-[12px] leading-4 break-keep">
+                    사원·회의실 관리와 구독·저장소 화면에 들어갈 수 있습니다.
                   </span>
-                </label>
-              )}
+                </span>
+              </label>
+            )}
 
-              {/*
+            {/*
                 ⚠️ **권한·직급을 두 열로** 놓는다(§디자인 토큰: 폼 2열). 한 줄에 하나씩 쌓으면
                    카드는 넓은데 칸은 상한에 묶여 오른쪽 절반이 통째로 비고, 카드만 길어져
                    왼쪽 프로필 칸과 높이가 안 맞는다. 좁아지면 한 열로 접힌다.
               */}
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="member-authority">권한</Label>
-                  <Select
-                    items={AUTHORITY_LABEL}
-                    value={authority}
-                    onValueChange={(value) => setAuthority(value as Authority)}
-                    disabled={!canEdit || isPending}
-                  >
-                    <SelectTrigger id="member-authority" className="w-full">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent alignItemWithTrigger={false}>
-                      {POSITION_AUTHORITIES.map((value) => (
-                        <SelectItem key={value} value={value}>
-                          {AUTHORITY_LABEL[value]}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="member-authority">권한</Label>
+                <Select
+                  items={AUTHORITY_LABEL}
+                  value={authority}
+                  onValueChange={(value) => setAuthority(value as Authority)}
+                  disabled={!canEdit || isPending}
+                >
+                  <SelectTrigger id="member-authority" className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent alignItemWithTrigger={false}>
+                    {POSITION_AUTHORITIES.map((value) => (
+                      <SelectItem key={value} value={value}>
+                        {AUTHORITY_LABEL[value]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="member-position">직급</Label>
-                  {/*
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="member-position">직급</Label>
+                {/*
                 ⚠️ 직급은 **회사가 만든 목록**이라 원래 셀렉트가 맞다. 다만 그 목록은
                    기업 설정이 들고 있고 아직 이 화면으로 오지 않는다 — 없는 목록을
                    지어내느니 적게 두고, 목록이 오면 셀렉트로 바꾼다(§연동 검증).
               */}
-                  <Input
-                    id="member-position"
-                    value={position}
-                    onChange={(event) => setPosition(event.target.value)}
-                    disabled={!canEdit || isPending}
-                    placeholder="사원"
-                  />
-                </div>
+                <Input
+                  id="member-position"
+                  value={position}
+                  onChange={(event) => setPosition(event.target.value)}
+                  disabled={!canEdit || isPending}
+                  placeholder="사원"
+                />
               </div>
-            </>
-          )}
+            </div>
+          </>
         </div>
       </div>
 
@@ -199,7 +198,7 @@ export function MemberGradeCard({ member, canEdit }: { member: ManagedMember; ca
         ⚠️ 제출 버튼은 **밑단 우측**이다(§디자인 토큰). 폭 가득한 버튼은 이 카드만 다르게
            보이고, 비활성일 때 회색 덩어리가 카드 절반을 차지한다.
       */}
-      {canEdit && !isOwner && (
+      {canEdit && (
         <div className="border-border flex items-center justify-end gap-2 border-t px-7 py-4">
           {error && (
             <p role="alert" className="text-destructive mr-auto text-[12px] leading-4 break-keep">

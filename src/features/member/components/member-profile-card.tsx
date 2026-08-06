@@ -4,6 +4,7 @@ import { MEMBER_STATUS_LABEL } from "@/constants/member";
 import { formatYearMonthDay } from "@/lib/date";
 import { cn } from "@/lib/utils";
 
+import { canChangeGradeOf } from "../grade";
 import type { ManagedMember } from "../manage-types";
 
 /**
@@ -61,6 +62,17 @@ export function MemberProfileCard({ member, phone }: { member: ManagedMember; ph
             {MEMBER_STATUS_LABEL[member.status]}
           </span>
         </div>
+
+        {/*
+          ⚠️ **왜 고칠 칸이 없는지 여기서 말한다.** 대표에게는 직급·권한 카드를 안 그리는데,
+             아무 말도 없으면 보는 사람은 화면이 덜 그려진 줄 안다 — 카드를 하나 더 세우는
+             대신(그 카드는 아무 일도 안 한다) 그 사람 카드가 한 줄로 답한다.
+        */}
+        {!canChangeGradeOf(member) && (
+          <p className="text-muted-foreground/80 pt-1 text-center text-[12px] leading-4 break-keep">
+            대표 계정은 직급·권한을 여기서 바꿀 수 없습니다.
+          </p>
+        )}
       </section>
 
       {/* 값 카드 — 라벨 위, 값 아래. 마이페이지 기본 정보와 같은 결이다 */}
