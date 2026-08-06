@@ -86,29 +86,54 @@ export function validateDepartments(departments: DepartmentNode[]): string | nul
   return error;
 }
 
+/** 트리 전체(팀 + 그 안의 역할)의 id */
+function collectIds(nodes: DepartmentNode[]): Set<string> {
+  const ids = new Set<string>();
+  const walk = (list: DepartmentNode[]) => {
+    for (const node of list) {
+      ids.add(node.id);
+      walk(node.children);
+    }
+  };
+  walk(nodes);
+  return ids;
+}
+
+/** 사원이 딸린 팀에 손댔을 때 막는 이유 — 없으면 `null` */
+export interface BlockedTeamChange {
+  team: string;
+  /** `removed` = 트리에서 아예 사라짐 · `demoted` = 남의 팀 아래 역할로 들어감 */
+  kind: "removed" | "demoted";
+}
+
 /**
- * 사라진 팀 중 **사람이 딸린 팀**이 있는지 — 있으면 그 팀 이름을 돌려준다.
+ * 사원이 딸린 팀에 **못 하는 짓**을 했는지 본다.
  *
  * ⚠️ 팀은 인수인계·액션 귀속의 단위다. 워크플로우에서 사람이 빠질 때는 **항상 명시적
  *    재할당**을 거친다(휴직·오프보딩 → 인수인계 → 새 리더 귀속) — 조용히 붕 뜨는 경로가 없다.
- *    팀 삭제만 예외로 두면, 소속이 사라진 사원은 `isWithinTeamScope`가 `teamId` 비교라
- *    **아무도 관리할 수 없는 상태**가 되고 그 사람의 액션 출처도 끊긴다.
- * ⚠️ 그래서 **막는다.** 되돌릴 길이 있어서다 — 사원 관리에서 옮긴 뒤 다시 지우면 된다.
- *    미배정으로 흘려보내면 그 사원들을 다시 찾아 붙이는 일이 남는다.
- * ⚠️ 역할(트리 아랫단)은 세지 않는다. 사원이 소속되는 건 **팀**이다(§권한 ③).
+ *    소속이 사라진 사원은 `isWithinTeamScope`가 `teamId` 비교라 **아무도 관리할 수 없다**.
+ * ⚠️ **두 가지를 갈라 본다.** 예전엔 "최상위에 없으면 삭제"로 뭉뚱그렸는데, 트리는 2계층이고
+ *    강등(`demoteNode`)·드래그(`inside`)가 팀을 남의 역할로 내릴 수 있다 — 지우지도 않았는데
+ *    "사원이 남아 있어 못 지웁니다"가 떠서 저장이 통째로 막혔다. 옮긴 것과 지운 것은
+ *    **다른 사건**이고 사용자가 되돌릴 방법도 다르다.
+ * ⚠️ 강등도 막는 건 같은 이유다 — 역할에는 사원이 소속되지 않는다(§권한 ③).
  * ⚠️ 우리가 정한 잠정 규칙이다 — BE 확인이 필요하다(§연동 검증).
  */
-export function findBlockedTeamRemoval(
+export function findBlockedTeamChange(
   previous: DepartmentNode[],
   next: DepartmentNode[],
   memberCounts: Record<string, number>,
-): string | null {
-  const remaining = new Set(next.map((team) => team.id));
-  const removed = previous.find(
-    (team) => !remaining.has(team.id) && (memberCounts[team.id] ?? 0) > 0,
-  );
+): BlockedTeamChange | null {
+  const survivingIds = collectIds(next);
+  const roots = new Set(next.map((team) => team.id));
 
-  return removed ? removed.name : null;
+  for (const team of previous) {
+    if ((memberCounts[team.id] ?? 0) === 0) continue;
+    if (!survivingIds.has(team.id)) return { team: team.name, kind: "removed" };
+    if (!roots.has(team.id)) return { team: team.name, kind: "demoted" };
+  }
+
+  return null;
 }
 
 /**

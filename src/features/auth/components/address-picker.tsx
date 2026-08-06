@@ -129,6 +129,8 @@ export function AddressPicker({
              0을 통과시켜서 막아 주는 곳이 없다.
           ⚠️ 대신 좌표가 **주소를 따라오지 못한다는 사실**을 화면에 적는다. 지도를 못 쓰는
              상태를 숨기면 사용자는 위치가 옮겨진 줄 안다(§정직성).
+          ⚠️ 문구는 **고른 곳이 있느냐로 갈린다.** 신청 화면에는 지킬 좌표가 아예 없어서
+             "위치는 그대로입니다"가 거짓말이 된다 — 거기선 좌표 없이 주소만 간다.
         */}
         <Input
           id="company-address"
@@ -148,7 +150,9 @@ export function AddressPicker({
         <p className="text-muted-foreground flex items-center gap-1.5 text-[12px] leading-4">
           <MapPin className="size-3.5 shrink-0" aria-hidden />
           <span className="translate-y-px break-keep">
-            지도를 불러오지 못해 주소만 저장됩니다. 지도에 찍히는 위치는 그대로입니다.
+            {picked
+              ? "지도를 불러오지 못해 주소만 고칠 수 있습니다. 지도에 찍힌 위치는 그대로입니다."
+              : "지도를 불러오지 못했습니다. 지도 위치 없이 주소만 저장됩니다."}
           </span>
         </p>
       </div>

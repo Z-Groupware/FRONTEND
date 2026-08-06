@@ -20,7 +20,7 @@ import type {
   Position,
 } from "./types";
 import {
-  findBlockedTeamRemoval,
+  findBlockedTeamChange,
   validateCompanyProfile,
   validateDepartments,
   validatePositions,
@@ -75,8 +75,8 @@ export interface CompanyProfileFormState {
    *    칸 밑 인라인은 **그 칸의 값이 틀렸을 때만** 쓰는 자리다(§토스트).
    */
   message?: string;
-  /** 성공한 저장의 일련번호. 값이 바뀐 걸 보고 화면이 토스트를 띄운다 */
-  savedAt?: number;
+  /** 저장이 끝났는지 — 화면이 이걸 보고 토스트를 띄운다 */
+  isSaved?: boolean;
 }
 
 /**
@@ -122,8 +122,13 @@ export async function saveCompanyProfileAction(
 
   updateMockCompanyProfile(draft);
   revalidatePath(SETTING_PATH);
-  // 같은 값을 두 번 저장해도 화면이 알아채게 매번 다른 값을 준다
-  return { errors: {}, savedAt: Date.now() };
+  /*
+    ⚠️ **시각을 담지 않는다.** 전에는 `Date.now()`를 넣고 화면이 "값이 바뀌었나"로 판정했는데,
+       같은 밀리초에 두 번 저장하면 값이 같아 두 번째 토스트가 안 떴다 — 이 카드는 저장해도
+       화면 값이 그대로라 토스트가 유일한 신호다.
+       화면은 `useActionState`가 제출마다 주는 **새 객체**를 보고 판정한다(§company-profile-card).
+  */
+  return { errors: {}, isSaved: true };
 }
 
 /**
@@ -140,27 +145,30 @@ export async function saveDepartmentsAction(
   if (error) return { isSuccess: false, message: error };
 
   /*
-    ⚠️ **사람이 딸린 팀은 못 지운다.** 화면에서 미리 막지만 액션은 직접 부를 수 있다
-       (§권한: 화면 숨김은 보안이 아니다). 지금 저장된 트리와 견줘 사라진 팀을 찾는다 —
-       클라이언트가 보낸 값만 보면 "무엇이 사라졌는지"를 알 수 없다.
+    ⚠️ **미연결 검사가 먼저다.** 아래 재검사가 `getCompanySetting()`을 부르는데, 연동 전에는
+       그게 던진다 — 순서가 뒤집히면 액션 자체가 거절되어 화면이 결과 대신 아무것도 못 받는다
+       (이 파일이 세 번 적어 둔 "던지지 않는다"를 스스로 깨는 자리였다).
   */
-  const current = await getCompanySetting();
-  const blocked = findBlockedTeamRemoval(
-    current.departments,
-    departments,
-    current.teamMemberCounts,
-  );
-  if (blocked) {
-    return {
-      isSuccess: false,
-      message: `'${blocked}'에 사원이 남아 있습니다. 사원 관리에서 옮긴 뒤 지워 주세요`,
-    };
-  }
-
-  // ⚠️ 던지지 않는다 — 저장 실패는 화면 전체 실패가 아니다(§기업 정보 저장과 같은 이유)
   if (!isMock) {
     // TODO(BE 협의): `PUT /companies/me/teams`
     return { isSuccess: false, message: NOT_CONNECTED };
+  }
+
+  /*
+    ⚠️ **사람이 딸린 팀은 못 지우고, 남의 팀 아래로도 못 넣는다.** 화면에서 미리 막지만
+       액션은 직접 부를 수 있다(§권한). 지금 저장된 트리와 견줘야 무엇이 바뀌었는지 알 수 있다 —
+       클라이언트가 보낸 값만 보면 "무엇이 사라졌는지"를 모른다.
+  */
+  const current = await getCompanySetting();
+  const blocked = findBlockedTeamChange(current.departments, departments, current.teamMemberCounts);
+  if (blocked) {
+    return {
+      isSuccess: false,
+      message:
+        blocked.kind === "removed"
+          ? `'${blocked.team}'에 사원이 남아 있습니다. 사원 관리에서 옮긴 뒤 지워 주세요`
+          : `'${blocked.team}'에는 사원이 있어 다른 팀의 역할로 옮길 수 없습니다`,
+    };
   }
 
   updateMockDepartments(departments);

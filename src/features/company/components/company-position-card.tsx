@@ -78,6 +78,11 @@ export function CompanyPositionCard({ initial }: { initial: Position[] }) {
 
   /** 지금 고를 수 없는 권한 — 추가 줄과 각 행이 같은 값을 본다 */
   const blocked = blockedRoles(list.positions);
+  /*
+    ⚠️ 막힌 값이면 **상태를 내린다.** 표시만 덮어쓰면 위 목록에서 리더를 도로 풀었을 때
+       추가 줄이 손대지도 않았는데 Leader로 되살아난다 — 화면이 스스로 값을 바꾼 것처럼 보인다.
+  */
+  if (blocked.includes(draftRole)) setDraftRole(list.defaultRole);
 
   const handleSave = () => {
     const next = list.positions;
@@ -131,7 +136,7 @@ export function CompanyPositionCard({ initial }: { initial: Position[] }) {
         }
       >
         {/* 칸 너비는 행(`PositionRow`)과 같은 곳에서 온다 — 따로 적으면 머리와 몸이 어긋난다 */}
-        <div className="text-muted-foreground bg-secondary/50 border-border flex shrink-0 items-center gap-2 border-b px-7 py-3 text-[12px] leading-4">
+        <div className="text-muted-foreground bg-muted border-border flex shrink-0 items-center gap-2 border-b px-7 py-3 text-[12px] leading-4">
           <span className={cn(POSITION_COLUMN.INDEX, "shrink-0")} aria-hidden />
           <span className={cn(POSITION_COLUMN.NAME, "shrink-0 text-center")}>직급명</span>
           <span className="flex-1" aria-hidden />
@@ -192,12 +197,12 @@ export function CompanyPositionCard({ initial }: { initial: Position[] }) {
         <PositionAddRow
           insetClassName="px-7"
           name={draftName}
-          role={blocked.includes(draftRole) ? list.defaultRole : draftRole}
+          role={draftRole}
           blocked={blocked}
           onNameChange={setDraftName}
           onRoleChange={setDraftRole}
           onSubmit={() => {
-            if (list.add(draftName, blocked.includes(draftRole) ? list.defaultRole : draftRole)) {
+            if (list.add(draftName, draftRole)) {
               setDraftName("");
               setDraftRole(list.defaultRole);
             }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { LeaveGuard } from "@/components/common/leave-guard";
@@ -85,8 +85,6 @@ export function CompanyProfileCard({ profile }: { profile: CompanyProfile }) {
   const errorOf = (field: keyof CompanyProfileDraft) =>
     fixed.has(field) ? undefined : state.errors[field];
   const [place, setPlace] = useState<PickedPlace | null>(profile.place);
-  const notified = useRef<number | null>(null);
-
   /* 다시 제출했으니 가려 뒀던 오류를 되살린다 */
   const handleSubmit = () => setFixed(new Set());
 
@@ -100,12 +98,14 @@ export function CompanyProfileCard({ profile }: { profile: CompanyProfile }) {
     businessNumber !== profile.businessNumber ||
     JSON.stringify(place) !== JSON.stringify(profile.place);
 
+  /*
+    ⚠️ 의존성이 `state` **객체**다. `useActionState`는 제출할 때마다 새 객체를 주므로,
+       같은 값을 두 번 저장해도 효과가 다시 돈다 — 안에 담긴 값으로 판정하면 두 번째가
+       조용해진다(같은 밀리초·같은 결과).
+  */
   useEffect(() => {
-    if (state.savedAt && state.savedAt !== notified.current) {
-      notified.current = state.savedAt;
-      toast.success("기본 정보를 저장했습니다");
-    }
-  }, [state.savedAt]);
+    if (state.isSaved) toast.success("기본 정보를 저장했습니다");
+  }, [state]);
 
   return (
     <form action={formAction} onSubmit={handleSubmit}>

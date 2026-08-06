@@ -64,14 +64,39 @@ export function CompanyTeamCard({
    */
   const [failed, setFailed] = useState<{ snapshot: string; message: string } | null>(null);
 
+  /**
+   * 사원이 딸린 **팀(뿌리)** 인가.
+   * ⚠️ 역할(아랫단)은 사원이 소속되는 곳이 아니라 언제나 `false`다(§권한 ③).
+   */
+  const hasMembers = (id: string) =>
+    tree.departments.some((team) => team.id === id) && (memberCounts[id] ?? 0) > 0;
+
+  /*
+    ⚠️ **강등·이동도 막는다.** 사원이 있는 팀을 남의 팀 아래로 내리면 그 사원들의 소속이
+       역할이 되어 버린다 — 지우는 것과 같은 결과다. 화면에서 안 막으면 서버만 거절해서,
+       사용자는 지운 적도 없는데 "사원이 남아 있습니다"를 보고 무엇을 되돌릴지 모른다.
+    ⚠️ 조용히 무시하지 않고 **왜 안 되는지 말한다**(§정직성).
+  */
+  const blockIfStaffed = (id: string, run: () => void) => {
+    if (!hasMembers(id)) {
+      run();
+      return;
+    }
+    const team = tree.departments.find((node) => node.id === id);
+    toast.error(`'${team?.name ?? ""}'에는 사원이 있어 다른 팀의 역할로 옮길 수 없습니다`);
+  };
+
   const handlers: DepartmentNodeHandlers = {
     onRename: tree.rename,
     onAddChild: tree.addChild,
     onRemove: (id: string) => setPendingTeam(findNode(tree.departments, id) ?? null),
-    onMove: tree.move,
+    onMove: (draggedId, targetId, position) =>
+      position === "inside"
+        ? blockIfStaffed(draggedId, () => tree.move(draggedId, targetId, position))
+        : tree.move(draggedId, targetId, position),
     onShift: tree.shift,
     onPromote: tree.promote,
-    onDemote: tree.demote,
+    onDemote: (id: string) => blockIfStaffed(id, () => tree.demote(id)),
     editingId: tree.editingId,
     onEditingChange: tree.setEditingId,
     dragging,
@@ -99,6 +124,12 @@ export function CompanyTeamCard({
    */
   const pendingMembers = pendingTeam ? (memberCounts[pendingTeam.id] ?? 0) : 0;
   const isBlocked = pendingMembers > 0;
+  /*
+    ⚠️ 삭제 버튼은 **역할에도** 붙어 있다. 전부 "팀"이라 부르면 역할을 지울 때 "'프론트' 팀을
+       지울까요?"가 되어 무엇을 지우는지 잘못 말한다(§권한 ③: 팀과 역할은 다른 단이다).
+  */
+  const isTeam = pendingTeam !== null && tree.departments.some((t) => t.id === pendingTeam.id);
+  const unit = isTeam ? "팀" : "역할";
 
   const handleSave = () => {
     const next = tree.departments;
@@ -156,10 +187,13 @@ export function CompanyTeamCard({
       >
         {/*
           열 머리 — 표가 있는 다른 카드(저장소 관리)와 같은 모양이다.
+          ⚠️ 면은 `bg-muted`다. 저장소 표 머리는 `bg-secondary/50`이지만 **거긴 아래에 추가 줄이
+             없다** — 이 카드는 머리와 바닥에 회색 면이 둘이라, 강도가 다르면 같은 뜻의 두 줄이
+             다른 밝기로 보인다. 추가 줄은 온보딩 공용이라 `bg-muted`로 고정이므로 머리를 맞춘다.
           ⚠️ 여백은 카드 전체와 같은 28px다. 아래 목록은 `DepartmentNode`가 자기 몫으로
              8px(`px-2`)를 쓰므로 컨테이너가 20px만 대서 합이 28이 된다.
         */}
-        <div className="text-muted-foreground bg-secondary/50 border-border flex items-center justify-between border-b px-7 py-3 text-[12px] leading-4">
+        <div className="text-muted-foreground bg-muted border-border flex items-center justify-between border-b px-7 py-3 text-[12px] leading-4">
           <span>팀 · 역할</span>
           <span>구분</span>
         </div>
@@ -208,8 +242,8 @@ export function CompanyTeamCard({
         onOpenChange={() => setPendingTeam(null)}
         title={
           isBlocked
-            ? `\u2018${pendingTeam?.name ?? ""}\u2019 팀은 지울 수 없습니다`
-            : `\u2018${pendingTeam?.name ?? ""}\u2019 팀을 지울까요?`
+            ? `\u2018${pendingTeam?.name ?? ""}\u2019 ${unit}은 지울 수 없습니다`
+            : `\u2018${pendingTeam?.name ?? ""}\u2019 ${unit}을 지울까요?`
         }
         description={
           isBlocked ? (
@@ -217,12 +251,18 @@ export function CompanyTeamCard({
               사원 {pendingMembers}명이 이 팀에 속해 있습니다.
               <br />
               사원 관리에서 다른 팀으로 옮긴 뒤 지워 주세요.
+              {isDirty && (
+                <>
+                  <br />
+                  지금 나가면 저장하지 않은 팀 편집은 사라집니다.
+                </>
+              )}
             </>
           ) : (
             <>
               {pendingTeam && pendingTeam.children.length > 0
                 ? `안에 있는 역할 ${pendingTeam.children.length}개도 함께 목록에서 빠집니다.`
-                : "이 팀에는 사원이 없어 바로 지울 수 있습니다."}
+                : `이 ${unit}에는 사원이 없어 바로 지울 수 있습니다.`}
               <br />
               [저장]을 눌러야 반영됩니다.
             </>
@@ -236,6 +276,11 @@ export function CompanyTeamCard({
         onConfirm={() => {
           if (!pendingTeam) return;
           if (isBlocked) {
+            /*
+              ⚠️ `LeaveGuard`는 `beforeunload`만 잡는다 — Next의 클라이언트 이동에는 안 뛴다.
+                 그래서 나가기 전에 **설명으로 한 번 알리고**(위 문장) 창을 닫고 옮긴다.
+            */
+            setPendingTeam(null);
             router.push("/manage/members");
             return;
           }

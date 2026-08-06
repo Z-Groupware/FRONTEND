@@ -112,6 +112,25 @@ describe("saveCompanyProfileAction", () => {
     expect(revalidatePathMock).toHaveBeenCalledWith("/owner/setting");
   });
 
+  /*
+    ⚠️ 이 카드는 저장해도 **화면 값이 그대로**라, 토스트가 성공을 알리는 유일한 신호다.
+       그 토스트는 이 값을 보고 뜬다 — 빠지면 저장해도 아무 말도 안 한다.
+  */
+  it("성공하면 저장됐다고 알린다", async () => {
+    const result = await saveCompanyProfileAction({ errors: {} }, profileForm(VALID_PROFILE));
+
+    expect(result.isSaved).toBe(true);
+  });
+
+  it("실패하면 저장됐다고 하지 않는다", async () => {
+    const result = await saveCompanyProfileAction(
+      { errors: {} },
+      profileForm({ ...VALID_PROFILE, name: "" }),
+    );
+
+    expect(result.isSaved).toBeUndefined();
+  });
+
   /* ⚠️ 기업 코드는 폼에 없다 — 저장이 그 값을 지워 버리면 사원이 전부 못 들어온다 */
   it("기업 코드는 그대로 남는다", async () => {
     const before = getMockCompanySetting().profile.code;
@@ -166,6 +185,23 @@ describe("saveDepartmentsAction · savePositionsAction", () => {
   });
 
   /* ⚠️ 화면이 미리 막지만 액션은 직접 부를 수 있다 — 서버가 마지막에 다시 본다 */
+  /* ⚠️ 옮긴 것과 지운 것은 다른 사건이라 문구도 다르다 */
+  it("사원이 남은 팀을 남의 역할로 내리려 하면 다른 말로 막는다", async () => {
+    const teams = getMockCompanySetting().departments;
+    const moved = teams
+      .filter((team) => team.id !== "d2")
+      .map((team) =>
+        team.id === "d1"
+          ? { ...team, children: [...team.children, teams.find((t) => t.id === "d2")!] }
+          : team,
+      );
+
+    const result = await saveDepartmentsAction(moved);
+
+    expect(result.isSuccess).toBe(false);
+    expect(result.message).toMatch(/옮길 수 없습니다/);
+  });
+
   it("사원이 남은 팀을 지우려 하면 막는다", async () => {
     const withoutTeams = getMockCompanySetting().departments.filter((team) => team.id !== "d1");
 

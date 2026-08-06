@@ -2,7 +2,7 @@ import { AUTHORITY } from "@/constants/domain";
 
 import type { CompanyProfileDraft, DepartmentNode, Position } from "./types";
 import {
-  findBlockedTeamRemoval,
+  findBlockedTeamChange,
   validateCompanyProfile,
   validateDepartments,
   validatePositions,
@@ -162,28 +162,62 @@ describe("validatePositions", () => {
   });
 });
 
-describe("findBlockedTeamRemoval", () => {
+describe("findBlockedTeamChange", () => {
   const before = [team("d1", "개발팀", [team("r1", "프론트")]), team("d2", "기획팀")];
+  const counts = { d1: 6, d2: 3 };
 
   /*
     ⚠️ 팀은 인수인계·액션 귀속의 단위다. 소속이 사라진 사원은 `isWithinTeamScope`가 teamId
        비교라 **아무도 관리할 수 없는 상태**가 된다 — 워크플로우가 사람이 빠질 때 늘 명시적
        재할당을 거치는 것과 같은 이유로 막는다.
   */
-  it("사람이 남은 팀을 지우려 하면 그 팀 이름을 돌려준다", () => {
-    expect(findBlockedTeamRemoval(before, [team("d1", "개발팀")], { d1: 6, d2: 3 })).toBe("기획팀");
+  it("사람이 남은 팀을 지우면 removed로 잡는다", () => {
+    expect(findBlockedTeamChange(before, [team("d1", "개발팀")], counts)).toEqual({
+      team: "기획팀",
+      kind: "removed",
+    });
   });
 
-  it("빈 팀은 지울 수 있다", () => {
-    expect(findBlockedTeamRemoval(before, [team("d1", "개발팀")], { d1: 6, d2: 0 })).toBeNull();
+  /*
+    ⚠️ **옮긴 것과 지운 것은 다른 사건이다.** 예전엔 최상위 배열만 보고 "없으면 삭제"로
+       뭉뚱그려서, 팀을 남의 역할로 내리기만 해도 "사원이 남아 있어 못 지웁니다"가 떴다 —
+       지운 적이 없으니 사원 관리에 가도 할 일이 없고 저장은 통째로 막혔다.
+  */
+  it("사람이 남은 팀을 남의 역할로 내리면 demoted로 잡는다 — 삭제가 아니다", () => {
+    const moved = [team("d1", "개발팀", [team("r1", "프론트"), team("d2", "기획팀")])];
+
+    expect(findBlockedTeamChange(before, moved, counts)).toEqual({
+      team: "기획팀",
+      kind: "demoted",
+    });
+  });
+
+  it("빈 팀은 지워도 옮겨도 된다", () => {
+    const removed = [team("d1", "개발팀")];
+    const moved = [team("d1", "개발팀", [team("r1", "프론트"), team("d2", "기획팀")])];
+
+    expect(findBlockedTeamChange(before, removed, { d1: 6, d2: 0 })).toBeNull();
+    expect(findBlockedTeamChange(before, moved, { d1: 6, d2: 0 })).toBeNull();
   });
 
   it("인원을 모르는 팀은 0으로 본다 — 없는 키에 걸려 못 지우면 안 된다", () => {
-    expect(findBlockedTeamRemoval(before, [team("d1", "개발팀")], { d1: 6 })).toBeNull();
+    expect(findBlockedTeamChange(before, [team("d1", "개발팀")], { d1: 6 })).toBeNull();
   });
 
-  it("아무 팀도 안 지웠으면 막지 않는다", () => {
-    expect(findBlockedTeamRemoval(before, before, { d1: 6, d2: 3 })).toBeNull();
+  it("아무것도 안 바꿨으면 막지 않는다", () => {
+    expect(findBlockedTeamChange(before, before, counts)).toBeNull();
+  });
+
+  it("순서만 바꾸는 건 막지 않는다", () => {
+    const reordered = [team("d2", "기획팀"), team("d1", "개발팀", [team("r1", "프론트")])];
+
+    expect(findBlockedTeamChange(before, reordered, counts)).toBeNull();
+  });
+
+  it("이름만 바꾸는 건 막지 않는다 — id가 그대로다", () => {
+    const renamed = [team("d1", "개발본부", [team("r1", "프론트")]), team("d2", "기획팀")];
+
+    expect(findBlockedTeamChange(before, renamed, counts)).toBeNull();
   });
 
   /*
@@ -193,6 +227,6 @@ describe("findBlockedTeamRemoval", () => {
   it("역할만 지우는 건 막지 않는다", () => {
     const next = [team("d1", "개발팀"), team("d2", "기획팀")];
 
-    expect(findBlockedTeamRemoval(before, next, { d1: 6, d2: 3, r1: 6 })).toBeNull();
+    expect(findBlockedTeamChange(before, next, { ...counts, r1: 6 })).toBeNull();
   });
 });
