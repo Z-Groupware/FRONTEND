@@ -57,6 +57,19 @@ describe("ProjectStorageTable", () => {
   });
 
   /*
+    ⚠️ **본문과 툴팁이 같은 판정을 거쳐야 한다.** 전에는 없는 날짜(`2026-02-30`)를 두고
+       `formatElapsed`만 검증을 안 거쳐서, 본문엔 굴러간 날짜로 계산한 `5개월 전`이 뜨고
+       툴팁엔 원문 ISO가 남아 한 셀이 두 말을 했다(적대적 검토 #137).
+  */
+  it("없는 날짜는 지어내지도, ISO 원문을 내보이지도 않는다", () => {
+    renderTable([project({ lastRecordedAt: "2026-02-30" })]);
+
+    expect(screen.queryByText("5개월 전")).not.toBeInTheDocument();
+    expect(screen.queryByText("2026-02-30")).not.toBeInTheDocument();
+    expect(screen.getByText("—")).toBeInTheDocument();
+  });
+
+  /*
     ⚠️ 판정 기준은 **음성 + 자막·요약**이다(`canDeleteRecordings`와 같다). 전에는 음성만
        봐서, 자막·요약이 남은 줄이 `—`(= 남은 게 없다)로 읽혔다 — 같은 줄에서 삭제 버튼은
        살아 있고 확인 창은 "자막·요약이 삭제됩니다"라고 말하는데 말이 어긋났다.

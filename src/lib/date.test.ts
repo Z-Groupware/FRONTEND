@@ -4,6 +4,7 @@ import {
   formatElapsed,
   formatFullDate,
   formatMonthDayWeekday,
+  isReadableDate,
 } from "./date";
 
 /**
@@ -129,6 +130,34 @@ describe("formatFullDate", () => {
   it("형식이 아니면 원문을 그대로 둔다", () => {
     expect(formatFullDate("")).toBe("");
     expect(formatFullDate("2026-02-30")).toBe("2026-02-30");
+  });
+});
+
+/**
+ * ⚠️ **없는 날짜를 두 함수가 다르게 판정하면 한 줄이 두 말을 한다.**
+ *    전에는 검증이 `formatMonthDayWeekday`에만 있어서 `formatElapsed`가 그 문을 안 거쳤다 —
+ *    저장소 표의 같은 셀이 본문엔 지어낸 `5개월 전`, 툴팁엔 원문 `2026-02-30`을 보여줬다.
+ *    이제 `parseIsoDate` 한 곳이 막으므로 **전부 같이 물러선다.**
+ */
+describe("없는 날짜 — 날짜 함수 전부가 같은 판정을 쓴다", () => {
+  const IMPOSSIBLE = ["2026-02-30", "2026-06-31", "2026-13-01", "2026-01-00", "2026-02-29"];
+
+  it.each(IMPOSSIBLE)("%s은 상대 표기를 지어내지 않는다", (iso) => {
+    expect(formatElapsed(iso, "2026-08-05")).toBeNull();
+  });
+
+  it.each(IMPOSSIBLE)("%s은 표기 함수도 전부 물러선다", (iso) => {
+    expect(formatMonthDayWeekday(iso)).toBeNull();
+    expect(formatDate(iso)).toBe(iso);
+    expect(formatDateWithYear(iso, THIS_YEAR)).toBe(iso);
+    expect(formatFullDate(iso)).toBe(iso);
+  });
+
+  it("읽을 수 있는 날짜와 없는 날짜를 가려 준다", () => {
+    expect(isReadableDate("2026-02-28")).toBe(true);
+    expect(isReadableDate("2024-02-29")).toBe(true); // 윤년은 실재한다
+    expect(isReadableDate("2026-02-29")).toBe(false);
+    expect(isReadableDate("내일")).toBe(false);
   });
 });
 

@@ -6,7 +6,7 @@ import Link from "next/link";
 import { StatusDot } from "@/components/common/status-dot";
 import { PROJECT_STATUS_LABEL } from "@/constants/project";
 import { formatGb } from "@/features/billing/pricing";
-import { formatDateWithYear, formatElapsed } from "@/lib/date";
+import { formatDateWithYear, formatElapsed, isReadableDate } from "@/lib/date";
 import { pickPaletteColor } from "@/lib/palette";
 
 import { canDeleteRecordings } from "../storage";
@@ -210,6 +210,13 @@ function Row({
       : `${PROJECT_STATUS_LABEL[project.status]} 상태에서는 삭제할 수 없습니다`;
   // 툴팁에 넣을 정확한 날짜. 기준 연도는 서버가 준 `today`에서 뽑는다(여기서 `new Date()` 금지)
   const recordedOn = formatDateWithYear(project.lastRecordedAt, Number(today.slice(0, 4)));
+  /*
+    ⚠️ **읽을 수 없는 날짜는 화면에 안 내보낸다.** 날짜 함수들은 못 읽으면 원문을 그대로
+       돌려주는데(지어내지 않으려고), 그 원문이 `2026-02-30` 같은 ISO 문자열이라 그대로 두면
+       개발자용 표기가 표에 뜬다(§디자인 토큰 — 화면에 안 내보내는 것).
+       기록은 있는데 날짜만 못 읽는 경우라, 지우기 버튼은 그대로 살아 있어야 한다.
+  */
+  const hasRecordedOn = isReadableDate(project.lastRecordedAt);
   const tagColor = pickPaletteColor(project.tag);
   // ⚠️ 0으로 나누면 `NaN%`가 되어 막대가 아예 안 그려진다
   const share = totalVoiceGb > 0 ? (project.voiceGb / totalVoiceGb) * 100 : 0;
@@ -337,8 +344,11 @@ function Row({
              정확히 봐야 하는 사람도 있다 — `title`로 그대로 남긴다(§정직성).
           ⚠️ 미래 날짜면 `formatElapsed`가 `null`을 준다(시계 어긋남·이상한 BE 값).
              `-3일 전`을 지어내느니 절대 날짜로 물러선다.
+          ⚠️ 아예 못 읽는 날짜면 `—`로 물러선다. 상대 표기와 툴팁이 **같은 판정**을 거치므로
+             한쪽은 `5개월 전`, 다른 쪽은 `2026-02-30`처럼 갈리지 않는다.
+             `dateTime`에는 원본을 남겨 값 자체는 잃지 않는다.
         */}
-        {project.voiceGb + project.sttGb > 0 ? (
+        {project.voiceGb + project.sttGb > 0 && hasRecordedOn ? (
           <time dateTime={project.lastRecordedAt} title={recordedOn}>
             {formatElapsed(project.lastRecordedAt, today) ?? recordedOn}
           </time>

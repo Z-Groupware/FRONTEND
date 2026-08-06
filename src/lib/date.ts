@@ -21,12 +21,34 @@ export function todayIso(): string {
   return new Intl.DateTimeFormat("en-CA", { timeZone: TIME_ZONE }).format(new Date());
 }
 
-/** `YYYY-MM-DD`를 연·월·일로 가른다. 형식이 아니면 `null` */
+/**
+ * `YYYY-MM-DD`를 연·월·일로 가른다. 읽을 수 없으면 `null`.
+ *
+ * ⚠️ **형식만 보지 않는다.** `2026-02-30`은 정규식을 통과하지만 없는 날이고, `Date`에 넣으면
+ *    조용히 3월 2일로 굴러간다. `Date.UTC`로 만들어 되돌려 확인해 걸러낸다.
+ * ⚠️ **검증은 여기 한 곳이다.** 전에는 표기 함수(`formatMonthDayWeekday`)에만 있어서
+ *    `formatElapsed`가 그 문을 안 거쳤다 — 같은 값을 두고 한 셀의 본문은 `5개월 전`을
+ *    지어내고 툴팁은 원문 `2026-02-30`을 보여줬다. 날짜를 읽는 문이 하나여야 말이 갈리지 않는다.
+ */
 function parseIsoDate(iso: string): { y: number; m: number; d: number } | null {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
   if (!match) return null;
 
-  return { y: Number(match[1]), m: Number(match[2]), d: Number(match[3]) };
+  const y = Number(match[1]);
+  const m = Number(match[2]);
+  const d = Number(match[3]);
+
+  const date = new Date(Date.UTC(y, m - 1, d));
+  if (date.getUTCFullYear() !== y || date.getUTCMonth() !== m - 1 || date.getUTCDate() !== d) {
+    return null;
+  }
+
+  return { y, m, d };
+}
+
+/** 화면에 날짜로 내보낼 수 있는 값인지 — 아니면 부르는 쪽이 물러설 자리를 정한다 */
+export function isReadableDate(iso: string): boolean {
+  return parseIsoDate(iso) !== null;
 }
 
 /**
@@ -93,21 +115,13 @@ const WEEKDAY_LABEL = ["일", "월", "화", "수", "목", "금", "토"] as const
  *
  * ⚠️ 요일도 `toLocaleDateString` 대신 `Date.UTC`로 구한다 — 로케일·시간대에 흔들리지 않게
  *    (§렌더링: 서버·클라 표기가 갈리면 하이드레이션이 어긋난다). 카피 규칙 `8월 5일(수)`.
+ * ⚠️ 없는 날짜는 `parseIsoDate`가 이미 걸렀다 — 여기서 다시 보지 않는다.
  */
 export function formatMonthDayWeekday(iso: string): string | null {
   const d = parseIsoDate(iso);
   if (!d) return null;
 
   const date = new Date(Date.UTC(d.y, d.m - 1, d.d));
-  // `2026-02-30`처럼 형식은 맞지만 없는 날짜는 Date가 다음 달로 굴러간다 — 되돌려 확인해 걸러낸다
-  if (
-    date.getUTCFullYear() !== d.y ||
-    date.getUTCMonth() !== d.m - 1 ||
-    date.getUTCDate() !== d.d
-  ) {
-    return null;
-  }
-
   const weekday = WEEKDAY_LABEL[date.getUTCDay()] ?? "";
   return `${d.m}월 ${d.d}일(${weekday})`;
 }
