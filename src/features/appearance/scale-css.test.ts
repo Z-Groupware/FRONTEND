@@ -48,7 +48,8 @@ describe("화면 배율 적용 방식", () => {
   */
   it("`body`는 스크롤하지 않는다 — 스크롤은 `#app-scroll`이 맡는다", () => {
     expect(ruleOf("body")).toContain("overflow: hidden;");
-    expect(GLOBALS_CSS).toContain("#app-scroll {");
+    // 선택자만 있으면 소용없다 — 그 상자가 **실제로 스크롤해야** 내용이 잘리지 않는다
+    expect(ruleOf("#app-scroll")).toMatch(/overflow(-y)?-auto|overflow-y:\s*auto/);
   });
 
   /*
@@ -72,7 +73,10 @@ describe("화면 배율 적용 방식", () => {
   it("`h-screen-z`가 `100dvh`가 아니라 `100%`다", () => {
     expect(ruleOf(".h-screen-z")).toContain("height: 100%;");
     expect(ruleOf(".min-h-screen-z")).toContain("min-height: 100%;");
-    expect(GLOBALS_CSS).not.toContain("100dvh / var(--app-scale)");
+
+    // ⚠️ 옛 문자열 하나만 막으면 `calc(100dvh / 0.75)` 같은 변형이 그대로 들어온다
+    expect(ruleOf(".h-screen-z")).not.toMatch(/\b100dvh\b/);
+    expect(ruleOf(".min-h-screen-z")).not.toMatch(/\b100dvh\b/);
   });
 
   it("`body`가 `transform: scale()`로 배율을 건다", () => {
