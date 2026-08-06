@@ -36,10 +36,9 @@ describe("팝업 배율 보정이 기대는 데이터 속성", () => {
 
   /*
     ⚠️ Positioner는 base-ui가 그리므로 **열린 상태**여야 DOM에 나온다.
-       두 속성이 함께 나오는지가 이 테스트의 전부다 — 위치 계산은 여기서 검증하지 않는다
-       (jsdom에는 레이아웃이 없어 좌표가 전부 0이다).
+       위치 계산은 여기서 검증하지 않는다 — jsdom에는 레이아웃이 없어 좌표가 전부 0이다.
   */
-  it("Select Positioner는 `data-side`와 `data-align`을 함께 내보낸다", () => {
+  function renderOpenSelect() {
     render(
       <Select defaultValue="a" open>
         <SelectTrigger>
@@ -50,10 +49,44 @@ describe("팝업 배율 보정이 기대는 데이터 속성", () => {
         </SelectContent>
       </Select>,
     );
+  }
 
-    const positioner = document.querySelector("[data-side]");
+  it("Positioner는 `data-side`와 `data-align`을 함께 내보낸다 — 규칙이 이걸로 고른다", () => {
+    renderOpenSelect();
+
+    const positioner = document.querySelector("[data-base-ui-portal] > [data-side]");
 
     expect(positioner).not.toBeNull();
     expect(positioner).toHaveAttribute("data-align");
+  });
+
+  /*
+    ⚠️ **두 속성은 Positioner 전용이 아니다.** base-ui는 Popup에도 같은 것을 붙인다.
+       그래서 규칙을 자손(공백)으로 두면 Popup까지 걸리고, Popup의 자식이 `> *`에 한 번 더
+       걸려 팝업 **내용물**이 배율을 두 번 먹는다(Z²). 직계 자식(`>`)이라야 갈린다.
+    ⚠️ 이 사실이 조용히 바뀌면(base-ui가 구조를 바꾸거나, 누가 Popup을 한 겹 더 감싸면)
+       CSS는 아무 소리 없이 틀린다 — 그래서 **개수와 부모 관계까지** 못 박는다.
+  */
+  it("Popup도 같은 두 속성을 갖는다 — 그래서 자손이 아니라 직계 자식으로 골라야 한다", () => {
+    renderOpenSelect();
+
+    const both = document.querySelectorAll("[data-side][data-align]");
+    const portal = document.querySelector("[data-base-ui-portal]");
+
+    // Positioner와 Popup 둘 다다. 하나로 줄었다면 구조가 바뀐 것이라 규칙을 다시 봐야 한다
+    expect(both).toHaveLength(2);
+
+    // 규칙이 기대는 관계 — Positioner만 포털의 직계 자식이고, Popup은 그 아래다
+    expect(both[0]?.parentElement).toBe(portal);
+    expect(both[1]?.parentElement).toBe(both[0]);
+  });
+
+  it("규칙의 선택자는 Positioner 하나만 고른다 — Popup은 안 걸린다", () => {
+    renderOpenSelect();
+
+    const matched = document.querySelectorAll("[data-base-ui-portal] > [data-side][data-align]");
+
+    expect(matched).toHaveLength(1);
+    expect(matched[0]).not.toHaveAttribute("data-slot", "select-content");
   });
 });
