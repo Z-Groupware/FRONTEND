@@ -6,6 +6,7 @@ import { toast } from "sonner";
 
 import { ConfirmDialog } from "@/components/common/confirm-dialog";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import { HANDOVER_TYPE, HANDOVER_TYPE_LABEL } from "@/constants/handover";
 import { formatMonthDayWeekday } from "@/lib/date";
 
@@ -27,6 +28,12 @@ import type { PendingHandover } from "../manage-types";
  *    로그인이 막힌다), 반려하면 신청이 되돌아간다 — 둘 다 되돌릴 수 없다.
  *    반려는 사유를 적는 걸음이 하나 더 있다(사유 없이 되돌리면 무엇을 고칠지 모른다).
  */
+/**
+ * 반려 사유 상한 — 되돌려받는 사람이 읽고 고칠 만큼이면 충분하다.
+ * ⚠️ 상한을 두면 **남은 글자 수도 같이** 보여야 한다. 말없이 자르면 글이 사라진 줄 안다.
+ */
+const REASON_MAX = 200;
+
 export function HandoverApprovalCard({
   memberId,
   memberName,
@@ -146,20 +153,47 @@ export function HandoverApprovalCard({
         )}
 
         {isRejecting ? (
-          <div className="flex flex-col gap-2">
-            <label htmlFor="reject-reason" className="sr-only">
-              반려 사유
-            </label>
+          /*
+            ⚠️ **한 걸음이 새로 열린 것으로 보여야 한다.** 전에는 입력칸 하나가 카드 본문에
+               불쑥 끼어들어, 방금 무슨 일이 일어났는지가 안 읽혔다 — 테두리로 묶고
+               제목을 달아 "지금은 사유를 적는 자리"라고 말한다.
+            ⚠️ 라벨을 `sr-only`로 감추지 않는다. 화면에도 보여야 무엇을 적는 칸인지 알고,
+               스크린 리더와 눈이 같은 것을 읽는다(§a11y).
+            ⚠️ **폭을 묶는다**(720). 카드 전폭이면 한 줄이 1200px가 되어 눈이 다음 줄을 못 찾고,
+               글자 수와 버튼이 양 끝으로 밀려 한 덩어리로 안 읽힌다(§레이아웃: 읽는 글은 좁게).
+          */
+          <div className="border-destructive/30 bg-destructive/[0.03] flex max-w-[720px] flex-col gap-2.5 rounded-lg border p-4">
+            <div className="flex flex-col gap-1">
+              <Label htmlFor="reject-reason" className="text-[13px] leading-5">
+                반려 사유
+              </Label>
+              {/* ⚠️ **어디로 가는 글인지 적는다.** 남이 읽는 줄 모르면 메모처럼 쓴다 */}
+              <p className="text-muted-foreground text-[12px] leading-4 break-keep">
+                신청한 {memberName} 님에게 그대로 전달됩니다. 무엇을 고쳐 다시 올려야 하는지 적어
+                주세요.
+              </p>
+            </div>
+
             <textarea
               ref={reasonRef}
               id="reject-reason"
               value={reason}
-              onChange={(event) => setReason(event.target.value)}
+              onChange={(event) => setReason(event.target.value.slice(0, REASON_MAX))}
               rows={3}
-              placeholder="반려 사유를 입력해 주세요"
-              className="border-input placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 bg-card w-full resize-none rounded-lg border px-3 py-2.5 text-[13px] leading-5 transition-colors outline-none focus-visible:ring-3"
+              maxLength={REASON_MAX}
+              placeholder="예) 인계 대상 액션이 빠졌습니다. 8월 캠페인 건을 포함해 다시 올려 주세요."
+              className="border-input placeholder:text-muted-foreground/70 focus-visible:border-ring focus-visible:ring-ring/50 bg-card w-full resize-none rounded-lg border px-3 py-2.5 text-[13px] leading-5 transition-colors outline-none focus-visible:ring-3"
             />
-            <div className="flex items-center justify-end gap-2">
+
+            <div className="flex items-center gap-2">
+              {/*
+                ⚠️ 남은 글자 수는 **왼쪽 아래**다. 상한이 있는 칸에서 어디까지 썼는지 모르면
+                   글이 잘린 뒤에야 안다. `tabular-nums`라 숫자가 바뀌어도 안 흔들린다.
+              */}
+              <p className="text-muted-foreground/70 text-[12px] leading-4 tabular-nums">
+                {reason.length} / {REASON_MAX}
+              </p>
+              <span className="flex-1" aria-hidden />
               <Button
                 type="button"
                 size="sm"

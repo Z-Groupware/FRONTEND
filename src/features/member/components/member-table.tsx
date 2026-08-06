@@ -3,7 +3,7 @@ import Link from "next/link";
 import { ProfileAvatar } from "@/components/common/profile-avatar";
 import { AUTHORITY_BADGE_CLASS, AUTHORITY_LABEL } from "@/constants/authority";
 import { MEMBER_STATUS, MEMBER_STATUS_LABEL } from "@/constants/member";
-import { formatFullDate } from "@/lib/date";
+import { formatYearMonthDay } from "@/lib/date";
 import { cn } from "@/lib/utils";
 
 import type { ManagedMember } from "../manage-types";
@@ -75,14 +75,22 @@ export function MemberTable({ members }: { members: ManagedMember[] }) {
            세로줄을 못 따라간다. 폭은 `colgroup`이 한 곳에서 정한다.
       */}
       <table className="w-full min-w-[880px] table-fixed border-collapse">
+        {/*
+          ⚠️ 폭을 **비율(%)로** 준다(저장소 표와 같은 규칙). px로 고정하면 남는 폭을 어느 한
+             열이 통째로 먹는다 — 폭 없이 뒀던 `역할`이 화면에서 제일 넓었고(대부분 `없음`이다),
+             그걸 이름으로 옮기자 이번엔 이름 칸만 600px가 되고 나머지가 오른쪽에 뭉쳤다.
+             비율이면 화면이 넓어질 때 일곱 열이 **같이** 늘어난다.
+          ⚠️ `입사일`은 `2020년 1월 2일`이 한 줄에 들어가는 몫을 준다. 좁게 뒀더니
+             `2020년 1월 2` / `일`로 잘려 줄마다 높이가 달라졌다.
+        */}
         <colgroup>
-          <col className="w-[200px]" />
-          <col className="w-[120px]" />
-          <col className="w-[100px]" />
-          <col className="w-[160px]" />
-          <col />
-          <col className="w-[90px]" />
-          <col className="w-[130px]" />
+          <col className="w-[22%]" />
+          <col className="w-[12%]" />
+          <col className="w-[10%]" />
+          <col className="w-[16%]" />
+          <col className="w-[16%]" />
+          <col className="w-[10%]" />
+          <col className="w-[14%]" />
         </colgroup>
         <thead>
           <tr className="text-muted-foreground bg-secondary/50 border-border border-b text-[12px] leading-4">
@@ -93,7 +101,7 @@ export function MemberTable({ members }: { members: ManagedMember[] }) {
             {/* ⚠️ 팀 안의 세부 라벨이다 — 권한(Leader/Member)과 다른 열이다(WORKFLOW §9) */}
             <th className="px-4 py-3 text-center font-normal">역할</th>
             <th className="px-4 py-3 text-center font-normal">상태</th>
-            <th className="px-6 py-3 text-center font-normal">입사일</th>
+            <th className="px-4 py-3 text-center font-normal">입사일</th>
           </tr>
         </thead>
 
@@ -126,8 +134,14 @@ export function MemberTable({ members }: { members: ManagedMember[] }) {
               <td className="px-4 py-3.5 text-center">
                 <StatusCell status={member.status} />
               </td>
-              <td className="text-muted-foreground px-6 py-3.5 text-center text-[13px] leading-5 tabular-nums">
-                <time dateTime={member.joinedAt}>{formatFullDate(member.joinedAt)}</time>
+              {/*
+                ⚠️ **요일을 빼고 적는다.** 입사일이 무슨 요일이었는지는 쓸 데가 없는데,
+                   그 세 글자 때문에 칸이 모자라 줄이 깨졌다(`formatYearMonthDay`).
+                ⚠️ `whitespace-nowrap` — 폭을 넉넉히 줬어도 좁은 화면에서 다시 접히면
+                   그 줄만 키가 커져 표가 들쭉날쭉해진다. 좁아지면 가로로 스크롤한다.
+              */}
+              <td className="text-muted-foreground px-4 py-3.5 text-center text-[13px] leading-5 whitespace-nowrap tabular-nums">
+                <time dateTime={member.joinedAt}>{formatYearMonthDay(member.joinedAt)}</time>
               </td>
             </tr>
           ))}

@@ -1,6 +1,7 @@
 import { ProfileAvatar } from "@/components/common/profile-avatar";
 import { AUTHORITY_BADGE_CLASS, AUTHORITY_LABEL } from "@/constants/authority";
 import { MEMBER_STATUS_LABEL } from "@/constants/member";
+import { formatYearMonthDay } from "@/lib/date";
 import { cn } from "@/lib/utils";
 
 import type { ManagedMember } from "../manage-types";
@@ -25,7 +26,11 @@ export function MemberProfileCard({ member, phone }: { member: ManagedMember; ph
     { label: "연락처", value: phone },
     // ⚠️ 팀 안의 세부 라벨이다 — 권한(위 배지)과 다른 값이라 줄을 나눈다(WORKFLOW §9)
     { label: "역할", value: member.roleLabel ?? "없음" },
-    { label: "입사일", value: member.joinedAt },
+    /*
+      ⚠️ **ISO 원문을 화면에 찍지 않는다.** `2024-06-01`은 개발자용 표기다(§카피).
+         요일은 붙이지 않는다 — 지나간 입사일이 무슨 요일이었는지는 쓸 데가 없다.
+    */
+    { label: "입사일", value: formatYearMonthDay(member.joinedAt) },
   ];
 
   return (

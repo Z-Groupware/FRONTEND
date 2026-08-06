@@ -4,6 +4,7 @@ import {
   formatElapsed,
   formatFullDate,
   formatMonthDayWeekday,
+  formatYearMonthDay,
   isReadableDate,
 } from "./date";
 
@@ -179,5 +180,16 @@ describe("formatMonthDayWeekday", () => {
   it("형식은 맞지만 실재하지 않는 날짜는 null이다", () => {
     expect(formatMonthDayWeekday("2026-02-30")).toBeNull();
     expect(formatMonthDayWeekday("2026-02-29")).toBeNull(); // 2026은 평년
+  });
+});
+
+describe("formatYearMonthDay", () => {
+  it("요일을 빼고 연·월·일만 준다 — 표 칸에서 줄이 깨지지 않게", () => {
+    expect(formatYearMonthDay("2020-01-02")).toBe("2020년 1월 2일");
+    expect(formatYearMonthDay("2024-06-01")).toBe("2024년 6월 1일");
+  });
+
+  it("형식이 아니면 원문을 그대로 둔다", () => {
+    expect(formatYearMonthDay("2026-02-30")).toBe("2026-02-30");
   });
 });

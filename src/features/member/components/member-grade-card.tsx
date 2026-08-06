@@ -108,100 +108,115 @@ export function MemberGradeCard({ member, canEdit }: { member: ManagedMember; ca
       </p>
 
       {/*
-        ⚠️ 입력칸에 **상한을 건다.** 카드가 넓어져도 셀렉트 하나가 800px가 되면 라벨과
-           값이 멀어져 읽기 나빠진다(§폼 규격을 둔 이유와 같다).
+        ⚠️ 구분선은 **카드 전폭**이다. 상한을 이 줄에 걸면 선이 카드 절반에서 끊겨,
+           카드가 반쯤 잘린 것처럼 보인다 — 상한은 안쪽 칸에만 건다.
+        ⚠️ 그 상한이 필요한 이유: 카드가 넓어져도 셀렉트 하나가 800px가 되면 라벨과 값이
+           멀어져 읽고 쓰기가 나빠진다(§폼 규격을 둔 이유와 같다).
       */}
-      <div className="border-border flex max-w-[420px] flex-col gap-4 border-t px-7 py-5">
-        {isOwner ? (
-          <p className="text-muted-foreground text-[13px] leading-5 break-keep">
-            대표 계정은 이 화면에서 바꿀 수 없습니다.
-          </p>
-        ) : (
-          <>
-            {/*
+      <div className="border-border border-t px-7 py-5">
+        <div className="flex max-w-[640px] flex-col gap-4">
+          {isOwner ? (
+            <p className="text-muted-foreground text-[13px] leading-5 break-keep">
+              대표 계정은 이 화면에서 바꿀 수 없습니다.
+            </p>
+          ) : (
+            <>
+              {/*
               ⚠️ **셀렉트가 아니라 토글이다.** 켜고 끄는 값 하나에 목록을 열게 하면 두 번 눌러야
                  하고, 닫힌 칸에 "관리자 권한 없음"이라 적혀 있으면 그게 현재 상태인지 고를 수
                  있는 항목인지 헷갈린다(WORKFLOW §11도 "토글"이라 부른다).
             */}
-            {showsAdmin && (
-              <label
-                htmlFor="member-admin"
-                className="border-border bg-secondary/40 flex cursor-pointer items-start gap-3 rounded-lg border px-3.5 py-3"
-              >
-                <Checkbox
-                  id="member-admin"
-                  checked={isAdmin}
-                  onCheckedChange={(checked) => setIsAdmin(checked === true)}
-                  disabled={!canEdit || isPending}
-                  className="mt-0.5"
-                />
-                <span className="flex flex-col gap-0.5">
-                  <span className="text-[13px] leading-5 font-medium">관리자 권한 부여</span>
-                  <span className="text-muted-foreground text-[12px] leading-4 break-keep">
-                    사원·회의실 관리와 구독·저장소 화면에 들어갈 수 있습니다.
+              {showsAdmin && (
+                <label
+                  htmlFor="member-admin"
+                  className="border-border bg-secondary/40 flex cursor-pointer items-start gap-3 rounded-lg border px-3.5 py-3"
+                >
+                  <Checkbox
+                    id="member-admin"
+                    checked={isAdmin}
+                    onCheckedChange={(checked) => setIsAdmin(checked === true)}
+                    disabled={!canEdit || isPending}
+                    className="mt-0.5"
+                  />
+                  <span className="flex flex-col gap-0.5">
+                    <span className="text-[13px] leading-5 font-medium">관리자 권한 부여</span>
+                    <span className="text-muted-foreground text-[12px] leading-4 break-keep">
+                      사원·회의실 관리와 구독·저장소 화면에 들어갈 수 있습니다.
+                    </span>
                   </span>
-                </span>
-              </label>
-            )}
+                </label>
+              )}
 
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="member-authority">권한</Label>
-              <Select
-                items={AUTHORITY_LABEL}
-                value={authority}
-                onValueChange={(value) => setAuthority(value as Authority)}
-                disabled={!canEdit || isPending}
-              >
-                <SelectTrigger id="member-authority" className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent alignItemWithTrigger={false}>
-                  {POSITION_AUTHORITIES.map((value) => (
-                    <SelectItem key={value} value={value}>
-                      {AUTHORITY_LABEL[value]}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="member-position">직급</Label>
               {/*
+                ⚠️ **권한·직급을 두 열로** 놓는다(§디자인 토큰: 폼 2열). 한 줄에 하나씩 쌓으면
+                   카드는 넓은데 칸은 상한에 묶여 오른쪽 절반이 통째로 비고, 카드만 길어져
+                   왼쪽 프로필 칸과 높이가 안 맞는다. 좁아지면 한 열로 접힌다.
+              */}
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="member-authority">권한</Label>
+                  <Select
+                    items={AUTHORITY_LABEL}
+                    value={authority}
+                    onValueChange={(value) => setAuthority(value as Authority)}
+                    disabled={!canEdit || isPending}
+                  >
+                    <SelectTrigger id="member-authority" className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent alignItemWithTrigger={false}>
+                      {POSITION_AUTHORITIES.map((value) => (
+                        <SelectItem key={value} value={value}>
+                          {AUTHORITY_LABEL[value]}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="member-position">직급</Label>
+                  {/*
                 ⚠️ 직급은 **회사가 만든 목록**이라 원래 셀렉트가 맞다. 다만 그 목록은
                    기업 설정이 들고 있고 아직 이 화면으로 오지 않는다 — 없는 목록을
                    지어내느니 적게 두고, 목록이 오면 셀렉트로 바꾼다(§연동 검증).
               */}
-              <Input
-                id="member-position"
-                value={position}
-                onChange={(event) => setPosition(event.target.value)}
-                disabled={!canEdit || isPending}
-                placeholder="사원"
-              />
-            </div>
-
-            {error && (
-              <p role="alert" className="text-destructive text-[12px] leading-4 break-keep">
-                {error}
-              </p>
-            )}
-
-            {canEdit && (
-              <Button
-                type="button"
-                size="sm"
-                variant="ink"
-                className="w-full"
-                disabled={isPending || !isDirty}
-                onClick={() => (raisesAuthority ? setIsConfirming(true) : handleSave())}
-              >
-                {isPending ? "저장 중…" : "저장"}
-              </Button>
-            )}
-          </>
-        )}
+                  <Input
+                    id="member-position"
+                    value={position}
+                    onChange={(event) => setPosition(event.target.value)}
+                    disabled={!canEdit || isPending}
+                    placeholder="사원"
+                  />
+                </div>
+              </div>
+            </>
+          )}
+        </div>
       </div>
+
+      {/*
+        ⚠️ 제출 버튼은 **밑단 우측**이다(§디자인 토큰). 폭 가득한 버튼은 이 카드만 다르게
+           보이고, 비활성일 때 회색 덩어리가 카드 절반을 차지한다.
+      */}
+      {canEdit && !isOwner && (
+        <div className="border-border flex items-center justify-end gap-2 border-t px-7 py-4">
+          {error && (
+            <p role="alert" className="text-destructive mr-auto text-[12px] leading-4 break-keep">
+              {error}
+            </p>
+          )}
+          <Button
+            type="button"
+            size="sm"
+            variant="ink"
+            disabled={isPending || !isDirty}
+            onClick={() => (raisesAuthority ? setIsConfirming(true) : handleSave())}
+          >
+            {isPending ? "저장 중…" : "저장"}
+          </Button>
+        </div>
+      )}
 
       {/*
         ⚠️ **무엇이 열리는지** 적는다. "권한을 바꿀까요?"만 묻는 건 확인이 아니다 —
