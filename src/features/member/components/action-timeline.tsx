@@ -4,6 +4,7 @@ import type { StatusTone } from "@/components/common/status-dot";
 import { ACTION_DELAYED_LABEL, ACTION_STATUS, ACTION_STATUS_LABEL } from "@/constants/domain";
 import {
   buildActionTimeline,
+  TIMELINE_DAY_WIDTH_PX,
   type TimelineActionInput,
   type TimelineDay,
 } from "@/features/member/action-timeline";
@@ -12,6 +13,13 @@ import { cn } from "@/lib/utils";
 /**
  * 처리할 액션 타임라인 — GitHub Projects Roadmap 결. 좌측 아이템 열 + 우측 날짜 축.
  * 각 액션을 **시작일→마감일 기간 바**로 그리고, 오늘 세로선이 가로지른다.
+ * ⚠️ 날짜 칸은 고정폭(`TIMELINE_DAY_WIDTH_PX`)이다 — 기간이 길어지면 칸을 눌러 욱여넣지 않고
+ *    **가로 스크롤**로 보여준다(2026-08-06 정정).
+ * ⚠️ **스크롤 컨테이너는 하나뿐이다**(가로·세로 전부). 헤더는 `sticky top-0`, 좌측 아이템 열은
+ *    `sticky left-0`로 고정한다 — 세로 스크롤용 안쪽 컨테이너를 따로 두면(`overflow-y-auto`),
+ *    그 안의 `sticky left-0`가 바깥 가로 스크롤이 아니라 그 안쪽 컨테이너 기준으로 붙어버려서
+ *    가로로 스크롤할 때 라벨 열이 통째로 사라진다(2026-08-06에 실제로 겪은 버그 — sticky의
+ *    포함 블록은 "가장 가까운 스크롤 컨테이너"라 컨테이너를 하나로 합쳐야 한다).
  * ⚠️ 상태는 색만으로 전하지 않는다 — 바의 `aria-label`에 상태·기간을 함께 넣는다(§a11y).
  */
 
@@ -54,8 +62,11 @@ function dayToneClass(day: TimelineDay): string {
   return "text-muted-foreground";
 }
 
-/** 왼쪽 아이템 열 폭 — 축 머리·그리드·행이 같은 값을 공유한다. */
-const LABEL_COL = "w-[200px]";
+/** 왼쪽 아이템 열 폭 — 축 머리·그리드·행이 같은 값을 공유한다. 스크롤 중에도 고정(sticky). */
+const LABEL_COL_PX = 200;
+const LABEL_COL_STYLE = { width: LABEL_COL_PX, minWidth: LABEL_COL_PX };
+/** 행 높이(px) — 그리드 오버레이 높이 계산에 쓴다(행 수 × 이 값). */
+const ROW_HEIGHT_PX = 44;
 
 interface ActionTimelineProps {
   items: TimelineActionInput[];
@@ -80,56 +91,71 @@ export function ActionTimeline({
     );
   }
 
-  const { days, bars, todayLeftPct, monthLabel } = model;
+  const { days, bars, todayLeftPx, totalWidthPx, monthLabel } = model;
+  const gridHeightPx = bars.length * ROW_HEIGHT_PX;
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
-      {/* 날짜 축 */}
-      <div className="border-border flex shrink-0 border-b text-[10.5px]">
-        <div className={cn("text-muted-foreground shrink-0 self-end px-3 pt-2 pb-1.5", LABEL_COL)}>
-          {monthLabel}
-        </div>
-        <div className="flex flex-1">
-          {days.map((day) => (
-            <div
-              key={day.iso}
-              className={cn("flex-1 py-1.5 text-center leading-tight", dayToneClass(day))}
-            >
-              <span className="block">{day.isToday ? "오늘" : day.weekday}</span>
-              <span className="block font-semibold tabular-nums">{day.dayOfMonth}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* 본문 — 배경 그리드·오늘선(뒤) + 행들(앞, 내부 스크롤) */}
-      <div className="relative min-h-0 flex-1">
-        <div className="pointer-events-none absolute inset-0 flex" aria-hidden>
-          <div className={cn("shrink-0", LABEL_COL)} />
-          <div className="relative flex flex-1">
+    <div className="scrollbar-hidden min-h-0 flex-1 overflow-auto">
+      <div className="relative" style={{ minWidth: LABEL_COL_PX + totalWidthPx }}>
+        {/* 날짜 축 — 세로 스크롤 중에도 위에 고정. z는 아래 그리드(0)·행(20)보다 항상 높게(30) */}
+        <div className="border-border bg-card sticky top-0 z-30 flex border-b text-[10.5px]">
+          <div
+            className="text-muted-foreground bg-card sticky left-0 z-10 shrink-0 self-end px-3 pt-2 pb-1.5"
+            style={LABEL_COL_STYLE}
+          >
+            {monthLabel}
+          </div>
+          <div className="bg-card flex">
             {days.map((day) => (
-              <div key={day.iso} className="border-border/55 flex-1 border-l first:border-l-0" />
+              <div
+                key={day.iso}
+                className={cn("shrink-0 py-1.5 text-center leading-tight", dayToneClass(day))}
+                style={{ width: TIMELINE_DAY_WIDTH_PX }}
+              >
+                <span className="block">{day.isToday ? "오늘" : day.weekday}</span>
+                <span className="block font-semibold tabular-nums">{day.dayOfMonth}</span>
+              </div>
             ))}
-            <span
-              className="bg-primary absolute inset-y-0 w-0.5 -translate-x-1/2"
-              style={{ left: `${todayLeftPct}%` }}
-            />
           </div>
         </div>
 
-        <ul className="scrollbar-hidden absolute inset-0 overflow-y-auto">
-          {bars.map((bar) => (
-            <li
+        {/* 행 묶음 — 그리드 오버레이가 이 래퍼 하나에만 딱 맞으면 되니 헤더 높이를 몰라도 된다 */}
+        <div className="relative" style={{ height: gridHeightPx }}>
+          {/* 배경 그리드·오늘선(뒤) — 항상 행(z-20)보다 아래 */}
+          <div className="pointer-events-none absolute inset-0 z-0 flex" aria-hidden>
+            <div className="shrink-0" style={LABEL_COL_STYLE} />
+            <div className="relative flex" style={{ width: totalWidthPx }}>
+              {days.map((day) => (
+                <div
+                  key={day.iso}
+                  className="border-border/55 shrink-0 border-l first:border-l-0"
+                  style={{ width: TIMELINE_DAY_WIDTH_PX }}
+                />
+              ))}
+              <span
+                className="bg-primary absolute inset-y-0 w-0.5 -translate-x-1/2"
+                style={{ left: todayLeftPx }}
+              />
+            </div>
+          </div>
+
+          {/* 행들 — 보통 흐름(세로 스크롤은 바깥 컨테이너가 한다) */}
+          {bars.map((bar, index) => (
+            <div
               key={bar.id}
-              className="border-border flex h-11 items-stretch border-t first:border-t-0"
+              className={cn("border-border relative flex items-stretch", index > 0 && "border-t")}
+              style={{ height: ROW_HEIGHT_PX }}
             >
-              {/* 좌: 상태점 · 액션명 · 프로젝트 태그 */}
-              <div className={cn("flex shrink-0 items-center gap-2 px-3", LABEL_COL)}>
+              {/* 좌: 상태점 · 액션명 · 칩(호출부마다 뜻 다름 — 태그 또는 팀명) */}
+              <div
+                className="bg-card sticky left-0 z-10 flex min-w-0 shrink-0 items-center gap-2 px-3"
+                style={LABEL_COL_STYLE}
+              >
                 <span
                   className={cn("size-1.5 shrink-0 rounded-full", DOT_CLASS[bar.tone])}
                   aria-hidden
                 />
-                <span className="truncate text-[13px]">{bar.title}</span>
+                <span className="min-w-0 truncate text-[13px]">{bar.title}</span>
                 <span
                   className="shrink-0 rounded px-1.5 py-0.5 font-mono text-[10px] font-semibold"
                   style={{ backgroundColor: bar.tagBgColor, color: bar.tagTextColor }}
@@ -139,7 +165,7 @@ export function ActionTimeline({
               </div>
 
               {/* 우: 기간 바 */}
-              <div className="relative flex-1">
+              <div className="relative" style={{ width: totalWidthPx }}>
                 <Link
                   href={bar.href}
                   aria-label={`${bar.title}, ${bar.tag}, ${TONE_LABEL[bar.tone]}, ${bar.ddayLabel}, ${bar.periodLabel}`}
@@ -147,7 +173,7 @@ export function ActionTimeline({
                     "absolute top-1/2 flex h-[22px] min-w-[42px] -translate-y-1/2 items-center justify-end rounded border pr-2 text-[11px] font-semibold tabular-nums transition-shadow hover:shadow-sm",
                     BAR_CLASS[bar.tone],
                   )}
-                  style={{ left: `${bar.leftPct}%`, width: `${bar.widthPct}%` }}
+                  style={{ left: bar.leftPx, width: bar.widthPx }}
                 >
                   {bar.ddayLabel}
                   <span
@@ -159,9 +185,9 @@ export function ActionTimeline({
                   />
                 </Link>
               </div>
-            </li>
+            </div>
           ))}
-        </ul>
+        </div>
       </div>
     </div>
   );

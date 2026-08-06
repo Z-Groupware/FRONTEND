@@ -17,42 +17,48 @@ import { pickPaletteColor } from "@/lib/palette";
 import { cn } from "@/lib/utils";
 
 interface ProjectDetailPageProps {
-  params: Promise<{ projectTag: string }>;
+  params: Promise<{ projectId: string }>;
   searchParams: Promise<{ tab?: string }>;
 }
 
 export async function generateMetadata({ params }: ProjectDetailPageProps): Promise<Metadata> {
-  const { projectTag } = await params;
-  const project = await getProjectDetail(projectTag);
+  const { projectId } = await params;
+  const project = await getProjectDetail(projectId);
   return { title: project?.name ?? "프로젝트" };
 }
 
 export default async function ProjectDetailPage({ params, searchParams }: ProjectDetailPageProps) {
-  const { projectTag } = await params;
-  const project = await getProjectDetail(projectTag);
+  const { projectId } = await params;
+  const project = await getProjectDetail(projectId);
   if (!project) notFound();
 
   const activeTab = parseProjectDetailTab((await searchParams).tab);
   const tagColor = pickPaletteColor(project.tag);
   const due = formatMonthDayWeekday(project.dueDate);
 
-  const teamActions = activeTab === "timeline" ? await getProjectTeamActions(project.tag) : [];
-  const timelineItems: TimelineActionInput[] = teamActions.map((action) => ({
-    id: action.id,
-    title: action.name,
-    tag: project.tag,
-    tagBgColor: tagColor.bgColor,
-    tagTextColor: tagColor.textColor,
-    startDate: action.startDate,
-    dueDate: action.dueDate,
-    tone: isDelayed(action) ? "DELAYED" : action.status,
-    // ⚠️ 팀 액션 상세(`/app/projects/:tag/team/:teamId`)는 아직 없다 — 생기면 이 href를 바꾼다.
-    href: `/app/projects/${project.tag}/team/${encodeURIComponent(action.team)}`,
-  }));
+  const teamActions =
+    activeTab === "timeline" ? await getProjectTeamActions(String(project.id)) : [];
+  const timelineItems: TimelineActionInput[] = teamActions.map((action) => {
+    // ⚠️ 이 화면은 이미 프로젝트 하나로 좁혀져 있어 태그 칩은 노이즈다 — 대신 팀명을 단다.
+    // 부서 색상도 프로젝트 태그와 같은 팔레트에서, 팀명을 키로 뽑는다(WORKFLOW.md §부서 색상).
+    const teamColor = pickPaletteColor(action.team);
+    return {
+      id: action.id,
+      title: action.name,
+      tag: action.team,
+      tagBgColor: teamColor.bgColor,
+      tagTextColor: teamColor.textColor,
+      startDate: action.startDate,
+      dueDate: action.dueDate,
+      tone: isDelayed(action) ? "DELAYED" : action.status,
+      // ⚠️ 팀 액션 상세(`/app/projects/:projectId/team/:teamId`)는 아직 없다 — 생기면 이 href를 바꾼다.
+      href: `/app/projects/${project.id}/team/${encodeURIComponent(action.team)}`,
+    };
+  });
 
   return (
     <main className="scrollbar-hidden min-h-0 flex-1 overflow-y-auto px-8 py-7">
-      <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-4">
+      <div className="mx-auto flex w-full max-w-[1080px] flex-col gap-4">
         <div className="flex flex-col gap-1">
           <p className="text-muted-foreground text-xs">
             <Link href="/app/projects" className="hover:text-foreground">
@@ -69,8 +75,8 @@ export default async function ProjectDetailPage({ params, searchParams }: Projec
               key={t.tab}
               href={
                 t.tab === "plan"
-                  ? `/app/projects/${project.tag}`
-                  : `/app/projects/${project.tag}?tab=${t.tab}`
+                  ? `/app/projects/${project.id}`
+                  : `/app/projects/${project.id}?tab=${t.tab}`
               }
               aria-current={activeTab === t.tab ? "page" : undefined}
               className={cn(
@@ -86,7 +92,7 @@ export default async function ProjectDetailPage({ params, searchParams }: Projec
         </nav>
 
         {activeTab === "plan" ? (
-          <section className="border-border bg-card flex max-w-[720px] flex-col gap-3 rounded-xl border p-6">
+          <section className="border-border bg-card flex flex-col gap-3 rounded-xl border p-6">
             <div className="flex items-center gap-2 text-xs">
               <span
                 className="rounded px-1.5 py-0.5 font-mono font-semibold"

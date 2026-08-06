@@ -9,7 +9,7 @@ import type { ProjectDraft, ProjectListItem } from "../types";
  */
 export const TOP_LEVEL_PROJECTS: ProjectListItem[] = [
   {
-    id: "p-goods",
+    id: 1,
     name: "연예인 굿즈 쇼핑몰 앱 구축",
     description:
       "아티스트 공식 굿즈를 판매하는 모바일 커머스 앱을 신규 구축한다. 회원가입·결제·상품 관리 전반을 포함하며 개발·마케팅·디자인 3개 팀이 참여한다.",
@@ -21,7 +21,7 @@ export const TOP_LEVEL_PROJECTS: ProjectListItem[] = [
     status: PROJECT_STATUS.IN_PROGRESS,
   },
   {
-    id: "p-brand",
+    id: 2,
     name: "3분기 마케팅 브랜드 리뉴얼",
     description:
       "3분기 브랜드 아이덴티티를 리뉴얼한다. 로고·가이드라인 개편과 캠페인 자산 제작을 마케팅·디자인팀이 함께 진행한다.",
@@ -33,7 +33,7 @@ export const TOP_LEVEL_PROJECTS: ProjectListItem[] = [
     status: PROJECT_STATUS.IN_PROGRESS,
   },
   {
-    id: "p-collab",
+    id: 3,
     name: "사내 협업툴 리뉴얼",
     description:
       "사내에서 쓰는 협업 도구를 재정비한다. 회의·문서·일정 흐름을 하나로 잇는 개편을 개발·전략기획팀이 담당한다.",
@@ -46,6 +46,9 @@ export const TOP_LEVEL_PROJECTS: ProjectListItem[] = [
   },
 ];
 
+/** BE는 자동증가 정수 PK를 준다 — 목도 같은 모양으로 다음 id를 이어 붙인다. */
+let nextProjectId = TOP_LEVEL_PROJECTS.length + 1;
+
 /**
  * 프로젝트 생성 — 격리막(CLAUDE.md §Mock 격리막). 새 프로젝트는 착수 직후라 진척 0%·할일 상태로 만든다.
  * ⚠️ 태그 색상(`tagColor`)은 지금 이 목 배열에 저장할 자리가 없다 — `ProjectListItem`엔
@@ -54,7 +57,7 @@ export const TOP_LEVEL_PROJECTS: ProjectListItem[] = [
  */
 export function addMockProject(draft: ProjectDraft): ProjectListItem {
   const project: ProjectListItem = {
-    id: `p-${draft.tag.toLowerCase()}`,
+    id: nextProjectId++,
     name: draft.name,
     description: draft.description,
     tag: draft.tag,
