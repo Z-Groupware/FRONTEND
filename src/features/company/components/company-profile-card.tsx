@@ -107,12 +107,30 @@ export function CompanyProfileCard({ profile }: { profile: CompanyProfile }) {
         }
       >
         {/*
-          ⚠️ 위는 적는 칸 둘, 아래는 **위치**다. 좌우로 나누면 칸 둘(≈190px)이 지도 쪽
-             (≈280px)보다 짧아 왼쪽 아래가 빈 채로 남는다 — 세로로 쌓으면 그 자리가 없다.
-          ⚠️ 지도는 신청 화면보다 넓어서 기본 높이(160px)로는 납작해 보인다 — 조금 키운다.
+          ⚠️ **왼쪽이 지도, 오른쪽이 칸**이다. 세 가지를 다 시도해 보고 남은 배치다.
+             · 좌 칸 / 우 지도 → 칸이 짧아 왼쪽 아래가 빈다
+             · 전부 세로로 쌓기 → 지도가 전폭이라 5:1 띠가 된다
+             · 지도만 폭을 720으로 → 카드 오른쪽 절반이 통째로 빈다
+             지도를 반쪽에 두면 3:1에 가까워져 주변이 제대로 보이고, 남는 여백은
+             오른쪽 칸 **아래**로 흩어져 눈에 덜 걸린다.
+          ⚠️ `items-start` — 늘려 맞추면 지도만 커져 다시 비율이 무너진다.
         */}
-        <div className="flex flex-col gap-6 px-6 py-6">
-          <div className="grid grid-cols-1 gap-x-7 gap-y-6 sm:grid-cols-2">
+        <div className="grid grid-cols-1 items-start gap-x-7 gap-y-6 px-6 py-6 lg:grid-cols-2">
+          <Field
+            name="place"
+            controlId="company-address"
+            label={COMPANY_FIELD_LABEL.PLACE}
+            error={state.errors.place}
+          >
+            <AddressPicker
+              picked={place}
+              onPick={setPlace}
+              hasError={Boolean(state.errors.place)}
+              mapClassName="h-[232px]"
+            />
+          </Field>
+
+          <div className="flex flex-col gap-6">
             <Field name="name" label={COMPANY_FIELD_LABEL.NAME} error={state.errors.name}>
               <Input
                 id="company-name"
@@ -143,25 +161,6 @@ export function CompanyProfileCard({ profile }: { profile: CompanyProfile }) {
               />
             </Field>
           </div>
-
-          {/*
-            ⚠️ 위치는 **전폭**이다. 폭을 720으로 잡아 봤더니 카드 오른쪽 절반이 통째로 비어
-               보였다 — 지도는 넓을수록 주변 건물이 더 보여서 손해가 없다.
-            ⚠️ 대신 높이를 키운다. 전폭에 기본 높이(160px)를 두면 7:1 띠가 된다.
-          */}
-          <Field
-            name="place"
-            controlId="company-address"
-            label={COMPANY_FIELD_LABEL.PLACE}
-            error={state.errors.place}
-          >
-            <AddressPicker
-              picked={place}
-              onPick={setPlace}
-              hasError={Boolean(state.errors.place)}
-              mapClassName="h-[260px]"
-            />
-          </Field>
         </div>
 
         {/*
