@@ -5,6 +5,7 @@ import Script from "next/script";
 import { useEffect, useState } from "react";
 
 import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 
 import type { PickedPlace } from "../register-draft";
 import { type KakaoPlace, readKakao } from "./kakao-sdk";
@@ -27,9 +28,20 @@ interface AddressPickerProps {
   picked: PickedPlace | null;
   onPick: (place: PickedPlace) => void;
   hasError: boolean;
+  /**
+   * 지도 상자 크기.
+   * ⚠️ 폭이 화면마다 다르다 — 좁은 카드(신청)에서 알맞은 높이가 전폭(기업 설정)에서는
+   *    납작한 띠가 된다. 기본값은 신청 화면 기준이다.
+   */
+  mapClassName?: string;
 }
 
-export function AddressPicker({ picked, onPick, hasError }: AddressPickerProps) {
+export function AddressPicker({
+  picked,
+  onPick,
+  hasError,
+  mapClassName = "h-[160px]",
+}: AddressPickerProps) {
   const appKey = process.env.NEXT_PUBLIC_KAKAO_MAP_KEY;
   const [keyword, setKeyword] = useState("");
   const [results, setResults] = useState<KakaoPlace[]>([]);
@@ -122,16 +134,39 @@ export function AddressPicker({ picked, onPick, hasError }: AddressPickerProps) 
         ⚠️ `form` 안에 `form`을 넣을 수 없다 — 여기서 Enter는 바깥 폼 제출로 새어 나간다.
            `keydown`에서 막고 검색으로 돌린다.
       */}
-      <div className="relative">
+      {/*
+        ⚠️ 떠 있는 것은 **닫는 길이 있어야 한다.** 결과가 지도를 가린 채 남으면 고르는 것
+           말고는 치울 방법이 없다 — Esc와 바깥으로 나가는 포커스 둘 다로 닫는다.
+        ⚠️ `onBlur`는 **컨테이너에** 건다. 입력에 걸면 결과 항목으로 가는 포커스 이동에도
+           닫혀서 키보드로는 아무것도 못 고른다 — `relatedTarget`이 이 상자 밖일 때만 닫는다.
+      */}
+      <div
+        className="relative"
+        onBlur={(event) => {
+          if (!event.currentTarget.contains(event.relatedTarget)) setResults([]);
+        }}
+      >
         <Input
           id="company-address"
           value={keyword}
-          onChange={(event) => setKeyword(event.target.value)}
+          /* 키워드를 고치는 순간 옛 결과는 답이 아니다 */
+          onChange={(event) => {
+            setKeyword(event.target.value);
+            setResults([]);
+          }}
           onKeyDown={(event) => {
+            if (event.key === "Escape") {
+              setResults([]);
+              return;
+            }
             if (event.key !== "Enter") return;
             event.preventDefault();
             handleSearch();
           }}
+          role="combobox"
+          aria-expanded={results.length > 0}
+          aria-controls="company-address-results"
+          aria-autocomplete="list"
           placeholder="건물명이나 주소로 찾아보세요"
           disabled={!isReady}
           aria-invalid={hasError}
@@ -147,26 +182,35 @@ export function AddressPicker({ picked, onPick, hasError }: AddressPickerProps) 
         >
           <Search className="size-4" aria-hidden />
         </button>
-      </div>
 
-      {results.length > 0 && (
-        <ul className="border-border bg-card overflow-hidden rounded-lg border">
-          {results.map((place) => (
-            <li key={`${place.x},${place.y}`}>
-              <button
-                type="button"
-                onClick={() => handleChoose(place)}
-                className="hover:bg-secondary focus-visible:ring-ring flex w-full flex-col gap-0.5 px-3.5 py-2.5 text-left focus-visible:ring-2 focus-visible:outline-hidden"
-              >
-                <span className="text-[13px] leading-5 font-medium">{place.place_name}</span>
-                <span className="text-muted-foreground text-[12px] leading-4">
-                  {place.road_address_name || place.address_name}
-                </span>
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
+        {/*
+          ⚠️ 결과는 **띄운다**(absolute). 줄 사이에 끼워 넣으면 검색할 때마다 아래 지도와
+             카드 전체가 밀렸다 돌아와 화면이 출렁인다 — 고르는 동안 뒤가 안 움직여야
+             무엇을 고르는지 눈이 따라간다.
+          ⚠️ 지도 위에 떠야 하므로 `z-20`이다. 지도(카카오 SDK)가 자기 요소에 z-index를 매긴다.
+        */}
+        {results.length > 0 && (
+          <ul
+            id="company-address-results"
+            className="border-border bg-card absolute top-full right-0 left-0 z-20 mt-1 overflow-hidden rounded-lg border shadow-lg"
+          >
+            {results.map((place) => (
+              <li key={`${place.x},${place.y}`}>
+                <button
+                  type="button"
+                  onClick={() => handleChoose(place)}
+                  className="hover:bg-secondary focus-visible:ring-ring flex w-full flex-col gap-0.5 px-3.5 py-2.5 text-left focus-visible:ring-2 focus-visible:outline-hidden"
+                >
+                  <span className="text-[13px] leading-5 font-medium">{place.place_name}</span>
+                  <span className="text-muted-foreground text-[12px] leading-4">
+                    {place.road_address_name || place.address_name}
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
 
       {picked && (
         <>
@@ -174,11 +218,24 @@ export function AddressPicker({ picked, onPick, hasError }: AddressPickerProps) 
             <Check className="text-success size-3.5 shrink-0" aria-hidden />
             <span className="translate-y-px">{picked.address}</span>
           </p>
+          {/*
+            ⚠️ `key`에 **SDK 상태를 함께 넣는다.** 이미 고른 곳을 들고 시작하는 화면
+               (기업 설정)에서는 지도 상자가 SDK보다 먼저 붙어서, ref 콜백이 도는 시점에
+               `readKakao()`가 아직 `null`이다 — 그대로 두면 **빈 상자가 영영 남는다.**
+               상태가 `ready`로 바뀌면 상자가 새로 붙으면서 콜백이 한 번 더 돈다.
+          */}
           <div
-            key={`${picked.lat},${picked.lng}`}
+            key={`${loadState}:${picked.lat},${picked.lng}`}
             ref={drawPin}
-            aria-hidden
-            className="border-border h-[160px] w-full overflow-hidden rounded-lg border"
+            /*
+              ⚠️ `aria-hidden`이 아니라 `inert`다. 지도 안에는 카카오 SDK가 만든 버튼·링크가
+                 들어 있어서, `aria-hidden`만 걸면 **읽히지는 않는데 탭으로는 들어가진다** —
+                 스크린리더 사용자가 이름 없는 것들 사이에 갇힌다. `inert`는 포커스까지 뺀다.
+              ⚠️ 지도를 실제로 조작하게 둘 생각이면 반대로 `inert`를 떼고 이름을 줘야 한다.
+                 지금은 **고른 곳을 눈으로 확인하는 그림**이라 빼는 게 맞다.
+            */
+            inert
+            className={cn("border-border w-full overflow-hidden rounded-lg border", mapClassName)}
           />
         </>
       )}

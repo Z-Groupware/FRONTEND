@@ -1,0 +1,182 @@
+"use client";
+
+import { useState, useTransition } from "react";
+import { toast } from "sonner";
+
+import { ConfirmDialog } from "@/components/common/confirm-dialog";
+import { Button } from "@/components/ui/button";
+import { COMPANY_SECTION_TITLE } from "@/constants/company";
+import { AUTHORITY } from "@/constants/domain";
+import { PositionAddRow } from "@/features/onboarding/components/position-add-row";
+import { POSITION_COLUMN } from "@/features/onboarding/components/position-columns";
+import {
+  PositionRow,
+  type PositionRowHandlers,
+} from "@/features/onboarding/components/position-row";
+import { blockedRoles } from "@/features/onboarding/positions";
+import type { AssignableRole } from "@/features/onboarding/types";
+import type { DraggingPositionId } from "@/features/onboarding/use-position-drag";
+import { usePositionList } from "@/features/onboarding/use-position-list";
+import { cn } from "@/lib/utils";
+
+import { savePositionsAction } from "../actions";
+import type { Position } from "../types";
+import { SettingCard } from "./setting-card";
+
+/**
+ * 직급·권한 — 온보딩 2단계에서 만든 직급을 나중에 고친다.
+ *
+ * ⚠️ 편집 조각은 **온보딩 것을 그대로 쓴다**(§팀 체계 카드와 같은 이유).
+ * ⚠️ **Admin은 여기 없다.** 직급이 아니라 사람에게 붙는 겸직이라 사원 관리에서 켠다
+ *    (CLAUDE.md §라우트 그룹 — `is_admin`은 역할이 아니라 플래그다).
+ * ⚠️ Leader는 **한 직급만** 가진다 — 훅이 막고, 서버가 다시 본다.
+ */
+export function CompanyPositionCard({ initial }: { initial: Position[] }) {
+  const list = usePositionList(initial);
+  const [draftName, setDraftName] = useState("");
+  const [draftRole, setDraftRole] = useState<AssignableRole>(list.defaultRole);
+  const [draggingId, setDraggingId] = useState<DraggingPositionId>(null);
+  const [saved, setSaved] = useState(initial);
+  const [isSaving, startSaving] = useTransition();
+  /*
+    ⚠️ 저장 실패는 **화면에 남긴다.** 검증 문구는 `같은 이름이 둘 있습니다 — 개발팀`처럼
+       어느 줄이 문제인지 담고 있는데, 토스트로 띄우면 한 줄에 잘리고 몇 초 뒤 사라진다 —
+       그러면 사라진 문장을 기억해 목록을 눈으로 훑어야 한다(§토스트: 사라지므로 보조다).
+  */
+  const [error, setError] = useState<string | null>(null);
+  /*
+    ⚠️ 직급 삭제도 **확인을 받는다**(§토스트: 파괴적 작업은 Dialog). 그 직급을 쓰던 사원의
+       권한이 사라지는 일이고, 특히 Leader 직급을 지우면 팀을 관리할 사람이 없어진다.
+  */
+  const [pending, setPending] = useState<Position | null>(null);
+
+  const handlers: PositionRowHandlers = {
+    onRename: list.rename,
+    onChangeRole: list.changeRole,
+    onRemove: (id: string) => setPending(list.positions.find((item) => item.id === id) ?? null),
+    onMove: list.move,
+    onShift: list.shift,
+    blockedRolesOf: (id: string) => blockedRoles(list.positions, id),
+    editingId: list.editingId,
+    onEditingChange: list.setEditingId,
+    draggingId,
+    onDraggingChange: setDraggingId,
+  };
+
+  const isDirty = JSON.stringify(list.positions) !== JSON.stringify(saved);
+
+  const handleSave = () => {
+    const next = list.positions;
+    startSaving(async () => {
+      const result = await savePositionsAction(next);
+      if (!result.isSuccess) {
+        setError(result.message ?? "직급·권한을 저장하지 못했습니다");
+        return;
+      }
+      setError(null);
+      setSaved(next);
+      toast.success("직급·권한을 저장했습니다");
+    });
+  };
+
+  return (
+    <SettingCard
+      title={COMPANY_SECTION_TITLE.POSITION}
+      aside={`직급 ${list.positions.length}개`}
+      description={
+        <>
+          <span className="text-foreground font-medium">권한은 직급에서 옵니다.</span> Leader는 한
+          직급만 가질 수 있고, 그 직급을 받은 사람이 팀마다 한 명씩 자기 팀 전체를 관리합니다.
+          Admin은 직급이 아니라 사람에게 붙는 겸직이라 사원 관리에서 켭니다.
+        </>
+      }
+      footer={
+        <>
+          {error && (
+            <p role="alert" className="text-destructive mr-auto text-[12px] leading-4 break-keep">
+              {error}
+            </p>
+          )}
+          <Button
+            type="button"
+            size="sm"
+            variant="ink"
+            onClick={handleSave}
+            disabled={isSaving || !isDirty}
+          >
+            {isSaving ? "저장 중…" : "저장"}
+          </Button>
+        </>
+      }
+    >
+      {/* 칸 너비는 행(`PositionRow`)과 같은 곳에서 온다 — 따로 적으면 머리와 몸이 어긋난다 */}
+      <div className="text-muted-foreground bg-muted border-border flex shrink-0 items-center gap-2 border-b px-7 py-3 text-[12px] leading-4">
+        <span className={cn(POSITION_COLUMN.INDEX, "shrink-0")} aria-hidden />
+        <span className={cn(POSITION_COLUMN.NAME, "shrink-0 text-center")}>직급명</span>
+        <span className="flex-1" aria-hidden />
+        <span className={cn(POSITION_COLUMN.ROLE, "shrink-0 text-center")}>권한</span>
+        <span className={cn(POSITION_COLUMN.REMOVE, "shrink-0")} aria-hidden />
+      </div>
+
+      {/* 남는 키는 목록이 가져간다 — 팀 체계 카드와 같은 이유 */}
+      <div className="min-h-0 flex-1 overflow-auto overscroll-contain">
+        {list.positions.length === 0 ? (
+          <p className="text-muted-foreground/70 py-12 text-center text-[13px]">
+            아래에서 첫 직급을 추가해 주세요
+          </p>
+        ) : (
+          list.positions.map((position, index) => (
+            <PositionRow
+              key={position.id}
+              position={position}
+              index={index}
+              insetClassName="px-7"
+              {...handlers}
+            />
+          ))
+        )}
+      </div>
+
+      {/*
+        ⚠️ Leader는 **다른 말을 한다.** 회사에 하나뿐인 직급이라, 지우면 팀을 관리할 사람이
+           아예 없어진다 — 사원 하나가 권한을 잃는 것과 무게가 다르다.
+      */}
+      <ConfirmDialog
+        isOpen={pending !== null}
+        onOpenChange={() => setPending(null)}
+        title={`\u2018${pending?.name ?? ""}\u2019 직급을 지울까요?`}
+        description={
+          <>
+            {pending?.role === AUTHORITY.LEADER
+              ? "회사에 하나뿐인 Leader 직급입니다. 지우면 팀을 관리할 권한을 가진 사람이 없어집니다."
+              : "이 직급을 쓰던 사원은 직급과 그에 딸린 권한을 잃습니다."}
+            <br />
+            [저장]을 눌러야 반영됩니다.
+          </>
+        }
+        confirmLabel="삭제"
+        isDestructive
+        onConfirm={() => {
+          if (!pending) return;
+          list.remove(pending.id);
+          setPending(null);
+        }}
+      />
+
+      <PositionAddRow
+        insetClassName="px-7"
+        name={draftName}
+        role={draftRole}
+        blocked={blockedRoles(list.positions)}
+        onNameChange={setDraftName}
+        onRoleChange={setDraftRole}
+        onSubmit={() => {
+          if (list.add(draftName, draftRole)) {
+            setDraftName("");
+            setDraftRole(list.defaultRole);
+          }
+        }}
+      />
+    </SettingCard>
+  );
+}

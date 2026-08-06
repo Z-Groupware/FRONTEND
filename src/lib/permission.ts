@@ -63,6 +63,19 @@ export function canManageNotice(actor: Actor): boolean {
 }
 
 /**
+ * 기업 설정(`/owner/setting`) — **OWNER 전용**.
+ *
+ * ⚠️ Admin 겸직으로는 안 연다. 여기서 고치는 건 사업자 정보와 **조직 체계**인데,
+ *    직급의 권한이 여기서 나온다 — Admin이 직급 권한을 고칠 수 있으면 자기 위를
+ *    스스로 만들 수 있다(§권한: 화면 단위로 판정한다).
+ * ⚠️ `canManageMembers`와 판정이 겹치지 않게 함수를 따로 둔다 — 사원을 넣고 빼는 일과
+ *    조직의 틀을 바꾸는 일은 다른 결정이다.
+ */
+export function canManageCompany(actor: Actor): boolean {
+  return actor.role === AUTHORITY.OWNER;
+}
+
+/**
  * 구독·결제 — OWNER이거나 Admin을 겸한 사람.
  *
  * ⚠️ 이 판정 때문에 관리 기능이 `/owner/*`가 아니라 **`/manage/*`** 하나로 모여 있다
