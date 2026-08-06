@@ -10,8 +10,10 @@ import type { ManagedMember } from "../manage-types";
  *
  * ⚠️ **읽기 전용**이다. 이름·이메일·연락처는 본인이 마이페이지에서 관리할 값이고,
  *    여기서 고치는 건 직급·권한뿐이다(아래 카드) — 한 화면에 두 성격을 섞지 않는다.
- * ⚠️ 값 줄은 마이페이지 기본 정보 카드와 **같은 모양**이다(라벨 왼쪽 고정폭 · 값 오른쪽).
- *    같은 성격의 표를 화면마다 다르게 그리면 같은 서비스로 안 읽힌다.
+ * ⚠️ 사람 카드는 **가운데 정렬**이다. 이름 하나를 보여 주는 자리라 왼쪽에 붙이면 오른쪽이
+ *    비고, 아바타가 작아져 목록에서 익힌 색을 알아보기 어렵다.
+ * ⚠️ 값은 **따로 카드**다. 사람과 연락처는 성격이 달라서, 한 상자에 넣으면 어디까지가
+ *    "누구인가"이고 어디부터가 "어떻게 닿는가"인지 경계가 사라진다.
  * ⚠️ 아바타는 **공용 훅**(`useProfileAvatar`)이 만든다 — 이름 첫 글자를 직접 그리면
  *    같은 사람이 화면마다 다른 색으로 보인다.
  * ⚠️ 팀이 없는 사람(Owner)은 `-`를 안 적는다. 이 줄은 표가 아니라 문장이라 빈칸 표시가
@@ -27,51 +29,47 @@ export function MemberProfileCard({ member, phone }: { member: ManagedMember; ph
   ];
 
   return (
-    <section className="border-border bg-card overflow-hidden rounded-2xl border">
-      <div className="flex items-center gap-3.5 px-6 py-5">
-        <ProfileAvatar userId={member.id} size={48} />
+    <div className="flex flex-col gap-5">
+      <section className="border-border bg-card flex flex-col items-center gap-2 rounded-2xl border px-6 py-7">
+        <ProfileAvatar userId={member.id} size={64} />
 
-        <div className="flex min-w-0 flex-col gap-1">
-          <h1 className="truncate text-[17px] leading-[26px] font-semibold">{member.name}</h1>
-          <p className="text-muted-foreground truncate text-[12px] leading-4">
-            {[member.teamName, member.position].filter(Boolean).join(" · ")}
-          </p>
+        <h1 className="pt-1 text-[17px] leading-[26px] font-semibold">{member.name}</h1>
+        <p className="text-muted-foreground text-[13px] leading-5">
+          {[member.teamName, member.position].filter(Boolean).join(" · ")}
+        </p>
 
-          <div className="flex flex-wrap items-center gap-1 pt-0.5">
-            <span
-              className={cn(
-                "inline-flex shrink-0 items-center rounded px-1.5 py-0.5 text-[11px] leading-none",
-                AUTHORITY_BADGE_CLASS[member.authority],
-              )}
-            >
-              {AUTHORITY_LABEL[member.authority]}
-            </span>
-            {member.isAdmin && (
-              <span className="border-border text-muted-foreground shrink-0 rounded border px-1.5 py-0.5 text-[11px] leading-none">
-                Admin
-              </span>
+        <div className="flex flex-wrap items-center justify-center gap-1 pt-1">
+          <span
+            className={cn(
+              "inline-flex shrink-0 items-center rounded px-1.5 py-0.5 text-[11px] leading-none",
+              AUTHORITY_BADGE_CLASS[member.authority],
             )}
+          >
+            {AUTHORITY_LABEL[member.authority]}
+          </span>
+          {member.isAdmin && (
             <span className="border-border text-muted-foreground shrink-0 rounded border px-1.5 py-0.5 text-[11px] leading-none">
-              {MEMBER_STATUS_LABEL[member.status]}
+              Admin
             </span>
-          </div>
+          )}
+          <span className="border-border text-muted-foreground shrink-0 rounded border px-1.5 py-0.5 text-[11px] leading-none">
+            {MEMBER_STATUS_LABEL[member.status]}
+          </span>
         </div>
-      </div>
+      </section>
 
-      <div className="border-border border-t">
+      {/* 값 카드 — 라벨 위, 값 아래. 마이페이지 기본 정보와 같은 결이다 */}
+      <section className="border-border bg-card overflow-hidden rounded-2xl border">
         {rows.map((row, index) => (
           <div
             key={row.label}
-            className={cn(
-              "flex items-center gap-3.5 px-6 py-3",
-              index > 0 && "border-border border-t",
-            )}
+            className={cn("flex flex-col gap-1 px-6 py-3.5", index > 0 && "border-border border-t")}
           >
-            <p className="text-muted-foreground w-12 shrink-0 text-xs">{row.label}</p>
-            <p className="min-w-0 flex-1 truncate text-[13px] leading-5">{row.value}</p>
+            <p className="text-muted-foreground text-[12px] leading-4">{row.label}</p>
+            <p className="truncate text-[13px] leading-5 tabular-nums">{row.value}</p>
           </div>
         ))}
-      </div>
-    </section>
+      </section>
+    </div>
   );
 }
