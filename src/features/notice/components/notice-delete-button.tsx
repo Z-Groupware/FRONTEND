@@ -5,6 +5,7 @@ import { useState, useTransition } from "react";
 
 import { ConfirmDialog } from "@/components/common/confirm-dialog";
 import { Button } from "@/components/ui/button";
+import { NOTICE_DELETE_CONFIRM } from "@/constants/notice";
 
 import { deleteNoticeAction } from "../actions";
 
@@ -26,9 +27,9 @@ export function NoticeDeleteButton({ id, title }: NoticeDeleteButtonProps) {
   function handleConfirm() {
     const formData = new FormData();
     formData.set("id", id);
-    startTransition(() => {
-      deleteNoticeAction(formData);
-    });
+    // ⚠️ 콜백이 Promise를 반환해야 한다 — 반환하지 않으면 React가 삭제가 끝나기 전에
+    //    전환을 "완료"로 보고 `isPending`이 너무 일찍 꺼져 버튼이 풀린다.
+    startTransition(() => deleteNoticeAction(formData));
   }
 
   return (
@@ -48,9 +49,9 @@ export function NoticeDeleteButton({ id, title }: NoticeDeleteButtonProps) {
         isOpen={open}
         onOpenChange={setOpen}
         title={`'${title}' 공지를 삭제할까요?`}
-        description="삭제하면 공지 내용을 되돌릴 수 없습니다."
-        confirmLabel="삭제"
-        pendingLabel="삭제 중"
+        description={NOTICE_DELETE_CONFIRM.description}
+        confirmLabel={NOTICE_DELETE_CONFIRM.confirmLabel}
+        pendingLabel={NOTICE_DELETE_CONFIRM.pendingLabel}
         isDestructive
         isPending={isPending}
         onConfirm={handleConfirm}

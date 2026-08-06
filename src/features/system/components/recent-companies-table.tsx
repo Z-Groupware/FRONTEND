@@ -6,7 +6,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { formatDate } from "@/lib/date";
 
 import type { RecentCompany } from "../types";
 
@@ -60,8 +59,10 @@ export function RecentCompaniesTable({ companies }: { companies: RecentCompany[]
                 <TableCell className="text-muted-foreground text-center tabular-nums">
                   {company.memberCount}명
                 </TableCell>
-                <TableCell className="text-muted-foreground pr-4 text-center tabular-nums">
-                  {formatDate(company.joinedAt)}
+                {/* ⚠️ 관리자 화면 표기라 일반 화면의 "8월 5일(화)" 형식을 안 따른다(`types.ts`
+                    `RecentCompany.joinedAt` 주석) — 원문 "YYYY-MM-DD" 그대로 보여준다. */}
+                <TableCell className="text-muted-foreground pr-4 text-center font-mono tabular-nums">
+                  {company.joinedAt}
                 </TableCell>
               </TableRow>
             ))}

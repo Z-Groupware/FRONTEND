@@ -1,12 +1,9 @@
-import { Pencil } from "lucide-react";
-import Link from "next/link";
-
-import { buttonVariants } from "@/components/ui/button";
 import { formatDate } from "@/lib/date";
 
 import type { Notice } from "../types";
 import { MarkNoticeRead } from "./mark-notice-read";
 import { NoticeDeleteButton } from "./notice-delete-button";
+import { NoticeEditDialog } from "./notice-edit-dialog";
 
 /** 공지 상세 — 날짜·제목·본문. 관리 권한이 있으면 수정·삭제로 갈 수 있다. */
 export function NoticeDetail({ notice, canManage }: { notice: Notice; canManage: boolean }) {
@@ -19,13 +16,7 @@ export function NoticeDetail({ notice, canManage }: { notice: Notice; canManage:
         <p className="text-muted-foreground text-[11px]">{formatDate(notice.publishedAt)}</p>
         {canManage && (
           <div className="flex shrink-0 gap-2">
-            <Link
-              href={`/app/notice/${notice.id}/edit`}
-              className={buttonVariants({ variant: "outline", size: "xs" })}
-            >
-              <Pencil aria-hidden />
-              수정
-            </Link>
+            <NoticeEditDialog notice={notice} />
             <NoticeDeleteButton id={notice.id} title={notice.title} />
           </div>
         )}

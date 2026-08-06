@@ -35,22 +35,31 @@ beforeEach(() => {
 
 describe("기업 승인·반려", () => {
   // ⚠️ 목 배열을 실제로 지운다 — 테스트마다 다른 id를 써서 서로 간섭하지 않게 한다.
-  it("승인하면 대기 목록에서 빠지고 목록 화면으로 보낸다", async () => {
+  // ⚠️ 무한 스크롤 목록이라 페이지를 옮기지 않는다 — `redirect` 대신 `revalidatePath` +
+  //    `{ success }` 반환으로 끝난다(호출부가 로컬 상태에서 행을 지운다).
+  it("승인하면 대기 목록에서 빠지고 성공을 돌려준다", async () => {
     expect(findMockPendingApproval("2")).not.toBeNull();
 
-    await approveCompanyAction(form({ companyId: "2" }));
+    const result = await approveCompanyAction("2");
 
     expect(findMockPendingApproval("2")).toBeNull();
-    expect(redirectMock).toHaveBeenCalledWith("/system/approval");
+    expect(result).toEqual({ success: true });
+    expect(revalidatePathMock).toHaveBeenCalledWith("/system/approval");
+    expect(redirectMock).not.toHaveBeenCalled();
   });
 
   it("반려도 대기 목록에서 지운다", async () => {
     expect(findMockPendingApproval("3")).not.toBeNull();
 
-    await rejectCompanyAction(form({ companyId: "3", redirectTo: "/system/approval?done=1" }));
+    const result = await rejectCompanyAction("3");
 
     expect(findMockPendingApproval("3")).toBeNull();
-    expect(redirectMock).toHaveBeenCalledWith("/system/approval?done=1");
+    expect(result).toEqual({ success: true });
+  });
+
+  it("없는 id면 실패로 돌려준다", async () => {
+    expect(await approveCompanyAction("존재하지-않음")).toEqual({ success: false });
+    expect(await rejectCompanyAction("존재하지-않음")).toEqual({ success: false });
   });
 });
 

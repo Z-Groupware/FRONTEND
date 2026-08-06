@@ -12,7 +12,7 @@ const LEGEND_DOT_CLASS = {
 /** "플랜 분포" 카드 — 도넛차트(클라이언트) + 범례(서버). */
 export function PlanDistributionCard({ data }: { data: PlanDistributionSlice[] }) {
   return (
-    <section className="border-border bg-card w-64 shrink-0 rounded-2xl border">
+    <section className="border-border bg-card w-full rounded-2xl border lg:w-64 lg:shrink-0">
       <h2 className="flex items-center gap-2 px-7 pt-6 pb-3 text-[17px] leading-7 font-semibold tracking-[-0.3px]">
         <span className="bg-foreground size-2 rounded-full" aria-hidden />
         플랜 분포
