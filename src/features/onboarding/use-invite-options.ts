@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 
-import { ROLE } from "@/constants/domain";
+import { AUTHORITY } from "@/constants/domain";
 
 import { loadDraft } from "./draft";
 import { departmentRoles, rootDepartments } from "./tree";
@@ -61,7 +61,7 @@ export function useInviteOptions(departments: DepartmentNode[], positions: Posit
   const isLeaderPosition = useMemo(() => {
     const leaderIds = new Set(
       source.positions
-        .filter((position) => position.role === ROLE.LEADER)
+        .filter((position) => position.role === AUTHORITY.LEADER)
         .map((position) => position.id),
     );
     return (positionId: string) => leaderIds.has(positionId);

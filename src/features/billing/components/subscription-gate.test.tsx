@@ -1,6 +1,6 @@
 import { render } from "@testing-library/react";
 
-import { ROLE } from "@/constants/role";
+import { AUTHORITY } from "@/constants/authority";
 
 import { SUBSCRIPTION_STATUS, type SubscriptionStatus } from "../subscription";
 import { SubscriptionGate } from "./subscription-gate";
@@ -34,8 +34,9 @@ const config = {
 } as never;
 
 const blocked = (status: SubscriptionStatus = SUBSCRIPTION_STATUS.EXPIRED) =>
-  render(<SubscriptionGate config={config} status={status} role={ROLE.MEMBER} canManage={false} />)
-    .container;
+  render(
+    <SubscriptionGate config={config} status={status} role={AUTHORITY.MEMBER} canManage={false} />,
+  ).container;
 
 describe("결제 권한이 없는 사람", () => {
   it("창 밖 본문에도 안내가 남는다 — JS 없이도 왜 막혔는지 읽힌다", () => {

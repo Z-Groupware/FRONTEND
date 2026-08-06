@@ -1,4 +1,4 @@
-import { ROLE, type Role, ROLE_LABEL } from "@/constants/role";
+import { AUTHORITY, type Authority, AUTHORITY_LABEL } from "@/constants/authority";
 
 import { dashboardFor, navFor } from "../nav-config";
 import type { Viewer } from "../viewer";
@@ -21,7 +21,7 @@ interface PreviewCase {
   viewer: Viewer;
 }
 
-const person = (role: Role, name: string, isAdmin = false): Viewer => ({
+const person = (role: Authority, name: string, isAdmin = false): Viewer => ({
   id: 1,
   name,
   role,
@@ -39,33 +39,33 @@ const person = (role: Role, name: string, isAdmin = false): Viewer => ({
 const CASES: PreviewCase[] = [
   {
     key: "owner",
-    title: ROLE_LABEL[ROLE.OWNER],
+    title: AUTHORITY_LABEL[AUTHORITY.OWNER],
     note: "회사 운영이 늘 보인다. 계정 발급은 사원 관리 화면 안 버튼이다",
-    viewer: person(ROLE.OWNER, "박대표"),
+    viewer: person(AUTHORITY.OWNER, "박대표"),
   },
   {
     key: "leader",
-    title: ROLE_LABEL[ROLE.LEADER],
+    title: AUTHORITY_LABEL[AUTHORITY.LEADER],
     note: "팀 관리 구역이 붙는다. 회사 운영은 없다",
-    viewer: person(ROLE.LEADER, "김팀장"),
+    viewer: person(AUTHORITY.LEADER, "김팀장"),
   },
   {
     key: "leader-admin",
-    title: `${ROLE_LABEL[ROLE.LEADER]} + Admin`,
+    title: `${AUTHORITY_LABEL[AUTHORITY.LEADER]} + Admin`,
     note: "팀 관리를 그대로 두고 회사 운영이 덧붙는다 — 역할을 갈아치우지 않는다",
-    viewer: person(ROLE.LEADER, "김팀장", true),
+    viewer: person(AUTHORITY.LEADER, "김팀장", true),
   },
   {
     key: "member",
-    title: ROLE_LABEL[ROLE.MEMBER],
+    title: AUTHORITY_LABEL[AUTHORITY.MEMBER],
     note: "워크벤치만 본다",
-    viewer: person(ROLE.MEMBER, "이사원"),
+    viewer: person(AUTHORITY.MEMBER, "이사원"),
   },
   {
     key: "member-admin",
-    title: `${ROLE_LABEL[ROLE.MEMBER]} + Admin`,
+    title: `${AUTHORITY_LABEL[AUTHORITY.MEMBER]} + Admin`,
     note: "사원인 채로 회사 운영이 덧붙는다. 기업 설정·팀장 인수인계는 Owner 것이라 없다",
-    viewer: person(ROLE.MEMBER, "이사원", true),
+    viewer: person(AUTHORITY.MEMBER, "이사원", true),
   },
 ];
 

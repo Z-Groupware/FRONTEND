@@ -1,8 +1,9 @@
-import { ROLE } from "@/constants/domain";
+import { AUTHORITY } from "@/constants/domain";
 
 import {
   type Actor,
   canApproveFinal,
+  canApproveMid,
   canGrantAdmin,
   canIssueAccount,
   canManageBilling,
@@ -10,17 +11,18 @@ import {
   canManageNotice,
   canManageRooms,
   canViewMeetingDetail,
+  isWithinTeamScope,
 } from "./permission";
 
 /**
  * 권한 개편(Admin = 겸직) 회귀 테스트.
  *
- * ⚠️ 여기서 지키려는 건 하나다 — **Admin은 역할 위에 얹히고, Owner에게는 얹히지 않는다.**
+ * ⚠️ 여기서 지키려는 건 하나다 — **Admin은 권한 위에 얹히고, Owner에게는 얹히지 않는다.**
  *    BE가 실수로 Owner에게 `isAdmin: true`를 내려도 권한이 새면 안 된다.
  */
-const leader: Actor = { id: 1, role: ROLE.LEADER };
-const member: Actor = { id: 2, role: ROLE.MEMBER };
-const owner: Actor = { id: 3, role: ROLE.OWNER };
+const leader: Actor = { id: 1, role: AUTHORITY.LEADER };
+const member: Actor = { id: 2, role: AUTHORITY.MEMBER };
+const owner: Actor = { id: 3, role: AUTHORITY.OWNER };
 
 describe("Admin 겸직", () => {
   it("Leader가 Admin을 겸하면 운영 권한이 열린다", () => {
@@ -76,7 +78,7 @@ describe("Owner와 Admin이 갈리는 지점", () => {
 
 describe("canViewMeetingDetail — 목록이 아니라 상세(내용) 열람", () => {
   const ownerHosted = { isOwnerHosted: true, attendeeIds: [] as number[] };
-  const teamMeeting = { isOwnerHosted: false, attendeeIds: [] as number[], hostDepartmentId: 10 };
+  const teamMeeting = { isOwnerHosted: false, attendeeIds: [] as number[], hostTeamId: 10 };
 
   it("Owner는 전체 열람 가능", () => {
     expect(canViewMeetingDetail(owner, teamMeeting)).toBe(true);
@@ -84,7 +86,7 @@ describe("canViewMeetingDetail — 목록이 아니라 상세(내용) 열람", (
   });
 
   it("Member는 참석자인 회의만 — 참석자 아니면 Owner 개설 회의도 못 본다", () => {
-    const attendee: Actor = { id: 99, role: ROLE.MEMBER };
+    const attendee: Actor = { id: 99, role: AUTHORITY.MEMBER };
     expect(canViewMeetingDetail(attendee, { ...teamMeeting, attendeeIds: [99] })).toBe(true);
     expect(canViewMeetingDetail(member, teamMeeting)).toBe(false);
     expect(canViewMeetingDetail(member, ownerHosted)).toBe(false);
@@ -94,9 +96,31 @@ describe("canViewMeetingDetail — 목록이 아니라 상세(내용) 열람", (
     expect(canViewMeetingDetail(leader, ownerHosted)).toBe(true);
   });
 
-  it("Leader는 자기 부서가 연 회의는 보고, 타 부서 회의는 못 본다", () => {
-    const withDept: Actor = { ...leader, departmentId: 10 };
-    expect(canViewMeetingDetail(withDept, teamMeeting)).toBe(true);
-    expect(canViewMeetingDetail(withDept, { ...teamMeeting, hostDepartmentId: 20 })).toBe(false);
+  it("Leader는 자기 팀이 연 회의는 보고, 타 팀 회의는 못 본다", () => {
+    const withTeam: Actor = { ...leader, teamId: 10 };
+    expect(canViewMeetingDetail(withTeam, teamMeeting)).toBe(true);
+    expect(canViewMeetingDetail(withTeam, { ...teamMeeting, hostTeamId: 20 })).toBe(false);
+  });
+});
+
+describe("isWithinTeamScope — teamId 단순 비교(2026-08-06 확정 스키마)", () => {
+  it("같은 teamId면 범위 안, 다르면 밖", () => {
+    const withTeam: Actor = { ...leader, teamId: 1 };
+    expect(isWithinTeamScope(withTeam, { teamId: 1 })).toBe(true);
+    expect(isWithinTeamScope(withTeam, { teamId: 2 })).toBe(false);
+  });
+
+  it("teamId가 없는 actor(OWNER 등)는 항상 범위 밖", () => {
+    expect(isWithinTeamScope(owner, { teamId: 1 })).toBe(false);
+  });
+});
+
+describe("canApproveMid", () => {
+  it("LEADER만 가능하고, 대상 팀을 넘기면 teamId로 검증한다", () => {
+    const withTeam: Actor = { ...leader, teamId: 1 };
+    expect(canApproveMid(member)).toBe(false);
+    expect(canApproveMid(withTeam)).toBe(true); // 대상 안 넘기면 화면 노출 판단용으로 통과
+    expect(canApproveMid(withTeam, { teamId: 1 })).toBe(true);
+    expect(canApproveMid(withTeam, { teamId: 2 })).toBe(false);
   });
 });

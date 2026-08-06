@@ -1,4 +1,4 @@
-import { ROLE_BADGE_CLASS, ROLE_LABEL } from "@/constants/domain";
+import { AUTHORITY_BADGE_CLASS, AUTHORITY_LABEL } from "@/constants/domain";
 import { cn } from "@/lib/utils";
 
 import type { AssignableRole } from "../types";
@@ -20,11 +20,11 @@ export function RoleBadge({ role, className }: RoleBadgeProps) {
     <span
       className={cn(
         "inline-flex shrink-0 items-center rounded px-1.5 py-0.5 text-[11px] leading-none",
-        ROLE_BADGE_CLASS[role],
+        AUTHORITY_BADGE_CLASS[role],
         className,
       )}
     >
-      {ROLE_LABEL[role]}
+      {AUTHORITY_LABEL[role]}
     </span>
   );
 }

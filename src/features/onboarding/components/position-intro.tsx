@@ -1,4 +1,4 @@
-import { POSITION_ROLES, ROLE_LABEL, ROLE_SCOPE_LABEL } from "@/constants/domain";
+import { AUTHORITY_LABEL, AUTHORITY_SCOPE_LABEL, POSITION_AUTHORITIES } from "@/constants/domain";
 
 import { MAX_ORG_NAME_LENGTH, ONBOARDING_STEP, type Position } from "../types";
 import { PositionPreview } from "./position-preview";
@@ -7,11 +7,13 @@ import { StepHintList } from "./step-hint-list";
 import { StepNote, StepNoteList } from "./step-note-list";
 
 /*
-  ⚠️ **여기서 고를 수 있는 것만** 적는다(`POSITION_ROLES`). 예전엔 Owner까지 보여 줬는데
+  ⚠️ **여기서 고를 수 있는 것만** 적는다(`POSITION_AUTHORITIES`). 예전엔 Owner까지 보여 줬는데
      정작 드롭다운에는 없어서, 읽은 사람이 목록에서 Owner를 찾다가 못 찾는다.
      Owner는 아래 안내 상자에서 "여기서 정하지 않는다"고 따로 말한다.
 */
-const ROLE_HINTS = POSITION_ROLES.map((role) => `${ROLE_LABEL[role]}: ${ROLE_SCOPE_LABEL[role]}`);
+const ROLE_HINTS = POSITION_AUTHORITIES.map(
+  (role) => `${AUTHORITY_LABEL[role]}: ${AUTHORITY_SCOPE_LABEL[role]}`,
+);
 
 /** 온보딩 2단계 좌측 — 설명과 축약 미리보기. */
 interface PositionIntroProps {

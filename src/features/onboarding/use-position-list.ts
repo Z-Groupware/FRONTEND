@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import { ROLE } from "@/constants/domain";
+import { AUTHORITY } from "@/constants/domain";
 
 import {
   changePositionRole,
@@ -31,7 +31,7 @@ export function usePositionList(initial: Position[]) {
     if (!trimmed) return false;
     setPositions((prev) => {
       // 리더가 이미 있으면 멤버로 낮춰 들어간다 — 조용히 둘이 되게 두지 않는다
-      const safeRole = role === ROLE.LEADER && isLeaderTaken(prev) ? ROLE.MEMBER : role;
+      const safeRole = role === AUTHORITY.LEADER && isLeaderTaken(prev) ? AUTHORITY.MEMBER : role;
       return [...prev, createPosition(nextAvailablePositionName(prev, trimmed), safeRole)];
     });
     return true;
@@ -51,13 +51,15 @@ export function usePositionList(initial: Position[]) {
     /** 리더가 이미 있으면 바꾸지 않는다 — 화면에서도 그 항목을 잠근다 */
     changeRole: (id: string, role: AssignableRole) =>
       setPositions((prev) =>
-        role === ROLE.LEADER && isLeaderTaken(prev, id) ? prev : changePositionRole(prev, id, role),
+        role === AUTHORITY.LEADER && isLeaderTaken(prev, id)
+          ? prev
+          : changePositionRole(prev, id, role),
       ),
     remove: (id: string) => setPositions((prev) => removePosition(prev, id)),
     move: (draggedId: string, targetId: string, position: "before" | "after") =>
       setPositions((prev) => movePosition(prev, draggedId, targetId, position)),
     shift: (id: string, offset: 1 | -1) => setPositions((prev) => shiftPosition(prev, id, offset)),
     /** 새 직급의 기본 권한 — 가장 좁은 권한에서 시작해 필요한 만큼 올린다 */
-    defaultRole: ROLE.MEMBER as AssignableRole,
+    defaultRole: AUTHORITY.MEMBER as AssignableRole,
   };
 }

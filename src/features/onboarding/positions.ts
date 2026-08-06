@@ -1,4 +1,4 @@
-import { ROLE } from "@/constants/domain";
+import { AUTHORITY } from "@/constants/domain";
 
 import type { AssignableRole, Position } from "./types";
 
@@ -85,8 +85,8 @@ export function enforceSingleLeader(positions: Position[]): Position[] {
   let hasLeader = false;
 
   return positions.map((position) => {
-    if (position.role !== ROLE.LEADER) return position;
-    if (hasLeader) return { ...position, role: ROLE.MEMBER as AssignableRole };
+    if (position.role !== AUTHORITY.LEADER) return position;
+    if (hasLeader) return { ...position, role: AUTHORITY.MEMBER as AssignableRole };
 
     hasLeader = true;
     return position;
@@ -94,10 +94,12 @@ export function enforceSingleLeader(positions: Position[]): Position[] {
 }
 
 export function isLeaderTaken(positions: Position[], exceptId?: string): boolean {
-  return positions.some((position) => position.role === ROLE.LEADER && position.id !== exceptId);
+  return positions.some(
+    (position) => position.role === AUTHORITY.LEADER && position.id !== exceptId,
+  );
 }
 
 /** 이 줄에서 고를 수 없는 권한 — 화면에서 잠근다. */
 export function blockedRoles(positions: Position[], exceptId?: string): AssignableRole[] {
-  return isLeaderTaken(positions, exceptId) ? [ROLE.LEADER] : [];
+  return isLeaderTaken(positions, exceptId) ? [AUTHORITY.LEADER] : [];
 }
