@@ -1,75 +1,77 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 
 import { ConfirmDialog } from "@/components/common/confirm-dialog";
 import { Button } from "@/components/ui/button";
+import { APPROVAL_RESULT } from "@/constants/system";
 
 import { approveCompanyAction, rejectCompanyAction } from "../actions";
 
-interface ApprovalRowActionsProps {
+interface ApprovalDetailActionsProps {
   companyId: string;
   companyName: string;
-  /** 성공하면 목록(무한 스크롤 로컬 상태)에서 그 행을 지운다 */
-  onDone: (companyId: string) => void;
 }
 
-type PendingAction = "approve" | "reject" | null;
+type PendingAction = typeof APPROVAL_RESULT.APPROVE | typeof APPROVAL_RESULT.REJECT | null;
 
 /**
- * 승인·반려 버튼 — 공용 `ConfirmDialog` **하나**를 두 조작이 같이 쓴다(둘 다 되돌리기 어려운
- * 조작이라 확인 없이 바로 실행하지 않는다). 눌린 버튼에 따라 제목·설명·색만 바꾼다.
- * ⚠️ 성공해도 페이지를 옮기지 않는다 — 무한 스크롤 목록이라 `redirect`하면 이어붙인 항목이
- *    전부 날아간다(`../actions.ts`의 `approveCompanyAction` 주석 참고).
+ * 승인·반려 버튼 — 상세 페이지(`/system/approval/:id`) 전용.
+ * ⚠️ 공용 `ConfirmDialog` **하나**를 두 조작이 같이 쓴다(둘 다 되돌리기 어려운 조작이라
+ *    확인 없이 바로 실행하지 않는다).
+ * ⚠️ 성공하면 **목록으로 돌아간다** — `?done=approve|reject`를 달아 보내고, 그 쪽
+ *    (`approval-list.tsx`)이 쿼리를 보고 토스트를 띄운다. 실패하면 이 페이지에 남아 토스트로
+ *    알린다(상태가 안 바뀌었으니 옮겨갈 이유가 없다).
  */
-export function ApprovalRowActions({ companyId, companyName, onDone }: ApprovalRowActionsProps) {
+export function ApprovalDetailActions({ companyId, companyName }: ApprovalDetailActionsProps) {
+  const router = useRouter();
   const [pendingAction, setPendingAction] = useState<PendingAction>(null);
   const [isPending, startTransition] = useTransition();
 
-  const isReject = pendingAction === "reject";
+  const isReject = pendingAction === APPROVAL_RESULT.REJECT;
 
   function handleConfirm() {
     const action = pendingAction;
     if (!action) return;
 
     startTransition(async () => {
+      let success = false;
+
       try {
         const response =
-          action === "approve"
+          action === APPROVAL_RESULT.APPROVE
             ? await approveCompanyAction(companyId)
             : await rejectCompanyAction(companyId);
-
-        if (response.success) {
-          toast.success(
-            `'${companyName}' 기업을 ${action === "approve" ? "승인" : "반려"}했습니다`,
-          );
-          onDone(companyId);
-        } else {
-          toast.error(`'${companyName}' 처리에 실패했습니다`);
-        }
+        success = response.success;
       } catch {
         // ⚠️ 미구현(!isMock) 분기 등에서 던진 에러가 여기로 온다 — 조용히 삼키지 않고 실패로 알린다.
+        success = false;
+      }
+
+      setPendingAction(null);
+
+      if (success) {
+        router.push(`/system/approval?done=${action}`);
+      } else {
         toast.error(`'${companyName}' 처리에 실패했습니다`);
-      } finally {
-        setPendingAction(null);
       }
     });
   }
 
   return (
-    <div className="flex justify-center gap-1.5">
-      <Button type="button" variant="outline" size="xs" onClick={() => setPendingAction("approve")}>
-        승인
-      </Button>
+    <div className="flex justify-end gap-2">
       <Button
         type="button"
         variant="outline"
-        size="xs"
         className="border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
-        onClick={() => setPendingAction("reject")}
+        onClick={() => setPendingAction(APPROVAL_RESULT.REJECT)}
       >
         반려
+      </Button>
+      <Button type="button" variant="ink" onClick={() => setPendingAction(APPROVAL_RESULT.APPROVE)}>
+        승인
       </Button>
 
       <ConfirmDialog
@@ -85,7 +87,7 @@ export function ApprovalRowActions({ companyId, companyName, onDone }: ApprovalR
         description={
           isReject
             ? "반려하면 이 신청은 목록에서 사라지고 되돌릴 수 없습니다."
-            : "승인하면 기업 코드가 자동 발급되고 담당자 이메일로 발송됩니다."
+            : "승인하면 이 신청은 대기 목록에서 사라집니다."
         }
         confirmLabel={isReject ? "반려" : "승인"}
         pendingLabel={isReject ? "반려 중" : "승인 중"}

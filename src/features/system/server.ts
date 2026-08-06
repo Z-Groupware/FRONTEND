@@ -12,6 +12,7 @@ import { MOCK_MONITORING_OVERVIEW } from "./mock/monitoring";
 import { MOCK_NOTICE_HISTORY } from "./mock/notices";
 import type {
   BillingOverview,
+  CompanyListFilter,
   DashboardOverview,
   ManagedCompany,
   MonitoringOverview,
@@ -50,15 +51,6 @@ export async function getPendingApprovalById(id: string): Promise<PendingCompany
   if (isMock) return findMockPendingApproval(id);
 
   throw new Error("기업 승인 상세 API가 아직 연결되지 않았습니다.");
-}
-
-/** "기업 관리" 목록 검색 조건 — 전부 선택값이라 없으면 전체를 대상으로 한다. */
-export interface CompanyListFilter {
-  /** 기업명 또는 코드 부분 일치(대소문자 무시) */
-  keyword?: string;
-  status?: CompanyStatus;
-  /** 정렬 기준 — 없으면 최신 가입순 */
-  sort?: CompanySort;
 }
 
 function matchesFilter(company: ManagedCompany, filter: CompanyListFilter): boolean {

@@ -41,6 +41,9 @@ export function useInfiniteScrollList<T>({
   const [error, setError] = useState(false);
   const isFetchingRef = useRef(false);
   const initialItemsRef = useRef(initialItems);
+  /** `loadMore`가 시작될 때의 "세대"를 찍어 둔다 — 도중에 초기화 효과가 돌면 세대가 올라가고,
+   * 응답이 와도 낡은 세대의 결과는 버린다(막 되돌린 목록 위에 옛 페이지가 얹히지 않게). */
+  const generationRef = useRef(0);
 
   /**
    * 서버가 첫 페이지를 다시 렌더해 `initialItems`가 새로 오면(정지/정지 해제처럼 상세 패널의
@@ -52,6 +55,7 @@ export function useInfiniteScrollList<T>({
   useEffect(() => {
     if (initialItems === initialItemsRef.current) return;
     initialItemsRef.current = initialItems;
+    generationRef.current += 1;
 
     setItems(initialItems);
     setPage(initialPage);
@@ -63,6 +67,7 @@ export function useInfiniteScrollList<T>({
 
   const loadMore = useCallback(async () => {
     if (isFetchingRef.current || !hasMore) return;
+    const generation = generationRef.current;
     isFetchingRef.current = true;
     setIsLoadingMore(true);
     setError(false);
@@ -70,6 +75,8 @@ export function useInfiniteScrollList<T>({
     try {
       const next = page + 1;
       const result = await fetchPage(next);
+      // ⚠️ 기다리는 사이에 목록이 통째로 초기화됐으면(위 효과) 이 응답은 낡은 세대다 — 버린다.
+      if (generation !== generationRef.current) return;
 
       setItems((prev) => {
         const seen = new Set(prev.map(getId));
@@ -80,7 +87,7 @@ export function useInfiniteScrollList<T>({
       setTotalPages(result.totalPages);
       setTotalCount(result.totalCount);
     } catch {
-      setError(true);
+      if (generation === generationRef.current) setError(true);
     } finally {
       isFetchingRef.current = false;
       setIsLoadingMore(false);

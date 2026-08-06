@@ -1,5 +1,6 @@
 import type {
   CompanySize,
+  CompanySort,
   CompanyStatus,
   NoticeTarget,
   PaymentStatus,
@@ -81,6 +82,19 @@ export interface ManagedCompany {
   /** "YYYY-MM-DD" */
   joinedAt: string;
   ownerEmail: string;
+}
+
+/**
+ * "기업 관리" 목록 검색 조건 — 전부 선택값이라 없으면 전체를 대상으로 한다.
+ * ⚠️ `server.ts`(`server-only`)가 아니라 여기(UI 계약)에 둔다 — 클라이언트 컴포넌트
+ *    (`company-list.tsx`)가 prop 타입으로 그대로 써야 해서, server-only 모듈에 기대면 안 된다.
+ */
+export interface CompanyListFilter {
+  /** 기업명 또는 코드 부분 일치(대소문자 무시) */
+  keyword?: string;
+  status?: CompanyStatus;
+  /** 정렬 기준 — 없으면 최신 가입순 */
+  sort?: CompanySort;
 }
 
 /** 구독·매출 상단 통계 4종. */

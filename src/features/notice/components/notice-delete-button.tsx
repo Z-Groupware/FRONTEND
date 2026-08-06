@@ -48,7 +48,7 @@ export function NoticeDeleteButton({ id, title }: NoticeDeleteButtonProps) {
       <ConfirmDialog
         isOpen={open}
         onOpenChange={setOpen}
-        title={`'${title}' 공지를 삭제할까요?`}
+        title={NOTICE_DELETE_CONFIRM.title(title)}
         description={NOTICE_DELETE_CONFIRM.description}
         confirmLabel={NOTICE_DELETE_CONFIRM.confirmLabel}
         pendingLabel={NOTICE_DELETE_CONFIRM.pendingLabel}

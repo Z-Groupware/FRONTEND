@@ -7,9 +7,12 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { NOTICE_ACTION, NOTICE_ACTION_LABEL } from "@/constants/notice";
 
 import { createNoticeAction } from "../actions";
 import { NoticeForm } from "./notice-form";
+
+const LABEL = NOTICE_ACTION_LABEL[NOTICE_ACTION.CREATE];
 
 /**
  * "새 공지" 트리거 + 작성 모달 — 페이지(`/app/notice/new`) 대신 모달로 연다
@@ -19,28 +22,39 @@ import { NoticeForm } from "./notice-form";
  */
 export function NoticeCreateDialog() {
   const [open, setOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
 
   return (
     <>
       <Button type="button" size="sm" variant="ink" onClick={() => setOpen(true)}>
-        <Plus aria-hidden />새 공지
+        <Plus aria-hidden />
+        {LABEL.trigger}
       </Button>
 
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog
+        open={open}
+        onOpenChange={(next) => {
+          // ⚠️ 제출 중엔 Esc·바깥 클릭으로 안 닫는다 — 요청은 계속 가는데 화면만 사라지면
+          //    결과를 못 본다(`notice-form.tsx`의 `onPendingChange` 참고).
+          if (!next && isSubmitting) return;
+          setOpen(next);
+        }}
+      >
         <DialogContent className="sm:max-w-[480px]">
           <DialogHeader>
-            <DialogTitle>새 공지 작성</DialogTitle>
+            <DialogTitle>{LABEL.dialogTitle}</DialogTitle>
           </DialogHeader>
 
           <NoticeForm
             action={createNoticeAction}
-            submitLabel="발행"
+            submitLabel={LABEL.submitLabel}
             onCancel={() => setOpen(false)}
+            onPendingChange={setIsSubmitting}
             onSuccess={(notice) => {
               setOpen(false);
               router.refresh();
-              toast.success(`'${notice.title}' 공지를 발행했습니다`);
+              toast.success(LABEL.successToast(notice.title));
             }}
           />
         </DialogContent>

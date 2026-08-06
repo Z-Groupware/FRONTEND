@@ -9,7 +9,7 @@ export default function Loading() {
 
         <div className="flex flex-col gap-4 lg:flex-row">
           <Skeleton className="h-[360px] rounded-2xl lg:flex-1" />
-          <Skeleton className="h-[360px] w-full rounded-2xl lg:w-[300px] lg:shrink-0" />
+          <Skeleton className="h-[360px] w-full rounded-2xl lg:w-64 lg:shrink-0" />
         </div>
 
         <Skeleton className="h-[320px] rounded-2xl" />

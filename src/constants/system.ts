@@ -125,3 +125,19 @@ export const COMPANY_SIZE_LABEL: Record<CompanySize, string> = {
   MEDIUM: "21~100명",
   LARGE: "101명 이상",
 };
+
+/** 기업 승인 처리 결과 — 상세 페이지가 목록으로 돌아올 때 `?done=` 쿼리로 넘긴다. */
+export const APPROVAL_RESULT = {
+  APPROVE: "approve",
+  REJECT: "reject",
+} as const;
+export type ApprovalResult = (typeof APPROVAL_RESULT)[keyof typeof APPROVAL_RESULT];
+
+export const APPROVAL_RESULT_LABEL: Record<ApprovalResult, string> = {
+  approve: "승인이 완료되었습니다.",
+  reject: "반려 처리되었습니다.",
+};
+
+export function isApprovalResult(value: string): value is ApprovalResult {
+  return (Object.values(APPROVAL_RESULT) as string[]).includes(value);
+}
