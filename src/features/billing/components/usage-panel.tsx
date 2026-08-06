@@ -1,6 +1,6 @@
 import { CircleAlert, Info } from "lucide-react";
 
-import { formatFullDate } from "@/lib/date";
+import { formatFullDate, isReadableDate } from "@/lib/date";
 
 import { formatGb, formatTokens, formatWon } from "../pricing";
 import type { Subscription } from "../subscription";
@@ -22,6 +22,11 @@ interface UsagePanelProps {
  *    주기 초반일수록 크게 흔들렸고, BE 스펙에 없는 값을 화면이 지어낸 셈이었다.
  *    BE가 예측을 내려 주면 그 값을 받아 쓴다(§연동 검증).
  */
+/** 주기 양 끝 표기 — 읽을 수 없으면 ISO 원문 대신 `—`다 */
+function periodLabel(iso: string): string {
+  return isReadableDate(iso) ? formatFullDate(iso) : "—";
+}
+
 export function UsagePanel({ subscription, config }: UsagePanelProps) {
   const usage = buildUsage({ config, usage: subscription.usage });
 
@@ -33,9 +38,14 @@ export function UsagePanel({ subscription, config }: UsagePanelProps) {
           <span className="bg-foreground size-2 rounded-full" aria-hidden />
           이번 주기 사용량
         </h2>
+        {/*
+          ⚠️ **못 읽는 쪽만 `—`로 둔다.** 범위 표기라 한쪽이 비어도 `9월 1일 ~ —`로 읽히고,
+             어느 끝을 모르는지가 그대로 드러난다 — 줄을 통째로 숨기면 주기가 없는 것처럼 보인다.
+             날짜 함수는 못 읽으면 원문을 돌려주므로, 그대로 두면 ISO가 그 자리에 뜬다.
+        */}
         <p className="text-muted-foreground/70 text-[12px] leading-4 tabular-nums">
-          {formatFullDate(subscription.currentPeriodStart)} ~{" "}
-          {formatFullDate(subscription.currentPeriodEnd)}
+          {periodLabel(subscription.currentPeriodStart)} ~{" "}
+          {periodLabel(subscription.currentPeriodEnd)}
         </p>
       </div>
 

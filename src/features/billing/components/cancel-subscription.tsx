@@ -4,14 +4,16 @@ import { useState } from "react";
 
 import { ConfirmDialog } from "@/components/common/confirm-dialog";
 import { Button } from "@/components/ui/button";
-import { formatFullDate } from "@/lib/date";
+import { formatFullDate, isReadableDate } from "@/lib/date";
 
 interface CancelSubscriptionProps {
   /**
    * 이번 결제 주기가 끝나는 날 `YYYY-MM-DD` — 언제까지 쓸 수 있는지 말할 때 쓴다.
    *
-   * ⚠️ 화면에는 **`formatDate`를 거쳐** 내보낸다. `2026-09-01`을 그대로 찍으면 읽는 사람이
-   *    날짜를 한 번 더 해석해야 한다(CLAUDE.md §카피 — `9월 1일(화)`).
+   * ⚠️ 화면에는 **`formatFullDate`를 거쳐** 내보낸다. `2026-09-01`을 그대로 찍으면 읽는 사람이
+   *    날짜를 한 번 더 해석해야 한다(CLAUDE.md §카피 — `2026년 9월 1일(화)`).
+   * ⚠️ **못 읽는 값이면 날짜 절을 통째로 뺀다**(아래 `endsOn`). 날짜 함수는 못 읽으면 원문을
+   *    돌려주는데, 그게 문장 한가운데로 들어가면 `2026-02-30까지 이용할 수 있습니다`가 된다.
    */
   periodEnd: string;
   isCanceling: boolean;
@@ -52,6 +54,13 @@ export function CancelSubscription({
 }: CancelSubscriptionProps) {
   const [isOpen, setIsOpen] = useState(false);
 
+  /*
+    ⚠️ **읽을 수 없으면 날짜를 말하지 않는다.** `—까지 이용할 수 있습니다`도 문장이 아니라,
+       날짜 절만 빼고 나머지를 그대로 둔다 — 돈이 걸린 문장이라 틀린 날짜를 보이느니
+       "언제까지인지"를 안 말하는 편이 낫다(§정직성).
+  */
+  const endsOn = isReadableDate(periodEnd) ? formatFullDate(periodEnd) : null;
+
   const handleConfirm = () => {
     setIsOpen(false);
     onConfirm();
@@ -68,14 +77,24 @@ export function CancelSubscription({
         <p className="text-muted-foreground pt-1 text-[13px] leading-5 break-keep">
           {isCanceling ? (
             <>
-              <span className="text-foreground font-medium">{formatFullDate(periodEnd)}</span>까지
+              {endsOn ? (
+                <>
+                  <span className="text-foreground font-medium">{endsOn}</span>까지
+                </>
+              ) : (
+                "현재 결제 주기가 끝날 때까지"
+              )}{" "}
               이용할 수 있습니다. 계속 이용하시려면 해지를 취소해 주세요.
             </>
           ) : (
             <>
-              해지 시 현재 결제 주기(
-              <span className="text-foreground font-medium">{formatFullDate(periodEnd)}</span>)가
-              끝난 뒤 구독이 종료됩니다. {DOWNGRADE_NOTE}
+              해지 시 현재 결제 주기
+              {endsOn && (
+                <>
+                  (<span className="text-foreground font-medium">{endsOn}</span>)
+                </>
+              )}
+              가 끝난 뒤 구독이 종료됩니다. {DOWNGRADE_NOTE}
             </>
           )}
         </p>
@@ -114,18 +133,19 @@ export function CancelSubscription({
         /*
           ⚠️ **두 문장을 줄로 나눈다.** 한 줄로 이어 두면 창 폭에서 아무 데나 접혀
              `워크스페이스에` / `접근할 수 없습니다`처럼 끊긴다 — 뜻 단위로 끊어야 읽힌다.
-          ⚠️ 날짜는 `formatDate`를 거친다(`2026-09-01` → `9월 1일(화)`).
+          ⚠️ 날짜는 `formatFullDate`를 거친다(`2026-09-01` → `2026년 9월 1일(화)`).
+             못 읽는 값이면 카드와 **같은 방식으로** 날짜 절을 뺀다 — 두 곳이 다른 말을 하면 안 된다.
         */
         description={
           isCanceling ? (
             <>
-              {formatFullDate(periodEnd)} 이후에도 구독이 유지됩니다.
+              {endsOn ? `${endsOn} 이후에도` : "이번 결제 주기 이후에도"} 구독이 유지됩니다.
               <br />
               다음 결제일에 정상 청구됩니다.
             </>
           ) : (
             <>
-              {formatFullDate(periodEnd)}까지 이용할 수 있습니다.
+              {endsOn ? `${endsOn}까지` : "현재 결제 주기가 끝날 때까지"} 이용할 수 있습니다.
               <br />
               {DOWNGRADE_NOTE}
             </>

@@ -1,6 +1,6 @@
 import { Sparkles } from "lucide-react";
 
-import { formatFullDate } from "@/lib/date";
+import { formatFullDate, isReadableDate } from "@/lib/date";
 
 import { formatWon } from "../pricing";
 import { canUseWorkspace, type Subscription, SUBSCRIPTION_STATUS_LABEL } from "../subscription";
@@ -88,8 +88,11 @@ export function PlanPanel({ subscription, config }: PlanPanelProps) {
           <Metric label="월 기본료" value={formatWon(config.baseFee)} />
           <Metric
             label="다음 결제일"
+            /* ⚠️ 빈 값뿐 아니라 **못 읽는 값도** `—`다 — 안 그러면 ISO 원문이 지표 자리에 뜬다 */
             value={
-              subscription.nextBillingDate ? formatFullDate(subscription.nextBillingDate) : "—"
+              subscription.nextBillingDate && isReadableDate(subscription.nextBillingDate)
+                ? formatFullDate(subscription.nextBillingDate)
+                : "—"
             }
             hint={isUnpaid ? "결제 후 확정됩니다" : undefined}
           />
