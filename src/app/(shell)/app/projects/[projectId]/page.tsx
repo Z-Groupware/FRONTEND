@@ -59,15 +59,17 @@ export default async function ProjectDetailPage({ params, searchParams }: Projec
 
   return (
     <main className="scrollbar-hidden min-h-0 flex-1 overflow-y-auto px-8 py-7">
-      <div className="mx-auto flex w-full max-w-[1080px] flex-col gap-4">
+      <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-4">
         <div className="flex flex-col gap-1">
-          <p className="text-muted-foreground text-xs">
+          <p className="text-muted-foreground text-[11px] leading-4">
             <Link href="/app/projects" className="hover:text-foreground">
               프로젝트
             </Link>{" "}
             &gt; {project.name}
           </p>
-          <h2 className="text-foreground text-base font-semibold">{project.name}</h2>
+          <h2 className="text-foreground text-xl leading-7 font-semibold tracking-[-0.4px]">
+            {project.name}
+          </h2>
         </div>
 
         <nav aria-label="프로젝트 상세 탭" className="border-border flex gap-4 border-b">
@@ -93,36 +95,45 @@ export default async function ProjectDetailPage({ params, searchParams }: Projec
         </nav>
 
         {activeTab === "plan" ? (
-          <section className="border-border bg-card flex flex-col gap-3 rounded-xl border p-6">
-            <div className="flex items-center gap-2 text-xs">
+          <section className="border-border bg-card flex flex-col rounded-2xl border">
+            <div className="flex items-baseline justify-between gap-3 px-7 pt-6 pb-3">
+              <h3 className="flex items-center gap-2 text-[17px] leading-7 font-semibold tracking-[-0.3px]">
+                <span className="bg-foreground size-2 rounded-full" aria-hidden />
+                {project.name}
+              </h3>
+              <p className="text-muted-foreground text-[12px] leading-4">
+                마감 {due ? `${due}까지` : "-"}
+              </p>
+            </div>
+            <div className="flex flex-col gap-3 px-7 pb-7">
               <span
-                className="rounded px-1.5 py-0.5 font-mono font-semibold"
+                className="w-fit rounded px-1.5 py-0.5 font-mono text-xs font-semibold"
                 style={{ backgroundColor: tagColor.bgColor, color: tagColor.textColor }}
               >
                 {project.tag}
               </span>
-              <span className="text-muted-foreground">마감 {due ? `${due}까지` : "-"}</span>
+              <p className="text-muted-foreground text-sm whitespace-pre-wrap">
+                {project.description}
+              </p>
+              {project.attachmentName && (
+                // ⚠️ 목 단계라 다운로드 URL이 없다(§9 화면은 사실만 말한다) — 죽은 링크(href="#") 대신
+                //    지금 있는 파일명만 정직하게 보여준다. API 스펙 확정 후 실제 다운로드 링크로 바꾼다.
+                <span className="text-muted-foreground inline-flex w-fit items-center gap-1.5 text-sm">
+                  <Paperclip className="size-3.5" />
+                  {project.attachmentName}
+                </span>
+              )}
             </div>
-            <h3 className="text-foreground text-lg font-semibold">{project.name}</h3>
-            <p className="text-muted-foreground text-sm whitespace-pre-wrap">
-              {project.description}
-            </p>
-            {project.attachmentName && (
-              // ⚠️ 목 단계라 다운로드 URL이 없다(§9 화면은 사실만 말한다) — 죽은 링크(href="#") 대신
-              //    지금 있는 파일명만 정직하게 보여준다. API 스펙 확정 후 실제 다운로드 링크로 바꾼다.
-              <span className="text-muted-foreground inline-flex w-fit items-center gap-1.5 text-sm">
-                <Paperclip className="size-3.5" />
-                {project.attachmentName}
-              </span>
-            )}
           </section>
         ) : (
           <section
-            className="border-border bg-card flex flex-col overflow-hidden rounded-xl border"
+            className="border-border bg-card flex flex-col overflow-hidden rounded-2xl border"
             style={{ height: PROJECT_TIMELINE_BOX_HEIGHT }}
           >
-            <div className="border-border flex shrink-0 items-center justify-between border-b px-4 py-3">
-              <h3 className="text-sm font-semibold">팀 액션 타임라인</h3>
+            <div className="border-border flex shrink-0 items-baseline justify-between gap-3 border-b px-7 pt-6 pb-3">
+              <h3 className="flex items-center gap-2 text-[17px] leading-7 font-semibold tracking-[-0.3px]">
+                <span className="bg-foreground size-2 rounded-full" aria-hidden />팀 액션 타임라인
+              </h3>
               <ActionTimelineLegend />
             </div>
             <ActionTimeline
