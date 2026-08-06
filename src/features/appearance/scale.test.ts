@@ -92,21 +92,28 @@ describe("SCALE_BOOT_SCRIPT", () => {
     if (original) Object.defineProperty(globalThis, "localStorage", original);
   });
 
-  it("100%는 `zoom`을 아예 걸지 않는다 — 쓸데없는 계산을 남기지 않는다", () => {
+  /*
+    ⚠️ **`zoom`이 아니라 `--app-scale` 변수다**(2026-08-06 전환). 실제로 줄이는 일은
+       `globals.css`의 `body`가 `transform: scale()`로 한다 — `zoom`은 배율을 레이아웃에
+       섞어 좌표를 다루는 코드를 전부 어긋나게 했다(§`--app-scale` 주석).
+  */
+  const scaleVar = () => document.documentElement.style.getPropertyValue("--app-scale");
+
+  it("100%는 아무것도 세우지 않는다 — 기본값 `1`로 둔다", () => {
     localStorage.setItem("z:screen-scale", "100");
-    document.documentElement.style.zoom = "";
+    document.documentElement.style.removeProperty("--app-scale");
 
     new Function(SCALE_BOOT_SCRIPT)();
 
-    expect(document.documentElement.style.zoom).toBe("");
+    expect(scaleVar()).toBe("");
   });
 
-  it("고른 배율을 `zoom`으로 건다", () => {
+  it("고른 배율을 `--app-scale`로 세운다", () => {
     localStorage.setItem("z:screen-scale", "150");
 
     new Function(SCALE_BOOT_SCRIPT)();
 
-    expect(document.documentElement.style.zoom).toBe("1.5");
+    expect(scaleVar()).toBe("1.5");
   });
 
   /*
@@ -118,7 +125,15 @@ describe("SCALE_BOOT_SCRIPT", () => {
 
     new Function(SCALE_BOOT_SCRIPT)();
 
-    expect(document.documentElement.style.zoom).toBe("0.75");
+    expect(scaleVar()).toBe("0.75");
+  });
+
+  /*
+    ⚠️ **`zoom`으로 돌아가면 안 된다.** 그게 좌표를 다루는 코드를 세 군데 어긋나게 했다 —
+       팝업 위치·클릭 차단 층·기준 상자. 부트 스크립트에 그 낱말이 다시 들어오면 잡는다.
+  */
+  it("`zoom`을 건드리지 않는다", () => {
+    expect(SCALE_BOOT_SCRIPT).not.toContain("zoom");
   });
 });
 

@@ -37,7 +37,7 @@ export const SCALE_STORAGE_KEY = "z:screen-scale";
  * 저장된 값을 배율로 읽는다.
  *
  * ⚠️ 목록에 없는 값은 **기본값으로 되돌린다.** 저장소는 사람이 고칠 수 있어서
- *    `zoom: 9999` 같은 값이 들어오면 화면이 통째로 못 쓰게 된다.
+ *    `scale(9999)` 같은 값이 들어오면 화면이 통째로 못 쓰게 된다.
  */
 export function parseScale(raw: string | null): ScreenScale {
   const value = Number(raw);
@@ -124,13 +124,14 @@ export function suggestScale(input: { viewportWidth: number; hasChosen: boolean 
  * ⚠️ **하이드레이션까지 기다리면 안 된다.** 새로고침마다 100%로 한 번 그려졌다가 확대되면서
  *    화면이 통째로 튄다 — 랜딩 밝기가 이미 같은 방식으로 `<head>`에서 처리한다.
  * ⚠️ 저장소를 못 읽어도(사생활 모드·CSP) 화면은 산다. 기본값 100%로 남을 뿐이다.
- * ⚠️ 100%면 `zoom`을 **아예 안 건다.** 빈 값으로 두면 브라우저가 계산을 한 단계 덜 한다.
+ * ⚠️ 100%면 **아무것도 안 건다.** 기본값이 `1`이라 `scale(1)`은 그리기에 영향이 없다.
  * ⚠️ 목록에 있는지를 `indexOf(s) >= 0`으로 본다. 전에는 `> 0`이었는데, 100%가 배열 첫
  *    자리라 그걸로 "100%는 건너뛴다"까지 겸했다 — 줄이는 배율이 앞에 붙자 **75%가 통째로
  *    무시됐다.** 두 판정을 섞어 쓰면 목록이 바뀔 때 조용히 틀린다.
  * ⚠️ 문자열로 넣는다. 브라우저는 숫자도 받아 주지만, 값을 다시 읽는 쪽(테스트 등)에서
  *    타입이 갈려 헷갈린다.
- * ⚠️ `--app-zoom`도 같이 세운다. `100dvh`는 배율을 모르는 값이라, 그대로 두면 화면 높이를
- *    쓰는 상자가 배율만큼 짧아지거나 넘친다 — `h-screen-z`가 이 변수로 나눠 준다.
+ * ⚠️ **`zoom`이 아니라 `--app-scale` 변수 하나만 세운다**(2026-08-06 전환). 실제로 줄이는 일은
+ *    `globals.css`의 `body`가 `transform: scale()`로 한다 — `zoom`은 배율을 레이아웃에 섞어
+ *    좌표를 다루는 코드를 전부 어긋나게 했다(§`--app-scale` 주석).
  */
-export const SCALE_BOOT_SCRIPT = `try{var s=Number(localStorage.getItem("${SCALE_STORAGE_KEY}"));if(s!==${DEFAULT_SCALE}&&[${SCREEN_SCALES.join(",")}].indexOf(s)>=0){var e=document.documentElement;e.style.zoom=String(s/100);e.style.setProperty("--app-zoom",String(s/100))}}catch(e){}`;
+export const SCALE_BOOT_SCRIPT = `try{var s=Number(localStorage.getItem("${SCALE_STORAGE_KEY}"));if(s!==${DEFAULT_SCALE}&&[${SCREEN_SCALES.join(",")}].indexOf(s)>=0){document.documentElement.style.setProperty("--app-scale",String(s/100))}}catch(e){}`;
