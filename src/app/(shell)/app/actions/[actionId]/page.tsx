@@ -77,7 +77,7 @@ export default async function PersonalActionDetailPage({ params }: PersonalActio
             </span>
           </div>
           <p className="text-muted-foreground text-[11px] leading-4">
-            마감 {formatMonthDayWeekday(action.parentTeamAction.dueDate) ?? "-"}까지
+            {formatMonthDayWeekday(action.parentTeamAction.dueDate) ?? "-"}까지
           </p>
         </>
       ),
@@ -99,7 +99,7 @@ export default async function PersonalActionDetailPage({ params }: PersonalActio
             </span>
           </div>
           <p className="text-muted-foreground text-[11px] leading-4">
-            마감 {formatMonthDayWeekday(project.dueDate) ?? "-"}까지
+            {formatMonthDayWeekday(project.dueDate) ?? "-"}까지
           </p>
         </>
       ),
