@@ -29,7 +29,12 @@ export const HANDOVER_TYPE = {
 export type HandoverType = (typeof HANDOVER_TYPE)[keyof typeof HANDOVER_TYPE];
 
 export const HANDOVER_TYPE_LABEL: Record<HandoverType, string> = {
-  VACATION: "휴가",
+  /*
+    ⚠️ **"휴가"가 아니라 "휴직"이다.** 워크플로우가 처음부터 끝까지 휴직으로 부르고
+       (§7 팀장 본인 휴직·휴직 최종 승인), 끝난 뒤 사람 상태도 `MEMBER_STATUS_LABEL.VACATION`
+       = 휴직이다 — 신청 화면만 휴가라고 하면 같은 일을 두 이름으로 부르게 된다.
+  */
+  VACATION: "휴직",
   /*
     ⚠️ **흐름은 "오프보딩", 사람 상태는 "퇴사"다**(2026-08-05 확정, DECISIONS.md).
        같은 일의 두 쪽이라 라벨을 섞어 쓰면 화면이 다른 말을 한다 — 신청·승인 화면에서는

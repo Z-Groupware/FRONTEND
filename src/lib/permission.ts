@@ -115,6 +115,16 @@ export function canGrantAdmin(target: { role: Authority }): boolean {
 }
 
 /**
+ * 사원의 직급·권한 변경 — **OWNER 또는 Admin 겸직자**.
+ * ⚠️ 화면 접근(`canManageMembers`)과 같은 문이다(WORKFLOW §11: 계정 발급·직급 변경은 Admin도).
+ *    그래도 함수를 따로 둔다 — 아래 승인 권한과 갈리는 지점이라, 한 곳이 바뀔 때
+ *    다른 쪽이 끌려가면 안 된다(§권한: 화면·액션 단위로 판정한다).
+ */
+export function canChangeMemberGrade(actor: Actor): boolean {
+  return actor.role === AUTHORITY.OWNER || isAdmin(actor);
+}
+
+/**
  * 인수인계 **최종** 승인 — **OWNER 전용**(2026-08-06 확정: Admin 제외).
  * ⚠️ 이전엔 Admin도 됐지만, 최종 승인은 인사·조직 결정이라 대표만 하기로 정정했다.
  *    Admin은 사원 관리 화면(`canManageMembers`)엔 계속 들어가 계정 발급·직급 변경은 하되,
