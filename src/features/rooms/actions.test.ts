@@ -2,12 +2,24 @@
 jest.mock("next/cache", () => ({ revalidatePath: jest.fn() }));
 // isMock은 NEXT_PUBLIC_USE_MOCK 환경변수로 정해진다 — 테스트가 환경에 휘둘리지 않게 고정한다.
 jest.mock("@/mocks/config", () => ({ isMock: true }));
+// 기본은 실제 getMockActor()와 같은 값(OWNER, Admin 아님) — 회의실 관리 권한 테스트에서만
+// Admin 겸직 액터로 덮어쓴다(`canManageRooms`는 Admin 겸직자 전용이라 OWNER로는 절대 못 지나간다).
+jest.mock("@/lib/mock-actor", () => ({
+  getMockActor: jest.fn(() => ({ id: 1, role: "OWNER" })),
+}));
 
 import { revalidatePath } from "next/cache";
 
-import { createRoomReservationAction } from "./actions";
+import { getMockActor } from "@/lib/mock-actor";
+
+import {
+  createMeetingRoomAction,
+  createRoomReservationAction,
+  updateMeetingRoomAction,
+} from "./actions";
 
 const revalidatePathMock = revalidatePath as unknown as jest.Mock;
+const getMockActorMock = getMockActor as unknown as jest.Mock;
 
 const VALID_ENTRIES: Record<string, string> = {
   title: "새 회의",
@@ -28,6 +40,70 @@ const form = (entries: Record<string, string>, attendeeIds: number[] = [1]) => {
 
 beforeEach(() => {
   revalidatePathMock.mockClear();
+  getMockActorMock.mockReturnValue({ id: 1, role: "OWNER" });
+});
+
+const roomForm = (entries: Record<string, string>) => {
+  const data = new FormData();
+  for (const [key, value] of Object.entries(entries)) data.append(key, value);
+  return data;
+};
+
+const VALID_ROOM_ENTRIES: Record<string, string> = {
+  name: "신관 세미나실",
+  location: "4층 C동",
+  openTime: "10:00",
+  closeTime: "17:00",
+};
+
+describe("회의실 추가·수정", () => {
+  it("Admin이 아니면 추가를 막는다(OWNER도 예외 없음)", async () => {
+    const result = await createMeetingRoomAction({ errors: {} }, roomForm(VALID_ROOM_ENTRIES));
+
+    expect(result.errors.name).toBe("회의실을 추가할 권한이 없어요");
+    expect(result.room).toBeUndefined();
+  });
+
+  it("Admin 겸직자면 추가할 수 있다", async () => {
+    getMockActorMock.mockReturnValue({ id: 2, role: "MEMBER", isAdmin: true });
+
+    const result = await createMeetingRoomAction({ errors: {} }, roomForm(VALID_ROOM_ENTRIES));
+
+    expect(result.errors).toEqual({});
+    expect(result.room?.name).toBe("신관 세미나실");
+    expect(revalidatePathMock).toHaveBeenCalledWith("/manage/rooms");
+  });
+
+  it("Admin이어도 필수값이 비면 막는다", async () => {
+    getMockActorMock.mockReturnValue({ id: 2, role: "MEMBER", isAdmin: true });
+
+    const result = await createMeetingRoomAction(
+      { errors: {} },
+      roomForm({ ...VALID_ROOM_ENTRIES, name: "" }),
+    );
+
+    expect(result.errors.name).toBe("회의실 이름을 입력해 주세요");
+  });
+
+  it("Admin이 아니면 수정도 막는다", async () => {
+    const result = await updateMeetingRoomAction(
+      { errors: {} },
+      roomForm({ ...VALID_ROOM_ENTRIES, id: "room-large" }),
+    );
+
+    expect(result.errors.name).toBe("회의실을 수정할 권한이 없어요");
+  });
+
+  it("없는 id를 수정하려 하면 오류를 돌려준다", async () => {
+    getMockActorMock.mockReturnValue({ id: 2, role: "MEMBER", isAdmin: true });
+
+    const result = await updateMeetingRoomAction(
+      { errors: {} },
+      roomForm({ ...VALID_ROOM_ENTRIES, id: "존재하지-않음" }),
+    );
+
+    expect(result.errors.name).toBe("수정할 회의실을 찾을 수 없어요");
+  });
 });
 
 describe("회의실 예약 생성", () => {

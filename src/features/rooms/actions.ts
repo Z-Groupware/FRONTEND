@@ -4,15 +4,28 @@ import { revalidatePath } from "next/cache";
 
 import { TOP_LEVEL_PROJECTS } from "@/features/project/mock/projects";
 import { getMockActor } from "@/lib/mock-actor";
+import { canManageRooms } from "@/lib/permission";
 import { isMock } from "@/mocks/config";
 
 import { findMockMember } from "./mock/members";
 import { addMockReservation, listMockReservationsByRoom } from "./mock/reservations";
-import { findMockRoom } from "./mock/rooms";
-import type { RoomReservation, RoomReservationDraft, RoomReservationFormErrors } from "./types";
-import { RESERVATION_DURATION_MINUTES, validateRoomReservationDraft } from "./validate";
+import { addMockRoom, findMockRoom, updateMockRoom } from "./mock/rooms";
+import type {
+  MeetingRoom,
+  MeetingRoomDraft,
+  MeetingRoomFormErrors,
+  RoomReservation,
+  RoomReservationDraft,
+  RoomReservationFormErrors,
+} from "./types";
+import {
+  RESERVATION_DURATION_MINUTES,
+  validateMeetingRoomDraft,
+  validateRoomReservationDraft,
+} from "./validate";
 
 const ROOMS_PATH = "/app/rooms";
+const MANAGE_ROOMS_PATH = "/manage/rooms";
 
 /** 예약 폼 결과 — `useActionState`가 그대로 들고 있는 모양. */
 export interface RoomReservationFormState {
@@ -90,4 +103,75 @@ export async function createRoomReservationAction(
   const created = addMockReservation(draft, actor.id);
   revalidatePath(ROOMS_PATH);
   return { errors: {}, created };
+}
+
+/** 회의실 추가·수정 폼 결과 — `useActionState`가 그대로 들고 있는 모양. */
+export interface MeetingRoomFormState {
+  errors: MeetingRoomFormErrors;
+  room?: MeetingRoom;
+}
+
+function readRoomDraft(formData: FormData): MeetingRoomDraft {
+  return {
+    name: String(formData.get("name") ?? ""),
+    location: String(formData.get("location") ?? ""),
+    openTime: String(formData.get("openTime") ?? ""),
+    closeTime: String(formData.get("closeTime") ?? ""),
+  };
+}
+
+/**
+ * 회의실 추가(`/manage/rooms`, is_admin 전용) — 격리막(CLAUDE.md §Mock 격리막).
+ * ⚠️ 예약 승인 절차가 없다(WORKFLOW.md §10-A) — 저장되는 즉시 `/app/rooms` 예약 모달의
+ *    회의실 select에 나타난다.
+ * ⚠️ **권한을 서버에서 다시 본다** — 화면 가드는 UX일 뿐 보안이 아니다(§권한).
+ */
+export async function createMeetingRoomAction(
+  _prev: MeetingRoomFormState,
+  formData: FormData,
+): Promise<MeetingRoomFormState> {
+  if (!canManageRooms(getMockActor())) {
+    return { errors: { name: "회의실을 추가할 권한이 없어요" } };
+  }
+
+  const draft = readRoomDraft(formData);
+  const errors = validateMeetingRoomDraft(draft);
+  if (Object.keys(errors).length > 0) return { errors };
+
+  if (!isMock) {
+    // ⚠️ 미구현 — API 스펙 확정 후 BFF 경로로 회의실 추가 요청을 보낸다.
+    throw new Error("회의실 추가 API가 아직 연결되지 않았습니다.");
+  }
+
+  const room = addMockRoom(draft);
+  revalidatePath(MANAGE_ROOMS_PATH);
+  revalidatePath(ROOMS_PATH);
+  return { errors: {}, room };
+}
+
+/** 회의실 수정 — 추가와 같은 규칙(권한·검증). */
+export async function updateMeetingRoomAction(
+  _prev: MeetingRoomFormState,
+  formData: FormData,
+): Promise<MeetingRoomFormState> {
+  if (!canManageRooms(getMockActor())) {
+    return { errors: { name: "회의실을 수정할 권한이 없어요" } };
+  }
+
+  const id = String(formData.get("id") ?? "");
+  const draft = readRoomDraft(formData);
+  const errors = validateMeetingRoomDraft(draft);
+  if (Object.keys(errors).length > 0) return { errors };
+
+  if (!isMock) {
+    // ⚠️ 미구현 — API 스펙 확정 후 BFF 경로로 회의실 수정 요청을 보낸다.
+    throw new Error("회의실 수정 API가 아직 연결되지 않았습니다.");
+  }
+
+  const room = updateMockRoom(id, draft);
+  if (!room) return { errors: { name: "수정할 회의실을 찾을 수 없어요" } };
+
+  revalidatePath(MANAGE_ROOMS_PATH);
+  revalidatePath(ROOMS_PATH);
+  return { errors: {}, room };
 }

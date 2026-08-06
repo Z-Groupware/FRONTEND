@@ -5,17 +5,36 @@
 
 import type { MeetingTopicMain } from "@/constants/meeting";
 
-/** 회의실 한 곳. 운영시간은 전 회의실 09:00~18:00 동일(팀 워크플로우 목업). */
+/**
+ * 회의실 한 곳.
+ * ⚠️ **"수용 인원" 필드는 없다**(WORKFLOW.md §10-A 확정 — 전면 폐기). 화면·모달·데이터 구조
+ *    어디에도 안 둔다. 대신 "위치"가 있다.
+ */
 export interface MeetingRoom {
   id: string;
   name: string;
-  /** 수용 인원 */
-  capacity: number;
+  /** 자유 텍스트 — "3층 A동"처럼(WORKFLOW.md §10-A) */
+  location: string;
   /** "HH:mm" */
   openTime: string;
   /** "HH:mm" */
   closeTime: string;
 }
+
+/**
+ * 회의실 추가·수정 폼 입력(`/manage/rooms`, is_admin 전용) — 화면과 서버가 같은 스키마로 검증한다.
+ * ⚠️ 예약 승인 절차가 없다(WORKFLOW.md §10-A) — 만들면 바로 예약 가능한 목록에 들어간다.
+ */
+export interface MeetingRoomDraft {
+  name: string;
+  location: string;
+  /** "HH:mm" */
+  openTime: string;
+  /** "HH:mm" */
+  closeTime: string;
+}
+
+export type MeetingRoomFormErrors = Partial<Record<keyof MeetingRoomDraft, string>>;
 
 /** 참석자 검색 대상 — 예약 폼의 "참석자" 피커가 쓴다. */
 export interface RoomMember {
