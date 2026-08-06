@@ -31,6 +31,31 @@ const GLOBALS_CSS = readFileSync(join(process.cwd(), "src/app/globals.css"), "ut
 /** 규칙이 고르는 것 — 테스트와 CSS가 **같은 문자열**을 보게 한다 */
 const POSITIONER_SELECTOR = "[data-base-ui-portal] > [data-side][data-align]";
 
+/**
+ * 그 자리가 **어느 `@layer` 안인지** 알아낸다.
+ *
+ * ⚠️ 레이어가 곧 우선순위다(`theme < base < components < utilities`). 규칙이 다른 레이어로
+ *    옮겨 가면 선언은 그대로인데 승패가 뒤집힌다 — 문자열만 확인하면 그걸 못 본다.
+ * ⚠️ `globals.css`는 최상위 블록을 **열 자리 없이**(`^@layer x {` … `^}`) 쓰므로
+ *    줄 머리만 보고 가른다. 중괄호를 세는 것보다 이 파일의 실제 모양에 맞다.
+ */
+function layerAt(css: string, index: number): string | null {
+  let layer: string | null = null;
+  let offset = 0;
+
+  for (const line of css.split("\n")) {
+    if (offset > index) break;
+
+    const opened = /^@layer ([\w-]+) \{/.exec(line);
+    if (opened) layer = opened[1] ?? null;
+    else if (line === "}") layer = null;
+
+    offset += line.length + 1;
+  }
+
+  return layer;
+}
+
 describe("배율 보정 규칙 자체", () => {
   it("`globals.css`에 좌표를 되돌리는 규칙과 되거는 규칙이 둘 다 있다", () => {
     expect(GLOBALS_CSS).toContain(`${POSITIONER_SELECTOR} {\n    zoom: calc(1 / var(--app-zoom));`);
@@ -52,6 +77,24 @@ describe("배율 보정 규칙 자체", () => {
   it("`@layer utilities` 블록이 한 덩이로 남아 있다", () => {
     expect(GLOBALS_CSS.match(/^@layer utilities \{/gm)).toHaveLength(1);
   });
+
+  /*
+    ⚠️ **레이어가 곧 우선순위다.** 이 규칙은 `base`에 있어야 한다 — 화면을 그리는 값이 아니라
+       배율이 걸렸을 때 좌표계를 되돌리는 **바탕 보정**이고, 컴포넌트가 붙이는 Tailwind
+       유틸리티(`z-50` 등)와 다툴 일이 없어야 한다.
+    ⚠️ `utilities`로 옮기면 그 블록이 끊겨 커스텀 유틸 1255줄이 `base`로 강등된다 —
+       실제로 한 번 그랬다. 레이어 밖으로 나가면 아예 레이어 없는 규칙이 되어
+       **모든 레이어를 이긴다.** 어느 쪽이든 선언은 그대로라 문자열 검사로는 안 잡힌다.
+  */
+  it.each([POSITIONER_SELECTOR, `${POSITIONER_SELECTOR} > *`])(
+    "`%s` 규칙이 `@layer base` 안에 있다",
+    (selector) => {
+      const at = GLOBALS_CSS.indexOf(`  ${selector} {`);
+
+      expect(at).toBeGreaterThan(-1);
+      expect(layerAt(GLOBALS_CSS, at)).toBe("base");
+    },
+  );
 });
 
 describe("팝업 배율 보정이 기대는 데이터 속성", () => {
