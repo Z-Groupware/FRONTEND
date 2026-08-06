@@ -6,10 +6,13 @@ import { type Plan, PLAN_LABEL } from "@/constants/domain";
 
 import type { PlanDistributionSlice } from "../types";
 
-/** 차트 카테고리 색과 맞춘다(globals.css `--chart-1`·`--chart-2`) — Team이 먼저, Free가 다음. */
-const SLICE_COLOR: Record<Plan, string> = {
-  TEAM: "var(--chart-1)",
-  FREE: "var(--chart-2)",
+/**
+ * 조각은 색(hue)이 아니라 명도로 가른다(DESIGN §5·§10 — 색으로 알리는 건 에러뿐이다).
+ * `storage-summary.tsx`의 두 조각(`bg-foreground`/`bg-foreground/35`)과 같은 규칙.
+ */
+const SLICE_OPACITY: Record<Plan, number> = {
+  TEAM: 1,
+  FREE: 0.35,
 };
 
 interface PlanDonutChartProps {
@@ -32,7 +35,11 @@ export function PlanDonutChart({ data }: PlanDonutChartProps) {
           strokeWidth={2}
         >
           {data.map((slice) => (
-            <Cell key={slice.plan} fill={SLICE_COLOR[slice.plan]} />
+            <Cell
+              key={slice.plan}
+              fill="var(--foreground)"
+              fillOpacity={SLICE_OPACITY[slice.plan]}
+            />
           ))}
         </Pie>
         <Tooltip

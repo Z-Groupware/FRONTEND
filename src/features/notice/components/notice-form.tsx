@@ -61,7 +61,7 @@ export function NoticeForm({ action, notice, submitLabel, cancelHref }: NoticeFo
           onChange={(event) => setBody(event.target.value)}
           placeholder="공지 내용을 입력하세요"
           aria-invalid={Boolean(state.errors.body)}
-          className="border-input placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:border-destructive dark:bg-input/30 min-h-[180px] w-full resize-none rounded-lg border bg-transparent px-2.5 py-2 text-sm transition-colors outline-none focus-visible:ring-3"
+          className="border-input placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:border-destructive min-h-[180px] w-full resize-none rounded-lg border bg-transparent px-2.5 py-2 text-sm transition-colors outline-none focus-visible:ring-3"
         />
         {state.errors.body && <p className="text-destructive text-xs">{state.errors.body}</p>}
       </div>
@@ -70,13 +70,7 @@ export function NoticeForm({ action, notice, submitLabel, cancelHref }: NoticeFo
         <Link href={cancelHref} className={buttonVariants({ variant: "outline", size: "sm" })}>
           취소
         </Link>
-        <Button
-          type="submit"
-          size="sm"
-          disabled={isPending || !canSubmit}
-          // 시안의 주 버튼은 액센트(파랑)가 아니라 먹색이다 — `department-setup.tsx`와 같은 이유.
-          className="bg-foreground text-background hover:bg-foreground/90"
-        >
+        <Button type="submit" size="sm" variant="ink" disabled={isPending || !canSubmit}>
           {isPending ? "저장 중…" : submitLabel}
         </Button>
       </div>

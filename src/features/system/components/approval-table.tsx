@@ -9,6 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { formatDate } from "@/lib/date";
 import { cn } from "@/lib/utils";
 
 import type { PendingCompanyApproval } from "../types";
@@ -56,7 +57,7 @@ export function ApprovalTable({ companies, buildDetailHref, pageSize }: Approval
   if (companies.length === 0) {
     return (
       <div
-        className="border-border bg-card flex flex-col items-center justify-center rounded-xl border p-10 text-center"
+        className="border-border bg-card flex flex-col items-center justify-center rounded-2xl border p-10 text-center"
         style={{ height: HEADER_HEIGHT_PX + pageSize * ROW_HEIGHT_PX }}
       >
         <p className="text-muted-foreground text-sm">승인 대기 중인 기업이 없습니다</p>
@@ -67,7 +68,7 @@ export function ApprovalTable({ companies, buildDetailHref, pageSize }: Approval
   const fillerCount = Math.max(0, pageSize - companies.length);
 
   return (
-    <div className="border-border bg-card overflow-hidden rounded-xl border">
+    <div className="border-border bg-card overflow-hidden rounded-2xl border">
       <div className="overflow-x-auto">
         <Table className="min-w-[720px] table-fixed text-xs">
           {/* 각 컬럼 폭을 %로 고정 — 회사명 길이가 페이지마다 달라져도 다른 컬럼이 밀리지 않는다(위 COLUMN_WIDTH 참고) */}
@@ -79,7 +80,7 @@ export function ApprovalTable({ companies, buildDetailHref, pageSize }: Approval
             <col style={{ width: COLUMN_WIDTH.appliedAt }} />
           </colgroup>
           <TableHeader>
-            <TableRow className={cn(HEADER_HEIGHT_CLASS, "hover:bg-transparent")}>
+            <TableRow className={cn(HEADER_HEIGHT_CLASS, "bg-secondary/50 hover:bg-transparent")}>
               <TableHead className="pl-4 text-xs">회사명</TableHead>
               <TableHead className="text-center text-xs">대표자</TableHead>
               <TableHead className="text-center text-xs">담당자 이메일</TableHead>
@@ -90,7 +91,10 @@ export function ApprovalTable({ companies, buildDetailHref, pageSize }: Approval
           <TableBody>
             {companies.map((company) => (
               // relative — stretched link(아래 after:absolute)가 이 행 기준으로 덮인다
-              <TableRow key={company.id} className={cn(ROW_HEIGHT_CLASS, "relative")}>
+              <TableRow
+                key={company.id}
+                className={cn(ROW_HEIGHT_CLASS, "hover:bg-foreground/[0.04] relative")}
+              >
                 <TableCell className="max-w-0 pl-4">
                   <Link
                     href={buildDetailHref(company.id)}
@@ -117,7 +121,7 @@ export function ApprovalTable({ companies, buildDetailHref, pageSize }: Approval
                   {company.memberCount}명
                 </TableCell>
                 <TableCell className="text-muted-foreground pr-4 text-center tabular-nums">
-                  {company.appliedAt}
+                  {formatDate(company.appliedAt)}
                 </TableCell>
               </TableRow>
             ))}

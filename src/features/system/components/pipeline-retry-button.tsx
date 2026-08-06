@@ -26,7 +26,7 @@ export function PipelineRetryButton({ meetingId, companyName }: PipelineRetryBut
 
   if (isDone) {
     return (
-      <span className="text-success inline-flex items-center gap-1 text-xs font-medium">
+      <span className="text-foreground inline-flex items-center gap-1 text-xs font-medium">
         <Check className="size-3" strokeWidth={3} aria-hidden />
         완료
       </span>

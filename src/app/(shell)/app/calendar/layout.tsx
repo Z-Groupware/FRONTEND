@@ -1,3 +1,4 @@
+import { CalendarDays } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { PageHeader } from "@/features/shell/components/page-header";
@@ -10,7 +11,7 @@ interface CalendarLayoutProps {
 export default function CalendarLayout({ children }: CalendarLayoutProps) {
   return (
     <>
-      <PageHeader title="캘린더" />
+      <PageHeader title="캘린더" icon={CalendarDays} />
       {children}
     </>
   );

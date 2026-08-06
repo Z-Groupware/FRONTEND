@@ -13,6 +13,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { PAYMENT_STATUS, PAYMENT_STATUS_LABEL } from "@/constants/domain";
+import { formatDate } from "@/lib/date";
 import { cn } from "@/lib/utils";
 
 import { sendUnpaidNoticeAction } from "../actions";
@@ -81,14 +82,14 @@ export function SubscriptionTable({ subscriptions }: SubscriptionTableProps) {
 
   if (subscriptions.length === 0) {
     return (
-      <div className="border-border bg-card flex items-center justify-center rounded-xl border p-10 text-center">
+      <div className="border-border bg-card flex items-center justify-center rounded-2xl border p-10 text-center">
         <p className="text-muted-foreground text-sm">구독 중인 기업이 없습니다</p>
       </div>
     );
   }
 
   return (
-    <div className="border-border bg-card overflow-hidden rounded-xl border">
+    <div className="border-border bg-card overflow-hidden rounded-2xl border">
       <div className="overflow-x-auto">
         <Table className="min-w-[680px] table-fixed text-xs">
           {/* 각 컬럼 폭을 %로 고정 — 기업명 길이가 달라져도 다른 컬럼이 밀리지 않는다(위 COLUMN_WIDTH 참고) */}
@@ -101,7 +102,7 @@ export function SubscriptionTable({ subscriptions }: SubscriptionTableProps) {
             <col style={{ width: COLUMN_WIDTH.action }} />
           </colgroup>
           <TableHeader>
-            <TableRow className={cn(HEADER_HEIGHT_CLASS, "hover:bg-transparent")}>
+            <TableRow className={cn(HEADER_HEIGHT_CLASS, "bg-secondary/50 hover:bg-transparent")}>
               <TableHead className="pl-4 text-xs">기업명</TableHead>
               <TableHead className="text-center text-xs">인원</TableHead>
               <TableHead className="text-center text-xs">금액</TableHead>
@@ -112,7 +113,10 @@ export function SubscriptionTable({ subscriptions }: SubscriptionTableProps) {
           </TableHeader>
           <TableBody>
             {subscriptions.map((subscription) => (
-              <TableRow key={subscription.companyId} className={ROW_HEIGHT_CLASS}>
+              <TableRow
+                key={subscription.companyId}
+                className={cn(ROW_HEIGHT_CLASS, "hover:bg-foreground/[0.04]")}
+              >
                 <TableCell className="max-w-0 truncate pl-4" title={subscription.companyName}>
                   {subscription.companyName}
                 </TableCell>
@@ -123,7 +127,7 @@ export function SubscriptionTable({ subscriptions }: SubscriptionTableProps) {
                   {formatWon(subscription.amount)}
                 </TableCell>
                 <TableCell className="text-muted-foreground text-center tabular-nums">
-                  {subscription.billingDate ?? "–"}
+                  {subscription.billingDate ? formatDate(subscription.billingDate) : "–"}
                 </TableCell>
                 <TableCell className="text-center">
                   <StatusBadge tone={STATUS_TONE[subscription.paymentStatus]}>
@@ -131,22 +135,26 @@ export function SubscriptionTable({ subscriptions }: SubscriptionTableProps) {
                   </StatusBadge>
                 </TableCell>
                 <TableCell className="pr-4 text-center">
-                  {subscription.paymentStatus === PAYMENT_STATUS.UNPAID && (
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      size="xs"
-                      onClick={() =>
-                        setNoticeTarget({
-                          companyId: subscription.companyId,
-                          companyName: subscription.companyName,
-                          ownerEmail: subscription.ownerEmail,
-                        })
-                      }
-                    >
-                      안내 발송
-                    </Button>
-                  )}
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="xs"
+                    disabled={subscription.paymentStatus !== PAYMENT_STATUS.UNPAID}
+                    title={
+                      subscription.paymentStatus !== PAYMENT_STATUS.UNPAID
+                        ? "미납 상태인 기업에만 안내를 보낼 수 있습니다"
+                        : undefined
+                    }
+                    onClick={() =>
+                      setNoticeTarget({
+                        companyId: subscription.companyId,
+                        companyName: subscription.companyName,
+                        ownerEmail: subscription.ownerEmail,
+                      })
+                    }
+                  >
+                    안내 발송
+                  </Button>
                 </TableCell>
               </TableRow>
             ))}

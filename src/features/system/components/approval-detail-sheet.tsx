@@ -5,6 +5,7 @@ import { useFormStatus } from "react-dom";
 
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { formatDate } from "@/lib/date";
 
 import { approveCompanyAction, rejectCompanyAction } from "../actions";
 import type { PendingCompanyApproval } from "../types";
@@ -43,7 +44,7 @@ export function ApprovalDetailSheet({ company, closeHref }: ApprovalDetailSheetP
               <Field label="대표자" value={company.representativeName} />
               <Field label="담당자 이메일" value={company.contactEmail} />
               <Field label="구성원" value={`${company.memberCount}명`} />
-              <Field label="신청일" value={company.appliedAt} />
+              <Field label="신청일" value={formatDate(company.appliedAt)} />
 
               <p className="text-muted-foreground bg-muted rounded-md p-3 text-xs leading-[18px]">
                 승인 시 기업 코드가 자동 발급되고 담당자 이메일로 발송됩니다.

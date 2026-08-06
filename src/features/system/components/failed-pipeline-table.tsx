@@ -40,15 +40,18 @@ const COLUMN_WIDTH = {
 export function FailedPipelineTable({ items }: { items: FailedPipelineItem[] }) {
   if (items.length === 0) {
     return (
-      <div className="border-border bg-card flex items-center justify-center rounded-xl border p-10 text-center">
+      <div className="border-border bg-card flex items-center justify-center rounded-2xl border p-10 text-center">
         <p className="text-muted-foreground text-sm">재처리할 실패 건이 없어요</p>
       </div>
     );
   }
 
   return (
-    <section className="border-border bg-card overflow-hidden rounded-xl border">
-      <h2 className="text-foreground px-5 pt-5 pb-3 text-sm font-semibold">실패 목록</h2>
+    <section className="border-border bg-card overflow-hidden rounded-2xl border">
+      <h2 className="flex items-center gap-2 px-7 pt-6 pb-3 text-[17px] leading-7 font-semibold tracking-[-0.3px]">
+        <span className="bg-foreground size-2 rounded-full" aria-hidden />
+        실패 목록
+      </h2>
 
       <div className="overflow-x-auto">
         <Table className="table-fixed text-xs">
@@ -61,32 +64,38 @@ export function FailedPipelineTable({ items }: { items: FailedPipelineItem[] }) 
             <col style={{ width: COLUMN_WIDTH.action }} />
           </colgroup>
           <TableHeader>
-            <TableRow className={cn(HEADER_HEIGHT_CLASS, "hover:bg-transparent")}>
+            <TableRow className={cn(HEADER_HEIGHT_CLASS, "bg-secondary/50 hover:bg-transparent")}>
               <TableHead className="pl-4 text-xs">회의 ID</TableHead>
-              <TableHead className="text-xs">기업</TableHead>
-              <TableHead className="text-xs">실패 단계</TableHead>
-              <TableHead className="text-xs">시각</TableHead>
-              <TableHead className="text-xs">오류</TableHead>
+              <TableHead className="text-center text-xs">기업</TableHead>
+              <TableHead className="text-center text-xs">실패 단계</TableHead>
+              <TableHead className="text-center text-xs">시각</TableHead>
+              <TableHead className="text-center text-xs">오류</TableHead>
               <TableHead className="pr-4 text-center text-xs">액션</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {items.map((item) => (
-              <TableRow key={item.meetingId} className={ROW_HEIGHT_CLASS}>
+              <TableRow
+                key={item.meetingId}
+                className={cn(ROW_HEIGHT_CLASS, "hover:bg-foreground/[0.04]")}
+              >
                 <TableCell className="text-muted-foreground pl-4 font-mono">
                   {item.meetingId}
                 </TableCell>
-                <TableCell className="text-foreground max-w-0 truncate" title={item.companyName}>
+                <TableCell
+                  className="text-foreground max-w-0 truncate text-center"
+                  title={item.companyName}
+                >
                   {item.companyName}
                 </TableCell>
-                <TableCell className="text-destructive">
+                <TableCell className="text-destructive text-center">
                   {PIPELINE_STAGE_LABEL[item.stage]}
                 </TableCell>
-                <TableCell className="text-muted-foreground font-mono tabular-nums">
+                <TableCell className="text-muted-foreground text-center font-mono tabular-nums">
                   {item.failedAt}
                 </TableCell>
                 <TableCell
-                  className="text-muted-foreground max-w-0 truncate"
+                  className="text-muted-foreground max-w-0 truncate text-center"
                   title={item.errorMessage}
                 >
                   {item.errorMessage}
