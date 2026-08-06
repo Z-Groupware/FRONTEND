@@ -18,6 +18,7 @@ import { join } from "node:path";
  *    직접 읽는다. 이게 없으면 누가 `body`의 배율 적용을 지워도 아무도 모른다.
  */
 const GLOBALS_CSS = readFileSync(join(process.cwd(), "src/app/globals.css"), "utf8");
+const ROOT_LAYOUT = readFileSync(join(process.cwd(), "src/app/layout.tsx"), "utf8");
 
 /** 그 선택자의 선언 블록만 떼어 낸다 — 파일 어딘가에 같은 문자열이 있어도 속지 않는다 */
 function ruleOf(selector: string): string {
@@ -48,6 +49,21 @@ describe("화면 배율 적용 방식", () => {
   it("`body`는 스크롤하지 않는다 — 스크롤은 `#app-scroll`이 맡는다", () => {
     expect(ruleOf("body")).toContain("overflow: hidden;");
     expect(GLOBALS_CSS).toContain("#app-scroll {");
+  });
+
+  /*
+    ⚠️ CSS만 있으면 소용없다 — **그 상자가 실제로 화면을 감싸야** 스크롤이 거기서 돈다.
+       루트 레이아웃에서 사라지면 어느 화면도 스크롤되지 않는다.
+    ⚠️ `Toaster`는 그 밖이어야 한다. 토스트는 `fixed`라 스크롤과 무관해야 하고,
+       `body` 바로 안에 있어야 배율도 같이 받는다.
+  */
+  it("루트 레이아웃이 `#app-scroll`로 화면을 감싼다", () => {
+    expect(ROOT_LAYOUT).toContain('<div id="app-scroll">{children}</div>');
+
+    const scrollAt = ROOT_LAYOUT.indexOf('id="app-scroll"');
+    const toasterAt = ROOT_LAYOUT.indexOf("<Toaster />");
+
+    expect(toasterAt).toBeGreaterThan(scrollAt);
   });
 
   /*
