@@ -1,4 +1,4 @@
-import { ROLE_BADGE_CLASS, ROLE_LABEL } from "@/constants/role";
+import { AUTHORITY_BADGE_CLASS, AUTHORITY_LABEL } from "@/constants/authority";
 import { cn } from "@/lib/utils";
 
 import type { MyProfile } from "../types";
@@ -23,10 +23,10 @@ export function ProfileHeader({ profile }: ProfileHeaderProps) {
           <span
             className={cn(
               "inline-flex shrink-0 items-center rounded px-1.5 py-0.5 text-[11px] leading-none",
-              ROLE_BADGE_CLASS[profile.role],
+              AUTHORITY_BADGE_CLASS[profile.role],
             )}
           >
-            {ROLE_LABEL[profile.role]}
+            {AUTHORITY_LABEL[profile.role]}
           </span>
           <span className="text-muted-foreground/70 text-[11px]">
             {profile.companyName} · {profile.teamName} · {profile.position}

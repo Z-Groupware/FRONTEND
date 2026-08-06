@@ -23,6 +23,13 @@ export interface RoomMember {
   name: string;
 }
 
+/** 예약 폼의 "프로젝트" select가 쓰는 경량 항목 — 프로젝트 도메인 전체 타입을 끌어오지 않는다. */
+export interface RoomProjectOption {
+  id: string;
+  name: string;
+  tag: string;
+}
+
 /**
  * 주간 캘린더 한 칸에 그려지는 예약 건. react-big-calendar의 start/end 접근자가 이 필드명을 그대로 쓴다.
  * ⚠️ 막대 색은 여기 없다 — `projectTag`를 화면에서 `pickPaletteColor`에 넘겨 그때 뽑는다

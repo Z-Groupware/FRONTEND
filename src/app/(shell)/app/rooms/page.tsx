@@ -5,6 +5,7 @@ import { RoomsBoard } from "@/features/rooms/components/rooms-board";
 import {
   getMeetingRooms,
   getReservableMembers,
+  getReservableProjects,
   getWeekReservations,
 } from "@/features/rooms/server";
 
@@ -30,10 +31,11 @@ export default async function RoomsPage({ searchParams }: RoomsPageProps) {
   const { week: weekParam } = await searchParams;
   const week = parseWeekParam(weekParam);
 
-  const [reservations, rooms, members] = await Promise.all([
+  const [reservations, rooms, members, projects] = await Promise.all([
     getWeekReservations(week),
     getMeetingRooms(),
     getReservableMembers(),
+    getReservableProjects(),
   ]);
 
   return (
@@ -44,6 +46,7 @@ export default async function RoomsPage({ searchParams }: RoomsPageProps) {
           initialReservations={reservations}
           rooms={rooms}
           members={members}
+          projects={projects}
           week={format(week, "yyyy-MM-dd")}
         />
       </div>
