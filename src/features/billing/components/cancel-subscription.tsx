@@ -68,11 +68,14 @@ export function CancelSubscription({
 
   return (
     /*
-      ⚠️ **한 줄짜리 카드**다. 제목·설명·버튼을 세로로 쌓았더니 위 카드들과 같은 높이를 차지해
-         해지가 이 화면의 주요 기능처럼 보였다 — 설명은 왼쪽, 버튼은 오른쪽 끝에 둔다.
+      ⚠️ **곁 컬럼(360px)에 선다.** 전에는 설명 왼쪽·버튼 오른쪽 한 줄이었는데, 화면이 2컬럼이
+         되면서 그 폭에서는 설명이 눌려 여섯 줄로 접히고 버튼이 구겨졌다. 좁은 칸에서는
+         설명 아래에 버튼을 두고 **오른쪽 끝에 붙인다** — 실행 버튼 자리는 그대로다.
+      ⚠️ 그래도 **높이를 키우지 않는다.** 해지가 이 화면의 주요 기능처럼 보이면 안 된다 —
+         제목은 한 줄, 버튼은 하나뿐이다.
     */
-    <section className="border-border bg-card flex items-center gap-6 rounded-2xl border px-7 py-5">
-      <div className="min-w-0 flex-1">
+    <section className="border-border bg-card flex flex-col gap-4 rounded-2xl border px-7 py-5">
+      <div className="min-w-0">
         <h2 className="text-[14px] leading-5 font-semibold tracking-[-0.2px]">구독 해지</h2>
         <p className="text-muted-foreground pt-1 text-[13px] leading-5 break-keep">
           {isCanceling ? (
@@ -104,7 +107,7 @@ export function CancelSubscription({
         ⚠️ 권한이 없으면 **버튼을 숨기지 않고 잠근다.** 사라지면 "원래 없는 기능"으로 읽히는데
            사실은 권한 문제다 — 왜 못 누르는지 옆에 적는다(§정직성).
       */}
-      <div className="flex shrink-0 items-center gap-3">
+      <div className="flex shrink-0 items-center justify-end gap-3">
         {!canManage && (
           <span className="text-muted-foreground text-[12px] leading-4">
             대표 또는 Admin 권한이 필요합니다

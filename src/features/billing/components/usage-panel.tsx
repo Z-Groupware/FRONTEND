@@ -1,4 +1,4 @@
-import { CircleAlert, Info } from "lucide-react";
+import { CircleAlert, HardDrive, Info, type LucideIcon, Sparkles } from "lucide-react";
 
 import { formatFullDate, isReadableDate } from "@/lib/date";
 
@@ -45,11 +45,17 @@ export function UsagePanel({ subscription, config }: UsagePanelProps) {
       </div>
 
       <ul className="flex flex-col gap-5 pt-5">
+        {/*
+          ⚠️ **아이콘으로 두 축을 가른다.** 둘 다 `이름 · 숫자 · 막대`라 생김새가 같아서, 훑을 때
+             어느 줄이 무엇인지 다시 읽어야 했다. 이모지는 안 쓴다(§디자인 토큰 — ❌이모지).
+          ⚠️ 어느 축인지는 **부르는 쪽이 안다**(`usage.tokens`·`usage.storage`). 라벨 문자열을
+             보고 고르지 않는다 — 이름이 바뀌면 조용히 아이콘이 사라진다(§라벨 하드코딩 금지).
+        */}
         <li>
-          <Axis axis={usage.tokens} format={formatTokens} />
+          <Axis axis={usage.tokens} format={formatTokens} icon={Sparkles} />
         </li>
         <li>
-          <Axis axis={usage.storage} format={formatGb} />
+          <Axis axis={usage.storage} format={formatGb} icon={HardDrive} />
           {/*
             ⚠️ 저장 공간은 **음성과 자막을 나눠** 적는다. 둘 다 과금 대상인데,
                지울 때 음성은 권장이고 자막·요약은 비권장이라(제품 자산) 무엇이 얼마인지
@@ -140,14 +146,31 @@ function UsageBanner({ tokens, storage }: { tokens: UsageAxis; storage: UsageAxi
 }
 
 /** 한 축 — 쓴 양 / 총량, 소진율 막대. 넘겼을 때만 초과량·금액을 덧붙인다 */
-function Axis({ axis, format }: { axis: UsageAxis; format: (value: number) => string }) {
+function Axis({
+  axis,
+  format,
+  icon: Icon,
+}: {
+  axis: UsageAxis;
+  format: (value: number) => string;
+  /** 이 축을 가리키는 표식 — `lucide` 아이콘 컴포넌트를 그대로 받는다 */
+  icon: LucideIcon;
+}) {
   const percent = Math.round(axis.ratio * 100);
   const isOver = axis.overage > 0;
 
   return (
     <>
       <div className="flex items-baseline justify-between gap-3">
-        <span className="text-[13px] leading-5">{axis.label}</span>
+        {/*
+          ⚠️ 아이콘은 **장식**이라 `aria-hidden`이다 — 이름은 옆 글자가 말한다(§a11y).
+          ⚠️ 한글은 아이콘보다 1px 내려야 눈높이가 맞는다. 한글 글자는 위가 비어 있어
+             그대로 두면 글자만 떠 보인다.
+        */}
+        <span className="flex items-center gap-1.5 text-[13px] leading-5">
+          <Icon className="text-muted-foreground size-3.5 shrink-0" aria-hidden />
+          <span className="translate-y-[1px]">{axis.label}</span>
+        </span>
         <span className="text-[13px] leading-5 font-medium tabular-nums">
           {format(axis.used)}
           <span className="text-muted-foreground pl-1 font-normal">
