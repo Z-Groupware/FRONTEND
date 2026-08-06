@@ -61,7 +61,7 @@ const MY_PAGE: NavItem = { href: "/app/me", label: "마이페이지", icon: "me"
 const MANAGE_SHARED: NavItem[] = [
   { href: "/manage/members", label: "사원 관리", icon: "members" },
   { href: "/manage/rooms", label: "회의실 관리", icon: "room" },
-  { href: "/manage/billing", label: "구독·결제", icon: "billing" },
+  { href: "/manage/billing", label: "구독", icon: "billing" },
   { href: "/manage/storage", label: "저장소 관리", icon: "storage" },
 ];
 
