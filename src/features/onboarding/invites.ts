@@ -1,5 +1,5 @@
 import {
-  departmentsWithLeader,
+  duplicatedLeaderIds,
   fitsRoleAndPosition,
   type InviteRules,
   isValidEmail,
@@ -112,16 +112,14 @@ export function changeInviteDepartment(
   const isLeaderRow = rules.isLeaderPosition(target?.positionId ?? "");
 
   /*
-    ⚠️ **이미 리더가 있는 팀으로 옮기면 직급까지 비운다.** 팀 칸은 `positionsFor` 필터를
-       지나가지 않는 유일한 경로라, 여기서 안 막으면 한 팀에 리더가 둘이 된다.
-       전에는 옮기면 역할이 빈 값이 돼서 발송에서 저절로 걸렸는데, 리더를 자동으로 채우면서
-       **세 칸이 다 찬 완전한 줄**이 됐다 — 규칙 위반이 그대로 나간다.
-    ⚠️ 비우는 게 맞다. 잠긴 역할 칸은 손으로 못 고치니 직급을 남겨 두면 빠져나갈 길이 없다.
-       빈 칸이 되면 확인 창이 "고르지 않은 줄"로 세어 준다(`useInviteCommit`).
+    ⚠️ **이미 리더가 있는 팀으로 옮겨도 직급을 지우지 않는다.** 한때 여기서 역할·직급을
+       비워 규칙 위반을 막았는데, 사용자가 고른 값을 화면이 조용히 지우는 일이었다 —
+       왜 비었는지 말해 주는 자리도 없었다(줄 경고는 그 줄이 더는 리더가 아니라서 꺼진다).
+    ⚠️ 대신 **규칙을 검증에 심었다.** 옮긴 줄은 값을 그대로 들고 있고,
+       줄에는 `리더가 이미 있습니다`가 뜨며, `sendableInvites`가 그 줄을 뺀다.
+       빠져나갈 길도 있다 — 팀을 되돌리거나 직급을 다른 것으로 고르면 된다
+       (`positionsFor`가 **지금 고른 값은 늘 남긴다**).
   */
-  if (isLeaderRow && departmentsWithLeader(invites, rules.isLeaderPosition, id).has(departmentId)) {
-    return updateInvite(invites, id, { departmentId, roleId: "", positionId: "" });
-  }
 
   // 부서가 바뀌면 역할은 비운다 — 다른 부서의 역할이 남아 있으면 안 된다
   const roleId = isLeaderRow ? LEADER_ROLE_ID : rules.hasRoles(departmentId) ? "" : NO_ROLE_ID;
@@ -225,8 +223,21 @@ export function remapInvite(
  *
  * 이미 보낸 줄은 다시 보내지 않는다. 같은 주소가 여러 줄에 적혀 있으면 **첫 줄만** 나간다
  * — 화면에 중복 경고를 띄워도 그대로 누를 수 있어서, 같은 사람이 초대장을 두 번 받는다.
+ *
+ * ⚠️ **`팀당 리더 한 명`을 여기서 직접 본다.** 전에는 이 규칙이 검증에 없었다 —
+ *    목록을 바꾸는 쪽(`changeInviteDepartment`)이 값을 지워서 우회했기 때문에,
+ *    정작 "무엇이 규칙인가"는 코드 어디에도 적혀 있지 않았다. 값을 지우지 않기로 하면서
+ *    규칙이 있어야 할 자리인 **발송 검증**으로 옮겼다.
+ * ⚠️ 판정 기준은 화면과 **같은 함수**(`duplicatedLeaderIds`)다. 앞줄을 정상으로 보고
+ *    뒤에 온 줄만 뺀다 — 주소 중복과 같은 규약이라, 줄에 `리더가 이미 있습니다`가 뜬
+ *    그 줄이 정확히 빠진다. 각자 세면 경고는 뜨는데 발송은 되는 줄이 생긴다.
  */
-export function sendableInvites(invites: Invite[]): Invite[] {
+export function sendableInvites(
+  invites: Invite[],
+  isLeaderPosition: (positionId: string) => boolean,
+): Invite[] {
+  const leaderClash = duplicatedLeaderIds(invites, isLeaderPosition);
+
   // 이미 나간 주소로 시작한다 — 같은 주소를 새 줄에 다시 적어도 두 번 가지 않게
   const seen = new Set(
     invites.filter((invite) => invite.isSent).map((invite) => normalizeEmail(invite.email)),
@@ -234,6 +245,8 @@ export function sendableInvites(invites: Invite[]): Invite[] {
 
   return invites.filter((invite) => {
     if (invite.isSent || !isValidEmail(invite.email)) return false;
+    // 한 팀에 리더가 둘이면 뒤에 온 줄은 안 나간다 — 줄에 뜬 경고와 같은 판정이다
+    if (leaderClash.has(invite.id)) return false;
     // 부서·역할·직급을 다 고르지 않은 줄은 보내지 않는다 — 어디 소속인지 모르는 계정이 생긴다.
     // 역할은 `없음`도 고른 것이다(`NO_ROLE_ID`) — 빈 값만 "아직 안 골랐다"는 뜻이다.
     if (!invite.departmentId || !invite.roleId || !invite.positionId) return false;
@@ -246,8 +259,14 @@ export function sendableInvites(invites: Invite[]): Invite[] {
   });
 }
 
-/** 발송 처리 — 이번에 나간 줄에만 도장을 찍는다. 나머지는 그대로 둔다. */
-export function markInvitesSent(invites: Invite[]): Invite[] {
-  const going = new Set(sendableInvites(invites).map((invite) => invite.id));
+/**
+ * 발송 처리 — 이번에 나간 줄에만 도장을 찍는다. 나머지는 그대로 둔다.
+ * ⚠️ 판정은 `sendableInvites` 하나가 한다 — 여기서 따로 세면 안 나간 줄에 도장이 찍힌다.
+ */
+export function markInvitesSent(
+  invites: Invite[],
+  isLeaderPosition: (positionId: string) => boolean,
+): Invite[] {
+  const going = new Set(sendableInvites(invites, isLeaderPosition).map((invite) => invite.id));
   return invites.map((invite) => (going.has(invite.id) ? { ...invite, isSent: true } : invite));
 }

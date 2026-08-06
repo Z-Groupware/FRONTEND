@@ -65,9 +65,16 @@ export function InviteCommitDialog({
            조용히 빼면 보낸 줄 알고 넘어간다(§정직성).
       */}
       {skippedCount > 0 && (
+        /*
+          ⚠️ **빠지는 이유를 여기서 단정하지 않는다.** 안 고른 줄만이 아니라 주소가 겹친 줄,
+             한 팀에 리더가 둘인 줄도 빠진다 — `팀·직급을 고르지 않은`이라고 적어 두면
+             다 채운 줄이 빠졌을 때 화면이 틀린 말을 한다.
+          ⚠️ 이유는 **그 줄이 직접** 말한다(`InviteRow`의 경고). 여기서는 몇 줄인지와
+             어디를 보라는 것까지만 말한다.
+        */
         <p className="text-muted-foreground pt-3 text-[12px] leading-[18px] break-keep">
-          팀·직급을 고르지 않은 {skippedCount}줄은 발송에서 빠집니다. 취소하고 채우거나, 나중에 기업
-          설정에서 초대해 주세요.
+          {skippedCount}줄은 이번 발송에서 빠집니다 — 목록에서 표시된 줄을 확인해 주세요. 취소하고
+          고치거나, 나중에 기업 설정에서 초대해 주세요.
         </p>
       )}
     </ConfirmDialog>

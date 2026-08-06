@@ -28,7 +28,14 @@ export function useInviteList(rules: InviteRules) {
 
   const [invites, setInvites] = useState<Invite[]>(() => [createInvite(nextInviteId([]))]);
 
-  const sendable = useMemo(() => sendableInvites(invites), [invites]);
+  /*
+    ⚠️ `rules.isLeaderPosition`을 같이 넘긴다 — `팀당 리더 한 명`을 발송 검증이 직접 본다.
+       전에는 목록을 바꾸는 쪽이 값을 지워 우회해서, 규칙이 코드 어디에도 없었다.
+  */
+  const sendable = useMemo(
+    () => sendableInvites(invites, rules.isLeaderPosition),
+    [invites, rules.isLeaderPosition],
+  );
   const duplicated = useMemo(() => duplicateEmails(invites), [invites]);
 
   return {
@@ -56,7 +63,7 @@ export function useInviteList(rules: InviteRules) {
     remove: (id: string) =>
       setInvites((prev) => (prev.length === 1 ? [newInvite(prev)] : removeInvite(prev, id))),
     /** 발송 — 이번에 나간 줄을 잠근다. 이미 보낸 줄은 건드리지 않는다 */
-    markSent: () => setInvites((prev) => markInvitesSent(prev)),
+    markSent: () => setInvites((prev) => markInvitesSent(prev, rules.isLeaderPosition)),
     /** 임시 보관함에서 되돌릴 때만 쓴다(draft.ts) */
     reset: (next: Invite[]) => setInvites(next.length > 0 ? next : [newInvite([])]),
     /**

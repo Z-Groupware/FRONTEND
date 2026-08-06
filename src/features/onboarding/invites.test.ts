@@ -134,11 +134,11 @@ describe("changeInvite*", () => {
   */
   /*
     ⚠️ **팀 칸은 `positionsFor` 필터를 지나가지 않는 유일한 경로다.** 여기서 안 막으면 한 팀에
-       리더가 둘이 된다. 리더를 자동으로 채우기 전에는 옮기면 역할이 빈 값이 돼서 발송에서
-       저절로 걸렸는데, 이제 세 칸이 다 찬 완전한 줄이 되기 때문에 여기서 막아야 한다
+       리더가 둘이 된다. 한때 여기서 역할·직급을 비워 막았는데, 그건 사용자가 고른 값을
+       화면이 조용히 지우는 일이었다 — 지금은 **값을 그대로 두고 발송 검증이 막는다**
        (적대적 검토 #163).
   */
-  it("이미 리더가 있는 팀으로 리더 줄을 옮기면 역할과 직급을 비운다", () => {
+  it("이미 리더가 있는 팀으로 옮겨도 고른 값을 지우지 않는다", () => {
     const first = changeInvitePosition(makeList(), "a", "lead", isLeader);
     const moved = changeInviteDepartment(first, "b", "dev", isLeader);
     const asLeader = changeInvitePosition(moved, "b", "lead", isLeader);
@@ -147,10 +147,30 @@ describe("changeInvite*", () => {
     const clash = changeInviteDepartment(asLeader, "b", "dev", isLeader);
 
     expect(clash[1]?.departmentId).toBe("dev");
-    expect(clash[1]?.roleId).toBe("");
-    expect(clash[1]?.positionId).toBe("");
-    // 세 칸이 다 차 있지 않으니 발송에서 빠진다
-    expect(sendableInvites(clash).map((invite) => invite.id)).not.toContain("b");
+    // 고른 값은 남는다 — 왜 비었는지 말해 줄 자리가 없는 채로 지우지 않는다
+    expect(clash[1]?.roleId).toBe(LEADER_ROLE_ID);
+    expect(clash[1]?.positionId).toBe("lead");
+  });
+
+  /*
+    ⚠️ **규칙은 검증에 있다.** 값을 지워서 우회하면 `팀당 리더 한 명`이 코드 어디에도
+       적혀 있지 않게 된다 — 발송 검증이 그 규칙을 직접 본다.
+    ⚠️ 화면 경고(`duplicatedLeaderIds`)와 **같은 줄**이 빠져야 한다. 각자 세면
+       경고는 뜨는데 발송은 되는 줄이 생긴다.
+  */
+  it("한 팀에 리더가 둘이면 뒤에 온 줄이 발송에서 빠진다", () => {
+    const first = changeInvitePosition(makeList(), "a", "lead", isLeader);
+    const moved = changeInviteDepartment(first, "b", "dev", isLeader);
+    const asLeader = changeInvitePosition(moved, "b", "lead", isLeader);
+    const clash = changeInviteDepartment(asLeader, "b", "dev", isLeader);
+
+    const going = sendableInvites(clash, isLeader.isLeaderPosition).map((invite) => invite.id);
+
+    // 앞줄은 그대로 나가고 뒷줄만 빠진다 — 주소 중복과 같은 규약이다
+    expect(going).toContain("a");
+    expect(going).not.toContain("b");
+    // 화면이 문제로 잡는 줄과 정확히 같아야 한다
+    expect([...duplicatedLeaderIds(clash, isLeader.isLeaderPosition)]).toEqual(["b"]);
   });
 
   it("리더가 없는 팀으로 옮기면 `리더`가 그대로 따라간다", () => {
@@ -188,23 +208,26 @@ describe("removeInvite", () => {
 
 describe("sendableInvites", () => {
   it("주소가 유효한 줄만 남긴다 — 빈 줄은 발송 대상이 아니다", () => {
-    expect(emails(sendableInvites(makeList()))).toEqual(["dev1@company.com", "design@company.com"]);
+    expect(emails(sendableInvites(makeList(), isLeader.isLeaderPosition))).toEqual([
+      "dev1@company.com",
+      "design@company.com",
+    ]);
   });
 });
 
 describe("markInvitesSent", () => {
   it("발송하면 주소가 유효한 줄에만 도장이 찍힌다 — 빈 줄은 그대로다", () => {
-    const next = markInvitesSent(makeList());
+    const next = markInvitesSent(makeList(), isLeader.isLeaderPosition);
     expect(next.map((invite) => invite.isSent)).toEqual([true, true, false]);
   });
 
   it("이미 보낸 줄은 다음 발송 대상에서 빠진다", () => {
-    const sent = markInvitesSent(makeList());
-    expect(sendableInvites(sent)).toEqual([]);
+    const sent = markInvitesSent(makeList(), isLeader.isLeaderPosition);
+    expect(sendableInvites(sent, isLeader.isLeaderPosition)).toEqual([]);
   });
 
   it("나중에 추가한 줄만 다음 발송 대상이 된다", () => {
-    const sent = markInvitesSent(makeList());
+    const sent = markInvitesSent(makeList(), isLeader.isLeaderPosition);
     const added: Invite[] = [
       ...sent,
       {
@@ -218,7 +241,7 @@ describe("markInvitesSent", () => {
         isSent: false,
       },
     ];
-    expect(emails(sendableInvites(added))).toEqual(["new@company.com"]);
+    expect(emails(sendableInvites(added, isLeader.isLeaderPosition))).toEqual(["new@company.com"]);
   });
 });
 
@@ -455,11 +478,13 @@ describe("같은 주소는 한 번만 나간다", () => {
   ];
 
   it("중복 주소는 첫 줄만 발송 대상이다", () => {
-    expect(sendableInvites(twice).map((invite) => invite.id)).toEqual(["a"]);
+    expect(sendableInvites(twice, isLeader.isLeaderPosition).map((invite) => invite.id)).toEqual([
+      "a",
+    ]);
   });
 
   it("발송해도 둘째 줄은 잠기지 않는다 — 아직 안 나갔으니까", () => {
-    const next = markInvitesSent(twice);
+    const next = markInvitesSent(twice, isLeader.isLeaderPosition);
     expect(next[0]?.isSent).toBe(true);
     expect(next[1]?.isSent).toBe(false);
   });
@@ -469,7 +494,7 @@ describe("같은 주소는 한 번만 나간다", () => {
       { ...twice[0]!, isSent: true },
       { ...twice[1]!, id: "c" },
     ];
-    expect(sendableInvites(again)).toHaveLength(0);
+    expect(sendableInvites(again, isLeader.isLeaderPosition)).toHaveLength(0);
   });
 });
 
@@ -548,7 +573,7 @@ describe("remapInvite — 1·2단계 편집분 반영", () => {
     );
 
     expect(next.roleId).toBe("");
-    expect(sendableInvites([next])).toEqual([]);
+    expect(sendableInvites([next], isLeader.isLeaderPosition)).toEqual([]);
   });
 
   it("팀에 역할이 생기면 `없음`을 비운다 — 고를 수 있는데 안 고른 셈이다", () => {

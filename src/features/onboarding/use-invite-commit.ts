@@ -26,11 +26,18 @@ export function useInviteCommit({ invites, sendable, markSent }: UseInviteCommit
   const router = useRouter();
   const [isConfirmOpen, setConfirmOpen] = useState(false);
 
-  /** 주소는 적었는데 부서·직급을 안 골라 발송에서 빠지는 줄 — 확인 창에서 알린다 */
+  /**
+   * 주소는 적었는데 **이번에 안 나가는** 줄 — 확인 창에서 알린다.
+   *
+   * ⚠️ **빠지는 이유를 여기서 나열하지 않는다.** 전에는 `부서·역할·직급이 비었는지`만 봤는데,
+   *    그 뒤로 발송 검증에 규칙이 늘면서(주소 중복 · 팀당 리더 한 명) **세 칸이 다 찬 채로
+   *    빠지는 줄**이 생겼다 — 그런 줄은 여기서 안 세어져서 조용히 안 나갔다.
+   *    `sendable`을 뒤집어 세면 규칙이 몇 개든 항상 맞는다(§정직성).
+   * ⚠️ 이미 보낸 줄은 빼는 게 아니라 **이미 나간** 줄이다 — 세지 않는다.
+   */
+  const goingIds = new Set(sendable.map((invite) => invite.id));
   const skippedCount = invites.filter(
-    (invite) =>
-      invite.email.trim().length > 0 &&
-      (!invite.departmentId || !invite.roleId || !invite.positionId),
+    (invite) => invite.email.trim().length > 0 && !invite.isSent && !goingIds.has(invite.id),
   ).length;
 
   /*
