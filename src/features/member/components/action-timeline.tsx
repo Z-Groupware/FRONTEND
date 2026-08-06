@@ -132,7 +132,7 @@ export function ActionTimeline({
                 <span className="truncate text-[13px]">{bar.title}</span>
                 <span
                   className="shrink-0 rounded px-1.5 py-0.5 font-mono text-[10px] font-semibold"
-                  style={{ backgroundColor: `${bar.tagColor}1a`, color: bar.tagColor }}
+                  style={{ backgroundColor: bar.tagBgColor, color: bar.tagTextColor }}
                 >
                   {bar.tag}
                 </span>

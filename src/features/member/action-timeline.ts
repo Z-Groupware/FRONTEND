@@ -11,8 +11,9 @@ export interface TimelineActionInput {
   title: string;
   /** 프로젝트 태그 */
   tag: string;
-  /** 자유 HEX(프로젝트 태그 색) */
-  tagColor: string;
+  /** 태그 칩 배경·글자색 — 고정 팔레트(`lib/palette` → `pickPaletteColor`)에서 뽑은 값. 자유 HEX 아님. */
+  tagBgColor: string;
+  tagTextColor: string;
   /** 작업 시작일 `YYYY-MM-DD` — 바의 왼쪽 끝 */
   startDate: string;
   /** 마감일 `YYYY-MM-DD` — 바의 오른쪽 끝(마감 지점) */
