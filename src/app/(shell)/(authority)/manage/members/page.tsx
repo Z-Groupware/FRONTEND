@@ -31,13 +31,15 @@ export const metadata: Metadata = {
  *    연동되면 목록 API가 함께 주면 될 값이라 `TODO`로 남긴다.
  */
 export default async function ManageMembersPage() {
-  const [members, teamNames, viewer] = await Promise.all([
-    listManagedMembers(),
-    listTeamNames(),
-    getViewer(),
-  ]);
-
+  /*
+    ⚠️ **판정이 먼저다.** 조회와 나란히 두면 권한 없는 사람의 요청도 BE까지 나간다 —
+       연동되면 프론트가 권한 없는 조회를 대신 쏴 주는 경로가 된다(§권한).
+       왕복 한 번을 잃지만 그게 맞다.
+  */
+  const viewer = await getViewer();
   if (!canManageMembers(viewer)) notFound();
+
+  const [members, teamNames] = await Promise.all([listManagedMembers(), listTeamNames()]);
 
   // TODO(BE 협의): 목록 응답에 대기 신청 종류를 함께 실어 주면 이 왕복이 사라진다
   const details = await Promise.all(members.map((member) => getManagedMember(member.id)));

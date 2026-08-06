@@ -58,6 +58,11 @@ export function AccountIssueDialog({ teamNames }: { teamNames: string[] }) {
     setDraft((prev) => ({ ...prev, [key]: value }));
     // 고치는 순간 그 칸의 오류는 감춘다 — 다 고칠 때까지 빨간 글씨를 남길 이유가 없다
     setErrors((prev) => ({ ...prev, [key]: undefined }));
+    /*
+      ⚠️ 밑단 문구도 같이 지운다. 안 지우면 옛 실패 사유가 남아, 이번엔 다른 이유로 막혔는데
+         **서로 다른 두 사유가 동시에** 보인다.
+    */
+    setMessage(null);
   };
 
   const reset = () => {
@@ -73,6 +78,7 @@ export function AccountIssueDialog({ teamNames }: { teamNames: string[] }) {
     */
     const found = validateAccount(draft);
     setErrors(found);
+    setMessage(null);
     if (Object.keys(found).length > 0) return;
 
     startTransition(async () => {
@@ -96,9 +102,22 @@ export function AccountIssueDialog({ teamNames }: { teamNames: string[] }) {
   };
 
   /** 라벨 · 입력 · 오류 한 덩이 — 오류 자리는 비워 두지 않는다(떠도 창이 안 출렁인다) */
-  const field = (key: keyof AccountDraft, label: string, control: React.ReactNode) => (
+  const field = (
+    key: keyof AccountDraft,
+    label: string,
+    control: React.ReactNode,
+    /*
+      ⚠️ 가리킬 입력이 없으면 **라벨을 붙이지 않는다.** 없는 id를 가리키는 `htmlFor`는
+         스크린리더에서 이름 없는 라벨이 되어 오히려 방해가 된다(§a11y).
+    */
+    hasControl = true,
+  ) => (
     <div className="flex flex-col gap-1.5 text-left">
-      <Label htmlFor={`account-${key}`}>{label}</Label>
+      {hasControl ? (
+        <Label htmlFor={`account-${key}`}>{label}</Label>
+      ) : (
+        <p className="text-sm leading-none font-medium">{label}</p>
+      )}
       {control}
       <p
         id={`account-${key}-error`}
@@ -198,6 +217,7 @@ export function AccountIssueDialog({ teamNames }: { teamNames: string[] }) {
                 기업 설정에서 팀을 먼저 만들어 주세요
               </p>
             ),
+            teamNames.length > 0,
           )}
 
           {field(

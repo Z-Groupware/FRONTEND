@@ -29,8 +29,8 @@ export function MemberProfileCard({ member, phone }: { member: ManagedMember; ph
   ];
 
   return (
-    <div className="flex flex-col gap-5">
-      <section className="border-border bg-card flex flex-col items-center gap-2 rounded-2xl border px-6 py-7">
+    <div className="flex flex-col gap-7">
+      <section className="border-border bg-card flex flex-col items-center gap-2 rounded-2xl border px-7 py-7">
         <ProfileAvatar userId={member.id} size={64} />
 
         <h1 className="pt-1 text-[17px] leading-[26px] font-semibold">{member.name}</h1>
@@ -63,7 +63,7 @@ export function MemberProfileCard({ member, phone }: { member: ManagedMember; ph
         {rows.map((row, index) => (
           <div
             key={row.label}
-            className={cn("flex flex-col gap-1 px-6 py-3.5", index > 0 && "border-border border-t")}
+            className={cn("flex flex-col gap-1 px-7 py-3.5", index > 0 && "border-border border-t")}
           >
             <p className="text-muted-foreground text-[12px] leading-4">{row.label}</p>
             <p className="truncate text-[13px] leading-5 tabular-nums">{row.value}</p>

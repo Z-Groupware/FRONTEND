@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ProfileAvatar } from "@/components/common/profile-avatar";
 import { AUTHORITY_BADGE_CLASS, AUTHORITY_LABEL } from "@/constants/authority";
 import { MEMBER_STATUS, MEMBER_STATUS_LABEL } from "@/constants/member";
+import { formatFullDate } from "@/lib/date";
 import { cn } from "@/lib/utils";
 
 import type { ManagedMember } from "../manage-types";
@@ -16,8 +17,9 @@ import type { ManagedMember } from "../manage-types";
  *    머리와 칸에 같은 정렬을 줘야 눈이 세로로 따라간다.
  * ⚠️ 아바타는 **공용 훅**(`useProfileAvatar`)이 만든다. 이름 첫 글자를 직접 그리면 같은 사람이
  *    화면마다 다르게 보여, 목록에서 색으로 사람을 알아보는 일이 안 된다.
- * ⚠️ 줄 전체가 링크다 — 클릭 대상이 이름 글자뿐이면 표에서 누를 곳을 찾아야 한다.
- *    `<a>`로 감싸 키보드 Tab으로도 한 줄에 한 번만 걸리게 한다(§a11y).
+ * ⚠️ **링크는 이름 칸에만** 둔다. 줄 전체를 `<a>`로 감쌀 수 없고(표 구조가 깨진다), 줄마다
+ *    투명 오버레이를 얹으면 다른 칸의 글자를 드래그해 복사할 수 없다 — 대신 줄에 hover를
+ *    줘서 어디를 눌러야 하는지 보이게 한다. 키보드는 한 줄에 한 번만 걸린다(§a11y).
  */
 
 /** 권한 칸 — Admin 겸직이면 배지를 하나 더 붙인다(권한을 대체하지 않는다) */
@@ -48,7 +50,7 @@ function StatusCell({ status }: { status: ManagedMember["status"] }) {
       className={cn(
         "inline-flex shrink-0 items-center rounded border px-2 py-0.5 text-[11px] leading-4",
         status === MEMBER_STATUS.RESIGNED
-          ? "border-border text-muted-foreground/70"
+          ? "border-border/60 text-muted-foreground"
           : "border-border text-muted-foreground",
       )}
     >
@@ -68,7 +70,20 @@ export function MemberTable({ members }: { members: ManagedMember[] }) {
 
   return (
     <div className="border-border overflow-x-auto border-t">
-      <table className="w-full min-w-[880px] border-collapse">
+      {/*
+        ⚠️ `table-fixed` — 이름 길이에 따라 열이 흔들리면 목록을 위아래로 훑을 때 눈이
+           세로줄을 못 따라간다. 폭은 `colgroup`이 한 곳에서 정한다.
+      */}
+      <table className="w-full min-w-[880px] table-fixed border-collapse">
+        <colgroup>
+          <col className="w-[200px]" />
+          <col className="w-[120px]" />
+          <col className="w-[100px]" />
+          <col className="w-[160px]" />
+          <col />
+          <col className="w-[90px]" />
+          <col className="w-[130px]" />
+        </colgroup>
         <thead>
           <tr className="text-muted-foreground bg-secondary/50 border-border border-b text-[12px] leading-4">
             <th className="px-6 py-3 text-left font-normal">이름</th>
@@ -86,7 +101,7 @@ export function MemberTable({ members }: { members: ManagedMember[] }) {
           {members.map((member) => (
             <tr
               key={member.id}
-              className="border-border hover:bg-secondary/40 border-b transition-colors last:border-b-0"
+              className="border-border hover:bg-secondary/50 border-b transition-colors last:border-b-0"
             >
               <th scope="row" className="px-6 py-3.5 text-left font-normal">
                 <Link
@@ -112,7 +127,7 @@ export function MemberTable({ members }: { members: ManagedMember[] }) {
                 <StatusCell status={member.status} />
               </td>
               <td className="text-muted-foreground px-6 py-3.5 text-center text-[13px] leading-5 tabular-nums">
-                <time dateTime={member.joinedAt}>{member.joinedAt}</time>
+                <time dateTime={member.joinedAt}>{formatFullDate(member.joinedAt)}</time>
               </td>
             </tr>
           ))}

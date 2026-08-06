@@ -76,6 +76,11 @@ export function MemberGradeCard({ member, canEdit }: { member: ManagedMember; ca
         isAdmin: showsAdmin ? isAdmin : false,
       });
       if (!result.isSuccess) {
+        /*
+          ⚠️ 확인 창을 **먼저 닫는다.** 안 닫으면 오류 문구가 창 뒤에 그려져 보이지 않고,
+             사용자는 아무 일도 안 일어난 줄 알고 같은 버튼을 다시 누른다.
+        */
+        setIsConfirming(false);
         setError(result.message ?? "저장하지 못했습니다");
         return;
       }
@@ -92,17 +97,21 @@ export function MemberGradeCard({ member, canEdit }: { member: ManagedMember; ca
 
   return (
     <section className="border-border bg-card overflow-hidden rounded-2xl border">
-      <h2 className="flex items-center gap-2 px-6 pt-6 pb-3 text-[15px] leading-6 font-semibold tracking-[-0.2px]">
+      <h2 className="flex items-center gap-2 px-7 pt-6 pb-3 text-[15px] leading-6 font-semibold tracking-[-0.2px]">
         {/* 다른 카드 머리와 같은 표식 — 화면이 달라도 같은 서비스로 읽힌다 */}
         <span className="bg-foreground size-2 rounded-full" aria-hidden />
         직급·권한 변경
       </h2>
-      <p className="text-muted-foreground px-6 pb-5 text-[12px] leading-[18px] break-keep">
+      <p className="text-muted-foreground px-7 pb-5 text-[12px] leading-[18px] break-keep">
         권한은 이 사람이 <span className="text-foreground font-medium">볼 수 있는 화면</span>을
         정합니다. 관리자 권한은 권한을 대체하지 않고 위에 덧붙습니다.
       </p>
 
-      <div className="border-border flex flex-col gap-4 border-t px-6 py-5">
+      {/*
+        ⚠️ 입력칸에 **상한을 건다.** 카드가 넓어져도 셀렉트 하나가 800px가 되면 라벨과
+           값이 멀어져 읽기 나빠진다(§폼 규격을 둔 이유와 같다).
+      */}
+      <div className="border-border flex max-w-[420px] flex-col gap-4 border-t px-7 py-5">
         {isOwner ? (
           <p className="text-muted-foreground text-[13px] leading-5 break-keep">
             대표 계정은 이 화면에서 바꿀 수 없습니다.

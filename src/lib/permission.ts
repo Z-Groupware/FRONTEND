@@ -163,7 +163,7 @@ export function isWithinTeamScope(actor: Actor, target: { teamId: number }): boo
 }
 
 /**
- * 휴가 중간 승인 — LEADER. **자기 팀**의 사원만 대상이다(DECISIONS: 팀장 범위).
+ * 휴직 중간 승인 — LEADER. **자기 팀**의 사원만 대상이다(DECISIONS: 팀장 범위).
  * 대상 팀을 넘기지 않으면 권한만 본다(화면 노출 판단용). **서버 검증에서는 반드시 넘긴다.**
  */
 export function canApproveMid(actor: Actor, targetTeam?: { teamId: number }): boolean {
