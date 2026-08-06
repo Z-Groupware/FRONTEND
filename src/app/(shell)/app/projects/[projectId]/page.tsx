@@ -61,13 +61,15 @@ export default async function ProjectDetailPage({ params, searchParams }: Projec
     <main className="scrollbar-hidden min-h-0 flex-1 overflow-y-auto px-8 py-7">
       <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-4">
         <div className="flex flex-col gap-1">
-          <p className="text-muted-foreground text-xs">
+          <p className="text-muted-foreground text-[11px] leading-4">
             <Link href="/app/projects" className="hover:text-foreground">
               프로젝트
             </Link>{" "}
             &gt; {project.name}
           </p>
-          <h2 className="text-foreground text-base font-semibold">{project.name}</h2>
+          <h2 className="text-foreground text-xl leading-7 font-semibold tracking-[-0.4px]">
+            {project.name}
+          </h2>
         </div>
 
         <nav aria-label="프로젝트 상세 탭" className="border-border flex gap-4 border-b">
