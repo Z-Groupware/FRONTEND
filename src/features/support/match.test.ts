@@ -97,6 +97,34 @@ describe("findFaqCandidates", () => {
     expect(findFaqCandidates("기업코드")[0]?.id).toBe("company-code");
   });
 
+  /*
+    ⚠️ **`~는 뭔가`와 `~는 어떻게 만드나`는 다른 질문이다.** 구조 설명(`org-structure`)은
+       만드는 방법을 말하지 않는데, 만드는 법을 물어도 그 항목 하나만 걸리면 되묻지도 않고
+       엉뚱한 답이 나간다 — 실제로 온보딩에서 `팀 체계`를 뺐다가 그렇게 됐다.
+       둘 다 걸려서 **되묻는 것**이 맞다.
+  */
+  it.each(["팀 체계는 어떻게 만드나요", "부서 체계 어떻게 잡나요"])(
+    "`%s`는 구조 설명과 온보딩 둘 다에 걸려 되묻는다",
+    (question) => {
+      const ids = findFaqCandidates(question).map((found) => found.id);
+
+      expect(ids).toContain("onboarding");
+      expect(ids).toContain("org-structure");
+    },
+  );
+
+  /*
+    ⚠️ **한 글자 키워드(`팀`)가 아무 문장이나 끌어오면 안 된다.** 회의·액션을 물었는데
+       조직 구조 설명이 같이 뜨면 고르는 일만 늘어난다 — 문턱(`MIN_SCORE`)이 그걸 막는데,
+       키워드를 늘릴 때 같이 무너지기 쉬워서 여기서 잡아 둔다.
+  */
+  it.each(["우리 팀 회의 일정 어디서 봐요", "팀 액션은 누가 배정하나요"])(
+    "`%s`는 조직 구조 설명을 끌어오지 않는다",
+    (question) => {
+      expect(findFaqCandidates(question).map((found) => found.id)).not.toContain("org-structure");
+    },
+  );
+
   it("모든 항목은 대표 질문으로 자기 자신을 찾을 수 있다", () => {
     for (const entry of FAQ_ENTRIES) {
       expect(findFaqCandidates(entry.question).map((found) => found.id)).toContain(entry.id);
