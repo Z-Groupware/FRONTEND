@@ -81,7 +81,7 @@ export function CompanyProfileCard({ profile }: { profile: CompanyProfile }) {
           </Button>
         }
       >
-        <div className="grid grid-cols-1 gap-4 px-4 py-4 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-5 px-7 py-6 sm:grid-cols-2">
           <Field
             name="name"
             label={COMPANY_FIELD_LABEL.NAME}
