@@ -63,7 +63,7 @@ function SelectContent({
   sideOffset = 4,
   align = "center",
   alignOffset = 0,
-  alignItemWithTrigger = true,
+  alignItemWithTrigger = false,
   ...props
 }: SelectPrimitive.Popup.Props &
   Pick<
@@ -81,14 +81,17 @@ function SelectContent({
         className="isolate z-50"
       >
         {/*
-          ⚠️ **`alignItemWithTrigger`를 다시 켰다**(2026-08-06). 고른 항목을 트리거 위에 겹쳐
-             세우는 기능인데, 화면 배율을 `zoom`으로 걸던 동안에는 껐어야 했다 —
-             base-ui가 `getScale(트리거)`로 정규화한 값을 Positioner의 `height`·`top`에
-             적는데, `zoom`을 되돌리는 덧칠이 바로 그 Positioner에 걸려 좌표계가 갈렸다.
-             실측(배율 150%): 드롭다운이 의도한 높이의 2/3로 잘렸다.
-
-             배율을 `transform: scale()`로 옮기면서 그 덧칠이 사라졌고, base-ui는
-             `transform: scale`을 스스로 보정한다 — 껐던 이유가 없어져 되돌린다.
+          ⚠️ **`alignItemWithTrigger`를 끈 채로 둔다.** 고른 항목을 트리거 위에 겹쳐 세우는
+             기능인데, base-ui의 그 경로가 **단위를 섞어 쓴다** — 트리거·Positioner는
+             `getScale`로 나눠 **`body` 기준 px**으로 바꿔 놓고, 화면 크기는
+             `documentElement.clientWidth/Height`를 **화면 px 그대로** 쓴다.
+             배율을 `body`에 걸면서 `html`이 배율 밖으로 나갔기 때문에 두 단위가 갈렸다.
+             실측 계산(75%, 1455×900): `body`는 1940×1200인데 clamp 상한이 1210 근처로 잘려,
+             가운데 정렬 본문의 오른쪽에 있는 트리거는 팝업이 왼쪽으로 끌려간다.
+          ⚠️ 한때 `zoom`을 걷어냈으니 켜도 된다고 보고 되돌렸다가 되물렸다 — 그때는
+             "덧칠이 사라졌다"만 보고 base-ui 안쪽을 안 읽었다(적대적 검토에서 잡혔다).
+          ⚠️ 끄면 Popover·Tooltip·DropdownMenu와 **같은 방식**이 된다 — 트리거 아래에 붙는다.
+          ⚠️ prop은 남겨 둔다. 배율이 없는 화면에서 굳이 켜고 싶으면 켤 수 있다.
         */}
         <SelectPrimitive.Popup
           data-slot="select-content"

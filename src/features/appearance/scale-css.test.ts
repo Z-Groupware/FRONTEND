@@ -19,7 +19,46 @@ import { join } from "node:path";
  */
 const GLOBALS_CSS = readFileSync(join(process.cwd(), "src/app/globals.css"), "utf8");
 
+/** 그 선택자의 선언 블록만 떼어 낸다 — 파일 어딘가에 같은 문자열이 있어도 속지 않는다 */
+function ruleOf(selector: string): string {
+  const at = GLOBALS_CSS.indexOf(`\n  ${selector} {`);
+  if (at < 0) throw new Error(`규칙을 찾지 못했다: ${selector}`);
+
+  const body = GLOBALS_CSS.slice(at);
+  return body.slice(0, body.indexOf("\n  }"));
+}
+
 describe("화면 배율 적용 방식", () => {
+  /*
+    ⚠️ **`html`이 스크롤을 놓아야 한다.** 문서가 스크롤하면 줄어들기 전 크기 기준이라
+       실제보다 길게 스크롤된다.
+  */
+  it("`html`이 화면 높이를 잡고 스크롤을 놓는다", () => {
+    const html = ruleOf("html");
+
+    expect(html).toContain("height: 100%;");
+    expect(html).toContain("overflow: hidden;");
+  });
+
+  /*
+    ⚠️ **변형 조상과 스크롤 컨테이너를 갈라 둔다.** 둘이 같으면 그 안 `position: fixed`가
+       내용과 함께 밀려 나간다 — 랜딩 상단바·도움말 버튼·모달 오버레이가 전부 사라졌다.
+       `scale(1)`도 `none`이 아니라서 **배율 100%에서도** 그렇다.
+  */
+  it("`body`는 스크롤하지 않는다 — 스크롤은 `#app-scroll`이 맡는다", () => {
+    expect(ruleOf("body")).toContain("overflow: hidden;");
+    expect(GLOBALS_CSS).toContain("#app-scroll {");
+  });
+
+  /*
+    ⚠️ 화면 높이 유틸은 이제 `100%`다. `100dvh`는 **줄어들기 전** 크기라 배율에서 틀린다.
+  */
+  it("`h-screen-z`가 `100dvh`가 아니라 `100%`다", () => {
+    expect(ruleOf(".h-screen-z")).toContain("height: 100%;");
+    expect(ruleOf(".min-h-screen-z")).toContain("min-height: 100%;");
+    expect(GLOBALS_CSS).not.toContain("100dvh / var(--app-scale)");
+  });
+
   it("`body`가 `transform: scale()`로 배율을 건다", () => {
     expect(GLOBALS_CSS).toContain("transform: scale(var(--app-scale));");
     expect(GLOBALS_CSS).toContain("transform-origin: 0 0;");
@@ -39,10 +78,7 @@ describe("화면 배율 적용 방식", () => {
        트리거와 팝업이 같은 배율 공간에 있게 되고 Floating UI 계산이 맞는다.
   */
   it("배율을 거는 자리는 `body`다", () => {
-    const body = GLOBALS_CSS.slice(GLOBALS_CSS.indexOf("\n  body {"));
-    const rule = body.slice(0, body.indexOf("\n  }"));
-
-    expect(rule).toContain("transform: scale(var(--app-scale));");
+    expect(ruleOf("body")).toContain("transform: scale(var(--app-scale));");
   });
 
   /*

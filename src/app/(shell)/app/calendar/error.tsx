@@ -7,5 +7,5 @@ interface CalendarErrorProps {
 }
 
 export default function Error({ reset }: CalendarErrorProps) {
-  return <ScreenError title="캘린더를 불러오지 못했어요" reset={reset} />;
+  return <ScreenError title="캘린더를 불러오지 못했습니다" reset={reset} isInsideShell />;
 }

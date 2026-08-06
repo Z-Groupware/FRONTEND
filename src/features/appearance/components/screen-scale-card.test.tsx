@@ -27,18 +27,32 @@ describe("ScreenScaleCard 키보드", () => {
     }
   });
 
+  /*
+    ⚠️ **100%에서 시작하면 안 된다.** 100%가 목록의 마지막이라 오른쪽을 눌러도 제자리다 —
+       전후를 둘 다 `100%`로 적어 두면 아무것도 확인하지 못한다(적대적 검토에서 잡혔다).
+       한 칸 내려가서 눌러야 "다음으로 간다"가 검증된다.
+  */
   it("오른쪽 방향키로 다음 배율을 고른다", async () => {
     const user = userEvent.setup();
     render(<ScreenScaleCard />);
 
-    expect(checked()).toHaveTextContent("100%");
-
-    checked()?.focus();
+    await user.click(screen.getByRole("radio", { name: "90%" }));
     await user.keyboard("{ArrowRight}");
 
     expect(checked()).toHaveTextContent("100%");
     // 포커스도 새 칸으로 옮겨 간다 — 안 그러면 다음 방향키가 안 먹는다
     expect(checked()).toHaveFocus();
+  });
+
+  /* ⚠️ 끝에서 돌지 않는다(clamp) — 가장 큰 값의 다음이 가장 작은 값이 되면 방향 감각이 깨진다 */
+  it("마지막 배율에서 오른쪽을 눌러도 제자리다", async () => {
+    const user = userEvent.setup();
+    render(<ScreenScaleCard />);
+
+    checked()?.focus();
+    await user.keyboard("{ArrowRight}");
+
+    expect(checked()).toHaveTextContent("100%");
   });
 
   it("왼쪽 방향키로 이전 배율을 고른다", async () => {

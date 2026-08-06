@@ -7,5 +7,5 @@ interface RoomsErrorProps {
 }
 
 export default function Error({ reset }: RoomsErrorProps) {
-  return <ScreenError title="회의실 정보를 불러오지 못했어요" reset={reset} />;
+  return <ScreenError title="회의실 정보를 불러오지 못했습니다" reset={reset} isInsideShell />;
 }
