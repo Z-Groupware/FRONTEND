@@ -170,17 +170,21 @@ export function CompanyProfileCard({ profile }: { profile: CompanyProfile }) {
             </Field>
 
             {/*
-              ⚠️ 기업 코드는 **적는 칸 아래 읽는 값**이다. 오른쪽 열이 사업자등록번호에서
-                 끝나면 옆 지도만 남아 그 아래가 훵하다 — 여기에 두면 두 열 높이가 얼추 맞는다.
-              ⚠️ 상자를 두르지 않는다. 점선은 "여기에 뭘 넣으세요"로, 실선은 입력칸으로 읽힌다 —
-                 위 칸들과 같은 라벨을 쓰고 값만 글자로 두면 그 자체로 "적는 곳이 아니다"가 된다.
-                 바꿀 수 없다는 말은 카드 설명이 이미 하고 있어 여기서 되풀이하지 않는다.
+              ⚠️ 위 칸들과 **같은 모양**이되 `readOnly`다. 값이 나란히 서야 셋이 한 묶음으로
+                 읽히는데, 모양만 같고 고쳐지면 거짓말이 된다.
+              ⚠️ `disabled`가 아니라 `readOnly`인 이유: `disabled`는 탭 순서에서 빠져
+                 **키보드로 선택해 복사할 수 없다.** 대표가 사원에게 알려 줘야 하는 값이라
+                 복사가 막히면 안 된다. 읽기 전용은 `readOnly`가 정확한 뜻이기도 하다.
+              ⚠️ `name`을 주지 않는다 — 폼이 보내는 값이 아니다(서버는 이 값을 안 받는다).
             */}
             <div className="flex flex-col gap-1.5">
-              <p className="text-sm leading-none font-medium">{COMPANY_FIELD_LABEL.CODE}</p>
-              <p className="text-[17px] leading-9 font-medium tracking-[0.14em] tabular-nums">
-                {profile.code}
-              </p>
+              <Label htmlFor="company-code">{COMPANY_FIELD_LABEL.CODE}</Label>
+              <Input
+                id="company-code"
+                value={profile.code}
+                readOnly
+                className="bg-muted text-muted-foreground cursor-default tracking-[0.1em] tabular-nums"
+              />
             </div>
           </div>
         </div>
