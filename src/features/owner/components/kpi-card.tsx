@@ -11,7 +11,7 @@ interface KpiCardProps {
 /** 대시보드 상단 KPI 4카드가 공유하는 한 칸. */
 export function KpiCard({ label, value, sub, tone }: KpiCardProps) {
   return (
-    <div className="border-border bg-card flex flex-col gap-1.5 rounded-xl border p-4">
+    <div className="border-border bg-card flex flex-col gap-1.5 rounded-2xl border p-4">
       <p className="text-muted-foreground text-xs leading-4">{label}</p>
       <p
         className={cn(
