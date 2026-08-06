@@ -168,55 +168,71 @@ export function ActionTimeline({
           </div>
 
           {/* 행들 — 보통 흐름(세로 스크롤은 바깥 컨테이너가 한다) */}
-          {bars.map((bar, index) => (
-            <div
-              key={bar.id}
-              className={cn("border-border relative flex items-stretch", index > 0 && "border-t")}
-              style={{ height: ROW_HEIGHT_PX }}
-            >
-              {/* 좌: 상태점 · 액션명 · 칩(호출부마다 뜻 다름 — 태그 또는 팀명) */}
-              <div
-                className="bg-card sticky left-0 z-10 flex min-w-0 shrink-0 items-center gap-2 px-3"
-                style={LABEL_COL_STYLE}
-              >
-                <span
-                  className={cn("size-1.5 shrink-0 rounded-full", DOT_CLASS[bar.tone])}
-                  aria-hidden
-                />
-                <span className="min-w-0 truncate text-[13px]">{bar.title}</span>
-                <span
-                  className="shrink-0 rounded px-1.5 py-0.5 font-mono text-[10px] font-semibold"
-                  style={{ backgroundColor: bar.tagBgColor, color: bar.tagTextColor }}
+          {bars.map((bar, index) => {
+            // ⚠️ 좌측 아이템(제목·칩)과 우측 막대를 한 행으로 묶어 같이 클릭되게 한다 —
+            //    막대만 눌리면 클릭 영역이 좁고, 좌측을 눌렀을 때 반응이 없어 헷갈린다.
+            const rowContent = (
+              <>
+                {/* 좌: 상태점 · 액션명 · 칩(호출부마다 뜻 다름 — 태그 또는 팀명) */}
+                <div
+                  className="bg-card sticky left-0 z-10 flex min-w-0 shrink-0 items-center gap-2 px-3"
+                  style={LABEL_COL_STYLE}
                 >
-                  {bar.tag}
-                </span>
-              </div>
-
-              {/* 우: 기간 바 — 상세 라우트가 없으면(`href` 없음) 클릭 안 되는 막대로만 표시 */}
-              <div className="relative" style={{ width: totalWidthPx }}>
-                {bar.href ? (
-                  <Link
-                    href={bar.href}
-                    aria-label={barAriaLabel(bar)}
-                    className={cn(barClassName(bar.tone), "transition-shadow hover:shadow-sm")}
-                    style={{ left: bar.leftPx, width: bar.widthPx }}
+                  <span
+                    className={cn("size-1.5 shrink-0 rounded-full", DOT_CLASS[bar.tone])}
+                    aria-hidden
+                  />
+                  <span className="min-w-0 truncate text-[13px]">{bar.title}</span>
+                  <span
+                    className="shrink-0 rounded px-1.5 py-0.5 font-mono text-[10px] font-semibold"
+                    style={{ backgroundColor: bar.tagBgColor, color: bar.tagTextColor }}
                   >
-                    {bar.ddayLabel}
-                    <BarCap tone={bar.tone} />
-                  </Link>
-                ) : (
+                    {bar.tag}
+                  </span>
+                </div>
+
+                {/* 우: 기간 바 */}
+                <div className="relative" style={{ width: totalWidthPx }}>
                   <div
-                    aria-label={barAriaLabel(bar)}
+                    aria-hidden
                     className={barClassName(bar.tone)}
                     style={{ left: bar.leftPx, width: bar.widthPx }}
                   >
                     {bar.ddayLabel}
                     <BarCap tone={bar.tone} />
                   </div>
-                )}
+                </div>
+              </>
+            );
+
+            const rowClassName = cn(
+              "border-border relative flex items-stretch",
+              index > 0 && "border-t",
+              bar.href && "transition-colors hover:bg-foreground/[0.03]",
+            );
+
+            // ⚠️ 상세 라우트가 없으면(`href` 없음) 클릭 안 되는 행으로만 표시
+            return bar.href ? (
+              <Link
+                key={bar.id}
+                href={bar.href}
+                aria-label={barAriaLabel(bar)}
+                className={rowClassName}
+                style={{ height: ROW_HEIGHT_PX }}
+              >
+                {rowContent}
+              </Link>
+            ) : (
+              <div
+                key={bar.id}
+                aria-label={barAriaLabel(bar)}
+                className={rowClassName}
+                style={{ height: ROW_HEIGHT_PX }}
+              >
+                {rowContent}
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </div>
