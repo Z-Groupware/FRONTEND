@@ -1,25 +1,36 @@
 import type { Metadata } from "next";
 
 import { ScreenScaleCard } from "@/features/appearance/components/screen-scale-card";
+import { ProfileHeader } from "@/features/profile/components/profile-header";
+import { ProfileInfoCard } from "@/features/profile/components/profile-info-card";
+import { getMyProfile } from "@/features/profile/server";
 
 export const metadata: Metadata = {
   title: "마이페이지",
 };
 
 /**
- * 마이페이지 — 지금은 **화면 배율 하나뿐**이다.
+ * 마이페이지 — 프로필(읽기 전용)과 화면 배율.
  *
- * ⚠️ **명세가 아직 없다.** 라우트 트리에는 `/app/me`가 있지만 `docs/WORKFLOW.md`에 화면
- *    내용이 없다 — 프로필·알림·비밀번호 같은 걸 지금 지어내면 명세가 나올 때 갈아엎어야 한다.
- *    배율만 먼저 두고 그 위에 얹는다(§명세에 없는 화면·기능은 안 만든다).
- * ⚠️ 배율은 **기기 설정**이라 서버에 저장하지 않는다. 여기서는 조회할 것도 없어서
- *    Server Component가 하는 일이 없다.
+ * ⚠️ **편집·연차 등은 명세가 없어 만들지 않는다**(§명세에 없는 화면·기능은 안 만든다).
+ *    "기본 정보"는 팀 디자인(피그마)을 그대로 반영했지만, 이 화면에서 값을 고칠 수 있다는
+ *    뜻은 아니다 — 편집 API·정책이 확정되면 그때 붙인다.
+ * ⚠️ 배율은 **기기 설정**이라 서버에 저장하지 않는다(`ScreenScaleCard` 그대로 유지).
  */
-export default function AppMePage() {
+export default async function AppMePage() {
+  const profile = await getMyProfile();
+
   return (
     <div className="flex-1 overflow-y-auto px-8 py-7">
       <div className="mx-auto w-full max-w-[1440px]">
-        <ScreenScaleCard />
+        <div className="mx-auto flex w-full max-w-[600px] flex-col gap-7">
+          <div className="flex flex-col gap-5">
+            <ProfileHeader profile={profile} />
+            <ProfileInfoCard profile={profile} />
+          </div>
+
+          <ScreenScaleCard />
+        </div>
       </div>
     </div>
   );
