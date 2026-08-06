@@ -35,10 +35,6 @@ describe("Owner", () => {
     expect(titles(navFor(actor(ROLE.OWNER)))).toContain("회사 운영");
   });
 
-  it("**계정 발급이 없다** — 발급은 Admin의 일이고 Owner는 발급자도 대상도 아니다", () => {
-    expect(labels(navFor(actor(ROLE.OWNER)), "회사 운영")).not.toContain("계정 발급");
-  });
-
   it("기업 설정·팀장 인수인계는 Owner만 본다", () => {
     const items = labels(navFor(actor(ROLE.OWNER)), "회사 운영");
     expect(items).toContain("기업 설정");
@@ -100,19 +96,17 @@ describe("Admin 겸직", () => {
     expect(navFor(actor(ROLE.LEADER, true))[0]?.items[0]?.href).toBe("/team");
   });
 
-  it("겸직자는 **계정 발급을 본다**", () => {
-    expect(labels(navFor(actor(ROLE.MEMBER, true)), "회사 운영")).toContain("계정 발급");
-  });
-
   it("겸직자에게 기업 설정·팀장 인수인계는 **안 보인다** — 위계상 Owner의 것이다", () => {
     const items = labels(navFor(actor(ROLE.MEMBER, true)), "회사 운영");
     expect(items).not.toContain("기업 설정");
     expect(items).not.toContain("팀장 인수인계");
   });
 
-  it("Owner에게 `isAdmin`이 잘못 켜져도 계정 발급이 생기지 않는다", () => {
-    // ⚠️ `canGrantAdmin`이 Owner를 겸직 대상에서 빼므로 판정 자체가 거짓이다
-    expect(labels(navFor(actor(ROLE.OWNER, true)), "회사 운영")).not.toContain("계정 발급");
+  it("**계정 발급은 별도 탭이 아니다** — 사원 관리 화면 안 버튼이라 사이드바엔 안 뜬다", () => {
+    // ⚠️ Owner·겸직자 모두 "사원 관리"만 보인다. 발급 가능 여부(canIssueAccount)는
+    //    같은 화면 안에서 canManageMembers와 같은 문으로 갈리므로 nav엔 항목이 없다.
+    expect(labels(navFor(actor(ROLE.OWNER)), "회사 운영")).not.toContain("계정 발급");
+    expect(labels(navFor(actor(ROLE.MEMBER, true)), "회사 운영")).not.toContain("계정 발급");
   });
 });
 

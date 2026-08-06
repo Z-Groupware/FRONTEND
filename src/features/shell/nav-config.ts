@@ -1,6 +1,6 @@
 import { ROLE, type Role } from "@/constants/role";
 import type { Actor } from "@/lib/permission";
-import { canIssueAccount, canManageBilling } from "@/lib/permission";
+import { canManageBilling } from "@/lib/permission";
 
 import type { NavItem, NavSection } from "./nav";
 import { hasRoute } from "./routes";
@@ -50,7 +50,10 @@ const MY_PAGE: NavItem = { href: "/app/me", label: "마이페이지", icon: "me"
 /**
  * 회사 운영 — **Owner와 Admin 겸직자가 보는 것이 다르다.**
  *
- * ⚠️ **계정 발급은 Admin만** 한다(`canIssueAccount`). Owner는 발급 대상도 발급자도 아니다.
+ * ⚠️ **계정 발급은 별도 탭이 아니다**(2026-08-06 정정). Owner도 발급할 수 있게 되면서
+ *    "사원 관리" 화면 안의 버튼으로 옮겼다 — `/manage/members`가 Owner·Admin 공통이라
+ *    (`canManageMembers`) 발급도 같은 문으로 자연히 열린다. 두 화면(사원 관리·계정 발급)을
+ *    갈라 두면 나중에 권한이 갈릴 때마다 두 곳을 같이 고쳐야 한다.
  * ⚠️ **기업 설정·팀장 인수인계는 Owner만** 본다. 위계상 admin이 대신할 수 없다.
  * ⚠️ 겹치는 넷(사원 관리·회의실·구독·결제·녹음 용량)은 `/manage/*` 하나로 모여 있다 —
  *    역할 경로에 두면 겸직자에게 주소가 거짓말을 한다(DECISIONS §관리 기능).
@@ -61,8 +64,6 @@ const MANAGE_SHARED: NavItem[] = [
   { href: "/manage/billing", label: "구독·결제", icon: "billing" },
   { href: "/manage/storage", label: "저장소 관리", icon: "storage" },
 ];
-
-const ISSUE_ACCOUNT: NavItem = { href: "/manage/new", label: "계정 발급", icon: "members" };
 
 const OWNER_ONLY: NavItem[] = [
   { href: "/owner/leader-handovers", label: "팀장 인수인계", icon: "approval" },
@@ -140,13 +141,7 @@ export function navFor(viewer: Actor): NavSection[] {
   if (canManageBilling(viewer)) {
     sections.push({
       title: "회사 운영",
-      items: [
-        ...MANAGE_SHARED.slice(0, 1),
-        // 계정 발급은 Admin 겸직자만 — 사원 관리 바로 옆이 자연스럽다
-        ...(canIssueAccount(viewer) ? [ISSUE_ACCOUNT] : []),
-        ...MANAGE_SHARED.slice(1),
-        ...(isOwner ? OWNER_ONLY : []),
-      ],
+      items: [...MANAGE_SHARED, ...(isOwner ? OWNER_ONLY : [])],
     });
   }
 
