@@ -1,7 +1,8 @@
 "use client";
 
-import { Lightbulb, X } from "lucide-react";
+import { X } from "lucide-react";
 
+import { ZLogo } from "@/components/icons/z-logo";
 import { cn } from "@/lib/utils";
 
 import { ONBOARDING_STEP, ONBOARDING_STEP_LABEL, type OnboardingStep } from "../types";
@@ -60,10 +61,12 @@ export function OnboardingGuide({ step, isOpen, onToggle }: OnboardingGuideProps
         className="bg-guide-surface text-guide-foreground border-guide-border focus-visible:ring-ring fixed right-6 bottom-20 z-50 flex size-11 items-center justify-center rounded-full border shadow-lg transition-transform hover:scale-105 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-hidden"
       >
         {/*
-          ⚠️ **전구**다. 여기는 찾아보는 곳이 아니라 지금 단계에서 알아둘 것을 짚어 주는
-             곳이라, 랜딩 도움말(돋보기)과 표식을 일부러 다르게 쓴다.
+          ⚠️ **Z 표식**이다. 온보딩은 아직 아무것도 없는 화면이라, 여기서 말을 거는 게
+             누구인지가 표식으로 먼저 읽혀야 한다 — 일반 아이콘은 브라우저 확장처럼 보인다.
+          ⚠️ 로고는 `currentColor`라 버튼이 정한 글자색(`--guide-foreground`)을 따라간다.
+             패널이 밝아지든 어두워지든 따로 손댈 곳이 없다(§디자인 토큰).
         */}
-        {isOpen ? <X className="size-[18px]" /> : <Lightbulb className="size-[18px]" aria-hidden />}
+        {isOpen ? <X className="size-[18px]" /> : <ZLogo className="size-[15px]" aria-hidden />}
       </button>
 
       <aside

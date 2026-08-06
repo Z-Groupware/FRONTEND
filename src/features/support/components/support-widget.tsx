@@ -1,7 +1,9 @@
 "use client";
 
-import { RotateCcw, Search, X } from "lucide-react";
+import { RotateCcw, X } from "lucide-react";
 import { useState } from "react";
+
+import { ZLogo } from "@/components/icons/z-logo";
 
 import {
   FAQ_CATEGORY_LABEL,
@@ -93,10 +95,16 @@ export function SupportWidget() {
         */
         className="bg-popover text-popover-foreground/70 landing-light:text-popover-foreground border-foreground/20 focus-visible:ring-ring fixed right-5 bottom-5 z-50 flex size-12 items-center justify-center rounded-full border shadow-lg transition-transform hover:scale-105 focus-visible:ring-2 focus-visible:outline-hidden"
       >
+        {/*
+          ⚠️ **닫혀 있을 땐 Z 표식**이다. 이 창은 우리가 정해 둔 답을 돌려주는 곳이라
+             표식도 우리 것이어야 한다 — 일반 아이콘은 브라우저 확장이나 외부 위젯처럼 읽힌다.
+          ⚠️ 로고는 `currentColor`라 **버튼이 정한 글자색을 그대로 따라간다.** 밝은 화면에선
+             먹색, 어두운 화면에선 흰색이 되어 따로 손댈 곳이 없다(§디자인 토큰).
+        */}
         {isOpen ? (
           <X className="size-5" aria-hidden />
         ) : (
-          <Search className="size-[22px]" aria-hidden />
+          <ZLogo className="size-[18px]" aria-hidden />
         )}
       </button>
 
@@ -122,22 +130,17 @@ export function SupportWidget() {
         >
           <div className="border-border flex items-center gap-2.5 border-b px-4 py-3.5">
             {/*
-              ⚠️ 여기는 **물음표**다. Z 표식은 첫 화면 안내 블록에 이미 있어 한 창에 두 번
-                 나오고, 머리가 말해야 하는 건 브랜드가 아니라 **이 창이 도움말이라는 것**이다.
-              ⚠️ 우하단 버튼과 같은 아이콘이라 눌러서 열린 그 물건이라는 게 이어진다.
-            */}
-            {/*
-              ⚠️ **돋보기**다. 이 위젯이 실제로 하는 일은 정해진 답을 **찾아 주는 것**이라
-                 표식도 그렇게 읽혀야 한다.
+              ⚠️ **Z 표식**이다. 눌러서 연 우하단 버튼과 같은 표식이라 그 물건이 열렸다는 게
+                 이어진다 — 머리에서 표식이 바뀌면 다른 창으로 넘어온 것처럼 읽힌다.
               ⚠️ 말풍선·헤드셋은 쓰지 않는다 — 사람이나 AI가 답해 주는 것처럼 읽히는데
                  여기엔 사람도 AI도 없다(§정직성). 반짝이는 AI 표식이라 더 안 된다.
-              ⚠️ 온보딩 가이드는 전구를 쓴다. 둘은 성격이 다르다 —
-                 여기는 찾아보는 곳이고, 거기는 지금 단계에서 알아둘 것을 짚어 주는 곳이다.
-              ⚠️ 어두울 땐 회색, 밝을 땐 먹색을 한 단 눌러서. 밝은 바탕의 회색은 흐리멍덩하고,
+                 무엇을 하는 곳인지는 아래 **글**이 말한다(`자주 묻는 질문에서 찾아드립니다`).
+              ⚠️ 로고는 `currentColor`라 이 칸의 글자색을 따라간다 — 어두울 땐 회색,
+                 밝을 땐 먹색을 한 단 눌러서. 밝은 바탕의 회색은 흐리멍덩하고,
                  진한 먹색은 머리글보다 먼저 튄다.
             */}
             <span className="bg-secondary text-muted-foreground landing-light:text-foreground/70 border-border flex size-8 shrink-0 items-center justify-center rounded-full border">
-              <Search className="size-[18px]" aria-hidden />
+              <ZLogo className="size-[14px]" aria-hidden />
             </span>
 
             <span>
