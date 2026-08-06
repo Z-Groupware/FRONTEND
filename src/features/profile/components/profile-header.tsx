@@ -3,8 +3,12 @@ import { cn } from "@/lib/utils";
 
 import type { MyProfile } from "../types";
 
+interface ProfileHeaderProps {
+  profile: MyProfile;
+}
+
 /** 마이페이지 맨 위 — 아바타·이름·이메일·역할 배지·소속. 편집 불가(읽기 전용, §명세 없음). */
-export function ProfileHeader({ profile }: { profile: MyProfile }) {
+export function ProfileHeader({ profile }: ProfileHeaderProps) {
   return (
     <div className="border-border flex items-center gap-3.5 border-b pb-5">
       <div className="bg-foreground text-background flex size-14 shrink-0 items-center justify-center rounded-full text-[22px] font-medium">
