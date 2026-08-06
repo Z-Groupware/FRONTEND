@@ -12,9 +12,7 @@ import { validateCompanyProfile, validateDepartments, validatePositions } from "
 const VALID: CompanyProfileDraft = {
   name: "지그재그컴퍼니",
   businessNumber: "123-45-67890",
-  ceoName: "김대표",
-  address: "서울특별시 강남구 테헤란로 123",
-  phone: "02-1234-5678",
+  place: { address: "서울 강남구 테헤란로 152", lat: 37.500806, lng: 127.036377 },
 };
 
 function team(id: string, name: string, children: DepartmentNode[] = []): DepartmentNode {
@@ -26,10 +24,8 @@ describe("validateCompanyProfile", () => {
     expect(validateCompanyProfile(VALID)).toEqual({});
   });
 
-  it.each(["name", "ceoName", "address"] as const)("%s는 공백만 적으면 막는다", (field) => {
-    const errors = validateCompanyProfile({ ...VALID, [field]: "   " });
-
-    expect(errors[field]).toBeTruthy();
+  it("기업명이 공백만이면 막는다", () => {
+    expect(validateCompanyProfile({ ...VALID, name: "   " }).name).toBeTruthy();
   });
 
   /*
@@ -42,13 +38,36 @@ describe("validateCompanyProfile", () => {
     },
   );
 
-  it("대표번호(1588-0000)도 지역번호도 받는다 — 자릿수를 못박지 않는다", () => {
-    expect(validateCompanyProfile({ ...VALID, phone: "1588-0000" }).phone).toBeUndefined();
-    expect(validateCompanyProfile({ ...VALID, phone: "031-123-4567" }).phone).toBeUndefined();
+  it("위치를 안 고르면 막는다 — 세금계산서가 나가는 주소다", () => {
+    expect(validateCompanyProfile({ ...VALID, place: null }).place).toBeTruthy();
   });
 
-  it("전화번호에 숫자·하이픈이 아닌 게 섞이면 막는다", () => {
-    expect(validateCompanyProfile({ ...VALID, phone: "02-1234-5678 (내선 3)" }).phone).toBeTruthy();
+  it("주소가 비어 있으면 좌표가 있어도 막는다", () => {
+    expect(
+      validateCompanyProfile({ ...VALID, place: { address: "  ", lat: 37.5, lng: 127 } }).place,
+    ).toBeTruthy();
+  });
+
+  /*
+    ⚠️ 지도를 못 쓰는 환경(키 없음·SDK 차단)에서는 주소만 직접 적고 좌표가 `0`으로 남는다 —
+       신청 화면과 **같은 규칙**이라 여기서도 통과시켜야 한다. 막으면 그 환경에서는 회사
+       정보를 영영 못 고친다.
+  */
+  it("좌표가 0이어도 주소가 있으면 통과한다 — 지도를 못 쓰는 환경의 값이다", () => {
+    expect(
+      validateCompanyProfile({ ...VALID, place: { address: "서울 어딘가", lat: 0, lng: 0 } }),
+    ).toEqual({});
+  });
+
+  /*
+    ⚠️ 규칙은 **기업 등록 신청과 같은 스키마**에서 온다. 여기가 신청보다 느슨해지면
+       신청 때 막힌 값이 설정에서는 저장되고, 조이면 그 반대가 된다.
+  */
+  it("신청 화면과 같은 문구로 알린다", () => {
+    const errors = validateCompanyProfile({ name: "", businessNumber: "", place: null });
+
+    expect(errors.name).toBe("기업명을 입력해 주세요");
+    expect(errors.place).toBe("회사 위치를 찾아 골라 주세요");
   });
 });
 

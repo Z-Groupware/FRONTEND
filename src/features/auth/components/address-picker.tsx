@@ -174,8 +174,14 @@ export function AddressPicker({ picked, onPick, hasError }: AddressPickerProps) 
             <Check className="text-success size-3.5 shrink-0" aria-hidden />
             <span className="translate-y-px">{picked.address}</span>
           </p>
+          {/*
+            ⚠️ `key`에 **SDK 상태를 함께 넣는다.** 이미 고른 곳을 들고 시작하는 화면
+               (기업 설정)에서는 지도 상자가 SDK보다 먼저 붙어서, ref 콜백이 도는 시점에
+               `readKakao()`가 아직 `null`이다 — 그대로 두면 **빈 상자가 영영 남는다.**
+               상태가 `ready`로 바뀌면 상자가 새로 붙으면서 콜백이 한 번 더 돈다.
+          */}
           <div
-            key={`${picked.lat},${picked.lng}`}
+            key={`${loadState}:${picked.lat},${picked.lng}`}
             ref={drawPin}
             aria-hidden
             className="border-border h-[160px] w-full overflow-hidden rounded-lg border"

@@ -48,13 +48,24 @@ export interface CompanyProfileFormState {
   savedAt?: number;
 }
 
+/**
+ * ⚠️ 위치는 **숨은 칸 셋**으로 온다(`placeAddress`·`placeLat`·`placeLng`) — 신청 화면과 같은
+ *    모양이다. 지도가 고른 값이라 사람이 적는 칸이 없다.
+ * ⚠️ 주소가 비면 `null`이다. 좌표만 있고 주소가 없는 값은 위치로 치지 않는다.
+ */
 function readDraft(formData: FormData): CompanyProfileDraft {
+  const address = String(formData.get("placeAddress") ?? "");
+
   return {
     name: String(formData.get("name") ?? ""),
     businessNumber: String(formData.get("businessNumber") ?? ""),
-    ceoName: String(formData.get("ceoName") ?? ""),
-    address: String(formData.get("address") ?? ""),
-    phone: String(formData.get("phone") ?? ""),
+    place: address
+      ? {
+          address,
+          lat: Number(formData.get("placeLat") ?? 0),
+          lng: Number(formData.get("placeLng") ?? 0),
+        }
+      : null,
   };
 }
 

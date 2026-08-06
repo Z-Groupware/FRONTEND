@@ -15,9 +15,8 @@ const INITIAL: CompanySetting = {
   profile: {
     name: "지그재그컴퍼니",
     businessNumber: "123-45-67890",
-    ceoName: "김대표",
-    address: "서울특별시 강남구 테헤란로 123, 8층",
-    phone: "02-1234-5678",
+    // 지도에 핀이 꽂히는 좌표다 — 신청 화면에서 고른 값이 그대로 넘어온 모양
+    place: { address: "서울 강남구 테헤란로 152", lat: 37.500806, lng: 127.036377 },
     code: "ZIGZAG",
   },
   departments: [

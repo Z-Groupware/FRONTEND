@@ -97,8 +97,8 @@ export function CompanyPositionCard({ initial }: { initial: Position[] }) {
         <span className={cn(POSITION_COLUMN.REMOVE, "shrink-0")} aria-hidden />
       </div>
 
-      {/* 목록이 짧으면 카드도 짧다 — 팀 체계 카드와 같은 이유 */}
-      <div className="max-h-[268px] overflow-auto overscroll-contain">
+      {/* 남는 키는 목록이 가져간다 — 팀 체계 카드와 같은 이유 */}
+      <div className="min-h-0 flex-1 overflow-auto overscroll-contain">
         {list.positions.length === 0 ? (
           <p className="text-muted-foreground/70 py-12 text-center text-[13px]">
             아래에서 첫 직급을 추가해 주세요

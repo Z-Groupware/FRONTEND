@@ -42,8 +42,17 @@ export default async function OwnerSettingPage() {
     <div className="flex-1 overflow-y-auto px-8 py-7">
       <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-7">
         <CompanyProfileCard profile={setting.profile} />
-        <CompanyTeamCard initial={setting.departments} />
-        <CompanyPositionCard initial={setting.positions} />
+
+        {/*
+          ⚠️ 조직 카드 둘은 **나란히** 둔다. 트리도 직급도 보여 줄 게 `이름`과 `구분` 둘뿐이라,
+             1440 한 줄을 통째로 주면 이름은 왼쪽 끝, 뱃지는 오른쪽 끝에 붙고 가운데가 텅 빈다
+             (저장소 표는 열이 여섯이라 채워지는 것이고, 열 둘짜리 목록은 그렇지 않다).
+          ⚠️ 성격도 같다 — 둘 다 온보딩에서 만든 조직 체계를 나중에 고치는 자리다.
+        */}
+        <div className="grid grid-cols-1 gap-7 lg:grid-cols-2">
+          <CompanyTeamCard initial={setting.departments} />
+          <CompanyPositionCard initial={setting.positions} />
+        </div>
       </div>
     </div>
   );

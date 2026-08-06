@@ -1,4 +1,7 @@
+import { z } from "zod";
+
 import { AUTHORITY } from "@/constants/domain";
+import { registerSchema } from "@/features/auth/register-draft";
 import { MAX_DEPARTMENT_DEPTH, MAX_ORG_NAME_LENGTH } from "@/features/onboarding/types";
 
 import type { CompanyProfileDraft, CompanyProfileErrors, DepartmentNode, Position } from "./types";
@@ -8,26 +11,30 @@ import type { CompanyProfileDraft, CompanyProfileErrors, DepartmentNode, Positio
  * 규칙이 두 벌이면 화면은 통과시키고 서버는 막는 일이 생긴다.
  */
 
-/** `000-00-00000` — 국세청 사업자등록번호 꼴. 하이픈은 넣어 적게 한다(눈으로 세기 어렵다) */
-const BUSINESS_NUMBER = /^\d{3}-\d{2}-\d{5}$/;
-
-/** 숫자와 하이픈만. 대표번호(`1588-0000`)도 지역번호도 들어오므로 자릿수는 안 본다 */
-const PHONE = /^[\d-]{7,20}$/;
+/**
+ * 기본 정보 규칙은 **기업 등록 신청과 같은 것**을 쓴다.
+ *
+ * ⚠️ 여기서 규칙을 새로 적으면 신청 때는 통과한 값이 설정에서 막히거나 그 반대가 된다 —
+ *    같은 회사의 같은 값이다. 신청 스키마의 칸을 그대로 꺼내 쓴다(칸 이름만 우리 것).
+ */
+const companyProfileSchema = z.object({
+  name: registerSchema.shape.companyName,
+  businessNumber: registerSchema.shape.businessNumber,
+  place: registerSchema.shape.place,
+});
 
 export function validateCompanyProfile(draft: CompanyProfileDraft): CompanyProfileErrors {
+  const result = companyProfileSchema.safeParse(draft);
+  if (result.success) return {};
+
   const errors: CompanyProfileErrors = {};
-
-  if (!draft.name.trim()) errors.name = "회사명을 입력해 주세요";
-  if (!draft.ceoName.trim()) errors.ceoName = "대표자 이름을 입력해 주세요";
-  if (!draft.address.trim()) errors.address = "주소를 입력해 주세요";
-
-  if (!BUSINESS_NUMBER.test(draft.businessNumber.trim())) {
-    errors.businessNumber = "000-00-00000 꼴로 입력해 주세요";
+  for (const issue of result.error.issues) {
+    const field = issue.path[0];
+    // 한 칸에 오류가 여럿이면 **첫 줄만** 쓴다(신청 화면과 같은 규칙)
+    if (typeof field === "string" && !(field in errors)) {
+      errors[field as keyof CompanyProfileDraft] = issue.message;
+    }
   }
-  if (!PHONE.test(draft.phone.trim())) {
-    errors.phone = "숫자와 하이픈(-)만 입력해 주세요";
-  }
-
   return errors;
 }
 

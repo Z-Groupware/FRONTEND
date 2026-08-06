@@ -29,7 +29,7 @@ export function SettingCard({
   footer?: ReactNode;
 }) {
   return (
-    <section className="border-border bg-card overflow-hidden rounded-2xl border">
+    <section className="border-border bg-card flex h-full flex-col overflow-hidden rounded-2xl border">
       <div className="flex items-baseline justify-between gap-3 px-7 pt-6 pb-3">
         <h2 className="flex items-center gap-2 text-[17px] leading-7 font-semibold tracking-[-0.3px]">
           {/* 다른 카드 머리와 같은 표식 — 화면이 달라도 같은 서비스로 읽힌다 */}
@@ -47,7 +47,13 @@ export function SettingCard({
         {description}
       </p>
 
-      <div className="border-border border-t">{children}</div>
+      {/*
+        ⚠️ `flex-1` — 카드 둘을 나란히 놓으면 키가 다른데, 이게 없으면 짧은 쪽 저장 줄이
+           카드 중간에 뜬다. 늘어나는 건 목록 자리고 저장 줄은 바닥에 붙는다.
+        ⚠️ 세로 flex인 것도 같은 이유다. 안쪽에서 **목록만** 늘어나야 [추가] 줄이 목록 끝에
+           붙는다 — 블록으로 두면 짧은 카드의 [추가] 줄이 허공에 뜬다.
+      */}
+      <div className="border-border flex min-h-0 flex-1 flex-col border-t">{children}</div>
 
       {footer && (
         <div className="border-border flex items-center justify-end gap-2 border-t px-7 py-4">

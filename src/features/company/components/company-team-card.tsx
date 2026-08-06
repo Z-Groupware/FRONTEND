@@ -106,9 +106,12 @@ export function CompanyTeamCard({ initial }: { initial: DepartmentNodeType[] }) 
           <span>구분</span>
         </div>
 
-        {/* 목록이 짧으면 카드도 짧다. 길어지면 여기서 멈추고 안에서만 스크롤된다 —
-            빈 자리를 300px씩 비워 두면 세 카드가 화면을 넘겨 아래가 안 보인다 */}
-        <div className="max-h-[300px] overflow-auto overscroll-contain px-4 pt-4 pb-3">
+        {/*
+          ⚠️ 높이를 못박지 않는다. 옆 카드(직급)와 나란히 서서 **키를 나눠 쓰는데**,
+             여기서 300px로 고정하면 남는 자리가 [추가] 줄 아래에 빈 띠로 남는다.
+             길어지면 이 안에서만 스크롤된다.
+        */}
+        <div className="min-h-0 flex-1 overflow-auto overscroll-contain px-4 pt-4 pb-3">
           {tree.departments.length === 0 ? (
             <p className="text-muted-foreground/70 py-12 text-center text-[13px]">
               아래에서 첫 팀을 추가해 주세요

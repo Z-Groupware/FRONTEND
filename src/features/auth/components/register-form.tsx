@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useActionState, useState } from "react";
 
 import { type RegisterState, submitRegistrationAction } from "../actions";
+import { formatBusinessNumber } from "../business-number";
 import type { PickedPlace } from "../register-draft";
 import { AddressPicker } from "./address-picker";
 import { AuthCard } from "./auth-card";
@@ -21,14 +22,6 @@ import { SubmitButton } from "./submit-button";
  * ⚠️ 브라우저 기본 검증(`required` 말풍선)을 쓰지 않는다 — `noValidate` + 필드 인라인.
  */
 const INITIAL: RegisterState = { errors: {} };
-
-/** 사업자등록번호는 `000-00-00000` 모양으로 굳혀 준다 — 사람마다 다르게 적으면 서버가 고생한다 */
-function formatBusinessNumber(input: string) {
-  const digits = input.replace(/\D/g, "").slice(0, 10);
-  if (digits.length <= 3) return digits;
-  if (digits.length <= 5) return `${digits.slice(0, 3)}-${digits.slice(3)}`;
-  return `${digits.slice(0, 3)}-${digits.slice(3, 5)}-${digits.slice(5)}`;
-}
 
 interface SectionLabelProps {
   title: string;
