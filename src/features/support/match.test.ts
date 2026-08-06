@@ -35,6 +35,23 @@ describe("findFaqCandidates", () => {
     expect(findFaqCandidates(input).map((row) => row.id)).toContain(expected);
   });
 
+  /*
+    ⚠️ **`역할`은 이제 애매한 말이라 되물어야 한다.** 용어가 갈리면서 두 가지를 가리키게 됐다 —
+       권한(Owner·Leader·Member)이거나, 팀 안에서 맡는 일(프론트엔드·백엔드)이다.
+       한쪽으로 몰아 답하면 절반은 틀린 답을 받는다. 후보가 여럿이면 화면이 되묻는다
+       (`support-widget`) — 그러라고 둘 다 남긴 것이지 키워드가 겹쳐서 방치한 게 아니다.
+    ⚠️ 검색어에서 `역할`을 빼면 이 되묻기가 사라지고 늘 권한 쪽으로 답한다. 빼지 않는다.
+  */
+  it.each(["역할", "역할이 뭐예요", "팀장 직급"])(
+    "'%s'는 후보를 좁히지 않고 되묻게 둔다 — 뜻이 둘이다",
+    (input) => {
+      const ids = findFaqCandidates(input).map((row) => row.id);
+
+      expect(ids).toContain("roles");
+      expect(ids).toContain("org-structure");
+    },
+  );
+
   it("모르는 질문은 후보가 없다 — 억지로 답하지 않는다", () => {
     expect(findFaqCandidates("오늘 점심 뭐 먹지")).toHaveLength(0);
     expect(findFaqCandidates("주차장 있나요")).toHaveLength(0);
