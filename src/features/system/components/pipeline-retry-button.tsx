@@ -38,9 +38,9 @@ export function PipelineRetryButton({ meetingId, companyName }: PipelineRetryBut
       const response = await retryPipelineAction(meetingId);
       if (response.success) {
         setIsDone(true);
-        toast(`${companyName} 회의 재처리를 요청했어요`);
+        toast(`${companyName} 회의 재처리를 요청했습니다`);
       } else {
-        toast(`${companyName} 회의를 찾을 수 없어 재처리하지 못했어요`);
+        toast(`${companyName} 회의를 찾을 수 없어 재처리하지 못했습니다`);
       }
     });
   };

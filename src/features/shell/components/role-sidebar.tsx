@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { toast } from "sonner";
 
 import { ZLogo } from "@/components/icons/z-logo";
-import { ROLE_BADGE_CLASS, ROLE_LABEL } from "@/constants/role";
+import { AUTHORITY_BADGE_CLASS, AUTHORITY_LABEL } from "@/constants/authority";
 import { useProfileAvatar } from "@/hooks/use-profile-avatar";
 import { topicParticle } from "@/lib/korean";
 import { cn } from "@/lib/utils";
@@ -26,9 +26,9 @@ interface RoleSidebarProps {
   /**
    * 지금 보고 있는 사람 — 이름·역할 배지·로고 링크가 이 값에서 나온다.
    *
-   * ⚠️ `isAdmin`까지 통째로 받는다. 네비 구성은 역할 하나로 못 정한다 —
+   * ⚠️ `isAdmin`까지 통째로 받는다. 네비 구성은 권한 하나로 못 정한다 —
    *    `/manage`는 Admin 겸직자에게만 보이므로 `role` + `isAdmin`을 같이 본다
-   *    (DECISIONS §(role)).
+   *    (DECISIONS §(authority)).
    */
   user: Viewer;
 }
@@ -162,11 +162,11 @@ function AccountRow({ user }: { user: Viewer }) {
       <span className="min-w-0 flex-1 truncate text-xs leading-[18px]">{user.name}</span>
       <span
         className={cn(
-          ROLE_BADGE_CLASS[user.role],
+          AUTHORITY_BADGE_CLASS[user.role],
           "shrink-0 rounded px-[5.25px] py-[1.75px] text-[9px] leading-[14px]",
         )}
       >
-        {ROLE_LABEL[user.role]}
+        {AUTHORITY_LABEL[user.role]}
       </span>
     </div>
   );

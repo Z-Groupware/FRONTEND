@@ -63,7 +63,7 @@ export function CalendarDayDetailPanel({
 
       {events.length === 0 ? (
         <p className="text-muted-foreground flex flex-1 items-center justify-center text-center text-sm">
-          이 날짜엔 일정이 없어요
+          이 날짜에 일정이 없습니다
         </p>
       ) : (
         <div className="relative min-h-0 flex-1">

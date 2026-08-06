@@ -99,11 +99,16 @@ export function ActionTimeline({
       <div className="relative" style={{ minWidth: LABEL_COL_PX + totalWidthPx }}>
         {/* 날짜 축 — 세로 스크롤 중에도 위에 고정. z는 아래 그리드(0)·행(20)보다 항상 높게(30) */}
         <div className="border-border bg-card sticky top-0 z-30 flex border-b text-[10.5px]">
+          {/*
+            ⚠️ `self-stretch` + 내부 `items-end`로 라벨이 헤더 전체 높이를 채운다 — `self-end`(짧은
+            박스)만 쓰면 라벨 위쪽 몇 px가 이 칸의 배경으로 안 덮여서, 가로 스크롤로 지나가는 날짜
+            칸이 그 틈으로 살짝 비친다(2026-08-06에 실제로 겪은 버그).
+          */}
           <div
-            className="text-muted-foreground bg-card sticky left-0 z-10 shrink-0 self-end px-3 pt-2 pb-1.5"
+            className="bg-card sticky left-0 z-10 flex shrink-0 items-end self-stretch px-3 pb-1.5"
             style={LABEL_COL_STYLE}
           >
-            {monthLabel}
+            <span className="text-muted-foreground">{monthLabel}</span>
           </div>
           <div className="bg-card flex">
             {days.map((day) => (

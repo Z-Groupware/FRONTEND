@@ -1,6 +1,6 @@
 import "server-only";
 
-import { ROLE } from "@/constants/domain";
+import { AUTHORITY } from "@/constants/domain";
 
 import type { Actor } from "./permission";
 
@@ -12,5 +12,5 @@ import type { Actor } from "./permission";
  *    화면·Server Action은 그대로다(§Mock 격리막). 그래서 서버 재검사도 여기서 나온 actor로 한다.
  */
 export function getMockActor(): Actor {
-  return { id: 1, role: ROLE.OWNER };
+  return { id: 1, role: AUTHORITY.OWNER };
 }

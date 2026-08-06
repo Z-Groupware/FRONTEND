@@ -1,5 +1,15 @@
 import type { NextConfig } from "next";
 
+/*
+  ⚠️ 서버 프로세스의 시간대를 한국 시간(KST, UTC+9)으로 고정한다.
+     `new Date("2026-08-05T00:00:00")`처럼 오프셋 없는 문자열은 **프로세스의 로컬 시간대**로
+     해석된다(Mock 데이터·Server Action이 전부 이 방식이다, `src/features/calendar/mock/events.ts`
+     등). 배포 환경(컨테이너 등)이 기본값으로 UTC를 쓰면, 자정 근처 시각이 하루 앞뒤로 밀려
+     보인다 — 브라우저(사용자 KST)와 서버가 서로 다른 시간대로 같은 문자열을 해석해서 생기는
+     문제다. `next.config.ts`가 가장 먼저 로드되므로 여기서 프로세스 전체에 못 박는다.
+*/
+process.env.TZ = "Asia/Seoul";
+
 const nextConfig: NextConfig = {
   /*
     개발 서버 표시등(왼쪽 아래 동그란 `N` 배지)을 끈다.

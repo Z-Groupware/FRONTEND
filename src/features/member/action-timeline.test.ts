@@ -43,7 +43,7 @@ describe("buildActionTimeline", () => {
     // 실제 08-01~08-11(11일)은 최소 21일보다 짧아 뒤로 채워진다
     expect(model?.days).toHaveLength(TIMELINE_MIN_VISIBLE_DAYS);
     expect(model?.days[0]?.iso).toBe("2026-08-01");
-    expect(model?.days.at(-1)?.iso).toBe("2026-08-21");
+    expect(model?.days.at(-1)?.iso).toBe("2026-08-30");
     expect(model?.monthLabel).toBe("8월");
     expect(model?.totalWidthPx).toBe(TIMELINE_MIN_VISIBLE_DAYS * TIMELINE_DAY_WIDTH_PX);
   });
@@ -53,13 +53,13 @@ describe("buildActionTimeline", () => {
       ...OVERDUE,
       id: "a5",
       startDate: "2026-08-01",
-      dueDate: "2026-08-25", // 08-01~08-25 = 25일 > 21일
+      dueDate: "2026-09-15", // 08-01~09-15 = 46일 > 30일
       tone: "IN_PROGRESS",
     };
     const model = buildActionTimeline([longRun], TODAY);
 
-    expect(model?.days).toHaveLength(25);
-    expect(model?.days.at(-1)?.iso).toBe("2026-08-25");
+    expect(model?.days).toHaveLength(46);
+    expect(model?.days.at(-1)?.iso).toBe("2026-09-15");
   });
 
   it("오늘선은 오늘 칸(08-05, index 4)의 중앙에 놓인다", () => {

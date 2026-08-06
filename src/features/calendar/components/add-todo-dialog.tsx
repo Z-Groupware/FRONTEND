@@ -82,8 +82,8 @@ export function AddTodoDialog({ defaultDate, onCreated }: AddTodoDialogProps) {
         onOpenChange={setOpen}
         title="Todo를 추가할까요?"
         description="추가하면 캘린더에 바로 표시됩니다."
-        confirmLabel="추가하기"
-        pendingLabel="추가하는 중…"
+        confirmLabel="추가"
+        pendingLabel="추가 중"
         isPending={isPending}
         onConfirm={handleConfirm}
       >

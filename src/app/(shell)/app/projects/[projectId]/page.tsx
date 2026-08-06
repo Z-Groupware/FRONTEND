@@ -40,14 +40,13 @@ export default async function ProjectDetailPage({ params, searchParams }: Projec
     activeTab === "timeline" ? await getProjectTeamActions(String(project.id)) : [];
   const timelineItems: TimelineActionInput[] = teamActions.map((action) => {
     // ⚠️ 이 화면은 이미 프로젝트 하나로 좁혀져 있어 태그 칩은 노이즈다 — 대신 팀명을 단다.
-    // 부서 색상도 프로젝트 태그와 같은 팔레트에서, 팀명을 키로 뽑는다(WORKFLOW.md §부서 색상).
-    const teamColor = pickPaletteColor(action.team);
+    // ⚠️ 팀명은 무색이다(다른 대시보드의 팀명 라벨과 같은 결) — 팔레트는 프로젝트 태그 전용.
     return {
       id: action.id,
       title: action.name,
       tag: action.team,
-      tagBgColor: teamColor.bgColor,
-      tagTextColor: teamColor.textColor,
+      tagBgColor: "var(--muted)",
+      tagTextColor: "var(--muted-foreground)",
       startDate: action.startDate,
       dueDate: action.dueDate,
       tone: isDelayed(action) ? "DELAYED" : action.status,

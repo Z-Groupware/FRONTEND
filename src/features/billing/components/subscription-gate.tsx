@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 import { BrandBar } from "@/components/common/brand-bar";
-import type { Role } from "@/constants/role";
+import type { Authority } from "@/constants/authority";
 import { roleHome } from "@/features/shell/home";
 import { cn } from "@/lib/utils";
 
@@ -18,7 +18,7 @@ interface SubscriptionGateProps {
   config: BillingConfig;
   status: Subscription["status"];
   /** 지금 보고 있는 사람의 역할 — 결제 뒤 어느 대시보드로 보낼지가 여기서 갈린다 */
-  role: Role;
+  role: Authority;
   /** 결제할 수 있는 사람인지 — 대표이거나 Admin을 겸한 사람 */
   canManage: boolean;
 }

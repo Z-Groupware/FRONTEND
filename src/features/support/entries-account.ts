@@ -69,7 +69,7 @@ export const ACCOUNT_ENTRIES: readonly FaqEntry[] = [
     question: "역할마다 뭘 할 수 있나요?",
     keywords: ["뭘 할 수", "무엇을 할", "할 수 있는 일", "권한 범위"],
     answer:
-      "· Owner — 기업 전체 관리\n· Leader — 팀 현황·액션 관리\n· Member — 일반 사용\n\n여기에 +Admin(겸직) — 계정·회의실·직급 권한 관리가 얹혀요. 회의 개설이나 액션 조회 같은 건 Admin을 켠다고 늘지 않고, 그 사람의 역할이 정합니다.\n\n표로 정리한 화면이 따로 있습니다.",
+      "· Owner — 기업 전체 관리\n· Leader — 팀 현황·액션 관리\n· Member — 일반 사용\n\n여기에 +Admin(겸직) — 회의실·직급 권한 관리가 얹혀요. 계정 발급은 대표(Owner)도 Admin도 할 수 있어요. 회의 개설이나 액션 조회 같은 건 Admin을 켠다고 늘지 않고, 그 사람의 역할이 정합니다.\n\n표로 정리한 화면이 따로 있습니다.",
     links: [{ label: "권한 매트릭스 보기", href: "/roles" }],
   },
   {
@@ -78,7 +78,7 @@ export const ACCOUNT_ENTRIES: readonly FaqEntry[] = [
     question: "팀장은 어디까지 볼 수 있나요?",
     keywords: ["팀장은", "leader는", "부서 전체", "팀원 현황"],
     answer:
-      "자기 부서 전체를 봅니다. 조회·통계·중간 승인까지 그 부서의 모든 역할이 포함됩니다.\n\n다만 계정 발급과 초대는 Admin을 가진 사람이 합니다 — Leader라도 Admin을 겸하지 않으면 초대할 수 없습니다.",
+      "자기 부서 전체를 봅니다. 조회·통계·중간 승인까지 그 부서의 모든 역할이 포함됩니다.\n\n다만 계정 발급과 초대는 대표(Owner) 또는 Admin을 가진 사람이 합니다 — Leader라도 Admin을 겸하지 않으면 초대할 수 없습니다.",
     links: [{ label: "권한 매트릭스 보기", href: "/roles" }],
   },
   {

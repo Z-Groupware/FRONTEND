@@ -1,4 +1,4 @@
-import { ASSIGNABLE_ROLES, ROLE } from "@/constants/domain";
+import { ASSIGNABLE_AUTHORITIES, AUTHORITY } from "@/constants/domain";
 
 /** 조직 트리 노드. 2계층(부서 > 역할)까지 쓴다(DECISIONS · CONVENTIONS §6). */
 export interface DepartmentNode {
@@ -80,8 +80,8 @@ export interface Position {
   role: AssignableRole;
 }
 
-/** 기업이 고를 수 있는 역할. `SYSTEM`은 서비스 운영자라 제외된다. */
-export type AssignableRole = (typeof ASSIGNABLE_ROLES)[number];
+/** 기업이 고를 수 있는 권한. `SYSTEM`은 서비스 운영자라 제외된다. */
+export type AssignableRole = (typeof ASSIGNABLE_AUTHORITIES)[number];
 
 /**
  * 기업 승인 때 **시스템이 발급하는 계정.**
@@ -91,7 +91,7 @@ export type AssignableRole = (typeof ASSIGNABLE_ROLES)[number];
  *    가입 시점엔 붙일 사람이 없다 — 사원이 들어온 뒤 대표가 지정한다.
  */
 export const SYSTEM_ISSUED_POSITIONS = [
-  { name: "대표", role: ROLE.OWNER },
+  { name: "대표", role: AUTHORITY.OWNER },
 ] as const satisfies readonly { name: string; role: AssignableRole }[];
 
 /* ───────── 3단계 · 사원 초대 ───────── */

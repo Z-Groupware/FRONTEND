@@ -13,7 +13,7 @@ export const TIMELINE_DAY_WIDTH_PX = 40;
  * 남아 보기 나쁘다(2026-08-06 정정). 실제 기간이 이보다 길면 그 값을 그대로 쓴다(줄이지 않는다).
  * 뒤쪽(마감 이후)에만 칸을 더 붙인다 — 시작·오늘·마감의 상대 위치는 그대로 둔다.
  */
-export const TIMELINE_MIN_VISIBLE_DAYS = 21;
+export const TIMELINE_MIN_VISIBLE_DAYS = 30;
 
 /** 타임라인 한 줄의 입력 계약 — 멤버 액션 등 특정 도메인 타입에 묶이지 않는 범용 입력이다. */
 export interface TimelineActionInput {
