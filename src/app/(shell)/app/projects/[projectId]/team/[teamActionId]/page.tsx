@@ -118,7 +118,7 @@ export default async function TeamActionDetailPage({
             </span>
           </div>
           <p className="text-muted-foreground text-[11px] leading-4">
-            마감 {formatMonthDayWeekday(project.dueDate) ?? "-"}까지
+            {formatMonthDayWeekday(project.dueDate) ?? "-"}까지
           </p>
         </>
       ),
