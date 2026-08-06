@@ -118,7 +118,7 @@ export default async function TeamActionDetailPage({
             </span>
           </div>
           <p className="text-muted-foreground text-[11px] leading-4">
-            마감 {formatMonthDayWeekday(project.dueDate) ?? "-"}까지
+            {formatMonthDayWeekday(project.dueDate) ?? "-"}까지
           </p>
         </>
       ),
@@ -198,7 +198,7 @@ export default async function TeamActionDetailPage({
             <div className="border-border flex shrink-0 items-baseline justify-between gap-3 border-b px-7 pt-6 pb-3">
               <h3 className="flex items-center gap-2 text-[17px] leading-7 font-semibold tracking-[-0.3px]">
                 <span className="bg-foreground size-2 rounded-full" aria-hidden />
-                개인 액션 타임라인
+                팀원별 액션 타임라인
               </h3>
               <ActionTimelineLegend />
             </div>
