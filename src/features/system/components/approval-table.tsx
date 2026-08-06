@@ -1,6 +1,3 @@
-import Link from "next/link";
-
-import { Badge } from "@/components/ui/badge";
 import {
   Table,
   TableBody,
@@ -13,11 +10,13 @@ import { formatDate } from "@/lib/date";
 import { cn } from "@/lib/utils";
 
 import type { PendingCompanyApproval } from "../types";
+import { ApprovalRowActions } from "./approval-row-actions";
 
 interface ApprovalTableProps {
   companies: PendingCompanyApproval[];
-  buildDetailHref: (id: string) => string;
-  /** 한 페이지 행 수 — 마지막 페이지처럼 행이 모자라도 이 개수만큼 높이를 잡아둔다 */
+  /** 승인·반려가 끝나면 그 행을 지운다(무한 스크롤 로컬 상태) */
+  onRowDone: (companyId: string) => void;
+  /** 목록이 비었을 때 자리 높이를 잡는 데만 쓴다(첫 페이지 크기) */
   pageSize: number;
 }
 
@@ -34,26 +33,23 @@ const HEADER_HEIGHT_PX = 34;
  * 밀리는 덜컥거림이 생긴다(`company-table.tsx`에서 같은 문제를 같은 방식으로 고쳤다).
  */
 const COLUMN_WIDTH = {
-  name: "28%",
+  name: "24%",
   representative: "16%",
-  email: "28%",
-  members: "14%",
-  appliedAt: "14%",
+  email: "26%",
+  members: "12%",
+  appliedAt: "12%",
+  action: "10%",
 } as const;
 
 /**
  * 승인 대기 기업 표.
  *
- * ⚠️ 행 어디를 눌러도 상세로 들어간다 — 그렇다고 `tr`에 `onClick`을 달지 않는다.
- *    그러면 키보드·스크린리더로는 못 누른다(CLAUDE.md §a11y: 클릭은 button/a).
- *    대신 회사명 링크를 **행 전체 크기로 늘리는 "stretched link" 방식**을 쓴다 —
- *    포커스 가능한 진짜 `<a>`는 하나뿐이고, 그 히트 영역만 CSS로 행 전체를 덮는다.
- * ⚠️ **행 개수 자체를 페이지마다 똑같이 맞춘다** — 마지막 페이지처럼 행이 모자라면
- *    보이지 않는 채움 행(filler row)으로 `pageSize`개를 채운다. CSS `min-height` 계산값으로
- *    맞추는 방식은 행 수가 다르면(보더 개수 등) 브라우저 렌더링에서 1~2px 오차가 생길 수 있다 —
- *    실제 `<tr>` 개수를 항상 똑같이 만들면 이 오차 자체가 생길 여지가 없다.
+ * ⚠️ 행을 눌러도 상세로 가지 않는다 — 옆에 뜨던 사이드 패널(`ApprovalDetailSheet`)은
+ *    폐지했다(2026-08-06 팀 확정). 승인·반려는 행 안 버튼으로 그 자리에서 끝낸다.
+ * ⚠️ 무한 스크롤 목록이라 채움 행(filler row)을 두지 않는다 — 페이지를 갈아 끼우던 방식과
+ *    달리 항목이 아래로 이어붙기만 해서, 마지막 묶음이 `pageSize`보다 적어도 자연스럽다.
  */
-export function ApprovalTable({ companies, buildDetailHref, pageSize }: ApprovalTableProps) {
+export function ApprovalTable({ companies, onRowDone, pageSize }: ApprovalTableProps) {
   if (companies.length === 0) {
     return (
       <div
@@ -65,12 +61,10 @@ export function ApprovalTable({ companies, buildDetailHref, pageSize }: Approval
     );
   }
 
-  const fillerCount = Math.max(0, pageSize - companies.length);
-
   return (
     <div className="border-border bg-card overflow-hidden rounded-2xl border">
       <div className="overflow-x-auto">
-        <Table className="min-w-[720px] table-fixed text-xs">
+        <Table className="min-w-[760px] table-fixed text-xs">
           {/* 각 컬럼 폭을 %로 고정 — 회사명 길이가 페이지마다 달라져도 다른 컬럼이 밀리지 않는다(위 COLUMN_WIDTH 참고) */}
           <colgroup>
             <col style={{ width: COLUMN_WIDTH.name }} />
@@ -78,6 +72,7 @@ export function ApprovalTable({ companies, buildDetailHref, pageSize }: Approval
             <col style={{ width: COLUMN_WIDTH.email }} />
             <col style={{ width: COLUMN_WIDTH.members }} />
             <col style={{ width: COLUMN_WIDTH.appliedAt }} />
+            <col style={{ width: COLUMN_WIDTH.action }} />
           </colgroup>
           <TableHeader>
             <TableRow className={cn(HEADER_HEIGHT_CLASS, "bg-secondary/50 hover:bg-transparent")}>
@@ -85,28 +80,20 @@ export function ApprovalTable({ companies, buildDetailHref, pageSize }: Approval
               <TableHead className="text-center text-xs">대표자</TableHead>
               <TableHead className="text-center text-xs">담당자 이메일</TableHead>
               <TableHead className="text-center text-xs">구성원</TableHead>
-              <TableHead className="pr-4 text-center text-xs">신청일</TableHead>
+              <TableHead className="text-center text-xs">신청일</TableHead>
+              <TableHead className="pr-4 text-center text-xs">액션</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {companies.map((company) => (
-              // relative — stretched link(아래 after:absolute)가 이 행 기준으로 덮인다
               <TableRow
                 key={company.id}
-                className={cn(ROW_HEIGHT_CLASS, "hover:bg-foreground/[0.04] relative")}
+                className={cn(ROW_HEIGHT_CLASS, "hover:bg-foreground/[0.04]")}
               >
                 <TableCell className="max-w-0 pl-4">
-                  <Link
-                    href={buildDetailHref(company.id)}
-                    className="text-foreground focus-visible:ring-ring flex items-center gap-2 rounded after:absolute after:inset-0 hover:underline focus-visible:ring-2 focus-visible:outline-none"
-                  >
-                    <span className="truncate" title={company.companyName}>
-                      {company.companyName}
-                    </span>
-                    <Badge variant="secondary" className="shrink-0">
-                      승인 대기
-                    </Badge>
-                  </Link>
+                  <span className="text-foreground truncate" title={company.companyName}>
+                    {company.companyName}
+                  </span>
                 </TableCell>
                 <TableCell className="text-muted-foreground max-w-0 truncate text-center">
                   {company.representativeName}
@@ -120,19 +107,16 @@ export function ApprovalTable({ companies, buildDetailHref, pageSize }: Approval
                 <TableCell className="text-muted-foreground text-center tabular-nums">
                   {company.memberCount}명
                 </TableCell>
-                <TableCell className="text-muted-foreground pr-4 text-center tabular-nums">
+                <TableCell className="text-muted-foreground text-center tabular-nums">
                   {formatDate(company.appliedAt)}
                 </TableCell>
-              </TableRow>
-            ))}
-            {/* 채움 행 — 보더 없이, 스크린리더에서도 안 읽힌다. 목적은 오직 <tr> 개수를 맞추는 것뿐 */}
-            {Array.from({ length: fillerCount }, (_, index) => (
-              <TableRow
-                key={`filler-${index}`}
-                aria-hidden
-                className={cn(ROW_HEIGHT_CLASS, "border-transparent hover:bg-transparent")}
-              >
-                <TableCell className="pl-4" colSpan={5} />
+                <TableCell className="pr-4 text-center">
+                  <ApprovalRowActions
+                    companyId={company.id}
+                    companyName={company.companyName}
+                    onDone={onRowDone}
+                  />
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>

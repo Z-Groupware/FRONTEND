@@ -1,8 +1,6 @@
-import { Plus } from "lucide-react";
 import type { Metadata } from "next";
-import Link from "next/link";
 
-import { buttonVariants } from "@/components/ui/button";
+import { NoticeCreateDialog } from "@/features/notice/components/notice-create-dialog";
 import { NoticeList } from "@/features/notice/components/notice-list";
 import { getNotices } from "@/features/notice/server";
 import { getMockActor } from "@/lib/mock-actor";
@@ -22,9 +20,7 @@ export default async function AppNoticePage() {
       <div className="mx-auto flex max-w-[1440px] flex-col gap-4">
         {canManage && (
           <div className="flex justify-end">
-            <Link href="/app/notice/new" className={buttonVariants({ variant: "ink", size: "sm" })}>
-              <Plus aria-hidden />새 공지
-            </Link>
+            <NoticeCreateDialog />
           </div>
         )}
 

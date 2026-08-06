@@ -13,7 +13,7 @@ import {
   markMockNoticeRead,
   updateMockNotice,
 } from "./mock/notices";
-import type { NoticeDraft, NoticeFormErrors } from "./types";
+import type { Notice, NoticeDraft, NoticeFormErrors } from "./types";
 import { validateNoticeDraft } from "./validate";
 
 const LIST_PATH = "/app/notice";
@@ -36,9 +36,15 @@ export async function markNoticeReadAction(formData: FormData): Promise<void> {
   revalidatePath(LIST_PATH);
 }
 
-/** 작성·수정 폼 결과 — `useActionState`가 그대로 들고 있는 모양. */
+/**
+ * 작성·수정 폼 결과 — `useActionState`가 그대로 들고 있는 모양.
+ * ⚠️ 성공하면 `redirect` 대신 `notice`로 결과를 돌려준다 — 모달(`NoticeCreateDialog`·
+ *    `NoticeEditDialog`)이 페이지 이동 없이 이 값을 보고 스스로 닫힌다(캘린더
+ *    `PersonalTodoFormState.created`와 같은 패턴).
+ */
 export interface NoticeFormState {
   errors: NoticeFormErrors;
+  notice?: Notice;
 }
 
 function readDraft(formData: FormData): NoticeDraft {
@@ -70,11 +76,11 @@ export async function createNoticeAction(
 
   // "YYYY-MM-DD" — 발행일은 서버 기준으로 찍는다(목 데이터는 날짜를 만들지 않는다).
   const publishedAt = new Date().toISOString().slice(0, 10);
-  addMockNotice(draft, publishedAt);
+  const notice = addMockNotice(draft, publishedAt);
 
+  // 목록은 다음 방문 때를 위한 백그라운드 정합성용 — 화면 반영은 아래 `notice` 반환값이 맡는다.
   revalidatePath(LIST_PATH);
-  // ⚠️ `redirect`는 내부적으로 예외를 던진다 — try/catch 밖에 둔다(§렌더링·데이터)
-  redirect(LIST_PATH);
+  return { errors: {}, notice };
 }
 
 /** 공지 수정 — 작성과 같은 규칙. 끝나면 그 공지 상세로 돌아간다. */
@@ -99,7 +105,7 @@ export async function updateNoticeAction(
 
   revalidatePath(LIST_PATH);
   revalidatePath(`${LIST_PATH}/${id}`);
-  redirect(`${LIST_PATH}/${id}`);
+  return { errors: {}, notice: updated };
 }
 
 /**

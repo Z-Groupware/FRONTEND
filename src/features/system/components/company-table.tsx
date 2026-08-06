@@ -53,9 +53,8 @@ const COLUMN_WIDTH = {
  *
  * ⚠️ 행 어디를 눌러도 상세로 들어간다 — `tr`에 `onClick`을 달지 않고 "stretched link"
  *    방식을 쓴다(CLAUDE.md §a11y: 클릭은 button/a). `approval-table.tsx`와 같은 패턴이다.
- * ⚠️ **행 개수를 페이지마다 똑같이 맞춘다** — 부족한 만큼 보이지 않는 채움 행으로 채워
- *    페이지 전환 시 목록 높이가 들썩이지 않게 한다(`approval-table.tsx`에서 겪은 문제,
- *    같은 해법을 재사용한다).
+ * ⚠️ 무한 스크롤 목록이라 채움 행(filler row)을 두지 않는다 — 항목이 아래로 이어붙기만
+ *    해서, 마지막 묶음이 `pageSize`보다 적어도 자연스럽다.
  */
 export function CompanyTable({ companies, buildDetailHref, pageSize }: CompanyTableProps) {
   if (companies.length === 0) {
@@ -68,8 +67,6 @@ export function CompanyTable({ companies, buildDetailHref, pageSize }: CompanyTa
       </div>
     );
   }
-
-  const fillerCount = Math.max(0, pageSize - companies.length);
 
   return (
     <div className="border-border bg-card overflow-hidden rounded-2xl border">
@@ -130,16 +127,6 @@ export function CompanyTable({ companies, buildDetailHref, pageSize }: CompanyTa
                     {COMPANY_STATUS_LABEL[company.status]}
                   </StatusBadge>
                 </TableCell>
-              </TableRow>
-            ))}
-            {/* 채움 행 — 보더 없이, 스크린리더에서도 안 읽힌다. 목적은 오직 <tr> 개수를 맞추는 것뿐 */}
-            {Array.from({ length: fillerCount }, (_, index) => (
-              <TableRow
-                key={`filler-${index}`}
-                aria-hidden
-                className={cn(ROW_HEIGHT_CLASS, "border-transparent hover:bg-transparent")}
-              >
-                <TableCell className="pl-4" colSpan={6} />
               </TableRow>
             ))}
           </TableBody>
