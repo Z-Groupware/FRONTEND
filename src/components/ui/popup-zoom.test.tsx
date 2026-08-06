@@ -31,6 +31,9 @@ const GLOBALS_CSS = readFileSync(join(process.cwd(), "src/app/globals.css"), "ut
 /** 규칙이 고르는 것 — 테스트와 CSS가 **같은 문자열**을 보게 한다 */
 const POSITIONER_SELECTOR = "[data-base-ui-portal] > [data-side][data-align]";
 
+/** 바깥 클릭을 막는 층 — 트리거 자리를 `clip-path`로 뚫는데 그 좌표도 화면 px이다 */
+const INERT_SELECTOR = '[data-base-ui-portal] > [data-base-ui-inert][role="presentation"]';
+
 /**
  * 그 자리가 **어느 `@layer` 안인지** 알아낸다.
  *
@@ -86,7 +89,17 @@ describe("배율 보정 규칙 자체", () => {
        실제로 한 번 그랬다. 레이어 밖으로 나가면 아예 레이어 없는 규칙이 되어
        **모든 레이어를 이긴다.** 어느 쪽이든 선언은 그대로라 문자열 검사로는 안 잡힌다.
   */
-  it.each([POSITIONER_SELECTOR, `${POSITIONER_SELECTOR} > *`])(
+  /*
+    ⚠️ **위치만 고치면 반쪽이다.** 팝업이 열리면 base-ui는 화면 전체를 덮는 층을 깔고 트리거
+       자리만 뚫어 둔다. 그 구멍 좌표도 화면 px이라 배율이 걸리면 ×Z로 줄어 **구멍과 버튼이
+       어긋난다** — 실측(75%): 트리거는 `579~679`인데 구멍은 `434~509`에 뚫렸다.
+       그러면 팝업이 제자리에 떠도 **트리거가 층에 덮여 다시 누를 수가 없다.**
+  */
+  it("바깥 클릭을 막는 층에도 같은 보정이 걸린다", () => {
+    expect(GLOBALS_CSS).toContain(`${INERT_SELECTOR} {\n    zoom: calc(1 / var(--app-zoom));`);
+  });
+
+  it.each([POSITIONER_SELECTOR, `${POSITIONER_SELECTOR} > *`, INERT_SELECTOR])(
     "`%s` 규칙이 `@layer base` 안에 있다",
     (selector) => {
       const at = GLOBALS_CSS.indexOf(`  ${selector} {`);
