@@ -52,7 +52,12 @@ export function validateDepartments(departments: DepartmentNode[]): string | nul
   const walk = (nodes: DepartmentNode[], depth: number) => {
     if (error) return;
     if (depth >= MAX_DEPARTMENT_DEPTH && nodes.length > 0) {
-      error = `팀 아래 단계는 ${MAX_DEPARTMENT_DEPTH}단까지입니다`;
+      /*
+        ⚠️ 상수를 그대로 문장에 끼우면 틀린 말이 된다. `MAX_DEPARTMENT_DEPTH`는 팀을 **포함한**
+           전체 단수(팀 → 역할)라, "팀 아래 2단"이라고 적으면 한 단을 더 만들 수 있다고 읽힌다.
+           카드 설명("팀 아래 역할까지 두 단계입니다")과 같은 말을 쓴다.
+      */
+      error = "팀 아래에는 역할 한 단계만 둘 수 있습니다";
       return;
     }
 

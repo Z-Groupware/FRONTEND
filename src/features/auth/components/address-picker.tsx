@@ -134,16 +134,39 @@ export function AddressPicker({
         ⚠️ `form` 안에 `form`을 넣을 수 없다 — 여기서 Enter는 바깥 폼 제출로 새어 나간다.
            `keydown`에서 막고 검색으로 돌린다.
       */}
-      <div className="relative">
+      {/*
+        ⚠️ 떠 있는 것은 **닫는 길이 있어야 한다.** 결과가 지도를 가린 채 남으면 고르는 것
+           말고는 치울 방법이 없다 — Esc와 바깥으로 나가는 포커스 둘 다로 닫는다.
+        ⚠️ `onBlur`는 **컨테이너에** 건다. 입력에 걸면 결과 항목으로 가는 포커스 이동에도
+           닫혀서 키보드로는 아무것도 못 고른다 — `relatedTarget`이 이 상자 밖일 때만 닫는다.
+      */}
+      <div
+        className="relative"
+        onBlur={(event) => {
+          if (!event.currentTarget.contains(event.relatedTarget)) setResults([]);
+        }}
+      >
         <Input
           id="company-address"
           value={keyword}
-          onChange={(event) => setKeyword(event.target.value)}
+          /* 키워드를 고치는 순간 옛 결과는 답이 아니다 */
+          onChange={(event) => {
+            setKeyword(event.target.value);
+            setResults([]);
+          }}
           onKeyDown={(event) => {
+            if (event.key === "Escape") {
+              setResults([]);
+              return;
+            }
             if (event.key !== "Enter") return;
             event.preventDefault();
             handleSearch();
           }}
+          role="combobox"
+          aria-expanded={results.length > 0}
+          aria-controls="company-address-results"
+          aria-autocomplete="list"
           placeholder="건물명이나 주소로 찾아보세요"
           disabled={!isReady}
           aria-invalid={hasError}
@@ -167,7 +190,10 @@ export function AddressPicker({
           ⚠️ 지도 위에 떠야 하므로 `z-20`이다. 지도(카카오 SDK)가 자기 요소에 z-index를 매긴다.
         */}
         {results.length > 0 && (
-          <ul className="border-border bg-card absolute top-full right-0 left-0 z-20 mt-1 overflow-hidden rounded-lg border shadow-lg">
+          <ul
+            id="company-address-results"
+            className="border-border bg-card absolute top-full right-0 left-0 z-20 mt-1 overflow-hidden rounded-lg border shadow-lg"
+          >
             {results.map((place) => (
               <li key={`${place.x},${place.y}`}>
                 <button
@@ -201,7 +227,14 @@ export function AddressPicker({
           <div
             key={`${loadState}:${picked.lat},${picked.lng}`}
             ref={drawPin}
-            aria-hidden
+            /*
+              ⚠️ `aria-hidden`이 아니라 `inert`다. 지도 안에는 카카오 SDK가 만든 버튼·링크가
+                 들어 있어서, `aria-hidden`만 걸면 **읽히지는 않는데 탭으로는 들어가진다** —
+                 스크린리더 사용자가 이름 없는 것들 사이에 갇힌다. `inert`는 포커스까지 뺀다.
+              ⚠️ 지도를 실제로 조작하게 둘 생각이면 반대로 `inert`를 떼고 이름을 줘야 한다.
+                 지금은 **고른 곳을 눈으로 확인하는 그림**이라 빼는 게 맞다.
+            */
+            inert
             className={cn("border-border w-full overflow-hidden rounded-lg border", mapClassName)}
           />
         </>

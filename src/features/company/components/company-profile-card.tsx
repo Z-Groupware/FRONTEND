@@ -39,7 +39,13 @@ function Field({
     <div className="flex flex-col gap-1.5">
       <Label htmlFor={id}>{label}</Label>
       {children}
-      <p id={`${id}-error`} className="text-destructive min-h-4 text-[12px] leading-4">
+      {/*
+        ⚠️ `role="alert"` — [저장]을 누르면 포커스가 버튼에 남는다. 이 자리가 live region이
+           아니면 오류가 떠도 스크린리더는 아무 말도 안 해서 저장된 줄 안다(신청 화면의
+           `AuthField`가 같은 이유로 달아 뒀다).
+        ⚠️ 비어 있어도 노드는 남긴다 — 없다 생겼다 하면 읽히지 않고 높이도 출렁인다.
+      */}
+      <p id={`${id}-error`} role="alert" className="text-destructive min-h-4 text-[12px] leading-4">
         {error}
       </p>
     </div>
@@ -89,9 +95,8 @@ export function CompanyProfileCard({ profile }: { profile: CompanyProfile }) {
         aside={
           <span className="flex items-center gap-2">
             <span className="text-muted-foreground">{COMPANY_FIELD_LABEL.CODE}</span>
-            <span className="text-foreground text-[13px] leading-5 font-medium tracking-[0.12em]">
-              {profile.code}
-            </span>
+            {/* ⚠️ 크기는 다른 카드 aside와 같은 12px다 — 강조는 굵기로만 준다 */}
+            <span className="text-foreground font-medium tracking-[0.1em]">{profile.code}</span>
           </span>
         }
         description={
@@ -101,9 +106,20 @@ export function CompanyProfileCard({ profile }: { profile: CompanyProfile }) {
           </>
         }
         footer={
-          <Button type="submit" size="sm" variant="ink" disabled={isPending}>
-            {isPending ? "저장 중…" : "저장"}
-          </Button>
+          <>
+            {/*
+              ⚠️ 칸과 무관한 실패는 **저장 줄에 남긴다.** 토스트로 띄우면 몇 초 뒤 사라져,
+                 왜 저장이 안 됐는지 모른 채 같은 버튼을 다시 누르게 된다(§토스트는 보조다).
+            */}
+            {state.message && (
+              <p role="alert" className="text-destructive mr-auto text-[12px] leading-4">
+                {state.message}
+              </p>
+            )}
+            <Button type="submit" size="sm" variant="ink" disabled={isPending}>
+              {isPending ? "저장 중…" : "저장"}
+            </Button>
+          </>
         }
       >
         {/*
@@ -115,7 +131,7 @@ export function CompanyProfileCard({ profile }: { profile: CompanyProfile }) {
              오른쪽 칸 **아래**로 흩어져 눈에 덜 걸린다.
           ⚠️ `items-start` — 늘려 맞추면 지도만 커져 다시 비율이 무너진다.
         */}
-        <div className="grid grid-cols-1 items-start gap-x-7 gap-y-6 px-6 py-6 lg:grid-cols-2">
+        <div className="grid grid-cols-1 items-start gap-x-7 gap-y-6 px-7 py-6 lg:grid-cols-2">
           <Field
             name="place"
             controlId="company-address"
@@ -130,7 +146,12 @@ export function CompanyProfileCard({ profile }: { profile: CompanyProfile }) {
             />
           </Field>
 
-          <div className="flex flex-col gap-6">
+          {/*
+            ⚠️ 입력칸에는 **상한을 건다.** 반쪽이라도 1440에서는 한 칸이 680px가 되는데,
+               `000-00-00000`을 적는 칸이 그만큼 넓으면 라벨과 커서가 멀어져 읽고 쓰기가
+               나빠진다 — 폼 규격(720)을 둔 이유와 같다.
+          */}
+          <div className="flex max-w-[420px] flex-col gap-6">
             <Field name="name" label={COMPANY_FIELD_LABEL.NAME} error={state.errors.name}>
               <Input
                 id="company-name"

@@ -41,6 +41,12 @@ export function CompanyTeamCard({ initial }: { initial: DepartmentNodeType[] }) 
   const [dragging, setDragging] = useState<DraggingInfo | null>(null);
   const [saved, setSaved] = useState(initial);
   const [isSaving, startSaving] = useTransition();
+  /*
+    ⚠️ 저장 실패는 **화면에 남긴다.** 검증 문구는 `같은 이름이 둘 있습니다 — 개발팀`처럼
+       어느 줄이 문제인지 담고 있는데, 토스트로 띄우면 한 줄에 잘리고 몇 초 뒤 사라진다 —
+       그러면 사라진 문장을 기억해 목록을 눈으로 훑어야 한다(§토스트: 사라지므로 보조다).
+  */
+  const [error, setError] = useState<string | null>(null);
 
   const handlers: DepartmentNodeHandlers = {
     onRename: tree.rename,
@@ -71,9 +77,10 @@ export function CompanyTeamCard({ initial }: { initial: DepartmentNodeType[] }) 
     startSaving(async () => {
       const result = await saveDepartmentsAction(next);
       if (!result.isSuccess) {
-        toast.error(result.message ?? "팀 체계를 저장하지 못했습니다");
+        setError(result.message ?? "팀 체계를 저장하지 못했습니다");
         return;
       }
+      setError(null);
       setSaved(next);
       toast.success("팀 체계를 저장했습니다");
     });
@@ -91,23 +98,30 @@ export function CompanyTeamCard({ initial }: { initial: DepartmentNodeType[] }) 
           </>
         }
         footer={
-          <Button
-            type="button"
-            size="sm"
-            variant="ink"
-            onClick={handleSave}
-            disabled={isSaving || !isDirty}
-          >
-            {isSaving ? "저장 중…" : "저장"}
-          </Button>
+          <>
+            {error && (
+              <p role="alert" className="text-destructive mr-auto text-[12px] leading-4 break-keep">
+                {error}
+              </p>
+            )}
+            <Button
+              type="button"
+              size="sm"
+              variant="ink"
+              onClick={handleSave}
+              disabled={isSaving || !isDirty}
+            >
+              {isSaving ? "저장 중…" : "저장"}
+            </Button>
+          </>
         }
       >
         {/*
           열 머리 — 표가 있는 다른 카드(저장소 관리)와 같은 모양이다.
-          ⚠️ 여백은 카드 전체와 같은 24px다. 아래 목록은 `DepartmentNode`가 자기 몫으로
-             8px(`px-2`)를 쓰므로 컨테이너가 16px만 대서 합이 24가 된다.
+          ⚠️ 여백은 카드 전체와 같은 28px다. 아래 목록은 `DepartmentNode`가 자기 몫으로
+             8px(`px-2`)를 쓰므로 컨테이너가 20px만 대서 합이 28이 된다.
         */}
-        <div className="text-muted-foreground bg-secondary/50 border-border flex items-center justify-between border-b px-6 py-3 text-[12px] leading-4">
+        <div className="text-muted-foreground bg-muted border-border flex items-center justify-between border-b px-7 py-3 text-[12px] leading-4">
           <span>팀 · 역할</span>
           <span>구분</span>
         </div>
@@ -117,7 +131,7 @@ export function CompanyTeamCard({ initial }: { initial: DepartmentNodeType[] }) 
              여기서 300px로 고정하면 남는 자리가 [추가] 줄 아래에 빈 띠로 남는다.
              길어지면 이 안에서만 스크롤된다.
         */}
-        <div className="min-h-0 flex-1 overflow-auto overscroll-contain px-4 pt-4 pb-3">
+        <div className="min-h-0 flex-1 overflow-auto overscroll-contain px-5 pt-4 pb-3">
           {tree.departments.length === 0 ? (
             <p className="text-muted-foreground/70 py-12 text-center text-[13px]">
               아래에서 첫 팀을 추가해 주세요
@@ -134,7 +148,7 @@ export function CompanyTeamCard({ initial }: { initial: DepartmentNodeType[] }) 
         </div>
 
         <DepartmentAddRow
-          insetClassName="px-6"
+          insetClassName="px-7"
           value={draftName}
           onChange={setDraftName}
           onSubmit={() => {
@@ -144,17 +158,22 @@ export function CompanyTeamCard({ initial }: { initial: DepartmentNodeType[] }) 
       </SettingCard>
 
       {/*
-        ⚠️ **무엇을 잃는지** 적는다. 역할이 딸려 있으면 그 수까지 말한다 — "정말요?"만 묻는 건
-           확인이 아니다. 지운 뒤 [저장]을 눌러야 실제로 반영된다는 것도 같이 말한다.
+        ⚠️ **무엇을 잃는지**와 **언제 그렇게 되는지**를 같이 적는다. 여기서 [삭제]를 눌러도
+           화면에서만 빠지고, 카드 밑 [저장]을 눌러야 서버에 간다 — 그 말을 빼면 이미
+           지워진 줄 알고 저장 없이 나가서, 지운 팀이 그대로 남는다(§정직성).
       */}
       <ConfirmDialog
         isOpen={pendingTeam !== null}
         onOpenChange={() => setPendingTeam(null)}
         title={`\u2018${pendingTeam?.name ?? ""}\u2019 팀을 지울까요?`}
         description={
-          pendingTeam && pendingTeam.children.length > 0
-            ? `안에 있는 역할 ${pendingTeam.children.length}개도 함께 사라집니다. 이 팀 소속 사원은 소속이 없어집니다.`
-            : "이 팀 소속 사원은 소속이 없어집니다."
+          <>
+            {pendingTeam && pendingTeam.children.length > 0
+              ? `안에 있는 역할 ${pendingTeam.children.length}개도 함께 목록에서 빠집니다.`
+              : "목록에서 빠집니다."}
+            <br />
+            [저장]을 눌러야 반영되고, 그때 이 팀 소속 사원은 소속이 없어집니다.
+          </>
         }
         confirmLabel="삭제"
         isDestructive

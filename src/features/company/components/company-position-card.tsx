@@ -39,6 +39,12 @@ export function CompanyPositionCard({ initial }: { initial: Position[] }) {
   const [saved, setSaved] = useState(initial);
   const [isSaving, startSaving] = useTransition();
   /*
+    ⚠️ 저장 실패는 **화면에 남긴다.** 검증 문구는 `같은 이름이 둘 있습니다 — 개발팀`처럼
+       어느 줄이 문제인지 담고 있는데, 토스트로 띄우면 한 줄에 잘리고 몇 초 뒤 사라진다 —
+       그러면 사라진 문장을 기억해 목록을 눈으로 훑어야 한다(§토스트: 사라지므로 보조다).
+  */
+  const [error, setError] = useState<string | null>(null);
+  /*
     ⚠️ 직급 삭제도 **확인을 받는다**(§토스트: 파괴적 작업은 Dialog). 그 직급을 쓰던 사원의
        권한이 사라지는 일이고, 특히 Leader 직급을 지우면 팀을 관리할 사람이 없어진다.
   */
@@ -64,9 +70,10 @@ export function CompanyPositionCard({ initial }: { initial: Position[] }) {
     startSaving(async () => {
       const result = await savePositionsAction(next);
       if (!result.isSuccess) {
-        toast.error(result.message ?? "직급을 저장하지 못했습니다");
+        setError(result.message ?? "직급·권한을 저장하지 못했습니다");
         return;
       }
+      setError(null);
       setSaved(next);
       toast.success("직급·권한을 저장했습니다");
     });
@@ -84,19 +91,26 @@ export function CompanyPositionCard({ initial }: { initial: Position[] }) {
         </>
       }
       footer={
-        <Button
-          type="button"
-          size="sm"
-          variant="ink"
-          onClick={handleSave}
-          disabled={isSaving || !isDirty}
-        >
-          {isSaving ? "저장 중…" : "저장"}
-        </Button>
+        <>
+          {error && (
+            <p role="alert" className="text-destructive mr-auto text-[12px] leading-4 break-keep">
+              {error}
+            </p>
+          )}
+          <Button
+            type="button"
+            size="sm"
+            variant="ink"
+            onClick={handleSave}
+            disabled={isSaving || !isDirty}
+          >
+            {isSaving ? "저장 중…" : "저장"}
+          </Button>
+        </>
       }
     >
       {/* 칸 너비는 행(`PositionRow`)과 같은 곳에서 온다 — 따로 적으면 머리와 몸이 어긋난다 */}
-      <div className="text-muted-foreground bg-secondary/50 border-border flex shrink-0 items-center gap-2 border-b px-6 py-3 text-[12px] leading-4">
+      <div className="text-muted-foreground bg-muted border-border flex shrink-0 items-center gap-2 border-b px-7 py-3 text-[12px] leading-4">
         <span className={cn(POSITION_COLUMN.INDEX, "shrink-0")} aria-hidden />
         <span className={cn(POSITION_COLUMN.NAME, "shrink-0 text-center")}>직급명</span>
         <span className="flex-1" aria-hidden />
@@ -116,7 +130,7 @@ export function CompanyPositionCard({ initial }: { initial: Position[] }) {
               key={position.id}
               position={position}
               index={index}
-              insetClassName="px-6"
+              insetClassName="px-7"
               {...handlers}
             />
           ))
@@ -132,9 +146,13 @@ export function CompanyPositionCard({ initial }: { initial: Position[] }) {
         onOpenChange={() => setPending(null)}
         title={`\u2018${pending?.name ?? ""}\u2019 직급을 지울까요?`}
         description={
-          pending?.role === AUTHORITY.LEADER
-            ? "회사에 하나뿐인 Leader 직급입니다. 지우면 팀을 관리할 권한을 가진 사람이 없어집니다."
-            : "이 직급을 쓰던 사원은 직급과 그에 딸린 권한을 잃습니다."
+          <>
+            {pending?.role === AUTHORITY.LEADER
+              ? "회사에 하나뿐인 Leader 직급입니다. 지우면 팀을 관리할 권한을 가진 사람이 없어집니다."
+              : "이 직급을 쓰던 사원은 직급과 그에 딸린 권한을 잃습니다."}
+            <br />
+            [저장]을 눌러야 반영됩니다.
+          </>
         }
         confirmLabel="삭제"
         isDestructive
@@ -146,7 +164,7 @@ export function CompanyPositionCard({ initial }: { initial: Position[] }) {
       />
 
       <PositionAddRow
-        insetClassName="px-6"
+        insetClassName="px-7"
         name={draftName}
         role={draftRole}
         blocked={blockedRoles(list.positions)}
