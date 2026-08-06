@@ -42,7 +42,7 @@ export default async function ProjectDetailPage({ params, searchParams }: Projec
     // ⚠️ 이 화면은 이미 프로젝트 하나로 좁혀져 있어 태그 칩은 노이즈다 — 대신 팀명을 단다.
     // ⚠️ 팀명은 무색이다(다른 대시보드의 팀명 라벨과 같은 결) — 팔레트는 프로젝트 태그 전용.
     return {
-      id: action.id,
+      id: String(action.id),
       title: action.name,
       tag: action.team,
       tagBgColor: "var(--muted)",

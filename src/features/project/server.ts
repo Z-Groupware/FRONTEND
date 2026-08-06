@@ -91,7 +91,11 @@ export async function getProjectTeamActions(id: string): Promise<ProjectTeamActi
 
 /** 팀 액션 상세(`/app/projects/:projectId/team/:teamActionId`)의 상세 탭. 못 찾으면 `null`(호출부가 404). */
 export async function getTeamActionDetail(teamActionId: string): Promise<TeamActionDetail | null> {
-  if (isMock) return TEAM_ACTION_DETAIL_MOCK[teamActionId] ?? null;
+  if (isMock) {
+    const numericId = Number(teamActionId);
+    if (!Number.isInteger(numericId)) return null;
+    return TEAM_ACTION_DETAIL_MOCK[numericId] ?? null;
+  }
 
   throw new Error("서버 연동 미구현 — ERD·API 스펙 확정 후 매퍼 작성");
 }
@@ -100,7 +104,11 @@ export async function getTeamActionDetail(teamActionId: string): Promise<TeamAct
 export async function getTeamActionPersonalItems(
   teamActionId: string,
 ): Promise<TeamActionPersonalItem[]> {
-  if (isMock) return TEAM_ACTION_PERSONAL_ITEMS_MOCK[teamActionId] ?? [];
+  if (isMock) {
+    const numericId = Number(teamActionId);
+    if (!Number.isInteger(numericId)) return [];
+    return TEAM_ACTION_PERSONAL_ITEMS_MOCK[numericId] ?? [];
+  }
 
   throw new Error("서버 연동 미구현 — ERD·API 스펙 확정 후 매퍼 작성");
 }

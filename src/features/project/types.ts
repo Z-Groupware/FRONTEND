@@ -76,7 +76,8 @@ export interface ProjectDetail {
  * ⚠️ 팀 액션 1개 = 이 프로젝트 타임라인의 막대 1개(WORKFLOW.md §1 타임라인 탭).
  */
 export interface ProjectTeamAction {
-  id: string;
+  /** BE 자동증가 정수 PK(고유 id는 전부 오토 인크리먼트, 태그처럼 만들지 않는다). */
+  id: number;
   name: string;
   team: string;
   /** 작업 시작일 `YYYY-MM-DD` */
@@ -92,7 +93,8 @@ export interface ProjectTeamAction {
  *    개인 액션 상세를 만들 때는 같은 필드에 그 사람 본인 역할이 들어간다.
  */
 export interface TeamActionDetail {
-  id: string;
+  /** BE 자동증가 정수 PK — `ProjectTeamAction.id`와 같은 값. */
+  id: number;
   name: string;
   description: string;
   team: string;
@@ -110,7 +112,8 @@ export interface TeamActionDetail {
 
 /** 팀 액션 상세의 타임라인 탭 한 줄 — 이 팀 액션에 속한 개인 액션 한 건(담당자별 행). */
 export interface TeamActionPersonalItem {
-  id: string;
+  /** BE 자동증가 정수 PK. */
+  id: number;
   title: string;
   assigneeName: string;
   /** Leader면 "팀장" 등, 없으면 undefined(이름만 표시) */
