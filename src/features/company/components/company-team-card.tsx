@@ -81,8 +81,7 @@ export function CompanyTeamCard({ initial }: { initial: DepartmentNodeType[] }) 
         description={
           <>
             <span className="text-foreground font-medium">팀 아래 역할까지 두 단계</span>입니다.
-            사원은 팀에 소속되고 역할은 비워 둘 수 있습니다. 팀을 지우면 그 안의 역할도 함께
-            사라집니다 — 소속된 사원은 사원 관리에서 옮겨 주세요.
+            사원은 팀에 소속되고, 역할은 비워 둘 수 있습니다.
           </>
         }
         footer={

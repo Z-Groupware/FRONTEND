@@ -82,9 +82,8 @@ export function CompanyProfileCard({ profile }: { profile: CompanyProfile }) {
         title={COMPANY_SECTION_TITLE.PROFILE}
         description={
           <>
-            세금계산서와 결제 영수증에{" "}
-            <span className="text-foreground font-medium">이 정보가 그대로</span> 나갑니다. 기업
-            등록 신청 때 적은 값이고, 여기서 고치면 다음 결제부터 반영됩니다.
+            기업 등록 신청 때 적은 회사 정보입니다.{" "}
+            <span className="text-foreground font-medium">기업 코드는 바꿀 수 없습니다.</span>
           </>
         }
         footer={
@@ -131,19 +130,17 @@ export function CompanyProfileCard({ profile }: { profile: CompanyProfile }) {
 
             {/*
               ⚠️ 기업 코드는 **왼쪽 칸 맨 아래**다. 입력칸 사이에 끼면 고칠 수 있는 값으로
-                 읽히고, 위에 따로 띠로 빼면 왼쪽 칸이 지도보다 짧아져 아래가 텅 빈다 —
-                 맨 아래에 두면 둘 다 풀린다(칸이 아니라 **읽는 값**이라는 것도 모양으로 드러난다).
+                 읽히고, 위에 따로 띠로 빼면 왼쪽 칸이 지도보다 짧아져 아래가 텅 빈다.
+              ⚠️ 상자를 두르지 않는다. 점선은 "여기에 뭘 넣으세요"로 읽히고, 실선은 입력칸으로
+                 읽힌다 — 위 두 칸과 **같은 라벨·같은 자리**에 값만 글자로 두면 그 자체로
+                 "적는 곳이 아니다"가 된다.
             */}
-            <div className="border-border flex flex-col gap-1 rounded-lg border border-dashed px-3.5 py-3">
-              <p className="text-muted-foreground text-[12px] leading-4">
-                {COMPANY_FIELD_LABEL.CODE}
-              </p>
-              <p className="text-[15px] leading-6 font-medium tracking-[0.12em] tabular-nums">
+            <div className="flex flex-col gap-1.5">
+              <p className="text-sm leading-none font-medium">{COMPANY_FIELD_LABEL.CODE}</p>
+              <p className="text-[17px] leading-[38px] font-medium tracking-[0.14em] tabular-nums">
                 {profile.code}
               </p>
-              <p className="text-muted-foreground/70 text-[12px] leading-4 break-keep">
-                {COMPANY_CODE_HINT}
-              </p>
+              <p className="text-muted-foreground text-[12px] leading-4">{COMPANY_CODE_HINT}</p>
             </div>
           </div>
 
