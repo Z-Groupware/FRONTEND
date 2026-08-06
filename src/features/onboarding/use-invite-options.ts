@@ -44,7 +44,7 @@ export function useInviteOptions(departments: DepartmentNode[], positions: Posit
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // 소속은 부서(윗단) + 역할(아랫단)로 정한다. 역할 없이 부서에만 속할 수도 있다.
+  // 소속은 부서(윗단) + 역할(아랫단)로 정한다. 팀장은 역할이 `리더`로 자동으로 정해진다.
   const departmentOptions = useMemo(() => rootDepartments(source.departments), [source]);
 
   const rolesOf = useMemo(

@@ -42,7 +42,7 @@ export function RoleSection() {
 
         <div className="grid items-center gap-12 pt-12 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] lg:gap-16">
           <div className="reveal-on-scroll">
-            <div role="tablist" aria-label="역할" className="flex flex-wrap gap-1.5">
+            <div role="tablist" aria-label="권한" className="flex flex-wrap gap-1.5">
               {ROLE_VIEWS.map((item, index) => (
                 <button
                   key={item.name}

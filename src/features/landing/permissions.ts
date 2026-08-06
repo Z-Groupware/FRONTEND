@@ -50,7 +50,7 @@ export const PERMISSION_GROUPS: readonly PermissionGroup[] = [
     title: "회의",
     rows: [
       { feature: "프로젝트 회의 개설", owner: "yes", leader: "no", member: "no", admin: "no" },
-      { feature: "부서 회의 개설", owner: "yes", leader: "yes", member: "yes", admin: "no" },
+      { feature: "팀 회의 개설", owner: "yes", leader: "yes", member: "yes", admin: "no" },
       { feature: "회의 참여", owner: "yes", leader: "yes", member: "yes", admin: "no" },
       {
         feature: "회의 캡처 · 종료",
@@ -58,7 +58,7 @@ export const PERMISSION_GROUPS: readonly PermissionGroup[] = [
         leader: "partial",
         member: "partial",
         admin: "no",
-        note: "역할과 무관하게 해당 회의 담당자만 가능합니다",
+        note: "권한과 무관하게 해당 회의 담당자만 가능합니다",
       },
     ],
   },

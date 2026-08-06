@@ -9,7 +9,7 @@ import { ROLE_ACCESS } from "@/features/landing/roles";
 export const metadata: Metadata = {
   title: "권한 매트릭스 — Z",
   description:
-    "Owner · Leader · Member 세 역할과 겸직 권한 Admin이 각각 무엇에 닿을 수 있는지 정리했습니다.",
+    "Owner · Leader · Member 세 권한과 겸직 Admin이 각각 무엇에 닿을 수 있는지 정리했습니다.",
 };
 
 /**
@@ -29,7 +29,7 @@ export default function RolesPage() {
   return (
     <DocPage
       title="권한 매트릭스"
-      description="Z는 역할에 따라 보이는 화면이 다릅니다. 계정을 받으면 어떤 일을 할 수 있는지 미리 확인하세요."
+      description="Z는 권한에 따라 보이는 화면이 다릅니다. 계정을 받으면 어떤 일을 할 수 있는지 미리 확인하세요."
       isDescriptionOneLine
     >
       {/* 역할 배지 토큰 색을 그대로 쓴다 — 앱 안에서 보게 될 색을 미리 익힌다 */}

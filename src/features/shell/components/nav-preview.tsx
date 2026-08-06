@@ -52,7 +52,7 @@ const CASES: PreviewCase[] = [
   {
     key: "leader-admin",
     title: `${AUTHORITY_LABEL[AUTHORITY.LEADER]} + Admin`,
-    note: "팀 관리를 그대로 두고 회사 운영이 덧붙는다 — 역할을 갈아치우지 않는다",
+    note: "팀 관리를 그대로 두고 회사 운영이 덧붙는다 — 권한을 갈아치우지 않는다",
     viewer: person(AUTHORITY.LEADER, "김팀장", true),
   },
   {
@@ -74,7 +74,7 @@ export function NavPreview() {
     <div className="bg-background min-h-screen-z overflow-x-auto p-8">
       <div className="mx-auto w-fit">
         <header className="pb-6">
-          <h1 className="text-2xl leading-8 font-semibold tracking-[-0.48px]">역할별 사이드바</h1>
+          <h1 className="text-2xl leading-8 font-semibold tracking-[-0.48px]">권한별 사이드바</h1>
           {/*
             ⚠️ **개발용이라고 화면에 적는다.** 안 적으면 다음 사람이 제품 화면으로 알고
                링크를 걸거나 명세에 없는 화면을 유지보수하게 된다(§정직성).

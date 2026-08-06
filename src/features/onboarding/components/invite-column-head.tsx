@@ -16,7 +16,7 @@ export function InviteColumnHead() {
       <span className={cn(INVITE_COLUMN.NAME, "shrink-0 text-center")}>이름</span>
       <span className={cn(INVITE_COLUMN.EMAIL, "ml-1 shrink-0 pl-2.5")}>이메일</span>
       <span className={cn(INVITE_COLUMN.MESSAGE, "min-w-0")} aria-hidden />
-      <span className={cn(INVITE_COLUMN.SELECT, "shrink-0 text-center")}>부서</span>
+      <span className={cn(INVITE_COLUMN.SELECT, "shrink-0 text-center")}>팀</span>
       <span className={cn(INVITE_COLUMN.SELECT, "shrink-0 text-center")}>역할</span>
       <span className={cn(INVITE_COLUMN.SELECT, "shrink-0 text-center")}>직급</span>
       <span className={cn(INVITE_COLUMN.ADMIN, "shrink-0 text-center")}>Admin</span>
