@@ -77,7 +77,7 @@ export function ScreenScaleCard() {
       ⚠️ **변수 하나만 세운다.** 실제로 줄이는 일은 `globals.css`의 `body`가
          `transform: scale()`로 한다 — 전에는 여기서 `zoom`을 직접 걸었는데, `zoom`은
          배율을 레이아웃에 섞어 좌표를 다루는 코드를 전부 어긋나게 했다
-         (§`--app-scale` 주석).
+         (DECISIONS §화면 배율).
     */
     if (scale === DEFAULT_SCALE) root.style.removeProperty("--app-scale");
     else root.style.setProperty("--app-scale", String(ratio));
@@ -165,8 +165,7 @@ export function ScreenScaleCard() {
           ⚠️ 색을 쓰지 않는다 — 잘못된 상태가 아니라 알려 주는 말이다(§디자인 토큰).
         */
         <p className="border-border bg-secondary mt-4 rounded-lg border px-3.5 py-3 text-[12px] leading-[18px] break-keep">
-          화면이 기준보다 {hint === "smaller" ? "좁아" : "넓어"} 다른 기기보다{" "}
-          <span className="font-medium">{hint === "smaller" ? "크게" : "작게"}</span> 보입니다.{" "}
+          화면이 기준보다 좁아 다른 기기보다 <span className="font-medium">크게</span> 보입니다.{" "}
           {/*
             ⚠️ "같은 폭이 된다"고 단언하지 않는다. 권장값은 배율 목록 중 **가장 가까운** 값일
                뿐이라, 좁은 창(약 1152px 미만)에서는 눌러도 기준 1440px에 못 미친다 —

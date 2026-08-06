@@ -36,7 +36,7 @@ describe("ScreenScaleCard 키보드", () => {
     checked()?.focus();
     await user.keyboard("{ArrowRight}");
 
-    expect(checked()).toHaveTextContent("125%");
+    expect(checked()).toHaveTextContent("100%");
     // 포커스도 새 칸으로 옮겨 간다 — 안 그러면 다음 방향키가 안 먹는다
     expect(checked()).toHaveFocus();
   });
@@ -55,8 +55,8 @@ describe("ScreenScaleCard 키보드", () => {
     const user = userEvent.setup();
     render(<ScreenScaleCard />);
 
-    await user.click(screen.getByRole("radio", { name: "150%" }));
+    await user.click(screen.getByRole("radio", { name: "80%" }));
 
-    expect(checked()).toHaveTextContent("150%");
+    expect(checked()).toHaveTextContent("80%");
   });
 });
