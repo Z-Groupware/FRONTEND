@@ -89,7 +89,7 @@ export default async function TeamActionDetailPage({
           <div className="flex items-center gap-1.5">
             <p className="truncate">{teamAction.sourceMeeting.title}</p>
             <span
-              className="shrink-0 rounded px-1.5 py-0.5 font-mono text-[10px] font-semibold"
+              className="shrink-0 rounded px-1.5 py-px font-mono text-[10px] font-semibold"
               style={{ backgroundColor: tagColor.bgColor, color: tagColor.textColor }}
             >
               {teamAction.projectTag}
@@ -111,7 +111,7 @@ export default async function TeamActionDetailPage({
           <div className="flex items-center gap-1.5">
             <p className="truncate">{project.name}</p>
             <span
-              className="shrink-0 rounded px-1.5 py-0.5 font-mono text-[10px] font-semibold"
+              className="shrink-0 rounded px-1.5 py-px font-mono text-[10px] font-semibold"
               style={{ backgroundColor: tagColor.bgColor, color: tagColor.textColor }}
             >
               {project.tag}
@@ -145,12 +145,12 @@ export default async function TeamActionDetailPage({
               {teamAction.name}
             </h2>
             <span
-              className="rounded px-1.5 py-0.5 font-mono text-xs font-semibold"
+              className="rounded px-1.5 py-px font-mono text-xs font-semibold"
               style={{ backgroundColor: tagColor.bgColor, color: tagColor.textColor }}
             >
               {teamAction.projectTag}
             </span>
-            <span className="bg-muted text-muted-foreground rounded px-1.5 py-0.5 text-xs font-semibold">
+            <span className="bg-muted text-muted-foreground rounded px-1.5 py-px text-xs font-semibold">
               {teamAction.team}
             </span>
           </div>
