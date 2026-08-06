@@ -202,7 +202,7 @@ export default function Layout({ children }: { children: ReactNode }) {
 
 ### 여백
 
-```
+```text
 본문 바깥   px-8 py-7
 카드 사이   gap-7
 카드 안쪽   px-7 · 머리 pt-6 pb-3 · 단일 카드 p-7
@@ -211,7 +211,7 @@ export default function Layout({ children }: { children: ReactNode }) {
 
 ### 폭
 
-```
+```text
 목록·표 · 상세     max-w-[1440px]
 폼 + 좌 네비       max-w-[960px]
 폼 한 장 · 읽는 글  max-w-[720px]
@@ -251,7 +251,7 @@ export default function Layout({ children }: { children: ReactNode }) {
 색은 **직접 고르지 않는다.** `pickPaletteColor(key)`가 11색 중 하나를 골라 준다 —
 같은 키는 언제나 같은 색이라 사람이 정할 일이 없다.
 
-```
+```text
 slate · yellow · lime · emerald · teal · cyan · sky · indigo · purple · fuchsia · pink
 ```
 
