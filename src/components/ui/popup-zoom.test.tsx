@@ -1,3 +1,6 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+
 import { render, screen } from "@testing-library/react";
 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./select";
@@ -17,6 +20,39 @@ import { Sheet, SheetContent, SheetTitle } from "./sheet";
  *
  * 둘 중 하나라도 깨지면 CSS는 조용히 틀린다(빌드도 테스트도 안 잡는다). 그래서 여기서 잡는다.
  */
+
+/*
+  ⚠️ **jsdom은 외부 CSS를 적용하지 않는다.** 그래서 계산된 스타일로는 규칙을 검증할 수 없다 —
+     규칙 문자열을 직접 읽어 확인한다. 이게 없으면 `globals.css`에서 두 규칙을 통째로 지워도
+     이 파일이 전부 통과해서, 있지도 않은 안전망을 있다고 읽게 된다.
+*/
+const GLOBALS_CSS = readFileSync(join(process.cwd(), "src/app/globals.css"), "utf8");
+
+/** 규칙이 고르는 것 — 테스트와 CSS가 **같은 문자열**을 보게 한다 */
+const POSITIONER_SELECTOR = "[data-base-ui-portal] > [data-side][data-align]";
+
+describe("배율 보정 규칙 자체", () => {
+  it("`globals.css`에 좌표를 되돌리는 규칙과 되거는 규칙이 둘 다 있다", () => {
+    expect(GLOBALS_CSS).toContain(`${POSITIONER_SELECTOR} {\n    zoom: calc(1 / var(--app-zoom));`);
+    expect(GLOBALS_CSS).toContain(`${POSITIONER_SELECTOR} > * {\n    zoom: var(--app-zoom);`);
+  });
+
+  /*
+    ⚠️ 자손 결합자(공백)로 되돌아가면 Popup까지 걸려 내용물이 배율을 두 번 먹는다(Z²).
+       실측: 배율 150%에서 내용물이 2.25배로 그려졌다.
+  */
+  it("자손이 아니라 직계 자식으로 고른다", () => {
+    expect(GLOBALS_CSS).not.toContain("[data-base-ui-portal] [data-side][data-align]");
+  });
+
+  /*
+    ⚠️ 규칙을 `@layer utilities` 안에 두면 커스텀 유틸 블록이 끊긴다 — 실제로 한 번 그랬고
+       1255줄이 `base`로 강등돼 모든 Tailwind 유틸리티에 지게 됐다.
+  */
+  it("`@layer utilities` 블록이 한 덩이로 남아 있다", () => {
+    expect(GLOBALS_CSS.match(/^@layer utilities \{/gm)).toHaveLength(1);
+  });
+});
 
 describe("팝업 배율 보정이 기대는 데이터 속성", () => {
   it("Sheet는 `data-side`를 쓰지만 `data-align`은 없다 — 보정에 걸리면 안 된다", () => {
@@ -84,7 +120,7 @@ describe("팝업 배율 보정이 기대는 데이터 속성", () => {
   it("규칙의 선택자는 Positioner 하나만 고른다 — Popup은 안 걸린다", () => {
     renderOpenSelect();
 
-    const matched = document.querySelectorAll("[data-base-ui-portal] > [data-side][data-align]");
+    const matched = document.querySelectorAll(POSITIONER_SELECTOR);
 
     expect(matched).toHaveLength(1);
     expect(matched[0]).not.toHaveAttribute("data-slot", "select-content");
