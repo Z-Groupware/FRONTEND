@@ -10,10 +10,10 @@ import { GuideDemo } from "./guide-demo";
 /** 단계마다 짚어줄 것 — 화면을 보며 따라 할 수 있는 순서로 적는다. */
 const GUIDE_STEPS: Record<OnboardingStep, string[]> = {
   [ONBOARDING_STEP.DEPARTMENT]: [
-    "아래 칸에 부서 이름을 적고 Enter를 누릅니다.",
-    "부서 줄에 마우스를 올리면 + 가 나옵니다. 누르면 그 안에 역할이 생깁니다.",
+    "아래 칸에 팀 이름을 적고 Enter를 누릅니다.",
+    "팀 줄에 마우스를 올리면 + 가 나옵니다. 누르면 그 안에 역할이 생깁니다.",
     "이름은 더블클릭해서 바꿉니다.",
-    "손잡이를 끌면 순서를 바꾸거나 다른 부서로 옮길 수 있습니다.",
+    "손잡이를 끌면 순서를 바꾸거나 다른 팀으로 옮길 수 있습니다.",
   ],
   [ONBOARDING_STEP.POSITION]: [
     "직급 이름을 적고 Enter를 누릅니다.",
@@ -21,9 +21,9 @@ const GUIDE_STEPS: Record<OnboardingStep, string[]> = {
     "위에 있을수록 높은 직급입니다. 손잡이를 끌어 맞춥니다.",
   ],
   [ONBOARDING_STEP.INVITE]: [
-    "부서 · 역할 · 직급을 앞에서부터 차례로 고릅니다.",
+    "팀 · 역할 · 직급을 앞에서부터 차례로 고릅니다.",
     "직급을 팀장으로 고르면 역할이 ‘리더’로 자동으로 채워집니다.",
-    "부서마다 리더는 한 명입니다.",
+    "팀마다 리더는 한 명입니다.",
     "주소를 적고 [완료]를 누르면 초대장이 함께 나갑니다.",
   ],
   [ONBOARDING_STEP.PAYMENT]: [

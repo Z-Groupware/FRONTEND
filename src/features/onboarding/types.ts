@@ -48,7 +48,7 @@ export const NO_ROLE_LABEL = "없음";
  * 팀장은 역할이 `리더`로 자동으로 정해지고, 역할이 하나도 없는 부서의 사원은 `없음`이 된다 —
  * 둘 다 **고르는 게 아니라 정해지는 값**이다(`LEADER_ROLE_ID`·`NO_ROLE_ID`).
  */
-const DEPTH_LABEL = ["부서", "역할"] as const;
+const DEPTH_LABEL = ["팀", "역할"] as const;
 
 export function getDepthLabel(depth: number): string {
   return DEPTH_LABEL[depth] ?? "역할";
@@ -71,7 +71,7 @@ export const ONBOARDING_STEP = {
 export type OnboardingStep = (typeof ONBOARDING_STEP)[keyof typeof ONBOARDING_STEP];
 
 export const ONBOARDING_STEP_LABEL: Record<OnboardingStep, string> = {
-  1: "부서 체계",
+  1: "팀 체계",
   2: "직급 체계",
   3: "사원 초대",
   4: "결제",

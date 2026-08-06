@@ -6,7 +6,7 @@ import { getDepartments } from "@/features/onboarding/server";
 import { ONBOARDING_STEP } from "@/features/onboarding/types";
 
 export const metadata: Metadata = {
-  title: "부서 체계 만들기",
+  title: "팀 체계 만들기",
 };
 
 export default async function OnboardingDepartmentPage() {

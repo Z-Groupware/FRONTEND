@@ -8,7 +8,7 @@ import { StepNote, StepNoteList } from "./step-note-list";
 
 const BENEFITS = [
   "계정과 첫 비밀번호를 메일로 보내드립니다",
-  "부서·역할·직급을 미리 지정해서 보낼 수 있습니다",
+  "팀·역할·직급을 미리 지정해서 보낼 수 있습니다",
   "나중에 기업 설정에서 추가로 초대할 수 있습니다",
 ] as const;
 
@@ -26,7 +26,7 @@ export function InviteIntro({ invites, departments, rolesOf, positions }: Invite
     <section className="flex w-full flex-col gap-[17.5px] lg:h-full lg:w-[320px] lg:shrink-0">
       <StepHeading step={ONBOARDING_STEP.INVITE} title="사원을 초대하세요">
         보내면 계정이 바로 만들어지고, 아이디와 첫 비밀번호가 메일로 갑니다. 여기서 정한
-        부서·역할·직급으로 배정됩니다.
+        팀·역할·직급으로 배정됩니다.
       </StepHeading>
 
       <StepHintList items={BENEFITS} />
@@ -43,7 +43,7 @@ export function InviteIntro({ invites, departments, rolesOf, positions }: Invite
           첫 비밀번호가 메일로 갑니다.
         </StepNote>
         <StepNote>
-          <span className="text-muted-foreground">역할은 부서를 고른 뒤</span> 정합니다. 직급을
+          <span className="text-muted-foreground">역할은 팀을 고른 뒤</span> 정합니다. 직급을
           팀장으로 고르면 역할이 &lsquo;리더&rsquo;로 자동으로 채워집니다.
         </StepNote>
         <StepNote>
@@ -56,7 +56,7 @@ export function InviteIntro({ invites, departments, rolesOf, positions }: Invite
              그 일을 할 사람이 없어 대표 혼자 막힌다.
         */}
         <StepNote>
-          <span className="text-muted-foreground">Admin은 역할 위에 얹는 권한</span>이라 직급과 따로
+          <span className="text-muted-foreground">Admin은 권한 위에 얹는 겸직</span>이라 직급과 따로
           켭니다. Leader이면서 Admin일 수 있고, 대표는 겸할 수 없습니다.
         </StepNote>
         <StepNote>

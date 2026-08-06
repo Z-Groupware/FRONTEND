@@ -5,9 +5,9 @@ import { StepHintList } from "./step-hint-list";
 import { StepNote, StepNoteList } from "./step-note-list";
 
 const BENEFITS = [
-  "회의를 만들 때 부서 전체를 한 번에 초대",
-  "인수인계 대상자를 부서 기준으로 추리기",
-  "부서별 활동 통계 자동 집계",
+  "회의를 만들 때 팀 전체를 한 번에 초대",
+  "인수인계 대상자를 팀 기준으로 추리기",
+  "팀별 활동 통계 자동 집계",
 ] as const;
 
 /** 온보딩 1단계 좌측 — 설명과 축약 미리보기. */
@@ -18,8 +18,8 @@ interface DepartmentIntroProps {
 export function DepartmentIntro({ departments }: DepartmentIntroProps) {
   return (
     <section className="flex w-full flex-col gap-[17.5px] lg:h-full lg:w-[320px] lg:shrink-0">
-      <StepHeading step={ONBOARDING_STEP.DEPARTMENT} title="부서 체계를 만들어 주세요">
-        회의 참석자와 알림 대상, 인수인계 범위를 부서 단위로 관리합니다. 지금 만들어 두면 사원이
+      <StepHeading step={ONBOARDING_STEP.DEPARTMENT} title="팀 체계를 만들어 주세요">
+        회의 참석자와 알림 대상, 인수인계 범위를 팀 단위로 관리합니다. 지금 만들어 두면 사원이
         합류할 때 바로 배정할 수 있습니다.
       </StepHeading>
 
@@ -39,11 +39,11 @@ export function DepartmentIntro({ departments }: DepartmentIntroProps) {
           3단계 초대 목록의 좁은 칸에서 이 이름을 골라야 해서입니다.
         </StepNote>
         <StepNote>
-          <span className="text-muted-foreground">역할</span>은 부서 안에서 맡는 일입니다. 개발팀
-          안의 프론트엔드·백엔드가 그렇습니다.
+          <span className="text-muted-foreground">역할</span>은 팀 안에서 맡는 일입니다. 개발팀 안의
+          프론트엔드·백엔드가 그렇습니다.
         </StepNote>
         <StepNote>
-          <span className="text-muted-foreground">손잡이를 끌면</span> 순서를 바꾸거나 다른 부서로
+          <span className="text-muted-foreground">손잡이를 끌면</span> 순서를 바꾸거나 다른 팀으로
           옮길 수 있습니다.
         </StepNote>
         <StepNote>

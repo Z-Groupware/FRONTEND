@@ -4,7 +4,7 @@ export const PROFILE_INFO_CARD_TITLE = "기본 정보";
 export const PROFILE_INFO_ROW_LABEL = {
   NAME: "이름",
   EMAIL: "이메일",
-  TEAM: "부서",
+  TEAM: "팀",
   POSITION: "직급",
   JOINED_AT: "입사일",
 } as const;

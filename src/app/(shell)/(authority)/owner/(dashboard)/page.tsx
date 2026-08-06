@@ -70,9 +70,7 @@ export default async function OwnerDashboardPage() {
                     <TableHead className="text-muted-foreground text-center text-xs">
                       이메일
                     </TableHead>
-                    <TableHead className="text-muted-foreground text-center text-xs">
-                      부서
-                    </TableHead>
+                    <TableHead className="text-muted-foreground text-center text-xs">팀</TableHead>
                     <TableHead className="text-muted-foreground text-center text-xs">
                       상태
                     </TableHead>

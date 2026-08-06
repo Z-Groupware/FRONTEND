@@ -52,7 +52,7 @@ export function InviteCommitDialog({
       */}
       <div className="flex justify-center">
         <dl className="bg-secondary/60 inline-flex items-center gap-3.5 rounded-full px-4 py-2">
-          <Item label="부서" value={departmentCount} />
+          <Item label="팀" value={departmentCount} />
           <Divider />
           <Item label="직급" value={positionCount} />
           <Divider />
@@ -66,8 +66,8 @@ export function InviteCommitDialog({
       */}
       {skippedCount > 0 && (
         <p className="text-muted-foreground pt-3 text-[12px] leading-[18px] break-keep">
-          부서·직급을 고르지 않은 {skippedCount}줄은 발송에서 빠집니다. 취소하고 채우거나, 나중에
-          기업 설정에서 초대해 주세요.
+          팀·직급을 고르지 않은 {skippedCount}줄은 발송에서 빠집니다. 취소하고 채우거나, 나중에 기업
+          설정에서 초대해 주세요.
         </p>
       )}
     </ConfirmDialog>
