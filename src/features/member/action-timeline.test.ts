@@ -40,7 +40,7 @@ describe("buildActionTimeline", () => {
   it("축 범위가 최소 노출일보다 짧으면 뒤쪽에 칸을 채운다", () => {
     const model = buildActionTimeline([OVERDUE, UPCOMING], TODAY);
 
-    // 실제 08-01~08-11(11일)은 최소 21일보다 짧아 뒤로 채워진다
+    // 실제 08-01~08-11(11일)은 최소 30일보다 짧아 뒤로 채워진다
     expect(model?.days).toHaveLength(TIMELINE_MIN_VISIBLE_DAYS);
     expect(model?.days[0]?.iso).toBe("2026-08-01");
     expect(model?.days.at(-1)?.iso).toBe("2026-08-30");
