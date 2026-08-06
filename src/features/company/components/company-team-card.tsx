@@ -78,6 +78,13 @@ export function CompanyTeamCard({ initial }: { initial: DepartmentNodeType[] }) 
       <SettingCard
         title={COMPANY_SECTION_TITLE.TEAM}
         aside={aside}
+        description={
+          <>
+            <span className="text-foreground font-medium">팀 아래 역할까지 두 단계</span>입니다.
+            사원은 팀에 소속되고 역할은 비워 둘 수 있습니다. 팀을 지우면 그 안의 역할도 함께
+            사라집니다 — 소속된 사원은 사원 관리에서 옮겨 주세요.
+          </>
+        }
         footer={
           <Button
             type="button"
@@ -90,6 +97,15 @@ export function CompanyTeamCard({ initial }: { initial: DepartmentNodeType[] }) 
           </Button>
         }
       >
+        {/*
+          열 머리 — 표가 있는 다른 카드(저장소 관리)와 같은 모양이다.
+          ⚠️ 좌우 여백은 **행과 같은 `px-4`** 다. 카드 머리의 `px-7`에 맞추면 머리와 몸이 어긋난다.
+        */}
+        <div className="text-muted-foreground bg-secondary/50 border-border flex items-center justify-between border-b px-4 py-3 text-[12px] leading-4">
+          <span>팀 · 역할</span>
+          <span>구분</span>
+        </div>
+
         {/* 목록이 짧으면 카드도 짧다. 길어지면 여기서 멈추고 안에서만 스크롤된다 —
             빈 자리를 300px씩 비워 두면 세 카드가 화면을 넘겨 아래가 안 보인다 */}
         <div className="max-h-[300px] overflow-auto overscroll-contain px-4 pt-4 pb-3">

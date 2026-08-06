@@ -68,6 +68,14 @@ export function CompanyPositionCard({ initial }: { initial: Position[] }) {
   return (
     <SettingCard
       title={COMPANY_SECTION_TITLE.POSITION}
+      aside={`직급 ${list.positions.length}개`}
+      description={
+        <>
+          <span className="text-foreground font-medium">권한은 직급에서 옵니다.</span> Leader는 한
+          직급만 가질 수 있고, 그 직급을 받은 사람이 팀마다 한 명씩 자기 팀 전체를 관리합니다.
+          Admin은 직급이 아니라 사람에게 붙는 겸직이라 사원 관리에서 켭니다.
+        </>
+      }
       footer={
         <Button
           type="button"
@@ -81,7 +89,7 @@ export function CompanyPositionCard({ initial }: { initial: Position[] }) {
       }
     >
       {/* 칸 너비는 행(`PositionRow`)과 같은 곳에서 온다 — 따로 적으면 머리와 몸이 어긋난다 */}
-      <div className="text-muted-foreground/60 border-border bg-card flex h-8 shrink-0 items-center gap-2 border-b px-4 text-[12px] leading-4">
+      <div className="text-muted-foreground bg-secondary/50 border-border flex shrink-0 items-center gap-2 border-b px-4 py-3 text-[12px] leading-4">
         <span className={cn(POSITION_COLUMN.INDEX, "shrink-0")} aria-hidden />
         <span className={cn(POSITION_COLUMN.NAME, "shrink-0 text-center")}>직급명</span>
         <span className="flex-1" aria-hidden />

@@ -75,13 +75,24 @@ export function CompanyProfileCard({ profile }: { profile: CompanyProfile }) {
     <form action={formAction}>
       <SettingCard
         title={COMPANY_SECTION_TITLE.PROFILE}
+        description={
+          <>
+            세금계산서와 결제 영수증에{" "}
+            <span className="text-foreground font-medium">이 정보가 그대로</span> 나갑니다. 고친
+            값은 다음 결제부터 반영됩니다.
+          </>
+        }
         footer={
           <Button type="submit" size="sm" variant="ink" disabled={isPending}>
             {isPending ? "저장 중…" : "저장"}
           </Button>
         }
       >
-        <div className="grid grid-cols-1 gap-5 px-7 py-6 sm:grid-cols-2">
+        {/*
+          ⚠️ 전폭(1440)에서 **한 줄에 셋**이다. 두 칸으로 두면 입력칸 하나가 700px가 되어
+             회사명 여섯 글자를 적는 데 화면 절반을 쓴다 — 표는 넓을수록 좋지만 입력칸은 아니다.
+        */}
+        <div className="grid grid-cols-1 gap-x-6 gap-y-5 px-7 py-6 sm:grid-cols-2 lg:grid-cols-3">
           <Field
             name="name"
             label={COMPANY_FIELD_LABEL.NAME}
@@ -119,7 +130,7 @@ export function CompanyProfileCard({ profile }: { profile: CompanyProfile }) {
             wide
           />
 
-          <div className="flex flex-col gap-1.5 sm:col-span-2">
+          <div className="flex flex-col gap-1.5">
             <p className="text-sm leading-none font-medium">{COMPANY_FIELD_LABEL.CODE}</p>
             <p className="text-[15px] tracking-[0.08em] tabular-nums">{profile.code}</p>
             <p className="text-muted-foreground text-xs">{COMPANY_CODE_HINT}</p>

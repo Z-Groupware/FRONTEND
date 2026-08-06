@@ -27,7 +27,9 @@ export const metadata: Metadata = {
  *    화면 가드는 UX일 뿐이고 **각 저장 액션이 `canManageCompany`로 서버에서 다시 본다**(§권한).
  * ⚠️ 탭으로 나누지 않는다. 세 덩이뿐이라 한 화면에 쌓아도 읽히고,
  *    탭은 **무엇이 있는지 감추기만** 한다.
- * ⚠️ 폭은 720이다 — 좌 네비 없는 폼 한 장(DESIGN §4). 항목이 늘어 좌 네비가 생기는 날 960이다.
+ * ⚠️ 폭은 **1440**이다 — 저장소 관리·구독과 같은 전폭 카드다(DESIGN §4 목록·표).
+ *    720(폼 한 장)으로 두면 사이드바로 오갈 때 이 화면만 본문이 좁아져 튄다.
+ *    대신 기본 정보의 입력칸은 카드 안에서 3열로 나눈다 — 표는 넓을수록 좋지만 입력칸은 아니다.
  * ⚠️ 편집 조각은 온보딩 것을 그대로 쓴다 — 두 벌이면 한쪽만 고쳐지고 조작이 갈린다.
  */
 export default async function OwnerSettingPage() {
@@ -38,7 +40,7 @@ export default async function OwnerSettingPage() {
 
   return (
     <div className="flex-1 overflow-y-auto px-8 py-7">
-      <div className="mx-auto flex w-full max-w-[720px] flex-col gap-7">
+      <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-7">
         <CompanyProfileCard profile={setting.profile} />
         <CompanyTeamCard initial={setting.departments} />
         <CompanyPositionCard initial={setting.positions} />
