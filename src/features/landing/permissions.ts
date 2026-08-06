@@ -75,13 +75,27 @@ export const PERMISSION_GROUPS: readonly PermissionGroup[] = [
     rows: [
       { feature: "신청", owner: "no", leader: "yes", member: "yes", admin: "no" },
       { feature: "중간 승인", owner: "no", leader: "yes", member: "no", admin: "no" },
-      { feature: "최종 승인", owner: "yes", leader: "no", member: "no", admin: "yes" },
+      {
+        feature: "최종 승인",
+        owner: "yes",
+        leader: "no",
+        member: "no",
+        admin: "no",
+        note: "2026-08-06부터 Owner 전용입니다 — Admin은 승인 대상 화면엔 들어가지만 승인 버튼은 없습니다",
+      },
     ],
   },
   {
     title: "관리",
     rows: [
-      { feature: "계정 발급", owner: "no", leader: "no", member: "no", admin: "yes" },
+      {
+        feature: "계정 발급",
+        owner: "yes",
+        leader: "no",
+        member: "no",
+        admin: "yes",
+        note: "사원 관리 화면 안 버튼입니다 — 별도 화면이 아닙니다",
+      },
       {
         feature: "직급 · 권한 변경",
         owner: "yes",

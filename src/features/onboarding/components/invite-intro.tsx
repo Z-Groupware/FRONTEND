@@ -51,8 +51,9 @@ export function InviteIntro({ invites, departments, rolesOf, positions }: Invite
           있습니다. 더 필요하면 이전 단계에서 추가해 주세요.
         </StepNote>
         {/*
-          ⚠️ 이 자리에서 Admin을 켜야 회사에 관리자가 **처음부터** 있다. 안 켜고 넘어가면
-             계정 발급·회의실 관리를 할 사람이 없어 대표 혼자 막힌다.
+          ⚠️ 이 자리에서 Admin을 켜야 회사에 관리자가 **처음부터** 있다. 계정 발급은 대표
+             혼자서도 되지만(2026-08-06), 회의실 관리는 Admin 전용이라 안 켜고 넘어가면
+             그 일을 할 사람이 없어 대표 혼자 막힌다.
         */}
         <StepNote>
           <span className="text-muted-foreground">Admin은 역할 위에 얹는 권한</span>이라 직급과 따로

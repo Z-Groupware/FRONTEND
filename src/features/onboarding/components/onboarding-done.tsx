@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 
 import { ZDoneMark } from "@/components/common/z-done-mark";
 import { buttonVariants } from "@/components/ui/button";
-import { ROLE } from "@/constants/role";
+import { AUTHORITY } from "@/constants/authority";
 import { roleHome } from "@/features/shell/home";
 import { cn } from "@/lib/utils";
 
@@ -113,7 +113,7 @@ export function OnboardingDone({ paymentSummary }: OnboardingDoneProps) {
              역할별 첫 화면이 바뀔 때 고칠 자리를 한 곳으로 모은다.
         */}
         <Link
-          href={roleHome(ROLE.OWNER)}
+          href={roleHome(AUTHORITY.OWNER)}
           className={cn(
             buttonVariants(),
             "bg-foreground text-background hover:bg-foreground/90 h-[38px] w-full gap-1.5 rounded-md text-[13px] leading-none",

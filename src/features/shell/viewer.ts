@@ -1,11 +1,11 @@
-import { ROLE } from "@/constants/role";
+import { AUTHORITY } from "@/constants/authority";
 import type { Actor } from "@/lib/permission";
 import { isMock } from "@/mocks/config";
 
 /**
  * 지금 보고 있는 사람 — **세션이 붙기 전까지 이 파일 하나가 목이다.**
  *
- * ⚠️ 화면마다 `role: ROLE.OWNER`를 적어 두면, 로그인이 붙었을 때 고칠 자리를 다 찾아야 한다.
+ * ⚠️ 화면마다 `role: AUTHORITY.OWNER`를 적어 두면, 로그인이 붙었을 때 고칠 자리를 다 찾아야 한다.
  *    셸·결제·완료 창이 전부 여기서 읽는다(Mock → Live 격리막).
  * ⚠️ 실연동 때는 **httpOnly 쿠키의 세션**을 읽는다 — 브라우저가 아니라 서버에서 판정한다
  *    (CLAUDE.md §권한: 화면 숨김은 UX일 뿐 보안이 아니다).
@@ -22,7 +22,7 @@ export interface Viewer extends Actor {
 
 export async function getViewer(): Promise<Viewer> {
   if (isMock) {
-    return { id: 1, name: "대표 계정", role: ROLE.OWNER, isAdmin: false };
+    return { id: 1, name: "대표 계정", role: AUTHORITY.OWNER, isAdmin: false };
   }
 
   // TODO(BE 협의): 쿠키의 세션으로 `GET /me` → { id, name, role, isAdmin, departmentId }

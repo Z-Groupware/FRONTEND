@@ -1,6 +1,6 @@
 import { PROJECT_STATUS } from "@/constants/domain";
 
-import type { ProjectListItem } from "../types";
+import type { ProjectDraft, ProjectListItem } from "../types";
 
 /**
  * ⚠️ 목 데이터 — BE 연동 전(ERD·API 스펙 미확정, DECISIONS.md).
@@ -45,3 +45,25 @@ export const TOP_LEVEL_PROJECTS: ProjectListItem[] = [
     status: PROJECT_STATUS.IN_PROGRESS,
   },
 ];
+
+/**
+ * 프로젝트 생성 — 격리막(CLAUDE.md §Mock 격리막). 새 프로젝트는 착수 직후라 진척 0%·할일 상태로 만든다.
+ * ⚠️ 태그 색상(`tagColor`)은 지금 이 목 배열에 저장할 자리가 없다 — `ProjectListItem`엔
+ *    색 필드가 없고 목록은 태그명을 해시해 색을 뽑는다(`pickPaletteColor`). 사용자가 고른 색은
+ *    BE에 색 필드가 생기면 그때 같이 흘려보낸다(지금은 생성 폼에서만 쓰고 버려진다).
+ */
+export function addMockProject(draft: ProjectDraft): ProjectListItem {
+  const project: ProjectListItem = {
+    id: `p-${draft.tag.toLowerCase()}`,
+    name: draft.name,
+    description: draft.description,
+    tag: draft.tag,
+    departments: draft.teamNames,
+    actionTotal: 0,
+    actionDone: 0,
+    dueDate: draft.dueDate,
+    status: PROJECT_STATUS.TODO,
+  };
+  TOP_LEVEL_PROJECTS.push(project);
+  return project;
+}

@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
-import { ROLE } from "@/constants/domain";
+import { AUTHORITY } from "@/constants/domain";
 
 import type { Position } from "../types";
 import { PositionSetup } from "./position-setup";
@@ -14,8 +14,8 @@ import { PositionSetup } from "./position-setup";
  * ⚠️ `sessionStorage`에 이전 테스트의 임시 저장이 남으면 다음 테스트가 오염된다 — 매번 비운다.
  */
 const SEED: Position[] = [
-  { id: "p1", name: "사원", role: ROLE.MEMBER },
-  { id: "p2", name: "팀장", role: ROLE.LEADER },
+  { id: "p1", name: "사원", role: AUTHORITY.MEMBER },
+  { id: "p2", name: "팀장", role: AUTHORITY.LEADER },
 ];
 
 function setup(initial: Position[] = SEED) {
