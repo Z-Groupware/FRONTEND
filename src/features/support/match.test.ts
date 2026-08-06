@@ -125,6 +125,28 @@ describe("findFaqCandidates", () => {
     },
   );
 
+  /*
+    ⚠️ **동점은 버그가 아니라 되묻기다.** 토끼(CodeRabbit)가 `팀장 직급`·`역할`이 두 항목에
+       동점이라며 키워드를 좁히라고 했는데, 이 위젯은 **하나로 좁히는 게 목표가 아니다** —
+       여러 갈래에 걸치는 말이면 잘못 짚느니 되묻는 쪽이 낫다(§match).
+    ⚠️ 좁혀 놓으면 `팀장 직급`이 권한 설명으로만 가는데, 조직 구조를 물은 사람은 엉뚱한
+       답을 받고 되물을 기회도 잃는다. 대신 **되묻는다는 사실을 여기서 못 박는다** —
+       키워드를 손댈 때 조용히 하나로 좁혀지는 걸 막는 게 이 테스트의 일이다.
+  */
+  it.each(["팀장 직급", "Leader 직급", "역할"])(
+    "`%s`는 권한 설명과 구조 설명 둘 다에 걸려 되묻는다",
+    (question) => {
+      const ids = findFaqCandidates(question).map((found) => found.id);
+
+      expect(ids).toContain("roles");
+      expect(ids).toContain("org-structure");
+    },
+  );
+
+  it("`권한`만 물으면 권한 항목 하나로 좁혀진다 — 걸치지 않는 말은 되묻지 않는다", () => {
+    expect(findFaqCandidates("권한").map((found) => found.id)).toEqual(["roles"]);
+  });
+
   it("모든 항목은 대표 질문으로 자기 자신을 찾을 수 있다", () => {
     for (const entry of FAQ_ENTRIES) {
       expect(findFaqCandidates(entry.question).map((found) => found.id)).toContain(entry.id);

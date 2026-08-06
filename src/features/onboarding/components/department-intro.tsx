@@ -46,8 +46,15 @@ export function DepartmentIntro({ departments }: DepartmentIntroProps) {
           <span className="text-muted-foreground">손잡이를 끌면</span> 순서를 바꾸거나 다른 팀으로
           옮길 수 있습니다.
         </StepNote>
+        {/*
+          ⚠️ **아직 안 한 일을 과거형으로 말하지 않는다.** 여기는 1단계라 직급 권한을 정하는
+             2단계를 보기 전이다 — `Leader 권한을 준 직급`이라고 적으면 이미 무언가 해 둔
+             것처럼 읽히고, 어디서 준다는 건지도 알 수 없다. **다음 단계**라고 짚어 준다.
+        */}
         <StepNote>
-          역할은 비워 둬도 됩니다. Leader 권한을 준 직급은 여기서 만든 역할과 무관하게{" "}
+          역할은 비워 둬도 됩니다.{" "}
+          <span className="text-muted-foreground">다음 단계에서 Leader 권한을 줄 직급</span>은
+          여기서 만든 역할과 무관하게{" "}
           <span className="text-muted-foreground">&lsquo;리더&rsquo;</span>가 됩니다.
         </StepNote>
       </StepNoteList>
