@@ -155,7 +155,7 @@ export function ProjectForm({ action, teamOptions, cancelHref }: ProjectFormProp
         )}
       </div>
 
-      <div className="grid grid-cols-[minmax(0,1fr)_224px] items-start gap-6">
+      <div className="grid grid-cols-[minmax(0,1fr)_160px] items-start gap-6">
         <div className="flex flex-col gap-1.5">
           <Label>
             태그 색상 <span className="text-destructive">*</span>
@@ -242,7 +242,7 @@ export function ProjectForm({ action, teamOptions, cancelHref }: ProjectFormProp
         </div>
       </div>
 
-      <div className="grid grid-cols-[minmax(0,1fr)_224px] items-start gap-6">
+      <div className="grid grid-cols-[minmax(0,1fr)_160px] items-start gap-6">
         <div className="flex flex-col gap-1.5">
           <Label>
             참여 팀 <span className="text-destructive">*</span>
