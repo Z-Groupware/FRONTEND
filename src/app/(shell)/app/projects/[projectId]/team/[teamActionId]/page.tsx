@@ -68,7 +68,7 @@ export default async function TeamActionDetailPage({
       startDate: item.startDate,
       dueDate: item.dueDate,
       tone: isDelayed(item) ? "DELAYED" : item.status,
-      // ⚠️ 개인 액션 상세(`/app/actions/:id`)는 아직 없다 — 생기면 href를 채운다.
+      href: `/app/actions/${item.id}`,
     };
   });
 
