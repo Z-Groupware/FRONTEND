@@ -63,6 +63,17 @@ describe("validateCompanyProfile", () => {
     ⚠️ 규칙은 **기업 등록 신청과 같은 스키마**에서 온다. 여기가 신청보다 느슨해지면
        신청 때 막힌 값이 설정에서는 저장되고, 조이면 그 반대가 된다.
   */
+  /*
+    ⚠️ 한 칸에 오류가 여럿 나와도 **첫 줄만** 쓴다(신청 화면과 같은 규칙). 빈 칸이면
+       "입력해 주세요"와 "형식이 틀렸어요"가 같이 나오는데, 아직 아무것도 안 적은 사람에게
+       형식 얘기는 소음이다. `!(field in errors)` 가드가 지워져도 이 테스트가 잡는다.
+  */
+  it("한 칸에 오류가 여럿이면 첫 줄만 남긴다", () => {
+    const errors = validateCompanyProfile({ ...VALID, businessNumber: "" });
+
+    expect(errors.businessNumber).toBe("사업자등록번호를 입력해 주세요");
+  });
+
   it("신청 화면과 같은 문구로 알린다", () => {
     const errors = validateCompanyProfile({ name: "", businessNumber: "", place: null });
 

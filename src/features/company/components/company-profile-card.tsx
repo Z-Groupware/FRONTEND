@@ -3,6 +3,7 @@
 import { useActionState, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
+import { LeaveGuard } from "@/components/common/leave-guard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -61,8 +62,8 @@ function Field({
  * ⚠️ 위치는 **입력이 아니라 고르는 일**이라 신청 화면의 `AddressPicker`를 그대로 쓴다.
  *    사람이 아는 건 "판교 우리 건물"이지 위경도가 아니다. 키가 없거나 SDK가 죽으면 그
  *    컴포넌트가 알아서 직접 입력 칸으로 내려간다(§정직성).
- * ⚠️ **기업 코드는 맨 위 따로 한 줄**이다. 편집 칸들 사이에 끼워 두면 고칠 수 있는 값으로
- *    읽힌다 — 줄로 갈라 두면 "못 고치는 값"이 위치로 드러난다.
+ * ⚠️ **기업 코드는 위 두 칸과 같은 모양이되 `readOnly`**다. 값이 나란히 서야 셋이 한 묶음으로
+ *    읽히고, 흐린 배경과 커서 없음이 "적는 곳이 아니다"를 말한다.
  * ⚠️ 검증 오류는 **칸 밑 인라인**이다(§토스트). 성공만 토스트로 알린다 — 화면이 그대로라
  *    안 알리면 저장됐는지 알 수 없다.
  */
@@ -72,8 +73,32 @@ export function CompanyProfileCard({ profile }: { profile: CompanyProfile }) {
     { errors: {} },
   );
   const [businessNumber, setBusinessNumber] = useState(profile.businessNumber);
+  const [name, setName] = useState(profile.name);
+  /*
+    ⚠️ 고친 칸의 오류는 **그 자리에서 감춘다**(신청 화면 `register-form`과 같은 규칙).
+       `useActionState`의 `errors`는 다음 제출까지 남아 있어서, 이름을 제대로 다시 적어도
+       빨간 글씨가 붙어 있다 — 같은 폼 조작이 화면마다 다르게 반응하면 안 된다.
+  */
+  const [fixed, setFixed] = useState<ReadonlySet<string>>(new Set());
+  const markFixed = (field: keyof CompanyProfileDraft) =>
+    setFixed((prev) => new Set(prev).add(field));
+  const errorOf = (field: keyof CompanyProfileDraft) =>
+    fixed.has(field) ? undefined : state.errors[field];
   const [place, setPlace] = useState<PickedPlace | null>(profile.place);
   const notified = useRef<number | null>(null);
+
+  /* 다시 제출했으니 가려 뒀던 오류를 되살린다 */
+  const handleSubmit = () => setFixed(new Set());
+
+  /*
+    ⚠️ **안 고쳤으면 저장을 안 연다.** 열자마자 눌러도 요청이 나가고 "저장했습니다"가 뜨는데,
+       이 카드는 저장 결과가 화면에 남지 않아(값이 그대로다) 그 토스트가 유일한 신호다 —
+       아무것도 안 바뀐 저장에도 뜨면 신호가 아니게 된다. 옆 두 카드도 같은 규칙이다.
+  */
+  const isDirty =
+    name !== profile.name ||
+    businessNumber !== profile.businessNumber ||
+    JSON.stringify(place) !== JSON.stringify(profile.place);
 
   useEffect(() => {
     if (state.savedAt && state.savedAt !== notified.current) {
@@ -83,7 +108,9 @@ export function CompanyProfileCard({ profile }: { profile: CompanyProfile }) {
   }, [state.savedAt]);
 
   return (
-    <form action={formAction}>
+    <form action={formAction} onSubmit={handleSubmit}>
+      {/* 적어 둔 게 있으면 탭을 닫기 전에 브라우저가 한 번 물어본다 — 저장은 별도 행동이다 */}
+      <LeaveGuard hasUnsaved={isDirty} />
       <SettingCard
         title={COMPANY_SECTION_TITLE.PROFILE}
         /*
@@ -102,7 +129,7 @@ export function CompanyProfileCard({ profile }: { profile: CompanyProfile }) {
         description={
           <>
             기업 등록 신청 때 적은 회사 정보입니다. 기업 코드는 사원이 로그인할 때 적는 값이라{" "}
-            <span className="text-foreground font-medium">바꿀 수 없습니다.</span>
+            <span className="text-foreground font-medium">이 화면에서는 바꿀 수 없습니다.</span>
           </>
         }
         footer={
@@ -116,7 +143,7 @@ export function CompanyProfileCard({ profile }: { profile: CompanyProfile }) {
                 {state.message}
               </p>
             )}
-            <Button type="submit" size="sm" variant="ink" disabled={isPending}>
+            <Button type="submit" size="sm" variant="ink" disabled={isPending || !isDirty}>
               {isPending ? "저장 중…" : "저장"}
             </Button>
           </>
@@ -136,12 +163,15 @@ export function CompanyProfileCard({ profile }: { profile: CompanyProfile }) {
             name="place"
             controlId="company-address"
             label={COMPANY_FIELD_LABEL.PLACE}
-            error={state.errors.place}
+            error={errorOf("place")}
           >
             <AddressPicker
               picked={place}
-              onPick={setPlace}
-              hasError={Boolean(state.errors.place)}
+              onPick={(next) => {
+                setPlace(next);
+                markFixed("place");
+              }}
+              hasError={Boolean(errorOf("place"))}
               mapClassName="h-[232px]"
             />
           </Field>
@@ -152,14 +182,18 @@ export function CompanyProfileCard({ profile }: { profile: CompanyProfile }) {
                나빠진다 — 폼 규격(720)을 둔 이유와 같다.
           */}
           <div className="flex max-w-[420px] flex-col gap-6">
-            <Field name="name" label={COMPANY_FIELD_LABEL.NAME} error={state.errors.name}>
+            <Field name="name" label={COMPANY_FIELD_LABEL.NAME} error={errorOf("name")}>
               <Input
                 id="company-name"
                 name="name"
-                defaultValue={profile.name}
+                value={name}
+                onChange={(event) => {
+                  setName(event.target.value);
+                  markFixed("name");
+                }}
                 placeholder="사업자등록증에 적힌 이름"
                 autoComplete="organization"
-                aria-invalid={Boolean(state.errors.name)}
+                aria-invalid={Boolean(errorOf("name"))}
                 aria-describedby="company-name-error"
               />
             </Field>
@@ -167,17 +201,20 @@ export function CompanyProfileCard({ profile }: { profile: CompanyProfile }) {
             <Field
               name="businessNumber"
               label={COMPANY_FIELD_LABEL.BUSINESS_NUMBER}
-              error={state.errors.businessNumber}
+              error={errorOf("businessNumber")}
             >
               {/* 적는 순간 하이픈을 넣어 굳힌다 — 신청 화면과 **같은 함수**다 */}
               <Input
                 id="company-businessNumber"
                 name="businessNumber"
                 value={businessNumber}
-                onChange={(event) => setBusinessNumber(formatBusinessNumber(event.target.value))}
+                onChange={(event) => {
+                  setBusinessNumber(formatBusinessNumber(event.target.value));
+                  markFixed("businessNumber");
+                }}
                 placeholder="000-00-00000"
                 inputMode="numeric"
-                aria-invalid={Boolean(state.errors.businessNumber)}
+                aria-invalid={Boolean(errorOf("businessNumber"))}
                 aria-describedby="company-businessNumber-error"
               />
             </Field>

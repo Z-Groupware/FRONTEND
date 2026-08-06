@@ -2,6 +2,8 @@
 
 import { useEffect } from "react";
 
+import { LeaveGuard } from "@/components/common/leave-guard";
+
 import { loadDraft, saveDraftInvites } from "../draft";
 import { createInviteChoices } from "../invite-choices";
 import { duplicatedLeaderIds, type InviteRules } from "../invite-rules";
@@ -17,7 +19,6 @@ import { InviteFooter } from "./invite-footer";
 import { InviteIntro } from "./invite-intro";
 import { InviteRow, type InviteRowHandlers } from "./invite-row";
 import { InviteSendBar } from "./invite-send-bar";
-import { LeaveGuard } from "./leave-guard";
 
 interface InviteSetupProps {
   departments: DepartmentNode[];

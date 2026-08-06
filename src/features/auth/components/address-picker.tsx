@@ -2,7 +2,7 @@
 
 import { Check, MapPin, Search } from "lucide-react";
 import Script from "next/script";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -44,6 +44,8 @@ export function AddressPicker({
 }: AddressPickerProps) {
   const appKey = process.env.NEXT_PUBLIC_KAKAO_MAP_KEY;
   const [keyword, setKeyword] = useState("");
+  /** Esc로 목록을 닫은 뒤 포커스를 돌려놓을 자리 */
+  const inputRef = useRef<HTMLInputElement>(null);
   const [results, setResults] = useState<KakaoPlace[]>([]);
   /*
     ⚠️ 상태가 셋이다 — 기다리는 중 · 쓸 수 있음 · 못 씀.
@@ -73,15 +75,24 @@ export function AddressPicker({
        그 시점엔 아직 DOM에 없다 — 상자가 붙을 때(**ref 콜백**) 그린다.
     ⚠️ `useEffect` 대신 ref 콜백인 이유는 같다. 아래 `key`가 좌표라 다시 고르면 상자가
        새로 붙고 콜백이 한 번 더 돈다 — 지도를 갱신하는 별도 코드가 필요 없다.
+    ⚠️ **`useCallback`이 꼭 있어야 한다.** 인라인 화살표로 두면 렌더마다 함수 정체성이 바뀌어
+       React가 `ref(null)` → `ref(container)`를 다시 부르고, 그때마다 카카오 지도 인스턴스가
+       새로 만들어진다 — 검색어를 한 글자 칠 때마다 지도가 통째로 다시 그려지며 깜빡인다.
+       `key`로 재마운트를 제어한다는 위 설명이 성립하려면 정체성이 고정돼 있어야 한다.
+    ⚠️ 의존성은 `picked` 하나다. `picked`는 고를 때만 새로 만들어지므로 타이핑 중에는
+       정체성이 안 바뀐다 — SDK 준비 여부는 상자의 `key`가 맡는다(그때 상자가 새로 붙는다).
   */
-  const drawPin = (container: HTMLDivElement | null) => {
-    const kakao = readKakao();
-    if (!kakao || !container || !picked) return;
+  const drawPin = useCallback(
+    (container: HTMLDivElement | null) => {
+      const kakao = readKakao();
+      if (!kakao || !container || !picked) return;
 
-    const center = new kakao.maps.LatLng(picked.lat, picked.lng);
-    const map = new kakao.maps.Map(container, { center, level: 4 });
-    new kakao.maps.Marker({ position: center }).setMap(map);
-  };
+      const center = new kakao.maps.LatLng(picked.lat, picked.lng);
+      const map = new kakao.maps.Map(container, { center, level: 4 });
+      new kakao.maps.Marker({ position: center }).setMap(map);
+    },
+    [picked],
+  );
 
   const handleSearch = () => {
     const kakao = readKakao();
@@ -110,15 +121,37 @@ export function AddressPicker({
   /* 키가 없거나 SDK가 죽으면 — 직접 입력. 신청 자체는 막지 않는다 */
   if (!appKey || loadState === "failed") {
     return (
-      <Input
-        id="company-address"
-        value={picked?.address ?? ""}
-        onChange={(event) => onPick({ address: event.target.value, lat: 0, lng: 0 })}
-        placeholder="회사 주소를 입력하세요"
-        autoComplete="street-address"
-        aria-invalid={hasError}
-        aria-describedby="company-address-error"
-      />
+      <div className="flex flex-col gap-2">
+        {/*
+          ⚠️ 좌표를 **0으로 덮어쓰지 않는다.** 신청 화면은 처음 적는 자리라 잃을 값이 없지만,
+             이미 고른 곳을 들고 여는 화면(기업 설정)에서는 주소 한 글자만 고쳐도 실좌표가
+             기니만 앞바다(0,0)로 조용히 바뀌어 저장된다 — `placeSchema`의 `lat: z.number()`도
+             0을 통과시켜서 막아 주는 곳이 없다.
+          ⚠️ 대신 좌표가 **주소를 따라오지 못한다는 사실**을 화면에 적는다. 지도를 못 쓰는
+             상태를 숨기면 사용자는 위치가 옮겨진 줄 안다(§정직성).
+        */}
+        <Input
+          id="company-address"
+          value={picked?.address ?? ""}
+          onChange={(event) =>
+            onPick({
+              address: event.target.value,
+              lat: picked?.lat ?? 0,
+              lng: picked?.lng ?? 0,
+            })
+          }
+          placeholder="회사 주소를 입력하세요"
+          autoComplete="street-address"
+          aria-invalid={hasError}
+          aria-describedby="company-address-error"
+        />
+        <p className="text-muted-foreground flex items-center gap-1.5 text-[12px] leading-4">
+          <MapPin className="size-3.5 shrink-0" aria-hidden />
+          <span className="translate-y-px break-keep">
+            지도를 불러오지 못해 주소만 저장됩니다. 지도에 찍히는 위치는 그대로입니다.
+          </span>
+        </p>
+      </div>
     );
   }
 
@@ -145,8 +178,22 @@ export function AddressPicker({
         onBlur={(event) => {
           if (!event.currentTarget.contains(event.relatedTarget)) setResults([]);
         }}
+        /*
+          ⚠️ Esc는 **입력이 아니라 이 상자에** 건다. 입력에만 걸면 Tab으로 결과 항목에 들어간
+             뒤에는 Esc가 안 먹어서, 목록을 치우려면 원치 않는 값을 고르거나 상자 밖까지
+             Tab으로 빠져나가는 수밖에 없다.
+          ⚠️ 닫은 뒤 포커스를 입력으로 되돌린다 — 안 그러면 사라진 항목에 포커스가 남아
+             다음 Tab이 어디로 갈지 알 수 없다.
+        */
+        onKeyDown={(event) => {
+          if (event.key !== "Escape" || results.length === 0) return;
+          event.stopPropagation();
+          setResults([]);
+          inputRef.current?.focus();
+        }}
       >
         <Input
+          ref={inputRef}
           id="company-address"
           value={keyword}
           /* 키워드를 고치는 순간 옛 결과는 답이 아니다 */
@@ -155,18 +202,10 @@ export function AddressPicker({
             setResults([]);
           }}
           onKeyDown={(event) => {
-            if (event.key === "Escape") {
-              setResults([]);
-              return;
-            }
             if (event.key !== "Enter") return;
             event.preventDefault();
             handleSearch();
           }}
-          role="combobox"
-          aria-expanded={results.length > 0}
-          aria-controls="company-address-results"
-          aria-autocomplete="list"
           placeholder="건물명이나 주소로 찾아보세요"
           disabled={!isReady}
           aria-invalid={hasError}
@@ -184,6 +223,11 @@ export function AddressPicker({
         </button>
 
         {/*
+          ⚠️ **`role="combobox"`를 선언하지 않는다.** 선언하면 보조기술은 팝업이 listbox이고
+             ↑↓로 옮겨 다니며 `aria-activedescendant`가 따라온다고 기대하는데, 여기 목록은
+             그냥 버튼 줄이라 "펼쳐짐"만 읽히고 정작 무엇이 떴는지는 알 수 없다 —
+             절반만 맞춘 ARIA는 아무것도 안 붙인 것보다 나쁘다. 버튼 목록은 Tab으로 닿고
+             Enter로 골라지므로 키보드 접근은 이미 성립한다. 대신 **몇 개 떴는지**를 말해 준다.
           ⚠️ 결과는 **띄운다**(absolute). 줄 사이에 끼워 넣으면 검색할 때마다 아래 지도와
              카드 전체가 밀렸다 돌아와 화면이 출렁인다 — 고르는 동안 뒤가 안 움직여야
              무엇을 고르는지 눈이 따라간다.
@@ -192,12 +236,21 @@ export function AddressPicker({
         {results.length > 0 && (
           <ul
             id="company-address-results"
+            aria-label="찾은 주소"
             className="border-border bg-card absolute top-full right-0 left-0 z-20 mt-1 overflow-hidden rounded-lg border shadow-lg"
           >
             {results.map((place) => (
               <li key={`${place.x},${place.y}`}>
                 <button
                   type="button"
+                  /*
+                    ⚠️ `onMouseDown`에서 기본 동작을 막는다. Safari·Firefox(mac)는 버튼을 누를 때
+                       포커스를 주지 않아서, 컨테이너 `onBlur`의 `relatedTarget`이 `null`이 된다 —
+                       그러면 클릭이 처리되기 **전에** 목록이 사라져 `onClick`이 영영 안 뛴다.
+                       Chrome에서만 우연히 되던 자리다. 기본 동작(포커스 이동)을 막으면
+                       blur 자체가 안 나서 세 브라우저가 같이 동작한다.
+                  */
+                  onMouseDown={(event) => event.preventDefault()}
                   onClick={() => handleChoose(place)}
                   className="hover:bg-secondary focus-visible:ring-ring flex w-full flex-col gap-0.5 px-3.5 py-2.5 text-left focus-visible:ring-2 focus-visible:outline-hidden"
                 >
@@ -211,6 +264,11 @@ export function AddressPicker({
           </ul>
         )}
       </div>
+
+      {/* 결과가 몇 개 떴는지 — 보이지는 않고 읽히기만 한다 */}
+      <p aria-live="polite" className="sr-only">
+        {results.length > 0 ? `찾은 주소 ${results.length}개` : ""}
+      </p>
 
       {picked && (
         <>

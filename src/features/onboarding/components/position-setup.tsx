@@ -4,6 +4,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 
+import { LeaveGuard } from "@/components/common/leave-guard";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -14,7 +15,6 @@ import { useCommittedRedirect } from "../use-committed-redirect";
 import { useDraftSync } from "../use-draft-sync";
 import type { DraggingPositionId } from "../use-position-drag";
 import { usePositionList } from "../use-position-list";
-import { LeaveGuard } from "./leave-guard";
 import { PositionAddRow } from "./position-add-row";
 import { POSITION_COLUMN } from "./position-columns";
 import { PositionIntro } from "./position-intro";

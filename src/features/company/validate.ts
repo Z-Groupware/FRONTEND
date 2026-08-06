@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { AUTHORITY } from "@/constants/domain";
+import { AUTHORITY, POSITION_AUTHORITIES } from "@/constants/domain";
 import { registerSchema } from "@/features/auth/register-draft";
 import { MAX_DEPARTMENT_DEPTH, MAX_ORG_NAME_LENGTH } from "@/features/onboarding/types";
 
@@ -92,6 +92,20 @@ export function validateDepartments(departments: DepartmentNode[]): string | nul
  */
 export function validatePositions(positions: Position[]): string | null {
   if (positions.length === 0) return "직급을 하나 이상 두어야 합니다";
+
+  /*
+    ⚠️ **권한 값을 화이트리스트로 본다.** 화면 셀렉트는 `POSITION_AUTHORITIES`(Leader·Member)만
+       주지만, Server Action은 주소만 알면 직접 부를 수 있다(§권한: 화면 숨김은 보안이 아니다).
+       여기가 없으면 `role: "OWNER"`인 직급을 심을 수 있고, **권한은 직급에서 오므로**
+       그 직급을 받은 사람 전원이 회사 전체 권한을 얻는다 —
+       `canManageCompany`·`canApproveFinal`·`canManageBilling`이 전부 열린다.
+    ⚠️ 타입으로는 안 막힌다. `AssignableRole`은 `ASSIGNABLE_AUTHORITIES`(OWNER 포함)이고
+       Server Action 인자에는 런타임 검사가 없다.
+  */
+  const allowed: readonly string[] = POSITION_AUTHORITIES;
+  if (positions.some((position) => !allowed.includes(position.role))) {
+    return "직급에 줄 수 없는 권한입니다";
+  }
 
   const seen = new Set<string>();
   for (const position of positions) {

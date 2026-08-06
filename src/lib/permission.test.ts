@@ -7,6 +7,7 @@ import {
   canGrantAdmin,
   canIssueAccount,
   canManageBilling,
+  canManageCompany,
   canManageMembers,
   canManageNotice,
   canManageRooms,
@@ -67,6 +68,19 @@ describe("Owner와 Admin이 갈리는 지점", () => {
     expect(canApproveFinal(owner)).toBe(true);
     expect(canApproveFinal({ ...member, isAdmin: true })).toBe(false);
     expect(canApproveFinal(member)).toBe(false);
+  });
+
+  /*
+    ⚠️ 이 함수의 **유일한 존재 이유가 Admin 배제**다. `canManageMembers`·`canManageBilling`과
+       판정이 갈리는 지점이라, 여기가 없으면 `|| isAdmin(actor)`를 슬쩍 붙여도 아무도 못 잡는다 —
+       기업 설정에서는 직급의 권한을 고칠 수 있어서, 열리면 Admin이 자기 위를 스스로 만든다.
+  */
+  it("기업 설정은 Owner 전용이다 — Admin 겸직도 못 연다", () => {
+    expect(canManageCompany(owner)).toBe(true);
+    expect(canManageCompany({ ...member, isAdmin: true })).toBe(false);
+    expect(canManageCompany({ ...leader, isAdmin: true })).toBe(false);
+    expect(canManageCompany(leader)).toBe(false);
+    expect(canManageCompany(member)).toBe(false);
   });
 
   it("공지 작성·수정은 Owner 전용이다(2026-08-06: Admin 제외)", () => {

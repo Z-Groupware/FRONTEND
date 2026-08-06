@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 
-import { getMockActor } from "@/lib/mock-actor";
+import { getViewer } from "@/features/shell/viewer";
 import { canManageCompany } from "@/lib/permission";
 import { isMock } from "@/mocks/config";
 
@@ -34,13 +34,29 @@ const FORBIDDEN = "기업 설정을 바꿀 권한이 없습니다";
 
 const NOT_CONNECTED = "저장 기능이 아직 연결되지 않았습니다";
 
-/** 세션을 못 읽으면 **권한 없음으로 본다** — 던지면 화면이 결과 대신 아무것도 못 받는다 */
-function canManage(): boolean {
+/**
+ * 세션을 못 읽었을 때.
+ * ⚠️ **권한 없음과 다른 말이다.** 쿠키가 만료된 OWNER에게 "권한이 없습니다"라고 하면
+ *    할 수 있는 게 없어진다 — 다시 로그인하면 되는 상황이라고 말해 줘야 한다(§정직성).
+ */
+const NO_SESSION = "세션이 만료되었습니다. 다시 로그인해 주세요";
+
+/**
+ * 문지기 — 통과면 `null`, 막히면 이유 한 줄.
+ *
+ * ⚠️ **던지지 않는다.** 던지면 화면이 결과 대신 아무것도 못 받는다.
+ * ⚠️ 신원은 화면과 **같은 출처**(`getViewer`)에서 읽는다. 화면은 `getViewer`, 액션은
+ *    `getMockActor`로 갈라 두면 세션이 붙을 때 한쪽만 바뀌어 판정이 어긋난다.
+ * ⚠️ 세션 실패와 권한 거부를 **나눠 적는다** — 사용자가 할 수 있는 일이 다르다.
+ */
+async function denyReason(): Promise<string | null> {
+  let viewer;
   try {
-    return canManageCompany(getMockActor());
+    viewer = await getViewer();
   } catch {
-    return false;
+    return NO_SESSION;
   }
+  return canManageCompany(viewer) ? null : FORBIDDEN;
 }
 
 /** 기본 정보 폼 결과 — `useActionState`가 그대로 들고 있는 모양 */
@@ -82,7 +98,8 @@ export async function saveCompanyProfileAction(
   _prev: CompanyProfileFormState,
   formData: FormData,
 ): Promise<CompanyProfileFormState> {
-  if (!canManage()) return { errors: {}, message: FORBIDDEN };
+  const denied = await denyReason();
+  if (denied) return { errors: {}, message: denied };
 
   const draft = readDraft(formData);
   const errors = validateCompanyProfile(draft);
@@ -110,7 +127,8 @@ export async function saveCompanyProfileAction(
 export async function saveDepartmentsAction(
   departments: DepartmentNode[],
 ): Promise<CompanyActionResult> {
-  if (!canManage()) return { isSuccess: false, message: FORBIDDEN };
+  const denied = await denyReason();
+  if (denied) return { isSuccess: false, message: denied };
 
   const error = validateDepartments(departments);
   if (error) return { isSuccess: false, message: error };
@@ -128,7 +146,8 @@ export async function saveDepartmentsAction(
 
 /** 직급·권한 저장 — 팀 체계와 같은 이유로 목록을 통째로 보낸다. */
 export async function savePositionsAction(positions: Position[]): Promise<CompanyActionResult> {
-  if (!canManage()) return { isSuccess: false, message: FORBIDDEN };
+  const denied = await denyReason();
+  if (denied) return { isSuccess: false, message: denied };
 
   const error = validatePositions(positions);
   if (error) return { isSuccess: false, message: error };

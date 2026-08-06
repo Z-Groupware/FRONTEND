@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { toast } from "sonner";
 
 import { ConfirmDialog } from "@/components/common/confirm-dialog";
+import { LeaveGuard } from "@/components/common/leave-guard";
 import { Button } from "@/components/ui/button";
 import { COMPANY_SECTION_TITLE } from "@/constants/company";
 import { DepartmentAddRow } from "@/features/onboarding/components/department-add-row";
@@ -46,7 +47,13 @@ export function CompanyTeamCard({ initial }: { initial: DepartmentNodeType[] }) 
        어느 줄이 문제인지 담고 있는데, 토스트로 띄우면 한 줄에 잘리고 몇 초 뒤 사라진다 —
        그러면 사라진 문장을 기억해 목록을 눈으로 훑어야 한다(§토스트: 사라지므로 보조다).
   */
-  const [error, setError] = useState<string | null>(null);
+  /**
+   * 마지막으로 **실패한 저장**과 그때 보낸 값.
+   * ⚠️ 문구만 들고 있으면 값을 고쳐도 빨간 글씨가 남는다 — `같은 이름이 둘 있습니다`를
+   *    고쳤는데 화면은 계속 그렇다고 말한다. 되돌려서 [저장]이 잠기면 지울 길조차 없다.
+   *    실패한 값과 지금 값이 **같을 때만** 보여 주면 편집하는 순간 저절로 사라진다.
+   */
+  const [failed, setFailed] = useState<{ snapshot: string; message: string } | null>(null);
 
   const handlers: DepartmentNodeHandlers = {
     onRename: tree.rename,
@@ -72,15 +79,22 @@ export function CompanyTeamCard({ initial }: { initial: DepartmentNodeType[] }) 
   // 안 고친 걸 저장하면 "저장했습니다"가 아무 뜻이 없다 — 바뀐 게 있을 때만 연다
   const isDirty = JSON.stringify(tree.departments) !== JSON.stringify(saved);
 
+  /* 편집하면 스냅샷이 어긋나 문구가 저절로 사라진다 */
+  const error =
+    failed && JSON.stringify(tree.departments) === failed.snapshot ? failed.message : null;
+
   const handleSave = () => {
     const next = tree.departments;
     startSaving(async () => {
       const result = await saveDepartmentsAction(next);
       if (!result.isSuccess) {
-        setError(result.message ?? "팀 체계를 저장하지 못했습니다");
+        setFailed({
+          snapshot: JSON.stringify(next),
+          message: result.message ?? "팀 체계를 저장하지 못했습니다",
+        });
         return;
       }
-      setError(null);
+      setFailed(null);
       setSaved(next);
       toast.success("팀 체계를 저장했습니다");
     });
@@ -88,6 +102,13 @@ export function CompanyTeamCard({ initial }: { initial: DepartmentNodeType[] }) 
 
   return (
     <>
+      {/*
+        ⚠️ 저장 안 한 편집을 들고 나가면 **조용히 사라진다.** 확인창에서 "[저장]을 눌러야
+           반영됩니다"라고 말해 놓고 저장 없이 나가는 걸 안 막으면 앞뒤가 안 맞는다.
+        ⚠️ 아직 안 누른 입력칸도 센다 — 적다가 닫으면 그것도 사라진다.
+      */}
+      <LeaveGuard hasUnsaved={isDirty || draftName.trim().length > 0} />
+
       <SettingCard
         title={COMPANY_SECTION_TITLE.TEAM}
         aside={aside}
@@ -121,7 +142,7 @@ export function CompanyTeamCard({ initial }: { initial: DepartmentNodeType[] }) 
           ⚠️ 여백은 카드 전체와 같은 28px다. 아래 목록은 `DepartmentNode`가 자기 몫으로
              8px(`px-2`)를 쓰므로 컨테이너가 20px만 대서 합이 28이 된다.
         */}
-        <div className="text-muted-foreground bg-muted border-border flex items-center justify-between border-b px-7 py-3 text-[12px] leading-4">
+        <div className="text-muted-foreground bg-secondary/50 border-border flex items-center justify-between border-b px-7 py-3 text-[12px] leading-4">
           <span>팀 · 역할</span>
           <span>구분</span>
         </div>
@@ -161,6 +182,9 @@ export function CompanyTeamCard({ initial }: { initial: DepartmentNodeType[] }) 
         ⚠️ **무엇을 잃는지**와 **언제 그렇게 되는지**를 같이 적는다. 여기서 [삭제]를 눌러도
            화면에서만 빠지고, 카드 밑 [저장]을 눌러야 서버에 간다 — 그 말을 빼면 이미
            지워진 줄 알고 저장 없이 나가서, 지운 팀이 그대로 남는다(§정직성).
+        ⚠️ **소속 사원이 어떻게 되는지는 안 적는다.** BE가 정한 적이 없다 — 삭제를 거부할 수도,
+           미배정으로 옮길 수도 있다. 확실하지 않은 결과를 단언하면 화면이 거짓말이 된다
+           (§연동 검증). 규칙을 받으면 그때 그 값대로 문장을 되살린다.
       */}
       <ConfirmDialog
         isOpen={pendingTeam !== null}
@@ -172,7 +196,7 @@ export function CompanyTeamCard({ initial }: { initial: DepartmentNodeType[] }) 
               ? `안에 있는 역할 ${pendingTeam.children.length}개도 함께 목록에서 빠집니다.`
               : "목록에서 빠집니다."}
             <br />
-            [저장]을 눌러야 반영되고, 그때 이 팀 소속 사원은 소속이 없어집니다.
+            [저장]을 눌러야 반영됩니다.
           </>
         }
         confirmLabel="삭제"
