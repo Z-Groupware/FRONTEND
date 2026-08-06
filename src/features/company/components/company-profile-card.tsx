@@ -86,19 +86,6 @@ export function CompanyProfileCard({ profile }: { profile: CompanyProfile }) {
     <form action={formAction}>
       <SettingCard
         title={COMPANY_SECTION_TITLE.PROFILE}
-        /*
-          ⚠️ 기업 코드는 **폼 밖**이다. 고칠 수 없는 값이라 입력칸 자리에 두면 무엇을 해도
-             어색하다 — 상자를 두르면 빈 칸으로, 안 두르면 렌더가 덜 된 칸으로 읽힌다.
-             카드 머리 오른쪽은 저장소·구독 카드가 수치를 놓는 자리이고, 여기서도 회사를
-             가리키는 값이 온다.
-        */
-        aside={
-          <span className="flex items-center gap-2">
-            <span className="text-muted-foreground">{COMPANY_FIELD_LABEL.CODE}</span>
-            {/* ⚠️ 크기는 다른 카드 aside와 같은 12px다 — 강조는 굵기로만 준다 */}
-            <span className="text-foreground font-medium tracking-[0.1em]">{profile.code}</span>
-          </span>
-        }
         description={
           <>
             기업 등록 신청 때 적은 회사 정보입니다. 기업 코드는 사원이 로그인할 때 적는 값이라{" "}
@@ -181,6 +168,20 @@ export function CompanyProfileCard({ profile }: { profile: CompanyProfile }) {
                 aria-describedby="company-businessNumber-error"
               />
             </Field>
+
+            {/*
+              ⚠️ 기업 코드는 **적는 칸 아래 읽는 값**이다. 오른쪽 열이 사업자등록번호에서
+                 끝나면 옆 지도만 남아 그 아래가 훵하다 — 여기에 두면 두 열 높이가 얼추 맞는다.
+              ⚠️ 상자를 두르지 않는다. 점선은 "여기에 뭘 넣으세요"로, 실선은 입력칸으로 읽힌다 —
+                 위 칸들과 같은 라벨을 쓰고 값만 글자로 두면 그 자체로 "적는 곳이 아니다"가 된다.
+                 바꿀 수 없다는 말은 카드 설명이 이미 하고 있어 여기서 되풀이하지 않는다.
+            */}
+            <div className="flex flex-col gap-1.5">
+              <p className="text-sm leading-none font-medium">{COMPANY_FIELD_LABEL.CODE}</p>
+              <p className="text-[17px] leading-9 font-medium tracking-[0.14em] tabular-nums">
+                {profile.code}
+              </p>
+            </div>
           </div>
         </div>
 
