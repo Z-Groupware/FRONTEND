@@ -313,7 +313,7 @@ export function ProjectForm({ action, teamOptions, cancelHref }: ProjectFormProp
             type="button"
             variant="outline"
             size="sm"
-            className="w-fit"
+            className="w-full justify-start"
             onClick={() => fileInputRef.current?.click()}
           >
             <Paperclip />
