@@ -1,13 +1,7 @@
 import { PROJECT_STATUS } from "@/constants/project";
 import type { BillingConfig } from "@/features/billing/types";
 
-import {
-  buildStorageTotals,
-  canDeleteRecordings,
-  formatRecordedDate,
-  freedGb,
-  totalFreeableGb,
-} from "./storage";
+import { buildStorageTotals, canDeleteRecordings, freedGb, totalFreeableGb } from "./storage";
 import type { ProjectStorage } from "./types";
 
 /** 포함량 50GB · 초과 1GB당 월 ₩500 — 값은 `BillingConfig`가 정본이다 */
@@ -133,33 +127,5 @@ describe("totalFreeableGb", () => {
 
     // `a`(4+1) + `c`(2+5) = 12. `b`는 진행 중이라 안 센다
     expect(totalFreeableGb(projects)).toBe(12);
-  });
-});
-
-describe("formatRecordedDate", () => {
-  // 기준 연도는 서버가 정해 내려준다 — 함수가 `new Date()`를 부르지 않는다(하이드레이션)
-  const THIS_YEAR = 2026;
-
-  it("ISO를 우리 날짜 표기로 바꾼다 — 2026-05-03 → 5월 3일(일)", () => {
-    expect(formatRecordedDate("2026-05-03", THIS_YEAR)).toBe("5월 3일(일)");
-  });
-
-  it("요일이 시간대에 밀리지 않는다 — 자정 UTC 파싱 함정", () => {
-    // 2026-01-12는 월요일이다. new Date(iso)로 읽으면 지역 시간대에서 하루 밀릴 수 있다
-    expect(formatRecordedDate("2026-01-12", THIS_YEAR)).toBe("1월 12일(월)");
-  });
-
-  it("올해가 아니면 연도를 붙인다 — 얼마나 오래됐는지 알 수 있어야 한다", () => {
-    expect(formatRecordedDate("2025-12-03", THIS_YEAR)).toBe("2025년 12월 3일(수)");
-    expect(formatRecordedDate("2024-02-06", THIS_YEAR)).toBe("2024년 2월 6일(화)");
-  });
-
-  it("올해 날짜에는 연도를 안 붙인다 — 매 줄에 붙으면 옛 날짜가 안 튄다", () => {
-    expect(formatRecordedDate("2026-02-06", THIS_YEAR)).not.toContain("년");
-  });
-
-  it("형식이 아니면 원문을 그대로 둔다 — 지어내지 않는다", () => {
-    expect(formatRecordedDate("", THIS_YEAR)).toBe("");
-    expect(formatRecordedDate("어제", THIS_YEAR)).toBe("어제");
   });
 });

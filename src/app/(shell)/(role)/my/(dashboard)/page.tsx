@@ -28,7 +28,7 @@ export default async function MemberDashboardPage() {
 
   return (
     <main className="scrollbar-hidden flex min-h-0 flex-1 flex-col overflow-y-auto px-8 py-7">
-      <div className="mx-auto flex min-h-0 w-full max-w-[1080px] flex-1 flex-col gap-4">
+      <div className="mx-auto flex min-h-0 w-full max-w-[1440px] flex-1 flex-col gap-4">
         {/* 처리할 액션 — 시작일→마감일 기간 타임라인. 남는 세로 공간을 채우고 넘치면 내부 스크롤 */}
         <section
           className="border-border bg-card flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border"

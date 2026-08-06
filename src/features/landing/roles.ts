@@ -34,7 +34,7 @@ export const ROLE_ACCESS: readonly RoleAccess[] = [
       "프로젝트 생성 · 기획 열람",
       "사원 직급 · 권한 변경",
       "휴직 · 오프보딩 최종 승인",
-      "구독 · 결제",
+      "구독",
     ],
     cannot: [
       "계정 발급 · 회의실 관리(Admin이 하는 일)",
@@ -71,12 +71,7 @@ export const ROLE_ACCESS: readonly RoleAccess[] = [
     name: "+Admin",
     korean: "겸직 권한",
     summary: "역할이 아니라, 그 위에 얹는 운영 권한이다.",
-    can: [
-      "계정 발급",
-      "회의실 등록 · 수정",
-      "사원 직급 · 권한 변경",
-      "인수인계 최종 승인 · 구독 · 결제",
-    ],
+    can: ["계정 발급", "회의실 등록 · 수정", "사원 직급 · 권한 변경", "인수인계 최종 승인 · 구독"],
     cannot: ["대표는 겸할 수 없음(Leader · Member만)", "회의·액션 권한은 늘지 않음(역할이 정함)"],
   },
 ];

@@ -1,5 +1,7 @@
 import { CircleAlert, Info } from "lucide-react";
 
+import { formatFullDate, isReadableDate } from "@/lib/date";
+
 import { formatGb, formatTokens, formatWon } from "../pricing";
 import type { Subscription } from "../subscription";
 import type { BillingConfig } from "../types";
@@ -8,8 +10,6 @@ import { buildUsage, shouldWarnUsage, USAGE_WARN_RATIO, type UsageAxis } from ".
 interface UsagePanelProps {
   subscription: Subscription;
   config: BillingConfig;
-  /** 오늘 `YYYY-MM-DD` — 월말 예측에 쓴다. 서버가 내려준다 */
-  today: string;
 }
 
 /**
@@ -18,18 +18,12 @@ interface UsagePanelProps {
  * ⚠️ 축은 **AI 사용량과 저장 공간 둘뿐**이다. 회의 건수는 청구와 무관해서 아래 참고 줄로 내렸다 —
  *    과금과 상관없는 숫자를 같은 크기로 놓으면 무엇 때문에 돈이 나가는지 흐려진다.
  * ⚠️ **넘겨도 막지 않는다**(팀 결정). 대신 얼마가 더 나가는지 금액으로 적는다(§정직성).
- * ⚠️ 월말 예측은 **예측이라고 밝힌다.** 단정하면 안 넘겼는데 넘긴다고 말한 셈이 된다.
+ * ⚠️ **월말 예측을 적지 않는다**(2026-08-05 제거). 프론트가 며칠치를 늘려 잡은 추정이라
+ *    주기 초반일수록 크게 흔들렸고, BE 스펙에 없는 값을 화면이 지어낸 셈이었다.
+ *    BE가 예측을 내려 주면 그 값을 받아 쓴다(§연동 검증).
  */
-export function UsagePanel({ subscription, config, today }: UsagePanelProps) {
-  const usage = buildUsage({
-    config,
-    usage: subscription.usage,
-    period: {
-      periodStart: subscription.currentPeriodStart,
-      periodEnd: subscription.currentPeriodEnd,
-      today,
-    },
-  });
+export function UsagePanel({ subscription, config }: UsagePanelProps) {
+  const usage = buildUsage({ config, usage: subscription.usage });
 
   return (
     <section className="border-border bg-card rounded-2xl border p-6">
@@ -39,8 +33,14 @@ export function UsagePanel({ subscription, config, today }: UsagePanelProps) {
           <span className="bg-foreground size-2 rounded-full" aria-hidden />
           이번 주기 사용량
         </h2>
+        {/*
+          ⚠️ **못 읽는 쪽만 `—`로 둔다.** 범위 표기라 한쪽이 비어도 `9월 1일 ~ —`로 읽히고,
+             어느 끝을 모르는지가 그대로 드러난다 — 줄을 통째로 숨기면 주기가 없는 것처럼 보인다.
+             날짜 함수는 못 읽으면 원문을 돌려주므로, 그대로 두면 ISO가 그 자리에 뜬다.
+        */}
         <p className="text-muted-foreground/70 text-[12px] leading-4 tabular-nums">
-          {subscription.currentPeriodStart} ~ {subscription.currentPeriodEnd}
+          {periodLabel(subscription.currentPeriodStart)} ~{" "}
+          {periodLabel(subscription.currentPeriodEnd)}
         </p>
       </div>
 
@@ -89,7 +89,9 @@ function UsageBanner({ tokens, storage }: { tokens: UsageAxis; storage: UsageAxi
     return (
       /* ⚠️ 표식을 앞에 둔다 — 글자만 있으면 본문에 섞여 그냥 설명으로 읽힌다 */
       <p className="border-destructive/30 bg-destructive/5 mt-5 flex items-start gap-2 rounded-lg border px-3.5 py-3 text-[12px] leading-[18px] break-keep">
-        <CircleAlert className="text-destructive mt-px size-3.5 shrink-0" aria-hidden />
+        <span className="flex h-[18px] shrink-0 items-center">
+          <CircleAlert className="text-destructive size-3.5" aria-hidden />
+        </span>
         <span>
           <span className="font-semibold">
             {overAxes.map((axis) => axis.label).join(" · ")} 포함량 초과
@@ -116,7 +118,15 @@ function UsageBanner({ tokens, storage }: { tokens: UsageAxis; storage: UsageAxi
          이미 돈이 더 나가는 줄 읽힌다 — 색으로 알리는 건 에러뿐이다(§디자인 토큰).
     */
     <p className="border-border bg-secondary mt-5 flex items-start gap-2 rounded-lg border px-3.5 py-3 text-[12px] leading-[18px] break-keep">
-      <Info className="text-muted-foreground mt-px size-3.5 shrink-0" aria-hidden />
+      {/*
+        ⚠️ 아이콘을 **첫 줄 높이(18px) 상자에 넣어 가운데** 맞춘다. `mt-px`로 눈대중하면
+           14px 아이콘이 12px 글자보다 한 칸 떠 보인다 — 둘은 중심이 다르다.
+        ⚠️ `items-center`(부모)로 하면 안 된다. 문구가 두 줄이 되는 순간 아이콘이
+           가운데로 내려가 첫 줄과 안 맞는다.
+      */}
+      <span className="flex h-[18px] shrink-0 items-center">
+        <Info className="text-muted-foreground size-3.5" aria-hidden />
+      </span>
       <span>
         {/*
           ⚠️ 문턱은 **상수에서 읽는다.** `80%`라고 적어 두면 문턱을 조정할 때 띄우는 조건만
@@ -129,7 +139,7 @@ function UsageBanner({ tokens, storage }: { tokens: UsageAxis; storage: UsageAxi
   );
 }
 
-/** 한 축 — 쓴 양 / 총량, 소진율 막대, 월말 예측 */
+/** 한 축 — 쓴 양 / 총량, 소진율 막대. 넘겼을 때만 초과량·금액을 덧붙인다 */
 function Axis({ axis, format }: { axis: UsageAxis; format: (value: number) => string }) {
   const percent = Math.round(axis.ratio * 100);
   const isOver = axis.overage > 0;
@@ -173,16 +183,22 @@ function Axis({ axis, format }: { axis: UsageAxis; format: (value: number) => st
       </div>
 
       {/*
-        ⚠️ 예측에는 **금액을 적지 않는다.** 예측은 프론트가 사흘치로 늘려 잡은 추정이라
-           초반일수록 크게 흔들리고, 서버가 실제로 청구하는 값과 다를 수 있다 —
-           틀릴 수 있는 금액을 먼저 말하면 그게 약속이 된다(§정직성).
-           **돈은 실제로 넘긴 뒤에만** 말한다(그 값은 서버가 안다).
+        ⚠️ **예상 사용량을 적지 않는다.** 한때 `주기 종료 시 N 예상`을 띄웠는데,
+           그건 프론트가 며칠치를 늘려 잡은 추정이라 주기 초반일수록 크게 흔들렸다 —
+           회의가 주중에 몰리는데 "매일 똑같이 쓴다"고 가정한 식이었다.
+           BE 스펙에 없는 값을 화면이 지어낸 셈이라 뺐다(§연동 검증 · §정직성).
+        ⚠️ **넘긴 뒤에만 말한다.** 그 값은 서버가 아는 사실이다.
       */}
-      <p className="text-muted-foreground/70 pt-1.5 text-[11px] leading-4 tabular-nums">
-        {isOver
-          ? `${format(axis.overage)} 초과 · ${formatWon(axis.overageAmount)}`
-          : `주기 종료 시 ${format(axis.forecast)} 예상`}
-      </p>
+      {isOver && (
+        <p className="text-muted-foreground/70 pt-1.5 text-[11px] leading-4 tabular-nums">
+          {`${format(axis.overage)} 초과 · ${formatWon(axis.overageAmount)}`}
+        </p>
+      )}
     </>
   );
+}
+
+/** 주기 양 끝 표기 — 읽을 수 없으면 ISO 원문 대신 `—`다 */
+function periodLabel(iso: string): string {
+  return isReadableDate(iso) ? formatFullDate(iso) : "—";
 }

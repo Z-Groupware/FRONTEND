@@ -1,5 +1,7 @@
 import { Sparkles } from "lucide-react";
 
+import { formatFullDate, isReadableDate } from "@/lib/date";
+
 import { formatWon } from "../pricing";
 import { canUseWorkspace, type Subscription, SUBSCRIPTION_STATUS_LABEL } from "../subscription";
 import type { BillingConfig } from "../types";
@@ -8,8 +10,6 @@ import { UsagePanel } from "./usage-panel";
 interface PlanPanelProps {
   subscription: Subscription;
   config: BillingConfig;
-  /** 오늘 `YYYY-MM-DD` — 월말 예측에 쓴다. 서버가 내려준다 */
-  today: string;
   /** 바꿀 수 있는 사람인지 — Owner이거나 Admin을 겸한 사람 */
 }
 
@@ -20,7 +20,7 @@ interface PlanPanelProps {
  *    다른 서비스처럼 보인다.
  * ⚠️ 해지는 화면 **맨 아래**다. 위에 두면 쓰는 사람이 먼저 만나게 된다.
  */
-export function PlanPanel({ subscription, config, today }: PlanPanelProps) {
+export function PlanPanel({ subscription, config }: PlanPanelProps) {
   /*
     ⚠️ **"무료 플랜"이 아니라 "아직/이제 못 쓰는 상태"다**(결제 전 · 만료).
        무료로 부르면 그 상태로 계속 써도 되는 것처럼 읽힌다.
@@ -88,7 +88,12 @@ export function PlanPanel({ subscription, config, today }: PlanPanelProps) {
           <Metric label="월 기본료" value={formatWon(config.baseFee)} />
           <Metric
             label="다음 결제일"
-            value={subscription.nextBillingDate ?? "—"}
+            /* ⚠️ 빈 값뿐 아니라 **못 읽는 값도** `—`다 — 안 그러면 ISO 원문이 지표 자리에 뜬다 */
+            value={
+              subscription.nextBillingDate && isReadableDate(subscription.nextBillingDate)
+                ? formatFullDate(subscription.nextBillingDate)
+                : "—"
+            }
             hint={isUnpaid ? "결제 후 확정됩니다" : undefined}
           />
           <Metric
@@ -103,7 +108,7 @@ export function PlanPanel({ subscription, config, today }: PlanPanelProps) {
         </dl>
       </section>
 
-      <UsagePanel subscription={subscription} config={config} today={today} />
+      <UsagePanel subscription={subscription} config={config} />
       {/*
         ⚠️ 해지는 **이 패널이 아니라 화면 맨 아래**에 있다(`BillingView`). 결제 수단보다 위에
            두면 쓰는 사람이 그만두는 버튼을 먼저 만난다.

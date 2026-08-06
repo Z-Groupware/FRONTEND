@@ -56,9 +56,46 @@ describe("ProjectStorageTable", () => {
     expect(screen.getByText("12월 25일(금)")).toBeInTheDocument();
   });
 
-  it("녹음이 없으면 날짜 대신 `—`다 — 지운 줄이 없는 녹음의 날짜를 말하면 안 된다", () => {
-    // 삭제 뒤 상태: 음성 0 · 회의 0, 자막·요약과 옛 날짜만 남는다
-    renderTable([project({ voiceGb: 0, meetingCount: 0 })]);
+  /*
+    ⚠️ **본문과 툴팁이 같은 판정을 거쳐야 한다.** 전에는 없는 날짜(`2026-02-30`)를 두고
+       `formatElapsed`만 검증을 안 거쳐서, 본문엔 굴러간 날짜로 계산한 `5개월 전`이 뜨고
+       툴팁엔 원문 ISO가 남아 한 셀이 두 말을 했다(적대적 검토 #137).
+  */
+  it("없는 날짜는 지어내지도, ISO 원문을 내보이지도 않는다", () => {
+    renderTable([project({ lastRecordedAt: "2026-02-30" })]);
+
+    expect(screen.queryByText("5개월 전")).not.toBeInTheDocument();
+    expect(screen.queryByText("2026-02-30")).not.toBeInTheDocument();
+  });
+
+  /*
+    ⚠️ **`—`로 두면 안 된다.** 이 표에서 `—`는 `남은 게 없다`는 뜻이라, 기록이 남은 줄이
+       그렇게 읽히면 같은 줄의 지우기 버튼·확인 창과 말이 어긋난다.
+    ⚠️ 화면에서 감추는 것과 값을 버리는 것은 다르다 — `dateTime`에는 원본이 남아야 한다.
+  */
+  it("날짜만 못 읽는 줄은 `—`가 아니라 `기록일 미상`이다 — 기록은 남아 있다", () => {
+    renderTable([project({ lastRecordedAt: "2026-02-30", voiceGb: 1.3, sttGb: 0.2 })]);
+
+    const cell = screen.getByText("기록일 미상");
+    expect(cell.tagName).toBe("TIME");
+    expect(cell).toHaveAttribute("dateTime", "2026-02-30");
+    expect(screen.queryByText("—")).not.toBeInTheDocument();
+  });
+
+  /*
+    ⚠️ 판정 기준은 **음성 + 자막·요약**이다(`canDeleteRecordings`와 같다). 전에는 음성만
+       봐서, 자막·요약이 남은 줄이 `—`(= 남은 게 없다)로 읽혔다 — 같은 줄에서 삭제 버튼은
+       살아 있고 확인 창은 "자막·요약이 삭제됩니다"라고 말하는데 말이 어긋났다.
+  */
+  it("자막·요약만 남아 있으면 날짜를 그대로 보여 준다 — 아직 지울 게 있는 줄이다", () => {
+    renderTable([project({ voiceGb: 0, meetingCount: 0, sttGb: 1.3 })]);
+
+    expect(screen.getByText("3개월 전")).toBeInTheDocument();
+    expect(screen.queryByText("—")).not.toBeInTheDocument();
+  });
+
+  it("남은 게 하나도 없으면 날짜 대신 `—`다 — 없는 기록의 날짜를 말하면 안 된다", () => {
+    renderTable([project({ voiceGb: 0, sttGb: 0, meetingCount: 0 })]);
 
     expect(screen.queryByText("3개월 전")).not.toBeInTheDocument();
     expect(screen.getByText("—")).toBeInTheDocument();
