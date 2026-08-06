@@ -16,6 +16,7 @@ import { CancelSubscription } from "./cancel-subscription";
 import { PaymentHistoryPanel } from "./payment-history-panel";
 import { PaymentMethodsPanel } from "./payment-methods-panel";
 import { PlanPanel } from "./plan-panel";
+import { UsagePanel } from "./usage-panel";
 
 interface BillingViewProps {
   config: BillingConfig;
@@ -108,7 +109,27 @@ export function BillingView({ overview, config, canManage }: BillingViewProps) {
 
   return (
     <div className="flex-1 overflow-y-auto px-8 py-7">
-      <div className="mx-auto w-full max-w-[1440px]">
+      {/*
+        ⚠️ **`list`가 아니라 `detail`(1440 2컬럼)이다**(CLAUDE.md §디자인 토큰 — PageLayout).
+           전에는 전폭 카드 다섯을 세로로 쌓았는데, 내용이 얇은데 폭만 1440이라 **옆이 비고
+           아래로만 길어졌다** — 별거 없는데 스크롤이 긴 화면이 됐다.
+           저장소 화면이 안 그런 건 카드가 둘이고 그중 하나가 표라서 1440을 실제로 채우기
+           때문이다. 구독은 목록이 아니라 **구독 하나의 상세**라 원래 이쪽이 맞다.
+        ⚠️ 나누는 기준은 **1440을 채우는가**다. 읽을 게 많은 사용량·결제 내역(표)은 주 컬럼,
+           값 두어 개뿐인 플랜 지표·결제 수단·해지는 곁 컬럼이다. 한 줄짜리 카드를 전폭으로
+           두면 그 줄만 1440을 가로지른다.
+        ⚠️ 좁은 화면에서는 한 줄로 돌아간다(`lg:` 아래). 곁 컬럼이 먼저 오지 않게 순서를
+           그대로 두었다 — 사용량이 이 화면의 본문이다.
+        ⚠️ **두 컬럼의 아래를 맞춘다.** `items-start`로 두면 곁 컬럼이 내용만큼만 서서 오른쪽
+           아래가 휑하게 남는다. 남는 높이는 **플랜 카드가 먹는다**(`flex-1`) — 지표 줄이
+           그만큼 넉넉해질 뿐, 빈 칸이 생기지 않는다.
+      */}
+      <div className="mx-auto grid w-full max-w-[1440px] grid-cols-1 gap-7 lg:grid-cols-[minmax(0,1fr)_360px]">
+        <div className="flex min-w-0 flex-col gap-7">
+          <UsagePanel subscription={subscription} config={config} />
+          <PaymentHistoryPanel payments={overview.payments} />
+        </div>
+
         <div className="flex flex-col gap-7">
           <PlanPanel subscription={subscription} config={config} />
           <PaymentMethodsPanel
@@ -116,7 +137,6 @@ export function BillingView({ overview, config, canManage }: BillingViewProps) {
             canManage={canManage}
             onChange={handleChangeMethod}
           />
-          <PaymentHistoryPanel payments={overview.payments} />
           {/* ⚠️ 아직 못 쓰는 상태(결제 전·만료)에는 해지할 게 없으니 두지 않는다 */}
           {canUseWorkspace(subscription.status) && (
             <CancelSubscription
