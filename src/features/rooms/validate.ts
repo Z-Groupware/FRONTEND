@@ -1,5 +1,7 @@
 import { isValid, parse } from "date-fns";
 
+import { MEETING_TOPIC_SUB, type MeetingTopicMain } from "@/constants/meeting";
+
 import type { RoomReservationDraft, RoomReservationFormErrors } from "./types";
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
@@ -51,10 +53,22 @@ export function validateRoomReservationDraft(
     }
   }
 
-  if (!draft.projectId?.trim()) errors.projectId = "프로젝트를 선택해 주세요";
+  // ⚠️ 프로젝트는 선택값이다 — "팀 위클리 싱크"처럼 프로젝트에 안 묶인 예약도 있다
+  //    (types.ts의 RoomReservation.projectId, mock/reservations.ts 시드가 이미 그렇다).
   if (!draft.topicMain.trim()) errors.topicMain = "대주제를 선택해 주세요";
   if (!draft.topicSub.trim()) errors.topicSub = "소주제를 선택해 주세요";
-  if (draft.attendeeIds.length === 0) errors.attendeeIds = "참석자를 한 명 이상 선택해 주세요";
+  else if (draft.topicMain.trim()) {
+    const validSubs = MEETING_TOPIC_SUB[draft.topicMain as MeetingTopicMain];
+    if (!validSubs?.some((sub) => sub.value === draft.topicSub)) {
+      errors.topicSub = "대주제와 맞지 않는 소주제예요";
+    }
+  }
+
+  if (draft.attendeeIds.length === 0) {
+    errors.attendeeIds = "참석자를 한 명 이상 선택해 주세요";
+  } else if (draft.attendeeIds.some((id) => !Number.isInteger(id))) {
+    errors.attendeeIds = "참석자 값이 올바르지 않아요";
+  }
 
   return errors;
 }

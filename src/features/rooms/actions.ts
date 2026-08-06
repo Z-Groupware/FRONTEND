@@ -2,10 +2,13 @@
 
 import { revalidatePath } from "next/cache";
 
+import { TOP_LEVEL_PROJECTS } from "@/features/project/mock/projects";
 import { getMockActor } from "@/lib/mock-actor";
 import { isMock } from "@/mocks/config";
 
+import { findMockMember } from "./mock/members";
 import { addMockReservation, listMockReservationsByRoom } from "./mock/reservations";
+import { findMockRoom } from "./mock/rooms";
 import type { RoomReservation, RoomReservationDraft, RoomReservationFormErrors } from "./types";
 import { RESERVATION_DURATION_MINUTES, validateRoomReservationDraft } from "./validate";
 
@@ -58,6 +61,18 @@ export async function createRoomReservationAction(
   if (!isMock) {
     // ⚠️ 미구현 — API 스펙 확정 후 BFF 경로로 예약 생성 요청을 보낸다.
     throw new Error("회의실 예약 API가 아직 연결되지 않았습니다.");
+  }
+
+  // ⚠️ 화면 select·피커가 이미 실제 목록에서만 고르게 해도, 폼은 조작될 수 있다
+  //    (§권한: 화면 숨김은 UX일 뿐 보안이 아니다) — 참조값이 실제로 존재하는지 서버에서 다시 본다.
+  if (!findMockRoom(draft.roomId)) {
+    return { errors: { roomId: "존재하지 않는 회의실이에요" } };
+  }
+  if (draft.projectId && !TOP_LEVEL_PROJECTS.some((project) => project.id === draft.projectId)) {
+    return { errors: { projectId: "존재하지 않는 프로젝트예요" } };
+  }
+  if (draft.attendeeIds.some((id) => !findMockMember(id))) {
+    return { errors: { attendeeIds: "존재하지 않는 참석자가 있어요" } };
   }
 
   const { start, end } = toReservedRange(draft);

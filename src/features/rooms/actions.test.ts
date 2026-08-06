@@ -79,4 +79,73 @@ describe("회의실 예약 생성", () => {
     expect(result.errors).toEqual({});
     expect(result.created).toBeDefined();
   });
+
+  it("프로젝트 없이도 생성된다(예: 팀 위클리 싱크 같은 예약)", async () => {
+    const result = await createRoomReservationAction(
+      { errors: {} },
+      form({ ...VALID_ENTRIES, projectId: "", date: "2026-08-14" }),
+    );
+
+    expect(result.errors).toEqual({});
+    expect(result.created?.projectId).toBeUndefined();
+    expect(result.created?.projectTag).toBeUndefined();
+  });
+
+  it("폼이 조작돼 존재하지 않는 회의실 id가 오면 막는다", async () => {
+    const result = await createRoomReservationAction(
+      { errors: {} },
+      form({ ...VALID_ENTRIES, roomId: "room-does-not-exist", date: "2026-08-15" }),
+    );
+
+    expect(result.errors.roomId).toBe("존재하지 않는 회의실이에요");
+    expect(result.created).toBeUndefined();
+  });
+
+  it("폼이 조작돼 존재하지 않는 프로젝트 id가 오면 막는다", async () => {
+    const result = await createRoomReservationAction(
+      { errors: {} },
+      form({ ...VALID_ENTRIES, projectId: "p-does-not-exist", date: "2026-08-15" }),
+    );
+
+    expect(result.errors.projectId).toBe("존재하지 않는 프로젝트예요");
+    expect(result.created).toBeUndefined();
+  });
+
+  it("폼이 조작돼 존재하지 않는 참석자 id가 오면 막는다", async () => {
+    const result = await createRoomReservationAction(
+      { errors: {} },
+      form({ ...VALID_ENTRIES, date: "2026-08-15" }, [9999]),
+    );
+
+    expect(result.errors.attendeeIds).toBe("존재하지 않는 참석자가 있어요");
+    expect(result.created).toBeUndefined();
+  });
+
+  it("폼이 조작돼 대주제·소주제 조합이 안 맞으면 막는다", async () => {
+    const result = await createRoomReservationAction(
+      { errors: {} },
+      form({
+        ...VALID_ENTRIES,
+        date: "2026-08-15",
+        topicMain: "PRODUCT",
+        topicSub: "CHANNEL_STRATEGY",
+      }),
+    );
+
+    expect(result.errors.topicSub).toBe("대주제와 맞지 않는 소주제예요");
+    expect(result.created).toBeUndefined();
+  });
+
+  it("폼이 조작돼 참석자 값이 숫자가 아니면 막는다", async () => {
+    const data = new FormData();
+    for (const [key, value] of Object.entries({ ...VALID_ENTRIES, date: "2026-08-15" })) {
+      data.append(key, value);
+    }
+    data.append("attendeeIds", "not-a-number");
+
+    const result = await createRoomReservationAction({ errors: {} }, data);
+
+    expect(result.errors.attendeeIds).toBe("참석자 값이 올바르지 않아요");
+    expect(result.created).toBeUndefined();
+  });
 });

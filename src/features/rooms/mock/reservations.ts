@@ -16,13 +16,29 @@ interface ReservationStore {
   sequence: number;
 }
 
-/** 오늘(2026-08-06)이 속한 주(월 8/3~금 8/7) 기준 시드. */
+/**
+ * 오늘(2026-08-06)이 속한 주(월 8/3~금 8/7) 기준 시드.
+ * ⚠️ **회의는 예외 없이 30분 고정이다**(팀 확정, CLAUDE.md §브라우저 API) — 목 데이터도 이
+ *    규칙을 그대로 지킨다. 90분·2시간짜리 목업을 두면 "30분 고정"이 화면에서부터 거짓말이 된다.
+ */
 const INITIAL: RoomReservation[] = [
   {
     id: "reservation-1",
+    title: "Q3 OKR 중간 점검",
+    start: new Date("2026-08-03T09:00:00"),
+    end: new Date("2026-08-03T09:30:00"),
+    roomId: "room-small-b",
+    roomName: "소회의실 B",
+    topicMain: "TEAM",
+    topicSub: "위클리 싱크",
+    attendeeIds: [1, 2, 3],
+    ownerId: 1,
+  },
+  {
+    id: "reservation-2",
     title: "마케팅 채널 전략 논의",
     start: new Date("2026-08-03T10:00:00"),
-    end: new Date("2026-08-03T11:30:00"),
+    end: new Date("2026-08-03T10:30:00"),
     roomId: "room-large",
     roomName: "대회의실",
     projectId: "p-brand",
@@ -33,10 +49,10 @@ const INITIAL: RoomReservation[] = [
     ownerId: 2,
   },
   {
-    id: "reservation-2",
+    id: "reservation-3",
     title: "8월 제품 로드맵 검토",
     start: new Date("2026-08-03T14:00:00"),
-    end: new Date("2026-08-03T16:00:00"),
+    end: new Date("2026-08-03T14:30:00"),
     roomId: "room-large",
     roomName: "대회의실",
     projectId: "p-goods",
@@ -47,10 +63,10 @@ const INITIAL: RoomReservation[] = [
     ownerId: 1,
   },
   {
-    id: "reservation-3",
+    id: "reservation-4",
     title: "인프라 마이그레이션 리뷰",
     start: new Date("2026-08-05T15:30:00"),
-    end: new Date("2026-08-05T17:00:00"),
+    end: new Date("2026-08-05T16:00:00"),
     roomId: "room-small-a",
     roomName: "소회의실 A",
     projectId: "p-collab",
@@ -61,10 +77,10 @@ const INITIAL: RoomReservation[] = [
     ownerId: 4,
   },
   {
-    id: "reservation-4",
+    id: "reservation-5",
     title: "팀 위클리 싱크",
     start: new Date("2026-08-06T11:00:00"),
-    end: new Date("2026-08-06T12:00:00"),
+    end: new Date("2026-08-06T11:30:00"),
     roomId: "room-video",
     roomName: "화상회의실",
     topicMain: "TEAM",

@@ -56,9 +56,9 @@ describe("회의실 예약 검증", () => {
     expect(errors.startTime).toBeUndefined();
   });
 
-  it("프로젝트를 안 고르면 막는다", () => {
+  it("프로젝트 없이도 통과한다(예: 팀 위클리 싱크)", () => {
     const errors = validateRoomReservationDraft({ ...VALID_DRAFT, projectId: undefined });
-    expect(errors.projectId).toBe("프로젝트를 선택해 주세요");
+    expect(errors.projectId).toBeUndefined();
   });
 
   it("대주제를 안 고르면 막는다", () => {
@@ -71,8 +71,22 @@ describe("회의실 예약 검증", () => {
     expect(errors.topicSub).toBeDefined();
   });
 
+  it("대주제와 안 맞는 소주제 조합은 막는다", () => {
+    const errors = validateRoomReservationDraft({
+      ...VALID_DRAFT,
+      topicMain: "PRODUCT",
+      topicSub: "CHANNEL_STRATEGY",
+    });
+    expect(errors.topicSub).toBe("대주제와 맞지 않는 소주제예요");
+  });
+
   it("참석자가 한 명도 없으면 막는다", () => {
     const errors = validateRoomReservationDraft({ ...VALID_DRAFT, attendeeIds: [] });
     expect(errors.attendeeIds).toBe("참석자를 한 명 이상 선택해 주세요");
+  });
+
+  it("참석자 값이 정수가 아니면 막는다", () => {
+    const errors = validateRoomReservationDraft({ ...VALID_DRAFT, attendeeIds: [Number.NaN] });
+    expect(errors.attendeeIds).toBe("참석자 값이 올바르지 않아요");
   });
 });
