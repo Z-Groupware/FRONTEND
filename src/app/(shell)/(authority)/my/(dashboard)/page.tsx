@@ -28,14 +28,17 @@ export default async function MemberDashboardPage() {
 
   return (
     <main className="scrollbar-hidden flex min-h-0 flex-1 flex-col overflow-y-auto px-8 py-7">
-      <div className="mx-auto flex min-h-0 w-full max-w-[1440px] flex-1 flex-col gap-4">
+      <div className="mx-auto flex min-h-0 w-full max-w-[1440px] flex-1 flex-col gap-7">
         {/* 처리할 액션 — 시작일→마감일 기간 타임라인. 남는 세로 공간을 채우고 넘치면 내부 스크롤 */}
         <section
-          className="border-border bg-card flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border"
+          className="border-border bg-card flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border"
           style={{ minHeight: DUE_SOON_BOX_MIN_HEIGHT }}
         >
-          <div className="border-border flex shrink-0 items-center justify-between border-b px-4 py-3">
-            <h2 className="text-sm font-semibold">처리할 액션</h2>
+          <div className="border-border flex shrink-0 items-baseline justify-between gap-3 border-b px-7 pt-6 pb-3">
+            <h2 className="flex items-center gap-2 text-[17px] leading-7 font-semibold tracking-[-0.3px]">
+              <span className="bg-foreground size-2 rounded-full" aria-hidden />
+              처리할 액션
+            </h2>
             <ActionTimelineLegend />
           </div>
           <ActionTimeline
@@ -47,12 +50,15 @@ export default async function MemberDashboardPage() {
 
         {/* 참석 회의 — 최신 5건 고정 */}
         <section
-          className="border-border bg-card flex shrink-0 flex-col overflow-hidden rounded-xl border"
+          className="border-border bg-card flex shrink-0 flex-col overflow-hidden rounded-2xl border"
           style={{ height: MEETING_BOX_HEIGHT }}
         >
-          <div className="border-border flex shrink-0 items-center justify-between border-b px-4 py-3">
-            <h2 className="text-sm font-semibold">참석 회의</h2>
-            <span className="text-muted-foreground text-xs">최신 5건</span>
+          <div className="border-border flex shrink-0 items-baseline justify-between gap-3 border-b px-7 pt-6 pb-3">
+            <h2 className="flex items-center gap-2 text-[17px] leading-7 font-semibold tracking-[-0.3px]">
+              <span className="bg-foreground size-2 rounded-full" aria-hidden />
+              참석 회의
+            </h2>
+            <span className="text-muted-foreground text-[12px] leading-4">최신 5건</span>
           </div>
           {attendedMeetings.length === 0 ? (
             <p className="text-muted-foreground flex flex-1 items-center justify-center text-sm">
