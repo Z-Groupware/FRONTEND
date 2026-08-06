@@ -17,13 +17,13 @@ export function DepartmentAddRow({ value, onChange, onSubmit }: DepartmentAddRow
   return (
     <div className="border-border bg-muted flex h-[54px] shrink-0 items-center gap-2 border-t px-4">
       <label htmlFor="root-department" className="sr-only">
-        부서 이름
+        팀 이름
       </label>
       <Input
         maxLength={MAX_ORG_NAME_LENGTH}
         id="root-department"
         value={value}
-        placeholder="새 부서 이름 (Enter)"
+        placeholder="새 팀 이름 (Enter)"
         onChange={(event) => onChange(event.target.value)}
         onKeyDown={(event) => {
           // 한글 입력 중(조합 중)의 Enter는 글자를 확정하는 키다 — 여기서 처리하면 두 번 등록된다

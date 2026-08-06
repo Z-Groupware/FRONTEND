@@ -1,9 +1,8 @@
 "use client";
 
-import Link from "next/link";
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
@@ -16,23 +15,34 @@ interface NoticeFormProps {
   /** 수정일 때만 — 기존 값 채우기 + id 전달 */
   notice?: Notice;
   submitLabel: string;
-  /** 취소 시 돌아갈 곳 */
-  cancelHref: string;
+  /** 취소 버튼 — 모달을 닫는다(페이지 이동 아님) */
+  onCancel: () => void;
+  /** 성공 시 호출 — 생성/수정된 공지를 그대로 받는다(캘린더 `AddTodoDialog`와 같은 패턴) */
+  onSuccess: (notice: Notice) => void;
 }
 
 /**
- * 공지 작성·수정 폼 — 작성/수정이 같은 폼을 쓴다(입력·검증이 같다).
+ * 공지 작성·수정 폼 — 모달(`NoticeCreateDialog`·`NoticeEditDialog`) 안에서 쓴다.
  *
  * ⚠️ `useActionState`로 서버 액션과 묶는다 — 검증 오류는 서버가 돌려준 걸 칸 밑에 인라인으로 보인다
- *    (토스트가 아니라 §토스트: 폼 검증 오류는 인라인). 성공하면 액션이 `redirect`로 화면을 옮긴다.
+ *    (토스트가 아니라 §토스트: 폼 검증 오류는 인라인). 성공하면 액션이 돌려준 `notice`를 보고
+ *    `onSuccess`를 호출한다 — `redirect`로 페이지를 옮기지 않는다(모달이라 그럴 필요가 없다).
  * ⚠️ 제목·내용 입력을 **직접 추적**한다 — 둘 다 채워지기 전엔 제출 버튼을 잠근다(빈 공지 발행 방지).
  *    `name` 속성은 그대로 둬서 제어 컴포넌트여도 `FormData`엔 정상적으로 값이 실린다.
  */
-export function NoticeForm({ action, notice, submitLabel, cancelHref }: NoticeFormProps) {
+export function NoticeForm({ action, notice, submitLabel, onCancel, onSuccess }: NoticeFormProps) {
   const [state, formAction, isPending] = useActionState(action, { errors: {} });
   const [title, setTitle] = useState(notice?.title ?? "");
   const [body, setBody] = useState(notice?.body ?? "");
   const canSubmit = title.trim().length > 0 && body.trim().length > 0;
+  const handledNoticeId = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (state.notice && state.notice.id !== handledNoticeId.current) {
+      handledNoticeId.current = state.notice.id;
+      onSuccess(state.notice);
+    }
+  }, [state.notice, onSuccess]);
 
   return (
     <form action={formAction} className="flex flex-col gap-4">
@@ -61,22 +71,16 @@ export function NoticeForm({ action, notice, submitLabel, cancelHref }: NoticeFo
           onChange={(event) => setBody(event.target.value)}
           placeholder="공지 내용을 입력하세요"
           aria-invalid={Boolean(state.errors.body)}
-          className="border-input placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:border-destructive dark:bg-input/30 min-h-[180px] w-full resize-none rounded-lg border bg-transparent px-2.5 py-2 text-sm transition-colors outline-none focus-visible:ring-3"
+          className="border-input placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:border-destructive min-h-[180px] w-full resize-none rounded-lg border bg-transparent px-2.5 py-2 text-sm transition-colors outline-none focus-visible:ring-3"
         />
         {state.errors.body && <p className="text-destructive text-xs">{state.errors.body}</p>}
       </div>
 
       <div className="flex justify-end gap-2">
-        <Link href={cancelHref} className={buttonVariants({ variant: "outline", size: "sm" })}>
+        <Button type="button" variant="outline" size="sm" onClick={onCancel}>
           취소
-        </Link>
-        <Button
-          type="submit"
-          size="sm"
-          disabled={isPending || !canSubmit}
-          // 시안의 주 버튼은 액센트(파랑)가 아니라 먹색이다 — `department-setup.tsx`와 같은 이유.
-          className="bg-foreground text-background hover:bg-foreground/90"
-        >
+        </Button>
+        <Button type="submit" size="sm" variant="ink" disabled={isPending || !canSubmit}>
           {isPending ? "저장 중…" : submitLabel}
         </Button>
       </div>

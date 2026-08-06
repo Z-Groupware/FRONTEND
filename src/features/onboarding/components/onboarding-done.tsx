@@ -90,7 +90,7 @@ export function OnboardingDone({ paymentSummary }: OnboardingDoneProps) {
                남은 것처럼 읽힌다. 다음에 무슨 일이 일어나는지를 적는다.
           */}
           <p className="text-muted-foreground text-[13px] leading-[21px] text-balance break-keep">
-            부서·직급 체계와 초대 목록을 정하고 결제까지 마쳤습니다. 초대한 분들께 계정 안내 메일이
+            팀·직급 체계와 초대 목록을 정하고 결제까지 마쳤습니다. 초대한 분들께 계정 안내 메일이
             나갑니다.
           </p>
         </div>

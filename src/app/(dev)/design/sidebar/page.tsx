@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { NavPreview } from "@/features/shell/components/nav-preview";
 
 export const metadata: Metadata = {
-  title: "역할별 사이드바",
+  title: "권한별 사이드바",
 };
 
 /**

@@ -36,7 +36,7 @@ export default async function TeamDashboardPage() {
 
   return (
     <main className="scrollbar-hidden min-h-0 flex-1 overflow-y-auto px-8 py-7">
-      <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-4">
+      <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-7">
         <div className="grid grid-cols-4 gap-3">
           {kpis.map((kpi) => (
             <KpiCard key={kpi.label} {...kpi} />
@@ -44,12 +44,15 @@ export default async function TeamDashboardPage() {
         </div>
 
         <section
-          className="border-border bg-card flex flex-col overflow-hidden rounded-xl border"
+          className="border-border bg-card flex flex-col overflow-hidden rounded-2xl border"
           style={{ height: MEMBER_BOX_HEIGHT }}
         >
-          <div className="border-border flex shrink-0 items-center justify-between border-b px-4 py-3">
-            <h2 className="text-sm font-semibold">팀원 현황</h2>
-            <span className="text-muted-foreground text-xs">
+          <div className="border-border flex shrink-0 items-baseline justify-between gap-3 border-b px-7 pt-6 pb-3">
+            <h2 className="flex items-center gap-2 text-[17px] leading-7 font-semibold tracking-[-0.3px]">
+              <span className="bg-foreground size-2 rounded-full" aria-hidden />
+              팀원 현황
+            </h2>
+            <span className="text-muted-foreground text-[12px] leading-4">
               {teamName} · {members.length}명
             </span>
           </div>
@@ -88,12 +91,15 @@ export default async function TeamDashboardPage() {
         </section>
 
         <section
-          className="border-border bg-card flex flex-col overflow-hidden rounded-xl border"
+          className="border-border bg-card flex flex-col overflow-hidden rounded-2xl border"
           style={{ height: MEETING_BOX_HEIGHT }}
         >
-          <div className="border-border flex shrink-0 items-center justify-between border-b px-4 py-3">
-            <h2 className="text-sm font-semibold">최근 팀 회의</h2>
-            <span className="text-muted-foreground text-xs">최신 5건</span>
+          <div className="border-border flex shrink-0 items-baseline justify-between gap-3 border-b px-7 pt-6 pb-3">
+            <h2 className="flex items-center gap-2 text-[17px] leading-7 font-semibold tracking-[-0.3px]">
+              <span className="bg-foreground size-2 rounded-full" aria-hidden />
+              최근 팀 회의
+            </h2>
+            <span className="text-muted-foreground text-[12px] leading-4">최신 5건</span>
           </div>
           {meetings.length === 0 ? (
             <p className="text-muted-foreground flex flex-1 items-center justify-center text-sm">

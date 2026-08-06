@@ -12,8 +12,8 @@ export default async function SystemNoticePage() {
   const [history, companies] = await Promise.all([getNoticeHistory(), getNoticeTargetCompanies()]);
 
   return (
-    <main className="min-h-0 flex-1 overflow-y-auto p-6">
-      <div className="mx-auto grid max-w-[1440px] grid-cols-2 gap-4">
+    <main className="min-h-0 flex-1 overflow-y-auto px-8 py-7">
+      <div className="mx-auto grid max-w-[1440px] grid-cols-2 gap-7">
         <NoticeComposeCard companies={companies} />
         <NoticeHistoryCard items={history} />
       </div>

@@ -2,6 +2,7 @@
 
 import { Lightbulb, X } from "lucide-react";
 
+import { ZLogo } from "@/components/icons/z-logo";
 import { cn } from "@/lib/utils";
 
 import { ONBOARDING_STEP, ONBOARDING_STEP_LABEL, type OnboardingStep } from "../types";
@@ -10,10 +11,10 @@ import { GuideDemo } from "./guide-demo";
 /** 단계마다 짚어줄 것 — 화면을 보며 따라 할 수 있는 순서로 적는다. */
 const GUIDE_STEPS: Record<OnboardingStep, string[]> = {
   [ONBOARDING_STEP.DEPARTMENT]: [
-    "아래 칸에 부서 이름을 적고 Enter를 누릅니다.",
-    "부서 줄에 마우스를 올리면 + 가 나옵니다. 누르면 그 안에 역할이 생깁니다.",
+    "아래 칸에 팀 이름을 적고 Enter를 누릅니다.",
+    "팀 줄에 마우스를 올리면 + 가 나옵니다. 누르면 그 안에 역할이 생깁니다.",
     "이름은 더블클릭해서 바꿉니다.",
-    "손잡이를 끌면 순서를 바꾸거나 다른 부서로 옮길 수 있습니다.",
+    "손잡이를 끌면 순서를 바꾸거나 다른 팀으로 옮길 수 있습니다.",
   ],
   [ONBOARDING_STEP.POSITION]: [
     "직급 이름을 적고 Enter를 누릅니다.",
@@ -21,9 +22,9 @@ const GUIDE_STEPS: Record<OnboardingStep, string[]> = {
     "위에 있을수록 높은 직급입니다. 손잡이를 끌어 맞춥니다.",
   ],
   [ONBOARDING_STEP.INVITE]: [
-    "부서 · 역할 · 직급을 앞에서부터 차례로 고릅니다.",
-    "팀장처럼 역할 없이 부서에만 두려면 역할을 ‘없음’으로 둡니다.",
-    "부서마다 리더는 한 명입니다.",
+    "팀 · 역할 · 직급을 앞에서부터 차례로 고릅니다.",
+    "Leader 권한을 준 직급을 고르면 역할이 ‘리더’로 자동으로 채워집니다.",
+    "팀마다 리더는 한 명입니다.",
     "주소를 적고 [완료]를 누르면 초대장이 함께 나갑니다.",
   ],
   [ONBOARDING_STEP.PAYMENT]: [
@@ -60,10 +61,12 @@ export function OnboardingGuide({ step, isOpen, onToggle }: OnboardingGuideProps
         className="bg-guide-surface text-guide-foreground border-guide-border focus-visible:ring-ring fixed right-6 bottom-20 z-50 flex size-11 items-center justify-center rounded-full border shadow-lg transition-transform hover:scale-105 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-hidden"
       >
         {/*
-          ⚠️ **전구**다. 여기는 찾아보는 곳이 아니라 지금 단계에서 알아둘 것을 짚어 주는
-             곳이라, 랜딩 도움말(돋보기)과 표식을 일부러 다르게 쓴다.
+          ⚠️ **Z 표식**이다. 온보딩은 아직 아무것도 없는 화면이라, 여기서 말을 거는 게
+             누구인지가 표식으로 먼저 읽혀야 한다 — 일반 아이콘은 브라우저 확장처럼 보인다.
+          ⚠️ 로고는 `currentColor`라 버튼이 정한 글자색(`--guide-foreground`)을 따라간다.
+             패널이 밝아지든 어두워지든 따로 손댈 곳이 없다(§디자인 토큰).
         */}
-        {isOpen ? <X className="size-[18px]" /> : <Lightbulb className="size-[18px]" aria-hidden />}
+        {isOpen ? <X className="size-[18px]" /> : <ZLogo className="size-[15px]" aria-hidden />}
       </button>
 
       <aside
@@ -76,7 +79,12 @@ export function OnboardingGuide({ step, isOpen, onToggle }: OnboardingGuideProps
         )}
       >
         <header className="border-guide-border flex shrink-0 items-center gap-2 border-b px-4 py-3">
-          <span className="bg-guide-foreground size-2 rounded-full" aria-hidden />
+          {/*
+            ⚠️ **전구**다. 여기는 찾아보는 곳이 아니라 지금 단계에서 알아둘 것을 짚어 주는
+               곳이라, 랜딩 도움말(돋보기)과 표식을 일부러 다르게 쓴다.
+            ⚠️ 브랜드(Z)는 **런처 버튼**이 맡는다. 머리까지 Z로 두면 같은 표식이 두 번 나온다.
+          */}
+          <Lightbulb className="size-4 shrink-0" aria-hidden />
           <h2 className="text-[13px] font-semibold">온보딩 가이드</h2>
           <span className="text-guide-muted ml-auto text-[11px]">
             {step}단계 · {ONBOARDING_STEP_LABEL[step]}

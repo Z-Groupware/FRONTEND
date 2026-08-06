@@ -48,8 +48,8 @@ export function InviteRowSelects({ invite, isBlank, ...sources }: InviteRowSelec
           value={invite.departmentId}
           onChange={(departmentId) => sources.onChangeDepartment(invite.id, departmentId)}
           options={sources.departments}
-          label={`${who} 부서`}
-          emptyText="부서 없음"
+          label={`${who} 팀`}
+          emptyText="팀 없음"
           placeholder={PICK_PLACEHOLDER}
           width={INVITE_SELECT_WIDTH}
           isMuted={isBlank}

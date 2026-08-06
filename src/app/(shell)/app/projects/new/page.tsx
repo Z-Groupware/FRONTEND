@@ -32,7 +32,7 @@ export default async function AppProjectNewPage() {
           <h2 className="text-foreground text-base font-semibold">새 프로젝트</h2>
         </div>
 
-        <div className="border-border bg-card rounded-xl border p-6">
+        <div className="border-border bg-card rounded-2xl border p-7">
           <ProjectForm
             action={createProjectAction}
             teamOptions={teamOptions}

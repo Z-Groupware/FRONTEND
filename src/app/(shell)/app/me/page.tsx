@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { ScreenScaleCard } from "@/features/appearance/components/screen-scale-card";
+import { ThemeCard } from "@/features/appearance/components/theme-card";
 import { ProfileHeader } from "@/features/profile/components/profile-header";
 import { ProfileInfoCard } from "@/features/profile/components/profile-info-card";
 import { getMyProfile } from "@/features/profile/server";
@@ -10,7 +11,7 @@ export const metadata: Metadata = {
 };
 
 /**
- * 마이페이지 — 프로필(읽기 전용)과 화면 배율.
+ * 마이페이지 — 프로필(읽기 전용)·화면 배율·테마.
  *
  * ⚠️ **편집·연차 등은 명세가 없어 만들지 않는다**(§명세에 없는 화면·기능은 안 만든다).
  *    "기본 정보"는 팀 디자인(피그마)을 그대로 반영했지만, 이 화면에서 값을 고칠 수 있다는
@@ -30,6 +31,7 @@ export default async function AppMePage() {
           </div>
 
           <ScreenScaleCard />
+          <ThemeCard />
         </div>
       </div>
     </div>

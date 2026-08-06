@@ -40,7 +40,7 @@ export default async function OwnerDashboardPage() {
 
   return (
     <main className="scrollbar-hidden min-h-0 flex-1 overflow-y-auto px-8 py-7">
-      <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-4">
+      <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-7">
         <div className="grid grid-cols-4 gap-3">
           {kpis.map((kpi) => (
             <KpiCard key={kpi.label} {...kpi} />
@@ -48,11 +48,14 @@ export default async function OwnerDashboardPage() {
         </div>
 
         <section
-          className="border-border bg-card flex flex-col overflow-hidden rounded-xl border"
+          className="border-border bg-card flex flex-col overflow-hidden rounded-2xl border"
           style={{ height: LEADER_BOX_HEIGHT }}
         >
-          <div className="border-border flex shrink-0 items-center border-b px-4 py-3">
-            <h2 className="text-sm font-semibold">팀장 현황</h2>
+          <div className="border-border flex shrink-0 items-center border-b px-7 pt-6 pb-3">
+            <h2 className="flex items-center gap-2 text-[17px] leading-7 font-semibold tracking-[-0.3px]">
+              <span className="bg-foreground size-2 rounded-full" aria-hidden />
+              팀장 현황
+            </h2>
           </div>
           {leaderRows.length === 0 ? (
             <p className="text-muted-foreground flex flex-1 items-center justify-center text-sm">
@@ -70,9 +73,7 @@ export default async function OwnerDashboardPage() {
                     <TableHead className="text-muted-foreground text-center text-xs">
                       이메일
                     </TableHead>
-                    <TableHead className="text-muted-foreground text-center text-xs">
-                      부서
-                    </TableHead>
+                    <TableHead className="text-muted-foreground text-center text-xs">팀</TableHead>
                     <TableHead className="text-muted-foreground text-center text-xs">
                       상태
                     </TableHead>
@@ -92,11 +93,14 @@ export default async function OwnerDashboardPage() {
         </section>
 
         <section
-          className="border-border bg-card flex flex-col overflow-hidden rounded-xl border"
+          className="border-border bg-card flex flex-col overflow-hidden rounded-2xl border"
           style={{ height: MEETING_BOX_HEIGHT }}
         >
-          <div className="border-border flex shrink-0 items-center justify-between border-b px-4 py-3">
-            <h2 className="text-sm font-semibold">최근 프로젝트 회의</h2>
+          <div className="border-border flex shrink-0 items-baseline justify-between gap-3 border-b px-7 pt-6 pb-3">
+            <h2 className="flex items-center gap-2 text-[17px] leading-7 font-semibold tracking-[-0.3px]">
+              <span className="bg-foreground size-2 rounded-full" aria-hidden />
+              최근 프로젝트 회의
+            </h2>
             <Link
               href="/app/meeting"
               className="text-muted-foreground hover:text-foreground text-xs transition-colors"

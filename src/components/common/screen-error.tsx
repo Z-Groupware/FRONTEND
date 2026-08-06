@@ -50,7 +50,7 @@ export function ScreenError({ title, reset, isInsideShell }: ScreenErrorProps) {
       className={cn(
         "bg-background flex flex-col items-center justify-center gap-4 px-6 text-center",
         // `min-h-0`이 있어야 flex 자식이 부모보다 커지지 않는다 — 없으면 내용 높이만큼 삐져나간다
-        // ⚠️ 셸 밖은 `min-h-screen-z`다 — `100dvh`는 배율(zoom)을 모르는 값이라
+        // ⚠️ 셸 밖은 `min-h-screen-z`다 — `100dvh`는 배율을 모르는 값이라
         //    그대로 두면 배율이 걸린 화면에서 아래가 남거나 넘친다(§화면 배율)
         isInsideShell ? "min-h-0 flex-1" : "min-h-screen-z",
       )}

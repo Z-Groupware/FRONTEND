@@ -3,23 +3,26 @@ import { PLAN, PLAN_LABEL } from "@/constants/domain";
 import type { PlanDistributionSlice } from "../types";
 import { PlanDonutChartLoader } from "./plan-donut-chart-loader";
 
-/** 도넛 조각과 같은 색이다(`plan-donut-chart.tsx`의 `SLICE_COLOR`). */
+/** 도넛 조각과 같은 명도다(`plan-donut-chart.tsx`의 `SLICE_OPACITY`) — 색이 아니라 명도로 가른다. */
 const LEGEND_DOT_CLASS = {
-  [PLAN.TEAM]: "bg-chart-1",
-  [PLAN.FREE]: "bg-chart-2",
+  [PLAN.TEAM]: "bg-foreground",
+  [PLAN.FREE]: "bg-foreground/35",
 } as const;
 
 /** "플랜 분포" 카드 — 도넛차트(클라이언트) + 범례(서버). */
 export function PlanDistributionCard({ data }: { data: PlanDistributionSlice[] }) {
   return (
-    <section className="border-border bg-card w-64 shrink-0 rounded-xl border p-5">
-      <h2 className="text-foreground text-sm font-semibold">플랜 분포</h2>
+    <section className="border-border bg-card w-full rounded-2xl border lg:w-64 lg:shrink-0">
+      <h2 className="flex items-center gap-2 px-7 pt-6 pb-3 text-[17px] leading-7 font-semibold tracking-[-0.3px]">
+        <span className="bg-foreground size-2 rounded-full" aria-hidden />
+        플랜 분포
+      </h2>
 
-      <div className="mt-3">
+      <div className="px-7">
         <PlanDonutChartLoader data={data} />
       </div>
 
-      <ul className="mt-3 flex flex-col gap-1.5">
+      <ul className="mt-3 flex flex-col gap-1.5 px-7 pb-6">
         {data.map((slice) => (
           <li key={slice.plan} className="flex items-center justify-between text-xs">
             <span className="flex items-center gap-1.5">

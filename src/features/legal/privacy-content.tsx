@@ -11,7 +11,7 @@ import { DocSection } from "@/features/landing/components/doc-page";
 const COLLECTED = [
   {
     kind: "계정 정보",
-    items: "이름 · 회사 이메일 · 부서 · 직급",
+    items: "이름 · 회사 이메일 · 팀 · 직급",
     when: "관리자가 계정을 발급할 때",
   },
   {

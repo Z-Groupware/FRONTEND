@@ -14,7 +14,7 @@ export default async function OnboardingInvitePage() {
 
   return (
     <OnboardingShell step={ONBOARDING_STEP.INVITE}>
-      {/* 말단 부서만 고를 수 있게 거르는 일은 화면에서 한다 — 1·2단계 편집분과 같은 규칙을 써야 해서다 */}
+      {/* 말단 팀만 고를 수 있게 거르는 일은 화면에서 한다 — 1·2단계 편집분과 같은 규칙을 써야 해서다 */}
       <InviteSetup departments={departments} positions={positions} />
     </OnboardingShell>
   );

@@ -39,7 +39,7 @@ export default async function ProjectsPage({ searchParams }: ProjectsPageProps) 
 
   return (
     <main className="scrollbar-hidden min-h-0 flex-1 overflow-y-auto px-8 py-7">
-      <div className="mx-auto flex w-full max-w-[1080px] flex-col gap-4">
+      <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-4">
         {/* 상단바엔 버튼을 두지 않는다(팀 규칙) — 생성 버튼은 본문 안, Owner 전용 */}
         <div className="flex items-center justify-between gap-4">
           <ProjectFilterTabs
@@ -66,7 +66,7 @@ export default async function ProjectsPage({ searchParams }: ProjectsPageProps) 
         </div>
 
         {/* 데이터가 있으면 내용 높이만큼만, 비어 있을 때만 최소 높이를 둬 텅 빈 카드가 안 되게 한다 */}
-        <section className="border-border bg-card overflow-hidden rounded-xl border">
+        <section className="border-border bg-card overflow-hidden rounded-2xl border">
           {projects.length === 0 ? (
             <p className="text-muted-foreground flex min-h-[360px] items-center justify-center px-4 text-sm">
               {keyword?.trim() ? "검색 결과가 없습니다." : "해당 상태의 프로젝트가 없습니다."}

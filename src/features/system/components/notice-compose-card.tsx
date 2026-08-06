@@ -2,6 +2,7 @@
 
 import { Check, Send } from "lucide-react";
 import { useState, useTransition } from "react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -50,15 +51,21 @@ export function NoticeComposeCard({ companies }: { companies: NoticeTargetCompan
         target,
         companyIds: isSpecific ? selectedCompanyIds : undefined,
       });
-      if (response.success) setIsSent(true);
+      if (response.success) {
+        setIsSent(true);
+        toast.success("공지를 발행했습니다");
+      }
     });
   };
 
   return (
-    <section className="border-border bg-card rounded-xl border p-5">
-      <h2 className="text-foreground mb-4 text-sm font-semibold">공지 작성</h2>
+    <section className="border-border bg-card rounded-2xl border">
+      <h2 className="flex items-center gap-2 px-7 pt-6 pb-3 text-[17px] leading-7 font-semibold tracking-[-0.3px]">
+        <span className="bg-foreground size-2 rounded-full" aria-hidden />
+        공지 작성
+      </h2>
 
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-3 px-7 pb-6">
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="notice-title">제목</Label>
           <Input
@@ -77,7 +84,7 @@ export function NoticeComposeCard({ companies }: { companies: NoticeTargetCompan
             onChange={(event) => setContent(event.target.value)}
             placeholder="공지 내용을 입력하세요"
             rows={5}
-            className="border-input placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 dark:bg-input/30 min-h-[120px] w-full resize-none rounded-lg border bg-transparent px-2.5 py-2 text-sm transition-colors outline-none focus-visible:ring-3"
+            className="border-input placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 min-h-[120px] w-full resize-none rounded-lg border bg-transparent px-2.5 py-2 text-sm transition-colors outline-none focus-visible:ring-3"
           />
         </div>
 
@@ -114,15 +121,20 @@ export function NoticeComposeCard({ companies }: { companies: NoticeTargetCompan
         </div>
 
         {isSent ? (
-          <div className="bg-success/12 text-success flex items-center gap-2 rounded-lg px-3 py-2.5 text-xs font-medium">
+          <div
+            role="status"
+            aria-live="polite"
+            className="border-border text-foreground flex items-center gap-2 rounded-lg border px-3 py-2.5 text-xs font-medium"
+          >
             <Check className="size-3.5 shrink-0" strokeWidth={2.5} aria-hidden />
-            공지를 발행했어요
+            공지를 발행했습니다
           </div>
         ) : (
           <Button
             type="button"
             size="lg"
-            className="w-full bg-[#EA580C] text-white hover:bg-[#C2410C]"
+            variant="ink"
+            className="w-full"
             disabled={!canPublish || isPending}
             onClick={handlePublish}
           >

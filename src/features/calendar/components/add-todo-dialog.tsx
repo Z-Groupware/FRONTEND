@@ -67,12 +67,7 @@ export function AddTodoDialog({ defaultDate, onCreated }: AddTodoDialogProps) {
 
   return (
     <>
-      <Button
-        type="button"
-        size="sm"
-        className="bg-foreground text-background hover:bg-foreground/90"
-        onClick={handleOpen}
-      >
+      <Button type="button" size="sm" variant="ink" onClick={handleOpen}>
         <Plus aria-hidden />
         Todo 추가
       </Button>
