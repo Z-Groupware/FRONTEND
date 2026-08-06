@@ -85,29 +85,45 @@ export function formatElapsed(iso: string, today: string): string | null {
   return `${Math.floor(months / 12)}년 전`;
 }
 
-const WEEKDAY_KO = ["일", "월", "화", "수", "목", "금", "토"] as const;
+/** 요일 라벨 — `Date.getUTCDay()` 인덱스(0=일)와 짝. */
+const WEEKDAY_LABEL = ["일", "월", "화", "수", "목", "금", "토"] as const;
 
-const ISO_DATE = /^(\d{4})-(\d{2})-(\d{2})$/;
+/**
+ * `2026-09-05` → `9월 5일(토)`. 형식이 아니면 `null`.
+ *
+ * ⚠️ 요일도 `toLocaleDateString` 대신 `Date.UTC`로 구한다 — 로케일·시간대에 흔들리지 않게
+ *    (§렌더링: 서버·클라 표기가 갈리면 하이드레이션이 어긋난다). 카피 규칙 `8월 5일(수)`.
+ */
+export function formatMonthDayWeekday(iso: string): string | null {
+  const d = parseIsoDate(iso);
+  if (!d) return null;
+
+  const date = new Date(Date.UTC(d.y, d.m - 1, d.d));
+  // `2026-02-30`처럼 형식은 맞지만 없는 날짜는 Date가 다음 달로 굴러간다 — 되돌려 확인해 걸러낸다
+  if (
+    date.getUTCFullYear() !== d.y ||
+    date.getUTCMonth() !== d.m - 1 ||
+    date.getUTCDate() !== d.d
+  ) {
+    return null;
+  }
+
+  const weekday = WEEKDAY_LABEL[date.getUTCDay()] ?? "";
+  return `${d.m}월 ${d.d}일(${weekday})`;
+}
 
 /**
  * 화면 표기 — `2026-05-03` → `5월 3일(일)`(CLAUDE.md §카피).
  *
  * ⚠️ **ISO 문자열을 화면에 그대로 찍지 않는다.** `2026-09-01`은 개발자용 표기다 —
  *    구독 해지 창이 실제로 그러고 있어서 읽는 사람이 날짜를 한 번 더 해석해야 했다.
- * ⚠️ **`new Date(iso)`로 파싱하지 않는다.** `"2026-05-03"`은 UTC 자정으로 읽혀 시간대에
- *    따라 하루가 밀린다 — 조각을 직접 갈라 `Date.UTC`로 요일만 구한다.
- * ⚠️ 형식이 아니면(빈 값·깨진 값) **원문을 그대로** 돌려준다 — 지어내는 것보다 낫다.
+ * ⚠️ **해를 넘길 수 있는 값에는 쓰지 않는다.** 결제 주기(`12월 1일 ~ 1월 1일`)처럼 앞뒤로
+ *    해가 갈리는 자리에서는 어느 해인지 알 수 없다 — `formatFullDate`를 쓴다.
+ * ⚠️ 형식이 아니거나 없는 날짜면(`2026-02-30`) **원문을 그대로** 돌려준다 —
+ *    지어내는 것보다 낫다. 판정은 `formatMonthDayWeekday` 한 곳이 한다.
  */
 export function formatDate(iso: string): string {
-  const match = ISO_DATE.exec(iso);
-  if (!match) return iso;
-
-  const y = Number(match[1]);
-  const m = Number(match[2]);
-  const d = Number(match[3]);
-  const weekday = WEEKDAY_KO[new Date(Date.UTC(y, m - 1, d)).getUTCDay()];
-
-  return `${m}월 ${d}일(${weekday})`;
+  return formatMonthDayWeekday(iso) ?? iso;
 }
 
 /**
@@ -119,10 +135,11 @@ export function formatDate(iso: string): string {
  *    렌더가 해가 바뀌는 순간 갈려 하이드레이션이 어긋난다.
  */
 export function formatDateWithYear(iso: string, currentYear: number): string {
-  const match = ISO_DATE.exec(iso);
-  if (!match) return iso;
+  const day = formatMonthDayWeekday(iso);
+  if (!day) return iso;
 
-  return Number(match[1]) === currentYear ? formatDate(iso) : `${match[1]}년 ${formatDate(iso)}`;
+  const year = Number(iso.slice(0, 4));
+  return year === currentYear ? day : `${year}년 ${day}`;
 }
 
 /**
@@ -135,8 +152,8 @@ export function formatDateWithYear(iso: string, currentYear: number): string {
  *    서버에서 오늘을 내려보낼 필요가 없다 — 하이드레이션이 어긋날 자리가 없다.
  */
 export function formatFullDate(iso: string): string {
-  const match = ISO_DATE.exec(iso);
-  if (!match) return iso;
+  const day = formatMonthDayWeekday(iso);
+  if (!day) return iso;
 
-  return `${match[1]}년 ${formatDate(iso)}`;
+  return `${iso.slice(0, 4)}년 ${day}`;
 }

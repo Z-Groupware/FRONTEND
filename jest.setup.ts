@@ -45,3 +45,17 @@ if (!Element.prototype.setPointerCapture) {
 if (!Element.prototype.releasePointerCapture) {
   Element.prototype.releasePointerCapture = () => {};
 }
+
+/*
+  ⚠️ jsdom엔 ResizeObserver가 없다 — 목록 넘침을 감지하는 화면(`calendar-day-detail-panel.tsx`)이
+     실제로 이걸 쓴다. 크기 변화를 흉내 낼 필요는 없고, 생성·해제가 안 터지기만 하면 된다.
+*/
+if (typeof window !== "undefined" && !window.ResizeObserver) {
+  class ResizeObserverPolyfill {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  }
+
+  window.ResizeObserver = ResizeObserverPolyfill;
+}

@@ -1,4 +1,10 @@
-import { formatDate, formatDateWithYear, formatElapsed } from "./date";
+import {
+  formatDate,
+  formatDateWithYear,
+  formatElapsed,
+  formatFullDate,
+  formatMonthDayWeekday,
+} from "./date";
 
 /**
  * ⚠️ `todayIso()`는 테스트하지 않는다 — 실제 시계를 읽는 함수라 시각을 고정하지 않으면
@@ -98,5 +104,51 @@ describe("formatDate", () => {
   it("형식이 아니면 원문을 그대로 둔다 — 지어내지 않는다", () => {
     expect(formatDate("")).toBe("");
     expect(formatDate("내일")).toBe("내일");
+  });
+
+  /* ⚠️ 없는 날짜도 원문으로 물러선다 — 판정은 `formatMonthDayWeekday` 한 곳이 한다 */
+  it("형식은 맞지만 없는 날짜도 원문을 그대로 둔다", () => {
+    expect(formatDate("2026-02-30")).toBe("2026-02-30");
+  });
+});
+
+/**
+ * ⚠️ 결제 주기·다음 결제일처럼 **해를 넘길 수 있는 값**에 쓴다. 연도가 없으면
+ *    `12월 1일 ~ 1월 1일`이 어느 해인지 알 수 없어 과거로 읽힌다.
+ */
+describe("formatFullDate", () => {
+  it("연도를 항상 붙인다 — 올해여도 붙인다", () => {
+    expect(formatFullDate("2026-09-01")).toBe("2026년 9월 1일(화)");
+  });
+
+  it("해를 넘기는 주기에서 어느 해인지 드러난다", () => {
+    expect(formatFullDate("2026-12-01")).toBe("2026년 12월 1일(화)");
+    expect(formatFullDate("2027-01-01")).toBe("2027년 1월 1일(금)");
+  });
+
+  it("형식이 아니면 원문을 그대로 둔다", () => {
+    expect(formatFullDate("")).toBe("");
+    expect(formatFullDate("2026-02-30")).toBe("2026-02-30");
+  });
+});
+
+describe("formatMonthDayWeekday", () => {
+  it("월·일·요일을 조립한다 — 2026-09-05는 토요일", () => {
+    expect(formatMonthDayWeekday("2026-09-05")).toBe("9월 5일(토)");
+    expect(formatMonthDayWeekday("2026-08-05")).toBe("8월 5일(수)");
+  });
+
+  it("앞자리 0을 붙이지 않는다", () => {
+    expect(formatMonthDayWeekday("2026-01-03")).toBe("1월 3일(토)");
+  });
+
+  it("형식이 아니면 null이다", () => {
+    expect(formatMonthDayWeekday("2026/09/05")).toBeNull();
+    expect(formatMonthDayWeekday("")).toBeNull();
+  });
+
+  it("형식은 맞지만 실재하지 않는 날짜는 null이다", () => {
+    expect(formatMonthDayWeekday("2026-02-30")).toBeNull();
+    expect(formatMonthDayWeekday("2026-02-29")).toBeNull(); // 2026은 평년
   });
 });
