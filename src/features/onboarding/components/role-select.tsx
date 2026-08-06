@@ -7,7 +7,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { POSITION_ROLES, ROLE_LABEL } from "@/constants/domain";
+import { AUTHORITY_LABEL, POSITION_AUTHORITIES } from "@/constants/domain";
 import { cn } from "@/lib/utils";
 
 import type { AssignableRole } from "../types";
@@ -56,7 +56,7 @@ export function RoleSelect({
         )}
       >
         {/* 원본 값(LEADER)이 아니라 표기용 라벨(Leader)을 보여준다 */}
-        <SelectValue>{(role) => ROLE_LABEL[role as AssignableRole]}</SelectValue>
+        <SelectValue>{(role) => AUTHORITY_LABEL[role as AssignableRole]}</SelectValue>
       </SelectTrigger>
 
       {/*
@@ -71,14 +71,14 @@ export function RoleSelect({
         // 기본 min-w-36이 트리거보다 넓다 — 칸 폭에 맞춘다
         className="w-[92px] min-w-0"
       >
-        {POSITION_ROLES.map((role) => (
+        {POSITION_AUTHORITIES.map((role) => (
           <SelectItem
             key={role}
             value={role}
             disabled={blocked.includes(role) && role !== value}
             className="text-[13px]"
           >
-            {ROLE_LABEL[role]}
+            {AUTHORITY_LABEL[role]}
           </SelectItem>
         ))}
       </SelectContent>

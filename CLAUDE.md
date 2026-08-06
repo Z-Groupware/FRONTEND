@@ -19,7 +19,7 @@
 - **① 역할(Role):** 화면·메뉴 접근. **역할 종류와 범위는 `DECISIONS.md`** 를 따른다(정책이라 바뀐다).
 - **② 리소스 소유권:** 역할과 **무관**하게 그 문서의 담당자만 가능.
   예) 회의 시작·녹음·파일 제출·종료 = **그 회의 담당자 1명만**(OWNER라도 담당자가 아니면 불가).
-- **③ 조직 계층:** **2계층**(부서 > 역할) 트리. 아랫단은 하위 부서가 아니라 **그 부서 안의 역할**이고 **비워둘 수 있다**(`없음`, 예: 팀장). 사원은 **부서에** 소속된다. 권한은 부서가 아니라 **직급**에서 온다 — LEADER 직급은 회사에 하나, 그 직급자는 **부서마다 한 명**. **LEADER는 자기 부서 전체**를 관리 → BE 응답에 **부서 경로** 필요(`isWithinDepartmentScope`).
+- **③ 조직 계층:** **팀은 계층이 없는 플랫 목록**이다(백엔드 스키마 확정, 2026-08-06). 팀 안의 세부 역할(프론트엔드·백엔드·리더·없음)은 별도 테이블이고 **비워둘 수 있다**(`없음`, 예: 팀장). 사원은 **팀에** 소속된다. 권한은 팀이 아니라 **직급**에서 온다 — LEADER 직급은 회사에 하나, 그 직급자는 **팀마다 한 명**(정확히 1명, 규칙). **LEADER는 자기 팀 전체**를 관리 → 판정은 `teamId`가 같은지만 보면 된다(`isWithinTeamScope`) — 팀장 자신의 역할이 "리더"든 "없음"이든 무관.
 - **검증은 서버에서.** 화면 숨김은 UX일 뿐 보안이 아니다 — Server Action·BFF에서 반드시 재검사.
 - 권한 판정은 `lib/permission.ts` 한 곳에. 역할 상수를 화면에 하드코딩하지 않는다.
 
@@ -30,13 +30,13 @@ app/
 │ ← 로그인 전. 기업 코드는 여기서만.
 ├─ (onboarding)/ /onboarding/1~3 · /payment · /done ← OWNER 초기설정 **4단계**(결제가 개통 관문)
 │
-├─ (role)/ ← 같은 셸(사이드바 220px), 네비 항목만 역할/권한별로 다름
+├─ (authority)/ ← 같은 셸(사이드바 220px), 네비 항목만 권한별로 다름
 │ ├─ /owner **base role = Owner 전용** : 대시보드 · /owner/setting(기업설정)
 │ │ · /owner/leader-handovers(+/:id) — 팀장급 **오프보딩** 인수인계
 │ ├─ /manage **Owner ‖ is_admin — 관리 기능 전부가 여기 하나로** :
 │ │ /manage/members(+/:id) · /manage/new(계정발급) · /manage/rooms
 │ │ · /manage/billing(구독·결제) · /manage/storage(저장소 관리)
-│ ├─ /team **base role = Leader**(본인 부서 스코프) : 대시보드 · /team/members(+/:id)
+│ ├─ /team **base role = Leader**(본인 팀 스코프) : 대시보드 · /team/members(+/:id)
 │ │ · /team/action · /team/handover(+/:id)
 │ └─ /my **base role = Member** 대시보드
 │
@@ -49,7 +49,10 @@ app/
 └─ (system)/ /system/* ← 목업(더미), 향후 개선
 
 - **기업 코드는 URL에 안 붙인다.** 기업 식별은 세션 쿠키(`companyId`). 코드는 로그인 전 화면(`/login`·`/register`)에만.
-- `(role)` 4개는 **같은 셸(사이드바 220px)**, 네비만 역할별 → 레이아웃 1개 + 역할별 네비.
+- `(authority)` 4개는 **같은 셸(사이드바 220px)**, 네비만 권한별 → 레이아웃 1개 + 권한별 네비.
+  (2026-08-06 개명: OWNER/LEADER/MEMBER를 "역할"이 아니라 "권한(Authority)"이라 부른다 — "역할"은
+  이제 팀 안의 세부 라벨(프론트엔드·백엔드·리더·없음)만 가리킨다. `(role)` 라우트 그룹도 이때
+  `(authority)`로 옮겼다.)
 - :star: **ADMIN은 역할 아닌 플래그(`is_admin`).** 전용 대시보드 없이 base role 대시보드 사용, `/manage/*` 메뉴만 추가. 가드 = `role==="owner" || is_admin`. 관리 기능은 `/manage`로 단일화(중복 금지). 관리자 권한 부여 토글도 admin 조작 가능.
 - :no_entry: 단 **`/owner/leader-handovers`(팀장 오프보딩 인수인계)는 OWNER 전용**(위계상 admin 불가). 팀장 휴직은 여기 말고 `/manage/members/:id`에서 승인.
 - `/app/*`은 라우트 분리 대신 **컴포넌트 레벨 가드**. (`/app/my/actions`=OWNER 접근 불가 / `/app/projects/new`·기획 편집=OWNER만 / `/app/handover`=OWNER 제외)

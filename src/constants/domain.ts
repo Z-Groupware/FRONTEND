@@ -10,9 +10,9 @@
  */
 
 export * from "./action";
+export * from "./authority";
 export * from "./handover";
 export * from "./meeting";
 export * from "./member";
 export * from "./project";
-export * from "./role";
 export * from "./system";

@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
-import { ROLE } from "@/constants/domain";
+import { AUTHORITY } from "@/constants/domain";
 
 import type { DepartmentNode, Position } from "../types";
 import { InviteSetup } from "./invite-setup";
@@ -24,7 +24,7 @@ jest.mock("next/navigation", () => ({
 const DEPARTMENTS: DepartmentNode[] = [
   { id: "d1", name: "개발팀", children: [{ id: "r1", name: "프론트엔드", children: [] }] },
 ];
-const POSITIONS: Position[] = [{ id: "p1", name: "사원", role: ROLE.MEMBER }];
+const POSITIONS: Position[] = [{ id: "p1", name: "사원", role: AUTHORITY.MEMBER }];
 
 function setup() {
   return {

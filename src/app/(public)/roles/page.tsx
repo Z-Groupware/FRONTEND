@@ -1,7 +1,7 @@
 import { Crown, ShieldCheck, UserRound, UsersRound } from "lucide-react";
 import type { Metadata } from "next";
 
-import { ROLE_BADGE_CLASS } from "@/constants/role";
+import { AUTHORITY_BADGE_CLASS } from "@/constants/authority";
 import { DocPage } from "@/features/landing/components/doc-page";
 import { PermissionTable } from "@/features/landing/components/permission-table";
 import { ROLE_ACCESS } from "@/features/landing/roles";
@@ -19,9 +19,9 @@ export const metadata: Metadata = {
  * 표만 두면 처음 보는 사람이 각 역할이 무엇을 하는 자리인지 알 수 없다.
  */
 const ROLE_STYLE = {
-  Owner: { icon: Crown, chip: ROLE_BADGE_CLASS.OWNER },
-  Leader: { icon: UsersRound, chip: ROLE_BADGE_CLASS.LEADER },
-  Member: { icon: UserRound, chip: ROLE_BADGE_CLASS.MEMBER },
+  Owner: { icon: Crown, chip: AUTHORITY_BADGE_CLASS.OWNER },
+  Leader: { icon: UsersRound, chip: AUTHORITY_BADGE_CLASS.LEADER },
+  Member: { icon: UserRound, chip: AUTHORITY_BADGE_CLASS.MEMBER },
   "+Admin": { icon: ShieldCheck, chip: "bg-role-admin-surface text-role-admin" },
 } as const;
 

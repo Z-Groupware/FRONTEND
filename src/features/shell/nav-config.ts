@@ -1,4 +1,4 @@
-import { ROLE, type Role } from "@/constants/role";
+import { AUTHORITY, type Authority } from "@/constants/authority";
 import type { Actor } from "@/lib/permission";
 import { canManageBilling } from "@/lib/permission";
 
@@ -80,12 +80,12 @@ const TEAM_SECTION: NavSection = {
   ],
 };
 
-/** 역할별 대시보드 — 첫 화면이다(`roleHome`과 같은 곳을 가리킨다) */
-const DASHBOARD: Record<Role, NavItem> = {
-  [ROLE.OWNER]: { href: "/owner", label: "대시보드", icon: "dashboard" },
-  [ROLE.LEADER]: { href: "/team", label: "대시보드", icon: "dashboard" },
-  [ROLE.MEMBER]: { href: "/my", label: "대시보드", icon: "dashboard" },
-  [ROLE.SYSTEM]: { href: "/system", label: "대시보드", icon: "dashboard" },
+/** 권한별 대시보드 — 첫 화면이다(`roleHome`과 같은 곳을 가리킨다) */
+const DASHBOARD: Record<Authority, NavItem> = {
+  [AUTHORITY.OWNER]: { href: "/owner", label: "대시보드", icon: "dashboard" },
+  [AUTHORITY.LEADER]: { href: "/team", label: "대시보드", icon: "dashboard" },
+  [AUTHORITY.MEMBER]: { href: "/my", label: "대시보드", icon: "dashboard" },
+  [AUTHORITY.SYSTEM]: { href: "/system", label: "대시보드", icon: "dashboard" },
 };
 
 /**
@@ -96,7 +96,7 @@ const DASHBOARD: Record<Role, NavItem> = {
  *    로고는 없는 화면으로 데려가니, 둘 중 로고가 거짓말을 하는 쪽이 된다(§정직성).
  *    항목 하나를 나눠 쓰면 화면이 생기는 날 `isReady` 한 줄로 둘이 같이 열린다.
  */
-export function dashboardFor(role: Role): NavItem {
+export function dashboardFor(role: Authority): NavItem {
   const item = DASHBOARD[role];
   return { ...item, isReady: hasRoute(item.href) };
 }
@@ -120,7 +120,7 @@ function withReadiness(items: NavItem[]): NavItem[] {
 }
 
 export function navFor(viewer: Actor): NavSection[] {
-  const isOwner = viewer.role === ROLE.OWNER;
+  const isOwner = viewer.role === AUTHORITY.OWNER;
 
   const workbench = isOwner
     ? [...COMMON_WORKBENCH, MY_PAGE]
@@ -131,7 +131,7 @@ export function navFor(viewer: Actor): NavSection[] {
     { title: "워크벤치", items: workbench },
   ];
 
-  if (viewer.role === ROLE.LEADER) sections.push(TEAM_SECTION);
+  if (viewer.role === AUTHORITY.LEADER) sections.push(TEAM_SECTION);
 
   /*
     회사 운영 — 볼 수 있는 사람만. Owner는 늘 보고, 겸직자는 `is_admin`으로 붙는다.

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { ZLogo } from "@/components/icons/z-logo";
-import { ROLE, ROLE_MARK_CLASS } from "@/constants/role";
+import { AUTHORITY, AUTHORITY_MARK_CLASS } from "@/constants/authority";
 import { SidebarItem } from "@/features/shell/components/sidebar-item";
 import type { NavSection } from "@/features/shell/nav";
 import { cn } from "@/lib/utils";
@@ -88,11 +88,11 @@ export function SystemSidebar({ sections, account }: SystemSidebarProps) {
       <div className="border-border flex h-[49px] shrink-0 items-center gap-[7px] border-t px-[17.5px]">
         {/*
           ⚠️ 색을 박지 않는다. 전에는 `bg-role-owner`가 적혀 있어 **운영자인데 대표 색**이었다 —
-             `SYSTEM`은 기업 화면의 역할이 아니라 회색을 쓴다(`constants/role.ts`).
+             `SYSTEM`은 기업 화면의 권한이 아니라 회색을 쓴다(`constants/authority.ts`).
         */}
         <span
           className={cn(
-            ROLE_MARK_CLASS[ROLE.SYSTEM],
+            AUTHORITY_MARK_CLASS[AUTHORITY.SYSTEM],
             "text-background flex size-[21px] shrink-0 items-center justify-center rounded-full text-[10px] leading-none",
           )}
         >
