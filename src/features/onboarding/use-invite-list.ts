@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 
-import { duplicateEmails, type InviteRules, normalizeEmail } from "./invite-rules";
+import { duplicatedEmailIds, type InviteRules, normalizeEmail } from "./invite-rules";
 import {
   changeInviteDepartment,
   changeInviteEmail,
@@ -32,18 +32,21 @@ export function useInviteList(rules: InviteRules) {
     ⚠️ `rules.isLeaderPosition`을 같이 넘긴다 — `팀당 리더 한 명`을 발송 검증이 직접 본다.
        전에는 목록을 바꾸는 쪽이 값을 지워 우회해서, 규칙이 코드 어디에도 없었다.
   */
-  const sendable = useMemo(
-    () => sendableInvites(invites, rules.isLeaderPosition),
-    [invites, rules.isLeaderPosition],
-  );
-  const duplicated = useMemo(() => duplicateEmails(invites), [invites]);
+  const sendable = useMemo(() => sendableInvites(invites, rules), [invites, rules]);
+  /*
+    ⚠️ **뒷줄만 표시한다**(`duplicatedEmailIds`). 전에는 주소 집합(`duplicateEmails`)으로
+       봐서 **첫 줄에도** 경고가 붙었는데, 실제로 나가는 건 첫 줄이라 경고 2줄 : 빠지는 줄
+       1줄로 어긋났다 — 확인 창이 "표시가 뜬 N줄"이라 말하는 이상 그 수가 맞아야 한다.
+       리더 중복과 같은 규약이다(적대적 검토 #163).
+  */
+  const duplicated = useMemo(() => duplicatedEmailIds(invites), [invites]);
 
   return {
     invites,
     /** 이번에 나갈 줄 — 주소가 유효하고 아직 안 보낸 것만 */
     sendable,
     /** 이 줄의 주소가 위에 또 있는지 — 화면에서 표시해 준다 */
-    isDuplicated: (invite: Invite) => duplicated.has(normalizeEmail(invite.email)),
+    isDuplicated: (invite: Invite) => duplicated.has(invite.id),
     addRow: () => setInvites((prev) => [...prev, newInvite(prev)]),
     changeName: (id: string, name: string) =>
       setInvites((prev) => changeInviteName(prev, id, name)),
@@ -63,7 +66,7 @@ export function useInviteList(rules: InviteRules) {
     remove: (id: string) =>
       setInvites((prev) => (prev.length === 1 ? [newInvite(prev)] : removeInvite(prev, id))),
     /** 발송 — 이번에 나간 줄을 잠근다. 이미 보낸 줄은 건드리지 않는다 */
-    markSent: () => setInvites((prev) => markInvitesSent(prev, rules.isLeaderPosition)),
+    markSent: () => setInvites((prev) => markInvitesSent(prev, rules)),
     /** 임시 보관함에서 되돌릴 때만 쓴다(draft.ts) */
     reset: (next: Invite[]) => setInvites(next.length > 0 ? next : [newInvite([])]),
     /**

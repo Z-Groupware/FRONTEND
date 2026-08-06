@@ -10,7 +10,10 @@ interface InviteCommitDialogProps {
   positionCount: number;
   inviteCount: number;
   /** 주소는 적었지만 부서·직급을 안 골라 **발송에서 빠지는** 줄 수 */
-  skippedCount: number;
+  /** 아직 안 고른 줄 — 목록에 표시가 없어서 여기서 직접 말한다 */
+  unfilledCount: number;
+  /** 다 골랐는데 규칙에 걸린 줄 — 그 줄에 문구가 떠 있다 */
+  flaggedCount: number;
   onConfirm: () => void;
 }
 
@@ -29,7 +32,8 @@ export function InviteCommitDialog({
   departmentCount,
   positionCount,
   inviteCount,
-  skippedCount,
+  unfilledCount,
+  flaggedCount,
   onConfirm,
 }: InviteCommitDialogProps) {
   return (
@@ -64,17 +68,19 @@ export function InviteCommitDialog({
         ⚠️ 빠지는 줄을 **여기서** 알린다. 줄마다 경고를 붙이는 대신 넘어가기 직전에 한 번 말한다 —
            조용히 빼면 보낸 줄 알고 넘어간다(§정직성).
       */}
-      {skippedCount > 0 && (
-        /*
-          ⚠️ **빠지는 이유를 여기서 단정하지 않는다.** 안 고른 줄만이 아니라 주소가 겹친 줄,
-             한 팀에 리더가 둘인 줄도 빠진다 — `팀·직급을 고르지 않은`이라고 적어 두면
-             다 채운 줄이 빠졌을 때 화면이 틀린 말을 한다.
-          ⚠️ 이유는 **그 줄이 직접** 말한다(`InviteRow`의 경고). 여기서는 몇 줄인지와
-             어디를 보라는 것까지만 말한다.
-        */
+      {/*
+        ⚠️ **이유를 갈라서 말한다.** 전에는 `목록에서 표시된 줄을 확인해 주세요` 한 문장이었는데,
+           가장 흔한 사유인 **아직 안 고른 줄에는 목록에 표시가 없다** — 안 고른 건 "틀렸다"가
+           아니라 "아직"이라 줄에 빨간 글씨를 안 띄우기 때문이다(`InviteRow`).
+           없는 표시를 가리키면 사용자는 찾다가 못 찾는다(적대적 검토 #163).
+        ⚠️ 표시가 있는 줄(주소 형식·주소 중복·리더 중복)만 `표시가 뜬`이라고 부른다.
+      */}
+      {unfilledCount + flaggedCount > 0 && (
         <p className="text-muted-foreground pt-3 text-[12px] leading-[18px] break-keep">
-          {skippedCount}줄은 이번 발송에서 빠집니다 — 목록에서 표시된 줄을 확인해 주세요. 취소하고
-          고치거나, 나중에 기업 설정에서 초대해 주세요.
+          {unfilledCount > 0 && `팀·역할·직급을 고르지 않은 ${unfilledCount}줄`}
+          {unfilledCount > 0 && flaggedCount > 0 && "과 "}
+          {flaggedCount > 0 && `목록에 표시가 뜬 ${flaggedCount}줄`}
+          {"은 이번 발송에서 빠집니다. 취소하고 고치거나, 나중에 기업 설정에서 초대해 주세요."}
         </p>
       )}
     </ConfirmDialog>

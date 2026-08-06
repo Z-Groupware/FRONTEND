@@ -26,13 +26,19 @@ const isLeader: InviteRules = {
   hasRoles: () => true,
 };
 
+/*
+  ⚠️ 역할은 **실제 역할 id**를 쓴다. 전에는 세 줄 다 `NO_ROLE_ID`(`없음`)였는데,
+     위 `isLeader`는 `hasRoles: () => true`(모든 팀에 역할이 있다)라 규칙상 `없음`을 고를 수
+     없는 줄이었다 — 픽스처 자체가 규칙과 모순이었고, `sendableInvites`가 짝 규칙을 보게 되면서
+     드러났다(적대적 검토 #163).
+*/
 const makeList = (): Invite[] => [
   {
     id: "a",
     name: "",
     email: "dev1@company.com",
     departmentId: "dev",
-    roleId: NO_ROLE_ID,
+    roleId: "fe",
     positionId: "staff",
     isAdmin: false,
     isSent: false,
@@ -42,7 +48,7 @@ const makeList = (): Invite[] => [
     name: "",
     email: "design@company.com",
     departmentId: "design",
-    roleId: NO_ROLE_ID,
+    roleId: "fe",
     positionId: "staff",
     isAdmin: false,
     isSent: false,
@@ -52,7 +58,7 @@ const makeList = (): Invite[] => [
     name: "",
     email: "",
     departmentId: "dev",
-    roleId: NO_ROLE_ID,
+    roleId: "fe",
     positionId: "staff",
     isAdmin: false,
     isSent: false,
@@ -164,7 +170,7 @@ describe("changeInvite*", () => {
     const asLeader = changeInvitePosition(moved, "b", "lead", isLeader);
     const clash = changeInviteDepartment(asLeader, "b", "dev", isLeader);
 
-    const going = sendableInvites(clash, isLeader.isLeaderPosition).map((invite) => invite.id);
+    const going = sendableInvites(clash, isLeader).map((invite) => invite.id);
 
     // 앞줄은 그대로 나가고 뒷줄만 빠진다 — 주소 중복과 같은 규약이다
     expect(going).toContain("a");
@@ -208,7 +214,7 @@ describe("removeInvite", () => {
 
 describe("sendableInvites", () => {
   it("주소가 유효한 줄만 남긴다 — 빈 줄은 발송 대상이 아니다", () => {
-    expect(emails(sendableInvites(makeList(), isLeader.isLeaderPosition))).toEqual([
+    expect(emails(sendableInvites(makeList(), isLeader))).toEqual([
       "dev1@company.com",
       "design@company.com",
     ]);
@@ -217,17 +223,17 @@ describe("sendableInvites", () => {
 
 describe("markInvitesSent", () => {
   it("발송하면 주소가 유효한 줄에만 도장이 찍힌다 — 빈 줄은 그대로다", () => {
-    const next = markInvitesSent(makeList(), isLeader.isLeaderPosition);
+    const next = markInvitesSent(makeList(), isLeader);
     expect(next.map((invite) => invite.isSent)).toEqual([true, true, false]);
   });
 
   it("이미 보낸 줄은 다음 발송 대상에서 빠진다", () => {
-    const sent = markInvitesSent(makeList(), isLeader.isLeaderPosition);
-    expect(sendableInvites(sent, isLeader.isLeaderPosition)).toEqual([]);
+    const sent = markInvitesSent(makeList(), isLeader);
+    expect(sendableInvites(sent, isLeader)).toEqual([]);
   });
 
   it("나중에 추가한 줄만 다음 발송 대상이 된다", () => {
-    const sent = markInvitesSent(makeList(), isLeader.isLeaderPosition);
+    const sent = markInvitesSent(makeList(), isLeader);
     const added: Invite[] = [
       ...sent,
       {
@@ -235,13 +241,13 @@ describe("markInvitesSent", () => {
         name: "",
         email: "new@company.com",
         departmentId: "dev",
-        roleId: NO_ROLE_ID,
+        roleId: "fe",
         positionId: "staff",
         isAdmin: false,
         isSent: false,
       },
     ];
-    expect(emails(sendableInvites(added, isLeader.isLeaderPosition))).toEqual(["new@company.com"]);
+    expect(emails(sendableInvites(added, isLeader))).toEqual(["new@company.com"]);
   });
 });
 
@@ -253,7 +259,7 @@ describe("duplicateEmails", () => {
         name: "",
         email: "dev1@company.com",
         departmentId: "dev",
-        roleId: NO_ROLE_ID,
+        roleId: "fe",
         positionId: "staff",
         isAdmin: false,
         isSent: false,
@@ -263,7 +269,7 @@ describe("duplicateEmails", () => {
         name: "",
         email: " DEV1@Company.com ",
         departmentId: "design",
-        roleId: NO_ROLE_ID,
+        roleId: "fe",
         positionId: "staff",
         isAdmin: false,
         isSent: false,
@@ -273,7 +279,7 @@ describe("duplicateEmails", () => {
         name: "",
         email: "biz@company.com",
         departmentId: "biz",
-        roleId: NO_ROLE_ID,
+        roleId: "fe",
         positionId: "staff",
         isAdmin: false,
         isSent: false,
@@ -289,7 +295,7 @@ describe("duplicateEmails", () => {
         name: "",
         email: "",
         departmentId: "dev",
-        roleId: NO_ROLE_ID,
+        roleId: "fe",
         positionId: "staff",
         isAdmin: false,
         isSent: false,
@@ -299,7 +305,7 @@ describe("duplicateEmails", () => {
         name: "",
         email: "  ",
         departmentId: "dev",
-        roleId: NO_ROLE_ID,
+        roleId: "fe",
         positionId: "staff",
         isAdmin: false,
         isSent: false,
@@ -375,7 +381,7 @@ describe("departmentsWithLeader / duplicatedLeaderIds — 부서마다 리더 �
     name: "",
     email: `${id}@company.com`,
     departmentId,
-    roleId: NO_ROLE_ID,
+    roleId: "fe",
     positionId,
     isAdmin: false,
     isSent: false,
@@ -393,7 +399,7 @@ describe("departmentsWithLeader / duplicatedLeaderIds — 부서마다 리더 �
       name: "",
       email: "",
       departmentId: "dev",
-      roleId: NO_ROLE_ID,
+      roleId: "fe",
       positionId: "lead",
       isAdmin: false,
       isSent: false,
@@ -460,7 +466,7 @@ describe("같은 주소는 한 번만 나간다", () => {
       name: "",
       email: "dev1@company.com",
       departmentId: "dev",
-      roleId: NO_ROLE_ID,
+      roleId: "fe",
       positionId: "staff",
       isAdmin: false,
       isSent: false,
@@ -470,7 +476,7 @@ describe("같은 주소는 한 번만 나간다", () => {
       name: "",
       email: "DEV1@company.com",
       departmentId: "design",
-      roleId: NO_ROLE_ID,
+      roleId: "fe",
       positionId: "staff",
       isAdmin: false,
       isSent: false,
@@ -478,13 +484,11 @@ describe("같은 주소는 한 번만 나간다", () => {
   ];
 
   it("중복 주소는 첫 줄만 발송 대상이다", () => {
-    expect(sendableInvites(twice, isLeader.isLeaderPosition).map((invite) => invite.id)).toEqual([
-      "a",
-    ]);
+    expect(sendableInvites(twice, isLeader).map((invite) => invite.id)).toEqual(["a"]);
   });
 
   it("발송해도 둘째 줄은 잠기지 않는다 — 아직 안 나갔으니까", () => {
-    const next = markInvitesSent(twice, isLeader.isLeaderPosition);
+    const next = markInvitesSent(twice, isLeader);
     expect(next[0]?.isSent).toBe(true);
     expect(next[1]?.isSent).toBe(false);
   });
@@ -494,7 +498,7 @@ describe("같은 주소는 한 번만 나간다", () => {
       { ...twice[0]!, isSent: true },
       { ...twice[1]!, id: "c" },
     ];
-    expect(sendableInvites(again, isLeader.isLeaderPosition)).toHaveLength(0);
+    expect(sendableInvites(again, isLeader)).toHaveLength(0);
   });
 });
 
@@ -505,7 +509,7 @@ describe("Admin 겸직 토글", () => {
       name: "",
       email: "a@company.com",
       departmentId: "dev",
-      roleId: NO_ROLE_ID,
+      roleId: "fe",
       positionId: "staff",
       isAdmin,
       isSent,
@@ -525,7 +529,7 @@ describe("Admin 겸직 토글", () => {
     const [next] = toggleInviteAdmin(make(false, false), "a");
 
     expect(next?.positionId).toBe("staff");
-    expect(next?.roleId).toBe(NO_ROLE_ID);
+    expect(next?.roleId).toBe("fe");
   });
 });
 
@@ -573,7 +577,7 @@ describe("remapInvite — 1·2단계 편집분 반영", () => {
     );
 
     expect(next.roleId).toBe("");
-    expect(sendableInvites([next], isLeader.isLeaderPosition)).toEqual([]);
+    expect(sendableInvites([next], isLeader)).toEqual([]);
   });
 
   it("팀에 역할이 생기면 `없음`을 비운다 — 고를 수 있는데 안 고른 셈이다", () => {
@@ -598,5 +602,77 @@ describe("remapInvite — 1·2단계 편집분 반영", () => {
       isSent: true,
     });
     expect(remapInvite(sent, options, isLeader)).toEqual(sent);
+  });
+});
+
+/*
+  적대적 검토(#163)가 잡은 구멍 셋 — 값을 지우지 않기로 하면서 규칙을 검증으로 옮긴 뒤
+  실제로 뚫려 있던 자리다. 임시로 확인만 하고 버리면 다시 뚫리므로 여기 남긴다.
+*/
+describe("발송 검증이 막아야 하는 것들", () => {
+  const guardRules: InviteRules = { isLeaderPosition: (p) => p === "lead", hasRoles: () => true };
+  const guardRow = (patch: Partial<Invite>): Invite => ({
+    id: "x",
+    name: "",
+    email: "x@z.com",
+    departmentId: "A",
+    roleId: "fe",
+    positionId: "staff",
+    isAdmin: false,
+    isSent: false,
+    ...patch,
+  });
+
+  /*
+    ⚠️ 목록 순서로만 앞줄을 정상으로 보면, 이미 나간 리더 줄이 **뒤에** 있을 때 그 줄이
+       중복으로 찍히고 새 줄이 통과한다 — 나간 초대장은 고칠 수 없으니 자리는 그쪽 것이다.
+  */
+  it("이미 나간 리더 줄이 목록 뒤에 있어도 자리를 지킨다", () => {
+    const list = [
+      guardRow({
+        id: "new",
+        roleId: LEADER_ROLE_ID,
+        positionId: "lead",
+        email: "n@z.com",
+      }),
+      guardRow({
+        id: "sent",
+        roleId: LEADER_ROLE_ID,
+        positionId: "lead",
+        email: "s@z.com",
+        isSent: true,
+      }),
+    ];
+
+    expect([...duplicatedLeaderIds(list, guardRules.isLeaderPosition)]).toEqual(["new"]);
+    expect(sendableInvites(list, guardRules)).toEqual([]);
+  });
+
+  /*
+    ⚠️ 2단계로 돌아가 직급 권한을 **올리는** 방향. 내리는 방향은 `remapInvite`가 막고 있었는데
+       올리는 방향이 비어 있어서 `리더 직급 + 일반 역할`이 세 칸이 다 찬 채로 나갔다.
+  */
+  it("직급 권한을 Leader로 올리면 `리더 직급 + 일반 역할`은 안 나간다", () => {
+    expect(
+      sendableInvites([guardRow({ id: "r", roleId: "fe", positionId: "lead" })], guardRules),
+    ).toEqual([]);
+  });
+
+  it("리더 있는 팀으로 옮겨도 값은 남고 발송만 막힌다", () => {
+    const base = [
+      guardRow({ id: "a", roleId: LEADER_ROLE_ID, positionId: "lead", email: "a@z.com" }),
+      guardRow({
+        id: "b",
+        departmentId: "B",
+        roleId: LEADER_ROLE_ID,
+        positionId: "lead",
+        email: "b@z.com",
+      }),
+    ];
+
+    const moved = changeInviteDepartment(base, "b", "A", guardRules);
+
+    expect(moved[1]?.positionId).toBe("lead");
+    expect(sendableInvites(moved, guardRules).map((invite) => invite.id)).toEqual(["a"]);
   });
 });

@@ -78,7 +78,7 @@ export function InviteSetup({ departments, positions }: InviteSetupProps) {
   }, [isReady, departmentOptions, positionOptions]);
 
   useCommittedRedirect();
-  const { isConfirmOpen, setConfirmOpen, skippedCount, commit } = useInviteCommit({
+  const { isConfirmOpen, setConfirmOpen, unfilledCount, flaggedCount, commit } = useInviteCommit({
     invites: list.invites,
     sendable: list.sendable,
     markSent: list.markSent,
@@ -161,7 +161,8 @@ export function InviteSetup({ departments, positions }: InviteSetupProps) {
         departmentCount={departmentOptions.length}
         positionCount={positionOptions.length}
         inviteCount={list.sendable.length}
-        skippedCount={skippedCount}
+        unfilledCount={unfilledCount}
+        flaggedCount={flaggedCount}
         onConfirm={commit}
       />
     </div>

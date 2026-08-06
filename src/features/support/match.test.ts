@@ -147,6 +147,19 @@ describe("findFaqCandidates", () => {
     expect(findFaqCandidates("권한").map((found) => found.id)).toEqual(["roles"]);
   });
 
+  /*
+    ⚠️ **새 용어로도 걸려야 한다.** 부서→팀으로 용어를 바꾸면서 `부서 만들기`는 걸리는데
+       `팀 만들기`는 후보가 **0개**였다 — `팀`은 한 글자라 문턱을 혼자 못 넘고 `팀 체계`는
+       `체계`가 있어야 걸린다. 화면 문구를 팀으로 바꿔 놓고 챗봇이 그 말을 못 알아들으면
+       바꾸다 만 것이다(적대적 검토 #163).
+  */
+  it.each(["팀 만들기", "팀 추가", "팀 생성", "팀 이름 변경"])(
+    "`%s`는 온보딩 항목에 닿는다 — 새 용어로 물어도 빈손이 아니다",
+    (question) => {
+      expect(findFaqCandidates(question).map((found) => found.id)).toContain("onboarding");
+    },
+  );
+
   it("모든 항목은 대표 질문으로 자기 자신을 찾을 수 있다", () => {
     for (const entry of FAQ_ENTRIES) {
       expect(findFaqCandidates(entry.question).map((found) => found.id)).toContain(entry.id);

@@ -94,21 +94,54 @@ export function departmentsWithLeader(
 }
 
 /**
- * 같은 부서에 리더가 둘 이상인 줄 — 화면에서 표시한다.
- * 앞줄을 정상으로 보고 **뒤에 온 줄만** 문제로 잡는다.
+ * 같은 부서에 리더가 둘 이상인 줄 — 화면 경고와 발송 검증이 **같이** 쓴다.
+ *
+ * ⚠️ **이미 나간 줄이 먼저 자리를 잡는다.** 목록 순서로만 앞줄을 정상으로 보면,
+ *    발송된 리더 줄이 목록 **뒤에** 있을 때 그 줄이 중복으로 찍히고 새 줄이 통과한다 —
+ *    이미 나간 초대장은 고칠 수도 취소할 수도 없으므로 자리는 그쪽이 가진 게 맞다.
+ *    (적대적 검토 #163: 팀A에 리더가 둘 생기는 경로였다.)
+ * ⚠️ 그 다음은 목록 순서다. 앞줄을 정상으로 보고 **뒤에 온 줄만** 문제로 잡는다 —
+ *    주소 중복과 같은 규약이라 화면 경고와 발송에서 빠지는 줄이 정확히 맞물린다.
+ * ⚠️ 주소가 비어도 센다 — `departmentsWithLeader`와 같은 기준이어야 화면과 경고가 어긋나지 않는다.
  */
 export function duplicatedLeaderIds(
   invites: Invite[],
   isLeaderPosition: (positionId: string) => boolean,
 ): Set<string> {
+  const leaders = invites.filter((invite) => isLeaderPosition(invite.positionId));
+  // 보낸 줄 먼저, 그다음 목록 순서 — 자리를 못 내주는 쪽이 먼저 잡는다
+  const ordered = [
+    ...leaders.filter((invite) => invite.isSent),
+    ...leaders.filter((invite) => !invite.isSent),
+  ];
+
+  const seen = new Set<string>();
+  const duplicated = new Set<string>();
+
+  for (const invite of ordered) {
+    if (seen.has(invite.departmentId)) duplicated.add(invite.id);
+    else seen.add(invite.departmentId);
+  }
+  return duplicated;
+}
+
+/**
+ * 같은 주소가 적힌 줄 중 **뒤에 온 줄만** — 화면 경고와 발송 검증이 같이 쓴다.
+ *
+ * ⚠️ `duplicateEmails`(주소 집합)와 다르다. 그건 첫 줄에도 경고를 붙였는데,
+ *    실제로 나가는 건 첫 줄이라 **경고 2줄 : 빠지는 줄 1줄**로 어긋났다 —
+ *    확인 창이 "표시된 줄을 확인해 주세요"라고 말하는 이상 그 대응이 맞아야 한다.
+ *    리더 중복과 같은 규약으로 맞춘다(적대적 검토 #163).
+ */
+export function duplicatedEmailIds(invites: Invite[]): Set<string> {
   const seen = new Set<string>();
   const duplicated = new Set<string>();
 
   for (const invite of invites) {
-    // ⚠️ 주소가 비어도 센다 — `departmentsWithLeader`와 같은 기준이어야 화면과 경고가 어긋나지 않는다
-    if (!isLeaderPosition(invite.positionId)) continue;
-    if (seen.has(invite.departmentId)) duplicated.add(invite.id);
-    else seen.add(invite.departmentId);
+    const email = normalizeEmail(invite.email);
+    if (!email) continue;
+    if (seen.has(email)) duplicated.add(invite.id);
+    else seen.add(email);
   }
   return duplicated;
 }

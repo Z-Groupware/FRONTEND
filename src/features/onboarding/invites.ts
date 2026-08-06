@@ -1,4 +1,5 @@
 import {
+  duplicatedEmailIds,
   duplicatedLeaderIds,
   fitsRoleAndPosition,
   type InviteRules,
@@ -232,14 +233,12 @@ export function remapInvite(
  *    뒤에 온 줄만 뺀다 — 주소 중복과 같은 규약이라, 줄에 `리더가 이미 있습니다`가 뜬
  *    그 줄이 정확히 빠진다. 각자 세면 경고는 뜨는데 발송은 되는 줄이 생긴다.
  */
-export function sendableInvites(
-  invites: Invite[],
-  isLeaderPosition: (positionId: string) => boolean,
-): Invite[] {
-  const leaderClash = duplicatedLeaderIds(invites, isLeaderPosition);
+export function sendableInvites(invites: Invite[], rules: InviteRules): Invite[] {
+  const leaderClash = duplicatedLeaderIds(invites, rules.isLeaderPosition);
+  const emailClash = duplicatedEmailIds(invites);
 
-  // 이미 나간 주소로 시작한다 — 같은 주소를 새 줄에 다시 적어도 두 번 가지 않게
-  const seen = new Set(
+  // 이미 나간 주소 — 같은 주소를 새 줄에 다시 적어도 두 번 가지 않게
+  const sentAddresses = new Set(
     invites.filter((invite) => invite.isSent).map((invite) => normalizeEmail(invite.email)),
   );
 
@@ -247,14 +246,20 @@ export function sendableInvites(
     if (invite.isSent || !isValidEmail(invite.email)) return false;
     // 한 팀에 리더가 둘이면 뒤에 온 줄은 안 나간다 — 줄에 뜬 경고와 같은 판정이다
     if (leaderClash.has(invite.id)) return false;
+    // 같은 주소가 위에 또 있으면 뒤에 온 줄은 안 나간다 — 이것도 줄 경고와 같은 판정이다
+    if (emailClash.has(invite.id)) return false;
+    if (sentAddresses.has(normalizeEmail(invite.email))) return false;
     // 부서·역할·직급을 다 고르지 않은 줄은 보내지 않는다 — 어디 소속인지 모르는 계정이 생긴다.
     // 역할은 `없음`도 고른 것이다(`NO_ROLE_ID`) — 빈 값만 "아직 안 골랐다"는 뜻이다.
     if (!invite.departmentId || !invite.roleId || !invite.positionId) return false;
+    /*
+      ⚠️ **역할·직급 짝도 여기서 본다.** 전에는 안 봤다 — 2단계로 돌아가 직급 권한을
+         Member에서 Leader로 **올리면** `리더 직급 + 일반 역할`이 세 칸이 다 찬 채로 남아
+         그대로 나갔다. 내리는 방향만 `remapInvite`가 막고 있었고 올리는 방향이 비어 있었다
+         (적대적 검토 #163). 규칙의 자리는 여기다.
+    */
+    if (!fitsRoleAndPosition(invite, rules)) return false;
 
-    const address = normalizeEmail(invite.email);
-    if (seen.has(address)) return false;
-
-    seen.add(address);
     return true;
   });
 }
@@ -263,10 +268,7 @@ export function sendableInvites(
  * 발송 처리 — 이번에 나간 줄에만 도장을 찍는다. 나머지는 그대로 둔다.
  * ⚠️ 판정은 `sendableInvites` 하나가 한다 — 여기서 따로 세면 안 나간 줄에 도장이 찍힌다.
  */
-export function markInvitesSent(
-  invites: Invite[],
-  isLeaderPosition: (positionId: string) => boolean,
-): Invite[] {
-  const going = new Set(sendableInvites(invites, isLeaderPosition).map((invite) => invite.id));
+export function markInvitesSent(invites: Invite[], rules: InviteRules): Invite[] {
+  const going = new Set(sendableInvites(invites, rules).map((invite) => invite.id));
   return invites.map((invite) => (going.has(invite.id) ? { ...invite, isSent: true } : invite));
 }

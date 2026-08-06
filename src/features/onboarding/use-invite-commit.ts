@@ -36,9 +36,23 @@ export function useInviteCommit({ invites, sendable, markSent }: UseInviteCommit
    * ⚠️ 이미 보낸 줄은 빼는 게 아니라 **이미 나간** 줄이다 — 세지 않는다.
    */
   const goingIds = new Set(sendable.map((invite) => invite.id));
-  const skippedCount = invites.filter(
+  const skipped = invites.filter(
     (invite) => invite.email.trim().length > 0 && !invite.isSent && !goingIds.has(invite.id),
+  );
+
+  /*
+    ⚠️ **두 갈래로 나눠 센다.** 확인 창이 "목록에서 표시된 줄을 보라"고만 말했더니, 가장 흔한
+       사유(아직 안 고른 줄)에는 **줄에 아무 표시가 없어서** 찾을 수가 없었다 — 안 고른 건
+       "틀렸다"가 아니라 "아직"이라 일부러 빨간 글씨를 안 띄우기 때문이다(`InviteRow`).
+       표시가 없는 줄은 확인 창이 직접 말하고, 표시가 있는 줄만 "표시가 뜬 줄"이라 부른다
+       (적대적 검토 #163).
+  */
+  /** 아직 안 고른 줄 — 목록에 표시가 없다 */
+  const unfilledCount = skipped.filter(
+    (invite) => !invite.departmentId || !invite.roleId || !invite.positionId,
   ).length;
+  /** 다 골랐는데 규칙에 걸린 줄 — 그 줄에 문구가 떠 있다(주소 형식·주소 중복·리더 중복) */
+  const flaggedCount = skipped.length - unfilledCount;
 
   /*
     ⚠️ **`isSent`는 서버가 보냈다고 답한 줄에만 붙여야 한다.** 완료 화면의 초대 수가 이 값을
@@ -62,5 +76,5 @@ export function useInviteCommit({ invites, sendable, markSent }: UseInviteCommit
     router.replace("/onboarding/payment");
   };
 
-  return { isConfirmOpen, setConfirmOpen, skippedCount, commit };
+  return { isConfirmOpen, setConfirmOpen, unfilledCount, flaggedCount, commit };
 }
