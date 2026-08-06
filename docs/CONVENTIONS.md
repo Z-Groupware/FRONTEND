@@ -175,6 +175,9 @@ export const isDelayed = (a: { status: ActionStatus; dueDate: string }) =>
 
 ## 8. 디자인 토큰 (Notion/Linear 톤 · **CSS 변수**, 하드코딩 금지)
 
+> 🎨 **이 절과 §9는 "값"이다.** 그 값을 **언제 어떻게 고르는지**와 실제로 겪은 함정은
+> [`DESIGN.md`](DESIGN.md)에 있다 — 새 화면을 시작하기 전에 그쪽을 먼저 본다.
+>
 > **다크모드는 전 페이지 적용이다.** 토큰만 쓰면 자동으로 따라오므로, 화면마다 따로 대응하지 않는다.
 
 |         | 라이트                     | 다크                       |

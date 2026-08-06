@@ -46,7 +46,7 @@ export function NoticeDeleteButton({ id, title }: NoticeDeleteButtonProps) {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>&lsquo;{title}&rsquo; 공지를 삭제할까요?</DialogTitle>
-            <DialogDescription>삭제하면 되돌릴 수 없어요.</DialogDescription>
+            <DialogDescription>삭제하면 되돌릴 수 없습니다.</DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>

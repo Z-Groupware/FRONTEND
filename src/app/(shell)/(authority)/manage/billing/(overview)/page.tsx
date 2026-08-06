@@ -6,17 +6,19 @@ import { getViewer } from "@/features/shell/viewer";
 import { canManageBilling } from "@/lib/permission";
 
 export const metadata: Metadata = {
-  title: "구독·결제",
+  title: "구독",
 };
 
 /*
-  ⚠️ **정적으로 굽히면 안 된다.** 아래에서 오늘 날짜를 만드는데, 미리 구우면 그 날짜가
-     빌드 시각에 박혀 사용량 예측이 며칠씩 어긋난다.
+  ⚠️ **정적으로 굳히지 않는다.** 회사마다 다른 구독 상태·사용량·결제 이력을 그리는 화면이라
+     한 벌을 미리 구워 돌려쓸 수 없다.
+  ⚠️ 세션이 붙으면 `getViewer()`가 쿠키를 읽어 저절로 동적이 되지만, 목인 지금은
+     동적 신호가 하나도 없어 `○`(Static)으로 빌드된다 — 그때 지워도 되는 줄이다.
 */
 export const dynamic = "force-dynamic";
 
 /**
- * 구독·결제 — 지금 무엇을 얼마에 쓰는지 보고, 플랜·결제 수단을 바꾸고, 지난 결제를 확인한다.
+ * 구독 — 지금 무엇을 얼마에 쓰는지 보고, 플랜·결제 수단을 바꾸고, 지난 결제를 확인한다.
  *
  * ⚠️ 조회는 **Server Component**가 한다 — `useEffect` 페칭을 쓰지 않는다(CLAUDE.md §렌더링).
  * ⚠️ **OWNER 또는 Admin 겸직자만** 볼 수 있다. 지금은 로그인이 없어 화면 가드만 있고,
@@ -38,11 +40,5 @@ export default async function OwnerBillingPage() {
   */
   const canManage = canManageBilling(viewer);
 
-  /*
-    ⚠️ 오늘 날짜를 **서버에서** 만든다. 월말 예측에 쓰이는 값이라 브라우저 시계를 믿으면
-       시계를 돌려 놓은 사람에게 다른 예측이 보인다.
-  */
-  const today = new Date().toISOString().slice(0, 10);
-
-  return <BillingView overview={overview} config={config} today={today} canManage={canManage} />;
+  return <BillingView overview={overview} config={config} canManage={canManage} />;
 }

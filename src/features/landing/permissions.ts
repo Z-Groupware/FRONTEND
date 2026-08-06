@@ -105,7 +105,7 @@ export const PERMISSION_GROUPS: readonly PermissionGroup[] = [
         note: "Admin 겸직은 Leader · Member에게만 줄 수 있습니다 — Owner는 겸할 수 없습니다",
       },
       { feature: "회의실 관리", owner: "no", leader: "no", member: "no", admin: "yes" },
-      { feature: "구독 · 결제", owner: "yes", leader: "no", member: "no", admin: "yes" },
+      { feature: "구독", owner: "yes", leader: "no", member: "no", admin: "yes" },
     ],
   },
 ];

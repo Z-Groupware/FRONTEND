@@ -1,3 +1,5 @@
+import { formatFullDate, isReadableDate } from "@/lib/date";
+
 import { formatWon } from "../pricing";
 import { PAYMENT_STATUS, PAYMENT_STATUS_LABEL, type PaymentRecord } from "../subscription";
 
@@ -12,6 +14,9 @@ interface PaymentHistoryPanelProps {
  *    (CLAUDE.md §레이아웃).
  * ⚠️ 상태는 색이 아니라 **글자**로 알린다. 색만 쓰면 색을 못 보는 사람에게 사라진다.
  * ⚠️ 금액은 `tabular-nums` — 자릿수가 흔들리면 위아래 비교가 안 된다.
+ * ⚠️ **결제일을 ISO로 찍지 않는다.** `2026-08-01`은 개발자용 표기다(§카피 — `8월 5일(수)`).
+ *    같은 화면 위쪽이 `2026년 9월 1일(화)`로 말하는데 표만 ISO면 한 화면이 두 말을 한다.
+ *    지난 결제는 해를 넘기므로 **연도를 늘 붙인다**(`formatFullDate`).
  * ⚠️ **머리와 값의 정렬을 같게** 둔다. 머리는 오른쪽인데 값이 가운데면 열이 어긋나 보인다.
  *    여기서는 전부 가운데다 — 칸이 넓어 왼쪽 정렬로 두면 값끼리 멀어진다.
  */
@@ -66,7 +71,18 @@ export function PaymentHistoryPanel({ payments }: PaymentHistoryPanelProps) {
                     scope="row"
                     className="px-6 py-3.5 text-center text-[13px] leading-5 font-normal tabular-nums"
                   >
-                    {payment.paidAt}
+                    {/*
+                      ⚠️ 원본은 `dateTime`에 남긴다 — 표기를 바꿔도 값은 안 잃는다.
+                      ⚠️ **못 읽어도 `—`로 비우지 않는다.** 이 칸은 `scope="row"`, 곧 그 줄의
+                         정체다. 금액·상태는 그대로인데 날짜만 비면 `결제일 없는 결제`가 되고
+                         스크린 리더는 이 줄을 `—`라 부른다. 돈이 나간 기록이라 언제였는지
+                         확인할 길이 사라지는 쪽이 개발자용 표기가 뜨는 것보다 나쁘다.
+                    */}
+                    <time dateTime={payment.paidAt}>
+                      {isReadableDate(payment.paidAt)
+                        ? formatFullDate(payment.paidAt)
+                        : payment.paidAt}
+                    </time>
                   </th>
                   <td className="px-3 py-3.5 text-center text-[13px] leading-5">
                     {payment.planName}

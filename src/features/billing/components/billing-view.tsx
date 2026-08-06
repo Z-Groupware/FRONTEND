@@ -19,8 +19,6 @@ import { PlanPanel } from "./plan-panel";
 
 interface BillingViewProps {
   config: BillingConfig;
-  /** 오늘 `YYYY-MM-DD` — 사용량 예측에 쓴다 */
-  today: string;
   overview: BillingOverview;
   /** 바꿀 수 있는 사람인지 — Owner이거나 Admin을 겸한 사람 */
   canManage: boolean;
@@ -43,7 +41,7 @@ interface BillingViewProps {
  * ⚠️ 결과 토스트는 **한 줄**이다. "지금은 화면에서만 바뀐다"는 설명을 붙였더니 두 줄이 되어
  *    알약이 판처럼 커졌다 — 목이라는 사실은 연동 전 임시 상태라 화면 문구로 남길 것이 아니다.
  */
-export function BillingView({ overview, config, today, canManage }: BillingViewProps) {
+export function BillingView({ overview, config, canManage }: BillingViewProps) {
   const [subscription, setSubscription] = useState(overview.subscription);
   const [method, setMethod] = useState<PaymentMethod | null>(overview.method);
 
@@ -110,9 +108,9 @@ export function BillingView({ overview, config, today, canManage }: BillingViewP
 
   return (
     <div className="flex-1 overflow-y-auto px-8 py-7">
-      <div className="mx-auto w-full max-w-[1080px]">
+      <div className="mx-auto w-full max-w-[1440px]">
         <div className="flex flex-col gap-7">
-          <PlanPanel subscription={subscription} config={config} today={today} />
+          <PlanPanel subscription={subscription} config={config} />
           <PaymentMethodsPanel
             method={method}
             canManage={canManage}

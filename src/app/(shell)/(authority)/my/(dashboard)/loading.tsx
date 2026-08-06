@@ -5,7 +5,7 @@ import { MEETING_BOX_HEIGHT } from "@/features/member/lib";
 export default function Loading() {
   return (
     <main className="scrollbar-hidden flex min-h-0 flex-1 flex-col overflow-y-auto px-8 py-7">
-      <div className="mx-auto flex min-h-0 w-full max-w-[1080px] flex-1 flex-col gap-4">
+      <div className="mx-auto flex min-h-0 w-full max-w-[1440px] flex-1 flex-col gap-4">
         <Skeleton className="min-h-0 flex-1 rounded-xl" />
         <Skeleton className="shrink-0 rounded-xl" style={{ height: MEETING_BOX_HEIGHT }} />
       </div>

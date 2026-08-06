@@ -11,7 +11,7 @@ import type { CardAuthResult } from "./payment-method";
 import type { PaymentMethod } from "./subscription";
 
 /**
- * 구독·결제의 **변경 작업**. 전부 서버에서 돈다.
+ * 구독의 **변경 작업**. 전부 서버에서 돈다.
  *
  * ⚠️ 브라우저 → Next서버(액션) → BE 순서다(CLAUDE.md 핵심 4원칙 ②).
  *    **토큰이 브라우저로 안 나간다** — 사내 도구라 권한이 핵심이고, 여기서 새면
@@ -33,7 +33,7 @@ export interface ActionResult {
 
 const FORBIDDEN: ActionResult = {
   isSuccess: false,
-  message: "구독·결제를 변경할 권한이 없습니다",
+  message: "구독을 변경할 권한이 없습니다",
 };
 
 /**
