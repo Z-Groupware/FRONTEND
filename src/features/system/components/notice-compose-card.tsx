@@ -2,6 +2,7 @@
 
 import { Check, Send } from "lucide-react";
 import { useState, useTransition } from "react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -50,7 +51,10 @@ export function NoticeComposeCard({ companies }: { companies: NoticeTargetCompan
         target,
         companyIds: isSpecific ? selectedCompanyIds : undefined,
       });
-      if (response.success) setIsSent(true);
+      if (response.success) {
+        setIsSent(true);
+        toast.success("공지를 발행했습니다");
+      }
     });
   };
 
@@ -117,7 +121,11 @@ export function NoticeComposeCard({ companies }: { companies: NoticeTargetCompan
         </div>
 
         {isSent ? (
-          <div className="border-border text-foreground flex items-center gap-2 rounded-lg border px-3 py-2.5 text-xs font-medium">
+          <div
+            role="status"
+            aria-live="polite"
+            className="border-border text-foreground flex items-center gap-2 rounded-lg border px-3 py-2.5 text-xs font-medium"
+          >
             <Check className="size-3.5 shrink-0" strokeWidth={2.5} aria-hidden />
             공지를 발행했습니다
           </div>

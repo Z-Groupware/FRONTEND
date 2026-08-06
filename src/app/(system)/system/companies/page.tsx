@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 
-import type { CompanySort, CompanyStatus } from "@/constants/domain";
+import { isCompanySort, isCompanyStatus } from "@/constants/domain";
 import { CompanyDetailSheet } from "@/features/system/components/company-detail-sheet";
 import { CompanyFilterBar } from "@/features/system/components/company-filter-bar";
 import { CompanyList } from "@/features/system/components/company-list";
+import { buildCompanyHref } from "@/features/system/lib/company-href";
 import { getManagedCompanies, getManagedCompanyById } from "@/features/system/server";
 
 export const metadata: Metadata = {
@@ -12,7 +13,6 @@ export const metadata: Metadata = {
 };
 
 const PAGE_SIZE = 10;
-const BASE_PATH = "/system/companies";
 
 interface SystemCompaniesPageProps {
   searchParams: Promise<{
@@ -23,24 +23,14 @@ interface SystemCompaniesPageProps {
   }>;
 }
 
-/** 목록은 더 이상 URL에 페이지 번호를 담지 않는다(무한 스크롤) — 검색어·정렬·상세 id만 남는다. */
-function buildHref(query: { q?: string; sort?: string; status?: string }, id?: string): string {
-  const params = new URLSearchParams();
-  if (query.q) params.set("q", query.q);
-  if (query.sort) params.set("sort", query.sort);
-  if (query.status) params.set("status", query.status);
-  if (id) params.set("id", id);
-  const qs = params.toString();
-  return qs ? `${BASE_PATH}?${qs}` : BASE_PATH;
-}
-
 export default async function SystemCompaniesPage({ searchParams }: SystemCompaniesPageProps) {
   const params = await searchParams;
   const query = { q: params.q, sort: params.sort, status: params.status };
   const filter = {
     keyword: params.q,
-    status: params.status as CompanyStatus | undefined,
-    sort: params.sort as CompanySort | undefined,
+    // ⚠️ URL 쿼리는 신뢰할 수 없는 입력이다 — 모르는 값이 들어오면 무시하고 "전체"로 물러선다.
+    status: params.status && isCompanyStatus(params.status) ? params.status : undefined,
+    sort: params.sort && isCompanySort(params.sort) ? params.sort : undefined,
   };
 
   const [{ items, page, totalPages, totalCount }, selected] = await Promise.all([
@@ -48,7 +38,7 @@ export default async function SystemCompaniesPage({ searchParams }: SystemCompan
     params.id ? getManagedCompanyById(params.id) : Promise.resolve(null),
   ]);
 
-  const currentPath = buildHref(query);
+  const currentPath = buildCompanyHref(query);
 
   return (
     <main className="min-h-0 flex-1 overflow-y-auto px-8 py-7">
@@ -69,7 +59,7 @@ export default async function SystemCompaniesPage({ searchParams }: SystemCompan
           initialTotalCount={totalCount}
           pageSize={PAGE_SIZE}
           filter={filter}
-          buildDetailHref={(id) => buildHref(query, id)}
+          query={query}
         />
       </div>
 

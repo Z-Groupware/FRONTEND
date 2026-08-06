@@ -18,7 +18,7 @@ import { StatusBadge, type StatusTone } from "./status-badge";
 interface CompanyTableProps {
   companies: ManagedCompany[];
   buildDetailHref: (id: string) => string;
-  /** 한 페이지 행 수 — 마지막 페이지처럼 행이 모자라도 이 개수만큼 높이를 잡아둔다 */
+  /** 목록이 비었을 때 자리 높이를 잡는 데만 쓴다(첫 페이지 크기, `approval-table.tsx`와 같음) */
   pageSize: number;
 }
 

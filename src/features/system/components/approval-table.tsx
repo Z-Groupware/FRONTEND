@@ -91,7 +91,7 @@ export function ApprovalTable({ companies, onRowDone, pageSize }: ApprovalTableP
                 className={cn(ROW_HEIGHT_CLASS, "hover:bg-foreground/[0.04]")}
               >
                 <TableCell className="max-w-0 pl-4">
-                  <span className="text-foreground truncate" title={company.companyName}>
+                  <span className="text-foreground block truncate" title={company.companyName}>
                     {company.companyName}
                   </span>
                 </TableCell>

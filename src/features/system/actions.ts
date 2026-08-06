@@ -14,6 +14,18 @@ import type { ManagedCompany, PendingCompanyApproval } from "./types";
 
 const APPROVAL_LIST_PATH = "/system/approval";
 
+/** 클라이언트가 부르는 값이라 그대로 믿지 않는다 — 범위를 벗어나면 안으로 당긴다. */
+const MAX_PAGE_SIZE = 50;
+
+function clampPage(page: number): number {
+  return Number.isFinite(page) && page >= 1 ? Math.floor(page) : 1;
+}
+
+function clampPageSize(pageSize: number): number {
+  if (!Number.isFinite(pageSize) || pageSize < 1) return MAX_PAGE_SIZE;
+  return Math.min(Math.floor(pageSize), MAX_PAGE_SIZE);
+}
+
 /**
  * 기업 승인 화면의 **변경 창구** — 격리막(CLAUDE.md §Mock 격리막).
  * ⚠️ 지금은 목뿐이다 — 승인·반려 둘 다 대기 목록에서 지우기만 한다(실제 기업 코드 발급·메일
@@ -55,7 +67,7 @@ export async function fetchApprovalsPageAction(
   page: number,
   pageSize: number,
 ): Promise<PaginatedResult<PendingCompanyApproval>> {
-  return getPendingApprovals(page, pageSize);
+  return getPendingApprovals(clampPage(page), clampPageSize(pageSize));
 }
 
 /** "기업 관리" 무한 스크롤 — 위와 같은 이유로 `getManagedCompanies`를 감싼다. */
@@ -64,7 +76,7 @@ export async function fetchCompaniesPageAction(
   page: number,
   pageSize: number,
 ): Promise<PaginatedResult<ManagedCompany>> {
-  return getManagedCompanies(filter, page, pageSize);
+  return getManagedCompanies(filter, clampPage(page), clampPageSize(pageSize));
 }
 
 /**

@@ -43,7 +43,7 @@ export default async function SystemDashboardPage() {
           ]}
         />
 
-        <div className="flex gap-3">
+        <div className="flex flex-col gap-3 lg:flex-row">
           <SignupChartCard data={monthlySignups} />
           <PlanDistributionCard data={planDistribution} />
         </div>

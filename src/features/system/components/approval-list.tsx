@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
+import { InfiniteListFooter } from "@/components/common/infinite-list-footer";
 import { useInfiniteScrollList } from "@/hooks/use-infinite-scroll-list";
 
 import { fetchApprovalsPageAction } from "../actions";
@@ -44,28 +44,13 @@ export function ApprovalList({
 
       <ApprovalTable companies={items} onRowDone={removeItem} pageSize={pageSize} />
 
-      {hasMore && (
-        <div ref={sentinelRef} className="flex justify-center py-1">
-          {error ? (
-            <div className="flex items-center gap-2">
-              <p className="text-muted-foreground text-xs">불러오지 못했습니다</p>
-              <Button type="button" variant="outline" size="xs" onClick={loadMore}>
-                다시 시도
-              </Button>
-            </div>
-          ) : (
-            <Button
-              type="button"
-              variant="outline"
-              size="xs"
-              disabled={isLoadingMore}
-              onClick={loadMore}
-            >
-              {isLoadingMore ? "불러오는 중…" : "더 보기"}
-            </Button>
-          )}
-        </div>
-      )}
+      <InfiniteListFooter
+        hasMore={hasMore}
+        isLoadingMore={isLoadingMore}
+        error={error}
+        onLoadMore={loadMore}
+        sentinelRef={sentinelRef}
+      />
     </div>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { PaginatedResult } from "@/lib/paginate";
 
@@ -40,6 +40,22 @@ export function useInfiniteScrollList<T>({
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [error, setError] = useState(false);
   const isFetchingRef = useRef(false);
+  const initialItemsRef = useRef(initialItems);
+
+  /**
+   * 서버가 첫 페이지를 다시 렌더해 `initialItems`가 새로 오면(정지/정지 해제처럼 상세 패널의
+   * 조작이 `revalidatePath`로 이 경로를 다시 그리게 만든 경우) 누적된 로컬 목록 중 그 id와
+   * 겹치는 항목만 새 값으로 맞춘다 — 2페이지 이후까지 통째로 버리진 않는다(스크롤 위치 유지).
+   */
+  useEffect(() => {
+    if (initialItems === initialItemsRef.current) return;
+    initialItemsRef.current = initialItems;
+
+    setItems((prev) => {
+      const freshById = new Map(initialItems.map((item) => [getId(item), item] as const));
+      return prev.map((item) => freshById.get(getId(item)) ?? item);
+    });
+  }, [initialItems, getId]);
 
   const hasMore = page < totalPages;
 

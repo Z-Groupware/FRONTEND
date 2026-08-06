@@ -34,18 +34,25 @@ export function ApprovalRowActions({ companyId, companyName, onDone }: ApprovalR
     if (!action) return;
 
     startTransition(async () => {
-      const response =
-        action === "approve"
-          ? await approveCompanyAction(companyId)
-          : await rejectCompanyAction(companyId);
+      try {
+        const response =
+          action === "approve"
+            ? await approveCompanyAction(companyId)
+            : await rejectCompanyAction(companyId);
 
-      setPendingAction(null);
-
-      if (response.success) {
-        toast.success(`'${companyName}' 기업을 ${action === "approve" ? "승인" : "반려"}했습니다`);
-        onDone(companyId);
-      } else {
+        if (response.success) {
+          toast.success(
+            `'${companyName}' 기업을 ${action === "approve" ? "승인" : "반려"}했습니다`,
+          );
+          onDone(companyId);
+        } else {
+          toast.error(`'${companyName}' 처리에 실패했습니다`);
+        }
+      } catch {
+        // ⚠️ 미구현(!isMock) 분기 등에서 던진 에러가 여기로 온다 — 조용히 삼키지 않고 실패로 알린다.
         toast.error(`'${companyName}' 처리에 실패했습니다`);
+      } finally {
+        setPendingAction(null);
       }
     });
   }
@@ -68,7 +75,9 @@ export function ApprovalRowActions({ companyId, companyName, onDone }: ApprovalR
       <ConfirmDialog
         isOpen={pendingAction !== null}
         onOpenChange={(open) => {
-          if (!open) setPendingAction(null);
+          // ⚠️ 처리 중엔 닫지 않는다 — Esc·배경 클릭으로 닫히면 요청은 계속 가는데 화면만
+          //    사라져 결과를 못 본다.
+          if (!open && !isPending) setPendingAction(null);
         }}
         title={
           isReject ? `'${companyName}' 신청을 반려할까요?` : `'${companyName}' 가입을 승인할까요?`

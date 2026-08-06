@@ -1,9 +1,12 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
+import { useCallback } from "react";
+
+import { InfiniteListFooter } from "@/components/common/infinite-list-footer";
 import { useInfiniteScrollList } from "@/hooks/use-infinite-scroll-list";
 
 import { fetchCompaniesPageAction } from "../actions";
+import { buildCompanyHref, type CompanyHrefQuery } from "../lib/company-href";
 import type { CompanyListFilter } from "../server";
 import type { ManagedCompany } from "../types";
 import { CompanyTable } from "./company-table";
@@ -15,7 +18,12 @@ interface CompanyListProps {
   initialTotalCount: number;
   pageSize: number;
   filter: CompanyListFilter;
-  buildDetailHref: (id: string) => string;
+  /**
+   * 상세 링크를 만드는 데 필요한 값만(직렬화 가능한 값) 받는다 — 서버 컴포넌트에서 만든
+   * 클로저(`(id) => ...`)를 그대로 내려보낼 수 없다(함수는 서버→클라이언트 경계를 못 건넌다).
+   * 링크 자체는 `buildCompanyHref`(순수 함수, 양쪽에서 같이 import)로 여기서 계산한다.
+   */
+  query: CompanyHrefQuery;
 }
 
 /**
@@ -30,7 +38,7 @@ export function CompanyList({
   initialTotalCount,
   pageSize,
   filter,
-  buildDetailHref,
+  query,
 }: CompanyListProps) {
   const { items, totalCount, hasMore, isLoadingMore, error, loadMore, sentinelRef } =
     useInfiniteScrollList({
@@ -42,34 +50,21 @@ export function CompanyList({
       fetchPage: (page) => fetchCompaniesPageAction(filter, page, pageSize),
     });
 
+  const buildDetailHref = useCallback((id: string) => buildCompanyHref(query, id), [query]);
+
   return (
     <div className="flex flex-col gap-3">
       <p className="text-muted-foreground text-xs">전체 {totalCount}건</p>
 
       <CompanyTable companies={items} buildDetailHref={buildDetailHref} pageSize={pageSize} />
 
-      {hasMore && (
-        <div ref={sentinelRef} className="flex justify-center py-1">
-          {error ? (
-            <div className="flex items-center gap-2">
-              <p className="text-muted-foreground text-xs">불러오지 못했습니다</p>
-              <Button type="button" variant="outline" size="xs" onClick={loadMore}>
-                다시 시도
-              </Button>
-            </div>
-          ) : (
-            <Button
-              type="button"
-              variant="outline"
-              size="xs"
-              disabled={isLoadingMore}
-              onClick={loadMore}
-            >
-              {isLoadingMore ? "불러오는 중…" : "더 보기"}
-            </Button>
-          )}
-        </div>
-      )}
+      <InfiniteListFooter
+        hasMore={hasMore}
+        isLoadingMore={isLoadingMore}
+        error={error}
+        onLoadMore={loadMore}
+        sentinelRef={sentinelRef}
+      />
     </div>
   );
 }
