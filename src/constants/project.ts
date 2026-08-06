@@ -36,3 +36,15 @@ export const PROJECT_SORT_LABEL: Record<ProjectSort, string> = {
 
 /** 기본 정렬 — 마감 임박순(스펙). */
 export const DEFAULT_PROJECT_SORT: ProjectSort = PROJECT_SORT.DUE_ASC;
+
+/** ProjectTag 최대 길이(백엔드 협의 확정) — 영문 대문자만 허용. */
+export const PROJECT_TAG_MAX_LENGTH = 6;
+
+/** 세부 설명 최대 길이 — 백엔드 `varchar(255)` 제한을 프론트에서도 그대로 지킨다. */
+export const PROJECT_DESCRIPTION_MAX_LENGTH = 255;
+
+/**
+ * ⚠️ 목 데이터 — BE 연동 전. 회사 팀 목록(팀·역할·권한 스키마의 `Team`).
+ * 실제로는 `GET /companies/me/teams` 같은 API로 내려받는다.
+ */
+export const COMPANY_TEAM_NAMES = ["개발팀", "마케팅팀", "디자인팀", "전략기획팀"] as const;

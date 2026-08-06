@@ -1,4 +1,5 @@
 import type { ProjectStatus } from "@/constants/domain";
+import type { TagColorName } from "@/lib/palette";
 
 /**
  * 프로젝트 전체 조회(`/app/projects`)의 한 행. UI 계약(Mock → Live 격리막) — 컴포넌트는 이 타입만 안다.
@@ -28,3 +29,25 @@ export interface ProjectListItem {
   dueDate: string;
   status: ProjectStatus;
 }
+
+/**
+ * 프로젝트 생성 폼 입력 — 화면과 서버 액션이 **같은 스키마**로 검증한다(규칙이 두 벌이면 어긋난다).
+ * ⚠️ `attachmentName`은 목 단계라 파일명만 들고 있는다 — 실제 업로드는 API 스펙 확정 후.
+ */
+export interface ProjectDraft {
+  name: string;
+  tag: string;
+  description: string;
+  tagColor: TagColorName;
+  dueDate: string;
+  /** 참여 팀 — 최소 1개. 순서 무관, 빈 값은 제출 전 걸러낸다. */
+  teamNames: string[];
+  attachmentName?: string;
+}
+
+/** 칸별 검증 오류 — 비어 있으면 통과. `teamNames`는 배열이라 한 문구로 받는다. */
+export type ProjectFormErrors = Partial<
+  Record<keyof Omit<ProjectDraft, "teamNames" | "attachmentName">, string> & {
+    teamNames: string;
+  }
+>;

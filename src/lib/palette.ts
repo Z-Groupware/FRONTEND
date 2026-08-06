@@ -16,7 +16,7 @@
  *    자동 배정인 지금은 겹치는 게 정상이다. 색으로 프로젝트를 **식별하지 않는다** —
  *    식별은 이름과 태그가 한다.
  */
-const TAG_NAMES = [
+export const TAG_NAMES = [
   "slate",
   "yellow",
   "lime",
@@ -29,6 +29,32 @@ const TAG_NAMES = [
   "fuchsia",
   "pink",
 ] as const;
+
+export type TagColorName = (typeof TAG_NAMES)[number];
+
+/** 팔레트 이름의 화면 표시용 한글 라벨 — 사용자가 직접 색을 고르는 화면(프로젝트 생성 등)에서 쓴다. */
+export const TAG_NAME_LABEL: Record<TagColorName, string> = {
+  slate: "슬레이트",
+  yellow: "옐로우",
+  lime: "라임",
+  emerald: "에메랄드",
+  teal: "틸",
+  cyan: "시안",
+  sky: "스카이",
+  indigo: "인디고",
+  purple: "퍼플",
+  fuchsia: "푸시아",
+  pink: "핑크",
+};
+
+/** 팔레트 이름으로 바로 색을 뽑는다 — 사용자가 명시적으로 고른 이름을 그대로 쓸 때(해시를 거치지 않는다). */
+export function paletteColorByName(name: TagColorName): PaletteColor {
+  return {
+    bgColor: `var(--tag-${name}-bg)`,
+    textColor: `var(--tag-${name}-fg)`,
+    solidColor: `var(--tag-${name}-solid)`,
+  };
+}
 
 export interface PaletteColor {
   /** 칩 배경 — `var(--tag-teal-bg)`. 테마 전환은 CSS가 한다 */
