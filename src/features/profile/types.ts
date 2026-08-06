@@ -1,4 +1,4 @@
-import type { Role } from "@/constants/role";
+import type { Authority } from "@/constants/authority";
 
 /**
  * 마이페이지 — 격리막의 UI 계약(CLAUDE.md §Mock 격리막).
@@ -8,7 +8,7 @@ import type { Role } from "@/constants/role";
 export interface MyProfile {
   name: string;
   email: string;
-  role: Role;
+  role: Authority;
   companyName: string;
   teamName: string;
   /** 직급 라벨 — 영문 워딩 규칙(§카피)과 별개로, 직급은 팀에서 한글로 쓴다(예: "수석"). */
