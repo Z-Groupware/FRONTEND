@@ -1,46 +1,82 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 
 import { COMPANY_STATUS, NOTICE_TARGET, type NoticeTarget } from "@/constants/domain";
+import type { PaginatedResult } from "@/lib/paginate";
 import { isMock } from "@/mocks/config";
 
-import { removeMockPendingApproval } from "./mock/approvals";
+import { findMockPendingApproval, removeMockPendingApproval } from "./mock/approvals";
 import { findMockCompany, setMockCompanyStatus } from "./mock/companies";
 import { findMockFailedItem } from "./mock/monitoring";
+import { type CompanyListFilter, getManagedCompanies, getPendingApprovals } from "./server";
+import type { ManagedCompany, PendingCompanyApproval } from "./types";
+
+const APPROVAL_LIST_PATH = "/system/approval";
+
+/** 클라이언트가 부르는 값이라 그대로 믿지 않는다 — 범위를 벗어나면 안으로 당긴다. */
+const MAX_PAGE_SIZE = 50;
+
+function clampPage(page: number): number {
+  return Number.isFinite(page) && page >= 1 ? Math.floor(page) : 1;
+}
+
+function clampPageSize(pageSize: number): number {
+  if (!Number.isFinite(pageSize) || pageSize < 1) return MAX_PAGE_SIZE;
+  return Math.min(Math.floor(pageSize), MAX_PAGE_SIZE);
+}
 
 /**
  * 기업 승인 화면의 **변경 창구** — 격리막(CLAUDE.md §Mock 격리막).
  * ⚠️ 지금은 목뿐이다 — 승인·반려 둘 다 대기 목록에서 지우기만 한다(실제 기업 코드 발급·메일
  *    발송·"기업 관리" 반영은 API가 붙어야 의미가 있다).
+ * ⚠️ **페이지 이동 없이 그 자리에서 끝난다.** 목록이 무한 스크롤로 이미 여러 페이지를 들고 있어
+ *    `redirect`로 화면을 되돌리면 그동안 이어붙인 항목이 전부 날아간다 — 확인 모달을 닫고
+ *    로컬 목록에서 그 행만 지우는 쪽이 결과와 맞는다(`revalidatePath`는 다음 방문을 위한
+ *    백그라운드 정합성용).
  */
-export async function approveCompanyAction(formData: FormData): Promise<void> {
-  const id = String(formData.get("companyId") ?? "");
-  const redirectTo = String(formData.get("redirectTo") ?? "/system/approval");
-
-  if (isMock) {
-    removeMockPendingApproval(id);
-  } else {
+export async function approveCompanyAction(companyId: string): Promise<{ success: boolean }> {
+  if (!isMock) {
     // ⚠️ 미구현 — API 스펙 확정 후 BFF 경로로 승인 요청을 보낸다.
     throw new Error("기업 승인 API가 아직 연결되지 않았습니다.");
   }
 
-  // ⚠️ `redirect`는 내부적으로 예외를 던진다 — try/catch 밖에 둔다(CLAUDE.md §렌더링·데이터)
-  redirect(redirectTo);
+  if (!findMockPendingApproval(companyId)) return { success: false };
+  removeMockPendingApproval(companyId);
+  revalidatePath(APPROVAL_LIST_PATH);
+  return { success: true };
 }
 
-export async function rejectCompanyAction(formData: FormData): Promise<void> {
-  const id = String(formData.get("companyId") ?? "");
-  const redirectTo = String(formData.get("redirectTo") ?? "/system/approval");
-
-  if (isMock) {
-    removeMockPendingApproval(id);
-  } else {
+export async function rejectCompanyAction(companyId: string): Promise<{ success: boolean }> {
+  if (!isMock) {
     throw new Error("기업 반려 API가 아직 연결되지 않았습니다.");
   }
 
-  redirect(redirectTo);
+  if (!findMockPendingApproval(companyId)) return { success: false };
+  removeMockPendingApproval(companyId);
+  revalidatePath(APPROVAL_LIST_PATH);
+  return { success: true };
+}
+
+/**
+ * "기업 승인" 무한 스크롤 — 다음 페이지를 클라이언트가 직접 부른다(CLAUDE.md §목록·페이지네이션).
+ * `server.ts`의 `getPendingApprovals`(서버 컴포넌트 전용, `server-only`)를 클라이언트에서
+ * 부를 수 있게 감싼 얇은 창구다.
+ */
+export async function fetchApprovalsPageAction(
+  page: number,
+  pageSize: number,
+): Promise<PaginatedResult<PendingCompanyApproval>> {
+  return getPendingApprovals(clampPage(page), clampPageSize(pageSize));
+}
+
+/** "기업 관리" 무한 스크롤 — 위와 같은 이유로 `getManagedCompanies`를 감싼다. */
+export async function fetchCompaniesPageAction(
+  filter: CompanyListFilter,
+  page: number,
+  pageSize: number,
+): Promise<PaginatedResult<ManagedCompany>> {
+  return getManagedCompanies(filter, clampPage(page), clampPageSize(pageSize));
 }
 
 /**

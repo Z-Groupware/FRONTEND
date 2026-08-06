@@ -19,7 +19,7 @@ export const metadata: Metadata = {
 const START_STEPS = [
   { title: "기업 등록 신청", detail: "사업자 정보와 담당자 연락처를 남깁니다." },
   { title: "승인", detail: "확인이 끝나면 대표 계정이 메일로 갑니다." },
-  { title: "초기 설정", detail: "부서 체계 · 직급 체계 · 사원 초대를 마칩니다." },
+  { title: "초기 설정", detail: "팀 체계 · 직급 체계 · 사원 초대를 마칩니다." },
   { title: "결제", detail: "결제를 마치면 워크스페이스가 열립니다." },
 ] as const;
 

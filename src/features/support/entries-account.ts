@@ -17,7 +17,7 @@ export const ACCOUNT_ENTRIES: readonly FaqEntry[] = [
     question: "권한은 어떻게 나뉘나요?",
     keywords: ["권한", "역할", "role", "owner", "admin", "leader", "member", "관리자", "팀장"],
     answer:
-      "Owner · Leader · Member 세 역할이 있고, 그 위에 Admin을 겸할 수 있습니다.\n\nAdmin은 따로 떨어진 역할이 아니라 덧붙는 권한입니다 — 예를 들어 한 사람이 Leader이면서 Admin일 수 있습니다. 계정을 나눠 쓰지 않습니다.\n\n다만 역할만으로 다 정해지진 않습니다 — 회의 시작이나 녹음처럼 그 회의 담당자만 할 수 있는 일이 따로 있습니다.",
+      "Owner · Leader · Member 세 권한이 있고, 그 위에 Admin을 겸할 수 있습니다.\n\nAdmin은 따로 떨어진 권한이 아니라 덧붙는 겸직입니다 — 예를 들어 한 사람이 Leader이면서 Admin일 수 있습니다. 계정을 나눠 쓰지 않습니다.\n\n다만 권한만으로 다 정해지진 않습니다 — 회의 시작이나 녹음처럼 그 회의 담당자만 할 수 있는 일이 따로 있습니다.\n\n‘역할’은 다른 것을 가리킵니다 — 팀 안에서 맡는 일(프론트엔드·백엔드 등)입니다.",
     links: [{ label: "권한 매트릭스 보기", href: "/roles" }],
   },
   {
@@ -32,18 +32,18 @@ export const ACCOUNT_ENTRIES: readonly FaqEntry[] = [
     id: "invite",
     category: FAQ_CATEGORY.ACCOUNT,
     question: "팀원은 어떻게 초대하나요?",
-    keywords: ["초대", "팀원", "사원", "직원", "부서", "조직도"],
+    keywords: ["초대", "팀원", "사원", "직원", "팀에", "팀과", "부서", "조직도"],
     answer:
-      "Admin을 가진 사람이 부서와 직급을 정한 뒤 메일 주소로 초대합니다.\n\n보내면 계정이 바로 만들어지고 아이디와 첫 비밀번호가 메일로 갑니다. 받은 사람이 따로 가입할 필요가 없습니다.\n\n부서마다 리더는 한 명이고, 사원은 부서에 소속됩니다.",
+      "Admin을 가진 사람이 팀과 직급을 정한 뒤 메일 주소로 초대합니다.\n\n보내면 계정이 바로 만들어지고 아이디와 첫 비밀번호가 메일로 갑니다. 받은 사람이 따로 가입할 필요가 없습니다.\n\n팀마다 리더는 한 명이고, 사원은 팀에 소속됩니다.",
     links: [{ label: "권한 매트릭스 보기", href: "/roles" }],
   },
   {
     id: "org-structure",
     category: FAQ_CATEGORY.ACCOUNT,
-    question: "부서와 직급은 어떻게 구성되나요?",
-    keywords: ["부서", "직급", "조직", "체계", "구조", "계층"],
+    question: "팀과 직급은 어떻게 구성되나요?",
+    keywords: ["팀", "부서", "직급", "조직", "체계", "구조", "계층", "역할", "리더"],
     answer:
-      "부서 아래에 역할이 오는 2계층입니다. 역할은 비워 둘 수도 있습니다.\n\n사원은 부서에 소속되고, 권한은 부서가 아니라 직급에서 옵니다.\n\nLeader 직급은 회사에 하나이고, 그 직급을 가진 사람은 부서마다 한 명입니다.",
+      "팀 아래에 역할이 오는 2계층입니다. 역할은 비워 둘 수도 있습니다.\n\n사원은 팀에 소속되고, 권한은 팀이 아니라 직급에서 옵니다.\n\nLeader 직급은 회사에 하나이고, 그 직급을 가진 사람은 팀마다 한 명입니다. 그 사람의 역할은 ‘리더’로 자동으로 정해집니다 — 따로 고르지 않습니다.\n\n역할이 하나도 없는 팀이라면 나머지 사원의 역할은 ‘없음’이 됩니다.",
     links: [{ label: "권한 매트릭스 보기", href: "/roles" }],
   },
   {
@@ -52,7 +52,7 @@ export const ACCOUNT_ENTRIES: readonly FaqEntry[] = [
     question: "회의는 누가 시작할 수 있나요?",
     keywords: ["회의 시작", "누가 시작", "녹음 시작", "담당자만", "종료"],
     answer:
-      "그 회의의 담당자 한 명만 할 수 있습니다. 시작·녹음·파일 제출·종료 모두요.\n\nOwner라도 담당자가 아니면 못 합니다 — 역할과 별개로 움직이는 부분입니다.",
+      "그 회의의 담당자 한 명만 할 수 있습니다. 시작·녹음·파일 제출·종료 모두요.\n\nOwner라도 담당자가 아니면 못 합니다 — 권한과 별개로 움직이는 부분입니다.",
     links: [{ label: "권한 매트릭스 보기", href: "/roles" }],
   },
   {
@@ -66,19 +66,19 @@ export const ACCOUNT_ENTRIES: readonly FaqEntry[] = [
   {
     id: "role-scope",
     category: FAQ_CATEGORY.ACCOUNT,
-    question: "역할마다 뭘 할 수 있나요?",
-    keywords: ["뭘 할 수", "무엇을 할", "할 수 있는 일", "권한 범위"],
+    question: "권한마다 뭘 할 수 있나요?",
+    keywords: ["뭘 할 수", "무엇을 할", "할 수 있는 일", "권한 범위", "역할마다"],
     answer:
-      "· Owner — 기업 전체 관리\n· Leader — 팀 현황·액션 관리\n· Member — 일반 사용\n\n여기에 +Admin(겸직) — 회의실·직급 권한 관리가 얹혀요. 계정 발급은 대표(Owner)도 Admin도 할 수 있어요. 회의 개설이나 액션 조회 같은 건 Admin을 켠다고 늘지 않고, 그 사람의 역할이 정합니다.\n\n표로 정리한 화면이 따로 있습니다.",
+      "· Owner — 기업 전체 관리\n· Leader — 팀 현황·액션 관리\n· Member — 일반 사용\n\n여기에 +Admin(겸직) — 회의실·직급 권한 관리가 얹혀요. 계정 발급은 대표(Owner)도 Admin도 할 수 있어요. 회의 개설이나 액션 조회 같은 건 Admin을 켠다고 늘지 않고, 그 사람의 권한이 정합니다.\n\n표로 정리한 화면이 따로 있습니다.",
     links: [{ label: "권한 매트릭스 보기", href: "/roles" }],
   },
   {
     id: "leader-scope",
     category: FAQ_CATEGORY.ACCOUNT,
     question: "팀장은 어디까지 볼 수 있나요?",
-    keywords: ["팀장은", "leader는", "부서 전체", "팀원 현황"],
+    keywords: ["팀장은", "leader는", "팀 전체", "부서 전체", "팀원 현황"],
     answer:
-      "자기 부서 전체를 봅니다. 조회·통계·중간 승인까지 그 부서의 모든 역할이 포함됩니다.\n\n다만 계정 발급과 초대는 대표(Owner) 또는 Admin을 가진 사람이 합니다 — Leader라도 Admin을 겸하지 않으면 초대할 수 없습니다.",
+      "자기 팀 전체를 봅니다. 조회·통계·중간 승인까지 그 팀의 모든 팀원이 포함됩니다.\n\n다만 계정 발급과 초대는 대표(Owner) 또는 Admin을 가진 사람이 합니다 — Leader라도 Admin을 겸하지 않으면 초대할 수 없습니다.",
     links: [{ label: "권한 매트릭스 보기", href: "/roles" }],
   },
   {

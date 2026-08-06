@@ -23,20 +23,32 @@ export const MAX_DEPARTMENT_DEPTH = 2;
 export const MAX_ORG_NAME_LENGTH = 5;
 
 /**
- * 역할 `없음`을 가리키는 값 — 부서에 바로 속한다는 **선택 결과**다.
+ * 화면 안에서만 쓰는 **역할 예약값 둘.**
+ *
+ * BE는 `리더`(roleId 1)와 `없음`(roleId 2)을 **전역 시드 행**으로 들고 있다 — 둘 다 실재하는
+ * 역할이고, 서로 다른 뜻이다. 팀장은 `리더`를 갖고, 세부 역할이 없는 일반 팀원은 `없음`을 갖는다.
+ *
+ * ⚠️ **하나로 뭉뚱그리면 안 된다.** 전에는 `없음` 하나로 둘 다 표현했는데, 그러면 BE에 보낼 때
+ *    리더인지 그냥 무라벨 팀원인지 구분이 안 된다. 화면에서도 팀장 줄에 `없음`이라 적혀
+ *    "역할을 안 정했다"로 읽혔다.
  * ⚠️ 실제 역할 id와 겹치지 않게 예약어 꼴로 둔다. 역할 id는 트리 노드 id(`r1` 등)라 안 겹친다.
+ * ⚠️ **BE 실제 id로 바꾸는 건 매퍼가 한다.** 여기 값은 화면 안에서만 산다 —
+ *    지금은 ERD 미확정이라 매퍼를 안 짠다(§연동 검증).
  */
+export const LEADER_ROLE_ID = "__leader-role__";
 export const NO_ROLE_ID = "__no-role__";
 
-/** `NO_ROLE_ID`를 화면에 적을 때 쓰는 말 — 값과 라벨이 갈라지지 않게 옆에 둔다 */
+/** 화면에 적는 말 — 값과 라벨이 갈라지지 않게 옆에 둔다 */
+export const LEADER_ROLE_LABEL = "리더";
 export const NO_ROLE_LABEL = "없음";
 
 /**
  * 트리 두 계층의 이름.
  * 윗단은 **부서**(개발팀), 아랫단은 그 안에서 맡는 **역할**(프론트엔드·백엔드)이다.
- * 역할 없이 부서에 바로 속할 수도 있다 — 팀장이 그런 경우다.
+ * 팀장은 역할이 `리더`로 자동으로 정해지고, 역할이 하나도 없는 부서의 사원은 `없음`이 된다 —
+ * 둘 다 **고르는 게 아니라 정해지는 값**이다(`LEADER_ROLE_ID`·`NO_ROLE_ID`).
  */
-const DEPTH_LABEL = ["부서", "역할"] as const;
+const DEPTH_LABEL = ["팀", "역할"] as const;
 
 export function getDepthLabel(depth: number): string {
   return DEPTH_LABEL[depth] ?? "역할";
@@ -59,7 +71,7 @@ export const ONBOARDING_STEP = {
 export type OnboardingStep = (typeof ONBOARDING_STEP)[keyof typeof ONBOARDING_STEP];
 
 export const ONBOARDING_STEP_LABEL: Record<OnboardingStep, string> = {
-  1: "부서 체계",
+  1: "팀 체계",
   2: "직급 체계",
   3: "사원 초대",
   4: "결제",
@@ -116,12 +128,16 @@ export interface Invite {
    * 부서 안에서 맡는 역할(트리 아랫단).
    *
    * - `""` — **아직 안 골랐다.** 부서를 고르기 전이거나 고르는 중이다.
-   * - `NO_ROLE_ID` — **`없음`을 골랐다.** 팀장처럼 역할 없이 부서에 바로 속한다.
+   * - `LEADER_ROLE_ID` — **리더**다. 리더 직급을 고르면 자동으로 채워지고 칸이 잠긴다.
+   * - `NO_ROLE_ID` — **`없음`**이다. 세부 역할이 없는 일반 팀원 — 그 부서에 고를 역할이
+   *   하나도 없을 때만 나온다.
    * - 그 밖 — 그 역할의 id.
    *
    * ⚠️ 안 고른 것과 `없음`을 **같은 값으로 두지 않는다.** 둘을 구분해야 직급 칸을
    *    언제 열지 알 수 있고, "역할을 안 골랐다"고 알릴 수도 있다.
-   * ⚠️ BE로 보낼 때 `NO_ROLE_ID`는 **null**로 바꾼다(매퍼가 맡는다) — 이 값은 화면 안에서만 쓴다.
+   * ⚠️ **`리더`와 `없음`도 다른 값이다.** BE에서 둘 다 실재하는 역할 행이라(전역 시드 1·2)
+   *    하나로 보내면 팀장인지 무라벨 팀원인지 구분이 안 된다.
+   * ⚠️ BE 실제 id로 바꾸는 건 **매퍼**가 맡는다 — 이 값들은 화면 안에서만 쓴다.
    */
   roleId: string;
   positionId: string;

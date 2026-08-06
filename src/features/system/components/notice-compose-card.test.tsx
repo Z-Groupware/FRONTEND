@@ -53,7 +53,7 @@ describe("NoticeComposeCard", () => {
       content: "오늘 밤 점검이 있어요",
       target: NOTICE_TARGET.ALL,
     });
-    expect(await screen.findByText("공지를 발행했어요")).toBeInTheDocument();
+    expect(await screen.findByText("공지를 발행했습니다")).toBeInTheDocument();
   });
 
   // 발행이 실패하면 성공 안내를 띄우지 않는다 — 조용히 성공한 척하지 않는다(§정직성).
@@ -66,6 +66,6 @@ describe("NoticeComposeCard", () => {
     await user.click(publishButton());
 
     await waitFor(() => expect(publishNoticeAction).toHaveBeenCalled());
-    expect(screen.queryByText("공지를 발행했어요")).not.toBeInTheDocument();
+    expect(screen.queryByText("공지를 발행했습니다")).not.toBeInTheDocument();
   });
 });

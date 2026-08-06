@@ -3,8 +3,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { MrrChartCard } from "@/features/system/components/mrr-chart-card";
-import { StatCard } from "@/features/system/components/stat-card";
 import { SubscriptionTable } from "@/features/system/components/subscription-table";
+import { SummaryCard } from "@/features/system/components/summary-card";
 import { formatCompactKrw } from "@/features/system/format";
 import { getBillingOverview } from "@/features/system/server";
 
@@ -16,28 +16,24 @@ export default async function SystemBillingPage() {
   const { summary, monthlyMrr, subscriptions } = await getBillingOverview();
 
   return (
-    <main className="min-h-0 flex-1 overflow-y-auto p-6">
-      <div className="mx-auto flex max-w-[1440px] flex-col gap-4">
-        <div className="grid grid-cols-4 gap-3">
-          <StatCard
-            label="이번 달 MRR"
-            value={formatCompactKrw(summary.mrr)}
-            meta={`전월 대비 +${summary.mrrDeltaPercent}%`}
-            tone="accent"
-          />
-          <StatCard
-            label="결제 완료"
-            value={`${summary.paidCount}건`}
-            meta={formatCompactKrw(summary.paidAmount)}
-          />
-          <StatCard
-            label="미납"
-            value={`${summary.unpaidCount}건`}
-            meta="안내 발송 필요"
-            tone="warning"
-          />
-          <StatCard label="해지" value={`${summary.canceledCountThisMonth}건`} meta="이번 달" />
-        </div>
+    <main className="min-h-0 flex-1 overflow-y-auto px-8 py-7">
+      <div className="mx-auto flex max-w-[1440px] flex-col gap-7">
+        <SummaryCard
+          items={[
+            {
+              label: "이번 달 MRR",
+              value: formatCompactKrw(summary.mrr),
+              meta: `전월 대비 +${summary.mrrDeltaPercent}%`,
+            },
+            {
+              label: "결제 완료",
+              value: `${summary.paidCount}건`,
+              meta: formatCompactKrw(summary.paidAmount),
+            },
+            { label: "미납", value: `${summary.unpaidCount}건`, meta: "안내 발송 필요" },
+            { label: "해지", value: `${summary.canceledCountThisMonth}건`, meta: "이번 달" },
+          ]}
+        />
 
         <MrrChartCard data={monthlyMrr} />
 

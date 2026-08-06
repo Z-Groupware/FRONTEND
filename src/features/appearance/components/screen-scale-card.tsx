@@ -27,10 +27,12 @@ import {
  * ⚠️ **자동으로 안 바꾼다.** 기준 폭에서 많이 벗어났으면 한 줄로 권하기만 한다 —
  *    브라우저는 화면의 물리적 크기를 안 알려줘서 27인치 모니터와 노트북을 구분할 수 없고,
  *    지금 배율을 일부러 고른 사람에게 강제로 바꾸면 서비스가 고장 난 것으로 보인다.
- * ⚠️ **양쪽으로 권한다.** 화면이 좁으면 크게 보이고(OS 배율이 높다) 넓으면 작게 보인다 —
- *    어느 쪽으로 어긋날지는 기기마다 다르다.
+ * ⚠️ **좁은 쪽만 권한다**(2026-08-06). 화면이 좁으면 크게 보이므로 줄이라고 권한다.
+ *    넓은 화면은 작게 보이지만 **키우는 배율을 없앴으므로 권할 값이 없다** — 답이 없는
+ *    안내는 하지 않는다(§정직성 · DECISIONS §화면 배율).
  * ⚠️ 값은 **이 기기에만** 남는다. 계정을 따라다니면 노트북과 모니터가 같은 배율이 된다.
- * ⚠️ `zoom`은 `<html>`에 건다. 본문에만 걸면 사이드바·상단바가 따로 놀고, `100dvh`를 쓰는
+ * ⚠️ 배율은 `<html>`의 변수 하나로 세우고, 실제로 줄이는 일은 `body`가 한다(`globals.css`).
+ * ⚠️ 본문에만 걸면 사이드바·상단바가 따로 논다. 그리고 `100dvh`를 쓰는
  *    화면들이 어긋난다.
  */
 export function ScreenScaleCard() {
@@ -60,9 +62,9 @@ export function ScreenScaleCard() {
   /*
     ⚠️ **DOM을 맞추는 건 효과의 일이다.** 브라우저는 React 밖의 시스템이라, 고른 값이 바뀔 때마다
        여기서 한 번 반영한다 — 이벤트 핸들러에서 직접 쓰면 다른 탭에서 바뀐 값이 안 따라온다.
-    ⚠️ 100%면 빈 값으로 돌려놓는다. `zoom: 1`을 남기면 브라우저가 계산을 한 단계 더 한다.
+    ⚠️ 100%면 변수를 지워 기본값(`1`)으로 돌려놓는다.
     ⚠️ **저장값을 읽기 전(`stored === null`)에는 손대지 않는다.** 부트 스크립트가 첫 페인트
-       전에 이미 올바른 `zoom`을 걸어 뒀는데, 여기서 값을 알기도 전에 100%로 덮으면
+       전에 이미 올바른 배율을 세워 뒀는데, 여기서 값을 알기도 전에 100%로 덮으면
        그 확대가 한 번 풀렸다가 되돌아온다 — 부트 스크립트가 막으려던 튐이 이 화면에서만
        재발한다. 구독이 값을 준 뒤부터 맞춘다.
   */
@@ -72,13 +74,14 @@ export function ScreenScaleCard() {
     const root = document.documentElement;
     const ratio = scale / DEFAULT_SCALE;
 
-    root.style.zoom = scale === DEFAULT_SCALE ? "" : String(ratio);
     /*
-      ⚠️ **`zoom`만 걸면 아래가 빈다.** `100dvh`는 배율을 모르는 값이라, 그 높이를 가진
-         상자가 0.75배로 그려지면 화면 아래 25%가 남는다 — 셸이 중간에서 끝나 보인다.
-         `h-screen-z`가 이 변수로 나눠 주므로 **둘을 같이 세운다**(부트 스크립트도 같다).
+      ⚠️ **변수 하나만 세운다.** 실제로 줄이는 일은 `globals.css`의 `body`가
+         `transform: scale()`로 한다 — 전에는 여기서 `zoom`을 직접 걸었는데, `zoom`은
+         배율을 레이아웃에 섞어 좌표를 다루는 코드를 전부 어긋나게 했다
+         (DECISIONS §화면 배율).
     */
-    root.style.setProperty("--app-zoom", String(ratio));
+    if (scale === DEFAULT_SCALE) root.style.removeProperty("--app-scale");
+    else root.style.setProperty("--app-scale", String(ratio));
   }, [scale, stored]);
 
   /*
@@ -163,8 +166,7 @@ export function ScreenScaleCard() {
           ⚠️ 색을 쓰지 않는다 — 잘못된 상태가 아니라 알려 주는 말이다(§디자인 토큰).
         */
         <p className="border-border bg-secondary mt-4 rounded-lg border px-3.5 py-3 text-[12px] leading-[18px] break-keep">
-          화면이 기준보다 {hint === "smaller" ? "좁아" : "넓어"} 다른 기기보다{" "}
-          <span className="font-medium">{hint === "smaller" ? "크게" : "작게"}</span> 보입니다.{" "}
+          화면이 기준보다 좁아 다른 기기보다 <span className="font-medium">크게</span> 보입니다.{" "}
           {/*
             ⚠️ "같은 폭이 된다"고 단언하지 않는다. 권장값은 배율 목록 중 **가장 가까운** 값일
                뿐이라, 좁은 창(약 1152px 미만)에서는 눌러도 기준 1440px에 못 미친다 —

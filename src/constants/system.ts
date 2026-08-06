@@ -85,6 +85,11 @@ export const COMPANY_STATUS_LABEL: Record<CompanyStatus, string> = {
   UNPAID: "미납",
 };
 
+/** URL 쿼리처럼 바깥에서 들어오는 값을 검증할 때 쓴다(`isVisibleMemberStatus`와 같은 패턴). */
+export function isCompanyStatus(value: string): value is CompanyStatus {
+  return (Object.values(COMPANY_STATUS) as string[]).includes(value);
+}
+
 /** "기업 관리" 목록 정렬 기준 — 규모·플랜 필터를 대신한다(구성원수·가입일 기준). */
 export const COMPANY_SORT = {
   MEMBERS_DESC: "MEMBERS_DESC",
@@ -100,6 +105,10 @@ export const COMPANY_SORT_LABEL: Record<CompanySort, string> = {
   JOINED_DESC: "최신 가입순",
   JOINED_ASC: "오래된 가입순",
 };
+
+export function isCompanySort(value: string): value is CompanySort {
+  return (Object.values(COMPANY_SORT) as string[]).includes(value);
+}
 
 /** 기업 가입 신청서의 직원 규모 구간. */
 export const COMPANY_SIZE = {

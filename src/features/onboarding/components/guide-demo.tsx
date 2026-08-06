@@ -27,18 +27,18 @@ interface DemoFrame {
  */
 const FRAMES: Record<OnboardingStep, DemoFrame[]> = {
   [ONBOARDING_STEP.DEPARTMENT]: [
-    { caption: "부서를 하나 만들고", rows: [{ label: "개발팀", sub: "부서", folder: true }] },
+    { caption: "팀을 하나 만들고", rows: [{ label: "개발팀", sub: "팀", folder: true }] },
     {
       caption: "그 안에 역할을 넣습니다",
       rows: [
-        { label: "개발팀", sub: "부서", folder: true },
+        { label: "개발팀", sub: "팀", folder: true },
         { label: "프론트엔드", sub: "역할", indent: true, tone: "accent", folder: true },
       ],
     },
     {
       caption: "역할은 여러 개도 됩니다",
       rows: [
-        { label: "개발팀", sub: "부서", folder: true },
+        { label: "개발팀", sub: "팀", folder: true },
         { label: "프론트엔드", sub: "역할", indent: true, folder: true },
         { label: "백엔드", sub: "역할", indent: true, tone: "accent", folder: true },
       ],
@@ -70,7 +70,7 @@ const FRAMES: Record<OnboardingStep, DemoFrame[]> = {
   [ONBOARDING_STEP.INVITE]: [
     { caption: "메일 주소를 적고", rows: [{ label: "dev1@company.com", sub: "" }] },
     {
-      caption: "부서를 고르면 역할이 열립니다",
+      caption: "팀을 고르면 역할이 열립니다",
       rows: [{ label: "dev1@company.com", sub: "개발팀", tone: "accent" }],
     },
     {

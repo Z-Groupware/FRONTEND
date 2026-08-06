@@ -67,7 +67,7 @@ export default async function ProjectDetailPage({ params, searchParams }: Projec
 
   return (
     <main className="scrollbar-hidden min-h-0 flex-1 overflow-y-auto px-8 py-7">
-      <div className="mx-auto flex w-full max-w-[1080px] flex-col gap-4">
+      <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-4">
         <div className="flex flex-col gap-1">
           <p className="text-muted-foreground text-[11px] leading-4">
             <Link href="/app/projects" className="hover:text-foreground">
@@ -111,7 +111,9 @@ export default async function ProjectDetailPage({ params, searchParams }: Projec
         </nav>
 
         {activeTab === "plan" ? (
-          <section className="border-border bg-card flex flex-col gap-3 rounded-xl border p-6">
+          // ⚠️ 헤더에 제목을 또 안 둔다 — 위 페이지 헤더가 이미 제목+태그를 보여준다(팀 액션
+          //    상세와 같은 결). 그래서 머리 표식(dot)도 없다 — 단일 카드라 §4 "단일 카드 p-7".
+          <section className="border-border bg-card flex flex-col gap-3 rounded-2xl border p-7">
             <div className="flex justify-end">
               <div className="flex flex-col items-end gap-1.5">
                 <span className="text-muted-foreground text-xs tabular-nums">
@@ -153,11 +155,13 @@ export default async function ProjectDetailPage({ params, searchParams }: Projec
           </section>
         ) : (
           <section
-            className="border-border bg-card flex flex-col overflow-hidden rounded-xl border"
+            className="border-border bg-card flex flex-col overflow-hidden rounded-2xl border"
             style={{ height: PROJECT_TIMELINE_BOX_HEIGHT }}
           >
-            <div className="border-border flex shrink-0 items-center justify-between border-b px-4 py-3">
-              <h3 className="text-sm font-semibold">팀 액션 타임라인</h3>
+            <div className="border-border flex shrink-0 items-baseline justify-between gap-3 border-b px-7 pt-6 pb-3">
+              <h3 className="flex items-center gap-2 text-[17px] leading-7 font-semibold tracking-[-0.3px]">
+                <span className="bg-foreground size-2 rounded-full" aria-hidden />팀 액션 타임라인
+              </h3>
               <ActionTimelineLegend />
             </div>
             <ActionTimeline

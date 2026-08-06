@@ -17,7 +17,7 @@ import type { FailedPipelineItem } from "../types";
 const FailedPipelineTable = dynamic(
   () => import("./failed-pipeline-table").then((m) => m.FailedPipelineTable),
   {
-    loading: () => <Skeleton className="h-[220px] w-full rounded-xl" />,
+    loading: () => <Skeleton className="h-[220px] w-full rounded-2xl" />,
   },
 );
 

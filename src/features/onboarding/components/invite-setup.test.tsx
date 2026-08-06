@@ -65,8 +65,12 @@ describe("InviteSetup", () => {
     const rows = screen.getAllByLabelText("초대할 메일 주소");
     await user.type(rows[rows.length - 1]!, "hyun@nova.com");
 
-    // ⚠️ 지금은 **겹치는 줄 전부**에 표시된다. 첫 줄에도 문구가 뜨는 건
-    //    문구와 맞지 않는데, 고칠지는 팀 확인이 필요해 현재 동작을 그대로 고정해 둔다.
-    expect(screen.getAllByText("위에 같은 주소가 있습니다")).toHaveLength(2);
+    /*
+      ⚠️ **뒤에 온 줄에만** 표시된다. 첫 줄에도 뜨던 것을 고쳤다 — 실제로 나가는 건 첫 줄이라
+         경고 2줄 : 빠지는 줄 1줄로 어긋났고, 확인 창이 `표시가 뜬 N줄`이라 말하는 이상
+         그 수가 맞아야 한다. 리더 중복과 같은 규약이다(적대적 검토 #163).
+      ⚠️ 문구가 `위에 같은 주소가 있습니다`라 첫 줄에 뜨면 그 자체로 틀린 말이기도 하다.
+    */
+    expect(screen.getAllByText("위에 같은 주소가 있습니다")).toHaveLength(1);
   });
 });

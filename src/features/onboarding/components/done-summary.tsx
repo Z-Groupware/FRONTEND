@@ -42,9 +42,8 @@ export function DoneSummary({
   const rows: SummaryRow[] = [
     {
       icon: FolderOpen,
-      label: "부서 체계",
-      value:
-        roleCount > 0 ? `부서 ${departmentCount} · 역할 ${roleCount}` : `부서 ${departmentCount}`,
+      label: "팀 체계",
+      value: roleCount > 0 ? `팀 ${departmentCount} · 역할 ${roleCount}` : `팀 ${departmentCount}`,
     },
     { icon: Users, label: "직급 체계", value: `직급 ${positionCount}` },
     // ⚠️ 여기서 "발송"이라고 적지 않는다 — 실제 메일은 아직 안 나간다(CLAUDE.md §정직성).

@@ -78,16 +78,15 @@ export function DepartmentSetup({
       <div className="flex flex-col gap-7 lg:flex-row [@media(min-height:820px)]:lg:h-[560px]">
         <DepartmentIntro departments={tree.departments} />
 
-        {/* 높이 고정 — 부서를 아무리 추가해도 카드 크기는 그대로고 안에서만 스크롤된다 */}
+        {/* 높이 고정 — 팀을 아무리 추가해도 카드 크기는 그대로고 안에서만 스크롤된다 */}
         <section className="border-border bg-card flex h-[460px] flex-1 flex-col overflow-hidden rounded-xl border shadow-sm [@media(min-height:820px)]:lg:h-full">
           <header className="border-border bg-muted flex h-12 shrink-0 items-center justify-between border-b px-4">
             <h2 className="flex items-center gap-2 text-[13px] leading-5">
-              <span className="bg-foreground size-2 rounded-full" aria-hidden />
-              부서 구조 미리보기
+              <span className="bg-foreground size-2 rounded-full" aria-hidden />팀 구조 미리보기
             </h2>
             {/* 계층 제약 안내는 좌측 안내문에 있다 — 헤더에 겹쳐 쓰면 지저분해진다 */}
             <span className="text-muted-foreground/70 text-xs leading-4 tabular-nums">
-              부서 {total}개
+              팀 {total}개
             </span>
           </header>
 
@@ -95,7 +94,7 @@ export function DepartmentSetup({
           <div className="flex-1 overflow-auto overscroll-contain px-4 pt-4 pb-3">
             {tree.departments.length === 0 ? (
               <p className="text-muted-foreground/70 py-12 text-center text-[13px]">
-                아래에서 첫 부서를 추가해 주세요
+                아래에서 첫 팀을 추가해 주세요
               </p>
             ) : (
               <ul>

@@ -45,7 +45,7 @@ export function PositionIntro({ positions }: PositionIntroProps) {
         </StepNote>
         {/*
           ⚠️ 전에는 "두 권한이 필요하면 계정을 따로 쓴다"고 안내했다. **더 이상 아니다** —
-             Admin은 역할이 아니라 겸직 권한이라 한 계정이 Leader이면서 Admin일 수 있다.
+             Admin은 따로 떨어진 권한이 아니라 겸직이라 한 계정이 Leader이면서 Admin일 수 있다.
              낡은 안내를 남겨 두면 대표가 계정을 두 개 만들어 놓고 시작한다.
         */}
         <StepNote>

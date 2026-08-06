@@ -9,6 +9,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { COMPANY_STATUS_LABEL } from "@/constants/domain";
+import { formatDate } from "@/lib/date";
 import { cn } from "@/lib/utils";
 
 import type { ManagedCompany } from "../types";
@@ -17,7 +18,7 @@ import { StatusBadge, type StatusTone } from "./status-badge";
 interface CompanyTableProps {
   companies: ManagedCompany[];
   buildDetailHref: (id: string) => string;
-  /** 한 페이지 행 수 — 마지막 페이지처럼 행이 모자라도 이 개수만큼 높이를 잡아둔다 */
+  /** 목록이 비었을 때 자리 높이를 잡는 데만 쓴다(첫 페이지 크기, `approval-table.tsx`와 같음) */
   pageSize: number;
 }
 
@@ -52,15 +53,14 @@ const COLUMN_WIDTH = {
  *
  * ⚠️ 행 어디를 눌러도 상세로 들어간다 — `tr`에 `onClick`을 달지 않고 "stretched link"
  *    방식을 쓴다(CLAUDE.md §a11y: 클릭은 button/a). `approval-table.tsx`와 같은 패턴이다.
- * ⚠️ **행 개수를 페이지마다 똑같이 맞춘다** — 부족한 만큼 보이지 않는 채움 행으로 채워
- *    페이지 전환 시 목록 높이가 들썩이지 않게 한다(`approval-table.tsx`에서 겪은 문제,
- *    같은 해법을 재사용한다).
+ * ⚠️ 무한 스크롤 목록이라 채움 행(filler row)을 두지 않는다 — 항목이 아래로 이어붙기만
+ *    해서, 마지막 묶음이 `pageSize`보다 적어도 자연스럽다.
  */
 export function CompanyTable({ companies, buildDetailHref, pageSize }: CompanyTableProps) {
   if (companies.length === 0) {
     return (
       <div
-        className="border-border bg-card flex flex-col items-center justify-center rounded-xl border p-10 text-center"
+        className="border-border bg-card flex flex-col items-center justify-center rounded-2xl border p-10 text-center"
         style={{ height: HEADER_HEIGHT_PX + pageSize * ROW_HEIGHT_PX }}
       >
         <p className="text-muted-foreground text-sm">조건에 맞는 기업이 없습니다</p>
@@ -68,10 +68,8 @@ export function CompanyTable({ companies, buildDetailHref, pageSize }: CompanyTa
     );
   }
 
-  const fillerCount = Math.max(0, pageSize - companies.length);
-
   return (
-    <div className="border-border bg-card overflow-hidden rounded-xl border">
+    <div className="border-border bg-card overflow-hidden rounded-2xl border">
       <div className="overflow-x-auto">
         <Table className="min-w-[760px] table-fixed text-xs">
           {/* 각 컬럼 폭을 %로 고정 — 기업명이 길어져도 다른 컬럼이 밀리지 않는다(위 COLUMN_WIDTH 참고) */}
@@ -84,7 +82,7 @@ export function CompanyTable({ companies, buildDetailHref, pageSize }: CompanyTa
             <col style={{ width: COLUMN_WIDTH.status }} />
           </colgroup>
           <TableHeader>
-            <TableRow className={cn(HEADER_HEIGHT_CLASS, "hover:bg-transparent")}>
+            <TableRow className={cn(HEADER_HEIGHT_CLASS, "bg-secondary/50 hover:bg-transparent")}>
               <TableHead className="pl-4 text-xs">기업명</TableHead>
               <TableHead className="text-center text-xs">기업 코드</TableHead>
               <TableHead className="text-center text-xs">구성원</TableHead>
@@ -96,7 +94,10 @@ export function CompanyTable({ companies, buildDetailHref, pageSize }: CompanyTa
           <TableBody>
             {companies.map((company) => (
               // relative — stretched link(아래 after:absolute)가 이 행 기준으로 덮인다
-              <TableRow key={company.id} className={cn(ROW_HEIGHT_CLASS, "relative")}>
+              <TableRow
+                key={company.id}
+                className={cn(ROW_HEIGHT_CLASS, "hover:bg-foreground/[0.04] relative")}
+              >
                 <TableCell className="max-w-0 pl-4">
                   <Link
                     href={buildDetailHref(company.id)}
@@ -119,23 +120,13 @@ export function CompanyTable({ companies, buildDetailHref, pageSize }: CompanyTa
                   {company.meetingCountThisMonth}회
                 </TableCell>
                 <TableCell className="text-muted-foreground text-center tabular-nums">
-                  {company.joinedAt}
+                  {formatDate(company.joinedAt)}
                 </TableCell>
                 <TableCell className="pr-4 text-center">
                   <StatusBadge tone={STATUS_TONE[company.status]}>
                     {COMPANY_STATUS_LABEL[company.status]}
                   </StatusBadge>
                 </TableCell>
-              </TableRow>
-            ))}
-            {/* 채움 행 — 보더 없이, 스크린리더에서도 안 읽힌다. 목적은 오직 <tr> 개수를 맞추는 것뿐 */}
-            {Array.from({ length: fillerCount }, (_, index) => (
-              <TableRow
-                key={`filler-${index}`}
-                aria-hidden
-                className={cn(ROW_HEIGHT_CLASS, "border-transparent hover:bg-transparent")}
-              >
-                <TableCell className="pl-4" colSpan={6} />
               </TableRow>
             ))}
           </TableBody>

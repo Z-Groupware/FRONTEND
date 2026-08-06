@@ -1,3 +1,4 @@
+import { StatusDot } from "@/components/common/status-dot";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 
@@ -55,19 +56,14 @@ export function CalendarEventListItem({ event, onToggleCompletion }: CalendarEve
           {event.title}
         </p>
 
-        {/* 태그 라벨과 같은 줄, 오른쪽 끝 — 진행중=초록 · 완료=보라(globals.css 상태점 색 재사용). */}
+        {/* 태그 라벨과 같은 줄, 오른쪽 끝 — 점만 색, 글자는 무채색(공용 StatusDot 재사용). */}
         <div className="flex items-center justify-between gap-2">
           <p className="text-muted-foreground text-xs">{CALENDAR_ITEM_TAG_LABEL[event.tag]}</p>
-          <span
-            className={cn(
-              "inline-flex h-5 shrink-0 items-center rounded-full px-2 text-xs font-medium whitespace-nowrap",
-              event.isCompleted
-                ? "bg-status-done/12 text-status-done"
-                : "bg-status-progress/12 text-status-progress",
-            )}
-          >
-            {getCalendarCompletionLabel(event.isCompleted)}
-          </span>
+          <StatusDot
+            tone={event.isCompleted ? "DONE" : "IN_PROGRESS"}
+            label={getCalendarCompletionLabel(event.isCompleted)}
+            className="text-muted-foreground shrink-0 text-xs whitespace-nowrap"
+          />
         </div>
       </div>
     </li>
