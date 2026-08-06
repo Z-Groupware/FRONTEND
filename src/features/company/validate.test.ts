@@ -1,7 +1,12 @@
 import { AUTHORITY } from "@/constants/domain";
 
 import type { CompanyProfileDraft, DepartmentNode, Position } from "./types";
-import { validateCompanyProfile, validateDepartments, validatePositions } from "./validate";
+import {
+  findBlockedTeamRemoval,
+  validateCompanyProfile,
+  validateDepartments,
+  validatePositions,
+} from "./validate";
 
 /**
  * 기업 설정 검증 — **서버가 마지막으로 보는 곳**이다.
@@ -154,5 +159,40 @@ describe("validatePositions", () => {
   it("이름이 비거나 5자를 넘으면 막는다", () => {
     expect(validatePositions([{ ...member, name: " " }])).toBeTruthy();
     expect(validatePositions([{ ...member, name: "여섯글자직급" }])).toBeTruthy();
+  });
+});
+
+describe("findBlockedTeamRemoval", () => {
+  const before = [team("d1", "개발팀", [team("r1", "프론트")]), team("d2", "기획팀")];
+
+  /*
+    ⚠️ 팀은 인수인계·액션 귀속의 단위다. 소속이 사라진 사원은 `isWithinTeamScope`가 teamId
+       비교라 **아무도 관리할 수 없는 상태**가 된다 — 워크플로우가 사람이 빠질 때 늘 명시적
+       재할당을 거치는 것과 같은 이유로 막는다.
+  */
+  it("사람이 남은 팀을 지우려 하면 그 팀 이름을 돌려준다", () => {
+    expect(findBlockedTeamRemoval(before, [team("d1", "개발팀")], { d1: 6, d2: 3 })).toBe("기획팀");
+  });
+
+  it("빈 팀은 지울 수 있다", () => {
+    expect(findBlockedTeamRemoval(before, [team("d1", "개발팀")], { d1: 6, d2: 0 })).toBeNull();
+  });
+
+  it("인원을 모르는 팀은 0으로 본다 — 없는 키에 걸려 못 지우면 안 된다", () => {
+    expect(findBlockedTeamRemoval(before, [team("d1", "개발팀")], { d1: 6 })).toBeNull();
+  });
+
+  it("아무 팀도 안 지웠으면 막지 않는다", () => {
+    expect(findBlockedTeamRemoval(before, before, { d1: 6, d2: 3 })).toBeNull();
+  });
+
+  /*
+    ⚠️ 역할(트리 아랫단)은 세지 않는다. 사원이 소속되는 건 **팀**이다(§권한 ③) —
+       역할만 지우는 건 사람의 소속을 건드리지 않는다.
+  */
+  it("역할만 지우는 건 막지 않는다", () => {
+    const next = [team("d1", "개발팀"), team("d2", "기획팀")];
+
+    expect(findBlockedTeamRemoval(before, next, { d1: 6, d2: 3, r1: 6 })).toBeNull();
   });
 });

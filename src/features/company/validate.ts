@@ -87,6 +87,31 @@ export function validateDepartments(departments: DepartmentNode[]): string | nul
 }
 
 /**
+ * 사라진 팀 중 **사람이 딸린 팀**이 있는지 — 있으면 그 팀 이름을 돌려준다.
+ *
+ * ⚠️ 팀은 인수인계·액션 귀속의 단위다. 워크플로우에서 사람이 빠질 때는 **항상 명시적
+ *    재할당**을 거친다(휴직·오프보딩 → 인수인계 → 새 리더 귀속) — 조용히 붕 뜨는 경로가 없다.
+ *    팀 삭제만 예외로 두면, 소속이 사라진 사원은 `isWithinTeamScope`가 `teamId` 비교라
+ *    **아무도 관리할 수 없는 상태**가 되고 그 사람의 액션 출처도 끊긴다.
+ * ⚠️ 그래서 **막는다.** 되돌릴 길이 있어서다 — 사원 관리에서 옮긴 뒤 다시 지우면 된다.
+ *    미배정으로 흘려보내면 그 사원들을 다시 찾아 붙이는 일이 남는다.
+ * ⚠️ 역할(트리 아랫단)은 세지 않는다. 사원이 소속되는 건 **팀**이다(§권한 ③).
+ * ⚠️ 우리가 정한 잠정 규칙이다 — BE 확인이 필요하다(§연동 검증).
+ */
+export function findBlockedTeamRemoval(
+  previous: DepartmentNode[],
+  next: DepartmentNode[],
+  memberCounts: Record<string, number>,
+): string | null {
+  const remaining = new Set(next.map((team) => team.id));
+  const removed = previous.find(
+    (team) => !remaining.has(team.id) && (memberCounts[team.id] ?? 0) > 0,
+  );
+
+  return removed ? removed.name : null;
+}
+
+/**
  * 직급 검증 — 이름과 **리더 하나 규칙**.
  * ⚠️ 리더 직급은 회사에 하나뿐이다(CLAUDE.md §권한). 둘이 되면 팀 범위 판정이 무너진다.
  */

@@ -11,6 +11,7 @@ import {
   updateMockDepartments,
   updateMockPositions,
 } from "./mock/company";
+import { getCompanySetting } from "./server";
 import type {
   CompanyActionResult,
   CompanyProfileDraft,
@@ -18,7 +19,12 @@ import type {
   DepartmentNode,
   Position,
 } from "./types";
-import { validateCompanyProfile, validateDepartments, validatePositions } from "./validate";
+import {
+  findBlockedTeamRemoval,
+  validateCompanyProfile,
+  validateDepartments,
+  validatePositions,
+} from "./validate";
 
 /**
  * 기업 설정의 **변경 작업**. 전부 서버에서 돈다(핵심 4원칙 ②).
@@ -132,6 +138,24 @@ export async function saveDepartmentsAction(
 
   const error = validateDepartments(departments);
   if (error) return { isSuccess: false, message: error };
+
+  /*
+    ⚠️ **사람이 딸린 팀은 못 지운다.** 화면에서 미리 막지만 액션은 직접 부를 수 있다
+       (§권한: 화면 숨김은 보안이 아니다). 지금 저장된 트리와 견줘 사라진 팀을 찾는다 —
+       클라이언트가 보낸 값만 보면 "무엇이 사라졌는지"를 알 수 없다.
+  */
+  const current = await getCompanySetting();
+  const blocked = findBlockedTeamRemoval(
+    current.departments,
+    departments,
+    current.teamMemberCounts,
+  );
+  if (blocked) {
+    return {
+      isSuccess: false,
+      message: `'${blocked}'에 사원이 남아 있습니다. 사원 관리에서 옮긴 뒤 지워 주세요`,
+    };
+  }
 
   // ⚠️ 던지지 않는다 — 저장 실패는 화면 전체 실패가 아니다(§기업 정보 저장과 같은 이유)
   if (!isMock) {

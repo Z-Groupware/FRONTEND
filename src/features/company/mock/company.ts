@@ -31,6 +31,11 @@ const INITIAL: CompanySetting = {
     { id: "d2", name: "기획팀", children: [] },
     { id: "d3", name: "디자인팀", children: [] },
   ],
+  /*
+    ⚠️ **빈 팀을 하나 둔다**(디자인팀). 사람이 딸린 팀만 있으면 "지울 수 있는 팀"이 하나도
+       없어서 삭제 경로를 데모에서 못 본다.
+  */
+  teamMemberCounts: { d1: 6, d2: 3, d3: 0 },
   positions: [
     { id: "p1", name: "팀장", role: AUTHORITY.LEADER },
     { id: "p2", name: "매니저", role: AUTHORITY.MEMBER },

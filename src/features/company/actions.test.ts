@@ -35,8 +35,13 @@ const VALID_PROFILE: CompanyProfileDraft = {
   place: { address: "서울 강남구 테헤란로 1", lat: 37.5, lng: 127 },
 };
 
+/*
+  ⚠️ **사람이 있는 팀(d1·d2)은 남겨 둔다.** 지우면 "사원이 남아 있습니다"로 막히는 게 맞고,
+     그건 아래 전용 테스트가 본다 — 여기서는 정상 저장 경로를 봐야 한다.
+*/
 const VALID_TEAMS: DepartmentNode[] = [
   { id: "d1", name: "개발팀", children: [{ id: "r1", name: "프론트", children: [] }] },
+  { id: "d2", name: "기획팀", children: [] },
 ];
 
 const VALID_POSITIONS: Position[] = [
@@ -158,6 +163,23 @@ describe("saveDepartmentsAction · savePositionsAction", () => {
 
     expect(result.isSuccess).toBe(false);
     expect(revalidatePathMock).not.toHaveBeenCalled();
+  });
+
+  /* ⚠️ 화면이 미리 막지만 액션은 직접 부를 수 있다 — 서버가 마지막에 다시 본다 */
+  it("사원이 남은 팀을 지우려 하면 막는다", async () => {
+    const withoutTeams = getMockCompanySetting().departments.filter((team) => team.id !== "d1");
+
+    const result = await saveDepartmentsAction(withoutTeams);
+
+    expect(result.isSuccess).toBe(false);
+    expect(result.message).toMatch(/사원 관리/);
+    expect(revalidatePathMock).not.toHaveBeenCalled();
+  });
+
+  it("빈 팀은 지울 수 있다", async () => {
+    const withoutEmpty = getMockCompanySetting().departments.filter((team) => team.id !== "d3");
+
+    expect(await saveDepartmentsAction(withoutEmpty)).toEqual({ isSuccess: true });
   });
 
   it("Leader 직급이 둘이면 막는다", async () => {

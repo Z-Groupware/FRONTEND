@@ -44,6 +44,19 @@ export interface CompanySetting {
   profile: CompanyProfile;
   departments: DepartmentNode[];
   positions: Position[];
+  /**
+   * 팀 id → 그 팀에 속한 사원 수.
+   *
+   * ⚠️ **사람이 딸린 팀은 지울 수 없다**(우리가 정한 잠정 규칙 — BE 확인 필요).
+   *    권한 판정(`isWithinTeamScope`)이 `teamId` 비교라, 팀이 사라진 사원은 **아무도 관리할 수
+   *    없는 상태**가 된다. 인수인계·액션 추적도 팀 기준이라 소속이 끊기면 출처가 사라진다
+   *    (퇴사자를 목록에 남기는 것과 같은 이유).
+   * ⚠️ 막는 쪽을 고른 건 **되돌릴 길이 있어서**다 — 사원 관리에서 옮긴 뒤 다시 지우면 된다.
+   *    미배정으로 흘려보내면 그 사원들을 다시 찾아 붙이는 일이 남는다.
+   * ⚠️ 트리 노드에 넣지 않는다. `DepartmentNode`는 온보딩과 공유하는 타입이고, 거기엔
+   *    아직 사원이 없다.
+   */
+  teamMemberCounts: Record<string, number>;
 }
 
 /** 폼이 보내는 값 — 기업 코드는 못 고치므로 빠진다 */
