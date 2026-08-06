@@ -3,6 +3,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { isDelayed } from "@/constants/domain";
 import type { TimelineActionInput } from "@/features/member/action-timeline";
 import { ActionTimeline, ActionTimelineLegend } from "@/features/member/components/action-timeline";
@@ -10,6 +12,7 @@ import {
   parseProjectDetailTab,
   PROJECT_DETAIL_TABS,
   PROJECT_TIMELINE_BOX_HEIGHT,
+  splitDepartments,
 } from "@/features/project/lib";
 import { getProjectDetail, getProjectTeamActions } from "@/features/project/server";
 import { formatMonthDayWeekday } from "@/lib/date";
@@ -35,6 +38,12 @@ export default async function ProjectDetailPage({ params, searchParams }: Projec
   const activeTab = parseProjectDetailTab((await searchParams).tab);
   const tagColor = pickPaletteColor(project.tag);
   const due = formatMonthDayWeekday(project.dueDate);
+  const { visible: visibleTeamNames, overflow: teamOverflow } = splitDepartments(project.teamNames);
+  const visibleTeamBadges = visibleTeamNames.map((team) => (
+    <Badge key={team} variant="outline" className="shrink-0">
+      {team}
+    </Badge>
+  ));
 
   const teamActions =
     activeTab === "timeline" ? await getProjectTeamActions(String(project.id)) : [];
@@ -60,13 +69,23 @@ export default async function ProjectDetailPage({ params, searchParams }: Projec
     <main className="scrollbar-hidden min-h-0 flex-1 overflow-y-auto px-8 py-7">
       <div className="mx-auto flex w-full max-w-[1080px] flex-col gap-4">
         <div className="flex flex-col gap-1">
-          <p className="text-muted-foreground text-xs">
+          <p className="text-muted-foreground text-[11px] leading-4">
             <Link href="/app/projects" className="hover:text-foreground">
               프로젝트
             </Link>{" "}
             &gt; {project.name}
           </p>
-          <h2 className="text-foreground text-base font-semibold">{project.name}</h2>
+          <div className="flex items-center gap-2">
+            <h2 className="text-foreground text-xl leading-7 font-semibold tracking-[-0.4px]">
+              {project.name}
+            </h2>
+            <span
+              className="rounded px-1.5 py-0.5 font-mono text-xs leading-none font-semibold"
+              style={{ backgroundColor: tagColor.bgColor, color: tagColor.textColor }}
+            >
+              {project.tag}
+            </span>
+          </div>
         </div>
 
         <nav aria-label="프로젝트 상세 탭" className="border-border flex gap-4 border-b">
@@ -93,16 +112,33 @@ export default async function ProjectDetailPage({ params, searchParams }: Projec
 
         {activeTab === "plan" ? (
           <section className="border-border bg-card flex flex-col gap-3 rounded-xl border p-6">
-            <div className="flex items-center gap-2 text-xs">
-              <span
-                className="rounded px-1.5 py-0.5 font-mono font-semibold"
-                style={{ backgroundColor: tagColor.bgColor, color: tagColor.textColor }}
-              >
-                {project.tag}
-              </span>
-              <span className="text-muted-foreground">마감 {due ? `${due}까지` : "-"}</span>
+            <div className="flex justify-end">
+              <div className="flex flex-col items-end gap-1.5">
+                <span className="text-muted-foreground text-xs tabular-nums">
+                  {due ? `${due}까지` : "-"}
+                </span>
+                <div
+                  className="flex items-center gap-1"
+                  aria-label={`참여 팀: ${project.teamNames.join(", ")}`}
+                >
+                  {teamOverflow > 0 ? (
+                    <Tooltip>
+                      <TooltipTrigger render={<span className="flex items-center gap-1" />}>
+                        {visibleTeamBadges}
+                        <Badge variant="secondary" className="shrink-0">
+                          +{teamOverflow}
+                        </Badge>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom" className="max-w-none">
+                        <span className="whitespace-nowrap">{project.teamNames.join(" · ")}</span>
+                      </TooltipContent>
+                    </Tooltip>
+                  ) : (
+                    visibleTeamBadges
+                  )}
+                </div>
+              </div>
             </div>
-            <h3 className="text-foreground text-lg font-semibold">{project.name}</h3>
             <p className="text-muted-foreground text-sm whitespace-pre-wrap">
               {project.description}
             </p>
