@@ -69,7 +69,7 @@ export const ACCOUNT_ENTRIES: readonly FaqEntry[] = [
     question: "역할마다 뭘 할 수 있나요?",
     keywords: ["뭘 할 수", "무엇을 할", "할 수 있는 일", "권한 범위"],
     answer:
-      "· Owner — 기업 전체 관리\n· Leader — 팀 현황·액션 관리\n· Member — 일반 사용\n\n여기에 +Admin(겸직) — 계정·회의실·직급 권한 관리가 얹혀요. 회의 개설이나 액션 조회 같은 건 Admin을 켠다고 늘지 않고, 그 사람의 역할이 정합니다.\n\n표로 정리한 화면이 따로 있습니다.",
+      "· Owner — 기업 전체 관리\n· Leader — 팀 현황·액션 관리\n· Member — 일반 사용\n\n여기에 +Admin(겸직) — 회의실·직급 권한 관리가 얹혀요. 계정 발급은 대표(Owner)도 Admin도 할 수 있어요. 회의 개설이나 액션 조회 같은 건 Admin을 켠다고 늘지 않고, 그 사람의 역할이 정합니다.\n\n표로 정리한 화면이 따로 있습니다.",
     links: [{ label: "권한 매트릭스 보기", href: "/roles" }],
   },
   {
