@@ -6,6 +6,7 @@ import type { TimelineActionInput } from "@/features/member/action-timeline";
 import { ActionTimeline, ActionTimelineLegend } from "@/features/member/components/action-timeline";
 import { DUE_SOON_BOX_MIN_HEIGHT, MEETING_BOX_HEIGHT } from "@/features/member/lib";
 import { getMemberDashboardOverview } from "@/features/member/server";
+import { pickPaletteColor } from "@/lib/palette";
 
 export const metadata: Metadata = {
   title: "대시보드",
@@ -15,16 +16,20 @@ export default async function MemberDashboardPage() {
   const { dueSoonActions, attendedMeetings } = await getMemberDashboardOverview();
 
   // 지연은 상태가 아니라 마감 경과 파생값이라 여기서 계산해 tone으로 넘긴다(§도메인 상수).
-  const timelineItems: TimelineActionInput[] = dueSoonActions.map((action) => ({
-    id: action.id,
-    title: action.title,
-    tag: action.projectTag,
-    tagColor: action.color,
-    startDate: action.startDate,
-    dueDate: action.dueDate,
-    tone: isDelayed(action) ? "DELAYED" : action.status,
-    href: `/app/actions/${action.id}`,
-  }));
+  const timelineItems: TimelineActionInput[] = dueSoonActions.map((action) => {
+    const tagColor = pickPaletteColor(action.projectTag);
+    return {
+      id: action.id,
+      title: action.title,
+      tag: action.projectTag,
+      tagBgColor: tagColor.bgColor,
+      tagTextColor: tagColor.textColor,
+      startDate: action.startDate,
+      dueDate: action.dueDate,
+      tone: isDelayed(action) ? "DELAYED" : action.status,
+      href: `/app/actions/${action.id}`,
+    };
+  });
 
   return (
     <main className="scrollbar-hidden flex min-h-0 flex-1 flex-col overflow-y-auto px-8 py-7">

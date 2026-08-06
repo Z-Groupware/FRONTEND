@@ -57,3 +57,22 @@ export function splitDepartments(
 ): { visible: string[]; overflow: number } {
   return { visible: departments.slice(0, max), overflow: Math.max(0, departments.length - max) };
 }
+
+/** 프로젝트 상세(`/app/projects/:tag`) 탭 — 값이 곧 `?tab=` 값이다(기획은 기본이라 쿼리에 안 실린다). */
+export const PROJECT_DETAIL_TABS = [
+  { tab: "plan", label: "기획" },
+  { tab: "timeline", label: "타임라인" },
+] as const;
+
+export type ProjectDetailTab = (typeof PROJECT_DETAIL_TABS)[number]["tab"];
+
+/** URL의 `?tab=` 값을 안전하게 탭으로 — 모르는 값이면 기본(기획). */
+export function parseProjectDetailTab(value: string | undefined): ProjectDetailTab {
+  return PROJECT_DETAIL_TABS.find((t) => t.tab === value)?.tab ?? "plan";
+}
+
+/**
+ * 타임라인 탭 박스 높이 — 사원 대시보드의 `DUE_SOON_BOX_MIN_HEIGHT`(280)와 같은 컴포넌트를
+ * 재사용하되, 여기는 다른 섹션과 경합하지 않는 전용 화면이라 더 크게 둔다.
+ */
+export const PROJECT_TIMELINE_BOX_HEIGHT = 480;
