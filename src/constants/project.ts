@@ -18,3 +18,21 @@ export const PROJECT_STATUS_LABEL: Record<ProjectStatus, string> = {
   IN_PROGRESS: "진행중",
   DONE: "완료",
 };
+
+/**
+ * 프로젝트 목록 정렬 기준. 화면엔 한글 라벨, 코드엔 영문 상수.
+ * ⚠️ '마감 늦은순'은 '마감 임박순'과 결이 겹쳐 두지 않는다.
+ */
+export const PROJECT_SORT = {
+  DUE_ASC: "DUE_ASC",
+  NAME: "NAME",
+} as const;
+export type ProjectSort = (typeof PROJECT_SORT)[keyof typeof PROJECT_SORT];
+
+export const PROJECT_SORT_LABEL: Record<ProjectSort, string> = {
+  DUE_ASC: "마감 임박순",
+  NAME: "이름순",
+};
+
+/** 기본 정렬 — 마감 임박순(스펙). */
+export const DEFAULT_PROJECT_SORT: ProjectSort = PROJECT_SORT.DUE_ASC;
