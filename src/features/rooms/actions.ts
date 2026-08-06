@@ -68,7 +68,10 @@ export async function createRoomReservationAction(
   if (!findMockRoom(draft.roomId)) {
     return { errors: { roomId: "존재하지 않는 회의실이에요" } };
   }
-  if (draft.projectId && !TOP_LEVEL_PROJECTS.some((project) => project.id === draft.projectId)) {
+  if (
+    draft.projectId &&
+    !TOP_LEVEL_PROJECTS.some((project) => String(project.id) === draft.projectId)
+  ) {
     return { errors: { projectId: "존재하지 않는 프로젝트예요" } };
   }
   if (draft.attendeeIds.some((id) => !findMockMember(id))) {

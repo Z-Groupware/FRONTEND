@@ -10,7 +10,7 @@ const DRAFT = {
   roomId: "room-small-b",
   date: "2026-08-10",
   startTime: "10:30",
-  projectId: "p-goods",
+  projectId: "1", // TOP_LEVEL_PROJECTS의 GOODS(id=1)
   topicMain: "PRODUCT",
   topicSub: "ROADMAP_REVIEW",
   attendeeIds: [1, 2],

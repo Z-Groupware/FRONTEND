@@ -41,7 +41,7 @@ const INITIAL: RoomReservation[] = [
     end: new Date("2026-08-03T10:30:00"),
     roomId: "room-large",
     roomName: "대회의실",
-    projectId: "p-brand",
+    projectId: "2",
     projectTag: "BRAND",
     topicMain: "MARKETING",
     topicSub: "채널 전략",
@@ -55,7 +55,7 @@ const INITIAL: RoomReservation[] = [
     end: new Date("2026-08-03T14:30:00"),
     roomId: "room-large",
     roomName: "대회의실",
-    projectId: "p-goods",
+    projectId: "1",
     projectTag: "GOODS",
     topicMain: "PRODUCT",
     topicSub: "로드맵 검토",
@@ -69,7 +69,7 @@ const INITIAL: RoomReservation[] = [
     end: new Date("2026-08-05T16:00:00"),
     roomId: "room-small-a",
     roomName: "소회의실 A",
-    projectId: "p-collab",
+    projectId: "3",
     projectTag: "COLLAB",
     topicMain: "INFRA",
     topicSub: "마이그레이션 리뷰",
@@ -123,7 +123,7 @@ export function addMockReservation(draft: RoomReservationDraft, ownerId: number)
   const topicSub =
     MEETING_TOPIC_SUB[topicMain]?.find((sub) => sub.value === draft.topicSub)?.label ??
     draft.topicSub;
-  const project = TOP_LEVEL_PROJECTS.find((item) => item.id === draft.projectId);
+  const project = TOP_LEVEL_PROJECTS.find((item) => String(item.id) === draft.projectId);
 
   const reservation: RoomReservation = {
     id: `reservation-${++store.sequence}`,

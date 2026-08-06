@@ -1,4 +1,4 @@
-import type { ProjectStatus } from "@/constants/domain";
+import type { ActionStatus, ProjectStatus } from "@/constants/domain";
 import type { TagColorName } from "@/lib/palette";
 
 /**
@@ -6,7 +6,8 @@ import type { TagColorName } from "@/lib/palette";
  * ⚠️ 프로젝트는 전부 Owner가 개설하므로 개설자 라벨은 항상 "Owner"라 필드로 두지 않는다(상수 표시).
  */
 export interface ProjectListItem {
-  id: string;
+  /** BE 자동증가 정수 PK. URL(`/app/projects/:projectId`)에는 이 값이 그대로 실린다(태그 아님). */
+  id: number;
   name: string;
   /**
    * 세부 설명(기획). 실제로는 Owner가 길게 쓸 수 있는 본문이라 목록에선 **첫 줄만** 잘라 보여준다.
@@ -51,3 +52,36 @@ export type ProjectFormErrors = Partial<
     teamNames: string;
   }
 >;
+
+/**
+ * 프로젝트 상세(`/app/projects/:projectId`)의 기획 탭. `ProjectListItem`과 필드가 겹치지만
+ * 목록에 없는 첨부파일이 있어 별도 타입으로 둔다 — 목록 카드에 첨부파일까지 끌고 오지 않는다.
+ * ⚠️ URL은 `id`로 다닌다(태그를 그대로 노출하지 않는다, 2026-08-06 확정) — `tag`는 화면 표시용.
+ */
+export interface ProjectDetail {
+  /** BE 자동증가 정수 PK — `ProjectListItem.id`와 같은 값. */
+  id: number;
+  tag: string;
+  name: string;
+  description: string;
+  dueDate: string;
+  /** 참여 팀 전체 — 목록과 달리 자르지 않는다(상세라 다 보여준다) */
+  teamNames: string[];
+  /** ⚠️ 목 단계라 파일명만 — 실제 다운로드는 API 스펙 확정 후 */
+  attachmentName?: string;
+}
+
+/**
+ * 프로젝트 상세의 타임라인 탭 한 줄 — 이 프로젝트에 속한 팀 액션 한 건.
+ * ⚠️ 팀 액션 1개 = 이 프로젝트 타임라인의 막대 1개(WORKFLOW.md §1 타임라인 탭).
+ */
+export interface ProjectTeamAction {
+  id: string;
+  name: string;
+  team: string;
+  /** 작업 시작일 `YYYY-MM-DD` */
+  startDate: string;
+  /** 마감일 `YYYY-MM-DD` */
+  dueDate: string;
+  status: ActionStatus;
+}

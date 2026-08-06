@@ -42,7 +42,7 @@ export async function getReservableMembers(): Promise<RoomMember[]> {
 export async function getReservableProjects(): Promise<RoomProjectOption[]> {
   if (isMock) {
     return TOP_LEVEL_PROJECTS.map((project) => ({
-      id: project.id,
+      id: String(project.id),
       name: project.name,
       tag: project.tag,
     }));

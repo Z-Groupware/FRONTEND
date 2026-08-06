@@ -39,10 +39,7 @@ export function ProjectListItem({ project }: { project: ProjectListItemModel }) 
       />
 
       {/* 클릭 영역 = 프로젝트 상세로 */}
-      <Link
-        href={`/app/projects/${project.tag}`}
-        className="flex min-w-0 flex-1 items-center gap-3"
-      >
+      <Link href={`/app/projects/${project.id}`} className="flex min-w-0 flex-1 items-center gap-3">
         <div className="flex min-w-0 flex-1 flex-col gap-1">
           <span
             className="w-fit rounded px-1.5 py-0.5 font-mono text-[10px] font-semibold"

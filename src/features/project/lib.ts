@@ -1,8 +1,12 @@
 import {
+  DEFAULT_PROJECT_DETAIL_TAB,
   DEFAULT_PROJECT_SORT,
+  PROJECT_DETAIL_TAB,
+  PROJECT_DETAIL_TAB_LABEL,
   PROJECT_SORT,
   PROJECT_STATUS,
   PROJECT_STATUS_LABEL,
+  type ProjectDetailTab,
   type ProjectSort,
   type ProjectStatus,
 } from "@/constants/domain";
@@ -57,3 +61,23 @@ export function splitDepartments(
 ): { visible: string[]; overflow: number } {
   return { visible: departments.slice(0, max), overflow: Math.max(0, departments.length - max) };
 }
+
+/** 프로젝트 상세 탭 목록 — 값·라벨은 도메인 상수에서 온다(라벨 하드코딩 금지). */
+export const PROJECT_DETAIL_TABS: { tab: ProjectDetailTab; label: string }[] = [
+  { tab: PROJECT_DETAIL_TAB.PLAN, label: PROJECT_DETAIL_TAB_LABEL[PROJECT_DETAIL_TAB.PLAN] },
+  {
+    tab: PROJECT_DETAIL_TAB.TIMELINE,
+    label: PROJECT_DETAIL_TAB_LABEL[PROJECT_DETAIL_TAB.TIMELINE],
+  },
+];
+
+/** URL의 `?tab=` 값을 안전하게 탭으로 — 모르는 값이면 기본(기획). */
+export function parseProjectDetailTab(value: string | undefined): ProjectDetailTab {
+  return PROJECT_DETAIL_TABS.find((t) => t.tab === value)?.tab ?? DEFAULT_PROJECT_DETAIL_TAB;
+}
+
+/**
+ * 타임라인 탭 박스 높이 — 사원 대시보드의 `DUE_SOON_BOX_MIN_HEIGHT`(280)와 같은 컴포넌트를
+ * 재사용하되, 여기는 다른 섹션과 경합하지 않는 전용 화면이라 더 크게 둔다.
+ */
+export const PROJECT_TIMELINE_BOX_HEIGHT = 480;

@@ -41,7 +41,7 @@ app/
 │ └─ /my **base role = Member** 대시보드
 │
 ├─ (app)/ /app/* ← 공용 워크벤치(로그인 전원, 컴포넌트 레벨 권한 차등)
-│ projects(+/new·/:tag·/:tag/team/:teamId) · actions/:id · my/actions
+│ projects(+/new·/:projectId·/:projectId/team/:teamActionId) · actions/:id · my/actions
 │ · meeting(+/:id·/:id/capture·/:id/review) · rooms · board · calendar
 │ · notice(+/:id·/new·/:id/edit) · people · me · search · handover
 │
@@ -56,7 +56,8 @@ app/
 - :star: **ADMIN은 역할 아닌 플래그(`is_admin`).** 전용 대시보드 없이 base role 대시보드 사용, `/manage/*` 메뉴만 추가. 가드 = `role==="owner" || is_admin`. 관리 기능은 `/manage`로 단일화(중복 금지). 관리자 권한 부여 토글도 admin 조작 가능.
 - :no_entry: 단 **`/owner/leader-handovers`(팀장 오프보딩 인수인계)는 OWNER 전용**(위계상 admin 불가). 팀장 휴직은 여기 말고 `/manage/members/:id`에서 승인.
 - `/app/*`은 라우트 분리 대신 **컴포넌트 레벨 가드**. (`/app/my/actions`=OWNER 접근 불가 / `/app/projects/new`·기획 편집=OWNER만 / `/app/handover`=OWNER 제외)
-- 진입 스코프만 다르고 데이터 같으면 라우트는 나누되 **상세 컴포넌트 재사용** (`/team/action` vs `/app/projects/:tag/team/:teamId`).
+- 진입 스코프만 다르고 데이터 같으면 라우트는 나누되 **상세 컴포넌트 재사용** (`/team/action` vs `/app/projects/:projectId/team/:teamActionId`).
+- ⚠️ **프로젝트 상세는 `:projectId`로 다닌다, 태그가 아니다**(2026-08-06 확정). URL에 태그를 그대로 노출하면 나중에 태그 변경·중복 이슈가 생긴다 — id는 안 바뀐다. 목록·개인 액션 상세·회의 상세에서 프로젝트로 가는 링크는 전부 `project.id`를 쓴다.
 - 회의 생성 진입점 없음 → `/app/rooms` 예약 = 회의 개설.
 - :no_entry: **명세에 없는 화면·기능은 안 만든다.** 화면 내 항목 순서도 명세 따름.
 - ⚠️ **관리 기능은 `/manage/*` 하나로 모은다**(팀 URL 문서 2026-08-05). `/owner/*`에 두면 겸직자에게

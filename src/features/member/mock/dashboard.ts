@@ -20,7 +20,6 @@ export const MEMBER_ACTIONS_MOCK: MemberAction[] = [
     id: "ma1",
     title: "로그인 폼 검증 로직 구현",
     projectTag: "GOODS",
-    color: "#7C3AED",
     status: ACTION_STATUS.IN_PROGRESS,
     startDate: "2026-08-01",
     dueDate: "2026-08-03", // 연체(D+2)
@@ -29,7 +28,6 @@ export const MEMBER_ACTIONS_MOCK: MemberAction[] = [
     id: "ma2",
     title: "접근성 점검 - 키보드 내비게이션",
     projectTag: "COLLAB",
-    color: "#2563EB",
     status: ACTION_STATUS.IN_PROGRESS,
     startDate: "2026-08-01",
     dueDate: "2026-08-04", // 연체(D+1)
@@ -38,7 +36,6 @@ export const MEMBER_ACTIONS_MOCK: MemberAction[] = [
     id: "ma3",
     title: "PG사 연동 문서 검토",
     projectTag: "GOODS",
-    color: "#7C3AED",
     // 시작일이 오늘이라 미착수 '할일'이 아니라 오늘부터 하는 '진행중'이다(오늘선에 걸침).
     status: ACTION_STATUS.IN_PROGRESS,
     startDate: "2026-08-05",
@@ -48,7 +45,6 @@ export const MEMBER_ACTIONS_MOCK: MemberAction[] = [
     id: "ma4",
     title: "온보딩 플로우 와이어프레임 검토",
     projectTag: "GOODS",
-    color: "#7C3AED",
     status: ACTION_STATUS.IN_PROGRESS,
     startDate: "2026-08-04",
     dueDate: "2026-08-08", // D-3 (오늘 걸침)
@@ -57,7 +53,6 @@ export const MEMBER_ACTIONS_MOCK: MemberAction[] = [
     id: "ma5",
     title: "회원가입 API 연동",
     projectTag: "GOODS",
-    color: "#7C3AED",
     status: ACTION_STATUS.TODO,
     startDate: "2026-08-09",
     dueDate: "2026-08-11", // D-6
@@ -66,7 +61,6 @@ export const MEMBER_ACTIONS_MOCK: MemberAction[] = [
     id: "ma6",
     title: "상품 목록 무한 스크롤 구현",
     projectTag: "GOODS",
-    color: "#7C3AED",
     status: ACTION_STATUS.TODO,
     startDate: "2026-08-10",
     dueDate: "2026-08-12", // D-7
@@ -75,7 +69,6 @@ export const MEMBER_ACTIONS_MOCK: MemberAction[] = [
     id: "ma7",
     title: "실시간 알림 UI 작업",
     projectTag: "COLLAB",
-    color: "#2563EB",
     status: ACTION_STATUS.TODO,
     startDate: "2026-08-25",
     dueDate: "2026-08-30", // D-25 (처리할 액션 제외)
@@ -84,7 +77,6 @@ export const MEMBER_ACTIONS_MOCK: MemberAction[] = [
     id: "ma8",
     title: "프로젝트 타임라인 화면 구현",
     projectTag: "COLLAB",
-    color: "#2563EB",
     status: ACTION_STATUS.TODO,
     startDate: "2026-09-15",
     dueDate: "2026-09-21", // D-47 (처리할 액션 제외)

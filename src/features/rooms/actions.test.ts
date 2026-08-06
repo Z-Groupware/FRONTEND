@@ -1,5 +1,7 @@
 // 서버 액션은 next 런타임 함수를 부른다 — jsdom엔 없으니 목으로 대체하고 호출만 검증한다.
 jest.mock("next/cache", () => ({ revalidatePath: jest.fn() }));
+// isMock은 NEXT_PUBLIC_USE_MOCK 환경변수로 정해진다 — 테스트가 환경에 휘둘리지 않게 고정한다.
+jest.mock("@/mocks/config", () => ({ isMock: true }));
 
 import { revalidatePath } from "next/cache";
 
@@ -12,7 +14,7 @@ const VALID_ENTRIES: Record<string, string> = {
   roomId: "room-small-b",
   date: "2026-08-11",
   startTime: "13:00",
-  projectId: "p-goods",
+  projectId: "1", // TOP_LEVEL_PROJECTS의 GOODS(id=1) — 실존 프로젝트여야 통과한다
   topicMain: "PRODUCT",
   topicSub: "ROADMAP_REVIEW",
 };

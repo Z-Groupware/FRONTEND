@@ -5,22 +5,36 @@ import type { StatusTone } from "@/components/common/status-dot";
  * 나중에 프로젝트/팀 액션 상세의 로드맵으로 추출할 때 이 파일이 재사용 씨앗이다.
  */
 
+/** 하루 칸의 폭(px) — 축·바 위치를 전부 이 값의 배수로 계산한다(퍼센트 아님, 2026-08-06 정정). */
+export const TIMELINE_DAY_WIDTH_PX = 40;
+
+/**
+ * 축에 최소 이만큼의 날짜 칸은 채운다 — 기간이 짧은 액션만 있으면 박스 오른쪽이 빈 채로
+ * 남아 보기 나쁘다(2026-08-06 정정). 실제 기간이 이보다 길면 그 값을 그대로 쓴다(줄이지 않는다).
+ * 뒤쪽(마감 이후)에만 칸을 더 붙인다 — 시작·오늘·마감의 상대 위치는 그대로 둔다.
+ */
+export const TIMELINE_MIN_VISIBLE_DAYS = 30;
+
 /** 타임라인 한 줄의 입력 계약 — 멤버 액션 등 특정 도메인 타입에 묶이지 않는 범용 입력이다. */
 export interface TimelineActionInput {
   id: string;
-  title: string;
-  /** 프로젝트 태그 */
+  /**
+   * 칩에 보이는 텍스트 — 호출부마다 의미가 다르다(사원 대시보드=프로젝트 태그,
+   * 프로젝트 상세=팀명 등). 이 계층은 "칩 문구"로만 알고 뜻을 모른다.
+   */
   tag: string;
-  /** 자유 HEX(프로젝트 태그 색) */
-  tagColor: string;
+  title: string;
+  /** 칩 배경·글자색 — 고정 팔레트(`lib/palette` → `pickPaletteColor`)에서 뽑은 값. 자유 HEX 아님. */
+  tagBgColor: string;
+  tagTextColor: string;
   /** 작업 시작일 `YYYY-MM-DD` — 바의 왼쪽 끝 */
   startDate: string;
   /** 마감일 `YYYY-MM-DD` — 바의 오른쪽 끝(마감 지점) */
   dueDate: string;
   /** 상태 색(지연=파생값 포함). `StatusDot`과 같은 셋을 쓴다. */
   tone: StatusTone;
-  /** 클릭 시 이동할 상세 경로 */
-  href: string;
+  /** 클릭 시 이동할 상세 경로. 상세 라우트가 아직 없으면 비워서 클릭 불가로 둔다. */
+  href?: string;
 }
 
 /** 축의 하루 칸. */
@@ -34,10 +48,10 @@ export interface TimelineDay {
   isSunday: boolean;
 }
 
-/** 한 액션의 기간 바 — day-area 대비 백분율로 놓는다. */
+/** 한 액션의 기간 바 — 왼쪽 끝·폭을 px로 놓는다(하루=`TIMELINE_DAY_WIDTH_PX`). */
 export interface TimelineBar extends TimelineActionInput {
-  leftPct: number;
-  widthPct: number;
+  leftPx: number;
+  widthPx: number;
   /** `D-day`·`D-n`·`D+n` */
   ddayLabel: string;
   /** 스크린리더용 기간 텍스트(예: `8월 1일~8월 3일`) */
@@ -47,8 +61,10 @@ export interface TimelineBar extends TimelineActionInput {
 export interface ActionTimelineModel {
   days: TimelineDay[];
   bars: TimelineBar[];
-  /** 오늘선 위치(%) — 오늘을 축 범위에 항상 포함하므로 값이 있다. */
-  todayLeftPct: number;
+  /** 오늘선 위치(px) — 오늘을 축 범위에 항상 포함하므로 값이 있다. */
+  todayLeftPx: number;
+  /** 날짜 칸 전체 폭(px) — `days.length * TIMELINE_DAY_WIDTH_PX`. 헤더·그리드·바가 같이 쓴다. */
+  totalWidthPx: number;
   /** 축 머리 라벨(예: `8월`) */
   monthLabel: string;
 }
@@ -107,7 +123,8 @@ function formatMonthLabel(rangeStart: Date, rangeEnd: Date): string {
 /**
  * 액션들을 오늘 기준 기간 타임라인 모델로 만든다. 비면 `null`.
  * 축 범위 = `min(시작일, 오늘) ~ max(마감일, 오늘)` — 오늘선이 항상 보이도록 오늘을 포함한다.
- * 위치는 day-area 백분율이라 축·오늘선·바가 같은 좌표계를 공유한다.
+ * ⚠️ 위치는 **퍼센트가 아니라 px 고정폭**이다(하루 = `TIMELINE_DAY_WIDTH_PX`) — 기간이 길어도
+ *    칸이 안 눌리고, 화면보다 넓어지면 컴포넌트가 가로 스크롤로 보여준다(2026-08-06 정정).
  */
 export function buildActionTimeline(
   items: TimelineActionInput[],
@@ -120,9 +137,10 @@ export function buildActionTimeline(
   const dueTimes = items.map((it) => parseLocalDate(it.dueDate).getTime());
 
   const rangeStart = new Date(Math.min(todayMid.getTime(), ...startTimes));
-  const rangeEnd = new Date(Math.max(todayMid.getTime(), ...dueTimes));
-  const totalDays = diffDays(rangeStart, rangeEnd) + 1;
-  const dayPct = 100 / totalDays;
+  const rangeEndRaw = new Date(Math.max(todayMid.getTime(), ...dueTimes));
+  const totalDaysRaw = diffDays(rangeStart, rangeEndRaw) + 1;
+  const totalDays = Math.max(totalDaysRaw, TIMELINE_MIN_VISIBLE_DAYS);
+  const rangeEnd = addDays(rangeStart, totalDays - 1);
 
   const days: TimelineDay[] = Array.from({ length: totalDays }, (_, i) => {
     const date = addDays(rangeStart, i);
@@ -144,8 +162,8 @@ export function buildActionTimeline(
     const endIndex = diffDays(rangeStart, due);
     return {
       ...it,
-      leftPct: startIndex * dayPct,
-      widthPct: (endIndex - startIndex + 1) * dayPct,
+      leftPx: startIndex * TIMELINE_DAY_WIDTH_PX,
+      widthPx: (endIndex - startIndex + 1) * TIMELINE_DAY_WIDTH_PX,
       ddayLabel: formatDdayFrom(due, todayMid),
       periodLabel: formatPeriod(start, due),
     };
@@ -155,7 +173,8 @@ export function buildActionTimeline(
     days,
     bars,
     // 오늘 칸의 왼쪽 끝이 아니라 **칸 중앙**(+0.5)에 선을 놓는다.
-    todayLeftPct: (diffDays(rangeStart, todayMid) + 0.5) * dayPct,
+    todayLeftPx: (diffDays(rangeStart, todayMid) + 0.5) * TIMELINE_DAY_WIDTH_PX,
+    totalWidthPx: totalDays * TIMELINE_DAY_WIDTH_PX,
     monthLabel: formatMonthLabel(rangeStart, rangeEnd),
   };
 }
