@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 /**
  * 기업 설정의 카드 한 장.
  *
- * ⚠️ **저장소 관리·구독 화면과 같은 규격이다** — `rounded-2xl` · `px-7 pt-6 pb-3` 머리에
+ * ⚠️ **저장소 관리·구독 화면과 같은 규격이다** — `rounded-2xl` · `px-6 pt-6 pb-3` 머리에
  *    17px 제목과 앞의 점 · 오른쪽에 작은 수치 · 그 아래 설명 한 줄 · 구획은 `border-t`.
  *    온보딩 카드는 머리에 `bg-muted` 띠를 두르는데, 그건 **한 번 지나가는 화면**의 모양이라
  *    워크스페이스 안에 그대로 가져오면 이 화면만 다른 서비스처럼 읽힌다.
@@ -30,7 +30,7 @@ export function SettingCard({
 }) {
   return (
     <section className="border-border bg-card flex h-full flex-col overflow-hidden rounded-2xl border">
-      <div className="flex items-baseline justify-between gap-3 px-7 pt-6 pb-3">
+      <div className="flex items-baseline justify-between gap-3 px-6 pt-6 pb-3">
         <h2 className="flex items-center gap-2 text-[17px] leading-7 font-semibold tracking-[-0.3px]">
           {/* 다른 카드 머리와 같은 표식 — 화면이 달라도 같은 서비스로 읽힌다 */}
           <span className="bg-foreground size-2 rounded-full" aria-hidden />
@@ -43,7 +43,7 @@ export function SettingCard({
         )}
       </div>
 
-      <p className="text-muted-foreground px-7 pb-5 text-[12px] leading-[18px] break-keep">
+      <p className="text-muted-foreground px-6 pb-5 text-[12px] leading-[18px] break-keep">
         {description}
       </p>
 
@@ -56,7 +56,7 @@ export function SettingCard({
       <div className="border-border flex min-h-0 flex-1 flex-col border-t">{children}</div>
 
       {footer && (
-        <div className="border-border flex items-center justify-end gap-2 border-t px-7 py-4">
+        <div className="border-border flex items-center justify-end gap-2 border-t px-6 py-4">
           {footer}
         </div>
       )}

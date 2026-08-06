@@ -3,6 +3,7 @@
 import { Plus } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 
 import { MAX_ORG_NAME_LENGTH } from "../types";
 
@@ -10,12 +11,28 @@ interface DepartmentAddRowProps {
   value: string;
   onChange: (value: string) => void;
   onSubmit: () => void;
+  /**
+   * 줄의 좌우 여백.
+   * ⚠️ **쓰는 카드가 정한다.** 온보딩 카드와 기업 설정 카드는 머리 여백이 달라서, 여기서
+   *    한 값으로 못박으면 한쪽은 반드시 오와 열이 어긋난다. 기본값은 온보딩 기준이다.
+   */
+  insetClassName?: string;
 }
 
 /** 카드 하단 — 부서 추가 줄. 역할은 부서를 만든 뒤 그 안에 넣는다. */
-export function DepartmentAddRow({ value, onChange, onSubmit }: DepartmentAddRowProps) {
+export function DepartmentAddRow({
+  value,
+  onChange,
+  onSubmit,
+  insetClassName = "px-4",
+}: DepartmentAddRowProps) {
   return (
-    <div className="border-border bg-muted flex h-[54px] shrink-0 items-center gap-2 border-t px-4">
+    <div
+      className={cn(
+        "border-border bg-muted flex h-[54px] shrink-0 items-center gap-2 border-t",
+        insetClassName,
+      )}
+    >
       <label htmlFor="root-department" className="sr-only">
         팀 이름
       </label>

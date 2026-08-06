@@ -32,9 +32,20 @@ interface PositionRowProps extends PositionRowHandlers {
   position: Position;
   /** 서열 순서(0부터). 화면에는 1부터 보여준다. */
   index: number;
+  /**
+   * 줄의 좌우 여백.
+   * ⚠️ **쓰는 카드가 정한다.** 온보딩 카드와 기업 설정 카드는 머리 여백이 달라서, 여기서
+   *    한 값으로 못박으면 한쪽은 반드시 오와 열이 어긋난다. 기본값은 온보딩 기준이다.
+   */
+  insetClassName?: string;
 }
 
-export function PositionRow({ position, index, ...handlers }: PositionRowProps) {
+export function PositionRow({
+  position,
+  index,
+  insetClassName = "px-4",
+  ...handlers
+}: PositionRowProps) {
   const { onRename, onChangeRole, onRemove, onShift, editingId, onEditingChange } = handlers;
 
   const isEditing = editingId === position.id;
@@ -57,7 +68,8 @@ export function PositionRow({ position, index, ...handlers }: PositionRowProps) 
     <div
       {...rowProps}
       className={cn(
-        "group border-border relative flex h-[38px] items-center gap-2 border-t px-4 transition-[background-color,opacity]",
+        "group border-border relative flex h-[38px] items-center gap-2 border-t transition-[background-color,opacity]",
+        insetClassName,
         isDragged ? "opacity-40" : "hover:bg-secondary/60",
         // 점선 = 여기 들어온다. 하단 "직급명 입력"의 점선과 같은 표현이다.
         dropEdge === "before" &&

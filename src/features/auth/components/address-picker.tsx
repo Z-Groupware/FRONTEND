@@ -5,6 +5,7 @@ import Script from "next/script";
 import { useEffect, useState } from "react";
 
 import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 
 import type { PickedPlace } from "../register-draft";
 import { type KakaoPlace, readKakao } from "./kakao-sdk";
@@ -27,9 +28,20 @@ interface AddressPickerProps {
   picked: PickedPlace | null;
   onPick: (place: PickedPlace) => void;
   hasError: boolean;
+  /**
+   * 지도 상자 크기.
+   * ⚠️ 폭이 화면마다 다르다 — 좁은 카드(신청)에서 알맞은 높이가 전폭(기업 설정)에서는
+   *    납작한 띠가 된다. 기본값은 신청 화면 기준이다.
+   */
+  mapClassName?: string;
 }
 
-export function AddressPicker({ picked, onPick, hasError }: AddressPickerProps) {
+export function AddressPicker({
+  picked,
+  onPick,
+  hasError,
+  mapClassName = "h-[160px]",
+}: AddressPickerProps) {
   const appKey = process.env.NEXT_PUBLIC_KAKAO_MAP_KEY;
   const [keyword, setKeyword] = useState("");
   const [results, setResults] = useState<KakaoPlace[]>([]);
@@ -147,26 +159,32 @@ export function AddressPicker({ picked, onPick, hasError }: AddressPickerProps) 
         >
           <Search className="size-4" aria-hidden />
         </button>
-      </div>
 
-      {results.length > 0 && (
-        <ul className="border-border bg-card overflow-hidden rounded-lg border">
-          {results.map((place) => (
-            <li key={`${place.x},${place.y}`}>
-              <button
-                type="button"
-                onClick={() => handleChoose(place)}
-                className="hover:bg-secondary focus-visible:ring-ring flex w-full flex-col gap-0.5 px-3.5 py-2.5 text-left focus-visible:ring-2 focus-visible:outline-hidden"
-              >
-                <span className="text-[13px] leading-5 font-medium">{place.place_name}</span>
-                <span className="text-muted-foreground text-[12px] leading-4">
-                  {place.road_address_name || place.address_name}
-                </span>
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
+        {/*
+          ⚠️ 결과는 **띄운다**(absolute). 줄 사이에 끼워 넣으면 검색할 때마다 아래 지도와
+             카드 전체가 밀렸다 돌아와 화면이 출렁인다 — 고르는 동안 뒤가 안 움직여야
+             무엇을 고르는지 눈이 따라간다.
+          ⚠️ 지도 위에 떠야 하므로 `z-20`이다. 지도(카카오 SDK)가 자기 요소에 z-index를 매긴다.
+        */}
+        {results.length > 0 && (
+          <ul className="border-border bg-card absolute top-full right-0 left-0 z-20 mt-1 overflow-hidden rounded-lg border shadow-lg">
+            {results.map((place) => (
+              <li key={`${place.x},${place.y}`}>
+                <button
+                  type="button"
+                  onClick={() => handleChoose(place)}
+                  className="hover:bg-secondary focus-visible:ring-ring flex w-full flex-col gap-0.5 px-3.5 py-2.5 text-left focus-visible:ring-2 focus-visible:outline-hidden"
+                >
+                  <span className="text-[13px] leading-5 font-medium">{place.place_name}</span>
+                  <span className="text-muted-foreground text-[12px] leading-4">
+                    {place.road_address_name || place.address_name}
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
 
       {picked && (
         <>
@@ -184,7 +202,7 @@ export function AddressPicker({ picked, onPick, hasError }: AddressPickerProps) 
             key={`${loadState}:${picked.lat},${picked.lng}`}
             ref={drawPin}
             aria-hidden
-            className="border-border h-[160px] w-full overflow-hidden rounded-lg border"
+            className={cn("border-border w-full overflow-hidden rounded-lg border", mapClassName)}
           />
         </>
       )}

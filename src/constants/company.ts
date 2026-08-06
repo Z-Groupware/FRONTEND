@@ -19,10 +19,3 @@ export const COMPANY_FIELD_LABEL = {
   PLACE: "회사 위치",
   CODE: "기업 코드",
 } as const;
-
-/**
- * 기업 코드 옆에 붙는 한 줄.
- * ⚠️ **고칠 수 없는 값**이라는 걸 적어 둔다 — 사원이 로그인할 때 적는 값이라
- *    바꿀 수 있는 것처럼 보이면 바꾸려다 못 바꾸고 문의가 온다.
- */
-export const COMPANY_CODE_HINT = "사원이 로그인할 때 적는 값입니다. 바꿀 수 없습니다.";

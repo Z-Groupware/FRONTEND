@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { COMPANY_CODE_HINT, COMPANY_FIELD_LABEL, COMPANY_SECTION_TITLE } from "@/constants/company";
+import { COMPANY_FIELD_LABEL, COMPANY_SECTION_TITLE } from "@/constants/company";
 import { formatBusinessNumber } from "@/features/auth/business-number";
 import { AddressPicker } from "@/features/auth/components/address-picker";
 
@@ -80,10 +80,24 @@ export function CompanyProfileCard({ profile }: { profile: CompanyProfile }) {
     <form action={formAction}>
       <SettingCard
         title={COMPANY_SECTION_TITLE.PROFILE}
+        /*
+          ⚠️ 기업 코드는 **폼 밖**이다. 고칠 수 없는 값이라 입력칸 자리에 두면 무엇을 해도
+             어색하다 — 상자를 두르면 빈 칸으로, 안 두르면 렌더가 덜 된 칸으로 읽힌다.
+             카드 머리 오른쪽은 저장소·구독 카드가 수치를 놓는 자리이고, 여기서도 회사를
+             가리키는 값이 온다.
+        */
+        aside={
+          <span className="flex items-center gap-2">
+            <span className="text-muted-foreground">{COMPANY_FIELD_LABEL.CODE}</span>
+            <span className="text-foreground text-[13px] leading-5 font-medium tracking-[0.12em]">
+              {profile.code}
+            </span>
+          </span>
+        }
         description={
           <>
-            기업 등록 신청 때 적은 회사 정보입니다.{" "}
-            <span className="text-foreground font-medium">기업 코드는 바꿀 수 없습니다.</span>
+            기업 등록 신청 때 적은 회사 정보입니다. 기업 코드는 사원이 로그인할 때 적는 값이라{" "}
+            <span className="text-foreground font-medium">바꿀 수 없습니다.</span>
           </>
         }
         footer={
@@ -93,11 +107,12 @@ export function CompanyProfileCard({ profile }: { profile: CompanyProfile }) {
         }
       >
         {/*
-          ⚠️ 왼쪽은 적는 칸, 오른쪽은 **지도**다. 전폭(1440)에서 한 줄에 늘어놓으면 입력칸
-             하나가 700px가 되고, 지도는 반대로 납작해져 어디가 찍혔는지 안 보인다.
+          ⚠️ 위는 적는 칸 둘, 아래는 **위치**다. 좌우로 나누면 칸 둘(≈190px)이 지도 쪽
+             (≈280px)보다 짧아 왼쪽 아래가 빈 채로 남는다 — 세로로 쌓으면 그 자리가 없다.
+          ⚠️ 지도는 신청 화면보다 넓어서 기본 높이(160px)로는 납작해 보인다 — 조금 키운다.
         */}
-        <div className="grid grid-cols-1 gap-x-7 gap-y-6 px-7 py-6 lg:grid-cols-2">
-          <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-6 px-6 py-6">
+          <div className="grid grid-cols-1 gap-x-7 gap-y-6 sm:grid-cols-2">
             <Field name="name" label={COMPANY_FIELD_LABEL.NAME} error={state.errors.name}>
               <Input
                 id="company-name"
@@ -127,23 +142,13 @@ export function CompanyProfileCard({ profile }: { profile: CompanyProfile }) {
                 aria-describedby="company-businessNumber-error"
               />
             </Field>
-
-            {/*
-              ⚠️ 기업 코드는 **왼쪽 칸 맨 아래**다. 입력칸 사이에 끼면 고칠 수 있는 값으로
-                 읽히고, 위에 따로 띠로 빼면 왼쪽 칸이 지도보다 짧아져 아래가 텅 빈다.
-              ⚠️ 상자를 두르지 않는다. 점선은 "여기에 뭘 넣으세요"로 읽히고, 실선은 입력칸으로
-                 읽힌다 — 위 두 칸과 **같은 라벨·같은 자리**에 값만 글자로 두면 그 자체로
-                 "적는 곳이 아니다"가 된다.
-            */}
-            <div className="flex flex-col gap-1.5">
-              <p className="text-sm leading-none font-medium">{COMPANY_FIELD_LABEL.CODE}</p>
-              <p className="text-[17px] leading-[38px] font-medium tracking-[0.14em] tabular-nums">
-                {profile.code}
-              </p>
-              <p className="text-muted-foreground text-[12px] leading-4">{COMPANY_CODE_HINT}</p>
-            </div>
           </div>
 
+          {/*
+            ⚠️ 위치는 **전폭**이다. 폭을 720으로 잡아 봤더니 카드 오른쪽 절반이 통째로 비어
+               보였다 — 지도는 넓을수록 주변 건물이 더 보여서 손해가 없다.
+            ⚠️ 대신 높이를 키운다. 전폭에 기본 높이(160px)를 두면 7:1 띠가 된다.
+          */}
           <Field
             name="place"
             controlId="company-address"
@@ -154,6 +159,7 @@ export function CompanyProfileCard({ profile }: { profile: CompanyProfile }) {
               picked={place}
               onPick={setPlace}
               hasError={Boolean(state.errors.place)}
+              mapClassName="h-[260px]"
             />
           </Field>
         </div>

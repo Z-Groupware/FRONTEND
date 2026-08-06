@@ -3,15 +3,15 @@
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 
+import { ConfirmDialog } from "@/components/common/confirm-dialog";
 import { Button } from "@/components/ui/button";
 import { COMPANY_SECTION_TITLE } from "@/constants/company";
 import { DepartmentAddRow } from "@/features/onboarding/components/department-add-row";
-import { DepartmentDeleteDialog } from "@/features/onboarding/components/department-delete-dialog";
 import {
   DepartmentNode,
   type DepartmentNodeHandlers,
 } from "@/features/onboarding/components/department-node";
-import { countDepartments } from "@/features/onboarding/tree";
+import { countDepartments, findNode } from "@/features/onboarding/tree";
 import type { DraggingInfo } from "@/features/onboarding/use-department-drag";
 import { useDepartmentTree } from "@/features/onboarding/use-department-tree";
 
@@ -31,6 +31,12 @@ import { SettingCard } from "./setting-card";
  */
 export function CompanyTeamCard({ initial }: { initial: DepartmentNodeType[] }) {
   const tree = useDepartmentTree(initial);
+  /*
+    ⚠️ 삭제 확인은 **여기서 직접 받는다.** 온보딩의 `requestRemove`는 안에 역할이 있을 때만
+       묻는데, 거기선 아직 아무도 안 쓰는 초안이라 그래도 됐다. 여기는 **실제 조직**이라
+       빈 팀을 지워도 그 팀 소속 사원이 갈 곳을 잃는다 — 늘 묻는다(§토스트: 파괴적 작업은 Dialog).
+  */
+  const [pendingTeam, setPendingTeam] = useState<DepartmentNodeType | null>(null);
   const [draftName, setDraftName] = useState("");
   const [dragging, setDragging] = useState<DraggingInfo | null>(null);
   const [saved, setSaved] = useState(initial);
@@ -39,7 +45,7 @@ export function CompanyTeamCard({ initial }: { initial: DepartmentNodeType[] }) 
   const handlers: DepartmentNodeHandlers = {
     onRename: tree.rename,
     onAddChild: tree.addChild,
-    onRemove: tree.requestRemove,
+    onRemove: (id: string) => setPendingTeam(findNode(tree.departments, id) ?? null),
     onMove: tree.move,
     onShift: tree.shift,
     onPromote: tree.promote,
@@ -98,9 +104,10 @@ export function CompanyTeamCard({ initial }: { initial: DepartmentNodeType[] }) 
       >
         {/*
           열 머리 — 표가 있는 다른 카드(저장소 관리)와 같은 모양이다.
-          ⚠️ 좌우 여백은 **행과 같은 `px-4`** 다. 카드 머리의 `px-7`에 맞추면 머리와 몸이 어긋난다.
+          ⚠️ 여백은 카드 전체와 같은 24px다. 아래 목록은 `DepartmentNode`가 자기 몫으로
+             8px(`px-2`)를 쓰므로 컨테이너가 16px만 대서 합이 24가 된다.
         */}
-        <div className="text-muted-foreground bg-secondary/50 border-border flex items-center justify-between border-b px-4 py-3 text-[12px] leading-4">
+        <div className="text-muted-foreground bg-secondary/50 border-border flex items-center justify-between border-b px-6 py-3 text-[12px] leading-4">
           <span>팀 · 역할</span>
           <span>구분</span>
         </div>
@@ -127,6 +134,7 @@ export function CompanyTeamCard({ initial }: { initial: DepartmentNodeType[] }) 
         </div>
 
         <DepartmentAddRow
+          insetClassName="px-6"
           value={draftName}
           onChange={setDraftName}
           onSubmit={() => {
@@ -135,10 +143,26 @@ export function CompanyTeamCard({ initial }: { initial: DepartmentNodeType[] }) 
         />
       </SettingCard>
 
-      <DepartmentDeleteDialog
-        target={tree.pendingDelete}
-        onCancel={tree.cancelRemove}
-        onConfirm={tree.confirmRemove}
+      {/*
+        ⚠️ **무엇을 잃는지** 적는다. 역할이 딸려 있으면 그 수까지 말한다 — "정말요?"만 묻는 건
+           확인이 아니다. 지운 뒤 [저장]을 눌러야 실제로 반영된다는 것도 같이 말한다.
+      */}
+      <ConfirmDialog
+        isOpen={pendingTeam !== null}
+        onOpenChange={() => setPendingTeam(null)}
+        title={`\u2018${pendingTeam?.name ?? ""}\u2019 팀을 지울까요?`}
+        description={
+          pendingTeam && pendingTeam.children.length > 0
+            ? `안에 있는 역할 ${pendingTeam.children.length}개도 함께 사라집니다. 이 팀 소속 사원은 소속이 없어집니다.`
+            : "이 팀 소속 사원은 소속이 없어집니다."
+        }
+        confirmLabel="삭제"
+        isDestructive
+        onConfirm={() => {
+          if (!pendingTeam) return;
+          tree.confirmRemove(pendingTeam.id);
+          setPendingTeam(null);
+        }}
       />
     </>
   );

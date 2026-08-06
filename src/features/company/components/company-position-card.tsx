@@ -3,8 +3,10 @@
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 
+import { ConfirmDialog } from "@/components/common/confirm-dialog";
 import { Button } from "@/components/ui/button";
 import { COMPANY_SECTION_TITLE } from "@/constants/company";
+import { AUTHORITY } from "@/constants/domain";
 import { PositionAddRow } from "@/features/onboarding/components/position-add-row";
 import { POSITION_COLUMN } from "@/features/onboarding/components/position-columns";
 import {
@@ -36,11 +38,16 @@ export function CompanyPositionCard({ initial }: { initial: Position[] }) {
   const [draggingId, setDraggingId] = useState<DraggingPositionId>(null);
   const [saved, setSaved] = useState(initial);
   const [isSaving, startSaving] = useTransition();
+  /*
+    ⚠️ 직급 삭제도 **확인을 받는다**(§토스트: 파괴적 작업은 Dialog). 그 직급을 쓰던 사원의
+       권한이 사라지는 일이고, 특히 Leader 직급을 지우면 팀을 관리할 사람이 없어진다.
+  */
+  const [pending, setPending] = useState<Position | null>(null);
 
   const handlers: PositionRowHandlers = {
     onRename: list.rename,
     onChangeRole: list.changeRole,
-    onRemove: list.remove,
+    onRemove: (id: string) => setPending(list.positions.find((item) => item.id === id) ?? null),
     onMove: list.move,
     onShift: list.shift,
     blockedRolesOf: (id: string) => blockedRoles(list.positions, id),
@@ -89,7 +96,7 @@ export function CompanyPositionCard({ initial }: { initial: Position[] }) {
       }
     >
       {/* 칸 너비는 행(`PositionRow`)과 같은 곳에서 온다 — 따로 적으면 머리와 몸이 어긋난다 */}
-      <div className="text-muted-foreground bg-secondary/50 border-border flex shrink-0 items-center gap-2 border-b px-4 py-3 text-[12px] leading-4">
+      <div className="text-muted-foreground bg-secondary/50 border-border flex shrink-0 items-center gap-2 border-b px-6 py-3 text-[12px] leading-4">
         <span className={cn(POSITION_COLUMN.INDEX, "shrink-0")} aria-hidden />
         <span className={cn(POSITION_COLUMN.NAME, "shrink-0 text-center")}>직급명</span>
         <span className="flex-1" aria-hidden />
@@ -105,12 +112,41 @@ export function CompanyPositionCard({ initial }: { initial: Position[] }) {
           </p>
         ) : (
           list.positions.map((position, index) => (
-            <PositionRow key={position.id} position={position} index={index} {...handlers} />
+            <PositionRow
+              key={position.id}
+              position={position}
+              index={index}
+              insetClassName="px-6"
+              {...handlers}
+            />
           ))
         )}
       </div>
 
+      {/*
+        ⚠️ Leader는 **다른 말을 한다.** 회사에 하나뿐인 직급이라, 지우면 팀을 관리할 사람이
+           아예 없어진다 — 사원 하나가 권한을 잃는 것과 무게가 다르다.
+      */}
+      <ConfirmDialog
+        isOpen={pending !== null}
+        onOpenChange={() => setPending(null)}
+        title={`\u2018${pending?.name ?? ""}\u2019 직급을 지울까요?`}
+        description={
+          pending?.role === AUTHORITY.LEADER
+            ? "회사에 하나뿐인 Leader 직급입니다. 지우면 팀을 관리할 권한을 가진 사람이 없어집니다."
+            : "이 직급을 쓰던 사원은 직급과 그에 딸린 권한을 잃습니다."
+        }
+        confirmLabel="삭제"
+        isDestructive
+        onConfirm={() => {
+          if (!pending) return;
+          list.remove(pending.id);
+          setPending(null);
+        }}
+      />
+
       <PositionAddRow
+        insetClassName="px-6"
         name={draftName}
         role={draftRole}
         blocked={blockedRoles(list.positions)}
