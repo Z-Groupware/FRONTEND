@@ -35,11 +35,11 @@ export function RoomAttendeePicker({ members, selectedIds, onChange }: RoomAtten
       .slice(0, MAX_RESULTS);
   }, [members, keyword, selectedIds]);
 
-  const add = (id: number) => {
+  const handleAdd = (id: number) => {
     onChange([...selectedIds, id]);
     setKeyword("");
   };
-  const remove = (id: number) => onChange(selectedIds.filter((value) => value !== id));
+  const handleRemove = (id: number) => onChange(selectedIds.filter((value) => value !== id));
 
   return (
     <div className="flex flex-col gap-2">
@@ -67,7 +67,7 @@ export function RoomAttendeePicker({ members, selectedIds, onChange }: RoomAtten
                 <li key={member.id}>
                   <button
                     type="button"
-                    onClick={() => add(member.id)}
+                    onClick={() => handleAdd(member.id)}
                     className="hover:bg-muted focus-visible:ring-ring flex w-full items-center px-3 py-2 text-left transition-colors focus-visible:ring-2 focus-visible:outline-none"
                   >
                     <span className="text-foreground truncate text-xs">{member.name}</span>
@@ -89,7 +89,7 @@ export function RoomAttendeePicker({ members, selectedIds, onChange }: RoomAtten
               {member.name}
               <button
                 type="button"
-                onClick={() => remove(member.id)}
+                onClick={() => handleRemove(member.id)}
                 aria-label={`${member.name} 제외`}
                 className="hover:bg-foreground/10 focus-visible:ring-ring flex size-4 items-center justify-center rounded transition-colors focus-visible:ring-2 focus-visible:outline-none"
               >
