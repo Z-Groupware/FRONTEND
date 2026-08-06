@@ -1,5 +1,6 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { toast } from "sonner";
 
 import { NOTICE_TARGET } from "@/constants/domain";
 
@@ -11,12 +12,17 @@ jest.mock("../actions", () => ({
   publishNoticeAction: (input: unknown) => publishNoticeAction(input),
 }));
 
+jest.mock("sonner", () => ({ toast: { success: jest.fn(), error: jest.fn() } }));
+
 function setup() {
   // 기본 대상은 "전체 기업"이라 companies는 쓰이지 않는다(특정 기업 검색용) — 빈 목록으로 충분하다.
   return { user: userEvent.setup(), ...render(<NoticeComposeCard companies={[]} />) };
 }
 
-beforeEach(() => publishNoticeAction.mockReset());
+beforeEach(() => {
+  publishNoticeAction.mockReset();
+  jest.mocked(toast.success).mockClear();
+});
 
 describe("NoticeComposeCard", () => {
   const publishButton = () => screen.getByRole("button", { name: "발행" });
@@ -54,6 +60,7 @@ describe("NoticeComposeCard", () => {
       target: NOTICE_TARGET.ALL,
     });
     expect(await screen.findByText("공지를 발행했습니다")).toBeInTheDocument();
+    expect(toast.success).toHaveBeenCalledWith("공지를 발행했습니다");
   });
 
   // 발행이 실패하면 성공 안내를 띄우지 않는다 — 조용히 성공한 척하지 않는다(§정직성).
@@ -67,5 +74,6 @@ describe("NoticeComposeCard", () => {
 
     await waitFor(() => expect(publishNoticeAction).toHaveBeenCalled());
     expect(screen.queryByText("공지를 발행했습니다")).not.toBeInTheDocument();
+    expect(toast.success).not.toHaveBeenCalled();
   });
 });

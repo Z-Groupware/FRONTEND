@@ -40,8 +40,11 @@ export default async function ApprovalDetailPage({ params }: ApprovalDetailPageP
             <Field label="담당자 이메일" value={company.contactEmail} className="col-span-2" />
           </dl>
 
+          {/* ⚠️ "기업 코드 자동 발급·이메일 발송"이라 적지 않는다 — 지금은 목이라 대기 목록에서
+              지우기만 한다(`../actions.ts`의 `approveCompanyAction` 주석 참고). 실제로 안 하는
+              일을 약속하지 않는다(§정직성). */}
           <p className="text-muted-foreground bg-secondary mt-6 rounded-lg p-3.5 text-xs leading-[18px]">
-            승인 시 기업 코드가 자동 발급되고 담당자 이메일로 발송됩니다.
+            승인하면 이 신청은 대기 목록에서 사라집니다.
           </p>
 
           <div className="mt-6">
@@ -53,7 +56,13 @@ export default async function ApprovalDetailPage({ params }: ApprovalDetailPageP
   );
 }
 
-function Field({ label, value, className }: { label: string; value: string; className?: string }) {
+interface FieldProps {
+  label: string;
+  value: string;
+  className?: string;
+}
+
+function Field({ label, value, className }: FieldProps) {
   return (
     <div className={className}>
       <dt className="text-muted-foreground text-xs leading-4">{label}</dt>

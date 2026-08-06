@@ -6,6 +6,7 @@ import { toast } from "sonner";
 
 import { ConfirmDialog } from "@/components/common/confirm-dialog";
 import { Button } from "@/components/ui/button";
+import { APPROVAL_RESULT } from "@/constants/system";
 
 import { approveCompanyAction, rejectCompanyAction } from "../actions";
 
@@ -14,7 +15,7 @@ interface ApprovalDetailActionsProps {
   companyName: string;
 }
 
-type PendingAction = "approve" | "reject" | null;
+type PendingAction = typeof APPROVAL_RESULT.APPROVE | typeof APPROVAL_RESULT.REJECT | null;
 
 /**
  * 승인·반려 버튼 — 상세 페이지(`/system/approval/:id`) 전용.
@@ -29,7 +30,7 @@ export function ApprovalDetailActions({ companyId, companyName }: ApprovalDetail
   const [pendingAction, setPendingAction] = useState<PendingAction>(null);
   const [isPending, startTransition] = useTransition();
 
-  const isReject = pendingAction === "reject";
+  const isReject = pendingAction === APPROVAL_RESULT.REJECT;
 
   function handleConfirm() {
     const action = pendingAction;
@@ -40,7 +41,7 @@ export function ApprovalDetailActions({ companyId, companyName }: ApprovalDetail
 
       try {
         const response =
-          action === "approve"
+          action === APPROVAL_RESULT.APPROVE
             ? await approveCompanyAction(companyId)
             : await rejectCompanyAction(companyId);
         success = response.success;
@@ -65,11 +66,11 @@ export function ApprovalDetailActions({ companyId, companyName }: ApprovalDetail
         type="button"
         variant="outline"
         className="border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
-        onClick={() => setPendingAction("reject")}
+        onClick={() => setPendingAction(APPROVAL_RESULT.REJECT)}
       >
         반려
       </Button>
-      <Button type="button" variant="ink" onClick={() => setPendingAction("approve")}>
+      <Button type="button" variant="ink" onClick={() => setPendingAction(APPROVAL_RESULT.APPROVE)}>
         승인
       </Button>
 
@@ -86,7 +87,7 @@ export function ApprovalDetailActions({ companyId, companyName }: ApprovalDetail
         description={
           isReject
             ? "반려하면 이 신청은 목록에서 사라지고 되돌릴 수 없습니다."
-            : "승인하면 기업 코드가 자동 발급되고 담당자 이메일로 발송됩니다."
+            : "승인하면 이 신청은 대기 목록에서 사라집니다."
         }
         confirmLabel={isReject ? "반려" : "승인"}
         pendingLabel={isReject ? "반려 중" : "승인 중"}

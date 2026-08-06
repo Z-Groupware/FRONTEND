@@ -55,6 +55,7 @@ describe("기업 승인·반려", () => {
 
     expect(findMockPendingApproval("3")).toBeNull();
     expect(result).toEqual({ success: true });
+    expect(revalidatePathMock).toHaveBeenCalledWith("/system/approval");
   });
 
   it("없는 id면 실패로 돌려준다", async () => {

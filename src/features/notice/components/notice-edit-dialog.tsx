@@ -7,10 +7,13 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { NOTICE_ACTION, NOTICE_ACTION_LABEL } from "@/constants/notice";
 
 import { updateNoticeAction } from "../actions";
 import type { Notice } from "../types";
 import { NoticeForm } from "./notice-form";
+
+const LABEL = NOTICE_ACTION_LABEL[NOTICE_ACTION.EDIT];
 
 interface NoticeEditDialogProps {
   /** 상세 페이지가 이미 서버에서 받아 온 값 — 모달을 위해 다시 조회하지 않는다 */
@@ -24,30 +27,40 @@ interface NoticeEditDialogProps {
  */
 export function NoticeEditDialog({ notice }: NoticeEditDialogProps) {
   const [open, setOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
 
   return (
     <>
       <Button type="button" variant="outline" size="xs" onClick={() => setOpen(true)}>
         <Pencil aria-hidden />
-        수정
+        {LABEL.trigger}
       </Button>
 
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog
+        open={open}
+        onOpenChange={(next) => {
+          // ⚠️ 제출 중엔 Esc·바깥 클릭으로 안 닫는다 — 요청은 계속 가는데 화면만 사라지면
+          //    결과를 못 본다(`notice-form.tsx`의 `onPendingChange` 참고).
+          if (!next && isSubmitting) return;
+          setOpen(next);
+        }}
+      >
         <DialogContent className="sm:max-w-[480px]">
           <DialogHeader>
-            <DialogTitle>공지 수정</DialogTitle>
+            <DialogTitle>{LABEL.dialogTitle}</DialogTitle>
           </DialogHeader>
 
           <NoticeForm
             action={updateNoticeAction}
             notice={notice}
-            submitLabel="수정"
+            submitLabel={LABEL.submitLabel}
             onCancel={() => setOpen(false)}
+            onPendingChange={setIsSubmitting}
             onSuccess={(updated) => {
               setOpen(false);
               router.refresh();
-              toast.success(`'${updated.title}' 공지를 수정했습니다`);
+              toast.success(LABEL.successToast(updated.title));
             }}
           />
         </DialogContent>

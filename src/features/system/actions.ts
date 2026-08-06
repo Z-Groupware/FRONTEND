@@ -9,8 +9,8 @@ import { isMock } from "@/mocks/config";
 import { findMockPendingApproval, removeMockPendingApproval } from "./mock/approvals";
 import { findMockCompany, setMockCompanyStatus } from "./mock/companies";
 import { findMockFailedItem } from "./mock/monitoring";
-import { type CompanyListFilter, getManagedCompanies, getPendingApprovals } from "./server";
-import type { ManagedCompany, PendingCompanyApproval } from "./types";
+import { getManagedCompanies, getPendingApprovals } from "./server";
+import type { CompanyListFilter, ManagedCompany, PendingCompanyApproval } from "./types";
 
 const APPROVAL_LIST_PATH = "/system/approval";
 

@@ -7,8 +7,7 @@ import { useInfiniteScrollList } from "@/hooks/use-infinite-scroll-list";
 
 import { fetchCompaniesPageAction } from "../actions";
 import { buildCompanyHref, type CompanyHrefQuery } from "../lib/company-href";
-import type { CompanyListFilter } from "../server";
-import type { ManagedCompany } from "../types";
+import type { CompanyListFilter, ManagedCompany } from "../types";
 import { CompanyTable } from "./company-table";
 
 interface CompanyListProps {
@@ -26,6 +25,11 @@ interface CompanyListProps {
   query: CompanyHrefQuery;
 }
 
+/** 컴포넌트 밖에 둬서 매 렌더 새 함수가 안 되게 한다(`approval-list.tsx`와 같은 이유). */
+function getId(item: ManagedCompany) {
+  return item.id;
+}
+
 /**
  * "기업 관리" 무한 스크롤 목록 — `approval-list.tsx`와 같은 패턴(CLAUDE.md §목록·페이지네이션).
  * ⚠️ 검색·정렬이 바뀌면 이 컴포넌트는 **다시 마운트돼야 한다** — 부르는 쪽(`page.tsx`)이
@@ -40,14 +44,19 @@ export function CompanyList({
   filter,
   query,
 }: CompanyListProps) {
+  const fetchPage = useCallback(
+    (page: number) => fetchCompaniesPageAction(filter, page, pageSize),
+    [filter, pageSize],
+  );
+
   const { items, totalCount, hasMore, isLoadingMore, error, loadMore, sentinelRef } =
     useInfiniteScrollList({
       initialItems,
       initialPage,
       initialTotalPages,
       initialTotalCount,
-      getId: (item) => item.id,
-      fetchPage: (page) => fetchCompaniesPageAction(filter, page, pageSize),
+      getId,
+      fetchPage,
     });
 
   const buildDetailHref = useCallback((id: string) => buildCompanyHref(query, id), [query]);

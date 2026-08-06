@@ -1,10 +1,11 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
 import { toast } from "sonner";
 
 import { InfiniteListFooter } from "@/components/common/infinite-list-footer";
+import { APPROVAL_RESULT_LABEL, isApprovalResult } from "@/constants/system";
 import { useInfiniteScrollList } from "@/hooks/use-infinite-scroll-list";
 
 import { fetchApprovalsPageAction } from "../actions";
@@ -19,10 +20,11 @@ interface ApprovalListProps {
   pageSize: number;
 }
 
-const DONE_MESSAGE: Record<string, string> = {
-  approve: "승인이 완료되었습니다.",
-  reject: "반려 처리되었습니다.",
-};
+/** 컴포넌트 밖에 둬서 매 렌더 새 함수가 안 되게 한다(`loadMore`의 의존값이라, 새 함수면
+ * 센티널이 매번 재부착돼 옵저버가 다시 붙는다 — 실패 뒤 재시도가 꼬일 수 있다). */
+function getId(item: PendingCompanyApproval) {
+  return item.id;
+}
 
 /**
  * "기업 승인" 무한 스크롤 목록 — 첫 페이지는 서버가 렌더하고, 그 아래부터는 스크롤이 끝에
@@ -46,10 +48,14 @@ export function ApprovalList({
 
   useEffect(() => {
     if (!done) return;
-    const message = DONE_MESSAGE[done];
-    if (message) toast.success(message);
+    if (isApprovalResult(done)) toast.success(APPROVAL_RESULT_LABEL[done]);
     router.replace("/system/approval");
   }, [done, router]);
+
+  const fetchPage = useCallback(
+    (page: number) => fetchApprovalsPageAction(page, pageSize),
+    [pageSize],
+  );
 
   const { items, totalCount, hasMore, isLoadingMore, error, loadMore, sentinelRef } =
     useInfiniteScrollList({
@@ -57,8 +63,8 @@ export function ApprovalList({
       initialPage,
       initialTotalPages,
       initialTotalCount,
-      getId: (item) => item.id,
-      fetchPage: (page) => fetchApprovalsPageAction(page, pageSize),
+      getId,
+      fetchPage,
     });
 
   return (

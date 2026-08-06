@@ -19,6 +19,12 @@ interface NoticeFormProps {
   onCancel: () => void;
   /** 성공 시 호출 — 생성/수정된 공지를 그대로 받는다(캘린더 `AddTodoDialog`와 같은 패턴) */
   onSuccess: (notice: Notice) => void;
+  /**
+   * 제출 진행 상태를 부모(모달)에 알린다 — 부모가 이 값을 보고 Esc·바깥 클릭으로 모달이
+   * 닫히지 않게 막는다. 진행 중에 닫히면 요청은 계속 가는데 화면만 사라져 결과를 못 본다
+   * (`approval-detail-actions.tsx`의 `ConfirmDialog` 처리 중 닫힘 방지와 같은 이유).
+   */
+  onPendingChange?: (isPending: boolean) => void;
 }
 
 /**
@@ -30,7 +36,14 @@ interface NoticeFormProps {
  * ⚠️ 제목·내용 입력을 **직접 추적**한다 — 둘 다 채워지기 전엔 제출 버튼을 잠근다(빈 공지 발행 방지).
  *    `name` 속성은 그대로 둬서 제어 컴포넌트여도 `FormData`엔 정상적으로 값이 실린다.
  */
-export function NoticeForm({ action, notice, submitLabel, onCancel, onSuccess }: NoticeFormProps) {
+export function NoticeForm({
+  action,
+  notice,
+  submitLabel,
+  onCancel,
+  onSuccess,
+  onPendingChange,
+}: NoticeFormProps) {
   const [state, formAction, isPending] = useActionState(action, { errors: {} });
   const [title, setTitle] = useState(notice?.title ?? "");
   const [body, setBody] = useState(notice?.body ?? "");
@@ -43,6 +56,10 @@ export function NoticeForm({ action, notice, submitLabel, onCancel, onSuccess }:
       onSuccess(state.notice);
     }
   }, [state.notice, onSuccess]);
+
+  useEffect(() => {
+    onPendingChange?.(isPending);
+  }, [isPending, onPendingChange]);
 
   return (
     <form action={formAction} className="flex flex-col gap-4">
@@ -77,7 +94,7 @@ export function NoticeForm({ action, notice, submitLabel, onCancel, onSuccess }:
       </div>
 
       <div className="flex justify-end gap-2">
-        <Button type="button" variant="outline" size="sm" onClick={onCancel}>
+        <Button type="button" variant="outline" size="sm" disabled={isPending} onClick={onCancel}>
           취소
         </Button>
         <Button type="submit" size="sm" variant="ink" disabled={isPending || !canSubmit}>
