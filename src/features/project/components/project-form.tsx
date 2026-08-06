@@ -93,39 +93,41 @@ export function ProjectForm({ action, teamOptions, cancelHref }: ProjectFormProp
     <form action={formAction} className="flex flex-col gap-5">
       <input type="hidden" name="tagColor" value={tagColor} />
 
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="project-name">
-          프로젝트명 <span className="text-destructive">*</span>
-        </Label>
-        <Input
-          id="project-name"
-          name="name"
-          value={name}
-          onChange={(event) => setName(event.target.value)}
-          placeholder="예: 온라인 굿즈샵 웹 구축"
-          aria-invalid={Boolean(state.errors.name)}
-        />
-        {state.errors.name && <p className="text-destructive text-xs">{state.errors.name}</p>}
-      </div>
+      <div className="flex items-start gap-4">
+        <div className="flex flex-1 flex-col gap-1.5">
+          <Label htmlFor="project-name">
+            프로젝트명 <span className="text-destructive">*</span>
+          </Label>
+          <Input
+            id="project-name"
+            name="name"
+            value={name}
+            onChange={(event) => setName(event.target.value)}
+            placeholder="예: 온라인 굿즈샵 웹 구축"
+            aria-invalid={Boolean(state.errors.name)}
+          />
+          {state.errors.name && <p className="text-destructive text-xs">{state.errors.name}</p>}
+        </div>
 
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="project-tag">
-          ProjectTag <span className="text-destructive">*</span>
-        </Label>
-        <Input
-          id="project-tag"
-          name="tag"
-          value={tag}
-          onChange={(event) => setTag(toTagInput(event.target.value))}
-          placeholder="GOODS"
-          maxLength={PROJECT_TAG_MAX_LENGTH}
-          className="w-40 font-mono"
-          aria-invalid={Boolean(state.errors.tag)}
-        />
-        <p className="text-muted-foreground text-xs">
-          영문 대문자만, 최대 {PROJECT_TAG_MAX_LENGTH}자 (소문자는 자동으로 대문자가 돼요)
-        </p>
-        {state.errors.tag && <p className="text-destructive text-xs">{state.errors.tag}</p>}
+        <div className="flex w-40 flex-col gap-1.5">
+          <Label htmlFor="project-tag">
+            프로젝트 태그 <span className="text-destructive">*</span>
+          </Label>
+          <Input
+            id="project-tag"
+            name="tag"
+            value={tag}
+            onChange={(event) => setTag(toTagInput(event.target.value))}
+            placeholder="GOODS"
+            maxLength={PROJECT_TAG_MAX_LENGTH}
+            className="font-mono"
+            aria-invalid={Boolean(state.errors.tag)}
+          />
+          <p className="text-muted-foreground text-xs">
+            영문 대문자만, 최대 {PROJECT_TAG_MAX_LENGTH}자
+          </p>
+          {state.errors.tag && <p className="text-destructive text-xs">{state.errors.tag}</p>}
+        </div>
       </div>
 
       <div className="flex flex-col gap-1.5">
@@ -153,170 +155,175 @@ export function ProjectForm({ action, teamOptions, cancelHref }: ProjectFormProp
         )}
       </div>
 
-      <div className="flex flex-col gap-1.5">
-        <Label>
-          태그 색상 <span className="text-destructive">*</span>
-        </Label>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={cycleTagColor}
-            className="ring-offset-background size-8 shrink-0 rounded-full ring-2 ring-offset-2 transition-transform outline-none active:scale-95"
-            style={
-              {
-                backgroundColor: mainColor.solidColor,
-                "--tw-ring-color": mainColor.solidColor,
-              } as CSSProperties
-            }
-            aria-label={`태그 색상: ${TAG_NAME_LABEL[tagColor]} (클릭하면 다른 색으로 바뀌어요)`}
-          />
-
-          <Popover open={colorPickerOpen} onOpenChange={setColorPickerOpen}>
-            <PopoverTrigger
-              render={
-                <Button type="button" variant="outline" size="sm">
-                  더보기
-                </Button>
+      <div className="flex items-start justify-between gap-6">
+        <div className="flex flex-col gap-1.5">
+          <Label>
+            태그 색상 <span className="text-destructive">*</span>
+          </Label>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={cycleTagColor}
+              className="ring-offset-background size-8 shrink-0 rounded-full ring-2 ring-offset-2 transition-transform outline-none active:scale-95"
+              style={
+                {
+                  backgroundColor: mainColor.solidColor,
+                  "--tw-ring-color": mainColor.solidColor,
+                } as CSSProperties
               }
+              aria-label={`태그 색상: ${TAG_NAME_LABEL[tagColor]} (클릭하면 다른 색으로 바뀌어요)`}
             />
-            {/* 버튼 우측에, 바닥면을 버튼 바닥과 맞춰서 띄운다. */}
-            <PopoverContent side="right" align="end" sideOffset={8} className="w-56">
-              <div className="grid grid-cols-4 gap-2">
-                {TAG_NAMES.map((colorName) => {
-                  const color = paletteColorByName(colorName);
-                  const label = TAG_NAME_LABEL[colorName];
-                  return (
-                    <button
-                      key={colorName}
-                      type="button"
-                      onClick={() => {
-                        setTagColor(colorName);
-                        setColorPickerOpen(false);
-                      }}
-                      className={cn(
-                        "hover:bg-muted focus-visible:ring-ring/50 flex flex-col items-center gap-1 rounded-md p-1.5 outline-none focus-visible:ring-3",
-                        colorName === tagColor && "bg-muted",
-                      )}
-                    >
-                      <span
-                        className="size-6 rounded-full"
-                        style={{ backgroundColor: color.solidColor }}
-                        aria-hidden
-                      />
-                      {/* 4글자부터 칸 폭에서 줄바꿈되므로 그만큼 작게 — 전부 한 줄로 보이게 */}
-                      <span
+
+            <Popover open={colorPickerOpen} onOpenChange={setColorPickerOpen}>
+              <PopoverTrigger
+                render={
+                  <Button type="button" variant="outline" size="sm">
+                    더보기
+                  </Button>
+                }
+              />
+              {/* 버튼 우측에, 바닥면을 버튼 바닥과 맞춰서 띄운다. */}
+              <PopoverContent side="right" align="end" sideOffset={8} className="w-56">
+                <div className="grid grid-cols-4 gap-2">
+                  {TAG_NAMES.map((colorName) => {
+                    const color = paletteColorByName(colorName);
+                    const label = TAG_NAME_LABEL[colorName];
+                    return (
+                      <button
+                        key={colorName}
+                        type="button"
+                        onClick={() => {
+                          setTagColor(colorName);
+                          setColorPickerOpen(false);
+                        }}
                         className={cn(
-                          "text-muted-foreground whitespace-nowrap",
-                          label.length >= 4 ? "text-[9px]" : "text-[11px]",
+                          "hover:bg-muted focus-visible:ring-ring/50 flex flex-col items-center gap-1 rounded-md p-1.5 outline-none focus-visible:ring-3",
+                          colorName === tagColor && "bg-muted",
                         )}
                       >
-                        {label}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </PopoverContent>
-          </Popover>
+                        <span
+                          className="size-6 rounded-full"
+                          style={{ backgroundColor: color.solidColor }}
+                          aria-hidden
+                        />
+                        {/* 4글자부터 칸 폭에서 줄바꿈되므로 그만큼 작게 — 전부 한 줄로 보이게 */}
+                        <span
+                          className={cn(
+                            "text-muted-foreground whitespace-nowrap",
+                            label.length >= 4 ? "text-[9px]" : "text-[11px]",
+                          )}
+                        >
+                          {label}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </PopoverContent>
+            </Popover>
+          </div>
+        </div>
+
+        <div className="flex w-48 flex-col gap-1.5">
+          <Label htmlFor="project-due-date">
+            마감 기한 <span className="text-destructive">*</span>
+          </Label>
+          <Input
+            id="project-due-date"
+            name="dueDate"
+            type="date"
+            value={dueDate}
+            onChange={(event) => setDueDate(event.target.value)}
+            aria-invalid={Boolean(state.errors.dueDate)}
+          />
+          {state.errors.dueDate && (
+            <p className="text-destructive text-xs">{state.errors.dueDate}</p>
+          )}
         </div>
       </div>
 
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="project-due-date">
-          마감 기한 <span className="text-destructive">*</span>
-        </Label>
-        <Input
-          id="project-due-date"
-          name="dueDate"
-          type="date"
-          value={dueDate}
-          onChange={(event) => setDueDate(event.target.value)}
-          className="w-48"
-          aria-invalid={Boolean(state.errors.dueDate)}
-        />
-        {state.errors.dueDate && <p className="text-destructive text-xs">{state.errors.dueDate}</p>}
-      </div>
-
-      <div className="flex flex-col gap-1.5">
-        <Label>
-          참여 팀 <span className="text-destructive">*</span>
-        </Label>
-        <div className="flex flex-col gap-2">
-          {teamRows.map((row) => (
-            <div key={row.rowId} className="flex items-center gap-2">
-              <Select
-                value={row.team}
-                onValueChange={(value) => updateTeamRow(row.rowId, value ?? "")}
-              >
-                <SelectTrigger aria-label="참여 팀 선택" className="w-48">
-                  <SelectValue placeholder="팀 선택" />
-                </SelectTrigger>
-                <SelectContent side="bottom" alignItemWithTrigger={false}>
-                  {teamOptions.map((team) => (
-                    <SelectItem
-                      key={team}
-                      value={team}
-                      disabled={team !== row.team && usedTeams.has(team)}
-                    >
-                      {team}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {teamRows.length > 1 && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon-sm"
-                  aria-label="이 팀 지정 삭제"
-                  onClick={() => removeTeamRow(row.rowId)}
+      <div className="flex items-start justify-between gap-6">
+        <div className="flex flex-col gap-1.5">
+          <Label>
+            참여 팀 <span className="text-destructive">*</span>
+          </Label>
+          <div className="flex flex-col gap-2">
+            {teamRows.map((row) => (
+              <div key={row.rowId} className="flex items-center gap-2">
+                <Select
+                  value={row.team}
+                  onValueChange={(value) => updateTeamRow(row.rowId, value ?? "")}
                 >
-                  <X />
-                </Button>
-              )}
-              {row.team && <input type="hidden" name="teamNames" value={row.team} />}
-            </div>
-          ))}
+                  <SelectTrigger aria-label="참여 팀 선택" className="w-48">
+                    <SelectValue placeholder="팀 선택" />
+                  </SelectTrigger>
+                  <SelectContent side="bottom" alignItemWithTrigger={false}>
+                    {teamOptions.map((team) => (
+                      <SelectItem
+                        key={team}
+                        value={team}
+                        disabled={team !== row.team && usedTeams.has(team)}
+                      >
+                        {team}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {teamRows.length > 1 && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon-sm"
+                    aria-label="이 팀 지정 삭제"
+                    onClick={() => removeTeamRow(row.rowId)}
+                  >
+                    <X />
+                  </Button>
+                )}
+                {row.team && <input type="hidden" name="teamNames" value={row.team} />}
+              </div>
+            ))}
 
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="w-fit"
+              disabled={!canAddTeamRow}
+              onClick={() => setTeamRows((rows) => [...rows, { rowId: nextRowId++, team: "" }])}
+            >
+              <Plus />팀 추가
+            </Button>
+          </div>
+          {state.errors.teamNames && (
+            <p className="text-destructive text-xs">{state.errors.teamNames}</p>
+          )}
+        </div>
+
+        <div className="flex w-56 flex-col gap-1.5">
+          <Label htmlFor="project-attachment">첨부파일</Label>
+          <input
+            ref={fileInputRef}
+            id="project-attachment"
+            type="file"
+            className="hidden"
+            onChange={(event) => setAttachmentName(event.target.files?.[0]?.name)}
+          />
           <Button
             type="button"
             variant="outline"
             size="sm"
             className="w-fit"
-            disabled={!canAddTeamRow}
-            onClick={() => setTeamRows((rows) => [...rows, { rowId: nextRowId++, team: "" }])}
+            onClick={() => fileInputRef.current?.click()}
           >
-            <Plus />팀 추가
+            <Paperclip />
+            {attachmentName ?? "파일 첨부 (선택)"}
           </Button>
+          {attachmentName && <input type="hidden" name="attachmentName" value={attachmentName} />}
+          <p className="text-muted-foreground text-xs">
+            프로젝트 기획서 등 참고 문서가 있다면 첨부해주세요.
+          </p>
         </div>
-        {state.errors.teamNames && (
-          <p className="text-destructive text-xs">{state.errors.teamNames}</p>
-        )}
-      </div>
-
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="project-attachment">첨부파일</Label>
-        <input
-          ref={fileInputRef}
-          id="project-attachment"
-          type="file"
-          className="hidden"
-          onChange={(event) => setAttachmentName(event.target.files?.[0]?.name)}
-        />
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="w-fit"
-          onClick={() => fileInputRef.current?.click()}
-        >
-          <Paperclip />
-          {attachmentName ?? "파일 첨부 (선택)"}
-        </Button>
-        {attachmentName && <input type="hidden" name="attachmentName" value={attachmentName} />}
-        <p className="text-muted-foreground text-xs">
-          프로젝트 기획서 등 참고 문서가 있다면 첨부해주세요.
-        </p>
       </div>
 
       <div className="flex justify-end gap-2">
