@@ -5,6 +5,7 @@ import { useState, useTransition } from "react";
 
 import { ConfirmDialog } from "@/components/common/confirm-dialog";
 import { Button } from "@/components/ui/button";
+import { NOTICE_DELETE_CONFIRM } from "@/constants/notice";
 
 import { deleteNoticeAction } from "../actions";
 
@@ -48,9 +49,9 @@ export function NoticeDeleteButton({ id, title }: NoticeDeleteButtonProps) {
         isOpen={open}
         onOpenChange={setOpen}
         title={`'${title}' 공지를 삭제할까요?`}
-        description="삭제하면 공지 내용을 되돌릴 수 없습니다."
-        confirmLabel="삭제"
-        pendingLabel="삭제 중"
+        description={NOTICE_DELETE_CONFIRM.description}
+        confirmLabel={NOTICE_DELETE_CONFIRM.confirmLabel}
+        pendingLabel={NOTICE_DELETE_CONFIRM.pendingLabel}
         isDestructive
         isPending={isPending}
         onConfirm={handleConfirm}

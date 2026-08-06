@@ -19,8 +19,7 @@ jest.mock("next-themes", () => {
 });
 
 describe("ThemeCard 키보드", () => {
-  const radios = () => screen.getAllByRole("radio");
-  const checked = () => radios().find((r) => r.getAttribute("aria-checked") === "true");
+  const checked = () => screen.getByRole("radio", { checked: true });
 
   it("초기값(라이트)이 선택돼 있다", () => {
     render(<ThemeCard />);
@@ -41,7 +40,7 @@ describe("ThemeCard 키보드", () => {
     const user = userEvent.setup();
     render(<ThemeCard />);
 
-    checked()?.focus();
+    checked().focus();
     await user.keyboard("{ArrowRight}");
 
     expect(checked()).toHaveTextContent("다크");
@@ -52,7 +51,7 @@ describe("ThemeCard 키보드", () => {
     const user = userEvent.setup();
     render(<ThemeCard />);
 
-    checked()?.focus();
+    checked().focus();
     await user.keyboard("{ArrowLeft}");
 
     expect(checked()).toHaveTextContent("시스템");

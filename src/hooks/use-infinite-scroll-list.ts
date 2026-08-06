@@ -44,18 +44,20 @@ export function useInfiniteScrollList<T>({
 
   /**
    * 서버가 첫 페이지를 다시 렌더해 `initialItems`가 새로 오면(정지/정지 해제처럼 상세 패널의
-   * 조작이 `revalidatePath`로 이 경로를 다시 그리게 만든 경우) 누적된 로컬 목록 중 그 id와
-   * 겹치는 항목만 새 값으로 맞춘다 — 2페이지 이후까지 통째로 버리진 않는다(스크롤 위치 유지).
+   * 조작이 `revalidatePath`로 이 경로를 다시 그리게 만든 경우) **첫 페이지 기준으로 통째로
+   * 되돌린다** — 2페이지 이후만 골라 병합하지 않는다. 부분 병합은 이어붙인 옛 페이지의
+   * `page`/`totalPages`/`totalCount` 커서가 새 서버 스냅숏과 안 맞을 수 있어(정렬·필터 결과가
+   * 그 사이 바뀌었을 수 있다), 다음 [더 보기]가 엉뚱한 페이지를 불러올 위험이 있다.
    */
   useEffect(() => {
     if (initialItems === initialItemsRef.current) return;
     initialItemsRef.current = initialItems;
 
-    setItems((prev) => {
-      const freshById = new Map(initialItems.map((item) => [getId(item), item] as const));
-      return prev.map((item) => freshById.get(getId(item)) ?? item);
-    });
-  }, [initialItems, getId]);
+    setItems(initialItems);
+    setPage(initialPage);
+    setTotalPages(initialTotalPages);
+    setTotalCount(initialTotalCount);
+  }, [initialItems, initialPage, initialTotalPages, initialTotalCount]);
 
   const hasMore = page < totalPages;
 

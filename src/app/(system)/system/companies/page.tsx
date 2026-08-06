@@ -25,13 +25,15 @@ interface SystemCompaniesPageProps {
 
 export default async function SystemCompaniesPage({ searchParams }: SystemCompaniesPageProps) {
   const params = await searchParams;
-  const query = { q: params.q, sort: params.sort, status: params.status };
-  const filter = {
-    keyword: params.q,
-    // ⚠️ URL 쿼리는 신뢰할 수 없는 입력이다 — 모르는 값이 들어오면 무시하고 "전체"로 물러선다.
-    status: params.status && isCompanyStatus(params.status) ? params.status : undefined,
-    sort: params.sort && isCompanySort(params.sort) ? params.sort : undefined,
-  };
+
+  // ⚠️ URL 쿼리는 신뢰할 수 없는 입력이다 — 모르는 값이 들어오면 무시하고 "전체"로 물러선다.
+  // ⚠️ 한 번만 걸러서 `filter`·`query` 양쪽이 같은 값을 쓴다 — 따로 걸렀다가 하나라도
+  //    빠뜨리면 필터에는 무효 값이 안 먹혔는데 링크(`buildCompanyHref`)에는 그 무효 값이
+  //    그대로 남아, 새로고침했을 때 방금 막았던 값이 되살아난다.
+  const status = params.status && isCompanyStatus(params.status) ? params.status : undefined;
+  const sort = params.sort && isCompanySort(params.sort) ? params.sort : undefined;
+  const query = { q: params.q, sort, status };
+  const filter = { keyword: params.q, status, sort };
 
   const [{ items, page, totalPages, totalCount }, selected] = await Promise.all([
     getManagedCompanies(filter, 1, PAGE_SIZE),
