@@ -87,13 +87,13 @@ export default async function TeamActionDetailPage({
       content: (
         <>
           <div className="flex items-center gap-1.5">
+            <p className="truncate">{teamAction.sourceMeeting.title}</p>
             <span
               className="shrink-0 rounded px-1.5 py-0.5 font-mono text-[10px] font-semibold"
               style={{ backgroundColor: tagColor.bgColor, color: tagColor.textColor }}
             >
               {teamAction.projectTag}
             </span>
-            <p className="truncate">{teamAction.sourceMeeting.title}</p>
           </div>
           <p className="text-muted-foreground text-[11px] leading-4">
             {formatMeetingDate(teamAction.sourceMeeting.scheduledAt)}
@@ -109,13 +109,13 @@ export default async function TeamActionDetailPage({
       content: (
         <>
           <div className="flex items-center gap-1.5">
+            <p className="truncate">{project.name}</p>
             <span
               className="shrink-0 rounded px-1.5 py-0.5 font-mono text-[10px] font-semibold"
               style={{ backgroundColor: tagColor.bgColor, color: tagColor.textColor }}
             >
               {project.tag}
             </span>
-            <p className="truncate">{project.name}</p>
           </div>
           <p className="text-muted-foreground text-[11px] leading-4">
             마감 {formatMonthDayWeekday(project.dueDate) ?? "-"}까지
