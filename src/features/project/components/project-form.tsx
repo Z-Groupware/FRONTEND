@@ -102,7 +102,7 @@ export function ProjectForm({ action, teamOptions, cancelHref }: ProjectFormProp
           name="name"
           value={name}
           onChange={(event) => setName(event.target.value)}
-          placeholder="예: 제품 v3.0"
+          placeholder="예: 온라인 굿즈샵 웹 구축"
           aria-invalid={Boolean(state.errors.name)}
         />
         {state.errors.name && <p className="text-destructive text-xs">{state.errors.name}</p>}
@@ -117,7 +117,7 @@ export function ProjectForm({ action, teamOptions, cancelHref }: ProjectFormProp
           name="tag"
           value={tag}
           onChange={(event) => setTag(toTagInput(event.target.value))}
-          placeholder="PROJ"
+          placeholder="GOODS"
           maxLength={PROJECT_TAG_MAX_LENGTH}
           className="w-40 font-mono"
           aria-invalid={Boolean(state.errors.tag)}
@@ -140,7 +140,7 @@ export function ProjectForm({ action, teamOptions, cancelHref }: ProjectFormProp
           onChange={(event) =>
             setDescription(event.target.value.slice(0, PROJECT_DESCRIPTION_MAX_LENGTH))
           }
-          placeholder="프로젝트 목표나 배경을 간략히 적어주세요"
+          placeholder="예: 아티스트 공식 굿즈를 판매하는 온라인 커머스 웹을 신규 구축합니다."
           maxLength={PROJECT_DESCRIPTION_MAX_LENGTH}
           aria-invalid={Boolean(state.errors.description)}
           className="border-input placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:border-destructive dark:bg-input/30 w-full resize-none rounded-lg border bg-transparent px-2.5 py-2 text-sm transition-colors outline-none focus-visible:ring-3"
