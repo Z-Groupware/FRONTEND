@@ -24,10 +24,8 @@ export default async function AppNoticeDetailPage({ params }: AppNoticeDetailPag
   if (!notice) notFound();
 
   return (
-    <main className="min-h-0 flex-1 overflow-y-auto p-6">
-      <div className="mx-auto max-w-[1440px]">
-        <NoticeDetail notice={notice} canManage={canManageNotice(getMockActor())} />
-      </div>
+    <main className="min-h-0 flex-1 overflow-y-auto px-8 py-7">
+      <NoticeDetail notice={notice} canManage={canManageNotice(getMockActor())} />
     </main>
   );
 }

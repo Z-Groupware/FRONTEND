@@ -3,24 +3,26 @@ import { PIPELINE_STAGE_LABEL, type PipelineStage } from "@/constants/domain";
 import type { StageTiming } from "../types";
 
 /**
- * 단계별 막대 색 — 파이프라인 4단계를 **명도가 아니라 색상**으로 구분한다(막대 4개가 같은 색이면
- * 어느 단계가 오래 걸리는지 길이로만 읽어야 해 시선이 흩어진다). 값은 전부 디자인 토큰이라
- * 다크모드가 그대로 따라온다(CLAUDE.md §디자인 토큰: 생 hex 금지).
+ * 단계별 막대 색 — 파이프라인 4단계를 **색상이 아니라 명도**로 구분한다(§5·§10 — 색으로
+ * 알리는 건 에러뿐이다). 값은 전부 무채색(`--foreground`) 위 opacity 단계다.
  */
 const STAGE_BAR_CLASS: Record<PipelineStage, string> = {
-  UPLOAD: "bg-chart-2",
-  TRANSCRIBE: "bg-success",
-  SUMMARIZE: "bg-warning",
-  EXTRACT_ACTION: "bg-chart-1",
+  UPLOAD: "bg-foreground",
+  TRANSCRIBE: "bg-foreground/75",
+  SUMMARIZE: "bg-foreground/50",
+  EXTRACT_ACTION: "bg-foreground/25",
 };
 
 /** "단계별 평균 소요 시간" 카드 — 가로 막대. 순수 표시라 서버에서 그린다. */
 export function StageTimingCard({ timings }: { timings: StageTiming[] }) {
   if (timings.length === 0) {
     return (
-      <section className="border-border bg-card rounded-xl border p-5">
-        <h2 className="text-foreground text-sm font-semibold">단계별 평균 소요 시간</h2>
-        <p className="text-muted-foreground mt-6 text-center text-xs">
+      <section className="border-border bg-card rounded-2xl border">
+        <h2 className="flex items-center gap-2 px-7 pt-6 pb-3 text-[17px] leading-7 font-semibold tracking-[-0.3px]">
+          <span className="bg-foreground size-2 rounded-full" aria-hidden />
+          단계별 평균 소요 시간
+        </h2>
+        <p className="text-muted-foreground px-7 pb-6 text-center text-xs">
           아직 집계된 처리 기록이 없어요
         </p>
       </section>
@@ -31,10 +33,13 @@ export function StageTimingCard({ timings }: { timings: StageTiming[] }) {
   const maxSeconds = Math.max(...timings.map((timing) => timing.avgSeconds));
 
   return (
-    <section className="border-border bg-card rounded-xl border p-5">
-      <h2 className="text-foreground text-sm font-semibold">단계별 평균 소요 시간</h2>
+    <section className="border-border bg-card rounded-2xl border">
+      <h2 className="flex items-center gap-2 px-7 pt-6 pb-3 text-[17px] leading-7 font-semibold tracking-[-0.3px]">
+        <span className="bg-foreground size-2 rounded-full" aria-hidden />
+        단계별 평균 소요 시간
+      </h2>
 
-      <div className="mt-4 flex flex-col gap-3">
+      <div className="flex flex-col gap-3 px-7 pb-6">
         {timings.map((timing) => (
           <div key={timing.stage} className="flex items-center gap-3">
             <span className="text-muted-foreground w-20 shrink-0 text-xs">

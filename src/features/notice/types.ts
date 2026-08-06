@@ -8,7 +8,7 @@ export interface Notice {
   id: string;
   title: string;
   body: string;
-  /** "YYYY-MM-DD" — 표시는 `formatNoticeDate`로 "2026년 8월 3일" 꼴로 바꾼다 */
+  /** "YYYY-MM-DD" — 표시는 공용 `formatDate`(lib/date.ts)로 "8월 3일(월)" 꼴로 바꾼다 */
   publishedAt: string;
   /** 이 사용자가 아직 안 읽었는지 — 미읽음 점 표시용(읽음 처리는 후속 작업) */
   isRead: boolean;

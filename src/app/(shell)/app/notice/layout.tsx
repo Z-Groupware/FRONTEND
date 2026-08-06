@@ -1,5 +1,6 @@
 "use client";
 
+import { Megaphone } from "lucide-react";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 
@@ -23,6 +24,7 @@ export default function NoticeLayout({ children }: { children: ReactNode }) {
     <>
       <PageHeader
         title="공지"
+        icon={Megaphone}
         reserveBack
         backTo={isDetail ? { href: NOTICE_LIST_PATH, label: "공지" } : undefined}
       />
