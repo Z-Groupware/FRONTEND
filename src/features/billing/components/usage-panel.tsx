@@ -22,11 +22,6 @@ interface UsagePanelProps {
  *    주기 초반일수록 크게 흔들렸고, BE 스펙에 없는 값을 화면이 지어낸 셈이었다.
  *    BE가 예측을 내려 주면 그 값을 받아 쓴다(§연동 검증).
  */
-/** 주기 양 끝 표기 — 읽을 수 없으면 ISO 원문 대신 `—`다 */
-function periodLabel(iso: string): string {
-  return isReadableDate(iso) ? formatFullDate(iso) : "—";
-}
-
 export function UsagePanel({ subscription, config }: UsagePanelProps) {
   const usage = buildUsage({ config, usage: subscription.usage });
 
@@ -201,4 +196,9 @@ function Axis({ axis, format }: { axis: UsageAxis; format: (value: number) => st
       )}
     </>
   );
+}
+
+/** 주기 양 끝 표기 — 읽을 수 없으면 ISO 원문 대신 `—`다 */
+function periodLabel(iso: string): string {
+  return isReadableDate(iso) ? formatFullDate(iso) : "—";
 }

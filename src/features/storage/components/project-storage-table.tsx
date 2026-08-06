@@ -217,6 +217,7 @@ function Row({
        기록은 있는데 날짜만 못 읽는 경우라, 지우기 버튼은 그대로 살아 있어야 한다.
   */
   const hasRecordedOn = isReadableDate(project.lastRecordedAt);
+  const hasRecords = project.voiceGb + project.sttGb > 0;
   const tagColor = pickPaletteColor(project.tag);
   // ⚠️ 0으로 나누면 `NaN%`가 되어 막대가 아예 안 그려진다
   const share = totalVoiceGb > 0 ? (project.voiceGb / totalVoiceGb) * 100 : 0;
@@ -346,16 +347,23 @@ function Row({
              정확히 봐야 하는 사람도 있다 — `title`로 그대로 남긴다(§정직성).
           ⚠️ 미래 날짜면 `formatElapsed`가 `null`을 준다(시계 어긋남·이상한 BE 값).
              `-3일 전`을 지어내느니 절대 날짜로 물러선다.
-          ⚠️ 아예 못 읽는 날짜면 `—`로 물러선다. 상대 표기와 툴팁이 **같은 판정**을 거치므로
-             한쪽은 `5개월 전`, 다른 쪽은 `2026-02-30`처럼 갈리지 않는다.
-             `dateTime`에는 원본을 남겨 값 자체는 잃지 않는다.
+          ⚠️ **`—`와 `기록일 미상`을 가른다.** 둘 다 `—`로 두면 기록이 남아 있는 줄이
+             `남은 게 없다`로 읽힌다 — 같은 줄에서 지우기 버튼은 살아 있고 확인 창은
+             `1.5GB가 삭제됩니다`라고 말하니 셀만 다른 소리를 한다. 이 표에서 `—`는
+             **남은 게 없다는 뜻 하나**로 쓴다(위 문단).
+          ⚠️ 못 읽는 값도 `<time>` 안에 둔다. 화면에는 안 내보내지만 `dateTime`에 원본이
+             남아야 무엇이 잘못 왔는지 볼 수 있다 — 화면에서 감추는 것과 값을 버리는 것은 다르다.
         */}
-        {project.voiceGb + project.sttGb > 0 && hasRecordedOn ? (
+        {!hasRecords ? (
+          "—"
+        ) : hasRecordedOn ? (
           <time dateTime={project.lastRecordedAt} title={recordedOn}>
             {formatElapsed(project.lastRecordedAt, today) ?? recordedOn}
           </time>
         ) : (
-          "—"
+          <time dateTime={project.lastRecordedAt} title="기록일을 읽을 수 없습니다">
+            기록일 미상
+          </time>
         )}
       </td>
       {/*

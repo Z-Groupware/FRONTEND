@@ -134,7 +134,7 @@ export function formatMonthDayWeekday(iso: string): string | null {
  * ⚠️ **해를 넘길 수 있는 값에는 쓰지 않는다.** 결제 주기(`12월 1일 ~ 1월 1일`)처럼 앞뒤로
  *    해가 갈리는 자리에서는 어느 해인지 알 수 없다 — `formatFullDate`를 쓴다.
  * ⚠️ 형식이 아니거나 없는 날짜면(`2026-02-30`) **원문을 그대로** 돌려준다 —
- *    지어내는 것보다 낫다. 판정은 `formatMonthDayWeekday` 한 곳이 한다.
+ *    지어내는 것보다 낫다. 판정은 `parseIsoDate` 한 곳이 한다.
  */
 export function formatDate(iso: string): string {
   return formatMonthDayWeekday(iso) ?? iso;

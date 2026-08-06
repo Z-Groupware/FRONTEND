@@ -66,7 +66,20 @@ describe("ProjectStorageTable", () => {
 
     expect(screen.queryByText("5개월 전")).not.toBeInTheDocument();
     expect(screen.queryByText("2026-02-30")).not.toBeInTheDocument();
-    expect(screen.getByText("—")).toBeInTheDocument();
+  });
+
+  /*
+    ⚠️ **`—`로 두면 안 된다.** 이 표에서 `—`는 `남은 게 없다`는 뜻이라, 기록이 남은 줄이
+       그렇게 읽히면 같은 줄의 지우기 버튼·확인 창과 말이 어긋난다.
+    ⚠️ 화면에서 감추는 것과 값을 버리는 것은 다르다 — `dateTime`에는 원본이 남아야 한다.
+  */
+  it("날짜만 못 읽는 줄은 `—`가 아니라 `기록일 미상`이다 — 기록은 남아 있다", () => {
+    renderTable([project({ lastRecordedAt: "2026-02-30", voiceGb: 1.3, sttGb: 0.2 })]);
+
+    const cell = screen.getByText("기록일 미상");
+    expect(cell.tagName).toBe("TIME");
+    expect(cell).toHaveAttribute("dateTime", "2026-02-30");
+    expect(screen.queryByText("—")).not.toBeInTheDocument();
   });
 
   /*

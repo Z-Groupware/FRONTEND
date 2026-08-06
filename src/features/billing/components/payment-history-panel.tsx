@@ -71,12 +71,18 @@ export function PaymentHistoryPanel({ payments }: PaymentHistoryPanelProps) {
                     scope="row"
                     className="px-6 py-3.5 text-center text-[13px] leading-5 font-normal tabular-nums"
                   >
-                    {/* 원본은 `dateTime`에 남긴다 — 표기를 바꿔도 값은 안 잃는다 */}
-                    {isReadableDate(payment.paidAt) ? (
-                      <time dateTime={payment.paidAt}>{formatFullDate(payment.paidAt)}</time>
-                    ) : (
-                      "—"
-                    )}
+                    {/*
+                      ⚠️ 원본은 `dateTime`에 남긴다 — 표기를 바꿔도 값은 안 잃는다.
+                      ⚠️ **못 읽어도 `—`로 비우지 않는다.** 이 칸은 `scope="row"`, 곧 그 줄의
+                         정체다. 금액·상태는 그대로인데 날짜만 비면 `결제일 없는 결제`가 되고
+                         스크린 리더는 이 줄을 `—`라 부른다. 돈이 나간 기록이라 언제였는지
+                         확인할 길이 사라지는 쪽이 개발자용 표기가 뜨는 것보다 나쁘다.
+                    */}
+                    <time dateTime={payment.paidAt}>
+                      {isReadableDate(payment.paidAt)
+                        ? formatFullDate(payment.paidAt)
+                        : payment.paidAt}
+                    </time>
                   </th>
                   <td className="px-3 py-3.5 text-center text-[13px] leading-5">
                     {payment.planName}
