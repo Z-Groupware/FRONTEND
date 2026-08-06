@@ -1,5 +1,5 @@
 import type { Invite } from "./types";
-import { NO_ROLE_ID } from "./types";
+import { LEADER_ROLE_ID, NO_ROLE_ID } from "./types";
 
 /**
  * 초대 줄이 **말이 되는지** 판정하는 규칙 — 목록을 바꾸지 않고 보기만 한다.
@@ -52,20 +52,23 @@ export interface InviteRules {
 /**
  * 역할과 직급의 짝이 맞는가 — **이 규칙은 여기 한 곳에만 둔다.**
  *
- * - 리더 직급은 역할이 `없음`일 때만.
- * - 리더가 아닌 직급은 역할이 있어야 한다.
- * - ⚠️ **역할이 하나도 없는 부서는 예외**다. 고를 역할이 `없음`뿐이라 규칙을 그대로 적용하면
+ * - **리더 직급은 역할이 `리더`다.** 고르는 게 아니라 자동으로 채워지고 칸이 잠긴다.
+ * - 리더가 아닌 직급은 **부서 안의 실제 역할**을 골라야 한다 — `리더`도 `없음`도 안 된다.
+ * - ⚠️ **역할이 하나도 없는 부서는 예외**다. 고를 게 `없음`뿐이라 규칙을 그대로 적용하면
  *   그 부서에는 팀장 한 명밖에 못 들어간다. 1단계에서 부서 아래를 비워둘 수 있으므로
  *   실제로 생길 수 있는 부서다(CLAUDE.md §조직 계층).
  * - 아직 안 고른 칸(빈 값)은 판정하지 않는다 — 고르는 중이다.
+ *
+ * ⚠️ **`없음`을 막는 줄을 빼면 안 된다.** 리더가 아닌 자리에서 `리더`만 막으면, 역할이 있는
+ *    부서인데도 일반 팀원이 `없음`을 고를 수 있게 된다 — 위의 예외 가드가 이미 "역할 없는
+ *    부서"를 통과시키므로, 여기까지 온 줄은 고를 역할이 실제로 있는 줄이다.
  */
 export function fitsRoleAndPosition(invite: Invite, rules: InviteRules): boolean {
   if (!invite.roleId || !invite.positionId) return true;
   if (!rules.hasRoles(invite.departmentId)) return true;
 
-  return invite.roleId === NO_ROLE_ID
-    ? rules.isLeaderPosition(invite.positionId)
-    : !rules.isLeaderPosition(invite.positionId);
+  if (rules.isLeaderPosition(invite.positionId)) return invite.roleId === LEADER_ROLE_ID;
+  return invite.roleId !== LEADER_ROLE_ID && invite.roleId !== NO_ROLE_ID;
 }
 
 /**

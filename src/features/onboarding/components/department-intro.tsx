@@ -47,8 +47,8 @@ export function DepartmentIntro({ departments }: DepartmentIntroProps) {
           옮길 수 있습니다.
         </StepNote>
         <StepNote>
-          <span className="text-muted-foreground">역할 없이 부서에만</span> 속할 수도 있습니다.
-          팀장이 그렇습니다.
+          <span className="text-muted-foreground">역할은 비워 둬도 됩니다.</span> 팀장은 여기서 만든
+          역할과 무관하게 &lsquo;리더&rsquo;가 됩니다.
         </StepNote>
       </StepNoteList>
 

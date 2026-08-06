@@ -17,7 +17,7 @@ import {
   toggleInviteAdmin,
 } from "./invites";
 import type { Invite } from "./types";
-import { NO_ROLE_ID } from "./types";
+import { LEADER_ROLE_ID, NO_ROLE_ID } from "./types";
 
 /**
  * 초대 목록 편집 상태.
@@ -44,11 +44,10 @@ export function useInviteList(rules: InviteRules) {
       setInvites((prev) => changeInviteEmail(prev, id, email)),
     changeDepartment: (id: string, departmentId: string) =>
       setInvites((prev) => changeInviteDepartment(prev, id, departmentId, rules)),
-    /** 역할 — 빈 문자열이면 "없음"(부서에 바로 소속) */
     /** ⚠️ 짝이 안 맞는 직급은 함께 비워진다(`changeInviteRole`) */
     changeRole: (id: string, roleId: string) =>
       setInvites((prev) => changeInviteRole(prev, id, roleId, rules)),
-    /** ⚠️ 리더 직급이면 역할이 함께 `없음`이 된다(`changeInvitePosition`) */
+    /** ⚠️ 리더 직급이면 역할이 `리더`로 자동으로 채워진다(`changeInvitePosition`) */
     changePosition: (id: string, positionId: string) =>
       setInvites((prev) => changeInvitePosition(prev, id, positionId, rules)),
     /** Admin 겸직 — 역할을 바꾸지 않고 그 위에 얹거나 뗀다 */
@@ -80,10 +79,15 @@ export function useInviteList(rules: InviteRules) {
           return {
             ...invite,
             departmentId,
-            // 부서가 바뀌었거나 그 역할이 사라졌으면 "없음"으로 되돌린다
-            // `없음`은 부서가 바뀌어도 살아남는다 — 어느 부서에서나 뜻이 같다
+            /*
+              부서가 바뀌었거나 그 역할이 사라졌으면 비운다.
+              ⚠️ **예약값 둘(`리더`·`없음`)은 살아남는다** — 어느 부서에서나 뜻이 같다.
+                 `리더`를 여기서 지우면 부서만 옮겼는데 팀장 표시가 사라진다.
+            */
             roleId:
-              invite.roleId === NO_ROLE_ID || roleIdsOf(departmentId).has(invite.roleId)
+              invite.roleId === LEADER_ROLE_ID ||
+              invite.roleId === NO_ROLE_ID ||
+              roleIdsOf(departmentId).has(invite.roleId)
                 ? invite.roleId
                 : "",
             positionId: positionIds.has(invite.positionId) ? invite.positionId : "",

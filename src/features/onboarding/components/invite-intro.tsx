@@ -43,8 +43,8 @@ export function InviteIntro({ invites, departments, rolesOf, positions }: Invite
           첫 비밀번호가 메일로 갑니다.
         </StepNote>
         <StepNote>
-          <span className="text-muted-foreground">역할은 부서를 고른 뒤</span> 정합니다. 팀장처럼
-          역할 없이 부서에만 두려면 &lsquo;없음&rsquo;을 고릅니다.
+          <span className="text-muted-foreground">역할은 부서를 고른 뒤</span> 정합니다. 직급을
+          팀장으로 고르면 역할이 &lsquo;리더&rsquo;로 자동으로 채워집니다.
         </StepNote>
         <StepNote>
           직급은 <span className="text-muted-foreground">2단계에서 만든 것</span>만 고를 수

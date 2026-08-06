@@ -17,7 +17,7 @@ import {
   toggleInviteAdmin,
 } from "./invites";
 import type { Invite } from "./types";
-import { NO_ROLE_ID } from "./types";
+import { LEADER_ROLE_ID, NO_ROLE_ID } from "./types";
 
 /** 목록에서 `lead`만 리더 직급으로 보고, 모든 부서에 역할이 있다고 본다 */
 const isLeader: InviteRules = {
@@ -112,15 +112,31 @@ describe("changeInvite*", () => {
     리더는 부서 전체를 맡는 자리다 — 부서 안의 한 역할에 매이면 관리 범위가 어긋난다.
     화면에서 막는 것만으로는 부족하다: 역할을 먼저 고른 뒤 직급을 리더로 바꾸는 순서가 남는다.
   */
-  it("리더 직급을 고르면 역할이 함께 비워진다", () => {
+  /*
+    ⚠️ **비우는 게 아니라 `리더`로 채운다.** 전에는 `없음`으로 비웠는데, 팀장 줄에 `없음`이라
+       적히니 "역할을 안 정했다"로 읽혔다. BE에서도 `리더`는 실재하는 역할이다(전역 시드 1).
+  */
+  it("리더 직급을 고르면 역할이 `리더`로 채워진다", () => {
     const next = changeInvitePosition(makeList(), "a", "lead", isLeader);
     expect(next[0]?.positionId).toBe("lead");
-    expect(next[0]?.roleId).toBe(NO_ROLE_ID);
+    expect(next[0]?.roleId).toBe(LEADER_ROLE_ID);
   });
 
   it("리더가 아닌 직급은 역할을 건드리지 않는다", () => {
     const before = makeList()[0]?.roleId;
     expect(changeInvitePosition(makeList(), "a", "staff", isLeader)[0]?.roleId).toBe(before);
+  });
+
+  /*
+    ⚠️ **리더에서 내려오면 역할을 비운다.** `리더`는 리더 직급만 가질 수 있는 값이라 그대로
+       두면 `과장 + 리더`처럼 짝이 어긋난 줄이 남는다.
+  */
+  it("리더에서 내려오면 `리더` 역할을 비운다 — 짝이 어긋난 줄을 남기지 않는다", () => {
+    const asLeader = changeInvitePosition(makeList(), "a", "lead", isLeader);
+    const next = changeInvitePosition(asLeader, "a", "staff", isLeader);
+
+    expect(next[0]?.positionId).toBe("staff");
+    expect(next[0]?.roleId).toBe("");
   });
 
   it("원본을 바꾸지 않는다", () => {

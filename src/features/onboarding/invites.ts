@@ -5,7 +5,7 @@ import {
   normalizeEmail,
 } from "./invite-rules";
 import type { Invite } from "./types";
-import { NO_ROLE_ID } from "./types";
+import { LEADER_ROLE_ID, NO_ROLE_ID } from "./types";
 
 /**
  * 초대 목록 조작 — 전부 순수 함수다(원본을 바꾸지 않는다).
@@ -73,12 +73,12 @@ export function changeInviteEmail(invites: Invite[], id: string, email: string):
  * 역할 바꾸기.
  *
  * 역할과 직급은 짝이 맞아야 한다(팀 확정).
- * - **리더 직급은 역할이 `없음`일 때만** — 부서 전체를 맡는 자리라 부서 안의 한 역할에 못 매인다.
- * - **리더가 아닌 직급은 역할이 있어야 한다** — 부서에만 걸쳐 두면 무슨 일을 하는지가 빈다.
+ * - **리더 직급은 역할이 `리더`다** — 부서 전체를 맡는 자리라 부서 안의 한 역할에 못 매인다.
+ * - **리더가 아닌 직급은 부서 안의 실제 역할을 골라야 한다** — 걸쳐만 두면 무슨 일을 하는지가 빈다.
  *
  * ⚠️ 짝이 어긋나면 **직급을 비운다.** 막기만 하면 빠져나갈 수 없는 줄이 생긴다 —
- *    `과장 + 프론트엔드`에서 팀장으로 가려면 역할을 `없음`으로 바꿔야 하는데,
- *    그 `없음`이 과장 때문에 막혀 있으면 어느 쪽도 못 고친다.
+ *    `과장 + 프론트엔드`에서 팀장으로 가려면 역할이 `리더`가 돼야 하는데,
+ *    그게 과장 때문에 막혀 있으면 어느 쪽도 못 고친다.
  */
 export function changeInviteRole(
   invites: Invite[],
@@ -98,6 +98,8 @@ export function changeInviteRole(
  *
  * ⚠️ **역할이 하나도 없는 부서면 곧장 `없음`으로 정한다.** 고를 게 `없음` 하나뿐인데
  *    한 번 더 고르게 하면 의미 없는 손이 한 번 더 든다 — 역할 칸은 그대로 잠긴다.
+ * ⚠️ **이미 리더 직급이면 `리더`로 채운다.** 부서를 먼저 고르든 직급을 먼저 고르든 결과가
+ *    같아야 한다 — 여기서 빈 값으로 두면 잠긴 칸이 빈 채로 남아 무엇이 정해졌는지 안 보인다.
  */
 export function changeInviteDepartment(
   invites: Invite[],
@@ -105,18 +107,26 @@ export function changeInviteDepartment(
   departmentId: string,
   rules: InviteRules,
 ): Invite[] {
+  const target = invites.find((invite) => invite.id === id);
+
   // 부서가 바뀌면 역할은 비운다 — 다른 부서의 역할이 남아 있으면 안 된다
-  const roleId = rules.hasRoles(departmentId) ? "" : NO_ROLE_ID;
+  const roleId = rules.isLeaderPosition(target?.positionId ?? "")
+    ? LEADER_ROLE_ID
+    : rules.hasRoles(departmentId)
+      ? ""
+      : NO_ROLE_ID;
+
   return updateInvite(invites, id, { departmentId, roleId });
 }
 
 /**
  * 직급 바꾸기.
  *
- * ⚠️ **리더 직급을 고르면 역할을 함께 비운다.** 리더는 부서 전체를 맡는 자리라 부서 안의 한
- *    역할(프론트엔드 등)에 매이면 관리 범위가 어긋난다. 화면에서 못 고르게 막는 것만으로는
- *    부족하다 — 역할을 먼저 고른 뒤 직급을 리더로 바꾸는 순서가 남는다.
- * ⚠️ 조용히 지우는 게 아니다. 역할 칸이 그 자리에서 `없음`으로 바뀌는 게 바로 보인다.
+ * ⚠️ **리더 직급을 고르면 역할이 `리더`로 자동으로 채워진다.** 리더는 부서 전체를 맡는 자리라
+ *    부서 안의 한 역할(프론트엔드 등)에 매이면 관리 범위가 어긋난다. 화면에서 못 고르게 막는
+ *    것만으로는 부족하다 — 역할을 먼저 고른 뒤 직급을 리더로 바꾸는 순서가 남는다.
+ * ⚠️ 조용히 지우는 게 아니다. 역할 칸이 그 자리에서 `리더`로 바뀌는 게 바로 보인다.
+ *    전에는 `없음`으로 바뀌었는데, 팀장 줄에 `없음`이라 적히니 "역할을 안 정했다"로 읽혔다.
  */
 export function changeInvitePosition(
   invites: Invite[],
@@ -124,10 +134,25 @@ export function changeInvitePosition(
   positionId: string,
   rules: InviteRules,
 ): Invite[] {
-  const patch = rules.isLeaderPosition(positionId)
-    ? { positionId, roleId: NO_ROLE_ID }
-    : { positionId };
-  return updateInvite(invites, id, patch);
+  const target = invites.find((invite) => invite.id === id);
+
+  if (rules.isLeaderPosition(positionId)) {
+    return updateInvite(invites, id, { positionId, roleId: LEADER_ROLE_ID });
+  }
+
+  /*
+    ⚠️ **리더에서 내려오면 역할을 비운다.** `리더`는 리더 직급만 가질 수 있는 값이라
+       그대로 두면 `과장 + 리더`처럼 짝이 어긋난 줄이 남는다 — 다시 고르게 한다.
+       역할이 하나도 없는 부서면 고를 게 `없음`뿐이라 곧장 정한다.
+  */
+  const roleId =
+    target?.roleId === LEADER_ROLE_ID
+      ? rules.hasRoles(target.departmentId)
+        ? ""
+        : NO_ROLE_ID
+      : target?.roleId;
+
+  return updateInvite(invites, id, { positionId, roleId });
 }
 
 /**
