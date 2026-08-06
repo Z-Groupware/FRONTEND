@@ -1,4 +1,5 @@
 import { DEFAULT_PROJECT_SORT, type ProjectSort, type ProjectStatus } from "@/constants/domain";
+import { COMPANY_TEAM_NAMES } from "@/constants/project";
 import { isMock } from "@/mocks/config";
 
 import { sortProjects } from "./lib";
@@ -33,6 +34,13 @@ export async function getProjectList({
     );
     return sortProjects(filtered, sort);
   }
+
+  throw new Error("서버 연동 미구현 — ERD·API 스펙 확정 후 매퍼 작성");
+}
+
+/** 프로젝트 생성 폼의 "참여 팀" 선택지 — 회사 전체 팀 목록. */
+export async function getCompanyTeamOptions(): Promise<string[]> {
+  if (isMock) return [...COMPANY_TEAM_NAMES];
 
   throw new Error("서버 연동 미구현 — ERD·API 스펙 확정 후 매퍼 작성");
 }
