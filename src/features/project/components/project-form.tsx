@@ -154,7 +154,9 @@ export function ProjectForm({ action, teamOptions, cancelHref }: ProjectFormProp
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <Label>태그 색상</Label>
+        <Label>
+          태그 색상 <span className="text-destructive">*</span>
+        </Label>
         <div className="flex items-center gap-2">
           <button
             type="button"
