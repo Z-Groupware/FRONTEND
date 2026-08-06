@@ -155,7 +155,7 @@ export function ProjectForm({ action, teamOptions, cancelHref }: ProjectFormProp
         )}
       </div>
 
-      <div className="flex items-start justify-between gap-6">
+      <div className="grid grid-cols-[minmax(0,1fr)_224px] items-start gap-6">
         <div className="flex flex-col gap-1.5">
           <Label>
             태그 색상 <span className="text-destructive">*</span>
@@ -224,7 +224,7 @@ export function ProjectForm({ action, teamOptions, cancelHref }: ProjectFormProp
           </div>
         </div>
 
-        <div className="flex w-48 flex-col gap-1.5">
+        <div className="flex flex-col gap-1.5">
           <Label htmlFor="project-due-date">
             마감 기한 <span className="text-destructive">*</span>
           </Label>
@@ -242,7 +242,7 @@ export function ProjectForm({ action, teamOptions, cancelHref }: ProjectFormProp
         </div>
       </div>
 
-      <div className="flex items-start justify-between gap-6">
+      <div className="grid grid-cols-[minmax(0,1fr)_224px] items-start gap-6">
         <div className="flex flex-col gap-1.5">
           <Label>
             참여 팀 <span className="text-destructive">*</span>
@@ -300,7 +300,7 @@ export function ProjectForm({ action, teamOptions, cancelHref }: ProjectFormProp
           )}
         </div>
 
-        <div className="flex w-56 flex-col gap-1.5">
+        <div className="flex flex-col gap-1.5">
           <Label htmlFor="project-attachment">첨부파일</Label>
           <input
             ref={fileInputRef}
