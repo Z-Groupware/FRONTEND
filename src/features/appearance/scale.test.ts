@@ -11,11 +11,9 @@ import {
 describe("parseScale", () => {
   it.each([
     ["75", 75],
+    ["80", 80],
     ["90", 90],
     ["100", 100],
-    ["125", 125],
-    ["150", 150],
-    ["200", 200],
   ])("저장된 값을 그대로 읽는다: %s", (raw, expected) => {
     expect(parseScale(raw)).toBe(expected);
   });
@@ -25,12 +23,12 @@ describe("parseScale", () => {
   });
 
   /*
-    ⚠️ **저장소는 사람이 고칠 수 있다.** 목록에 없는 값을 그대로 믿으면 `zoom: 9999`가 걸려
+    ⚠️ **저장소는 사람이 고칠 수 있다.** 목록에 없는 값을 그대로 믿으면 `scale(9999)`가 걸려
        화면을 통째로 못 쓰게 되고, 되돌릴 버튼도 안 보인다.
     ⚠️ `110`처럼 **그럴듯하지만 목록에 없는 값**도 걸러야 한다. 목록이 바뀌면 예전에 골라 둔
        값이 저장소에 남아 있다.
   */
-  it.each(["9999", "0", "-1", "abc", "", "1e3", "110"])(
+  it.each(["9999", "0", "-1", "abc", "", "1e3", "110", "150", "200"])(
     "목록에 없는 값은 기본값으로 되돌린다: %s",
     (raw) => {
       expect(parseScale(raw)).toBe(DEFAULT_SCALE);
@@ -42,19 +40,16 @@ describe("suggestScale", () => {
   const at = (viewportWidth: number, hasChosen = false) =>
     suggestScale({ viewportWidth, hasChosen });
 
-  /*
-    ⚠️ **한 방향만 보면 안 된다.** OS 배율이 높은 기기는 CSS 뷰포트가 좁아 화면이 크게 보이고,
-       배율이 없는 고해상도 기기는 넓어서 작게 보인다 — 처음엔 넓은 쪽만 보다가 틀렸다.
-  */
   it("기준보다 좁으면 줄이라고 권한다 — OS 배율이 높아 크게 보이는 경우", () => {
     expect(at(1152)).toBe("smaller");
   });
 
-  it("기준보다 넓으면 키우라고 권한다 — 배율 없이 고해상도를 쓰는 경우", () => {
-    expect(at(2880)).toBe("larger");
-  });
-
-  it.each([1440, 1200, 1512, 1800])("보통 폭에서는 참견하지 않는다: %s", (width) => {
+  /*
+    ⚠️ **넓은 화면에는 권하지 않는다**(2026-08-06). 키우는 배율을 없앴으니 권할 값이 없다 —
+       답이 없는 안내는 하지 않는다(§정직성). 화면을 키우면 쓸 수 있는 폭이 줄어
+       1440 기준 화면이 무너진다.
+  */
+  it.each([1440, 1200, 1512, 1800, 2880])("보통·넓은 폭에서는 참견하지 않는다: %s", (width) => {
     expect(at(width)).toBe("none");
   });
 
@@ -92,21 +87,28 @@ describe("SCALE_BOOT_SCRIPT", () => {
     if (original) Object.defineProperty(globalThis, "localStorage", original);
   });
 
-  it("100%는 `zoom`을 아예 걸지 않는다 — 쓸데없는 계산을 남기지 않는다", () => {
+  /*
+    ⚠️ **`zoom`이 아니라 `--app-scale` 변수다**(2026-08-06 전환). 실제로 줄이는 일은
+       `globals.css`의 `body`가 `transform: scale()`로 한다 — `zoom`은 배율을 레이아웃에
+       섞어 좌표를 다루는 코드를 전부 어긋나게 했다(DECISIONS §화면 배율).
+  */
+  const scaleVar = () => document.documentElement.style.getPropertyValue("--app-scale");
+
+  it("100%는 아무것도 세우지 않는다 — 기본값 `1`로 둔다", () => {
     localStorage.setItem("z:screen-scale", "100");
-    document.documentElement.style.zoom = "";
+    document.documentElement.style.removeProperty("--app-scale");
 
     new Function(SCALE_BOOT_SCRIPT)();
 
-    expect(document.documentElement.style.zoom).toBe("");
+    expect(scaleVar()).toBe("");
   });
 
-  it("고른 배율을 `zoom`으로 건다", () => {
-    localStorage.setItem("z:screen-scale", "150");
+  it("고른 배율을 `--app-scale`로 세운다", () => {
+    localStorage.setItem("z:screen-scale", "90");
 
     new Function(SCALE_BOOT_SCRIPT)();
 
-    expect(document.documentElement.style.zoom).toBe("1.5");
+    expect(scaleVar()).toBe("0.9");
   });
 
   /*
@@ -118,7 +120,15 @@ describe("SCALE_BOOT_SCRIPT", () => {
 
     new Function(SCALE_BOOT_SCRIPT)();
 
-    expect(document.documentElement.style.zoom).toBe("0.75");
+    expect(scaleVar()).toBe("0.75");
+  });
+
+  /*
+    ⚠️ **`zoom`으로 돌아가면 안 된다.** 그게 좌표를 다루는 코드를 세 군데 어긋나게 했다 —
+       팝업 위치·클릭 차단 층·기준 상자. 부트 스크립트에 그 낱말이 다시 들어오면 잡는다.
+  */
+  it("`zoom`을 건드리지 않는다", () => {
+    expect(SCALE_BOOT_SCRIPT).not.toContain("zoom");
   });
 });
 
@@ -132,9 +142,6 @@ describe("recommendScale", () => {
     [1440, 100],
     [1280, 90],
     [1080, 75],
-    [1800, 125],
-    [2160, 150],
-    [2880, 200],
   ])("폭 %s에서는 %s%%를 권한다", (width, expected) => {
     expect(recommendScale(width)).toBe(expected);
   });
@@ -148,8 +155,9 @@ describe("recommendScale", () => {
   });
 
   /*
-    ⚠️ **권하는 값은 반드시 목록에 있어야 한다.** 한때 200%를 목록에서 뺐더니, 배율 없이
-       2880을 쓰는 사람에게 150%를 권하게 됐다 — 눌러도 여전히 다른 기기보다 작다.
+    ⚠️ **권하는 값은 반드시 목록에 있어야 한다.** 목록에 없는 값을 권하면 눌러도 아무 일이 없다.
+    ⚠️ 넓은 화면에서는 권하는 값이 100%가 된다(키우는 배율이 없다) — 그래서 `suggestScale`이
+       넓은 쪽에는 아예 안내를 안 띄운다. 둘이 어긋나면 "권했는데 안 바뀐다"가 된다.
   */
   it.each([1152, 1440, 2880, 1080])("권하는 값은 언제나 고를 수 있다: 폭 %s", (width) => {
     expect(SCREEN_SCALES).toContain(recommendScale(width));
@@ -158,8 +166,8 @@ describe("recommendScale", () => {
 
 describe("nextScaleByKey", () => {
   it("오른쪽·아래는 다음 배율", () => {
-    expect(nextScaleByKey(100, "ArrowRight")).toBe(125);
-    expect(nextScaleByKey(100, "ArrowDown")).toBe(125);
+    expect(nextScaleByKey(90, "ArrowRight")).toBe(100);
+    expect(nextScaleByKey(90, "ArrowDown")).toBe(100);
   });
 
   it("왼쪽·위는 이전 배율", () => {

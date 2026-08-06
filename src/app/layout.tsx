@@ -60,9 +60,17 @@ export default function RootLayout({
         */}
         <script dangerouslySetInnerHTML={{ __html: SCALE_BOOT_SCRIPT }} />
       </head>
-      <body className="bg-background text-foreground flex min-h-full flex-col">
+      <body className="bg-background text-foreground flex flex-col">
         <ThemeProvider>
-          {children}
+          {/*
+            ⚠️ **스크롤은 여기서 돈다.** `body`는 화면 배율을 거는 자리라
+               `transform`이 걸려 있고(§globals.css `--app-scale`), 변형된 요소는 그 안
+               `position: fixed`의 기준이 된다 — 거기서 스크롤까지 하면 상단바·모달 같은
+               고정 요소가 내용과 함께 밀려 나간다. 스크롤을 한 겹 안으로 내려 갈라 둔다.
+            ⚠️ `Toaster`는 **이 상자 밖**이다. 토스트는 `fixed`라 스크롤과 무관해야 하고,
+               `body` 바로 안에 있어야 배율도 같이 받는다.
+          */}
+          <div id="app-scroll">{children}</div>
           {/* 변경 결과 토스트 — 앱 전체에 하나만 둔다(DECISIONS) */}
           <Toaster />
         </ThemeProvider>

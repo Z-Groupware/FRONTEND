@@ -24,20 +24,20 @@ describe("writeScale — 저장소가 막혔을 때", () => {
 
   it("던지지 않는다", () => {
     block();
-    expect(() => writeScale(150)).not.toThrow();
+    expect(() => writeScale(90)).not.toThrow();
   });
 
   it("고른 값이 **이번 세션에는 남는다** — 100%로 되돌아가지 않는다", () => {
     block();
-    writeScale(150);
+    writeScale(90);
 
-    expect(readScale()).toBe("150");
+    expect(readScale()).toBe("90");
   });
 
   it("저장소가 살아 있으면 저장소 값이 우선이다", () => {
-    writeScale(125);
+    writeScale(80);
 
-    expect(localStorage.getItem("z:screen-scale")).toBe("125");
-    expect(readScale()).toBe("125");
+    expect(localStorage.getItem("z:screen-scale")).toBe("80");
+    expect(readScale()).toBe("80");
   });
 });
