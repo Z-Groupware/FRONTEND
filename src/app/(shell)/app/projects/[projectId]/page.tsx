@@ -50,10 +50,9 @@ export default async function ProjectDetailPage({ params, searchParams }: Projec
       startDate: action.startDate,
       dueDate: action.dueDate,
       tone: isDelayed(action) ? "DELAYED" : action.status,
-      // ⚠️ 팀 액션 상세(`/app/projects/:projectId/team/:teamActionId`)는 아직 없다 — 생기면 href를 채운다.
-      //    식별자는 action.team(팀명)이 아니라 action.id(팀 액션 ID)를 써야 한다 — 팀명으로
-      //    임시 경로를 만들면 404 링크가 된다(코드리뷰 지적) — href 없이 두면 컴포넌트가
-      //    클릭 안 되는 막대로 표시한다.
+      // ⚠️ 식별자는 action.id(팀 액션 ID)를 쓴다 — action.team(팀명)으로 경로를 만들면
+      //    같은 팀에 팀 액션이 여러 개일 때 서로 구분이 안 된다.
+      href: `/app/projects/${project.id}/team/${action.id}`,
     };
   });
 

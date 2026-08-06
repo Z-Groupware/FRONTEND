@@ -85,3 +85,39 @@ export interface ProjectTeamAction {
   dueDate: string;
   status: ActionStatus;
 }
+
+/**
+ * 팀 액션 상세(`/app/projects/:projectId/team/:teamActionId`)의 상세 탭.
+ * ⚠️ 담당자는 이 팀 액션을 받은 팀의 **팀장**이다(`assigneeRoleLabel`은 항상 "팀장") —
+ *    개인 액션 상세를 만들 때는 같은 필드에 그 사람 본인 역할이 들어간다.
+ */
+export interface TeamActionDetail {
+  id: string;
+  name: string;
+  description: string;
+  team: string;
+  projectId: number;
+  projectTag: string;
+  assigneeName: string;
+  assigneeRoleLabel: string;
+  /** 이 팀 액션이 나온 프로젝트 회의. ⚠️ 회의 상세(`/app/meeting/:id`) 라우트가 아직 없어 링크는 없다. */
+  sourceMeeting: {
+    title: string;
+    /** ISO datetime */
+    scheduledAt: string;
+  };
+}
+
+/** 팀 액션 상세의 타임라인 탭 한 줄 — 이 팀 액션에 속한 개인 액션 한 건(담당자별 행). */
+export interface TeamActionPersonalItem {
+  id: string;
+  title: string;
+  assigneeName: string;
+  /** Leader면 "팀장" 등, 없으면 undefined(이름만 표시) */
+  assigneeRoleLabel?: string;
+  /** 작업 시작일 `YYYY-MM-DD` */
+  startDate: string;
+  /** 마감일 `YYYY-MM-DD` */
+  dueDate: string;
+  status: ActionStatus;
+}
