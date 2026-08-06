@@ -1,8 +1,14 @@
-import { DEFAULT_PROJECT_SORT, PROJECT_SORT, PROJECT_STATUS } from "@/constants/domain";
+import {
+  DEFAULT_PROJECT_SORT,
+  PROJECT_DETAIL_TAB,
+  PROJECT_SORT,
+  PROJECT_STATUS,
+} from "@/constants/domain";
 
 import {
   DEFAULT_PROJECT_STATUS,
   getProgressPercent,
+  parseProjectDetailTab,
   parseProjectSort,
   parseProjectStatus,
   sortProjects,
@@ -71,6 +77,14 @@ describe("parseProjectSort", () => {
     expect(parseProjectSort("NAME")).toBe(PROJECT_SORT.NAME);
     expect(parseProjectSort("nonsense")).toBe(DEFAULT_PROJECT_SORT);
     expect(parseProjectSort(undefined)).toBe(PROJECT_SORT.DUE_ASC);
+  });
+});
+
+describe("parseProjectDetailTab", () => {
+  it("아는 탭 값은 통과, 모르면 기본(기획)", () => {
+    expect(parseProjectDetailTab("timeline")).toBe(PROJECT_DETAIL_TAB.TIMELINE);
+    expect(parseProjectDetailTab("nonsense")).toBe(PROJECT_DETAIL_TAB.PLAN);
+    expect(parseProjectDetailTab(undefined)).toBe(PROJECT_DETAIL_TAB.PLAN);
   });
 });
 

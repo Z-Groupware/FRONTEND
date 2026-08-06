@@ -37,6 +37,21 @@ export const PROJECT_SORT_LABEL: Record<ProjectSort, string> = {
 /** 기본 정렬 — 마감 임박순(스펙). */
 export const DEFAULT_PROJECT_SORT: ProjectSort = PROJECT_SORT.DUE_ASC;
 
+/** 프로젝트 상세(`/app/projects/:projectId`) 탭. 화면엔 한글 라벨, 코드엔 영문 상수. */
+export const PROJECT_DETAIL_TAB = {
+  PLAN: "plan",
+  TIMELINE: "timeline",
+} as const;
+export type ProjectDetailTab = (typeof PROJECT_DETAIL_TAB)[keyof typeof PROJECT_DETAIL_TAB];
+
+export const PROJECT_DETAIL_TAB_LABEL: Record<ProjectDetailTab, string> = {
+  plan: "기획",
+  timeline: "타임라인",
+};
+
+/** 기본 탭 — 기획은 쿼리 없이도 기본으로 뜬다(`?tab=` 안 실림). */
+export const DEFAULT_PROJECT_DETAIL_TAB: ProjectDetailTab = PROJECT_DETAIL_TAB.PLAN;
+
 /** ProjectTag 최대 길이(백엔드 협의 확정) — 영문 대문자만 허용. */
 export const PROJECT_TAG_MAX_LENGTH = 6;
 

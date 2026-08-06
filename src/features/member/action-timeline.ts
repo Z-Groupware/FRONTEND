@@ -33,8 +33,8 @@ export interface TimelineActionInput {
   dueDate: string;
   /** 상태 색(지연=파생값 포함). `StatusDot`과 같은 셋을 쓴다. */
   tone: StatusTone;
-  /** 클릭 시 이동할 상세 경로 */
-  href: string;
+  /** 클릭 시 이동할 상세 경로. 상세 라우트가 아직 없으면 비워서 클릭 불가로 둔다. */
+  href?: string;
 }
 
 /** 축의 하루 칸. */

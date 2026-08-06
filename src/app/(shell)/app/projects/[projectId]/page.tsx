@@ -50,8 +50,9 @@ export default async function ProjectDetailPage({ params, searchParams }: Projec
       startDate: action.startDate,
       dueDate: action.dueDate,
       tone: isDelayed(action) ? "DELAYED" : action.status,
-      // ⚠️ 팀 액션 상세(`/app/projects/:projectId/team/:teamId`)는 아직 없다 — 생기면 이 href를 바꾼다.
-      href: `/app/projects/${project.id}/team/${encodeURIComponent(action.team)}`,
+      // ⚠️ 팀 액션 상세(`/app/projects/:projectId/team/:teamId`)는 아직 없다 — 생기면 href를 채운다.
+      //    실제 teamId 없이 팀명으로 임시 경로를 만들면 404 링크가 된다(코드리뷰 지적) — href
+      //    없이 두면 컴포넌트가 클릭 안 되는 막대로 표시한다.
     };
   });
 
@@ -106,14 +107,12 @@ export default async function ProjectDetailPage({ params, searchParams }: Projec
               {project.description}
             </p>
             {project.attachmentName && (
-              // ⚠️ 목 단계라 실제 다운로드 링크가 없다 — API 스펙 확정 후 연결.
-              <a
-                href="#"
-                className="text-foreground inline-flex w-fit items-center gap-1.5 text-sm underline underline-offset-2"
-              >
+              // ⚠️ 목 단계라 다운로드 URL이 없다(§9 화면은 사실만 말한다) — 죽은 링크(href="#") 대신
+              //    지금 있는 파일명만 정직하게 보여준다. API 스펙 확정 후 실제 다운로드 링크로 바꾼다.
+              <span className="text-muted-foreground inline-flex w-fit items-center gap-1.5 text-sm">
                 <Paperclip className="size-3.5" />
-                {project.attachmentName} 다운로드
-              </a>
+                {project.attachmentName}
+              </span>
             )}
           </section>
         ) : (

@@ -41,7 +41,7 @@ app/
 │ └─ /my **base role = Member** 대시보드
 │
 ├─ (app)/ /app/* ← 공용 워크벤치(로그인 전원, 컴포넌트 레벨 권한 차등)
-│ projects(+/new·/:tag·/:tag/team/:teamId) · actions/:id · my/actions
+│ projects(+/new·/:projectId·/:projectId/team/:teamId) · actions/:id · my/actions
 │ · meeting(+/:id·/:id/capture·/:id/review) · rooms · board · calendar
 │ · notice(+/:id·/new·/:id/edit) · people · me · search · handover
 │

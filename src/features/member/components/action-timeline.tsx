@@ -6,6 +6,7 @@ import {
   buildActionTimeline,
   TIMELINE_DAY_WIDTH_PX,
   type TimelineActionInput,
+  type TimelineBar,
   type TimelineDay,
 } from "@/features/member/action-timeline";
 import { cn } from "@/lib/utils";
@@ -53,6 +54,28 @@ const CAP_CLASS: Record<StatusTone, string> = {
   TODO: "bg-muted-foreground",
   DONE: "bg-muted-foreground",
 };
+
+/** 기간 바(또는 href 없을 때의 비클릭 바) 공통 클래스. */
+function barClassName(tone: StatusTone): string {
+  return cn(
+    "absolute top-1/2 flex h-[22px] min-w-[42px] -translate-y-1/2 items-center justify-end rounded border pr-2 text-[11px] font-semibold tabular-nums",
+    BAR_CLASS[tone],
+  );
+}
+
+function barAriaLabel(bar: TimelineBar): string {
+  return `${bar.title}, ${bar.tag}, ${TONE_LABEL[bar.tone]}, ${bar.ddayLabel}, ${bar.periodLabel}`;
+}
+
+/** 마감 지점 캡 — Link·div 양쪽에서 같이 쓴다. */
+function BarCap({ tone }: { tone: StatusTone }) {
+  return (
+    <span
+      className={cn("absolute inset-y-0 right-0 w-[3px] rounded-r", CAP_CLASS[tone])}
+      aria-hidden
+    />
+  );
+}
 
 /** 축 날짜 색 — 오늘은 파랑 대신 먹색 볼드(토요일 파랑과 안 겹치게) · 토=파랑 · 일=빨강. */
 function dayToneClass(day: TimelineDay): string {
@@ -169,26 +192,28 @@ export function ActionTimeline({
                 </span>
               </div>
 
-              {/* 우: 기간 바 */}
+              {/* 우: 기간 바 — 상세 라우트가 없으면(`href` 없음) 클릭 안 되는 막대로만 표시 */}
               <div className="relative" style={{ width: totalWidthPx }}>
-                <Link
-                  href={bar.href}
-                  aria-label={`${bar.title}, ${bar.tag}, ${TONE_LABEL[bar.tone]}, ${bar.ddayLabel}, ${bar.periodLabel}`}
-                  className={cn(
-                    "absolute top-1/2 flex h-[22px] min-w-[42px] -translate-y-1/2 items-center justify-end rounded border pr-2 text-[11px] font-semibold tabular-nums transition-shadow hover:shadow-sm",
-                    BAR_CLASS[bar.tone],
-                  )}
-                  style={{ left: bar.leftPx, width: bar.widthPx }}
-                >
-                  {bar.ddayLabel}
-                  <span
-                    className={cn(
-                      "absolute inset-y-0 right-0 w-[3px] rounded-r",
-                      CAP_CLASS[bar.tone],
-                    )}
-                    aria-hidden
-                  />
-                </Link>
+                {bar.href ? (
+                  <Link
+                    href={bar.href}
+                    aria-label={barAriaLabel(bar)}
+                    className={cn(barClassName(bar.tone), "transition-shadow hover:shadow-sm")}
+                    style={{ left: bar.leftPx, width: bar.widthPx }}
+                  >
+                    {bar.ddayLabel}
+                    <BarCap tone={bar.tone} />
+                  </Link>
+                ) : (
+                  <div
+                    aria-label={barAriaLabel(bar)}
+                    className={barClassName(bar.tone)}
+                    style={{ left: bar.leftPx, width: bar.widthPx }}
+                  >
+                    {bar.ddayLabel}
+                    <BarCap tone={bar.tone} />
+                  </div>
+                )}
               </div>
             </div>
           ))}
