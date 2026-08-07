@@ -35,6 +35,8 @@ export interface UseCaptureResult {
   /** 실제 녹음 누적 ms — 일시정지는 빠진다 */
   recordedMs: number;
   chunks: TranscriptChunk[];
+  /** 아직 확정 전인 말 — 화면에 흐리게 비추고 서버로는 안 보낸다 */
+  partial: string;
   /** 되돌릴 수 없는 실패 한 줄 — 화면에 남긴다(토스트는 사라진다) */
   error: string | null;
   enter(): void;
@@ -51,6 +53,7 @@ export function useCapture(): UseCaptureResult {
   const [phase, setPhase] = useState<CapturePhase>(CAPTURE_PHASE.BEFORE_ENTER);
   const [spans, setSpans] = useState<RecordingSpan[]>([]);
   const [chunks, setChunks] = useState<TranscriptChunk[]>([]);
+  const [partial, setPartial] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [now, setNow] = useState(() => Date.now());
 
@@ -98,22 +101,53 @@ export function useCapture(): UseCaptureResult {
     recorderRef.current?.rotate(closed);
   }, [phase, recordedMs]);
 
+  /**
+   * 지금 말하는 중인 문장이 **시작된** 시각(녹음 기준 ms). 아직 없으면 `null`.
+   *
+   * ⚠️ 확정된 순간을 찍으면 **말이 끝난 시각**이 된다. 10초에 시작해 2초 동안 말한 문장이
+   *    `00:12`로 남는데, 팀이 정한 건 "10초에 안녕하세요라고 하면 `00:10`"이다 —
+   *    문장을 **감지한 시점**이 기준이다.
+   */
+  const utteranceStartRef = useRef<number | null>(null);
+
+  /** 녹음 시작 기준 지금까지의 경과(ms) — 일시정지는 빠진다 */
+  const elapsedNow = useCallback(() => recordedMsOf(spansRef.current, Date.now()), []);
+
+  /*
+    말이 시작되는 순간을 잡아 둔다 — 중간 결과가 처음 뜨는 때다.
+    ⚠️ 이미 잡아 뒀으면 덮어쓰지 않는다. 한 문장이 이어지는 동안 중간 결과는 여러 번 온다.
+  */
+  const markPartial = useCallback(
+    (text: string) => {
+      if (text && utteranceStartRef.current === null) utteranceStartRef.current = elapsedNow();
+      setPartial(text);
+    },
+    [elapsedNow],
+  );
+
   /*
     ⚠️ 자막 시각은 **녹음 시작 기준 경과 시간**이다(팀 확정). 벽시계(`10:04`)로 찍으면 나중에
-       기록을 볼 때 녹음의 어느 지점인지 알 수 없다 — 회의 시작 10초 뒤의 말은 `00:10`이다.
+       기록을 볼 때 녹음의 어느 지점인지 알 수 없다.
     ⚠️ 일시정지 구간은 빠진다. 위 타이머·10분 세그먼트와 **같은 시계**를 쓴다 — 자막만 다른
        기준으로 세면 나중에 오디오와 자막이 어긋난다.
     ⚠️ 구간을 `spansRef`로 읽는다. `spans` 상태를 의존성에 넣으면 문장이 쌓일 때마다 STT
        엔진에 새 콜백이 물려 재시작이 걸린다.
   */
-  const pushChunk = useCallback((text: string) => {
-    const at = formatRecordedTime(recordedMsOf(spansRef.current, Date.now()));
-    setChunks((prev) => [
-      ...prev,
-      // 같은 문장이 반복돼도 키가 겹치지 않게 순번을 쓴다
-      { id: `chunk-${prev.length}-${Date.now()}`, at, text },
-    ]);
-  }, []);
+  const pushChunk = useCallback(
+    (text: string) => {
+      // 중간 결과 없이 바로 확정되는 짧은 말은 잡아 둔 게 없다 — 그때는 지금이 곧 시작이다
+      const startedAt = utteranceStartRef.current ?? elapsedNow();
+      utteranceStartRef.current = null;
+
+      const at = formatRecordedTime(startedAt);
+      setChunks((prev) => [
+        ...prev,
+        // 같은 문장이 반복돼도 키가 겹치지 않게 순번을 쓴다
+        { id: `chunk-${prev.length}-${Date.now()}`, at, text },
+      ]);
+    },
+    [elapsedNow],
+  );
 
   const teardown = useCallback(() => {
     sttRef.current?.stop();
@@ -182,7 +216,12 @@ export function useCapture(): UseCaptureResult {
       return;
     }
 
-    const stt = createSttEngine({ onChunk: pushChunk, onFatal: setError });
+    utteranceStartRef.current = null;
+    const stt = createSttEngine({
+      onChunk: pushChunk,
+      onPartial: markPartial,
+      onFatal: setError,
+    });
     stt?.start();
     sttRef.current = stt;
 
@@ -191,7 +230,7 @@ export function useCapture(): UseCaptureResult {
     setNow(at);
     setSpans((prev) => [...prev, { from: at, to: null }]);
     setPhase(CAPTURE_PHASE.RECORDING);
-  }, [pushChunk]);
+  }, [pushChunk, markPartial]);
 
   const pause = useCallback(() => {
     sttRef.current?.stop();
@@ -226,5 +265,5 @@ export function useCapture(): UseCaptureResult {
     setPhase(CAPTURE_PHASE.ENDED);
   }, [teardown]);
 
-  return { phase, support, recordedMs, chunks, error, enter, start, pause, resume, end };
+  return { phase, support, recordedMs, chunks, partial, error, enter, start, pause, resume, end };
 }
