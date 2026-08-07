@@ -41,14 +41,9 @@ export default async function TeamActionPage() {
   return (
     <main className="scrollbar-hidden min-h-0 flex-1 overflow-y-auto px-8 py-7">
       <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-4">
-        <div className="flex items-baseline justify-between gap-3">
-          <h2 className="text-foreground text-xl leading-7 font-semibold tracking-[-0.4px]">
-            {teamName}
-          </h2>
-          <p className="text-muted-foreground text-xs tabular-nums">
-            {groups.length}개 프로젝트 · 총 {totalTeamActions}개 팀 액션
-          </p>
-        </div>
+        <p className="text-muted-foreground self-end text-xs tabular-nums">
+          {groups.length}개 프로젝트 · 총 {totalTeamActions}개 팀 액션
+        </p>
 
         {groups.length === 0 ? (
           <p className="text-muted-foreground flex min-h-[240px] items-center justify-center text-sm">
