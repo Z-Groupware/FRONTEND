@@ -93,7 +93,18 @@ export async function changeMemberGradeAction(
     return { isSuccess: false, message: "자기 계정의 권한은 바꿀 수 없습니다" };
   }
 
-  if (!next.position.trim()) return { isSuccess: false, message: "직급을 입력해 주세요" };
+  /*
+    ⚠️ 직급도 **회사 목록 안에서만** 받는다. 화면은 셀렉트로 목록만 주지만 Server Action은
+       주소만 알면 직접 부를 수 있다 — 없으면 회사에 없는 직급으로 바뀐다(§권한: 화면
+       숨김은 보안이 아니다). 발급 검증과 같은 규칙이다.
+  */
+  const position = next.position.trim();
+  if (!position) return { isSuccess: false, message: "직급을 골라 주세요" };
+
+  const company = await getCompanySetting();
+  if (!company.positions.some((entry) => entry.name === position)) {
+    return { isSuccess: false, message: "회사에 없는 직급입니다" };
+  }
 
   const allowed: readonly string[] = POSITION_AUTHORITIES;
   if (!allowed.includes(next.authority)) {

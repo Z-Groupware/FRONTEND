@@ -36,10 +36,21 @@ const INITIAL: CompanySetting = {
        없어서 삭제 경로를 데모에서 못 본다.
   */
   teamMemberCounts: { d1: 6, d2: 3, d3: 0 },
+  /*
+    ⚠️ **사원 목이 실제로 쓰는 직급을 전부 담는다.** 전에는 `팀장·매니저·사원` 셋뿐이었는데
+       사원들은 `선임·주임·대리·과장`을 달고 있었다 — 두 목이 서로 다른 회사를 그리고 있었다.
+       직급을 목록에서 고르게 바꾸자(발급·직급 변경) 그 어긋남이 바로 드러났다.
+    ⚠️ `Leader` 권한은 **한 직급뿐**이다(`validatePositions`) — 팀장만 갖는다.
+    ⚠️ `대표`는 넣지 않는다. Owner는 회사에 하나뿐이고 발급·변경 대상이 아니라서
+       고를 수 있는 목록에 있으면 안 된다(§권한).
+  */
   positions: [
     { id: "p1", name: "팀장", role: AUTHORITY.LEADER },
-    { id: "p2", name: "매니저", role: AUTHORITY.MEMBER },
-    { id: "p3", name: "사원", role: AUTHORITY.MEMBER },
+    { id: "p2", name: "과장", role: AUTHORITY.MEMBER },
+    { id: "p3", name: "대리", role: AUTHORITY.MEMBER },
+    { id: "p4", name: "선임", role: AUTHORITY.MEMBER },
+    { id: "p5", name: "주임", role: AUTHORITY.MEMBER },
+    { id: "p6", name: "사원", role: AUTHORITY.MEMBER },
   ],
 };
 

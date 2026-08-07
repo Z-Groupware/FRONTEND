@@ -37,7 +37,19 @@ import type { ManagedMember } from "../manage-types";
  *    "Admin을 빼면 권한이 줄어든다"는 오해가 생긴다(`ADMIN_ELIGIBLE_AUTHORITIES`).
  * ⚠️ 안 고쳤으면 [저장]을 안 연다 — 눌러도 아무 뜻이 없는 저장을 만들지 않는다.
  */
-export function MemberGradeCard({ member, canEdit }: { member: ManagedMember; canEdit: boolean }) {
+export function MemberGradeCard({
+  member,
+  canEdit,
+  positionNames,
+}: {
+  member: ManagedMember;
+  canEdit: boolean;
+  /**
+   * 회사가 만든 직급 이름들(온보딩 2단계·기업 설정).
+   * ⚠️ 손으로 적게 두면 회사에 없는 직급이 생긴다 — 직급에는 권한이 매여 있다.
+   */
+  positionNames: string[];
+}) {
   const [position, setPosition] = useState(member.position);
   const [authority, setAuthority] = useState<Authority>(member.authority);
   const [isAdmin, setIsAdmin] = useState(member.isAdmin);
@@ -152,17 +164,35 @@ export function MemberGradeCard({ member, canEdit }: { member: ManagedMember; ca
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="member-position">직급</Label>
                 {/*
-                ⚠️ 직급은 **회사가 만든 목록**이라 원래 셀렉트가 맞다. 다만 그 목록은
-                   기업 설정이 들고 있고 아직 이 화면으로 오지 않는다 — 없는 목록을
-                   지어내느니 적게 두고, 목록이 오면 셀렉트로 바꾼다(§연동 검증).
-              */}
-                <Input
-                  id="member-position"
-                  value={position}
-                  onChange={(event) => setPosition(event.target.value)}
-                  disabled={!canEdit || isPending}
-                  placeholder="사원"
-                />
+                  ⚠️ 직급은 **회사가 만든 목록**에서 고른다(온보딩 2단계·기업 설정).
+                     한때 목록이 이 화면에 없어서 자유 입력이었는데, 그동안 회사에 없는
+                     직급도 그대로 저장됐다 — 직급에는 권한이 매여 있어 목록 밖 값은
+                     어느 권한에도 안 걸린다.
+                  ⚠️ 고를 게 없으면 빈 셀렉트 대신 **갈 곳을 말한다**(발급 창과 같은 문법).
+                */}
+                {positionNames.length > 0 ? (
+                  <Select
+                    items={Object.fromEntries(positionNames.map((name) => [name, name]))}
+                    value={position}
+                    onValueChange={(value) => setPosition(value ?? "")}
+                    disabled={!canEdit || isPending}
+                  >
+                    <SelectTrigger id="member-position" className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent alignItemWithTrigger={false}>
+                      {positionNames.map((name) => (
+                        <SelectItem key={name} value={name}>
+                          {name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <p className="text-muted-foreground py-2 text-[13px] leading-5 break-keep">
+                    기업 설정에서 직급을 먼저 만들어 주세요
+                  </p>
+                )}
               </div>
             </div>
 

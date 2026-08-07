@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
+import { getCompanySetting } from "@/features/company/server";
 import { HandoverApprovalCard } from "@/features/member/components/handover-approval-card";
 import { MemberActionList } from "@/features/member/components/member-action-list";
 import { MemberGradeCard } from "@/features/member/components/member-grade-card";
@@ -41,6 +42,13 @@ export default async function ManageMemberDetailPage({
   const detail = await getManagedMember(id);
   if (!detail) notFound();
 
+  /*
+    ⚠️ **직급 목록을 같이 받는다.** 손으로 적게 두면 회사에 없는 직급이 생긴다 —
+       발급 창과 같은 이유다(직급에는 권한이 매여 있다).
+  */
+  const company = await getCompanySetting();
+  const positionNames = company.positions.map((position) => position.name);
+
   return (
     <div className="flex-1 overflow-y-auto px-8 py-7">
       <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-7">
@@ -72,7 +80,11 @@ export default async function ManageMemberDetailPage({
 
           <div className="flex flex-col gap-7">
             <MemberActionList actions={detail.actions} />
-            <MemberGradeCard member={detail.member} canEdit={canChangeMemberGrade(viewer)} />
+            <MemberGradeCard
+              member={detail.member}
+              canEdit={canChangeMemberGrade(viewer)}
+              positionNames={positionNames}
+            />
           </div>
         </div>
       </div>
