@@ -7,7 +7,6 @@ import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/common/confirm-dialog";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -132,27 +131,18 @@ export function MemberGradeCard({
         정합니다. 관리자 권한은 권한을 대체하지 않고 위에 덧붙습니다.
       </p>
 
-      {/*
-        ⚠️ 구분선은 **카드 전폭**이다. 상한을 이 줄에 걸면 선이 카드 절반에서 끊겨,
-           카드가 반쯤 잘린 것처럼 보인다 — 상한은 안쪽 칸에만 건다.
-        ⚠️ 그 상한이 필요한 이유: 카드가 넓어져도 셀렉트 하나가 800px가 되면 라벨과 값이
-           멀어져 읽고 쓰기가 나빠진다(§폼 규격을 둔 이유와 같다).
-      */}
+      {/* ⚠️ 구분선은 **카드 전폭**이다 — 안쪽 칸에 폭을 걸어도 선은 안 따라간다 */}
       <div className="border-border border-t px-7 py-5">
-        <div className="flex max-w-[760px] flex-col gap-4">
+        <div className="@container flex flex-col gap-4">
           <>
             {/*
-                ⚠️ **권한·직급을 두 열로** 놓는다(§디자인 토큰: 폼 2열). 한 줄에 하나씩 쌓으면
-                   카드는 넓은데 칸은 상한에 묶여 오른쪽 절반이 통째로 비고, 카드만 길어져
-                   왼쪽 프로필 칸과 높이가 안 맞는다. 좁아지면 한 열로 접힌다.
-              */}
-            {/*
-              ⚠️ **셋을 한 줄에 놓는다.** 두 열로 두니 `역할`만 다음 줄 왼쪽에 혼자 남아
-                 오른쪽이 비고 카드만 세로로 길어졌다 — 고를 게 셋뿐인데 카드가 화면 절반을
-                 먹었다. 셋은 같은 성격(그 사람이 무엇으로 불리는가)이라 한 줄이 읽기에도 맞는다.
-              ⚠️ 좁아지면 한 열로 접힌다(`sm:`) — 칸이 좁아져 값이 잘리는 것보다 낫다.
+              ⚠️ **칸 수를 뷰포트가 아니라 카드 폭으로 정한다**(`@container`). 이 카드는
+                 360px 곁 컬럼에 산다 — `sm:`으로 잡으면 화면이 넓다는 이유만으로 좁은
+                 칸 안에서 3열이 되어 `프론트엔드` 같은 값이 잘린다. 카드가 넓어지는 날
+                 (본 칸으로 옮기거나 컬럼을 늘리면) 저절로 3열이 된다.
+              ⚠️ 셋은 같은 성격(그 사람이 무엇으로 불리는가)이라 한 줄에 놓을 값이다.
             */}
-            <div className="grid gap-4 sm:grid-cols-3">
+            <div className="grid gap-4 @md:grid-cols-3">
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="member-authority">권한</Label>
                 <Select

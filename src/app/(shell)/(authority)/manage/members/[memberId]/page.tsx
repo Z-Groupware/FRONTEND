@@ -72,25 +72,27 @@ export default async function ManageMemberDetailPage({
         )}
 
         {/*
-          ⚠️ 곁 컬럼은 **360px**이다(DESIGN: 곁 컬럼 고정폭). 사람 카드는 폭이 늘어나도
-             얻는 게 없다.
-          ⚠️ **폼이 위, 목록이 아래다.** 한때 반대로 뒀는데 그건 "담당 액션은 짧다"는 전제
-             위에 세운 배치였다 — 액션은 몇 건일지 정해져 있지 않고 스무 건이 될 수도 있다.
-             길이가 변하는 것이 위에 있으면 고정 크기인 폼이 그만큼 아래로 밀려, 직급 하나
-             고치러 온 사람이 목록을 다 지나쳐 스크롤해야 한다.
+          ⚠️ 곁 컬럼은 **360px**이다(DESIGN: 곁 컬럼 고정폭).
+          ⚠️ **읽는 것이 위, 고치는 것이 아래다.** 이 화면에 들어오는 대부분은 이 사람이
+             누구이고 무엇을 맡고 있는지 보러 온다 — 직급·권한을 실제로 바꾸는 건 드물다.
+             폼을 오른쪽 맨 위에 두니 고를 게 셋뿐인 칸이 본 칸의 머리를 차지하고 정작
+             담당 액션이 그 아래로 밀렸다.
+          ⚠️ **왼쪽 칸으로도 내리지 않는다.** 거기로 옮겼더니 왼쪽만 카드 셋으로 길어지고
+             오른쪽은 액션 카드 하나만 남아 통째로 비었다 — 게다가 폼이 접힌 화면 밖으로
+             내려가 [저장]을 보려면 스크롤해야 했다.
           ⚠️ 폼을 전폭에 두지 않는다 — 입력칸만 넓어지고 라벨과 값이 멀어진다.
         */}
         <div className="grid grid-cols-1 items-start gap-7 lg:grid-cols-[360px_minmax(0,1fr)]">
           <MemberProfileCard member={detail.member} />
 
           <div className="flex flex-col gap-7">
+            <MemberActionList actions={detail.actions} />
             <MemberGradeCard
               member={detail.member}
               canEdit={canChangeMemberGrade(viewer)}
               positionNames={positionNames}
               roleOptions={roleOptions}
             />
-            <MemberActionList actions={detail.actions} />
           </div>
         </div>
       </div>
