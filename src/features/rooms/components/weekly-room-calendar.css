@@ -74,6 +74,21 @@
   border-top: none;
 }
 
+/*
+  빈 슬롯 클릭 = 예약 모달을 연다 — 클릭 가능한 영역이라는 걸 커서·hover 배경으로 알린다.
+  ⚠️ 예약이 이미 있는 칸도 이 클래스를 그대로 갖고 있지만, 그 위엔 `RoomReservationEvent`가
+  덮어 그려져서(§Mock 격리막) 실제로는 그 막대의 클릭 핸들러가 우선한다 — 빈 칸에서만
+  보이는 hover라 헷갈리지 않는다.
+*/
+.rbc-day-slot .rbc-time-slot {
+  cursor: pointer;
+  transition: background-color 100ms;
+}
+
+.rbc-day-slot .rbc-time-slot:hover {
+  background-color: color-mix(in srgb, var(--foreground) 6%, transparent);
+}
+
 .rbc-day-slot .rbc-time-slot {
   border-top: 1px dashed color-mix(in srgb, var(--border) 60%, transparent);
 }

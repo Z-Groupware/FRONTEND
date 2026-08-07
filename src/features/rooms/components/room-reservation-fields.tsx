@@ -11,17 +11,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { AUTHORITY, type Authority } from "@/constants/authority";
 
 import type {
   MeetingRoom,
-  RoomMember,
   RoomProjectOption,
   RoomReservationFormErrors,
   RoomTeamActionOption,
 } from "../types";
 import { MeetingTopicList } from "./meeting-topic-list";
-import { RoomAttendeePicker } from "./room-attendee-picker";
+import { RoomPickerList } from "./room-picker-list";
 import type { RoomReservationFormValues } from "./use-room-reservation-form";
 
 interface RoomReservationFieldsProps {
@@ -29,23 +27,27 @@ interface RoomReservationFieldsProps {
   setForm: Dispatch<SetStateAction<RoomReservationFormValues>>;
   errors: RoomReservationFormErrors;
   rooms: MeetingRoom[];
-  members: RoomMember[];
   projects: RoomProjectOption[];
-  /** 지금 예약 모달을 여는 사람의 권한 — Owner가 아니면 "상위 팀 액션"이 뜬다(WORKFLOW.md §3-1). */
-  hostAuthority: Authority;
+  /**
+   * "상위 팀 액션" 필드를 보여줄지 — 판정은 `lib/permission.ts`의 `requiresParentTeamAction`
+   * 한 곳에서 하고, 이 컴포넌트는 그 결과 boolean만 받는다(권한 판정을 화면에 흩어 두지 않는다).
+   */
+  showParentTeamAction: boolean;
   /** Host의 팀에 하달된 팀 액션 전체(프로젝트 무관) — 지금 고른 프로젝트로 화면에서 다시 거른다. */
   teamActions: RoomTeamActionOption[];
 }
 
-/** 예약 모달의 입력 필드 전부 — 제목·회의실·프로젝트·안건·상위 팀 액션·참석자(`room-reservation-dialog.tsx`에서 뺀 조각). */
+/**
+ * 예약 모달 왼쪽 열 — 제목·회의실·프로젝트·상위 팀 액션·회의 주제(`room-reservation-dialog.tsx`가
+ * 오른쪽 열의 참석자 패널과 나란히 배치한다).
+ */
 export function RoomReservationFields({
   form,
   setForm,
   errors,
   rooms,
-  members,
   projects,
-  hostAuthority,
+  showParentTeamAction,
   teamActions,
 }: RoomReservationFieldsProps) {
   const selectedProjectTag = projects.find((project) => project.id === form.projectId)?.tag;
@@ -59,35 +61,23 @@ export function RoomReservationFields({
         <Label htmlFor="reservation-title">회의 제목</Label>
         <Input
           id="reservation-title"
+          name="title"
           value={form.title}
           onChange={(event) => setForm((prev) => ({ ...prev, title: event.target.value }))}
-          placeholder="회의 제목을 입력해 주세요"
+          placeholder="회의 제목을 입력하세요"
           aria-invalid={Boolean(errors.title)}
         />
         {errors.title && <p className="text-destructive text-xs">{errors.title}</p>}
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="reservation-room">회의실</Label>
-        <Select
-          value={form.roomId}
-          onValueChange={(value) => setForm((prev) => ({ ...prev, roomId: value ?? "" }))}
-        >
-          <SelectTrigger
-            id="reservation-room"
-            aria-invalid={Boolean(errors.roomId)}
-            className="w-full"
-          >
-            <SelectValue placeholder="회의실을 선택해 주세요" />
-          </SelectTrigger>
-          <SelectContent>
-            {rooms.map((room) => (
-              <SelectItem key={room.id} value={room.id}>
-                {room.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <Label>회의실</Label>
+        <RoomPickerList
+          rooms={rooms}
+          selectedId={form.roomId}
+          onChange={(roomId) => setForm((prev) => ({ ...prev, roomId }))}
+          error={Boolean(errors.roomId)}
+        />
         {errors.roomId && <p className="text-destructive text-xs">{errors.roomId}</p>}
       </div>
 
@@ -105,7 +95,7 @@ export function RoomReservationFields({
             aria-invalid={Boolean(errors.projectId)}
             className="w-full"
           >
-            <SelectValue placeholder="프로젝트를 선택해 주세요" />
+            <SelectValue placeholder="프로젝트 선택" />
           </SelectTrigger>
           <SelectContent>
             {projects.map((project) => (
@@ -118,7 +108,7 @@ export function RoomReservationFields({
         {errors.projectId && <p className="text-destructive text-xs">{errors.projectId}</p>}
       </div>
 
-      {hostAuthority !== AUTHORITY.OWNER && (
+      {showParentTeamAction && (
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="reservation-parent-team-action">상위 팀 액션</Label>
           <Select
@@ -134,9 +124,7 @@ export function RoomReservationFields({
               className="w-full"
             >
               <SelectValue
-                placeholder={
-                  form.projectId ? "상위 팀 액션을 선택해 주세요" : "프로젝트를 먼저 선택해 주세요"
-                }
+                placeholder={form.projectId ? "상위 팀 액션 선택" : "프로젝트를 먼저 선택해 주세요"}
               />
             </SelectTrigger>
             <SelectContent>
@@ -158,16 +146,6 @@ export function RoomReservationFields({
         onChange={(topics) => setForm((prev) => ({ ...prev, topics }))}
         error={errors.topics}
       />
-
-      <div className="flex flex-col gap-1.5">
-        <Label>참석자</Label>
-        <RoomAttendeePicker
-          members={members}
-          selectedIds={form.attendeeIds}
-          onChange={(attendeeIds) => setForm((prev) => ({ ...prev, attendeeIds }))}
-        />
-        {errors.attendeeIds && <p className="text-destructive text-xs">{errors.attendeeIds}</p>}
-      </div>
     </div>
   );
 }

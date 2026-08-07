@@ -24,11 +24,20 @@ describe("회의 mock 스토어", () => {
 
     const created = addMockMeeting(DRAFT);
 
-    expect(created.id).toBeDefined();
-    expect(created.createdAt).toBeDefined();
+    expect(created.id).toMatch(/^meeting-\d+$/);
+    expect(created.createdAt).toBe(new Date(created.createdAt).toISOString());
     expect(created.title).toBe("8월 킥오프 미팅");
     expect(listMockMeetings()).toHaveLength(before + 1);
     expect(findMockMeeting(created.id)).toEqual(created);
+  });
+
+  it("연달아 추가하면 id 뒷자리가 순서대로 늘어난다", () => {
+    const first = addMockMeeting(DRAFT);
+    const second = addMockMeeting(DRAFT);
+
+    const firstSeq = Number(first.id.replace("meeting-", ""));
+    const secondSeq = Number(second.id.replace("meeting-", ""));
+    expect(secondSeq).toBe(firstSeq + 1);
   });
 
   it("팀 액션 회의는 parentTeamActionId·hostTeamId를 그대로 담는다", () => {

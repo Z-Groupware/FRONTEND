@@ -1,12 +1,12 @@
+import { AUTHORITY } from "@/constants/authority";
+
 jest.mock("next/cache", () => ({ revalidatePath: jest.fn() }));
 jest.mock("@/lib/mock-actor", () => ({
-  getMockActor: jest.fn(() => ({ id: 1, role: "OWNER" })),
+  getMockActor: jest.fn(() => ({ id: 1, role: AUTHORITY.OWNER })),
 }));
 
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-
-import { AUTHORITY } from "@/constants/authority";
 
 import type { MeetingRoom, RoomMember, RoomProjectOption, RoomTeamActionOption } from "../types";
 import { RoomReservationDialog } from "./room-reservation-dialog";
@@ -36,7 +36,7 @@ function renderDialog(overrides: Partial<React.ComponentProps<typeof RoomReserva
       rooms={ROOMS}
       members={MEMBERS}
       projects={PROJECTS}
-      hostAuthority={AUTHORITY.OWNER}
+      showParentTeamAction={false}
       teamActions={TEAM_ACTIONS}
       onCreated={onCreated}
       {...overrides}
@@ -54,19 +54,21 @@ describe("RoomReservationDialog", () => {
         rooms={ROOMS}
         members={MEMBERS}
         projects={PROJECTS}
-        hostAuthority={AUTHORITY.OWNER}
+        showParentTeamAction={false}
         teamActions={TEAM_ACTIONS}
         onCreated={jest.fn()}
       />,
     );
 
-    expect(screen.queryByText("회의실을 예약할까요?")).not.toBeInTheDocument();
+    expect(screen.queryByText("회의실 예약")).not.toBeInTheDocument();
   });
 
   it("클릭한 슬롯의 날짜·시각을 안내한다", () => {
     renderDialog();
 
-    expect(screen.getByText(/8월 11일\(화\) 10:00부터 30분간 진행됩니다\./)).toBeInTheDocument();
+    expect(screen.getByText("화 8/11")).toBeInTheDocument();
+    expect(screen.getByText("10:00 - 10:30")).toBeInTheDocument();
+    expect(screen.getByText("30분 · 즉시 확정")).toBeInTheDocument();
   });
 
   it("취소를 누르면 onOpenChange(false)를 부른다", async () => {
@@ -78,16 +80,16 @@ describe("RoomReservationDialog", () => {
     expect(onOpenChange).toHaveBeenCalledWith(false);
   });
 
-  it("Owner가 열면 상위 팀 액션 필드가 없다", () => {
-    renderDialog({ hostAuthority: AUTHORITY.OWNER });
+  it("showParentTeamAction이 false면 상위 팀 액션 필드가 없다(Owner 개설)", () => {
+    renderDialog({ showParentTeamAction: false });
 
-    expect(screen.queryByText("상위 팀 액션")).not.toBeInTheDocument();
+    expect(screen.queryByRole("combobox", { name: "상위 팀 액션" })).not.toBeInTheDocument();
   });
 
-  it("Leader가 열면 상위 팀 액션 필드가 뜬다", () => {
-    renderDialog({ hostAuthority: AUTHORITY.LEADER });
+  it("showParentTeamAction이 true면 상위 팀 액션 필드가 뜬다(Leader/Member 개설)", () => {
+    renderDialog({ showParentTeamAction: true });
 
-    expect(screen.getByText("상위 팀 액션")).toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: "상위 팀 액션" })).toBeInTheDocument();
   });
 
   it("필수값을 안 채우고 등록을 누르면 필드별 오류를 보여주고 onCreated는 안 부른다", async () => {
@@ -95,7 +97,7 @@ describe("RoomReservationDialog", () => {
     const { onCreated } = renderDialog();
 
     await user.type(screen.getByLabelText("회의 제목"), "새 회의");
-    await user.click(screen.getByRole("button", { name: "등록" }));
+    await user.click(screen.getByRole("button", { name: "즉시 예약" }));
 
     await waitFor(() => {
       const roomError = screen.getByText(

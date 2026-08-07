@@ -10,6 +10,7 @@ import {
   getWeekReservations,
 } from "@/features/rooms/server";
 import { getViewer } from "@/features/shell/viewer";
+import { requiresParentTeamAction } from "@/lib/permission";
 
 export const metadata: Metadata = {
   title: "회의실",
@@ -53,7 +54,7 @@ export default async function RoomsPage({ searchParams }: RoomsPageProps) {
           rooms={rooms}
           members={members}
           projects={projects}
-          hostAuthority={viewer.role}
+          showParentTeamAction={requiresParentTeamAction(viewer)}
           teamActions={teamActions}
           week={format(week, "yyyy-MM-dd")}
         />

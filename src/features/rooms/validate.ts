@@ -1,7 +1,9 @@
 import { isValid, parse } from "date-fns";
 
-import { AUTHORITY, type Authority } from "@/constants/authority";
+import type { Authority } from "@/constants/authority";
+import { requiresParentTeamAction } from "@/lib/permission";
 
+import { RESERVATION_DURATION_MINUTES } from "./constants";
 import type {
   MeetingRoomDraft,
   MeetingRoomFormErrors,
@@ -13,9 +15,6 @@ const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const TIME_PATTERN = /^([01]\d|2[0-3]):(00|30)$/;
 /** 회의실 운영 시작·종료 시각용 — 예약 슬롯(`TIME_PATTERN`)과 달리 30분 단위 제약이 없다. */
 const GENERAL_TIME_PATTERN = /^([01]\d|2[0-3]):[0-5]\d$/;
-
-/** 예약 길이 — 팀 확정: 30분 한 타임, 연장하지 않는다(CLAUDE.md §브라우저 API). */
-export const RESERVATION_DURATION_MINUTES = 30;
 
 const OPERATING_START_MINUTES = 9 * 60;
 const OPERATING_END_MINUTES = 18 * 60;
@@ -37,12 +36,12 @@ function toMinutes(time: string): number {
  * ⚠️ **참조 무결성도 여기서 안 본다** — `roomId`·`projectId`가 실제로 존재하는지, 골라 낸
  *    `parentTeamActionId`가 진짜 그 프로젝트·그 팀의 것인지는 `actions.ts`가 목/실서버 조회
  *    뒤에 따로 확인한다(§권한: 화면 숨김은 UX일 뿐 보안이 아니다). 여기는 **형식**만 본다.
- * @param host "상위 팀 액션" 필수 여부는 회의를 여는 사람의 권한에 달렸다(WORKFLOW.md §3-1) —
- *   Owner면 이 필드가 없어도 되고, Leader/Member면 반드시 있어야 한다.
+ * @param host "상위 팀 액션" 필수 여부는 회의를 여는 사람의 권한에 달렸다(`requiresParentTeamAction`,
+ *   WORKFLOW.md §3-1) — Owner면 이 필드가 없어도 되고, Leader/Member면 반드시 있어야 한다.
  */
 export function validateRoomReservationDraft(
   draft: RoomReservationDraft,
-  host: { authority: Authority },
+  host: { role: Authority },
 ): RoomReservationFormErrors {
   const errors: RoomReservationFormErrors = {};
 
@@ -77,8 +76,12 @@ export function validateRoomReservationDraft(
 
   // ⚠️ Owner가 개설하면 이 필드가 아예 없다(= 프로젝트 회의) — Leader/Member면 반드시 있어야
   //    한다(= 팀 액션 회의, WORKFLOW.md §3-1 "상위 팀 액션 노출 조건").
-  if (host.authority !== AUTHORITY.OWNER && !draft.parentTeamActionId) {
-    errors.parentTeamActionId = "상위 팀 액션을 선택해 주세요";
+  if (requiresParentTeamAction(host)) {
+    if (!draft.parentTeamActionId) errors.parentTeamActionId = "상위 팀 액션을 선택해 주세요";
+  } else if (draft.parentTeamActionId !== undefined) {
+    // ⚠️ Owner는 반대로 이 필드를 아예 못 넣는다 — Owner 개설 회의(프로젝트 회의)엔 상위 팀
+    //    액션 개념이 없다(WORKFLOW.md §2). 폼이 조작돼 값이 들어와도 여기서 막는다.
+    errors.parentTeamActionId = "Owner가 개설하는 회의에는 상위 팀 액션을 지정할 수 없어요";
   }
 
   if (draft.attendeeIds.length === 0) {

@@ -1,9 +1,11 @@
 "use client";
 
-import { Search, X } from "lucide-react";
+import { Search } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useProfileAvatar } from "@/hooks/use-profile-avatar";
 
 import type { RoomMember } from "../types";
 
@@ -13,36 +15,59 @@ interface RoomAttendeePickerProps {
   onChange: (ids: number[]) => void;
 }
 
-/** 검색 결과로 한 번에 보여줄 최대 인원 — `notice-company-picker.tsx`와 같은 값. */
-const MAX_RESULTS = 6;
+const AVATAR_SIZE = 20;
 
-/** 회의실 예약 "참석자" 선택 — 이름으로 검색해 여러 명을 골라 담는다(`notice-company-picker.tsx`와 같은 모양). */
+/** 참석자 목록 한 줄 — 아바타는 훅이라 참석자 수만큼 이 컴포넌트를 마운트해 각자 한 번씩 부른다. */
+function AttendeeRow({
+  member,
+  checked,
+  onToggle,
+}: {
+  member: RoomMember;
+  checked: boolean;
+  onToggle: () => void;
+}) {
+  const avatar = useProfileAvatar(member.id, AVATAR_SIZE);
+
+  return (
+    <label className="hover:bg-muted flex cursor-pointer items-center gap-2.5 px-3 py-2 text-sm transition-colors">
+      <input
+        type="checkbox"
+        name="attendeeIds"
+        value={member.id}
+        checked={checked}
+        onChange={onToggle}
+        className="accent-foreground size-3.5 shrink-0"
+      />
+      {avatar}
+      <span className="truncate">{member.name}</span>
+    </label>
+  );
+}
+
+/**
+ * 회의실 예약 "참석자" 선택 — 검색으로 좁히되, 결과는 **전체 목록을 체크박스로** 보여준다
+ * (디자인 반영). 검색 전에는 전체가 다 보이고, 검색하면 이름이 걸리는 사람만 남는다.
+ */
 export function RoomAttendeePicker({ members, selectedIds, onChange }: RoomAttendeePickerProps) {
   const [keyword, setKeyword] = useState("");
 
-  const selected = useMemo(
-    () => members.filter((member) => selectedIds.includes(member.id)),
-    [members, selectedIds],
-  );
-
-  const results = useMemo(() => {
+  const visible = useMemo(() => {
     const query = keyword.trim().toLowerCase();
-    if (!query) return [];
-    return members
-      .filter(
-        (member) => !selectedIds.includes(member.id) && member.name.toLowerCase().includes(query),
-      )
-      .slice(0, MAX_RESULTS);
-  }, [members, keyword, selectedIds]);
+    if (!query) return members;
+    return members.filter((member) => member.name.toLowerCase().includes(query));
+  }, [members, keyword]);
 
-  const handleAdd = (id: number) => {
-    onChange([...selectedIds, id]);
-    setKeyword("");
-  };
-  const handleRemove = (id: number) => onChange(selectedIds.filter((value) => value !== id));
+  function toggle(id: number) {
+    onChange(
+      selectedIds.includes(id) ? selectedIds.filter((value) => value !== id) : [...selectedIds, id],
+    );
+  }
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex h-full flex-col gap-2">
+      <Label>참석자</Label>
+
       <div className="relative">
         <Search
           className="text-muted-foreground pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2"
@@ -57,50 +82,22 @@ export function RoomAttendeePicker({ members, selectedIds, onChange }: RoomAtten
         />
       </div>
 
-      {keyword.trim().length > 0 && (
-        <div className="border-border overflow-hidden rounded-lg border">
-          {results.length === 0 ? (
-            <p className="text-muted-foreground px-3 py-3 text-xs">검색 결과가 없어요</p>
-          ) : (
-            <ul>
-              {results.map((member) => (
-                <li key={member.id}>
-                  <button
-                    type="button"
-                    onClick={() => handleAdd(member.id)}
-                    className="hover:bg-muted focus-visible:ring-ring flex w-full items-center px-3 py-2 text-left transition-colors focus-visible:ring-2 focus-visible:outline-none"
-                  >
-                    <span className="text-foreground truncate text-xs">{member.name}</span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      )}
-
-      {selected.length > 0 ? (
-        <div className="flex flex-wrap gap-1.5">
-          {selected.map((member) => (
-            <span
+      <div className="border-border min-h-0 flex-1 overflow-y-auto rounded-lg border">
+        {visible.length === 0 ? (
+          <p className="text-muted-foreground px-3 py-3 text-xs">검색 결과가 없어요</p>
+        ) : (
+          visible.map((member) => (
+            <AttendeeRow
               key={member.id}
-              className="bg-muted text-foreground inline-flex items-center gap-1 rounded-md py-1 pr-1 pl-2 text-xs"
-            >
-              {member.name}
-              <button
-                type="button"
-                onClick={() => handleRemove(member.id)}
-                aria-label={`${member.name} 제외`}
-                className="hover:bg-foreground/10 focus-visible:ring-ring flex size-4 items-center justify-center rounded transition-colors focus-visible:ring-2 focus-visible:outline-none"
-              >
-                <X className="size-3" aria-hidden />
-              </button>
-            </span>
-          ))}
-        </div>
-      ) : (
-        <p className="text-muted-foreground text-[11px]">참석자를 검색해 선택하세요</p>
-      )}
+              member={member}
+              checked={selectedIds.includes(member.id)}
+              onToggle={() => toggle(member.id)}
+            />
+          ))
+        )}
+      </div>
+
+      <p className="text-muted-foreground text-[11px]">선택 {selectedIds.length}명</p>
     </div>
   );
 }

@@ -13,35 +13,46 @@ export interface MeetingTopic {
   sub: string;
 }
 
-/**
- * 회의 한 건.
- * ⚠️ **프로젝트 태그는 항상 필수다**(WORKFLOW.md §3-1) — 프로젝트에 안 묶인 회의는 없다.
- * ⚠️ `parentTeamActionId`는 **Host가 Owner가 아닐 때만** 있다(= 팀 액션 회의). Host가
- *    Owner면 프로젝트 회의라 이 필드가 없다(WORKFLOW.md §3-1 "상위 팀 액션 노출 조건").
- */
-export interface Meeting {
-  id: string;
+interface MeetingCommon {
   title: string;
   start: Date;
   end: Date;
   roomId: string;
   roomName: string;
+  /** ⚠️ 프로젝트 태그는 항상 필수다(WORKFLOW.md §3-1) — 프로젝트에 안 묶인 회의는 없다. */
   projectId: number;
   projectTag: string;
   /** 최소 1쌍(대주제+소주제) — 나머지는 "추가/삭제"로 늘고 준다. */
-  topics: MeetingTopic[];
+  topics: [MeetingTopic, ...MeetingTopic[]];
   attendeeIds: number[];
   /** 개설자 — 회의 조작 권한의 기준(권한 ②축, `lib/permission.ts`의 `canOperateMeeting`). */
   hostId: number;
-  hostAuthority: Authority;
-  /** Host의 소속 팀 — 팀 액션 회의의 상세 열람 범위 판정(`lib/permission.ts`의 `hostTeamId`)에 쓴다. */
-  hostTeamId?: number;
-  parentTeamActionId?: number;
   /** 이 회의를 만든 예약 — 같은 동작이라 항상 있다(WORKFLOW.md §3-1). */
   roomReservationId: string;
-  /** ISO datetime — 서버 기준 생성 시각. */
-  createdAt: string;
+}
+
+/**
+ * Owner가 개설 = 프로젝트 회의(WORKFLOW.md §2·§3-1). "상위 팀 액션" 개념 자체가 없다 —
+ * `hostTeamId`·`parentTeamActionId`는 아예 못 넣는다(타입으로 막는다).
+ */
+interface OwnerHostedMeeting extends MeetingCommon {
+  hostAuthority: Extract<Authority, "OWNER">;
+  hostTeamId?: undefined;
+  parentTeamActionId?: undefined;
+}
+
+/**
+ * Leader/Member가 개설 = 팀 액션 회의(WORKFLOW.md §5). 개설자의 소속 팀(`hostTeamId`)과
+ * 상위 팀 액션(`parentTeamActionId`)이 **둘 다 필수**다 — 하나만 있는 회의는 만들 수 없다.
+ */
+interface TeamActionHostedMeeting extends MeetingCommon {
+  hostAuthority: Extract<Authority, "LEADER" | "MEMBER">;
+  hostTeamId: number;
+  parentTeamActionId: number;
 }
 
 /** 회의 생성 입력 — id·createdAt은 서버(mock 스토어)가 채운다. */
-export type MeetingDraft = Omit<Meeting, "id" | "createdAt">;
+export type MeetingDraft = OwnerHostedMeeting | TeamActionHostedMeeting;
+
+/** 회의 한 건 — `MeetingDraft`에 서버가 채우는 두 필드(id·생성시각)만 더한다. */
+export type Meeting = MeetingDraft & { id: string; createdAt: string };

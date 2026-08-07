@@ -2,13 +2,13 @@
 
 import { revalidatePath } from "next/cache";
 
-import { AUTHORITY } from "@/constants/authority";
 import { TOP_LEVEL_PROJECTS } from "@/features/project/mock/projects";
 import { PROJECT_TEAM_ACTIONS_MOCK } from "@/features/project/mock/team-actions";
 import { getMockActor } from "@/lib/mock-actor";
-import { canManageRooms } from "@/lib/permission";
+import { canManageRooms, requiresParentTeamAction } from "@/lib/permission";
 import { isMock } from "@/mocks/config";
 
+import { RESERVATION_DURATION_MINUTES } from "./constants";
 import { findMockMember } from "./mock/members";
 import { addMockReservation, listMockReservationsByRoom } from "./mock/reservations";
 import { addMockRoom, findMockRoom, updateMockRoom } from "./mock/rooms";
@@ -21,11 +21,7 @@ import type {
   RoomReservationDraft,
   RoomReservationFormErrors,
 } from "./types";
-import {
-  RESERVATION_DURATION_MINUTES,
-  validateMeetingRoomDraft,
-  validateRoomReservationDraft,
-} from "./validate";
+import { validateMeetingRoomDraft, validateRoomReservationDraft } from "./validate";
 
 const ROOMS_PATH = "/app/rooms";
 const MANAGE_ROOMS_PATH = "/manage/rooms";
@@ -78,7 +74,7 @@ export async function createRoomReservationAction(
 ): Promise<RoomReservationFormState> {
   const draft = readDraft(formData);
   const actor = getMockActor();
-  const errors = validateRoomReservationDraft(draft, { authority: actor.role });
+  const errors = validateRoomReservationDraft(draft, { role: actor.role });
   if (Object.keys(errors).length > 0) return { errors };
 
   if (!isMock) {
@@ -101,7 +97,7 @@ export async function createRoomReservationAction(
   // ⚠️ Owner가 아니면 "상위 팀 액션"이 필수인데, 그 값이 진짜 이 프로젝트 소속이고 **자기
   //    팀**에 하달된 게 맞는지까지 다시 본다 — 화면이 이미 걸러 보여줘도, 폼은 조작될 수 있어서
   //    다른 팀의 팀 액션 id를 끼워 넣으면 그 팀 몫으로 회의가 잡히는 걸 여기서 막는다.
-  if (actor.role !== AUTHORITY.OWNER && draft.parentTeamActionId !== undefined) {
+  if (requiresParentTeamAction(actor) && draft.parentTeamActionId !== undefined) {
     const teamAction = PROJECT_TEAM_ACTIONS_MOCK[project.tag]?.find(
       (item) => item.id === draft.parentTeamActionId,
     );
