@@ -1,6 +1,6 @@
 "use client";
 
-import { UserPlus } from "lucide-react";
+import { ShieldCheck, UserPlus } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
@@ -156,6 +156,16 @@ export function AccountIssueDialog({ teamNames }: { teamNames: string[] }) {
             발급하면{" "}
             <span className="text-foreground font-medium">아이디와 첫 비밀번호가 메일로</span> 바로
             나갑니다. 보낸 메일은 되돌릴 수 없습니다.
+            {/*
+              ⚠️ 겸직을 켰으면 **무엇이 열리는지** 적는다. 권한이 늘어나는 일이라 발급과 함께
+                 조용히 나가면 안 된다(직급·권한 변경 창과 같은 규칙).
+            */}
+            {draft.isAdmin && (
+              <>
+                <br />
+                관리자 겸직으로 나가서 사원·회의실 관리와 구독·저장소 화면에 들어갈 수 있습니다.
+              </>
+            )}
           </>
         }
         confirmLabel="계정 발급"
@@ -233,29 +243,56 @@ export function AccountIssueDialog({ teamNames }: { teamNames: string[] }) {
             />,
           )}
 
-          <div className="sm:col-span-2">
-            {field(
-              "authority",
-              "권한",
-              <Select
-                items={AUTHORITY_LABEL}
-                value={draft.authority}
-                onValueChange={(value) => set("authority", value as Authority)}
-              >
-                <SelectTrigger id="account-authority" className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                {/* ⚠️ Owner는 회사에 하나라 발급 대상이 아니다(WORKFLOW §11) */}
-                <SelectContent alignItemWithTrigger={false}>
-                  {POSITION_AUTHORITIES.map((value) => (
-                    <SelectItem key={value} value={value}>
-                      {AUTHORITY_LABEL[value]}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>,
-            )}
-          </div>
+          {field(
+            "authority",
+            "권한",
+            <Select
+              items={AUTHORITY_LABEL}
+              value={draft.authority}
+              onValueChange={(value) => set("authority", value as Authority)}
+            >
+              <SelectTrigger id="account-authority" className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              {/* ⚠️ Owner는 회사에 하나라 발급 대상이 아니다(WORKFLOW §11) */}
+              <SelectContent alignItemWithTrigger={false}>
+                {POSITION_AUTHORITIES.map((value) => (
+                  <SelectItem key={value} value={value}>
+                    {AUTHORITY_LABEL[value]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>,
+          )}
+
+          {/*
+            ⚠️ **권한 칸 오른쪽에 나란히 둔다**(온보딩 초대 줄과 같은 자리). 겸직은 권한을
+               대체하는 값이 아니라 그 위에 덧붙는 플래그라, 권한 셀렉트 안에 넣으면
+               "Member 대신 Admin"으로 읽힌다(§권한: 축이 2개다).
+            ⚠️ 높이를 `h-8`로 맞춘다 — 옆 셀렉트와 같은 값이라 두 칸의 위아래가 한 선에 선다.
+               `field`를 그대로 써서 라벨·오류 자리까지 다른 칸과 같은 구조를 갖는다.
+            ⚠️ 켜짐을 **채움과 아이콘**으로 알린다 — 색으로 알리는 건 에러뿐이다(§디자인 토큰).
+               온보딩 `InviteAdminToggle`이 같은 방식이다.
+          */}
+          {field(
+            "isAdmin",
+            "관리자 겸직",
+            <button
+              type="button"
+              id="account-isAdmin"
+              aria-pressed={draft.isAdmin}
+              onClick={() => set("isAdmin", !draft.isAdmin)}
+              className={cn(
+                "focus-visible:ring-ring flex h-8 w-full items-center gap-1.5 rounded-lg border px-2.5 text-sm transition-colors focus-visible:ring-3 focus-visible:outline-hidden",
+                draft.isAdmin
+                  ? "bg-foreground text-background border-foreground"
+                  : "border-input text-muted-foreground hover:border-foreground/40 hover:text-foreground",
+              )}
+            >
+              <ShieldCheck className="size-4 shrink-0" aria-hidden />
+              {draft.isAdmin ? "부여함" : "부여 안 함"}
+            </button>,
+          )}
 
           {/* 칸과 무관한 실패는 칸 밑이 아니라 여기 — 그 칸이 틀렸다는 뜻이 아니다 */}
           {message && (
@@ -304,5 +341,7 @@ function emptyDraft(teamNames: string[]): AccountDraft {
     teamName: teamNames[0] ?? "",
     position: "",
     authority: AUTHORITY.MEMBER,
+    // ⚠️ 겸직은 **기본 꺼짐**이다. 권한을 주는 값이라 미리 켜 두면 확인 없이 나간다
+    isAdmin: false,
   };
 }

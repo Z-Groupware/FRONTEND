@@ -40,6 +40,7 @@ const DRAFT: AccountDraft = {
   teamName: "개발팀",
   position: "사원",
   authority: AUTHORITY.MEMBER,
+  isAdmin: false,
 };
 
 beforeEach(() => {
@@ -295,5 +296,34 @@ describe("issueAccountAction", () => {
     expect(created?.roleLabel).toBeNull();
     expect(created?.status).toBe(MEMBER_STATUS.ACTIVE);
     expect(created?.isAdmin).toBe(false);
+  });
+});
+
+/*
+  ⚠️ 발급 창에 관리자 겸직 토글을 붙였다(온보딩 초대 줄과 같은 자리). 켜서 내면 그 값이
+     실제로 계정에 붙어야 한다 — 화면만 켜지고 발급이 무시하면 아무도 모르게 어긋난다.
+*/
+describe("계정 발급 — 관리자 겸직", () => {
+  it("겸직을 켜서 내면 그 계정이 겸직으로 만들어진다", async () => {
+    const result = await issueAccountAction({
+      ...DRAFT,
+      name: "겸직",
+      email: "admin-new@company.com",
+      isAdmin: true,
+    });
+
+    expect(result.issued).toBeDefined();
+    expect(findMockManagedMember(result.issued!.id)?.member.isAdmin).toBe(true);
+  });
+
+  it("안 켜면 겸직이 아니다 — 기본은 꺼짐이다", async () => {
+    const result = await issueAccountAction({
+      ...DRAFT,
+      name: "일반",
+      email: "plain-new@company.com",
+      isAdmin: false,
+    });
+
+    expect(findMockManagedMember(result.issued!.id)?.member.isAdmin).toBe(false);
   });
 });

@@ -116,6 +116,15 @@ export interface AccountDraft {
   teamName: string;
   position: string;
   authority: Authority;
+  /**
+   * 관리자 겸직으로 낼지.
+   *
+   * ⚠️ **권한이 아니라 그 위에 덧붙는 플래그**다(§권한: 축이 2개다). 발급 대상이 Leader·Member
+   *    뿐이라는 규칙은 이 값과 무관하다 — 그건 `authority` 이야기다.
+   * ⚠️ 온보딩 3단계 초대가 줄마다 같은 토글을 갖는다. 여기만 없으면 방금 만든 사람에게
+   *    겸직을 주려고 목록 → 상세 → 저장을 다시 밟아야 한다.
+   */
+  isAdmin: boolean;
 }
 
 /** 칸별 오류 — 칸 밑에 인라인으로 붙는다(§토스트: 폼 검증 오류는 인라인) */

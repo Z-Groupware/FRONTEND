@@ -319,6 +319,7 @@ export function addMockManagedMember(
     teamName: string;
     position: string;
     authority: ManagedMember["authority"];
+    isAdmin: boolean;
   },
   joinedAt: string,
 ): ManagedMember {
@@ -330,7 +331,7 @@ export function addMockManagedMember(
     teamName: draft.teamName.trim(),
     position: draft.position.trim(),
     authority: draft.authority,
-    isAdmin: false,
+    isAdmin: draft.isAdmin,
     // ⚠️ 역할은 발급 때 안 정한다 — 팀에 들어간 뒤 팀장이 붙이는 라벨이다(WORKFLOW §9)
     roleLabel: null,
     status: MEMBER_STATUS.ACTIVE,
