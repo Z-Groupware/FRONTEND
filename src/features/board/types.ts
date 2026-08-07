@@ -37,7 +37,6 @@ export interface BoardCard {
   dueDate: string;
   /** 사용자가 보드에서 직접 완료 처리했는지 — 유일하게 저장되는 값 */
   isDone: boolean;
-  href: string;
 }
 
 /** 오너는 프로젝트, 팀장·사원은 본인 개인 액션 — 보드 종류는 둘뿐이다. */

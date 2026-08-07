@@ -23,7 +23,6 @@ export async function getProjectBoard(): Promise<BoardCard[]> {
         startDate: project.startDate,
         dueDate: project.dueDate,
         isDone: project.status === PROJECT_STATUS.DONE,
-        href: `/app/projects/${project.id}`,
       };
     });
   }
@@ -54,7 +53,6 @@ export async function getMyActionBoard(assigneeName: string): Promise<BoardCard[
           startDate: item.startDate,
           dueDate: item.dueDate,
           isDone: item.status === ACTION_STATUS.DONE,
-          href: `/app/actions/${item.id}`,
         });
       }
     }

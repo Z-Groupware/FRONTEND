@@ -13,7 +13,6 @@ function card(overrides: Partial<BoardCard>): BoardCard {
     startDate: "2026-08-01",
     dueDate: "2026-08-10",
     isDone: false,
-    href: "#",
     ...overrides,
   };
 }
