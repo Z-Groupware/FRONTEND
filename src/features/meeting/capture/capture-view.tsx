@@ -2,7 +2,7 @@
 
 import { CircleAlert, Mic, Pause, Play, Square } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { ConfirmDialog } from "@/components/common/confirm-dialog";
@@ -54,7 +54,7 @@ export function CaptureView({ meeting }: { meeting: MeetingCaptureInfo }) {
       {capture.phase === CAPTURE_PHASE.BEFORE_ENTER ? (
         <EnterCard meeting={meeting} support={capture.support} onEnter={capture.enter} />
       ) : (
-        <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-7">
+        <div className="mx-auto flex min-h-0 w-full max-w-[1440px] flex-1 flex-col gap-7">
           {/*
             조작 줄 — **무슨 회의인지 · 얼마나 녹음했는지 · 무엇을 할 수 있는지**가 한 줄에 선다.
             ⚠️ 왼쪽은 정보, 오른쪽은 조작으로 축을 가른다(DESIGN §3: 열마다 축이 따로 선다).
@@ -142,8 +142,12 @@ export function CaptureView({ meeting }: { meeting: MeetingCaptureInfo }) {
             </p>
           )}
 
-          {/* ⚠️ 곁 컬럼은 360 고정(DESIGN §1) — 반씩 나누면 자막 줄이 짧아져 눈이 헤맨다 */}
-          <div className="grid grid-cols-1 gap-7 lg:grid-cols-[minmax(0,1fr)_360px]">
+          {/*
+            ⚠️ 곁 컬럼은 360 고정(DESIGN §1) — 반씩 나누면 자막 줄이 짧아져 눈이 헤맨다.
+            ⚠️ **남는 높이를 여기가 다 먹는다**(`min-h-0 flex-1`). 그래야 자막 카드가 화면
+               끝까지 자라고, 그 안에서만 스크롤이 생긴다.
+          */}
+          <div className="grid min-h-0 flex-1 grid-cols-1 gap-7 lg:grid-cols-[minmax(0,1fr)_360px]">
             <TranscriptCard chunks={capture.chunks} isRecording={isRecording} isPaused={isPaused} />
             <AttendeeCard attendees={meeting.attendees} />
           </div>
@@ -261,8 +265,24 @@ function TranscriptCard({
   isRecording: boolean;
   isPaused: boolean;
 }) {
+  const listRef = useRef<HTMLOListElement>(null);
+
+  /*
+    ⚠️ **새 문장이 오면 바닥으로 따라간다.** 안 그러면 자막이 화면 밖에서 쌓여, 진행자가
+       말할 때마다 직접 스크롤을 내려야 한다.
+    ⚠️ 위로 올려 지난 말을 읽는 중이면 **끌어내리지 않는다.** 읽던 자리를 빼앗는 게
+       놓친 한 줄보다 성가시다 — 바닥 근처에 있을 때만 따라간다.
+  */
+  useEffect(() => {
+    const list = listRef.current;
+    if (!list) return;
+    const distanceFromBottom = list.scrollHeight - list.scrollTop - list.clientHeight;
+    if (distanceFromBottom > 120) return;
+    list.scrollTop = list.scrollHeight;
+  }, [chunks.length]);
+
   return (
-    <section className="border-border bg-card flex min-h-[440px] min-w-0 flex-col rounded-2xl border">
+    <section className="border-border bg-card flex h-full min-h-0 min-w-0 flex-col overflow-hidden rounded-2xl border">
       <div className="flex items-center justify-between gap-3 px-7 pt-6 pb-3">
         <h2 className="flex min-w-0 items-center gap-2 text-[17px] leading-7 font-semibold tracking-[-0.3px]">
           {/*
@@ -298,7 +318,10 @@ function TranscriptCard({
           </p>
         </div>
       ) : (
-        <ol className="flex flex-1 flex-col gap-2.5 px-7 pb-6">
+        <ol
+          ref={listRef}
+          className="flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto px-7 pb-6"
+        >
           {chunks.map((chunk) => (
             <li
               key={chunk.id}
@@ -325,7 +348,7 @@ function TranscriptCard({
 /** 참가자 레일 — 이름 아래 소속, 진행자는 오른쪽에 표시 */
 function AttendeeCard({ attendees }: { attendees: CaptureAttendee[] }) {
   return (
-    <section className="border-border bg-card h-fit rounded-2xl border">
+    <section className="border-border bg-card flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border">
       <div className="flex items-center justify-between gap-3 px-7 pt-6 pb-3">
         <h2 className="flex items-center gap-2 text-[17px] leading-7 font-semibold tracking-[-0.3px]">
           <span className="bg-foreground size-2 rounded-full" aria-hidden />
@@ -335,7 +358,7 @@ function AttendeeCard({ attendees }: { attendees: CaptureAttendee[] }) {
           {attendees.length}명
         </span>
       </div>
-      <ul className="flex flex-col gap-3.5 px-7 pb-6">
+      <ul className="flex min-h-0 flex-1 flex-col gap-3.5 overflow-y-auto px-7 pb-6">
         {attendees.map((attendee) => (
           <li key={attendee.id} className="flex items-center gap-2.5">
             <ProfileAvatar userId={attendee.id} size={32} />

@@ -46,19 +46,14 @@ export const AI_SUMMARY_STATUS_LABEL: Record<AiSummaryStatus, string> = {
   DISTRIBUTED: "분배 완료",
 };
 
-export const MEETING_INVITE_STATUS = {
-  PENDING: "PENDING",
-  ACCEPTED: "ACCEPTED",
-  DECLINED: "DECLINED",
-} as const;
-export type MeetingInviteStatus =
-  (typeof MEETING_INVITE_STATUS)[keyof typeof MEETING_INVITE_STATUS];
-
-export const MEETING_INVITE_STATUS_LABEL: Record<MeetingInviteStatus, string> = {
-  PENDING: "미응답",
-  ACCEPTED: "참석",
-  DECLINED: "불참",
-};
+/*
+  ⚠️ **초대 수락·거절 상수는 두지 않는다**(2026-08-07 제거). `MEETING_INVITE_STATUS`
+     (미응답·참석·불참)가 정의만 되고 아무 데서도 안 쓰이고 있었는데, WORKFLOW 어디에도
+     참석 응답 개념이 없다 — 예약은 **즉시 확정**이고(§3-1) 참석자는 지정될 뿐이며,
+     열람 권한도 응답이 아니라 지정 여부로 판정한다(§3-2-1).
+     남겨 두면 나중에 이걸 근거로 수락/거절 UI가 생긴다(§도메인 상수: 없는 걸 금지 문장으로만
+     두면 누가 만든다). 회의 주제 enum을 같은 이유로 지운 것과 같은 처리다.
+*/
 
 /*
   ⚠️ 회의 주제(대주제/소주제) 고정 enum은 여기 없다(2026-08-07 제거) — WORKFLOW.md §3-1

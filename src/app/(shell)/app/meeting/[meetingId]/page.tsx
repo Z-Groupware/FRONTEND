@@ -39,7 +39,9 @@ export default async function MeetingDetailPage({
         <div className="mx-auto w-full max-w-[1440px]">
           <section className="border-border bg-card rounded-2xl border px-7 py-14 text-center">
             <Lock className="text-muted-foreground/70 mx-auto size-6" aria-hidden />
-            <h2 className="pt-3 text-[15px] leading-6 font-semibold">{result.title}</h2>
+            <h2 className="pt-3 text-[17px] leading-7 font-semibold tracking-[-0.3px]">
+              {result.title}
+            </h2>
             <p className="text-muted-foreground pt-1 text-[13px] leading-5">
               참석자만 열람 가능합니다.
             </p>
@@ -54,7 +56,9 @@ export default async function MeetingDetailPage({
       <main className="min-h-0 flex-1 overflow-y-auto px-8 py-7">
         <div className="mx-auto w-full max-w-[1440px]">
           <section className="border-border bg-card rounded-2xl border px-7 py-14 text-center">
-            <h2 className="text-[15px] leading-6 font-semibold">{result.title}</h2>
+            <h2 className="text-[17px] leading-7 font-semibold tracking-[-0.3px]">
+              {result.title}
+            </h2>
             <p className="text-muted-foreground pt-1 text-[13px] leading-5">
               {MEETING_STATUS_LABEL[result.status]} 회의입니다. 회의가 끝나면 기록과 산출물을 여기서
               볼 수 있습니다.

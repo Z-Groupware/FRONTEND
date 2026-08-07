@@ -35,7 +35,9 @@ export default async function MeetingCapturePage({
       <main className="min-h-0 flex-1 overflow-y-auto px-8 py-7">
         <div className="mx-auto w-full max-w-[1440px]">
           <section className="border-border bg-card rounded-2xl border px-7 py-14 text-center">
-            <h2 className="text-[15px] leading-6 font-semibold">{result.title}</h2>
+            <h2 className="text-[17px] leading-7 font-semibold tracking-[-0.3px]">
+              {result.title}
+            </h2>
             <p className="text-muted-foreground pt-1 text-[13px] leading-5 break-keep">
               {result.kind === "notHost"
                 ? "회의를 개설한 사람만 진행할 수 있습니다."
@@ -47,8 +49,12 @@ export default async function MeetingCapturePage({
     );
   }
 
+  /*
+    ⚠️ **여기는 스크롤하지 않는다.** 자막이 쌓이면 페이지가 늘어나 조작 줄(녹음·일시정지·종료)이
+       위로 밀려 안 보였다 — 화면 높이를 그대로 쓰고 **자막 카드 안에서만** 스크롤한다.
+  */
   return (
-    <main className="min-h-0 flex-1 overflow-y-auto px-8 py-7">
+    <main className="flex min-h-0 flex-1 flex-col overflow-hidden px-8 py-7">
       <CaptureClient meeting={result.meeting} />
     </main>
   );

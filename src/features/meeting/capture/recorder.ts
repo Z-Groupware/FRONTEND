@@ -88,10 +88,21 @@ export function createCaptureRecorder(handlers: RecorderHandlers): CaptureRecord
       if (recorder?.state === "paused") recorder.resume();
     },
     rotate(index: number) {
-      if (!recorder) return;
-      recorder.stop();
-      handlers.onSegmentClosed(index);
-      openSegment();
+      const closing = recorder;
+      if (!closing) return;
+
+      /*
+        ⚠️ **닫혔다는 통보는 `onstop` 뒤에 보낸다.** `stop()` 직후에 바로 알리면, 그 구간의
+           **마지막 조각이 통보보다 늦게** 도착한다 — 서버가 이미 이어 붙인 파일을 확정한
+           뒤에 남은 조각이 와서 그 소리가 통째로 빠지거나 다음 구간에 붙는다.
+        ⚠️ 다음 구간은 통보 뒤에 연다. 먼저 열면 새 조각과 옛 조각이 섞인다.
+      */
+      closing.onstop = () => {
+        handlers.onSegmentClosed(index);
+        openSegment();
+      };
+      closing.stop();
+      recorder = null;
     },
     stop() {
       if (recorder && recorder.state !== "inactive") recorder.stop();

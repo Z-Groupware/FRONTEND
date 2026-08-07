@@ -150,10 +150,17 @@ export function useCapture(): UseCaptureResult {
       return;
     }
 
-    const opened = await recorder.start();
-    if (!opened) return; // 이유는 `onFatal`이 이미 남겼다
-
+    /*
+      ⚠️ **기다리기 전에 붙들어 둔다.** `getUserMedia`가 응답하는 동안 화면을 떠나면 정리
+         효과가 `null`을 보고 아무것도 안 멈춘다 — 그 뒤에 마이크가 열려 표시등이 계속 켜진다.
+    */
     recorderRef.current = recorder;
+
+    const opened = await recorder.start();
+    if (!opened) {
+      recorderRef.current = null;
+      return; // 이유는 `onFatal`이 이미 남겼다
+    }
 
     const stt = createSttEngine({ onChunk: pushChunk, onFatal: setError });
     stt?.start();
@@ -171,7 +178,7 @@ export function useCapture(): UseCaptureResult {
     recorderRef.current?.pause();
     // TODO(BE 협의): CAP-02 일시정지 이벤트
     const at = Date.now();
-    setSpans((prev) => prev.map((span, i) => (i === prev.length - 1 ? { ...span, to: at } : span)));
+    setSpans((prev) => prev.map((span) => (span.to === null ? { ...span, to: at } : span)));
     setNow(at);
     setPhase(CAPTURE_PHASE.PAUSED);
   }, []);
@@ -189,7 +196,12 @@ export function useCapture(): UseCaptureResult {
   const end = useCallback(() => {
     teardown();
     const at = Date.now();
-    setSpans((prev) => prev.map((span, i) => (i === prev.length - 1 ? { ...span, to: at } : span)));
+    /*
+      ⚠️ **열려 있는 구간만 닫는다.** 무조건 마지막 구간의 `to`를 덮어쓰면, 일시정지해 둔
+         상태에서 종료할 때 이미 닫힌 구간이 다시 열려 **쉬던 시간까지 녹음 시간에 들어간다** —
+         10분 세그먼트 경계도 같이 밀린다.
+    */
+    setSpans((prev) => prev.map((span) => (span.to === null ? { ...span, to: at } : span)));
     setNow(at);
     setPhase(CAPTURE_PHASE.ENDED);
   }, [teardown]);

@@ -90,6 +90,9 @@ const FATAL_MESSAGE: Record<string, string> = {
  * ⚠️ 미지원 브라우저면 `null`을 준다 — 부르는 쪽이 안내를 띄우게 하고, 여기서 조용히
  *    아무 일도 안 하는 가짜 엔진을 돌려주지 않는다(§정직성).
  */
+/** 이만큼 연속으로 빈 세션이면 포기하고 알린다 — 대략 30초어치다 */
+const MAX_EMPTY_RESTARTS = 8;
+
 export function createSttEngine(handlers: SttHandlers): SttEngine | null {
   const Ctor = ctorOf();
   if (!Ctor) return null;
@@ -97,6 +100,15 @@ export function createSttEngine(handlers: SttHandlers): SttEngine | null {
   let recognition: SpeechRecognitionLike | null = null;
   /** 우리가 멈춘 것인가 — 자동 재시작을 할지 가른다 */
   let stopped = true;
+  /**
+   * 한 문장도 못 받고 바로 닫힌 횟수.
+   *
+   * ⚠️ **즉시·무한 재시작을 막는다.** `network`·`no-speech`처럼 치명이 아닌 오류는 바로
+   *    `onend`로 이어지는데, 그때마다 곧장 다시 열면 실패가 계속되는 환경에서
+   *    `onerror → onend → start`가 초당 수백 번 돈다(탭이 멎는다).
+   */
+  let emptyRestarts = 0;
+  let retryTimer: number | null = null;
 
   const spawn = () => {
     const instance = new Ctor();
@@ -110,7 +122,10 @@ export function createSttEngine(handlers: SttHandlers): SttEngine | null {
         const result = event.results[i];
         if (!result?.isFinal) continue;
         const text = result[0]?.transcript?.trim();
-        if (text) handlers.onChunk(text);
+        if (!text) continue;
+        // 한 문장이라도 받았으면 정상이다 — 물러설 시간을 되돌린다
+        emptyRestarts = 0;
+        handlers.onChunk(text);
       }
     };
 
@@ -122,8 +137,24 @@ export function createSttEngine(handlers: SttHandlers): SttEngine | null {
 
     instance.onend = () => {
       if (stopped) return;
-      // 세션이 스스로 닫힌 것이다 — 바로 다시 연다
-      spawn();
+
+      /*
+        세션이 스스로 닫혔다 — 다시 연다.
+        ⚠️ 연속 실패가 쌓이면 **물러서며** 연다(0.2s → 0.4s → 0.8s …, 최대 5초). 조용해서
+           닫힌 정상 상황은 첫 문장이 오는 순간 `emptyRestarts`가 0으로 돌아가 지연이 사라진다.
+        ⚠️ 아주 오래 실패하면 **포기하고 알린다.** 조용히 안 되는 척하지 않는다(§정직성).
+      */
+      emptyRestarts += 1;
+      if (emptyRestarts > MAX_EMPTY_RESTARTS) {
+        stopped = true;
+        handlers.onFatal("자막을 계속 받지 못했습니다. 마이크와 네트워크를 확인해 주세요.");
+        return;
+      }
+
+      const delay = Math.min(200 * 2 ** (emptyRestarts - 1), 5_000);
+      retryTimer = window.setTimeout(() => {
+        if (!stopped) spawn();
+      }, delay);
     };
 
     recognition = instance;
@@ -134,10 +165,15 @@ export function createSttEngine(handlers: SttHandlers): SttEngine | null {
     start() {
       if (!stopped) return;
       stopped = false;
+      emptyRestarts = 0;
       spawn();
     },
     stop() {
       stopped = true;
+      if (retryTimer !== null) {
+        window.clearTimeout(retryTimer);
+        retryTimer = null;
+      }
       recognition?.abort();
       recognition = null;
     },
