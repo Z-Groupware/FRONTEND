@@ -68,16 +68,25 @@ export function CancelSubscription({
 
   return (
     /*
-      ⚠️ **본 컬럼(넓은 쪽) 맨 아래에 선다.** 한때 곁 컬럼(360px)에 뒀는데, 그 폭에서는
-         문장이 왼쪽에 몰리고 버튼만 오른쪽 아래에 떨어져 카드 안이 텅 비어 보였다 —
-         폭이 있으면 설명이 펴지고 버튼이 그 줄 끝에 선다.
-      ⚠️ `flex-wrap` — 좁은 화면에서는 버튼이 아래로 내려가고 오른쪽 끝에 붙는다.
+      ⚠️ **곁 컬럼(360px) 결제 수단 밑에 선다.** 돈에 관한 것들이 여기 모여 있고
+         (플랜 → 결제 수단 → 해지), 해지는 그 이야기의 마지막이다.
+      ⚠️ **설명 왼쪽, 버튼 오른쪽 한 줄**이다. 좁은 칸이라 설명이 두세 줄로 접히지만,
+         버튼이 그 옆에 서야 "이 문장에 대한 행동"으로 읽힌다 — 아래로 내리면 문장과
+         떨어져 카드 오른쪽 아래에 홀로 남는다.
+      ⚠️ 버튼은 `shrink-0`이라 설명이 길어져도 안 눌린다. 세로는 가운데로 맞춘다.
       ⚠️ 그래도 **높이를 키우지 않는다.** 해지가 이 화면의 주요 기능처럼 보이면 안 된다 —
          제목 한 줄, 설명 두 줄, 버튼 하나뿐이다.
     */
-    <section className="border-border bg-card flex flex-wrap items-center gap-x-6 gap-y-4 rounded-2xl border px-7 py-5">
+    <section className="border-border bg-card flex items-center gap-4 rounded-2xl border px-7 py-5">
       <div className="min-w-0 flex-1">
-        <h2 className="text-[14px] leading-5 font-semibold tracking-[-0.2px]">구독 해지</h2>
+        {/*
+          ⚠️ **다른 카드 머리와 같은 규격**이다(점 표식 + 15px semibold). 이 카드만 14px에
+             점이 없어서, 곁 컬럼 셋(플랜·결제 수단·해지) 중 하나만 다른 물건처럼 보였다.
+        */}
+        <h2 className="flex items-center gap-2 text-[15px] leading-6 font-semibold tracking-[-0.2px]">
+          <span className="bg-foreground size-2 rounded-full" aria-hidden />
+          구독 해지
+        </h2>
 
         {/*
           ⚠️ **한 문장 안에서 굵기를 바꾸지 않는다.** 전에는 날짜만 진하고 나머지가 흐려서
@@ -98,7 +107,7 @@ export function CancelSubscription({
         ⚠️ 권한이 없으면 **버튼을 숨기지 않고 잠근다.** 사라지면 "원래 없는 기능"으로 읽히는데
            사실은 권한 문제다 — 왜 못 누르는지 옆에 적는다(§정직성).
       */}
-      <div className="ml-auto flex shrink-0 items-center gap-3">
+      <div className="flex shrink-0 flex-col items-end gap-1.5">
         {!canManage && (
           <span className="text-muted-foreground text-[12px] leading-4">
             대표 또는 Admin 권한이 필요합니다
@@ -112,10 +121,9 @@ export function CancelSubscription({
           /*
             ⚠️ **좌우 여백을 넉넉히 준다.** `해지` 두 글자에 높이만 잡아 두면 폭이 글자만큼만
                나와 정사각형이 된다 — 버튼이 아니라 표식처럼 보인다.
-            ⚠️ 라벨이 `해지`(2자)와 `해지 취소`(5자)로 갈리는데, 최소 폭을 잡아 두면 상태가
-               바뀔 때 카드 오른쪽 끝이 들썩이지 않는다.
+            ⚠️ 최소 폭은 안 잡는다 — 곁 컬럼이 좁아 그만큼이 설명에서 빠진다.
           */
-          className="border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive h-9 min-w-[88px] px-5"
+          className="border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive h-9 px-4"
         >
           {/*
             ⚠️ 제목이 이미 "구독 해지"다 — 버튼까지 같은 말을 하면 한 카드에 같은 낱말이

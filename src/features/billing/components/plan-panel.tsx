@@ -90,7 +90,11 @@ export function PlanPanel({ subscription, config }: PlanPanelProps) {
              기본료 + 사용량이라, 인원 숫자를 여기 두면 그게 금액을 움직이는 줄 읽힌다.
              남은 셋은 전부 **돈과 직접 이어지는 값**이다.
         */}
-      <dl className="flex flex-col gap-2.5 px-7 pb-7">
+      {/*
+        ⚠️ 아래 여백은 **왼쪽 사용량 카드와 같은 24px**다. 28이면 이 카드가 9px 더 커져,
+           두 컬럼의 **둘째 줄 카드가 그만큼 어긋나** 시작선이 안 맞는다.
+      */}
+      <dl className="flex flex-col gap-2.5 px-7 pb-6">
         <Metric label="월 기본료" value={formatWon(config.baseFee)} />
         <Metric
           label="다음 결제일"
