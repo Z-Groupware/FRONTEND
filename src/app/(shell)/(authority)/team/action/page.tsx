@@ -1,0 +1,90 @@
+import type { Metadata } from "next";
+
+import { isDelayed } from "@/constants/domain";
+import type { TimelineActionInput } from "@/features/member/action-timeline";
+import { ActionTimeline, ActionTimelineLegend } from "@/features/member/components/action-timeline";
+import { getProgressPercent } from "@/features/project/lib";
+import { getTeamActionsByTeam } from "@/features/project/server";
+import type { ProjectListItem, ProjectTeamActionWithProgress } from "@/features/project/types";
+import { getTeamDashboardOverview } from "@/features/team/server";
+import { pickPaletteColor } from "@/lib/palette";
+
+export const metadata: Metadata = {
+  title: "팀 액션",
+};
+
+/** 이 프로젝트의 팀 액션들을 타임라인 입력으로 — 프로젝트 상세 타임라인 탭과 같은 모양(§디자인). */
+function toTimelineItems(
+  project: ProjectListItem,
+  teamActions: ProjectTeamActionWithProgress[],
+): TimelineActionInput[] {
+  const tagColor = pickPaletteColor(project.tag);
+  return teamActions.map((action) => ({
+    id: String(action.id),
+    title: action.name,
+    tag: project.tag,
+    tagBgColor: tagColor.bgColor,
+    tagTextColor: tagColor.textColor,
+    startDate: action.startDate,
+    dueDate: action.dueDate,
+    tone: isDelayed(action) ? "DELAYED" : action.status,
+    href: `/app/projects/${project.id}/team/${action.id}`,
+    progressPercent: getProgressPercent(action.actionDone, action.actionTotal),
+  }));
+}
+
+export default async function TeamActionPage() {
+  const { teamName } = await getTeamDashboardOverview();
+  const groups = await getTeamActionsByTeam(teamName);
+  const totalTeamActions = groups.reduce((sum, group) => sum + group.teamActions.length, 0);
+
+  return (
+    <main className="scrollbar-hidden min-h-0 flex-1 overflow-y-auto px-8 py-7">
+      <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-4">
+        <div className="flex items-baseline justify-between gap-3">
+          <h2 className="text-foreground text-xl leading-7 font-semibold tracking-[-0.4px]">
+            {teamName}
+          </h2>
+          <p className="text-muted-foreground text-xs tabular-nums">
+            {groups.length}개 프로젝트 · 총 {totalTeamActions}개 팀 액션
+          </p>
+        </div>
+
+        {groups.length === 0 ? (
+          <p className="text-muted-foreground flex min-h-[240px] items-center justify-center text-sm">
+            아직 하달된 팀 액션이 없습니다.
+          </p>
+        ) : (
+          groups.map(({ project, teamActions }) => {
+            const tagColor = pickPaletteColor(project.tag);
+            return (
+              <section
+                key={project.id}
+                className="border-border bg-card flex flex-col overflow-hidden rounded-2xl border"
+              >
+                <div className="border-border flex shrink-0 items-baseline justify-between gap-3 border-b px-7 pt-6 pb-3">
+                  <h3 className="flex items-center gap-2 text-[17px] leading-7 font-semibold tracking-[-0.3px]">
+                    <span className="bg-foreground size-2 rounded-full" aria-hidden />
+                    {project.name}
+                    <span
+                      className="rounded px-1.5 py-0.5 font-mono text-xs leading-none font-semibold"
+                      style={{ backgroundColor: tagColor.bgColor, color: tagColor.textColor }}
+                    >
+                      {project.tag}
+                    </span>
+                  </h3>
+                  <p className="text-muted-foreground text-[12px] leading-4 tabular-nums">
+                    {teamActions.length}개 팀 액션
+                  </p>
+                </div>
+                <ActionTimeline items={toTimelineItems(project, teamActions)} today={new Date()} />
+              </section>
+            );
+          })
+        )}
+
+        <ActionTimelineLegend />
+      </div>
+    </main>
+  );
+}

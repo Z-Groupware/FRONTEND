@@ -95,6 +95,17 @@ export interface ProjectTeamAction {
 }
 
 /**
+ * `ProjectTeamAction` + 진척(done/total) — 조회 시점에 개인 액션을 세서 채운다(저장 안 함).
+ * 타임라인 진척 바에 쓴다(프로젝트 상세 타임라인 탭·팀 액션 대시보드).
+ */
+export interface ProjectTeamActionWithProgress extends ProjectTeamAction {
+  /** 이 팀 액션에 속한 개인 액션 수. */
+  actionTotal: number;
+  /** 그중 완료된 개인 액션 수. */
+  actionDone: number;
+}
+
+/**
  * 팀 액션 상세(`/app/projects/:projectId/team/:teamActionId`)의 상세 탭.
  * ⚠️ 담당자는 이 팀 액션을 받은 팀의 **팀장**이다(`assigneeRoleLabel`은 항상 "팀장") —
  *    개인 액션 상세를 만들 때는 같은 필드에 그 사람 본인 역할이 들어간다.

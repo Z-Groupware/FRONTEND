@@ -1,4 +1,9 @@
-import { DEFAULT_PROJECT_SORT, type ProjectSort, type ProjectStatus } from "@/constants/domain";
+import {
+  ACTION_STATUS,
+  DEFAULT_PROJECT_SORT,
+  type ProjectSort,
+  type ProjectStatus,
+} from "@/constants/domain";
 import { COMPANY_TEAM_NAMES } from "@/constants/project";
 import { isMock } from "@/mocks/config";
 
@@ -12,7 +17,7 @@ import { PROJECT_ATTACHMENT_MOCK, PROJECT_TEAM_ACTIONS_MOCK } from "./mock/team-
 import type {
   ProjectDetail,
   ProjectListItem,
-  ProjectTeamAction,
+  ProjectTeamActionWithProgress,
   TeamActionDetail,
   TeamActionPersonalItem,
 } from "./types";
@@ -79,11 +84,42 @@ export async function getProjectDetail(id: string): Promise<ProjectDetail | null
   throw new Error("서버 연동 미구현 — ERD·API 스펙 확정 후 매퍼 작성");
 }
 
+/** 팀 액션 id로 개인 액션 진척(전체·완료)을 센다 — 진척 바(§타임라인 진척 바)에 쓴다. */
+function countActionProgress(teamActionId: number): { actionTotal: number; actionDone: number } {
+  const items = TEAM_ACTION_PERSONAL_ITEMS_MOCK[teamActionId] ?? [];
+  return {
+    actionTotal: items.length,
+    actionDone: items.filter((item) => item.status === ACTION_STATUS.DONE).length,
+  };
+}
+
 /** 프로젝트 상세의 타임라인 탭 — 이 프로젝트에 속한 팀 액션 전체(여러 팀이 하나의 축에 함께). */
-export async function getProjectTeamActions(id: string): Promise<ProjectTeamAction[]> {
+export async function getProjectTeamActions(id: string): Promise<ProjectTeamActionWithProgress[]> {
   if (isMock) {
     const project = findProjectById(id);
-    return project ? (PROJECT_TEAM_ACTIONS_MOCK[project.tag] ?? []) : [];
+    const teamActions = project ? (PROJECT_TEAM_ACTIONS_MOCK[project.tag] ?? []) : [];
+    return teamActions.map((action) => ({ ...action, ...countActionProgress(action.id) }));
+  }
+
+  throw new Error("서버 연동 미구현 — ERD·API 스펙 확정 후 매퍼 작성");
+}
+
+/**
+ * 팀 액션 대시보드(`/team/action`)용 — 이 팀이 받은 팀 액션 전체를 프로젝트별로 묶어서 준다.
+ * ⚠️ Leader 개인화: 로그인한 사람의 소속 팀 것만(WORKFLOW.md §4).
+ */
+export async function getTeamActionsByTeam(
+  teamName: string,
+): Promise<{ project: ProjectListItem; teamActions: ProjectTeamActionWithProgress[] }[]> {
+  if (isMock) {
+    const groups: { project: ProjectListItem; teamActions: ProjectTeamActionWithProgress[] }[] = [];
+    for (const project of TOP_LEVEL_PROJECTS) {
+      const teamActions = (PROJECT_TEAM_ACTIONS_MOCK[project.tag] ?? [])
+        .filter((action) => action.team === teamName)
+        .map((action) => ({ ...action, ...countActionProgress(action.id) }));
+      if (teamActions.length > 0) groups.push({ project, teamActions });
+    }
+    return groups;
   }
 
   throw new Error("서버 연동 미구현 — ERD·API 스펙 확정 후 매퍼 작성");

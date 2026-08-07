@@ -9,6 +9,7 @@ import { isDelayed } from "@/constants/domain";
 import type { TimelineActionInput } from "@/features/member/action-timeline";
 import { ActionTimeline, ActionTimelineLegend } from "@/features/member/components/action-timeline";
 import {
+  getProgressPercent,
   parseProjectDetailTab,
   PROJECT_DETAIL_TABS,
   PROJECT_TIMELINE_BOX_HEIGHT,
@@ -62,6 +63,7 @@ export default async function ProjectDetailPage({ params, searchParams }: Projec
       // ⚠️ 식별자는 action.id(팀 액션 ID)를 쓴다 — action.team(팀명)으로 경로를 만들면
       //    같은 팀에 팀 액션이 여러 개일 때 서로 구분이 안 된다.
       href: `/app/projects/${project.id}/team/${action.id}`,
+      progressPercent: getProgressPercent(action.actionDone, action.actionTotal),
     };
   });
 
