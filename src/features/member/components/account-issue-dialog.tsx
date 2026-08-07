@@ -347,7 +347,12 @@ export function AccountIssueDialog({
                 value={draft.authority}
                 onValueChange={(value) => set("authority", value as Authority)}
               >
-                <SelectTrigger id="account-authority" className="min-w-0 flex-1">
+                <SelectTrigger
+                  id="account-authority"
+                  className="min-w-0 flex-1"
+                  aria-invalid={Boolean(errors.authority)}
+                  aria-describedby="account-authority-error"
+                >
                   <SelectValue />
                 </SelectTrigger>
                 {/* ⚠️ Owner는 회사에 하나라 발급 대상이 아니다(WORKFLOW §11) */}

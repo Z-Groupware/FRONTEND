@@ -341,6 +341,8 @@ describe("계정 발급 — 관리자 겸직", () => {
       isAdmin: false,
     });
 
+    // ⚠️ 먼저 발급됐는지 본다 — 아니면 아래에서 `!`가 터져 진짜 원인이 가려진다
+    expect(result.issued).toBeTruthy();
     expect(findMockManagedMember(result.issued!.id)?.member.isAdmin).toBe(false);
   });
 });
