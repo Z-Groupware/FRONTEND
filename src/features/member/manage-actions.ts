@@ -84,6 +84,15 @@ async function gate(
  * ⚠️ **잠긴 사람은 아예 막는다**(`gradeLockOf`) — 대표와 퇴사자다. 화면이 폼을 안 그리는
  *    것과 같은 판정을 서버가 다시 본다.
  */
+/**
+ * 구성원 조직도 — **사원이 바뀌면 여기도 다시 그린다.**
+ *
+ * ⚠️ 같은 명부를 읽는 화면이 둘이다(`/manage/members`·`/app/people`). 관리 쪽만 되살리면
+ *    계정을 발급하거나 직급을 바꾼 뒤 구성원 화면이 **옛 명부를 그대로 보여준다** —
+ *    바꾼 사람은 반영된 걸 보고 남들은 못 보는 상태가 된다.
+ */
+const PEOPLE_PATH = "/app/people";
+
 export async function changeMemberGradeAction(
   id: number,
   next: { position: string; authority: Authority; isAdmin: boolean; roleLabel: string },
@@ -160,6 +169,7 @@ export async function changeMemberGradeAction(
   updateMockMemberGrade(id, next);
   revalidatePath(pathOf(id));
   revalidatePath("/manage/members");
+  revalidatePath(PEOPLE_PATH);
   return { isSuccess: true };
 }
 
@@ -220,6 +230,7 @@ export async function approveHandoverAction(id: number): Promise<MemberActionRes
   approveMockHandover(id);
   revalidatePath(pathOf(id));
   revalidatePath("/manage/members");
+  revalidatePath(PEOPLE_PATH);
   return { isSuccess: true };
 }
 
@@ -258,6 +269,7 @@ export async function rejectHandoverAction(
   rejectMockHandover(id);
   revalidatePath(pathOf(id));
   revalidatePath("/manage/members");
+  revalidatePath(PEOPLE_PATH);
   return { isSuccess: true };
 }
 
@@ -318,6 +330,7 @@ export async function issueAccountAction(draft: AccountDraft): Promise<IssueAcco
 
   const issued = addMockManagedMember(draft, todayIso());
   revalidatePath("/manage/members");
+  revalidatePath(PEOPLE_PATH);
   return { errors: {}, issued: { id: issued.id, name: issued.name, email: issued.email } };
 }
 
@@ -362,6 +375,7 @@ export async function deleteMemberAccountAction(id: number): Promise<MemberActio
   deleteMockManagedMember(id);
   revalidatePath(pathOf(id));
   revalidatePath("/manage/members");
+  revalidatePath(PEOPLE_PATH);
   return { isSuccess: true };
 }
 
