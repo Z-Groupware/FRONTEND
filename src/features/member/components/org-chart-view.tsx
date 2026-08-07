@@ -1,6 +1,7 @@
 import { cn } from "@/lib/utils";
 
 import type { OrgChart, OrgTeam } from "../org-types";
+import { MatchText } from "./match-text";
 import { OrgMemberNode } from "./org-member-node";
 import { PeopleSearch } from "./people-search";
 
@@ -45,10 +46,12 @@ function TeamBranch({
   team,
   isLast,
   hasOwner,
+  keyword,
 }: {
   team: OrgTeam;
   isLast: boolean;
   hasOwner: boolean;
+  keyword: string;
 }) {
   return (
     /*
@@ -78,7 +81,13 @@ function TeamBranch({
       )}
 
       <h3 className="flex items-baseline gap-2 pb-2">
-        <span className="text-[13px] leading-5 font-semibold">{team.name}</span>
+        {/*
+          ⚠️ 팀 이름에도 표시한다. 검색이 팀도 보기 때문에 `자`로 찾으면 이름에 `자`가 없는
+             사람이 뜨는데(`디자인팀`이 걸린 것이다), 여기가 표시돼야 그 이유가 보인다.
+        */}
+        <span className="text-[13px] leading-5 font-semibold">
+          <MatchText text={team.name} keyword={keyword} />
+        </span>
         <span className="text-muted-foreground text-[11px] leading-4 tabular-nums">
           {team.members.length}명
         </span>
@@ -87,7 +96,7 @@ function TeamBranch({
       <ul className={NODE_GRID_CLASS}>
         {team.members.map((member) => (
           <li key={member.id}>
-            <OrgMemberNode member={member} />
+            <OrgMemberNode member={member} keyword={keyword} />
           </li>
         ))}
       </ul>
@@ -145,7 +154,7 @@ export function OrgChartView({ chart, keyword }: { chart: OrgChart; keyword: str
         <div className="px-7 pt-2 pb-7">
           {owner && (
             <div className={NODE_GRID_CLASS}>
-              <OrgMemberNode member={owner} />
+              <OrgMemberNode member={owner} keyword={keyword} />
             </div>
           )}
 
@@ -156,6 +165,7 @@ export function OrgChartView({ chart, keyword }: { chart: OrgChart; keyword: str
                 team={team}
                 isLast={index === teams.length - 1}
                 hasOwner={owner !== null}
+                keyword={keyword}
               />
             ))}
           </ul>

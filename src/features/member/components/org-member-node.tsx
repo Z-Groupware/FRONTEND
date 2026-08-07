@@ -4,6 +4,7 @@ import { MEMBER_STATUS, MEMBER_STATUS_BADGE_CLASS, MEMBER_STATUS_LABEL } from "@
 import { cn } from "@/lib/utils";
 
 import type { OrgMember } from "../org-types";
+import { MatchText } from "./match-text";
 
 /**
  * 조직도에 서는 사람 한 명.
@@ -60,7 +61,7 @@ function StatusMark({ status }: { status: OrgMember["status"] }) {
   );
 }
 
-export function OrgMemberNode({ member }: { member: OrgMember }) {
+export function OrgMemberNode({ member, keyword }: { member: OrgMember; keyword: string }) {
   const isLead = member.authority === AUTHORITY.OWNER || member.authority === AUTHORITY.LEADER;
 
   return (
@@ -75,7 +76,9 @@ export function OrgMemberNode({ member }: { member: OrgMember }) {
 
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
         <div className="flex items-center gap-1.5">
-          <span className="truncate text-[13px] leading-5 font-medium">{member.name}</span>
+          <span className="truncate text-[13px] leading-5 font-medium">
+            <MatchText text={member.name} keyword={keyword} />
+          </span>
           <AuthorityMark authority={member.authority} />
           {/* 상태는 오른쪽 끝으로 민다 — 이름 옆에 붙이면 이름 길이마다 자리가 흔들린다 */}
           <span className="ml-auto flex items-center">
@@ -91,7 +94,13 @@ export function OrgMemberNode({ member }: { member: OrgMember }) {
              오히려 더 크게 읽힌다. 역할은 안 붙여도 되는 값이다(WORKFLOW §9).
         */}
         <p className="text-muted-foreground truncate text-[12px] leading-4">
-          {member.roleLabel ? `${member.position} · ${member.roleLabel}` : member.position}
+          <MatchText text={member.position} keyword={keyword} />
+          {member.roleLabel && (
+            <>
+              {" · "}
+              <MatchText text={member.roleLabel} keyword={keyword} />
+            </>
+          )}
         </p>
       </div>
     </div>
