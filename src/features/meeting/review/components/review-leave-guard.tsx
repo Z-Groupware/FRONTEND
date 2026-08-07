@@ -101,7 +101,10 @@ export function ReviewLeaveGuard({ isBlocked }: ReviewLeaveGuardProps) {
 
   function handleLeave() {
     if (pendingHref) {
-      router.push(pendingHref);
+      // ⚠️ `push`가 아니라 `replace`다 — 마운트 시 쌓은 더미 위에 새 경로를 또 쌓으면
+      //    나간 뒤 뒤로 가기를 눌렀을 때 이 리뷰 화면을 한 번 더 거친다. `replace`는
+      //    그 더미 자리를 목적지로 바꿔치기해 여분 없이 나간다.
+      router.replace(pendingHref);
     } else if (pendingBack) {
       // ⚠️ 한 칸만 뒤로 가면 마운트 시 쌓아 둔 더미(같은 URL)에만 닿아 제자리다 —
       //    더미 한 칸 + 원래 있던 진입 이력 한 칸, 총 두 칸을 지나야 실제로 나간다.
