@@ -11,6 +11,7 @@ import { ResultDialog } from "@/components/common/result-dialog";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -111,13 +112,18 @@ export function AccountIssueDialog({ teamNames }: { teamNames: string[] }) {
          스크린리더에서 이름 없는 라벨이 되어 오히려 방해가 된다(§a11y).
     */
     hasControl = true,
+    /** 라벨 옆 `?` — 설명이 길어 창 문구로 두면 창 크기가 흔들리는 칸에만 붙인다 */
+    help?: React.ReactNode,
   ) => (
     <div className="flex flex-col gap-1.5 text-left">
-      {hasControl ? (
-        <Label htmlFor={`account-${key}`}>{label}</Label>
-      ) : (
-        <p className="text-sm leading-none font-medium">{label}</p>
-      )}
+      <span className="flex items-center gap-1">
+        {hasControl ? (
+          <Label htmlFor={`account-${key}`}>{label}</Label>
+        ) : (
+          <p className="text-sm leading-none font-medium">{label}</p>
+        )}
+        {help}
+      </span>
       {control}
       <p
         id={`account-${key}-error`}
@@ -157,15 +163,9 @@ export function AccountIssueDialog({ teamNames }: { teamNames: string[] }) {
             <span className="text-foreground font-medium">아이디와 첫 비밀번호가 메일로</span> 바로
             나갑니다. 보낸 메일은 되돌릴 수 없습니다.
             {/*
-              ⚠️ 겸직을 켰으면 **무엇이 열리는지** 적는다. 권한이 늘어나는 일이라 발급과 함께
-                 조용히 나가면 안 된다(직급·권한 변경 창과 같은 규칙).
+              ⚠️ 겸직 설명을 **여기 넣지 않는다.** 켤 때만 한 줄이 늘어나 창이 세로로 커지고,
+                 누르는 순간 아래 버튼이 움직인다 — 설명은 라벨 옆 `?`가 맡는다.
             */}
-            {draft.isAdmin && (
-              <>
-                <br />
-                관리자 겸직으로 나가서 사원·회의실 관리와 구독·저장소 화면에 들어갈 수 있습니다.
-              </>
-            )}
           </>
         }
         confirmLabel="계정 발급"
@@ -269,10 +269,11 @@ export function AccountIssueDialog({ teamNames }: { teamNames: string[] }) {
             ⚠️ **권한 칸 오른쪽에 나란히 둔다**(온보딩 초대 줄과 같은 자리). 겸직은 권한을
                대체하는 값이 아니라 그 위에 덧붙는 플래그라, 권한 셀렉트 안에 넣으면
                "Member 대신 Admin"으로 읽힌다(§권한: 축이 2개다).
-            ⚠️ 높이를 `h-8`로 맞춘다 — 옆 셀렉트와 같은 값이라 두 칸의 위아래가 한 선에 선다.
-               `field`를 그대로 써서 라벨·오류 자리까지 다른 칸과 같은 구조를 갖는다.
-            ⚠️ 켜짐을 **채움과 아이콘**으로 알린다 — 색으로 알리는 건 에러뿐이다(§디자인 토큰).
-               온보딩 `InviteAdminToggle`이 같은 방식이다.
+            ⚠️ **글자를 붙이지 않는다.** `부여함`/`부여 안 함`은 글자 폭이 달라 누를 때마다
+               버튼이 늘었다 줄었다 했다 — 켜짐은 **채움**이 말한다(온보딩 `InviteAdminToggle`).
+            ⚠️ 무엇인지는 **라벨 옆 `?`** 가 말한다. 창 설명문에 한 줄을 더하면 켤 때마다
+               창이 세로로 커져서, 누르는 순간 아래 버튼이 움직인다.
+            ⚠️ 높이·너비를 `size-8`로 잡아 옆 셀렉트와 위아래가 한 선에 선다.
           */}
           {field(
             "isAdmin",
@@ -281,17 +282,36 @@ export function AccountIssueDialog({ teamNames }: { teamNames: string[] }) {
               type="button"
               id="account-isAdmin"
               aria-pressed={draft.isAdmin}
+              aria-label="관리자 겸직 부여"
               onClick={() => set("isAdmin", !draft.isAdmin)}
               className={cn(
-                "focus-visible:ring-ring flex h-8 w-full items-center gap-1.5 rounded-lg border px-2.5 text-sm transition-colors focus-visible:ring-3 focus-visible:outline-hidden",
+                "focus-visible:ring-ring flex size-8 items-center justify-center rounded-lg border transition-colors focus-visible:ring-3 focus-visible:outline-hidden",
                 draft.isAdmin
                   ? "bg-foreground text-background border-foreground"
-                  : "border-input text-muted-foreground hover:border-foreground/40 hover:text-foreground",
+                  : "border-input text-muted-foreground/60 hover:border-foreground/40 hover:text-foreground",
               )}
             >
-              <ShieldCheck className="size-4 shrink-0" aria-hidden />
-              {draft.isAdmin ? "부여함" : "부여 안 함"}
+              <ShieldCheck className="size-4" aria-hidden />
             </button>,
+            true,
+            <Popover>
+              <PopoverTrigger
+                type="button"
+                aria-label="관리자 겸직이 무엇인지 보기"
+                className="border-border text-muted-foreground hover:text-foreground hover:border-foreground/40 focus-visible:ring-ring flex size-4 shrink-0 items-center justify-center rounded-full border text-[10px] leading-none transition-colors focus-visible:ring-2 focus-visible:outline-hidden"
+              >
+                ?
+              </PopoverTrigger>
+              <PopoverContent className="w-64 text-left">
+                <p className="text-[13px] leading-5 break-keep">
+                  사원·회의실 관리와 구독·저장소 화면에 들어갈 수 있습니다.
+                </p>
+                <p className="text-muted-foreground text-[12px] leading-4 break-keep">
+                  권한을 대체하지 않고 위에 덧붙습니다. 발급한 뒤에도 사원 상세에서 켜고 끌 수
+                  있습니다.
+                </p>
+              </PopoverContent>
+            </Popover>,
           )}
 
           {/* 칸과 무관한 실패는 칸 밑이 아니라 여기 — 그 칸이 틀렸다는 뜻이 아니다 */}
