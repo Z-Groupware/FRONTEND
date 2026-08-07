@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { HANDOVER_TYPE, HANDOVER_TYPE_LABEL } from "@/constants/handover";
 import { formatMonthDayWeekday } from "@/lib/date";
+import { cn } from "@/lib/utils";
 
 import { approveHandoverAction, rejectHandoverAction } from "../manage-actions";
 import type { PendingHandover } from "../manage-types";
@@ -58,6 +59,11 @@ export function HandoverApprovalCard({
        같은 버튼을 다시 누르게 된다(§토스트는 보조다).
   */
   const [error, setError] = useState<string | null>(null);
+  /*
+    ⚠️ 칸 하나짜리 검증은 **그 칸 밑에** 적는다(§토스트: 폼 검증 오류는 필드 인라인).
+       위쪽 `error`는 서버가 막은 이유고, 이건 아직 서버에 가지도 않은 일이라 자리가 다르다.
+  */
+  const [reasonError, setReasonError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   /*
     ⚠️ 창이 열리면 **사유 칸에 포커스를 준다.** 안 주면 포커스가 창 껍데기에 머물러,
@@ -172,6 +178,7 @@ export function HandoverApprovalCard({
               disabled={isPending}
               onClick={() => {
                 setError(null);
+                setReasonError(null);
                 setConfirming("reject");
               }}
             >
@@ -203,16 +210,21 @@ export function HandoverApprovalCard({
         error={error}
         title={`${memberName} 님의 ${typeLabel}을 승인할까요?`}
         description={
+          /*
+            ⚠️ **두 줄을 비슷한 길이로 끊는다.** 앞 문장이 길어 창 폭(356px)을 넘기니 제멋대로
+               접혀 `이미 재할당된 / 대로 유지됩니다`처럼 낱말이 잘렸다 — `<br />`은 줄이
+               넘치지 않을 때만 줄바꿈 자리를 정한다.
+            ⚠️ 이름을 다시 안 적는다. 바로 위 제목이 이미 말했고, 그 세 글자 때문에 줄이 넘쳤다.
+          */
           isVacation ? (
             <>
-              {memberName} 님이 휴직 상태가 되고, 넘긴 액션 {handover.actionCount}건은 이미 재할당된
-              대로 유지됩니다.
+              휴직 상태가 되고, 넘긴 액션 {handover.actionCount}건은 그대로 남습니다.
               <br />
-              복귀해도 넘긴 액션은 되돌아오지 않습니다.
+              복귀해도 되돌아오지 않습니다.
             </>
           ) : (
             <>
-              {memberName} 님의 계정이 퇴사 처리되어 더는 로그인할 수 없습니다.
+              계정이 퇴사 처리되어 더는 로그인할 수 없습니다.
               <br />
               남긴 회의·액션 기록은 그대로 남습니다.
             </>
@@ -241,6 +253,7 @@ export function HandoverApprovalCard({
         onOpenChange={() => {
           setConfirming(null);
           setReason("");
+          setReasonError(null);
         }}
         error={error}
         title={`${memberName} 님의 ${typeLabel} 신청을 반려할까요?`}
@@ -258,10 +271,22 @@ export function HandoverApprovalCard({
         mark="alert"
         isPending={isPending}
         pendingLabel="반려 중…"
-        isConfirmDisabled={reason.trim().length === 0}
-        onConfirm={() =>
-          run(() => rejectHandoverAction(memberId, reason), `${typeLabel} 신청을 반려했습니다`)
-        }
+        onConfirm={() => {
+          /*
+            ⚠️ **버튼을 잠그지 않는다.** 회색으로 죽여 두면 왜 못 누르는지 아무 데도 안 적혀,
+               사유를 안 적은 사람은 창이 고장 난 줄 안다 — 눌러 보게 하고 무엇이 빠졌는지
+               칸 밑에서 말한다.
+            ⚠️ 포커스를 그 칸으로 옮긴다 — 문구만 띄우면 키보드 사용자는 어디를 고쳐야
+               하는지 모른다(§a11y).
+          */
+          if (!reason.trim()) {
+            setReasonError("반려 사유를 적어 주세요");
+            reasonRef.current?.focus();
+            return;
+          }
+          setReasonError(null);
+          run(() => rejectHandoverAction(memberId, reason), `${typeLabel} 신청을 반려했습니다`);
+        }}
       >
         {/*
           ⚠️ **선으로 가른다.** 위는 가운데 정렬 문장, 아래는 왼쪽 정렬 입력칸이라 이어 붙이면
@@ -280,23 +305,38 @@ export function HandoverApprovalCard({
             ref={reasonRef}
             id="reject-reason"
             value={reason}
-            onChange={(event) => setReason(event.target.value.slice(0, REASON_MAX))}
+            onChange={(event) => {
+              setReason(event.target.value.slice(0, REASON_MAX));
+              // 적기 시작하면 지운다 — 고치는 중에 빨간 글이 남아 있으면 계속 틀린 줄 안다
+              setReasonError(null);
+            }}
             rows={3}
             maxLength={REASON_MAX}
+            aria-invalid={reasonError !== null}
+            aria-describedby={reasonError ? "reject-reason-error" : undefined}
             placeholder="예) 인계 대상 액션이 빠졌습니다. 다시 올려 주세요."
-            className="border-input placeholder:text-muted-foreground/70 focus-visible:border-ring focus-visible:ring-ring/50 bg-card w-full resize-none rounded-lg border px-3 py-2.5 text-[13px] leading-5 transition-colors outline-none focus-visible:ring-3"
+            className={cn(
+              "placeholder:text-muted-foreground/70 focus-visible:ring-ring/50 bg-card w-full resize-none rounded-lg border px-3 py-2.5 text-[13px] leading-5 transition-colors outline-none focus-visible:ring-3",
+              reasonError
+                ? "border-destructive focus-visible:border-destructive"
+                : "border-input focus-visible:border-ring",
+            )}
           />
 
           <div className="text-muted-foreground flex items-baseline justify-between gap-3 text-[12px] leading-4">
             {/*
-              ⚠️ **"신청자에게 전달됩니다"라고 쓰지 않는다.** 지금 이 값은 액션이 받아서
-                 버린다 — 어디에도 저장되지 않고 보여주는 화면도 없다(알림 화면 자체가
-                 없다, CLAUDE.md §렌더링). 전달을 약속해 두면 승인자는 사유를 적고
-                 신청자는 영영 못 본다(§정직성).
-              ⚠️ 그래서 **무엇을 적을지만** 말한다. 실제로 전달되는 게 확인되면 그때 문구를
-                 되살린다(BE 협의 필요).
+              ⚠️ 평소에는 **비워 둔다.** 무엇을 적을지는 예시(placeholder)가 이미 보여주고,
+                 안내문을 늘 띄워 두면 정작 오류가 떴을 때 자리가 바뀐 줄 모른다.
+                 (`신청자에게 전달됩니다`는 못 쓴다 — 지금 이 값은 어디에도 안 남는다.)
+              ⚠️ 자리는 **글자 수와 같은 줄**이라, 문구가 생겨도 창 높이가 안 변한다.
             */}
-            <p className="break-keep">무엇을 고쳐 다시 올려야 하는지 적어 주세요</p>
+            {reasonError ? (
+              <p id="reject-reason-error" role="alert" className="text-destructive break-keep">
+                {reasonError}
+              </p>
+            ) : (
+              <span aria-hidden />
+            )}
             {/* ⚠️ 상한이 있는 칸은 어디까지 썼는지 보여준다. `tabular-nums`라 안 흔들린다 */}
             <p className="shrink-0 tabular-nums">
               {reason.length} / {REASON_MAX}
