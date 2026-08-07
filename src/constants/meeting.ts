@@ -65,3 +65,18 @@ export const MEETING_INVITE_STATUS_LABEL: Record<MeetingInviteStatus, string> = 
      확정: "대주제 1개+소주제 1개 필수, 나머지는 추가/삭제 버튼으로 늘리고 줄이는" **자유 입력
      텍스트**다. 타입은 `features/rooms/types.ts`의 `MeetingTopicInput`(자유 텍스트 쌍)을 본다.
 */
+
+/**
+ * 회의 상태 배지 — **색이 아니라 명도**로 가른다(DESIGN §5).
+ *
+ * ⚠️ 한때 예정=파랑·진행중=초록이었다. 그건 "색을 써도 되는 자리" 표에 없는 색이고,
+ *    같은 화면의 프로젝트 태그(팔레트 색)와 섞여 무엇을 구분하는 색인지 알 수 없었다.
+ *    지금 도는 회의만 **채워서** 띄우고 나머지는 테두리만 둔다.
+ * ⚠️ 목록 카드와 대시보드 위젯이 **같은 맵을 쓴다.** 두 벌로 두면 같은 상태가 화면마다
+ *    다르게 보인다(§도메인 상수: 라벨·색은 한 곳).
+ */
+export const MEETING_STATUS_BADGE_CLASS: Record<MeetingStatus, string> = {
+  SCHEDULED: "border-border text-muted-foreground",
+  IN_PROGRESS: "border-foreground/35 bg-foreground/[0.06] text-foreground font-medium",
+  DONE: "border-border/60 text-muted-foreground/70",
+};

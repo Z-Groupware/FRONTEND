@@ -109,10 +109,12 @@ export function MeetingListView({
         <EmptyState tab={tab} />
       ) : (
         /*
-          ⚠️ 칸 수를 박지 않는다(`auto-fill`) — 사이드바가 있는 폭·배율마다 칸이 찌그러진다
-             (구성원 조직도와 같은 이유).
+          ⚠️ **두 열까지만 넓힌다.** `auto-fill`로 두니 1440에서 넉 줄까지 벌어져 카드 하나가
+             340px로 좁아졌다 — 제목이 잘리고 발치 정보가 두 줄로 접혔다. 회의 카드는
+             읽을 게 있는 카드라 넓게 두는 편이 낫다(시안도 2열이다).
+          ⚠️ `items-stretch`(기본값)를 깨지 않는다. 카드가 `h-full`이라 한 줄이 같은 높이로 선다.
         */
-        <ul className="grid grid-cols-[repeat(auto-fill,minmax(340px,1fr))] gap-4">
+        <ul className="grid grid-cols-1 gap-5 lg:grid-cols-2">
           {items.map((meeting) => (
             <li key={meeting.id}>
               <MeetingCard meeting={meeting} />
