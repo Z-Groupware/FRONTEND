@@ -116,12 +116,18 @@ export function AccountIssueDialog({ teamNames }: { teamNames: string[] }) {
     help?: React.ReactNode,
   ) => (
     <div className="flex flex-col gap-1.5 text-left">
-      <span className="flex items-center gap-1">
-        {hasControl ? (
-          <Label htmlFor={`account-${key}`}>{label}</Label>
-        ) : (
-          <p className="text-sm leading-none font-medium">{label}</p>
-        )}
+      {/*
+        ⚠️ **라벨 줄 높이를 고정한다.** 라벨 글자는 14px인데 옆에 붙는 `?`는 16px이라,
+           그 칸만 라벨 줄이 2px 높아지고 **컨트롤이 그만큼 내려앉는다** — 옆 칸과
+           위아래가 어긋나 보인다. 높이를 잡아 두면 무엇이 붙든 컨트롤이 같은 자리에 선다.
+      */}
+      <span className="flex h-4 items-center gap-1">
+        {label &&
+          (hasControl ? (
+            <Label htmlFor={`account-${key}`}>{label}</Label>
+          ) : (
+            <p className="text-sm leading-none font-medium">{label}</p>
+          ))}
         {help}
       </span>
       {control}
@@ -266,52 +272,56 @@ export function AccountIssueDialog({ teamNames }: { teamNames: string[] }) {
           )}
 
           {/*
-            ⚠️ **권한 칸 오른쪽에 나란히 둔다**(온보딩 초대 줄과 같은 자리). 겸직은 권한을
-               대체하는 값이 아니라 그 위에 덧붙는 플래그라, 권한 셀렉트 안에 넣으면
+            ⚠️ **권한 칸 바로 옆이다**(온보딩 초대 줄과 같은 자리). 겸직은 권한을 대체하는
+               값이 아니라 그 위에 덧붙는 플래그라, 권한 셀렉트 안에 넣으면
                "Member 대신 Admin"으로 읽힌다(§권한: 축이 2개다).
-            ⚠️ **글자를 붙이지 않는다.** `부여함`/`부여 안 함`은 글자 폭이 달라 누를 때마다
-               버튼이 늘었다 줄었다 했다 — 켜짐은 **채움**이 말한다(온보딩 `InviteAdminToggle`).
-            ⚠️ 무엇인지는 **라벨 옆 `?`** 가 말한다. 창 설명문에 한 줄을 더하면 켤 때마다
-               창이 세로로 커져서, 누르는 순간 아래 버튼이 움직인다.
-            ⚠️ 높이·너비를 `size-8`로 잡아 옆 셀렉트와 위아래가 한 선에 선다.
+            ⚠️ **라벨 문구를 두지 않는다.** `관리자 겸직`이라 적으면 권한과 대등한 칸으로
+               보이는데, 이건 권한에 얹는 표식 하나다 — 온보딩 초대 줄도 라벨 없이 방패만 둔다.
+               뜻은 옆의 `?`가 말하고, 스크린 리더는 버튼의 `aria-label`로 읽는다(§a11y).
+            ⚠️ **글자를 붙이지 않는다.** `부여함`/`부여 안 함`은 폭이 달라 누를 때마다 버튼이
+               늘었다 줄었다 했다 — 켜짐은 **채움**이 말한다(온보딩 `InviteAdminToggle`).
+            ⚠️ 라벨 자리는 **비워 두되 높이는 남긴다.** 없애면 방패가 옆 셀렉트보다 위로 올라간다.
           */}
           {field(
             "isAdmin",
-            "관리자 겸직",
-            <button
-              type="button"
-              id="account-isAdmin"
-              aria-pressed={draft.isAdmin}
-              aria-label="관리자 겸직 부여"
-              onClick={() => set("isAdmin", !draft.isAdmin)}
-              className={cn(
-                "focus-visible:ring-ring flex size-8 items-center justify-center rounded-lg border transition-colors focus-visible:ring-3 focus-visible:outline-hidden",
-                draft.isAdmin
-                  ? "bg-foreground text-background border-foreground"
-                  : "border-input text-muted-foreground/60 hover:border-foreground/40 hover:text-foreground",
-              )}
-            >
-              <ShieldCheck className="size-4" aria-hidden />
-            </button>,
-            true,
-            <Popover>
-              <PopoverTrigger
+            "",
+            <div className="flex items-center gap-2">
+              <button
                 type="button"
-                aria-label="관리자 겸직이 무엇인지 보기"
-                className="border-border text-muted-foreground hover:text-foreground hover:border-foreground/40 focus-visible:ring-ring flex size-4 shrink-0 items-center justify-center rounded-full border text-[10px] leading-none transition-colors focus-visible:ring-2 focus-visible:outline-hidden"
+                id="account-isAdmin"
+                aria-pressed={draft.isAdmin}
+                aria-label="관리자 겸직 부여"
+                onClick={() => set("isAdmin", !draft.isAdmin)}
+                className={cn(
+                  "focus-visible:ring-ring flex size-8 shrink-0 items-center justify-center rounded-lg border transition-colors focus-visible:ring-3 focus-visible:outline-hidden",
+                  draft.isAdmin
+                    ? "bg-foreground text-background border-foreground"
+                    : "border-input text-muted-foreground/60 hover:border-foreground/40 hover:text-foreground",
+                )}
               >
-                ?
-              </PopoverTrigger>
-              <PopoverContent className="w-64 text-left">
-                <p className="text-[13px] leading-5 break-keep">
-                  사원·회의실 관리와 구독·저장소 화면에 들어갈 수 있습니다.
-                </p>
-                <p className="text-muted-foreground text-[12px] leading-4 break-keep">
-                  권한을 대체하지 않고 위에 덧붙습니다. 발급한 뒤에도 사원 상세에서 켜고 끌 수
-                  있습니다.
-                </p>
-              </PopoverContent>
-            </Popover>,
+                <ShieldCheck className="size-4" aria-hidden />
+              </button>
+
+              <Popover>
+                <PopoverTrigger
+                  type="button"
+                  aria-label="관리자 겸직이 무엇인지 보기"
+                  className="border-border text-muted-foreground hover:text-foreground hover:border-foreground/40 focus-visible:ring-ring flex size-4 shrink-0 items-center justify-center rounded-full border text-[10px] leading-none transition-colors focus-visible:ring-2 focus-visible:outline-hidden"
+                >
+                  ?
+                </PopoverTrigger>
+                <PopoverContent className="w-64 text-left">
+                  <p className="text-[13px] leading-5 break-keep">
+                    켜면 <span className="font-medium">관리자 겸직</span>으로 발급됩니다 —
+                    사원·회의실 관리와 구독·저장소 화면에 들어갈 수 있습니다.
+                  </p>
+                  <p className="text-muted-foreground text-[12px] leading-4 break-keep">
+                    권한을 대체하지 않고 위에 덧붙습니다. 발급한 뒤에도 사원 상세에서 켜고 끌 수
+                    있습니다.
+                  </p>
+                </PopoverContent>
+              </Popover>
+            </div>,
           )}
 
           {/* 칸과 무관한 실패는 칸 밑이 아니라 여기 — 그 칸이 틀렸다는 뜻이 아니다 */}
