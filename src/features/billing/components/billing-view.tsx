@@ -120,37 +120,43 @@ export function BillingView({ overview, config, canManage }: BillingViewProps) {
            두면 그 줄만 1440을 가로지른다.
         ⚠️ 좁은 화면에서는 한 줄로 돌아간다(`lg:` 아래). 곁 컬럼이 먼저 오지 않게 순서를
            그대로 두었다 — 사용량이 이 화면의 본문이다.
-        ⚠️ **곁 컬럼은 제 내용만큼만 선다**(`items-start`). 아래를 맞추려고 늘렸더니 남는
-           높이를 플랜 카드가 먹어 지표 세 줄이 한 뼘씩 벌어졌다 — 빈 칸을 없애려다
-           카드 안이 더 비어 보였다. 오른쪽 아래가 남는 건 그대로 두는 게 낫다.
+        ⚠️ **컬럼이 아니라 줄로 나눈다.** 두 컬럼을 각각 세로로 쌓으면 왼쪽 첫 카드와
+           오른쪽 첫 카드의 높이가 5px만 달라도 **둘째 줄 카드의 시작선이 그만큼 어긋난다** —
+           여백을 손으로 맞춰 봤자 내용이 바뀌면 또 틀어진다. 줄마다 그리드를 두면
+           같은 줄이 **저절로** 맞는다(짧은 쪽은 늘어나고 안쪽 내용은 위에 붙는다).
       */}
-      <div className="mx-auto grid w-full max-w-[1440px] grid-cols-1 items-start gap-7 lg:grid-cols-[minmax(0,1fr)_360px]">
-        <div className="flex min-w-0 flex-col gap-7">
+      <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-7">
+        {/* 첫 줄 — 이번 주기 사용량 · 플랜 */}
+        <div className="grid grid-cols-1 gap-7 lg:grid-cols-[minmax(0,1fr)_360px]">
           <UsagePanel subscription={subscription} config={config} />
-          <PaymentHistoryPanel payments={overview.payments} />
+          <PlanPanel subscription={subscription} config={config} />
         </div>
 
-        <div className="flex flex-col gap-7">
-          <PlanPanel subscription={subscription} config={config} />
-          <PaymentMethodsPanel
-            method={method}
-            canManage={canManage}
-            onChange={handleChangeMethod}
-          />
+        {/* 둘째 줄 — 결제 내역 · (결제 수단 → 해지) */}
+        <div className="grid grid-cols-1 gap-7 lg:grid-cols-[minmax(0,1fr)_360px]">
+          <PaymentHistoryPanel payments={overview.payments} />
 
-          {/*
-            ⚠️ 해지 카드는 **결제 수단 바로 밑**이다. 돈에 관한 것들이 곁 컬럼에 모여 있고
-               (플랜 → 결제 수단 → 해지), 해지는 그 이야기의 마지막이다.
-            ⚠️ 아직 못 쓰는 상태(결제 전·만료)에는 해지할 게 없으니 두지 않는다.
-          */}
-          {canUseWorkspace(subscription.status) && (
-            <CancelSubscription
-              periodEnd={subscription.currentPeriodEnd}
-              isCanceling={isCanceling}
+          <div className="flex flex-col gap-7">
+            <PaymentMethodsPanel
+              method={method}
               canManage={canManage}
-              onConfirm={handleToggleCancel}
+              onChange={handleChangeMethod}
             />
-          )}
+
+            {/*
+              ⚠️ 해지 카드는 **결제 수단 바로 밑**이다. 돈에 관한 것들이 곁 컬럼에 모여 있고
+                 (플랜 → 결제 수단 → 해지), 해지는 그 이야기의 마지막이다.
+              ⚠️ 아직 못 쓰는 상태(결제 전·만료)에는 해지할 게 없으니 두지 않는다.
+            */}
+            {canUseWorkspace(subscription.status) && (
+              <CancelSubscription
+                periodEnd={subscription.currentPeriodEnd}
+                isCanceling={isCanceling}
+                canManage={canManage}
+                onConfirm={handleToggleCancel}
+              />
+            )}
+          </div>
         </div>
       </div>
     </div>
