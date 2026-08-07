@@ -150,7 +150,12 @@ export function CaptureView({ meeting }: { meeting: MeetingCaptureInfo }) {
                끝까지 자라고, 그 안에서만 스크롤이 생긴다.
           */}
           <div className="grid min-h-0 flex-1 grid-cols-1 gap-7 lg:grid-cols-[minmax(0,1fr)_360px]">
-            <TranscriptCard chunks={capture.chunks} isRecording={isRecording} isPaused={isPaused} />
+            <TranscriptCard
+              chunks={capture.chunks}
+              partial={capture.partial}
+              isRecording={isRecording}
+              isPaused={isPaused}
+            />
             <AttendeeCard attendees={meeting.attendees} />
           </div>
         </div>
@@ -166,10 +171,16 @@ export function CaptureView({ meeting }: { meeting: MeetingCaptureInfo }) {
         onOpenChange={() => setIsConfirming(false)}
         title="회의를 종료하고 요약을 진행할까요?"
         description={
+          /*
+            ⚠️ **세 줄을 비슷한 길이로 끊는다**(DESIGN §6). `요약은 백그라운드에서 진행되니
+               목록으로 돌아가 다른 일을 하셔도 됩니다`(34자)는 창 폭(약 27자)을 넘겨
+               `하셔도 / 됩니다`로 갈라졌다 — `<br />`은 넘치지 않을 때만 줄바꿈 자리를 정한다.
+            ⚠️ "기다리지 않아도 된다"는 뜻은 **백그라운드**라는 낱말이 이미 담고 있다.
+          */
           <>
             녹음이 끝나고 마지막 파일이 제출됩니다.
             <br />
-            요약은 백그라운드에서 진행되니 목록으로 돌아가 다른 일을 하셔도 됩니다.
+            요약은 백그라운드에서 진행됩니다.
             <br />
             종료한 뒤에는 다시 녹음할 수 없습니다.
           </>
@@ -185,11 +196,13 @@ export function CaptureView({ meeting }: { meeting: MeetingCaptureInfo }) {
             ⚠️ **바로 목록으로 돌려보낸다**(팀 확정). 요약 API는 응답이 오래 걸려서 서버가
                백그라운드로 돌린다 — 여기서 기다리게 두면 아무것도 못 하는 화면을 몇 분씩
                쳐다보게 된다. 창을 닫아도 안전한 일이라 붙잡을 이유가 없다(§3-3 4).
-            ⚠️ 토스트는 **한 줄(220px)**이다(DESIGN §7) — 글자 자리가 184px뿐이라 문장을 넣으면
-               잘린다. "백그라운드에서 진행한다"는 설명은 **바로 위 확인 창**이 맡는다.
-               떠나기 전에 읽는 자리가 거기라서, 사라지는 토스트보다 낫다.
+            ⚠️ 토스트가 **"백그라운드"를 말한다**(팀 확정: 목록으로 보낸 뒤에 그렇게 전한다).
+               옮겨 간 화면에서 처음 보는 말이 이거라, 여기서 안 하면 왜 목록으로 튕겼는지
+               모른 채 요약을 기다리게 된다.
+            ⚠️ 한 줄(220px)이라 글자 자리가 **184px**뿐이다(DESIGN §7) — 이 문구는 153px다.
+               더 길게 쓰려면 잘린다.
           */
-          toast.success("요약을 시작했습니다");
+          toast.success("백그라운드에서 요약 중입니다");
           router.push("/app/meeting");
         }}
       />
@@ -261,28 +274,40 @@ function EnterCard({
 /** 실시간 자막 — 화자 구분 없이 청크 단위다(§3-2) */
 function TranscriptCard({
   chunks,
+  partial,
   isRecording,
   isPaused,
 }: {
   chunks: { id: string; at: string; text: string }[];
+  partial: string;
   isRecording: boolean;
   isPaused: boolean;
 }) {
   const listRef = useRef<HTMLOListElement>(null);
+  /** 바닥에 붙어 있는가 — **새 줄이 들어오기 전** 값이라야 판정이 맞다 */
+  const isPinnedRef = useRef(true);
 
   /*
-    ⚠️ **새 문장이 오면 바닥으로 따라간다.** 안 그러면 자막이 화면 밖에서 쌓여, 진행자가
-       말할 때마다 직접 스크롤을 내려야 한다.
-    ⚠️ 위로 올려 지난 말을 읽는 중이면 **끌어내리지 않는다.** 읽던 자리를 빼앗는 게
-       놓친 한 줄보다 성가시다 — 바닥 근처에 있을 때만 따라간다.
+    ⚠️ **삽입 뒤에 거리를 재면 안 된다.** 새 문장이 이미 높이를 늘린 뒤라, 긴 문장 하나가
+       들어오면 "멀어졌다"고 잘못 읽고 따라가지 않는다 — 그래서 스크롤할 때마다 미리 적어 둔다.
+    ⚠️ 위로 올려 지난 말을 읽는 중이면 **끌어내리지 않는다.** 읽던 자리를 빼앗는 게 놓친
+       한 줄보다 성가시다.
+  */
+  const handleScroll = () => {
+    const list = listRef.current;
+    if (!list) return;
+    isPinnedRef.current = list.scrollHeight - list.scrollTop - list.clientHeight <= 80;
+  };
+
+  /*
+    ⚠️ 흐린 줄(`partial`)이 자라도 같이 따라간다 — 말하는 동안 그 줄이 화면 밖으로 나가면
+       인식되고 있는지 볼 수가 없다.
   */
   useEffect(() => {
     const list = listRef.current;
-    if (!list) return;
-    const distanceFromBottom = list.scrollHeight - list.scrollTop - list.clientHeight;
-    if (distanceFromBottom > 120) return;
+    if (!list || !isPinnedRef.current) return;
     list.scrollTop = list.scrollHeight;
-  }, [chunks.length]);
+  }, [chunks.length, partial]);
 
   return (
     <section className="border-border bg-card flex h-full min-h-0 min-w-0 flex-col overflow-hidden rounded-2xl border">
@@ -309,7 +334,7 @@ function TranscriptCard({
         </span>
       </div>
 
-      {chunks.length === 0 ? (
+      {chunks.length === 0 && !partial ? (
         /* 빈 상태 — 왜 비었는지, 무엇을 하면 되는지 말한다(DESIGN §8) */
         <div className="flex flex-1 flex-col items-center justify-center gap-2 px-7 pb-12 text-center">
           <Mic className="text-muted-foreground/50 size-6" aria-hidden />
@@ -323,25 +348,63 @@ function TranscriptCard({
       ) : (
         <ol
           ref={listRef}
-          className="flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto px-7 pb-6"
+          onScroll={handleScroll}
+          className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto px-7 pb-6"
         >
+          {/*
+            ⚠️ **시간은 왼쪽 고정폭 홈통이다** — 상세 화면의 발화 기록과 같은 모양이다.
+               같은 내용을 두 화면이 다르게 그리면 회의가 끝나는 순간 기록이 낯설어진다.
+            ⚠️ 한때 줄마다 테두리 카드에 시각을 윗줄로 올렸는데, 한 문장이 90px를 먹어
+               화면에 대여섯 줄밖에 안 들어왔다 — 실시간 자막은 **흐름이 보여야** 한다.
+            ⚠️ `자동 인식` 꼬리표를 줄마다 붙이지 않는다. 모든 줄이 같은 값이라 아무것도
+               구분하지 못하면서 자리만 먹었다 — 그 말은 카드 머리가 한 번 한다.
+          */}
           {chunks.map((chunk) => (
+            /*
+              ⚠️ **한 문장이 옅은 박스 하나다.** 줄만 그어 두니 짧은 말("그대여")에서는 글자가
+                 왼쪽 200px만 채우고 오른쪽 800px이 허옇게 비어, 화면 반쪽만 쓰는 것처럼
+                 보였다 — 박스가 폭을 끝까지 채워 주면 그 빈 자리가 면으로 읽힌다.
+              ⚠️ 시각은 박스 **안쪽 왼쪽 홈통**이다. 윗줄로 올리면 한 문장이 두 줄을 먹어
+                 한 화면에 대여섯 개밖에 안 들어온다.
+            */
             <li
               key={chunk.id}
-              className="border-border bg-secondary/40 rounded-lg border px-4 py-3"
+              className="border-border bg-secondary/40 flex items-baseline gap-3.5 rounded-lg border px-4 py-2.5"
             >
-              <div className="flex items-baseline justify-between gap-3">
-                <span className="text-muted-foreground text-[11px] leading-4 tabular-nums">
-                  {chunk.at}
-                </span>
-                {/* AI가 아니라 브라우저 받아쓰기다 — "AI"라고 쓰지 않는다(CLAUDE.md §AI 기능) */}
-                <span className="text-muted-foreground/70 shrink-0 text-[11px] leading-4">
-                  자동 인식
-                </span>
-              </div>
-              <p className="pt-1 text-[13px] leading-5 break-keep">{chunk.text}</p>
+              {/* 시각은 **참고값**이다 — 문장보다 한 단계 작고 옅게 둬서 눈이 글에 먼저 간다 */}
+              <span className="text-muted-foreground/60 w-9 shrink-0 text-[11px] leading-5 tabular-nums">
+                {chunk.at}
+              </span>
+              <p className="min-w-0 flex-1 text-[13px] leading-5 break-keep">{chunk.text}</p>
             </li>
           ))}
+
+          {/*
+            아직 확정 전인 말.
+            ⚠️ 확정된 줄과 **같은 홈통**에 두되 시각 자리는 비운다 — 아직 시각이 정해지지
+               않았고, 확정되는 순간 그 자리에 채워지며 자연스럽게 이어진다.
+            ⚠️ **기울임을 쓰지 않는다.** 한글 폰트는 이탤릭이 없어서 브라우저가 글자를 억지로
+               기울이는데(가짜 기울임), 획이 뭉개져 깨진 글씨로 보인다 — 곧 뒤집힐 값이라는 건
+               **옅은 색과 깜빡이는 점**이 말한다.
+          */}
+          {partial && (
+            /*
+              ⚠️ 확정된 줄과 **같은 박스**를 쓰되 테두리를 점선으로 둔다 — 자리는 같아서
+                 확정되는 순간 매끄럽게 이어지고, 아직 굳지 않은 값이라는 건 선이 말한다.
+            */
+            <li className="border-border/70 flex items-baseline gap-3.5 rounded-lg border border-dashed px-4 py-2.5">
+              {/*
+                시각 자리에 **듣고 있다는 표시**를 둔다. 시각은 문장이 확정될 때 정해지므로
+                아직 비어 있는데, 그냥 비워 두면 앞줄이 밀린 것처럼 보였다.
+              */}
+              <span className="flex w-9 shrink-0 items-center pt-2" aria-hidden>
+                <span className="bg-foreground/40 size-1.5 animate-pulse rounded-full" />
+              </span>
+              <p className="text-muted-foreground min-w-0 flex-1 text-[13px] leading-5 break-keep">
+                {partial}
+              </p>
+            </li>
+          )}
         </ol>
       )}
     </section>
