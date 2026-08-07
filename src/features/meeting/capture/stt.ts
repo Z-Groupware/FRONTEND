@@ -23,6 +23,15 @@ export interface SttEngine {
 export interface SttHandlers {
   /** 문장이 확정될 때마다 — 서버로도 이 단위로 보낸다(§3-3 자막 청크 전송 API) */
   onChunk(text: string): void;
+  /**
+   * 아직 확정 전인 말 — 화면에 흐리게 비춘다.
+   *
+   * ⚠️ **서버로 보내지 않는다.** 중간 결과는 말이 이어지면서 통째로 뒤집힌다 —
+   *    쌓아 두면 같은 말이 여러 번 남는다(확정본만 §3-3의 청크다).
+   * ⚠️ 이걸 보여주는 이유는 정확도가 아니라 **되짚을 기회**다. 잘못 알아들은 게 바로
+   *    보이면 진행자가 그 자리에서 다시 말할 수 있다.
+   */
+  onPartial(text: string): void;
   /** 되돌릴 수 없는 실패(권한 거부 등) — 화면이 안내를 띄운다 */
   onFatal(message: string): void;
 }
@@ -114,19 +123,31 @@ export function createSttEngine(handlers: SttHandlers): SttEngine | null {
     const instance = new Ctor();
     instance.lang = "ko-KR";
     instance.continuous = true;
-    // 확정된 문장만 올린다 — 중간 결과까지 보내면 같은 말이 여러 번 쌓인다
-    instance.interimResults = false;
+    /*
+      ⚠️ 중간 결과를 **받되 쌓지는 않는다.** 확정본만 목록에 넣고, 중간 것은 흐린 한 줄로
+         비쳤다 사라진다 — 켜 두면 말하는 동안 화면이 반응해서 마이크가 죽었는지 알 수 있다.
+    */
+    instance.interimResults = true;
 
     instance.onresult = (event) => {
+      let pending = "";
+
       for (let i = event.resultIndex; i < event.results.length; i += 1) {
         const result = event.results[i];
-        if (!result?.isFinal) continue;
-        const text = result[0]?.transcript?.trim();
+        const text = result?.[0]?.transcript?.trim();
         if (!text) continue;
-        // 한 문장이라도 받았으면 정상이다 — 물러설 시간을 되돌린다
-        emptyRestarts = 0;
-        handlers.onChunk(text);
+
+        if (result?.isFinal) {
+          // 한 문장이라도 받았으면 정상이다 — 물러설 시간을 되돌린다
+          emptyRestarts = 0;
+          handlers.onChunk(text);
+        } else {
+          pending = pending ? `${pending} ${text}` : text;
+        }
       }
+
+      // 확정으로 넘어간 순간 흐린 줄을 비운다 — 안 비우면 같은 말이 두 줄로 보인다
+      handlers.onPartial(pending);
     };
 
     instance.onerror = (event) => {
@@ -180,6 +201,7 @@ export function createSttEngine(handlers: SttHandlers): SttEngine | null {
     },
     stop() {
       stopped = true;
+      handlers.onPartial("");
       if (retryTimer !== null) {
         window.clearTimeout(retryTimer);
         retryTimer = null;
