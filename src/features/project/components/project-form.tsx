@@ -238,6 +238,7 @@ export function ProjectForm({ action, teamOptions, cancelHref }: ProjectFormProp
             type="date"
             value={startDate}
             onChange={(event) => setStartDate(event.target.value)}
+            max={dueDate || undefined}
             aria-invalid={Boolean(state.errors.startDate)}
           />
           {state.errors.startDate && (
@@ -255,6 +256,7 @@ export function ProjectForm({ action, teamOptions, cancelHref }: ProjectFormProp
             type="date"
             value={dueDate}
             onChange={(event) => setDueDate(event.target.value)}
+            min={startDate || undefined}
             aria-invalid={Boolean(state.errors.dueDate)}
           />
           {state.errors.dueDate && (
