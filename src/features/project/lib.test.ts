@@ -26,6 +26,7 @@ function project(overrides: Partial<ProjectListItem>): ProjectListItem {
     departments: [],
     actionTotal: 0,
     actionDone: 0,
+    startDate: "2026-08-01",
     dueDate: "2026-09-01",
     status: PROJECT_STATUS.IN_PROGRESS,
     ...overrides,

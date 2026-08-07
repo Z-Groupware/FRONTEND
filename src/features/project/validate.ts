@@ -25,7 +25,12 @@ export function validateProjectDraft(draft: ProjectDraft): ProjectFormErrors {
     errors.description = `세부 설명은 ${PROJECT_DESCRIPTION_MAX_LENGTH}자를 넘을 수 없어요`;
   }
 
+  if (!draft.startDate.trim()) errors.startDate = "시작일을 선택해 주세요";
+
   if (!draft.dueDate.trim()) errors.dueDate = "마감 기한을 선택해 주세요";
+  else if (draft.startDate.trim() && draft.dueDate < draft.startDate) {
+    errors.dueDate = "마감 기한은 시작일보다 앞설 수 없어요";
+  }
 
   if (draft.teamNames.filter((team) => team.trim()).length === 0) {
     errors.teamNames = "참여 팀을 1개 이상 지정해 주세요";

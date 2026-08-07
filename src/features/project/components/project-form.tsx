@@ -57,6 +57,7 @@ export function ProjectForm({ action, teamOptions, cancelHref }: ProjectFormProp
   const [name, setName] = useState("");
   const [tag, setTag] = useState("");
   const [description, setDescription] = useState("");
+  const [startDate, setStartDate] = useState("");
   const [dueDate, setDueDate] = useState("");
   const [tagColor, setTagColor] = useState<TagColorName>(TAG_NAMES[0]);
   const [colorPickerOpen, setColorPickerOpen] = useState(false);
@@ -68,6 +69,7 @@ export function ProjectForm({ action, teamOptions, cancelHref }: ProjectFormProp
     name.trim().length > 0 &&
     tag.length > 0 &&
     description.trim().length > 0 &&
+    startDate.trim().length > 0 &&
     dueDate.trim().length > 0 &&
     teamRows.length > 0 &&
     teamRows.every((row) => row.team.trim().length > 0);
@@ -155,7 +157,7 @@ export function ProjectForm({ action, teamOptions, cancelHref }: ProjectFormProp
         )}
       </div>
 
-      <div className="grid grid-cols-[minmax(0,1fr)_160px] items-start gap-6">
+      <div className="grid grid-cols-[minmax(0,1fr)_120px_120px] items-start gap-4">
         <div className="flex flex-col gap-1.5">
           <Label>
             태그 색상 <span className="text-destructive">*</span>
@@ -222,6 +224,25 @@ export function ProjectForm({ action, teamOptions, cancelHref }: ProjectFormProp
               </PopoverContent>
             </Popover>
           </div>
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          {/* ⚠️ 화면엔 노출하지 않는다 — 상태·타임라인 계산용 값일 뿐 마감일처럼 보여줄 정보가
+              아니다(사용자 확인). 생성 폼에서만 받는다. */}
+          <Label htmlFor="project-start-date">
+            시작일 <span className="text-destructive">*</span>
+          </Label>
+          <Input
+            id="project-start-date"
+            name="startDate"
+            type="date"
+            value={startDate}
+            onChange={(event) => setStartDate(event.target.value)}
+            aria-invalid={Boolean(state.errors.startDate)}
+          />
+          {state.errors.startDate && (
+            <p className="text-destructive text-xs">{state.errors.startDate}</p>
+          )}
         </div>
 
         <div className="flex flex-col gap-1.5">
