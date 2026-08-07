@@ -2,6 +2,7 @@ import { cn } from "@/lib/utils";
 
 import type { OrgChart, OrgTeam } from "../org-types";
 import { OrgMemberNode } from "./org-member-node";
+import { PeopleSearch } from "./people-search";
 
 /**
  * 구성원 조직도(`/app/people`).
@@ -40,21 +41,41 @@ const BRANCH_OFFSET = "1.75rem";
 /** 척추가 서는 자리 — 대표 상자 아바타의 한가운데(`px-3.5` 14 + 지름 32의 절반 16)다 */
 const SPINE_OFFSET = "30px";
 
-function TeamBranch({ team, isLast }: { team: OrgTeam; isLast: boolean }) {
+function TeamBranch({
+  team,
+  isLast,
+  hasOwner,
+}: {
+  team: OrgTeam;
+  isLast: boolean;
+  hasOwner: boolean;
+}) {
   return (
-    <li className="relative pt-4 pl-7">
-      {/* 세로 척추 — 마지막 팀은 제 가지까지만 내려온다 */}
-      <span
-        className={cn("bg-border absolute top-0 left-0 w-px", !isLast && "h-full")}
-        style={isLast ? { height: BRANCH_OFFSET } : undefined}
-        aria-hidden
-      />
-      {/* 가로 가지 */}
-      <span
-        className="bg-border absolute left-0 h-px w-5"
-        style={{ top: BRANCH_OFFSET }}
-        aria-hidden
-      />
+    /*
+      ⚠️ 이을 곳이 없으면 **들여쓰지도 않는다.** 대표가 검색에 안 걸리면 조직도에 대표가
+         없는데, 그때도 들여쓰면 왼쪽이 빈 채로 팀만 밀려 있다.
+    */
+    <li className={cn("relative pt-4", hasOwner && "pl-7")}>
+      {/*
+        ⚠️ **대표가 있을 때만 선을 그린다.** 없는데 그리면 아무 데도 안 닿는 선이 남아,
+           위에 뭔가 잘려 나간 것처럼 보인다(검색 결과에서 실제로 그랬다).
+      */}
+      {hasOwner && (
+        <>
+          {/* 세로 척추 — 마지막 팀은 제 가지까지만 내려온다 */}
+          <span
+            className={cn("bg-border absolute top-0 left-0 w-px", !isLast && "h-full")}
+            style={isLast ? { height: BRANCH_OFFSET } : undefined}
+            aria-hidden
+          />
+          {/* 가로 가지 */}
+          <span
+            className="bg-border absolute left-0 h-px w-5"
+            style={{ top: BRANCH_OFFSET }}
+            aria-hidden
+          />
+        </>
+      )}
 
       <h3 className="flex items-baseline gap-2 pb-2">
         <span className="text-[13px] leading-5 font-semibold">{team.name}</span>
@@ -74,8 +95,9 @@ function TeamBranch({ team, isLast }: { team: OrgTeam; isLast: boolean }) {
   );
 }
 
-export function OrgChartView({ chart }: { chart: OrgChart }) {
+export function OrgChartView({ chart, keyword }: { chart: OrgChart; keyword: string }) {
   const { owner, teams, totalCount } = chart;
+  const isSearching = keyword.trim().length > 0;
 
   return (
     <section className="border-border bg-card rounded-2xl border">
@@ -84,21 +106,40 @@ export function OrgChartView({ chart }: { chart: OrgChart }) {
           <span className="bg-foreground size-2 rounded-full" aria-hidden />
           조직도
         </h2>
+        {/*
+          ⚠️ 찾는 중이면 **찾은 수**를 적는다. 검색을 걸어 놓고 `전체 3명`이라고 하면
+             회사가 세 명인 줄 읽힌다 — 회사 전체 인원은 위 요약 카드가 말한다.
+        */}
         <p className="text-muted-foreground text-[12px] leading-4 tabular-nums">
-          전체 {totalCount}명
+          {isSearching ? `찾은 ${totalCount}명` : `전체 ${totalCount}명`}
         </p>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-3 px-7 pb-5">
+        <PeopleSearch keyword={keyword} />
       </div>
 
       {totalCount === 0 ? (
         /*
-          ⚠️ 없다는 말만 두지 않는다 — **다음에 무엇이 있어야 채워지는지**를 같이 적는다
-             (§상태 세 장). 여기서 할 수 있는 일이 없으므로 버튼은 두지 않는다.
+          ⚠️ 없다는 말만 두지 않는다 — **다음에 무엇을 하면 되는지**를 같이 적는다
+             (§상태 세 장). 못 찾은 것과 아직 아무도 없는 것은 다음 할 일이 다르다.
         */
-        <div className="px-7 pt-4 pb-10 text-center">
-          <p className="text-[13px] leading-5">아직 등록된 구성원이 없습니다.</p>
-          <p className="text-muted-foreground pt-1 text-[12px] leading-4">
-            계정이 발급되면 이 자리에 조직도가 그려집니다.
-          </p>
+        <div className="px-7 pt-2 pb-10 text-center">
+          {isSearching ? (
+            <>
+              <p className="text-[13px] leading-5">찾는 구성원이 없습니다.</p>
+              <p className="text-muted-foreground pt-1 text-[12px] leading-4">
+                이름·팀·역할·직급으로 찾습니다. 검색어를 지우면 조직도 전체가 보입니다.
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="text-[13px] leading-5">아직 등록된 구성원이 없습니다.</p>
+              <p className="text-muted-foreground pt-1 text-[12px] leading-4">
+                계정이 발급되면 이 자리에 조직도가 그려집니다.
+              </p>
+            </>
+          )}
         </div>
       ) : (
         <div className="px-7 pt-2 pb-7">
@@ -108,13 +149,14 @@ export function OrgChartView({ chart }: { chart: OrgChart }) {
             </div>
           )}
 
-          {/*
-            ⚠️ 대표가 없으면 이을 곳이 없다 — 들여쓰기도 척추도 두지 않는다.
-               아무 데도 안 닿는 선을 그리지 않는다.
-          */}
           <ul style={owner ? { marginLeft: SPINE_OFFSET } : undefined}>
             {teams.map((team, index) => (
-              <TeamBranch key={team.name} team={team} isLast={index === teams.length - 1} />
+              <TeamBranch
+                key={team.name}
+                team={team}
+                isLast={index === teams.length - 1}
+                hasOwner={owner !== null}
+              />
             ))}
           </ul>
         </div>

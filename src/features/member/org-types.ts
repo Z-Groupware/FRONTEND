@@ -63,6 +63,27 @@ export interface OrgChart {
 }
 
 /**
+ * 화면 맨 위 요약 — **검색과 무관하게 늘 회사 전체**를 센다.
+ *
+ * ⚠️ 검색어를 넣으면 조직도는 걸러지지만 이 숫자는 안 바뀐다. 여기까지 같이 줄면
+ *    "우리 회사가 3명"으로 읽힌다.
+ */
+export interface OrgSummary {
+  /** 지금 조직에 있는 사람 수 — 대표를 포함한다 */
+  totalCount: number;
+  teamCount: number;
+  /** 지금 자리에 없는 사람 — 일을 맡기기 전에 알아야 한다 */
+  vacationCount: number;
+}
+
+/** 구성원 화면이 한 번에 받는 것 */
+export interface PeopleDirectory {
+  summary: OrgSummary;
+  /** 검색어가 걸리면 걸러진 조직도다 */
+  chart: OrgChart;
+}
+
+/**
  * 팀이 없는 사람을 묶는 자리.
  *
  * ⚠️ **조용히 빠뜨리지 않으려고 둔다**(§정직성). 팀이 없는 건 원래 대표뿐이라 여기에

@@ -34,14 +34,19 @@ function AuthorityMark({ authority }: { authority: OrgMember["authority"] }) {
 }
 
 /**
- * 상태 뱃지 — **재직이 아닌 사람에게만** 단다.
+ * 상태 뱃지 — **휴직에만** 단다.
  *
- * ⚠️ 재직이 기본이라 전원에게 달면 조직도가 뱃지밭이 된다. 지금 자리에 없거나(휴직·퇴사)
- *    손이 필요한 사람(대기)만 눈에 걸리면 된다 — 생김새는 `MEMBER_STATUS_BADGE_CLASS`
- *    한 곳이 정하고, 색이 아니라 채움과 진하기로 층을 만든다(§디자인 토큰).
+ * ⚠️ **`대기`를 달지 않는다.** 그건 "휴직·오프보딩을 신청하고 승인을 기다리는" 상태인데
+ *    (§constants/member), 이 화면은 **전 구성원이 본다**. 달아 두면 아직 승인도 안 난
+ *    남의 휴직·퇴사 신청이 회사 전체에 공개된다 — 그 신청을 다루는 자리는 대표·관리자의
+ *    사원 관리(`/manage/members/:id`)다(WORKFLOW §7).
+ *    승인 전까지 그 사람은 **여전히 재직 중**이라, 여기서는 아무 표시도 안 하는 게 사실에 맞다.
+ * ⚠️ 퇴사자는 애초에 조직도에 안 선다(`isCurrentOrgMember`) — 여기까지 오지 않는다.
+ * ⚠️ 재직은 기본이라 안 단다. 생김새는 `MEMBER_STATUS_BADGE_CLASS` 한 곳이 정하고,
+ *    색이 아니라 채움과 진하기로 층을 만든다(§디자인 토큰).
  */
 function StatusMark({ status }: { status: OrgMember["status"] }) {
-  if (status === MEMBER_STATUS.ACTIVE) return null;
+  if (status !== MEMBER_STATUS.VACATION) return null;
 
   return (
     <span

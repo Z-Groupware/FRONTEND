@@ -2,7 +2,7 @@ import { AUTHORITY } from "@/constants/authority";
 import { MEMBER_STATUS } from "@/constants/member";
 
 import type { ManagedMember } from "./manage-types";
-import { buildOrgChart } from "./org-chart";
+import { buildOrgChart, isCurrentOrgMember, searchOrgMembers, summarizeOrg } from "./org-chart";
 import { NO_TEAM_LABEL } from "./org-types";
 
 /**
@@ -84,17 +84,6 @@ describe("buildOrgChart", () => {
   });
 
   /*
-    ⚠️ 나간 사람을 뺄지는 팀이 정한 적이 없다. 여기서 거르면 화면이 정해지지 않은 정책을
-       단언하게 된다 — 뱃지로 알리고 판단은 하지 않는다.
-  */
-  it("퇴사자도 조직도에 남긴다 — 거르는 건 정해진 규칙이 아니다", () => {
-    const resigned = member({ id: 9, name: "나간사람", status: MEMBER_STATUS.RESIGNED });
-    const chart = buildOrgChart([LEADER, resigned]);
-
-    expect(chart.teams[0]?.members.map((m) => m.name)).toContain("나간사람");
-  });
-
-  /*
     ⚠️ 팀이 없는 건 원래 대표뿐이다. 여기 사람이 담기면 명부가 이상한 것인데, 안 그리면
        전체 인원과 화면에 보이는 수가 어긋나 아무도 못 알아챈다.
   */
@@ -135,5 +124,107 @@ describe("buildOrgChart", () => {
 
   it("아무도 없으면 빈 조직도다", () => {
     expect(buildOrgChart([])).toEqual({ owner: null, teams: [], totalCount: 0 });
+  });
+});
+
+describe("isCurrentOrgMember", () => {
+  /*
+    ⚠️ 조직도는 **지금 조직**이다. 나간 사람이 팀에 남으면 `개발팀 3명`이 틀린 말이 된다.
+       "나간 사람은 목록에 남는다"는 규칙이 지키려는 건 기록의 출처이고, 그 자리는
+       사원 관리와 액션·회의 이력이지 여기가 아니다.
+  */
+  it("퇴사자는 조직도에서 뺀다", () => {
+    expect(
+      isCurrentOrgMember(member({ id: 9, name: "나간사람", status: MEMBER_STATUS.RESIGNED })),
+    ).toBe(false);
+  });
+
+  /*
+    ⚠️ 신청했을 뿐 승인 전이라 **여전히 재직 중**이다. 신청했다는 이유로 조직에서 빼면
+       화면이 앞서간다.
+  */
+  it("승인 대기 중인 사람은 그대로 남긴다 — 아직 재직 중이다", () => {
+    expect(
+      isCurrentOrgMember(member({ id: 3, name: "이하윤", status: MEMBER_STATUS.WAITING })),
+    ).toBe(true);
+  });
+
+  it("휴직자도 남긴다 — 자리에 없을 뿐 조직에는 있다", () => {
+    expect(
+      isCurrentOrgMember(member({ id: 5, name: "쉬는사람", status: MEMBER_STATUS.VACATION })),
+    ).toBe(true);
+  });
+});
+
+describe("searchOrgMembers", () => {
+  const ROSTER = [OWNER, LEADER, FRONTEND, member({ id: 4, name: "박도현", roleLabel: "백엔드" })];
+
+  it("검색어가 없으면 그대로 돌려준다", () => {
+    expect(searchOrgMembers(ROSTER, "  ")).toHaveLength(4);
+  });
+
+  it("이름으로 찾는다", () => {
+    expect(searchOrgMembers(ROSTER, "하윤").map((m) => m.name)).toEqual(["이하윤"]);
+  });
+
+  /*
+    ⚠️ **역할·직급으로 찾는 게 이 화면의 핵심이다.** "프론트엔드가 누구지"로 들어오는
+       자리라, 사원 관리의 검색(이름·팀·이메일)을 그대로 쓰면 못 찾는다.
+  */
+  it("역할로 찾는다 — 이 화면에서 가장 많이 쓰는 길이다", () => {
+    expect(searchOrgMembers(ROSTER, "프론트").map((m) => m.name)).toEqual(["이하윤"]);
+  });
+
+  it("직급으로 찾는다", () => {
+    expect(searchOrgMembers(ROSTER, "팀장").map((m) => m.name)).toEqual(["김서준"]);
+  });
+
+  it("팀으로 찾는다", () => {
+    expect(searchOrgMembers(ROSTER, "개발팀")).toHaveLength(3);
+  });
+
+  it("대소문자를 가리지 않는다", () => {
+    const english = member({ id: 6, name: "Sam", roleLabel: "Backend" });
+
+    expect(searchOrgMembers([english], "backend")).toHaveLength(1);
+  });
+
+  it("역할이 없는 사람 때문에 터지지 않는다", () => {
+    expect(searchOrgMembers([OWNER], "없")).toHaveLength(0);
+  });
+});
+
+describe("summarizeOrg", () => {
+  it("대표를 포함해 전체를 세고, 팀은 대표를 빼고 센다", () => {
+    const summary = summarizeOrg([
+      OWNER,
+      LEADER,
+      member({ id: 5, name: "최유진", teamName: "마케팅팀" }),
+    ]);
+
+    expect(summary.totalCount).toBe(3);
+    expect(summary.teamCount).toBe(2);
+  });
+
+  it("휴직자를 센다", () => {
+    const summary = summarizeOrg([
+      LEADER,
+      member({ id: 5, name: "쉬는사람", status: MEMBER_STATUS.VACATION }),
+    ]);
+
+    expect(summary.vacationCount).toBe(1);
+  });
+
+  /*
+    ⚠️ 승인 대기는 **안 센다.** 아직 아무 일도 일어나지 않았고, 그건 대표·관리자가
+       사원 관리에서 다룰 일이다(WORKFLOW §7).
+  */
+  it("승인 대기는 휴직으로 세지 않는다", () => {
+    const summary = summarizeOrg([
+      LEADER,
+      member({ id: 3, name: "이하윤", status: MEMBER_STATUS.WAITING }),
+    ]);
+
+    expect(summary.vacationCount).toBe(0);
   });
 });

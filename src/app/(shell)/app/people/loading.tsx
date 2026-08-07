@@ -1,60 +1,81 @@
 import { Skeleton } from "@/components/ui/skeleton";
 
 /**
- * ⚠️ **본문과 같은 골격**으로 그린다 — 폭(1440)·카드 여백(`px-7`)·팀 칸 폭(300)·마디 높이가
+ * ⚠️ **본문과 같은 골격**으로 그린다 — 카드 두 장·폭(1440)·카드 여백(`px-7`)·검색줄·칸 폭이
  *    본문과 같아야 로딩이 끝날 때 화면이 안 튄다(§DESIGN 4).
- * ⚠️ 팀 수는 미리 알 수 없다. 목의 회사가 네 팀이라 네 칸으로 두되, **연결선까지 그린다** —
- *    선이 로딩에만 없으면 본문으로 넘어갈 때 팀 칸이 통째로 아래로 밀린다.
+ * ⚠️ 팀 수는 미리 알 수 없다. 목의 회사가 네 팀이라 네 가지로 두되, **연결선까지 그린다** —
+ *    선이 로딩에만 없으면 본문으로 넘어갈 때 팀이 통째로 왼쪽으로 밀린다.
  */
 
 /** 사람 한 명 상자의 높이 — 아바타(32) + 위아래 여백(24) + 보더(2) */
 const NODE_HEIGHT_CLASS = "h-[62px]";
 
-const TEAM_COLUMN_CLASS = "w-[300px] shrink-0 px-3";
+/** 척추가 서는 자리 · 가지가 갈라지는 높이 — 본문과 같은 값이다 */
+const SPINE_OFFSET = "30px";
+const BRANCH_OFFSET = "1.75rem";
+
+const NODE_GRID_CLASS = "grid grid-cols-[repeat(auto-fill,minmax(248px,1fr))] gap-2";
 
 export default function Loading() {
   return (
     <main className="min-h-0 flex-1 overflow-y-auto px-8 py-7">
-      <div className="mx-auto w-full max-w-[1440px]">
+      <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-7">
+        {/* 요약 카드 */}
+        <section className="border-border bg-card rounded-2xl border">
+          <div className="px-7 pt-6 pb-3">
+            <Skeleton className="h-7 w-24" />
+          </div>
+          <div className="grid gap-6 px-7 pt-2 pb-7 lg:grid-cols-3 lg:gap-0">
+            {[0, 1, 2].map((cell) => (
+              <div key={cell} className="flex flex-col items-center gap-1 lg:px-6">
+                <Skeleton className="h-4 w-16" />
+                <Skeleton className="h-9 w-20" />
+                <Skeleton className="h-4 w-14" />
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* 조직도 카드 */}
         <section className="border-border bg-card rounded-2xl border">
           <div className="flex items-baseline justify-between gap-3 px-7 pt-6 pb-3">
             <Skeleton className="h-7 w-20" />
             <Skeleton className="h-4 w-16" />
           </div>
+          <div className="px-7 pb-5">
+            <Skeleton className="h-9 w-full max-w-[280px] rounded-md" />
+          </div>
 
           <div className="px-7 pt-2 pb-7">
-            <div className="flex flex-col items-center">
-              <div className={TEAM_COLUMN_CLASS}>
-                <Skeleton className={`${NODE_HEIGHT_CLASS} rounded-xl`} />
-              </div>
-              <span className="bg-border h-6 w-px" aria-hidden />
+            <div className={NODE_GRID_CLASS}>
+              <Skeleton className={`${NODE_HEIGHT_CLASS} rounded-xl`} />
             </div>
 
-            <div className="overflow-x-auto">
-              <ul className="mx-auto flex w-fit">
-                {[0, 1, 2, 3].map((column) => (
-                  <li
-                    key={column}
-                    className={`relative flex flex-col items-center ${TEAM_COLUMN_CLASS}`}
-                  >
-                    <span
-                      className={`bg-border absolute top-0 h-px ${column === 0 ? "left-1/2" : "left-0"} ${column === 3 ? "right-1/2" : "right-0"}`}
-                      aria-hidden
-                    />
-                    <span className="bg-border h-6 w-px" aria-hidden />
+            <ul style={{ marginLeft: SPINE_OFFSET }}>
+              {[0, 1, 2, 3].map((branch) => (
+                <li key={branch} className="relative pt-4 pl-7">
+                  <span
+                    className="bg-border absolute top-0 left-0 w-px"
+                    style={branch === 3 ? { height: BRANCH_OFFSET } : { height: "100%" }}
+                    aria-hidden
+                  />
+                  <span
+                    className="bg-border absolute left-0 h-px w-5"
+                    style={{ top: BRANCH_OFFSET }}
+                    aria-hidden
+                  />
 
-                    <div className="flex w-full flex-col gap-2">
-                      <div className="flex items-baseline justify-between gap-2 px-0.5">
-                        <Skeleton className="h-5 w-20" />
-                        <Skeleton className="h-4 w-8" />
-                      </div>
-                      <Skeleton className={`${NODE_HEIGHT_CLASS} rounded-xl`} />
-                      <Skeleton className={`${NODE_HEIGHT_CLASS} rounded-xl`} />
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </div>
+                  <div className="flex items-baseline gap-2 pb-2">
+                    <Skeleton className="h-5 w-20" />
+                    <Skeleton className="h-4 w-8" />
+                  </div>
+                  <div className={NODE_GRID_CLASS}>
+                    <Skeleton className={`${NODE_HEIGHT_CLASS} rounded-xl`} />
+                    <Skeleton className={`${NODE_HEIGHT_CLASS} rounded-xl`} />
+                  </div>
+                </li>
+              ))}
+            </ul>
           </div>
         </section>
       </div>
