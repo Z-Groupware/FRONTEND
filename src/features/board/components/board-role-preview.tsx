@@ -45,8 +45,8 @@ export function BoardRolePreview({
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="border-warning/40 bg-warning/5 flex items-center gap-2 rounded-lg border px-3.5 py-2 text-xs">
+    <div className="flex min-h-0 flex-1 flex-col gap-4">
+      <div className="border-warning/40 bg-warning/5 flex shrink-0 items-center gap-2 rounded-lg border px-3.5 py-2 text-xs">
         <span className="text-warning font-semibold">⚠️ 임시 미리보기</span>
         <span className="text-muted-foreground">
           로그인 붙기 전까지만 있는 개발용 토글입니다. 실제로는 로그인한 권한 하나로만 보입니다.

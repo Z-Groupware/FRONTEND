@@ -97,8 +97,8 @@ export function BoardView({ boardType, cards, todayIso }: BoardViewProps) {
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex justify-end">
+    <div className="flex min-h-0 flex-1 flex-col gap-4">
+      <div className="flex shrink-0 justify-end">
         <Button
           size="sm"
           disabled={changeCount === 0}
@@ -110,7 +110,7 @@ export function BoardView({ boardType, cards, todayIso }: BoardViewProps) {
       </div>
 
       <DndContext sensors={sensors} onDragOver={handleDragOver} onDragEnd={handleDragEnd}>
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid min-h-0 flex-1 grid-cols-3 gap-4">
           {BOARD_COLUMNS.map((columnId) => (
             <BoardColumn
               key={columnId}
