@@ -6,7 +6,7 @@ import { MEMBER_STATUS_BADGE_CLASS, MEMBER_STATUS_LABEL } from "@/constants/memb
 import { formatYearMonthDay } from "@/lib/date";
 import { cn } from "@/lib/utils";
 
-import { canChangeGradeOf } from "../grade";
+import { GRADE_LOCK_NOTE, gradeLockOf } from "../grade";
 import type { ManagedMember } from "../manage-types";
 
 /**
@@ -25,6 +25,7 @@ import type { ManagedMember } from "../manage-types";
  *    오히려 어색하다 — 목록 표에서만 `-`로 채운다.
  */
 export function MemberProfileCard({ member }: { member: ManagedMember }) {
+  const lock = gradeLockOf(member);
   const rows = [
     { label: "이메일", value: member.email },
     // ⚠️ 팀 안의 세부 라벨이다 — 권한(위 배지)과 다른 값이라 줄을 나눈다(WORKFLOW §9)
@@ -78,13 +79,15 @@ export function MemberProfileCard({ member }: { member: ManagedMember }) {
         </div>
 
         {/*
-          ⚠️ **왜 고칠 칸이 없는지 여기서 말한다.** 대표에게는 직급·권한 카드를 안 그리는데,
-             아무 말도 없으면 보는 사람은 화면이 덜 그려진 줄 안다 — 카드를 하나 더 세우는
-             대신(그 카드는 아무 일도 안 한다) 그 사람 카드가 한 줄로 답한다.
+          ⚠️ **왜 고칠 칸이 없는지 여기서 말한다.** 잠긴 사람에게는 직급·권한 카드를 안
+             그리는데, 아무 말도 없으면 보는 사람은 화면이 덜 그려진 줄 안다 — 카드를 하나 더
+             세우는 대신(그 카드는 아무 일도 안 한다) 그 사람 카드가 한 줄로 답한다.
+          ⚠️ 문구를 여기 박지 않는다. 잠기는 이유가 대표 하나뿐이 아니라 퇴사도 있어서,
+             한 문장만 두면 퇴사자에게 "대표 계정은…"이라고 말하게 된다.
         */}
-        {!canChangeGradeOf(member) && (
+        {lock && (
           <p className="text-muted-foreground/80 pt-1 text-center text-[12px] leading-4 break-keep">
-            대표 계정은 직급·권한을 여기서 바꿀 수 없습니다.
+            {GRADE_LOCK_NOTE[lock]}
           </p>
         )}
       </section>

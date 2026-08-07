@@ -7,15 +7,11 @@ import { AUTHORITY, POSITION_AUTHORITIES } from "@/constants/authority";
 import { getCompanySetting } from "@/features/company/server";
 import { getViewer } from "@/features/shell/viewer";
 import { todayIso } from "@/lib/date";
-import {
-  canApproveFinal,
-  canChangeMemberGrade,
-  canGrantAdmin,
-  canIssueAccount,
-} from "@/lib/permission";
+import { canApproveFinal, canChangeMemberGrade, canIssueAccount } from "@/lib/permission";
 import { isMock } from "@/mocks/config";
 
 import { isEmailTaken, validateAccount } from "./account-validate";
+import { GRADE_LOCK_NOTE, gradeLockOf } from "./grade";
 import { getManagedMember, listManagedMembers } from "./manage-server";
 import type {
   AccountDraft,
@@ -75,8 +71,8 @@ async function gate(
  * ⚠️ 권한 값을 **화이트리스트로 본다.** 화면 셀렉트는 Leader·Member만 주지만 Server Action은
  *    주소만 알면 직접 부를 수 있다(§권한: 화면 숨김은 보안이 아니다) — 없으면 아무나
  *    자기 계정을 OWNER로 올릴 수 있다.
- * ⚠️ **Owner에게는 Admin을 켜지 않는다**(`canGrantAdmin`). 이미 다 되는 사람에게 겸직을
- *    붙이면 "Admin을 빼면 권한이 줄어든다"는 오해가 생긴다.
+ * ⚠️ **잠긴 사람은 아예 막는다**(`gradeLockOf`) — 대표와 퇴사자다. 화면이 폼을 안 그리는
+ *    것과 같은 판정을 서버가 다시 본다.
  */
 export async function changeMemberGradeAction(
   id: number,
@@ -119,9 +115,13 @@ export async function changeMemberGradeAction(
   */
   const target = await getManagedMember(id);
   if (!target) return { isSuccess: false, message: "없는 사원입니다" };
-  if (!canGrantAdmin({ role: target.member.authority })) {
-    return { isSuccess: false, message: "대표 계정은 이 화면에서 바꿀 수 없습니다" };
-  }
+  /*
+    ⚠️ 잠긴 이유(대표 · 퇴사)는 **화면과 같은 판정**을 쓴다. 두 곳이 각자 세면 화면은 폼을
+       감췄는데 액션은 받아 주는 구멍이 생긴다 — 퇴사자가 정확히 그랬다: 최종 승인 직후
+       카드가 남아 있어 로그인도 못 하는 계정에 Admin을 얹을 수 있었다.
+  */
+  const lock = gradeLockOf(target.member);
+  if (lock) return { isSuccess: false, message: GRADE_LOCK_NOTE[lock] };
 
   /*
     ⚠️ 역할은 **그 사람 팀의 것만** 붙는다. 화면은 그 팀 역할만 주지만 Server Action은

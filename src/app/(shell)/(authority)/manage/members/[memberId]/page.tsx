@@ -56,43 +56,47 @@ export default async function ManageMemberDetailPage({
     <div className="flex-1 overflow-y-auto px-8 py-7">
       <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-7">
         {/*
-          ⚠️ 승인 카드가 **맨 위 전폭**이다. 이 화면에 온 이유가 그것이고, 놓치면 사람이
-             기다린다 — 오른쪽 아래에 두면 담당 액션을 먼저 읽고 스크롤해야 보인다.
-          ⚠️ 신청이 있을 때만 그린다. 빈 카드를 두면 늘 처리할 게 있는 것처럼 보인다.
-          ⚠️ Admin 겸직자에게도 **카드는 보이되 버튼만 없다** — 무슨 일이 진행 중인지는
-             알아야 계정 발급·직급 변경을 할 때 헷갈리지 않는다(WORKFLOW §11).
-        */}
-        {detail.pendingHandover && (
-          <HandoverApprovalCard
-            memberId={detail.member.id}
-            memberName={detail.member.name}
-            handover={detail.pendingHandover}
-            canApprove={canApproveFinal(viewer)}
-          />
-        )}
-
-        {/*
-          ⚠️ 곁 컬럼은 **360px**이다(DESIGN: 곁 컬럼 고정폭).
-          ⚠️ **읽는 것이 위, 고치는 것이 아래다.** 이 화면에 들어오는 대부분은 이 사람이
-             누구이고 무엇을 맡고 있는지 보러 온다 — 직급·권한을 실제로 바꾸는 건 드물다.
-             폼을 오른쪽 맨 위에 두니 고를 게 셋뿐인 칸이 본 칸의 머리를 차지하고 정작
-             담당 액션이 그 아래로 밀렸다.
-          ⚠️ **왼쪽 칸으로도 내리지 않는다.** 거기로 옮겼더니 왼쪽만 카드 셋으로 길어지고
-             오른쪽은 액션 카드 하나만 남아 통째로 비었다 — 게다가 폼이 접힌 화면 밖으로
-             내려가 [저장]을 보려면 스크롤해야 했다.
+          ⚠️ 곁 컬럼은 **360px**이다(DESIGN: 곁 컬럼 고정폭). 사람 카드는 폭이 늘어나도
+             얻는 게 없다.
+          ⚠️ **왼쪽은 이 사람, 오른쪽은 이 사람을 두고 할 일이다.** 직급·권한은 그 사람에게
+             붙은 값이라 이름·이메일·입사일 바로 아래에 이어 붙는다 — 오른쪽 머리에 두면
+             고를 게 셋뿐인 폼이 본 칸을 차지하고 정작 승인·액션이 아래로 밀린다.
+          ⚠️ 폼이 좁은 칸에 들어가도 칸이 안 잘린다 — 카드가 `@container`로 제 폭을 보고
+             한 열로 접는다(`member-grade-card`).
           ⚠️ 폼을 전폭에 두지 않는다 — 입력칸만 넓어지고 라벨과 값이 멀어진다.
         */}
         <div className="grid grid-cols-1 items-start gap-7 lg:grid-cols-[360px_minmax(0,1fr)]">
-          <MemberProfileCard member={detail.member} />
-
           <div className="flex flex-col gap-7">
-            <MemberActionList actions={detail.actions} />
+            <MemberProfileCard member={detail.member} />
             <MemberGradeCard
               member={detail.member}
               canEdit={canChangeMemberGrade(viewer)}
               positionNames={positionNames}
               roleOptions={roleOptions}
             />
+          </div>
+
+          <div className="flex flex-col gap-7">
+            {/*
+              ⚠️ 승인 카드는 **곁 컬럼 옆, 담당 액션 바로 위**다. 한때 맨 위 전폭에 띄웠는데,
+                 폭이 1440까지 늘어난 카드에 값이 셋뿐이라 표가 허옇게 비었고 아래 칸들과
+                 폭이 달라 화면이 두 겹으로 끊겼다.
+              ⚠️ 그래도 **담당 액션보다는 위다.** 인계 액션이 몇 건인지 말하는 카드라
+                 그 목록 바로 앞에 붙어야 두 값이 이어져 읽힌다.
+              ⚠️ 신청이 있을 때만 그린다. 빈 카드를 두면 늘 처리할 게 있는 것처럼 보인다.
+              ⚠️ Admin 겸직자에게도 **카드는 보이되 버튼만 없다** — 무슨 일이 진행 중인지는
+                 알아야 계정 발급·직급 변경을 할 때 헷갈리지 않는다(WORKFLOW §11).
+            */}
+            {detail.pendingHandover && (
+              <HandoverApprovalCard
+                memberId={detail.member.id}
+                memberName={detail.member.name}
+                handover={detail.pendingHandover}
+                canApprove={canApproveFinal(viewer)}
+              />
+            )}
+
+            <MemberActionList actions={detail.actions} />
           </div>
         </div>
       </div>
