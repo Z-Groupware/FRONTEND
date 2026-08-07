@@ -139,14 +139,20 @@ export function MemberGradeCard({
            멀어져 읽고 쓰기가 나빠진다(§폼 규격을 둔 이유와 같다).
       */}
       <div className="border-border border-t px-7 py-5">
-        <div className="flex max-w-[640px] flex-col gap-4">
+        <div className="flex max-w-[760px] flex-col gap-4">
           <>
             {/*
                 ⚠️ **권한·직급을 두 열로** 놓는다(§디자인 토큰: 폼 2열). 한 줄에 하나씩 쌓으면
                    카드는 넓은데 칸은 상한에 묶여 오른쪽 절반이 통째로 비고, 카드만 길어져
                    왼쪽 프로필 칸과 높이가 안 맞는다. 좁아지면 한 열로 접힌다.
               */}
-            <div className="grid gap-4 sm:grid-cols-2">
+            {/*
+              ⚠️ **셋을 한 줄에 놓는다.** 두 열로 두니 `역할`만 다음 줄 왼쪽에 혼자 남아
+                 오른쪽이 비고 카드만 세로로 길어졌다 — 고를 게 셋뿐인데 카드가 화면 절반을
+                 먹었다. 셋은 같은 성격(그 사람이 무엇으로 불리는가)이라 한 줄이 읽기에도 맞는다.
+              ⚠️ 좁아지면 한 열로 접힌다(`sm:`) — 칸이 좁아져 값이 잘리는 것보다 낫다.
+            */}
+            <div className="grid gap-4 sm:grid-cols-3">
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="member-authority">권한</Label>
                 <Select
