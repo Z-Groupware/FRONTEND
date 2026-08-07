@@ -25,6 +25,7 @@ function readDraft(formData: FormData): ProjectDraft {
     tag: String(formData.get("tag") ?? "").toUpperCase(),
     description: String(formData.get("description") ?? ""),
     tagColor: String(formData.get("tagColor") ?? "slate") as ProjectDraft["tagColor"],
+    startDate: String(formData.get("startDate") ?? ""),
     dueDate: String(formData.get("dueDate") ?? ""),
     teamNames: formData.getAll("teamNames").map(String),
     attachmentName: String(formData.get("attachmentName") ?? "") || undefined,
