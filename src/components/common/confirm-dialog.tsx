@@ -48,6 +48,11 @@ interface ConfirmDialogProps {
   isPending?: boolean;
   /** 진행 중에 보여줄 실행 버튼 문구 — 없으면 `confirmLabel`을 그대로 쓴다 */
   pendingLabel?: string;
+  /**
+   * 실행 버튼만 잠근다 — `children`에 **채워야 할 칸**이 있을 때 쓴다(반려 사유).
+   * ⚠️ 취소는 안 잠근다. 못 채워서 못 나가는 창이 되면 갇힌다.
+   */
+  isConfirmDisabled?: boolean;
   onConfirm: () => void;
 }
 
@@ -79,6 +84,7 @@ export function ConfirmDialog({
   mark,
   isPending,
   pendingLabel,
+  isConfirmDisabled,
   onConfirm,
 }: ConfirmDialogProps) {
   return (
@@ -130,7 +136,7 @@ export function ConfirmDialog({
           <Button
             type="button"
             variant={isDestructive ? "destructive" : "ink"}
-            disabled={isPending}
+            disabled={isPending || isConfirmDisabled}
             onClick={onConfirm}
             className={
               isDestructive

@@ -46,8 +46,6 @@ export function HandoverApprovalCard({
   /** OWNER만 참이다 — Admin 겸직자는 화면엔 들어와도 이 버튼이 없다(WORKFLOW §11) */
   canApprove: boolean;
 }) {
-  /** 반려 사유를 적는 중인가 */
-  const [isRejecting, setIsRejecting] = useState(false);
   const [reason, setReason] = useState("");
   /**
    * 지금 확인을 기다리는 일.
@@ -57,15 +55,14 @@ export function HandoverApprovalCard({
   const [confirming, setConfirming] = useState<"approve" | "reject" | null>(null);
   const [isPending, startTransition] = useTransition();
   /*
-    ⚠️ 폼을 열고 닫을 때 **포커스를 옮긴다.** 안 옮기면 사라진 버튼에 있던 포커스가 body로
-       떨어져, 키보드 사용자는 다음 Tab이 어디로 갈지 알 수 없다(§a11y).
+    ⚠️ 창이 열리면 **사유 칸에 포커스를 준다.** 안 주면 포커스가 창 껍데기에 머물러,
+       키보드 사용자는 적을 자리를 Tab으로 찾아 들어가야 한다(§a11y).
   */
   const reasonRef = useRef<HTMLTextAreaElement>(null);
-  const rejectRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
-    if (isRejecting) reasonRef.current?.focus();
-  }, [isRejecting]);
+    if (confirming === "reject") reasonRef.current?.focus();
+  }, [confirming]);
 
   const isVacation = handover.type === HANDOVER_TYPE.VACATION;
   const typeLabel = HANDOVER_TYPE_LABEL[handover.type];
@@ -78,7 +75,6 @@ export function HandoverApprovalCard({
         return;
       }
       setConfirming(null);
-      setIsRejecting(false);
       setReason("");
       toast.success(done);
     });
@@ -152,98 +148,28 @@ export function HandoverApprovalCard({
           </Link>
         )}
 
-        {isRejecting ? (
-          /*
-            ⚠️ **한 걸음이 새로 열린 것으로 보여야 한다.** 전에는 입력칸 하나가 카드 본문에
-               불쑥 끼어들어, 방금 무슨 일이 일어났는지가 안 읽혔다 — 테두리로 묶고
-               제목을 달아 "지금은 사유를 적는 자리"라고 말한다.
-            ⚠️ 라벨을 `sr-only`로 감추지 않는다. 화면에도 보여야 무엇을 적는 칸인지 알고,
-               스크린 리더와 눈이 같은 것을 읽는다(§a11y).
-            ⚠️ **폭을 묶는다**(720). 카드 전폭이면 한 줄이 1200px가 되어 눈이 다음 줄을 못 찾고,
-               글자 수와 버튼이 양 끝으로 밀려 한 덩어리로 안 읽힌다(§레이아웃: 읽는 글은 좁게).
-          */
-          <div className="border-destructive/30 bg-destructive/[0.03] flex max-w-[720px] flex-col gap-2.5 rounded-lg border p-4">
-            <div className="flex flex-col gap-1">
-              <Label htmlFor="reject-reason" className="text-[13px] leading-5">
-                반려 사유
-              </Label>
-              {/* ⚠️ **어디로 가는 글인지 적는다.** 남이 읽는 줄 모르면 메모처럼 쓴다 */}
-              <p className="text-muted-foreground text-[12px] leading-4 break-keep">
-                신청한 {memberName} 님에게 그대로 전달됩니다. 무엇을 고쳐 다시 올려야 하는지 적어
-                주세요.
-              </p>
-            </div>
-
-            <textarea
-              ref={reasonRef}
-              id="reject-reason"
-              value={reason}
-              onChange={(event) => setReason(event.target.value.slice(0, REASON_MAX))}
-              rows={3}
-              maxLength={REASON_MAX}
-              placeholder="예) 인계 대상 액션이 빠졌습니다. 8월 캠페인 건을 포함해 다시 올려 주세요."
-              className="border-input placeholder:text-muted-foreground/70 focus-visible:border-ring focus-visible:ring-ring/50 bg-card w-full resize-none rounded-lg border px-3 py-2.5 text-[13px] leading-5 transition-colors outline-none focus-visible:ring-3"
-            />
-
-            <div className="flex items-center gap-2">
-              {/*
-                ⚠️ 남은 글자 수는 **왼쪽 아래**다. 상한이 있는 칸에서 어디까지 썼는지 모르면
-                   글이 잘린 뒤에야 안다. `tabular-nums`라 숫자가 바뀌어도 안 흔들린다.
-              */}
-              <p className="text-muted-foreground/70 text-[12px] leading-4 tabular-nums">
-                {reason.length} / {REASON_MAX}
-              </p>
-              <span className="flex-1" aria-hidden />
-              <Button
-                type="button"
-                size="sm"
-                variant="ghost"
-                disabled={isPending}
-                onClick={() => {
-                  setIsRejecting(false);
-                  setReason("");
-                  rejectRef.current?.focus();
-                }}
-              >
-                취소
-              </Button>
-              {/* ⚠️ 사유 없이는 안 열린다 — 되돌려받는 사람이 무엇을 고칠지 알아야 한다 */}
-              <Button
-                type="button"
-                size="sm"
-                variant="destructive"
-                disabled={isPending || reason.trim().length === 0}
-                onClick={() => setConfirming("reject")}
-              >
-                반려 확정
-              </Button>
-            </div>
+        {canApprove && (
+          <div className="flex items-center justify-end gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="text-destructive border-destructive/30 hover:bg-destructive/5"
+              disabled={isPending}
+              onClick={() => setConfirming("reject")}
+            >
+              반려
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="ink"
+              disabled={isPending}
+              onClick={() => setConfirming("approve")}
+            >
+              {isPending ? "처리 중…" : "최종 승인"}
+            </Button>
           </div>
-        ) : (
-          canApprove && (
-            <div className="flex items-center justify-end gap-2">
-              <Button
-                ref={rejectRef}
-                type="button"
-                size="sm"
-                variant="outline"
-                className="text-destructive border-destructive/30 hover:bg-destructive/5"
-                disabled={isPending}
-                onClick={() => setIsRejecting(true)}
-              >
-                반려
-              </Button>
-              <Button
-                type="button"
-                size="sm"
-                variant="ink"
-                disabled={isPending}
-                onClick={() => setConfirming("approve")}
-              >
-                {isPending ? "처리 중…" : "최종 승인"}
-              </Button>
-            </div>
-          )
         )}
       </div>
 
@@ -283,10 +209,18 @@ export function HandoverApprovalCard({
         ⚠️ 반려는 되돌릴 수 없다 — **무엇이 일어나는지** 적고 한 번 더 받는다.
            휴직과 오프보딩은 되돌아가는 자리가 같지만(재직), 신청한 사람이 다시 밟을 절차가
            달라서 유형을 문장에 적는다.
+        ⚠️ **사유도 이 창에서 받는다.** 전에는 카드 안에 붉은 칸이 펼쳐지고 그다음 확인 창이
+           떠서, 같은 한 가지 일을 두 번 물었다 — 게다가 그 붉은 면은 "색으로 알리는 건
+           에러뿐"(§디자인 토큰)에 어긋났다. 되돌릴 수 없는 일을 묻는 자리는 공용 확인 창
+           하나다(§토스트: 파괴적 작업은 Dialog).
+        ⚠️ 사유가 비면 **실행만 잠근다** — 취소는 열어 둬야 잘못 연 창에서 나갈 수 있다.
       */}
       <ConfirmDialog
         isOpen={confirming === "reject"}
-        onOpenChange={() => setConfirming(null)}
+        onOpenChange={() => {
+          setConfirming(null);
+          setReason("");
+        }}
         title={`${memberName} 님의 ${typeLabel} 신청을 반려할까요?`}
         description={
           <>
@@ -302,10 +236,46 @@ export function HandoverApprovalCard({
         mark="alert"
         isPending={isPending}
         pendingLabel="반려 중…"
+        isConfirmDisabled={reason.trim().length === 0}
         onConfirm={() =>
           run(() => rejectHandoverAction(memberId, reason), `${typeLabel} 신청을 반려했습니다`)
         }
-      />
+      >
+        {/*
+          ⚠️ 라벨을 `sr-only`로 감추지 않는다 — 화면에도 보여야 무엇을 적는 칸인지 알고,
+             스크린 리더와 눈이 같은 것을 읽는다(§a11y).
+          ⚠️ **어디로 가는 글인지 적는다.** 남이 읽는 줄 모르면 메모처럼 쓴다.
+          ⚠️ 창 안의 다른 글은 가운데 정렬이지만 **입력칸 묶음은 왼쪽**이다 — 라벨·칸·글자 수가
+             제각기 가운데로 모이면 어느 라벨이 어느 칸의 것인지 눈이 못 잇는다.
+        */}
+        <div className="flex flex-col gap-1.5 text-left">
+          <Label htmlFor="reject-reason" className="text-[13px] leading-5">
+            반려 사유
+          </Label>
+          <p className="text-muted-foreground text-[12px] leading-4 break-keep">
+            {memberName} 님에게 그대로 전달됩니다. 무엇을 고쳐 다시 올려야 하는지 적어 주세요.
+          </p>
+
+          <textarea
+            ref={reasonRef}
+            id="reject-reason"
+            value={reason}
+            onChange={(event) => setReason(event.target.value.slice(0, REASON_MAX))}
+            rows={3}
+            maxLength={REASON_MAX}
+            placeholder="예) 인계 대상 액션이 빠졌습니다. 8월 캠페인 건을 포함해 다시 올려 주세요."
+            className="border-input placeholder:text-muted-foreground/70 focus-visible:border-ring focus-visible:ring-ring/50 bg-card mt-1 w-full resize-none rounded-lg border px-3 py-2.5 text-[13px] leading-5 transition-colors outline-none focus-visible:ring-3"
+          />
+
+          {/*
+            ⚠️ 남은 글자 수는 **오른쪽 아래**다. 상한이 있는 칸에서 어디까지 썼는지 모르면
+               글이 잘린 뒤에야 안다. `tabular-nums`라 숫자가 바뀌어도 안 흔들린다.
+          */}
+          <p className="text-muted-foreground/70 text-right text-[12px] leading-4 tabular-nums">
+            {reason.length} / {REASON_MAX}
+          </p>
+        </div>
+      </ConfirmDialog>
     </section>
   );
 }

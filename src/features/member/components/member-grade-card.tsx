@@ -8,6 +8,7 @@ import { ConfirmDialog } from "@/components/common/confirm-dialog";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -241,23 +242,46 @@ export function MemberGradeCard({
               ⚠️ 표식은 **방패**다 — 목록 표·온보딩 초대 줄과 같은 것을 같게 그린다.
             */}
             {showsAdmin && (
-              <div className="border-border mt-1 flex items-start gap-3 border-t pt-4">
+              <div className="border-border mt-1 flex items-center gap-2.5 border-t pt-4">
                 <Checkbox
                   id="member-admin"
                   checked={isAdmin}
                   onCheckedChange={(checked) => setIsAdmin(checked === true)}
                   disabled={!canEdit || isPending}
-                  className="mt-0.5"
                 />
-                <label htmlFor="member-admin" className="flex cursor-pointer flex-col gap-0.5">
-                  <span className="flex items-center gap-1.5 text-[13px] leading-5 font-medium">
-                    <ShieldCheck className="size-3.5 shrink-0" aria-hidden />
-                    관리자 권한 부여
-                  </span>
-                  <span className="text-muted-foreground text-[12px] leading-4 break-keep">
-                    사원·회의실 관리와 구독·저장소 화면에 들어갈 수 있습니다.
-                  </span>
+                <label
+                  htmlFor="member-admin"
+                  className="flex cursor-pointer items-center gap-1.5 text-[13px] leading-5 font-medium"
+                >
+                  <ShieldCheck className="size-3.5 shrink-0" aria-hidden />
+                  관리자 권한 부여
                 </label>
+
+                {/*
+                  ⚠️ **설명을 줄로 깔지 않는다.** 두 줄짜리 회색 문장이 체크박스 아래에 붙으니
+                     값 하나짜리 칸이 위의 셀렉트 셋보다 무거워 보였다 — 곁 컬럼에서는 그 문장이
+                     두 줄로 접혀 더 커졌다. 계정 발급 창과 **같은 `?`** 로 옮긴다.
+                */}
+                <Popover>
+                  <PopoverTrigger
+                    type="button"
+                    aria-label="관리자 권한이 무엇인지 보기"
+                    className="border-border text-muted-foreground hover:text-foreground hover:border-foreground/40 focus-visible:ring-ring flex size-4 shrink-0 items-center justify-center rounded-full border text-[10px] leading-none transition-colors focus-visible:ring-2 focus-visible:outline-hidden"
+                  >
+                    ?
+                  </PopoverTrigger>
+                  {/* ⚠️ 오른쪽으로 편다 — 아래로 펴면 바로 밑의 [저장]을 덮는다 */}
+                  <PopoverContent side="right" align="center" className="w-56 text-center">
+                    <p className="text-[13px] leading-5 font-medium break-keep">
+                      관리자 화면에 들어갈 수 있습니다.
+                    </p>
+                    <p className="text-muted-foreground text-[12px] leading-[18px] break-keep">
+                      사원·회의실 관리, 구독·저장소 화면입니다.
+                      <br />
+                      권한을 대체하지 않고 위에 덧붙습니다.
+                    </p>
+                  </PopoverContent>
+                </Popover>
               </div>
             )}
           </>
