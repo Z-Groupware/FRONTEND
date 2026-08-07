@@ -176,6 +176,16 @@ export function canManageRooms(actor: Actor): boolean {
 }
 
 /**
+ * 회의실 예약(=회의 개설) 시 "상위 팀 액션"이 필수인가 — **Owner만 예외**다(WORKFLOW.md §3-1).
+ * Owner가 열면 프로젝트 회의라 이 필드가 아예 없고, Leader/Member가 열면 팀 액션 회의라 반드시
+ * 있어야 한다. 판정을 한 곳에 모아 화면(`room-reservation-fields.tsx`)·검증(`validate.ts`)·
+ * 조회(`rooms/server.ts`의 `getReservableTeamActions`)가 전부 같은 기준을 쓰게 한다.
+ */
+export function requiresParentTeamAction(actor: { role: Authority }): boolean {
+  return actor.role !== AUTHORITY.OWNER;
+}
+
+/**
  * 팀 범위 안인지 — **teamId가 같은지만 본다**(백엔드 스키마 확정, 2026-08-06 단순화).
  * ⚠️ 예전엔 부서 트리 조상 경로(`departmentPath`)를 비교했지만, 팀은 계층이 없는 플랫 목록이라
  *    이제 필요 없다 — LEADER 자신의 roleId가 "리더"든 "없음"이든 무관하게 teamId만 같으면 된다.

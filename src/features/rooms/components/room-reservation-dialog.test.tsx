@@ -1,12 +1,12 @@
+import { AUTHORITY } from "@/constants/authority";
+
 jest.mock("next/cache", () => ({ revalidatePath: jest.fn() }));
 jest.mock("@/lib/mock-actor", () => ({
-  getMockActor: jest.fn(() => ({ id: 1, role: "OWNER" })),
+  getMockActor: jest.fn(() => ({ id: 1, role: AUTHORITY.OWNER })),
 }));
 
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-
-import { AUTHORITY } from "@/constants/authority";
 
 import type { MeetingRoom, RoomMember, RoomProjectOption, RoomTeamActionOption } from "../types";
 import { RoomReservationDialog } from "./room-reservation-dialog";
@@ -83,13 +83,13 @@ describe("RoomReservationDialog", () => {
   it("Owner가 열면 상위 팀 액션 필드가 없다", () => {
     renderDialog({ hostAuthority: AUTHORITY.OWNER });
 
-    expect(screen.queryByText("상위 팀 액션")).not.toBeInTheDocument();
+    expect(screen.queryByRole("combobox", { name: "상위 팀 액션" })).not.toBeInTheDocument();
   });
 
   it("Leader가 열면 상위 팀 액션 필드가 뜬다", () => {
     renderDialog({ hostAuthority: AUTHORITY.LEADER });
 
-    expect(screen.getByText("상위 팀 액션")).toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: "상위 팀 액션" })).toBeInTheDocument();
   });
 
   it("필수값을 안 채우고 등록을 누르면 필드별 오류를 보여주고 onCreated는 안 부른다", async () => {

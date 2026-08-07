@@ -11,7 +11,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { AUTHORITY, type Authority } from "@/constants/authority";
 
 import type {
   MeetingRoom,
@@ -29,8 +28,11 @@ interface RoomReservationFieldsProps {
   errors: RoomReservationFormErrors;
   rooms: MeetingRoom[];
   projects: RoomProjectOption[];
-  /** 지금 예약 모달을 여는 사람의 권한 — Owner가 아니면 "상위 팀 액션"이 뜬다(WORKFLOW.md §3-1). */
-  hostAuthority: Authority;
+  /**
+   * "상위 팀 액션" 필드를 보여줄지 — 판정은 `lib/permission.ts`의 `requiresParentTeamAction`
+   * 한 곳에서 하고, 이 컴포넌트는 그 결과 boolean만 받는다(권한 판정을 화면에 흩어 두지 않는다).
+   */
+  showParentTeamAction: boolean;
   /** Host의 팀에 하달된 팀 액션 전체(프로젝트 무관) — 지금 고른 프로젝트로 화면에서 다시 거른다. */
   teamActions: RoomTeamActionOption[];
 }
@@ -45,7 +47,7 @@ export function RoomReservationFields({
   errors,
   rooms,
   projects,
-  hostAuthority,
+  showParentTeamAction,
   teamActions,
 }: RoomReservationFieldsProps) {
   const selectedProjectTag = projects.find((project) => project.id === form.projectId)?.tag;
@@ -105,7 +107,7 @@ export function RoomReservationFields({
         {errors.projectId && <p className="text-destructive text-xs">{errors.projectId}</p>}
       </div>
 
-      {hostAuthority !== AUTHORITY.OWNER && (
+      {showParentTeamAction && (
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="reservation-parent-team-action">상위 팀 액션</Label>
           <Select

@@ -7,6 +7,7 @@ import { Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import type { Authority } from "@/constants/authority";
+import { requiresParentTeamAction } from "@/lib/permission";
 
 import type {
   MeetingRoom,
@@ -77,6 +78,7 @@ export function RoomReservationDialog({
 }: RoomReservationDialogProps) {
   const { state, isPending, form, setForm, handleOpenChange, handleSubmit } =
     useRoomReservationForm({ slotStart, onCreated, onOpenChange });
+  const showParentTeamAction = requiresParentTeamAction({ role: hostAuthority });
 
   return (
     <Dialog open={slotStart !== null} onOpenChange={handleOpenChange}>
@@ -95,7 +97,7 @@ export function RoomReservationDialog({
               errors={state.errors}
               rooms={rooms}
               projects={projects}
-              hostAuthority={hostAuthority}
+              showParentTeamAction={showParentTeamAction}
               teamActions={teamActions}
             />
 

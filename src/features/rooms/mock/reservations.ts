@@ -1,7 +1,8 @@
-import { AUTHORITY } from "@/constants/authority";
+import { AUTHORITY, type Authority } from "@/constants/authority";
 import { addMockMeeting } from "@/features/meeting/mock/meetings";
+import type { MeetingDraft, MeetingTopic } from "@/features/meeting/types";
 import { TOP_LEVEL_PROJECTS } from "@/features/project/mock/projects";
-import type { Actor } from "@/lib/permission";
+import { type Actor, requiresParentTeamAction } from "@/lib/permission";
 
 import type { RoomReservation, RoomReservationDraft } from "../types";
 import { RESERVATION_DURATION_MINUTES } from "../validate";
@@ -143,7 +144,12 @@ export function addMockReservation(draft: RoomReservationDraft, actor: Actor): R
   };
   store.reservations = [...store.reservations, reservation];
 
-  addMockMeeting({
+  // ⚠️ `Meeting.topics`는 최소 1개짜리 튜플 타입이다 — `validateRoomReservationDraft`가 이미
+  //    최소 1쌍을 보장했으니 여기서 그 사실을 튜플로 그대로 옮긴다(캐스팅 없이).
+  const [firstTopic, ...restTopics] = reservation.topics;
+  const topics: [MeetingTopic, ...MeetingTopic[]] = [firstTopic!, ...restTopics];
+
+  const meetingCommon = {
     title: reservation.title,
     start: reservation.start,
     end: reservation.end,
@@ -151,14 +157,27 @@ export function addMockReservation(draft: RoomReservationDraft, actor: Actor): R
     roomName: reservation.roomName,
     projectId: project?.id ?? 0,
     projectTag: reservation.projectTag,
-    topics: reservation.topics,
+    topics,
     attendeeIds: reservation.attendeeIds,
     hostId: actor.id,
-    hostAuthority: actor.role,
-    hostTeamId: actor.role === AUTHORITY.OWNER ? undefined : actor.teamId,
-    parentTeamActionId: draft.parentTeamActionId,
     roomReservationId: reservation.id,
-  });
+  };
+
+  // ⚠️ `Meeting`은 Owner 개설/팀 액션 개설을 판별식 유니언으로 나눠 둔다(hostTeamId·
+  //    parentTeamActionId가 둘 다 있거나 둘 다 없거나만 허용) — 그래서 여기서도 분기해서
+  //    만든다. Leader/Member 분기의 `!`는 `actions.ts`가 이미 상위 팀 액션·자기 팀 소속을
+  //    검증한 뒤에만 이 함수를 부르기 때문에 안전하다. SYSTEM 역할은 `/app/rooms`를 쓰지
+  //    않아(회사 소속이 아님) 이 분기에 올 일이 없다.
+  const meetingDraft: MeetingDraft = requiresParentTeamAction(actor)
+    ? {
+        ...meetingCommon,
+        hostAuthority: actor.role as Extract<Authority, "LEADER" | "MEMBER">,
+        hostTeamId: actor.teamId!,
+        parentTeamActionId: draft.parentTeamActionId!,
+      }
+    : { ...meetingCommon, hostAuthority: AUTHORITY.OWNER };
+
+  addMockMeeting(meetingDraft);
 
   return reservation;
 }

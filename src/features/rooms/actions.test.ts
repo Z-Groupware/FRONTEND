@@ -10,6 +10,7 @@ jest.mock("@/lib/mock-actor", () => ({
 
 import { revalidatePath } from "next/cache";
 
+import { listMockMeetings } from "@/features/meeting/mock/meetings";
 import { getMockActor } from "@/lib/mock-actor";
 
 import {
@@ -115,7 +116,7 @@ describe("회의실 추가·수정", () => {
 });
 
 describe("회의실 예약 생성 (Owner 개설 = 프로젝트 회의)", () => {
-  it("필수값이 다 있으면 성공하고 생성값을 돌려준다", async () => {
+  it("필수값이 다 있으면 성공하고 생성값을 돌려준다 — 연결된 회의(Meeting)도 같이 만들어진다", async () => {
     const result = await createRoomReservationAction({ errors: {} }, form(VALID_ENTRIES));
 
     expect(result.errors).toEqual({});
@@ -123,6 +124,17 @@ describe("회의실 예약 생성 (Owner 개설 = 프로젝트 회의)", () => {
     expect(result.created?.roomName).toBe("소회의실 B");
     expect(result.created?.projectTag).toBe("GOODS");
     expect(revalidatePathMock).toHaveBeenCalledWith("/app/rooms");
+
+    const meeting = listMockMeetings().find(
+      (item) => item.roomReservationId === result.created?.id,
+    );
+    expect(meeting).toBeDefined();
+    expect(meeting?.projectId).toBe(1);
+    expect(meeting?.projectTag).toBe("GOODS");
+    expect(meeting?.topics).toEqual(DEFAULT_TOPICS);
+    expect(meeting?.hostAuthority).toBe("OWNER");
+    expect(meeting?.hostTeamId).toBeUndefined();
+    expect(meeting?.parentTeamActionId).toBeUndefined();
   });
 
   it("제목이 비면 막고 revalidatePath를 안 부른다", async () => {
@@ -215,6 +227,18 @@ describe("회의실 예약 생성 (Owner 개설 = 프로젝트 회의)", () => {
     expect(result.errors).toEqual({});
   });
 
+  it("Owner인데 폼에 상위 팀 액션이 끼어 있으면 막는다(폼 조작 방어)", async () => {
+    const result = await createRoomReservationAction(
+      { errors: {} },
+      form({ ...VALID_ENTRIES, date: "2026-08-14", startTime: "09:30", parentTeamActionId: "1" }),
+    );
+
+    expect(result.errors.parentTeamActionId).toBe(
+      "Owner가 개설하는 회의에는 상위 팀 액션을 지정할 수 없어요",
+    );
+    expect(result.created).toBeUndefined();
+  });
+
   it("폼이 조작돼 존재하지 않는 회의실 id가 오면 막는다", async () => {
     const result = await createRoomReservationAction(
       { errors: {} },
@@ -287,6 +311,14 @@ describe("회의실 예약 생성 (Leader 개설 = 팀 액션 회의)", () => {
 
     expect(result.errors).toEqual({});
     expect(result.created).toBeDefined();
+
+    const meeting = listMockMeetings().find(
+      (item) => item.roomReservationId === result.created?.id,
+    );
+    expect(meeting).toBeDefined();
+    expect(meeting?.hostAuthority).toBe("LEADER");
+    expect(meeting?.hostTeamId).toBe(LEADER.teamId);
+    expect(meeting?.parentTeamActionId).toBe(1);
   });
 
   it("다른 팀 소속 팀 액션 id를 끼워 넣으면 막는다(폼 조작 방어)", async () => {

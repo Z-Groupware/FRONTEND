@@ -2,8 +2,8 @@ import { AUTHORITY } from "@/constants/authority";
 
 import { validateMeetingRoomDraft, validateRoomReservationDraft } from "./validate";
 
-const OWNER_HOST = { authority: AUTHORITY.OWNER };
-const LEADER_HOST = { authority: AUTHORITY.LEADER };
+const OWNER_HOST = { role: AUTHORITY.OWNER };
+const LEADER_HOST = { role: AUTHORITY.LEADER };
 
 const VALID_DRAFT = {
   title: "주간 싱크",
@@ -125,6 +125,16 @@ describe("회의실 예약 검증", () => {
       LEADER_HOST,
     );
     expect(errors.parentTeamActionId).toBeUndefined();
+  });
+
+  it("Host가 Owner인데 상위 팀 액션을 넣으면 막는다(폼 조작 방어)", () => {
+    const errors = validateRoomReservationDraft(
+      { ...VALID_DRAFT, parentTeamActionId: 1 },
+      OWNER_HOST,
+    );
+    expect(errors.parentTeamActionId).toBe(
+      "Owner가 개설하는 회의에는 상위 팀 액션을 지정할 수 없어요",
+    );
   });
 
   it("참석자가 한 명도 없으면 막는다", () => {

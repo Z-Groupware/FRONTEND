@@ -2,10 +2,9 @@ import "server-only";
 
 import { endOfWeek, startOfWeek } from "date-fns";
 
-import { AUTHORITY } from "@/constants/authority";
 import { TOP_LEVEL_PROJECTS } from "@/features/project/mock/projects";
 import { PROJECT_TEAM_ACTIONS_MOCK } from "@/features/project/mock/team-actions";
-import type { Actor } from "@/lib/permission";
+import { type Actor, requiresParentTeamAction } from "@/lib/permission";
 import { isMock } from "@/mocks/config";
 
 import { listMockMembers } from "./mock/members";
@@ -66,7 +65,7 @@ export async function getReservableProjects(): Promise<RoomProjectOption[]> {
  */
 export async function getReservableTeamActions(actor: Actor): Promise<RoomTeamActionOption[]> {
   if (!isMock) throw new Error("팀 액션 목록 조회 API가 아직 연결되지 않았습니다.");
-  if (actor.role === AUTHORITY.OWNER || !actor.teamName) return [];
+  if (!requiresParentTeamAction(actor) || !actor.teamName) return [];
 
   const options: RoomTeamActionOption[] = [];
   for (const [projectTag, teamActions] of Object.entries(PROJECT_TEAM_ACTIONS_MOCK)) {
