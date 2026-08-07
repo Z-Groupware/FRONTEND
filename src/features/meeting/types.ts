@@ -54,5 +54,18 @@ interface TeamActionHostedMeeting extends MeetingCommon {
 /** 회의 생성 입력 — id·createdAt은 서버(mock 스토어)가 채운다. */
 export type MeetingDraft = OwnerHostedMeeting | TeamActionHostedMeeting;
 
-/** 회의 한 건 — `MeetingDraft`에 서버가 채우는 두 필드(id·생성시각)만 더한다. */
-export type Meeting = MeetingDraft & { id: string; createdAt: string };
+/**
+ * 회의 한 건 — `MeetingDraft`에 서버가 채우는 것들을 더한다.
+ *
+ * ⚠️ **`endedAt`은 상태를 저장하는 유일한 자리다.** 예정·진행중은 지금 시각과 `start`·`end`로
+ *    계산하면 되지만(§도메인 상수: 파생값은 계산한다), **완료는 계산할 수 없다** —
+ *    끝나는 시각이 지났다고 완료가 아니라 Host가 [회의 종료 및 제출]을 눌러야 완료다
+ *    (WORKFLOW §3-3, 그래서 되돌릴 수도 없다). 안 누르고 끝난 회의는 시간이 지나도 완료가 아니다.
+ * ⚠️ 예약이 만들 때는 늘 `null`이다 — 방금 잡은 회의가 끝나 있을 리 없다.
+ */
+export type Meeting = MeetingDraft & {
+  id: string;
+  createdAt: string;
+  /** 종료를 누른 시각(ISO). 안 눌렀으면 `null` */
+  endedAt: string | null;
+};

@@ -183,6 +183,7 @@ describe("화면이 있으면 자동으로 이어진다", () => {
     ["/manage/storage", "녹음 용량"],
     ["/owner/setting", "기업 설정"],
     ["/manage/members", "사원 관리"],
+    ["/app/meeting", "회의"],
   ])("만들어진 화면 `%s`(%s)는 링크가 된다", (href) => {
     const item = everyItem.find((candidate) => candidate.href === href);
 
@@ -190,7 +191,7 @@ describe("화면이 있으면 자동으로 이어진다", () => {
     expect(item?.isReady).toBe(true);
   });
 
-  it.each([["/app/meeting", "회의"]])("아직 없는 화면 `%s`(%s)는 준비 중으로 남는다", (href) => {
+  it.each([["/app/search", "검색"]])("아직 없는 화면 `%s`(%s)는 준비 중으로 남는다", (href) => {
     expect(everyItem.find((candidate) => candidate.href === href)?.isReady).toBe(false);
   });
 
