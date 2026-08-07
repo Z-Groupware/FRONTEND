@@ -53,6 +53,11 @@ export function HandoverApprovalCard({
    *    반려하면 신청이 되돌아간다. 둘 다 한 번 더 묻는다(§토스트: 파괴적 작업은 Dialog).
    */
   const [confirming, setConfirming] = useState<"approve" | "reject" | null>(null);
+  /*
+    ⚠️ 실패는 **창 안에** 남긴다. 토스트로만 알리면 창은 그대로 떠 있는데 문구는 사라져서,
+       같은 버튼을 다시 누르게 된다(§토스트는 보조다).
+  */
+  const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   /*
     ⚠️ 창이 열리면 **사유 칸에 포커스를 준다.** 안 주면 포커스가 창 껍데기에 머물러,
@@ -71,10 +76,11 @@ export function HandoverApprovalCard({
     startTransition(async () => {
       const result = await task();
       if (!result.isSuccess) {
-        toast.error(result.message ?? "처리하지 못했습니다");
+        setError(result.message ?? "처리하지 못했습니다");
         return;
       }
       setConfirming(null);
+      setError(null);
       setReason("");
       toast.success(done);
     });
@@ -156,7 +162,10 @@ export function HandoverApprovalCard({
               variant="outline"
               className="text-destructive border-destructive/30 hover:bg-destructive/5"
               disabled={isPending}
-              onClick={() => setConfirming("reject")}
+              onClick={() => {
+                setError(null);
+                setConfirming("reject");
+              }}
             >
               반려
             </Button>
@@ -165,7 +174,10 @@ export function HandoverApprovalCard({
               size="sm"
               variant="ink"
               disabled={isPending}
-              onClick={() => setConfirming("approve")}
+              onClick={() => {
+                setError(null);
+                setConfirming("approve");
+              }}
             >
               {isPending ? "처리 중…" : "최종 승인"}
             </Button>
@@ -180,6 +192,7 @@ export function HandoverApprovalCard({
       <ConfirmDialog
         isOpen={confirming === "approve"}
         onOpenChange={() => setConfirming(null)}
+        error={error}
         title={`${memberName} 님의 ${typeLabel}을 승인할까요?`}
         description={
           isVacation ? (
@@ -221,10 +234,11 @@ export function HandoverApprovalCard({
           setConfirming(null);
           setReason("");
         }}
+        error={error}
         title={`${memberName} 님의 ${typeLabel} 신청을 반려할까요?`}
         description={
           <>
-            신청이 되돌아가고 {memberName} 님은 다시 재직 상태가 됩니다.
+            신청이 되돌아가고 다시 재직 상태가 됩니다.
             <br />
             {isVacation
               ? "다시 신청하려면 인수인계부터 새로 밟아야 합니다."
@@ -242,19 +256,17 @@ export function HandoverApprovalCard({
         }
       >
         {/*
+          ⚠️ **선으로 가른다.** 위는 가운데 정렬 문장, 아래는 왼쪽 정렬 입력칸이라 이어 붙이면
+             두 정렬이 뒤엉켜 어디부터 적는 자리인지 안 읽힌다.
           ⚠️ 라벨을 `sr-only`로 감추지 않는다 — 화면에도 보여야 무엇을 적는 칸인지 알고,
              스크린 리더와 눈이 같은 것을 읽는다(§a11y).
-          ⚠️ **어디로 가는 글인지 적는다.** 남이 읽는 줄 모르면 메모처럼 쓴다.
-          ⚠️ 창 안의 다른 글은 가운데 정렬이지만 **입력칸 묶음은 왼쪽**이다 — 라벨·칸·글자 수가
-             제각기 가운데로 모이면 어느 라벨이 어느 칸의 것인지 눈이 못 잇는다.
+          ⚠️ **설명과 글자 수를 한 줄에** 둔다. 위아래로 나눠 놓으니 짧은 글 넷이 층층이
+             쌓여 창이 길어지고, 정작 적을 칸이 가운데 끼여 안 보였다.
         */}
-        <div className="flex flex-col gap-1.5 text-left">
+        <div className="border-border flex flex-col gap-2 border-t pt-5 text-left">
           <Label htmlFor="reject-reason" className="text-[13px] leading-5">
             반려 사유
           </Label>
-          <p className="text-muted-foreground text-[12px] leading-4 break-keep">
-            {memberName} 님에게 그대로 전달됩니다. 무엇을 고쳐 다시 올려야 하는지 적어 주세요.
-          </p>
 
           <textarea
             ref={reasonRef}
@@ -263,17 +275,18 @@ export function HandoverApprovalCard({
             onChange={(event) => setReason(event.target.value.slice(0, REASON_MAX))}
             rows={3}
             maxLength={REASON_MAX}
-            placeholder="예) 인계 대상 액션이 빠졌습니다. 8월 캠페인 건을 포함해 다시 올려 주세요."
-            className="border-input placeholder:text-muted-foreground/70 focus-visible:border-ring focus-visible:ring-ring/50 bg-card mt-1 w-full resize-none rounded-lg border px-3 py-2.5 text-[13px] leading-5 transition-colors outline-none focus-visible:ring-3"
+            placeholder="예) 인계 대상 액션이 빠졌습니다. 다시 올려 주세요."
+            className="border-input placeholder:text-muted-foreground/70 focus-visible:border-ring focus-visible:ring-ring/50 bg-card w-full resize-none rounded-lg border px-3 py-2.5 text-[13px] leading-5 transition-colors outline-none focus-visible:ring-3"
           />
 
-          {/*
-            ⚠️ 남은 글자 수는 **오른쪽 아래**다. 상한이 있는 칸에서 어디까지 썼는지 모르면
-               글이 잘린 뒤에야 안다. `tabular-nums`라 숫자가 바뀌어도 안 흔들린다.
-          */}
-          <p className="text-muted-foreground/70 text-right text-[12px] leading-4 tabular-nums">
-            {reason.length} / {REASON_MAX}
-          </p>
+          <div className="text-muted-foreground flex items-baseline justify-between gap-3 text-[12px] leading-4">
+            {/* ⚠️ **어디로 가는 글인지 적는다.** 남이 읽는 줄 모르면 메모처럼 쓴다 */}
+            <p className="break-keep">신청자에게 그대로 전달됩니다</p>
+            {/* ⚠️ 상한이 있는 칸은 어디까지 썼는지 보여준다. `tabular-nums`라 안 흔들린다 */}
+            <p className="shrink-0 tabular-nums">
+              {reason.length} / {REASON_MAX}
+            </p>
+          </div>
         </div>
       </ConfirmDialog>
     </section>

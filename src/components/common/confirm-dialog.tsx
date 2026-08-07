@@ -49,6 +49,14 @@ interface ConfirmDialogProps {
   /** 진행 중에 보여줄 실행 버튼 문구 — 없으면 `confirmLabel`을 그대로 쓴다 */
   pendingLabel?: string;
   /**
+   * 실패 사유 — 창을 **열어 둔 채** 버튼 위에 적는다.
+   *
+   * ⚠️ 되돌릴 수 없는 일이 막혔을 때는 토스트로만 알리지 않는다. 토스트는 사라지는데
+   *    창은 그대로 떠 있어서, 몇 초 뒤에 온 사람은 아무 일도 안 일어난 줄 알고 같은
+   *    버튼을 다시 누른다(§토스트는 보조다).
+   */
+  error?: string | null;
+  /**
    * 실행 버튼만 잠근다 — `children`에 **채워야 할 칸**이 있을 때 쓴다(반려 사유).
    * ⚠️ 취소는 안 잠근다. 못 채워서 못 나가는 창이 되면 갇힌다.
    */
@@ -85,6 +93,7 @@ export function ConfirmDialog({
   isPending,
   pendingLabel,
   isConfirmDisabled,
+  error,
   onConfirm,
 }: ConfirmDialogProps) {
   return (
@@ -112,6 +121,16 @@ export function ConfirmDialog({
         </DialogHeader>
 
         {children && <div className="mt-5">{children}</div>}
+
+        {/* ⚠️ 버튼 **바로 위**다 — 다시 누르려는 손이 지나가는 자리에 있어야 읽힌다 */}
+        {error && (
+          <p
+            role="alert"
+            className="text-destructive mt-4 text-center text-[13px] leading-5 break-keep"
+          >
+            {error}
+          </p>
+        )}
 
         {/*
           두 버튼이 같은 폭이다 — 한쪽이 넓으면 그쪽을 권하는 것처럼 보인다.
