@@ -1,5 +1,5 @@
 import { AUTHORITY } from "@/constants/authority";
-import { MEMBER_STATUS } from "@/constants/member";
+import { MEMBER_STATUS, ROLE_NONE_LABEL } from "@/constants/member";
 
 import type { ManagedMember } from "./manage-types";
 import {
@@ -16,22 +16,6 @@ import {
  * ⚠️ 서버 파일(`org-server.ts`)에 두지 않는 건 그쪽이 `server-only`라 테스트가 import를
  *    못 하기 때문이다. 누구를 보여줄지 정하는 규칙이라 테스트가 붙어야 한다.
  */
-
-/**
- * 조직도에 세울 사람인가 — **지금 조직에 있는 사람만** 센다.
- *
- * ⚠️ **퇴사자는 뺀다.** 조직도는 "지금 조직"이라, 나간 사람이 팀 인원에 섞이면
- *    `개발팀 3명`이 틀린 말이 된다.
- *    "나간 사람은 목록에 남는다"(CLAUDE.md §도메인 상수)는 규칙과 어긋나지 않는다 —
- *    그 규칙이 지키려는 건 **기록의 출처**이고, 그 자리는 사원 관리(`/manage/members`)와
- *    액션·회의·인수인계 이력이다. 여기는 기록이 아니라 조직 구조를 그리는 화면이다.
- * ⚠️ **대기(`WAITING`)는 남긴다.** 휴직·오프보딩을 신청했을 뿐 승인 전이라 그 사람은
- *    여전히 재직 중이다 — 신청했다는 이유로 조직에서 빼면 화면이 앞서간다.
- * ⚠️ 소프트 딜리트(`DELETED`)는 그 앞의 매퍼가 이미 걸러 온다.
- */
-export function isCurrentOrgMember(member: ManagedMember): boolean {
-  return member.status !== MEMBER_STATUS.RESIGNED;
-}
 
 /**
  * 사람 찾기 — **이름·팀·역할·직급** 네 곳을 본다.
@@ -73,7 +57,8 @@ function toOrgMember(member: ManagedMember): OrgMember {
     id: member.id,
     name: member.name,
     position: member.position,
-    roleLabel: member.roleLabel,
+    // 없으면 `없음` — 화면이 정하지 않게 여기서 맞춘다(§org-types)
+    roleLabel: member.roleLabel ?? ROLE_NONE_LABEL,
     authority: member.authority,
     status: member.status,
   };
@@ -87,8 +72,8 @@ function toOrgMember(member: ManagedMember): OrgMember {
  *   그 순서는 회사가 온보딩에서 정한 것이고, 프론트가 바꾸면 화면이 회사와 다른 말을 한다.
  * - 팀 안에서는 **리더가 맨 앞**, 나머지는 명부 순서다(WORKFLOW §9: 팀당 리더는 한 명).
  *
- * ⚠️ 누구를 넣을지는 여기서 안 고른다 — 부르는 쪽이 `isCurrentOrgMember`·`searchOrgMembers`로
- *    추려서 넘긴다. 세우는 일과 고르는 일을 한 함수에 담으면 검색할 때마다 규칙이 엉킨다.
+ * ⚠️ 누구를 넣을지는 여기서 안 고른다 — 부르는 쪽이 `searchOrgMembers`로 추려서 넘긴다.
+ *    세우는 일과 고르는 일을 한 함수에 담으면 검색할 때마다 규칙이 엉킨다.
  * ⚠️ **대표가 둘이면 첫 사람만 대표 자리에 세운다.** 회사에 대표는 하나라(CLAUDE.md §권한)
  *    둘째부터는 명부가 이상한 것인데, 조용히 버리면 전체 인원과 화면이 어긋난다 —
  *    팀이 없으니 `소속 없음`으로 내려가 눈에 띈다.

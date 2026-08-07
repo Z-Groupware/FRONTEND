@@ -35,19 +35,21 @@ function AuthorityMark({ authority }: { authority: OrgMember["authority"] }) {
 }
 
 /**
- * 상태 뱃지 — **휴직에만** 단다.
+ * 상태 뱃지 — **자리에 없는 사람에게만** 단다(휴직·퇴사).
  *
  * ⚠️ **`대기`를 달지 않는다.** 그건 "휴직·오프보딩을 신청하고 승인을 기다리는" 상태인데
  *    (§constants/member), 이 화면은 **전 구성원이 본다**. 달아 두면 아직 승인도 안 난
  *    남의 휴직·퇴사 신청이 회사 전체에 공개된다 — 그 신청을 다루는 자리는 대표·관리자의
  *    사원 관리(`/manage/members/:id`)다(WORKFLOW §7).
  *    승인 전까지 그 사람은 **여전히 재직 중**이라, 여기서는 아무 표시도 안 하는 게 사실에 맞다.
- * ⚠️ 퇴사자는 애초에 조직도에 안 선다(`isCurrentOrgMember`) — 여기까지 오지 않는다.
+ * ⚠️ **퇴사자는 조직도에 남는다**(CLAUDE.md §도메인 상수: 나간 사람은 목록에 남는다).
+ *    남긴 회의·액션의 출처라 이름이 사라지면 추적이 끊긴다 — 대신 이 뱃지로 알린다.
+ *    한때 아예 걸렀는데, 그건 팀이 정한 적 없는 정책을 화면이 단언한 것이었다.
  * ⚠️ 재직은 기본이라 안 단다. 생김새는 `MEMBER_STATUS_BADGE_CLASS` 한 곳이 정하고,
  *    색이 아니라 채움과 진하기로 층을 만든다(§디자인 토큰).
  */
 function StatusMark({ status }: { status: OrgMember["status"] }) {
-  if (status !== MEMBER_STATUS.VACATION) return null;
+  if (status !== MEMBER_STATUS.VACATION && status !== MEMBER_STATUS.RESIGNED) return null;
 
   return (
     <span
@@ -89,18 +91,14 @@ export function OrgMemberNode({ member, keyword }: { member: OrgMember; keyword:
         {/*
           ⚠️ **역할을 빠뜨리지 않는다.** 사원 관리 목록이 이미 컬럼으로 갖고 있는 값이라
              (WORKFLOW §9) 여기만 없으면 같은 사람이 화면마다 다르게 보인다.
-          ⚠️ 안 붙인 사람은 **직급만 적는다.** 사원 관리 표는 칸이 비면 깨져 보여서 `없음`을
-             적지만, 여기는 한 줄로 잇는 자리라 `대표 · 없음`·`팀장 · 없음`이 되어 없는 값이
-             오히려 더 크게 읽힌다. 역할은 안 붙여도 되는 값이다(WORKFLOW §9).
+          ⚠️ 안 붙인 사람은 **`없음`**이라고 적는다 — 사원 관리와 같은 말을 쓴다. 한때 직급만
+             적었는데(`팀장 · 없음`이 어색해서), 그러면 이 화면만 다른 말을 하고 "역할이 빠졌다"는
+             처음 문제로 돌아간다. 값은 매퍼가 이미 맞춰 준다(§org-types).
         */}
         <p className="text-muted-foreground truncate text-[12px] leading-4">
           <MatchText text={member.position} keyword={keyword} />
-          {member.roleLabel && (
-            <>
-              {" · "}
-              <MatchText text={member.roleLabel} keyword={keyword} />
-            </>
-          )}
+          {" · "}
+          <MatchText text={member.roleLabel} keyword={keyword} />
         </p>
       </div>
     </div>

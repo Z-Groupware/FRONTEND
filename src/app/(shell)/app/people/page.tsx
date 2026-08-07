@@ -7,6 +7,12 @@ export const metadata: Metadata = {
   title: "구성원",
 };
 
+/** 주소에서 온 검색어를 한 줄로 맞춘다 — 여러 번 왔으면 **첫 값**만 쓴다 */
+function toKeyword(value: string | string[] | undefined): string {
+  if (Array.isArray(value)) return value[0] ?? "";
+  return value ?? "";
+}
+
 /**
  * 구성원 — **회사에서 사람을 찾는 자리**다.
  *
@@ -23,9 +29,14 @@ export const metadata: Metadata = {
 export default async function AppPeoplePage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string }>;
+  /*
+    ⚠️ **`string`으로만 적으면 거짓말이다.** 주소는 같은 이름을 여러 번 받을 수 있어
+       (`?q=김&q=이`) 값이 배열로 온다 — 타입만 좁게 적어 두면 타입 검사는 통과하고
+       실행할 때 `keyword.trim()`에서 터진다(주소만 치면 누구나 낼 수 있는 500이다).
+  */
+  searchParams: Promise<{ q?: string | string[] }>;
 }) {
-  const keyword = (await searchParams).q ?? "";
+  const keyword = toKeyword((await searchParams).q);
   const { summary, chart } = await getPeopleDirectory(keyword);
 
   return (

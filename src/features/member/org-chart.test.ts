@@ -1,8 +1,8 @@
 import { AUTHORITY } from "@/constants/authority";
-import { MEMBER_STATUS } from "@/constants/member";
+import { MEMBER_STATUS, ROLE_NONE_LABEL } from "@/constants/member";
 
 import type { ManagedMember } from "./manage-types";
-import { buildOrgChart, isCurrentOrgMember, searchOrgMembers, summarizeOrg } from "./org-chart";
+import { buildOrgChart, searchOrgMembers, summarizeOrg } from "./org-chart";
 import { NO_TEAM_LABEL } from "./org-types";
 
 /**
@@ -84,6 +84,28 @@ describe("buildOrgChart", () => {
   });
 
   /*
+    ⚠️ 화면이 "없으면 뭘 적을지"를 정하게 두면 부르는 곳마다 답이 갈린다 — 실제로 한때
+       이 화면만 직급만 적어서 사원 관리와 다른 말을 했다. UI 계약이 값을 보장한다.
+  */
+  it("역할이 없으면 `없음`으로 맞춰 넘긴다 — 화면이 정하지 않는다", () => {
+    const chart = buildOrgChart([LEADER]);
+
+    expect(chart.teams[0]?.members[0]?.roleLabel).toBe(ROLE_NONE_LABEL);
+  });
+
+  /*
+    ⚠️ 나간 사람은 목록에 남는다(CLAUDE.md §도메인 상수). 남긴 회의·액션의 출처라
+       이름이 사라지면 추적이 끊긴다 — 화면이 `퇴사` 뱃지로 알린다.
+  */
+  it("퇴사자도 조직도에 남긴다", () => {
+    const resigned = member({ id: 9, name: "나간사람", status: MEMBER_STATUS.RESIGNED });
+    const chart = buildOrgChart([LEADER, resigned]);
+
+    expect(chart.teams[0]?.members.map((m) => m.name)).toContain("나간사람");
+    expect(chart.totalCount).toBe(2);
+  });
+
+  /*
     ⚠️ 팀이 없는 건 원래 대표뿐이다. 여기 사람이 담기면 명부가 이상한 것인데, 안 그리면
        전체 인원과 화면에 보이는 수가 어긋나 아무도 못 알아챈다.
   */
@@ -124,35 +146,6 @@ describe("buildOrgChart", () => {
 
   it("아무도 없으면 빈 조직도다", () => {
     expect(buildOrgChart([])).toEqual({ owner: null, teams: [], totalCount: 0 });
-  });
-});
-
-describe("isCurrentOrgMember", () => {
-  /*
-    ⚠️ 조직도는 **지금 조직**이다. 나간 사람이 팀에 남으면 `개발팀 3명`이 틀린 말이 된다.
-       "나간 사람은 목록에 남는다"는 규칙이 지키려는 건 기록의 출처이고, 그 자리는
-       사원 관리와 액션·회의 이력이지 여기가 아니다.
-  */
-  it("퇴사자는 조직도에서 뺀다", () => {
-    expect(
-      isCurrentOrgMember(member({ id: 9, name: "나간사람", status: MEMBER_STATUS.RESIGNED })),
-    ).toBe(false);
-  });
-
-  /*
-    ⚠️ 신청했을 뿐 승인 전이라 **여전히 재직 중**이다. 신청했다는 이유로 조직에서 빼면
-       화면이 앞서간다.
-  */
-  it("승인 대기 중인 사람은 그대로 남긴다 — 아직 재직 중이다", () => {
-    expect(
-      isCurrentOrgMember(member({ id: 3, name: "이하윤", status: MEMBER_STATUS.WAITING })),
-    ).toBe(true);
-  });
-
-  it("휴직자도 남긴다 — 자리에 없을 뿐 조직에는 있다", () => {
-    expect(
-      isCurrentOrgMember(member({ id: 5, name: "쉬는사람", status: MEMBER_STATUS.VACATION })),
-    ).toBe(true);
   });
 });
 
