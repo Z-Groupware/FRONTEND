@@ -19,27 +19,67 @@ const INITIAL: CompanySetting = {
     place: { address: "서울 강남구 테헤란로 152", lat: 37.500806, lng: 127.036377 },
     code: "ZIGZAG",
   },
+  /*
+    ⚠️ **사원 목이 실제로 쓰는 팀·역할과 맞춘다.** 직급과 같은 문제였다 — 여기는
+       `개발팀(프론트·백엔드)·기획팀·디자인팀`인데 사원들은 `마케팅팀·전략기획팀`에 있고
+       역할도 `프론트엔드`(여기는 `프론트`)를 달고 있었다. 두 목이 다른 회사를 그리면
+       팀·역할을 목록에서 고르게 하는 순간 고를 수 없는 값이 생긴다.
+    ⚠️ 역할 이름은 **5자까지**다(`MAX_NAME_LENGTH`). 사원 목이 쓰던 `브랜드 전략`·`캠페인 운영`
+       ·`비주얼 디자인`은 그 한도를 넘어 **기업 설정에서 만들 수조차 없는 이름**이었다 —
+       한도 안으로 줄이고 사원 목도 같이 맞췄다.
+    ⚠️ 역할이 **비어 있는 팀을 남긴다**(전략기획팀). 역할은 안 붙여도 되는 값이라
+       (WORKFLOW §9) 그 경로가 화면에서 보여야 한다.
+  */
   departments: [
     {
       id: "d1",
       name: "개발팀",
       children: [
-        { id: "r1", name: "프론트", children: [] },
+        { id: "r1", name: "프론트엔드", children: [] },
         { id: "r2", name: "백엔드", children: [] },
       ],
     },
-    { id: "d2", name: "기획팀", children: [] },
-    { id: "d3", name: "디자인팀", children: [] },
+    {
+      id: "d2",
+      name: "마케팅팀",
+      children: [
+        { id: "r3", name: "브랜드", children: [] },
+        { id: "r4", name: "캠페인", children: [] },
+      ],
+    },
+    {
+      id: "d3",
+      name: "디자인팀",
+      children: [{ id: "r5", name: "비주얼", children: [] }],
+    },
+    { id: "d4", name: "전략기획팀", children: [] },
+    /*
+      ⚠️ **사람이 없는 팀을 하나 둔다.** 사원이 딸린 팀만 있으면 "지울 수 있는 팀"이 하나도
+         없어서 삭제 경로를 데모에서 못 본다. 만들어만 두고 아직 아무도 안 넣은 팀은
+         실제로 흔하다.
+    */
+    { id: "d5", name: "신규팀", children: [] },
   ],
   /*
     ⚠️ **빈 팀을 하나 둔다**(디자인팀). 사람이 딸린 팀만 있으면 "지울 수 있는 팀"이 하나도
        없어서 삭제 경로를 데모에서 못 본다.
   */
-  teamMemberCounts: { d1: 6, d2: 3, d3: 0 },
+  teamMemberCounts: { d1: 3, d2: 3, d3: 2, d4: 1, d5: 0 },
+  /*
+    ⚠️ **사원 목이 실제로 쓰는 직급을 전부 담는다.** 전에는 `팀장·매니저·사원` 셋뿐이었는데
+       사원들은 `선임·주임·대리·과장`을 달고 있었다 — 두 목이 서로 다른 회사를 그리고 있었다.
+       직급을 목록에서 고르게 바꾸자(발급·직급 변경) 그 어긋남이 바로 드러났다.
+    ⚠️ `Leader` 권한은 **한 직급뿐**이다(`validatePositions`) — 팀장만 갖는다.
+    ⚠️ `대표`는 넣지 않는다. Owner는 회사에 하나뿐이고 발급·변경 대상이 아니라서
+       고를 수 있는 목록에 있으면 안 된다(§권한).
+  */
   positions: [
     { id: "p1", name: "팀장", role: AUTHORITY.LEADER },
-    { id: "p2", name: "매니저", role: AUTHORITY.MEMBER },
-    { id: "p3", name: "사원", role: AUTHORITY.MEMBER },
+    { id: "p2", name: "과장", role: AUTHORITY.MEMBER },
+    { id: "p3", name: "대리", role: AUTHORITY.MEMBER },
+    { id: "p4", name: "선임", role: AUTHORITY.MEMBER },
+    { id: "p5", name: "주임", role: AUTHORITY.MEMBER },
+    { id: "p6", name: "사원", role: AUTHORITY.MEMBER },
   ],
 };
 

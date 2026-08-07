@@ -1,0 +1,386 @@
+import { AUTHORITY } from "@/constants/authority";
+import { ACTION_STATUS } from "@/constants/domain";
+import { HANDOVER_TYPE } from "@/constants/handover";
+import { DELETED_MEMBER_STATUS, isVisibleMemberStatus, MEMBER_STATUS } from "@/constants/member";
+
+import type { ManagedMember, ManagedMemberDetail } from "../manage-types";
+
+/**
+ * 목 — WORKFLOW §0의 **페르소나 그대로**다.
+ *
+ * ⚠️ 이름·팀·권한을 여기서 새로 지어내지 않는다. 대시보드·회의 참석자 목록과 같은 사람들이라,
+ *    다르면 데모에서 화면을 오갈 때 회사가 달라 보인다.
+ * ⚠️ **고치면 남는다.** 모듈 수준 저장소라 서버가 살아 있는 동안은 승인·변경이 실제로
+ *    반영된다 — 눌러도 아무 일 없는 목은 "승인했습니다"가 거짓말이 된다(§정직한 목업).
+ */
+
+const INITIAL: ManagedMemberDetail[] = [
+  {
+    // ⚠️ Owner는 팀이 없다 — 화면에 `-`로 적힌다(WORKFLOW §9)
+    member: {
+      id: 1,
+      name: "박대표",
+      email: "ceo@zgroup.co.kr",
+      teamName: null,
+      position: "대표",
+      authority: AUTHORITY.OWNER,
+      isAdmin: false,
+      roleLabel: null,
+      status: MEMBER_STATUS.ACTIVE,
+      joinedAt: "2020-01-02",
+      pendingHandoverType: null,
+    },
+    actions: [],
+    pendingHandover: null,
+  },
+  {
+    member: {
+      id: 2,
+      name: "김서준",
+      email: "seojun@zgroup.co.kr",
+      teamName: "개발팀",
+      position: "팀장",
+      authority: AUTHORITY.LEADER,
+      isAdmin: false,
+      roleLabel: null,
+      status: MEMBER_STATUS.ACTIVE,
+      joinedAt: "2021-03-02",
+      pendingHandoverType: null,
+    },
+    actions: [
+      {
+        id: "a-201",
+        title: "3분기 개발 로드맵 확정",
+        status: ACTION_STATUS.IN_PROGRESS,
+        dueDate: "2026-08-14",
+      },
+    ],
+    pendingHandover: null,
+  },
+  {
+    /*
+      ⚠️ **휴직 승인을 기다리는 사람을 하나 둔다.** 없으면 이 화면의 핵심 경로
+         (최종 승인·반려)를 데모에서 아예 못 본다.
+    */
+    member: {
+      id: 3,
+      name: "이하윤",
+      email: "hayun@zgroup.co.kr",
+      teamName: "개발팀",
+      position: "선임",
+      authority: AUTHORITY.MEMBER,
+      isAdmin: true,
+      roleLabel: "프론트엔드",
+      status: MEMBER_STATUS.WAITING,
+      joinedAt: "2022-05-10",
+      pendingHandoverType: null,
+    },
+    actions: [
+      {
+        id: "a-101",
+        title: "온보딩 플로우 와이어프레임 검토",
+        status: ACTION_STATUS.IN_PROGRESS,
+        dueDate: "2026-08-05",
+      },
+      {
+        id: "a-102",
+        title: "API 엔드포인트 문서화",
+        status: ACTION_STATUS.TODO,
+        dueDate: "2026-08-07",
+      },
+      {
+        id: "a-103",
+        title: "스프린트 보드 세팅",
+        status: ACTION_STATUS.DONE,
+        dueDate: "2026-07-25",
+      },
+    ],
+    pendingHandover: {
+      id: "h-301",
+      type: HANDOVER_TYPE.VACATION,
+      period: { from: "2026-08-05", to: "2026-08-09" },
+      actionCount: 3,
+      midApproval: { approverName: "김서준", approvedAt: "2026-07-29" },
+    },
+  },
+  {
+    member: {
+      id: 4,
+      name: "박도현",
+      email: "dohyun@zgroup.co.kr",
+      teamName: "개발팀",
+      position: "주임",
+      authority: AUTHORITY.MEMBER,
+      isAdmin: false,
+      roleLabel: "백엔드",
+      status: MEMBER_STATUS.ACTIVE,
+      joinedAt: "2023-01-15",
+      pendingHandoverType: null,
+    },
+    actions: [
+      {
+        id: "a-104",
+        title: "회의록 저장 API 연동",
+        status: ACTION_STATUS.TODO,
+        dueDate: "2026-08-12",
+      },
+    ],
+    pendingHandover: null,
+  },
+  {
+    member: {
+      id: 5,
+      name: "최유진",
+      email: "yujin@zgroup.co.kr",
+      teamName: "마케팅팀",
+      position: "팀장",
+      authority: AUTHORITY.LEADER,
+      isAdmin: false,
+      roleLabel: null,
+      status: MEMBER_STATUS.ACTIVE,
+      joinedAt: "2023-04-20",
+      pendingHandoverType: null,
+    },
+    actions: [],
+    pendingHandover: null,
+  },
+  {
+    member: {
+      id: 6,
+      name: "정민석",
+      email: "minseok@zgroup.co.kr",
+      teamName: "마케팅팀",
+      position: "대리",
+      authority: AUTHORITY.MEMBER,
+      isAdmin: false,
+      roleLabel: "브랜드",
+      status: MEMBER_STATUS.ACTIVE,
+      joinedAt: "2020-09-01",
+      pendingHandoverType: null,
+    },
+    actions: [],
+    pendingHandover: null,
+  },
+  {
+    member: {
+      id: 7,
+      name: "강서연",
+      email: "seoyeon@zgroup.co.kr",
+      teamName: "디자인팀",
+      position: "팀장",
+      authority: AUTHORITY.LEADER,
+      isAdmin: false,
+      roleLabel: null,
+      status: MEMBER_STATUS.ACTIVE,
+      joinedAt: "2024-02-19",
+      pendingHandoverType: null,
+    },
+    actions: [],
+    pendingHandover: null,
+  },
+  {
+    /* ⚠️ 오프보딩 대기도 하나 — 휴직과 문구·결과가 다르다 */
+    member: {
+      id: 8,
+      name: "임지안",
+      email: "jian@zgroup.co.kr",
+      teamName: "마케팅팀",
+      position: "사원",
+      authority: AUTHORITY.MEMBER,
+      isAdmin: false,
+      roleLabel: "캠페인",
+      status: MEMBER_STATUS.WAITING,
+      joinedAt: "2024-06-01",
+      pendingHandoverType: null,
+    },
+    actions: [
+      {
+        id: "a-105",
+        title: "8월 캠페인 소재 정리",
+        status: ACTION_STATUS.IN_PROGRESS,
+        dueDate: "2026-08-20",
+      },
+    ],
+    pendingHandover: {
+      id: "h-302",
+      type: HANDOVER_TYPE.OFFBOARDING,
+      period: null,
+      actionCount: 5,
+      midApproval: { approverName: "최유진", approvedAt: "2026-08-01" },
+    },
+  },
+  {
+    member: {
+      id: 9,
+      name: "오현우",
+      email: "hyunwoo@zgroup.co.kr",
+      teamName: "전략기획팀",
+      position: "과장",
+      authority: AUTHORITY.LEADER,
+      isAdmin: false,
+      roleLabel: null,
+      status: MEMBER_STATUS.ACTIVE,
+      joinedAt: "2021-11-08",
+      pendingHandoverType: null,
+    },
+    actions: [],
+    pendingHandover: null,
+  },
+  {
+    member: {
+      id: 10,
+      name: "한소율",
+      email: "soyul@zgroup.co.kr",
+      teamName: "디자인팀",
+      position: "사원",
+      authority: AUTHORITY.MEMBER,
+      isAdmin: false,
+      roleLabel: "비주얼",
+      status: MEMBER_STATUS.ACTIVE,
+      joinedAt: "2024-08-12",
+      pendingHandoverType: null,
+    },
+    actions: [],
+    pendingHandover: null,
+  },
+];
+
+/*
+  ⚠️ `structuredClone`을 쓰지 않는다. Node엔 있지만 **jsdom 테스트 환경에는 없어서**
+     이 모듈을 import하는 것만으로 스위트가 죽는다. 여기 값은 전부 평범한 JSON이다.
+*/
+function clone<T>(value: T): T {
+  return JSON.parse(JSON.stringify(value)) as T;
+}
+
+let store: ManagedMemberDetail[] = clone(INITIAL);
+
+/**
+ * 화면에 내보낼 사원들.
+ *
+ * ⚠️ **지워진 사람은 뺀다**(`isVisibleMemberStatus`). 퇴사자는 남고(기록의 출처라서),
+ *    탈퇴 처리된 사람만 목록에서 사라진다(§도메인 상수).
+ * ⚠️ 대기 중인 신청의 종류를 **행에 실어 준다** — 목록이 상세를 사람 수만큼 훑지 않게.
+ */
+export function listMockManagedMembers(): ManagedMember[] {
+  return clone(store)
+    .filter((entry) => isVisibleMemberStatus(entry.member.status))
+    .map((entry) => ({
+      ...entry.member,
+      pendingHandoverType: entry.pendingHandover?.type ?? null,
+    }));
+}
+
+export function findMockManagedMember(id: number): ManagedMemberDetail | null {
+  const found = store.find((entry) => entry.member.id === id);
+  return found ? clone(found) : null;
+}
+
+/** 직급·권한·Admin 겸직 변경 */
+export function updateMockMemberGrade(
+  id: number,
+  next: { position: string; authority: ManagedMember["authority"]; isAdmin: boolean },
+): void {
+  store = store.map((entry) =>
+    entry.member.id === id ? { ...entry, member: { ...entry.member, ...next } } : entry,
+  );
+}
+
+/**
+ * 최종 승인 — 신청을 치우고 사람 상태를 옮긴다.
+ * ⚠️ 휴직은 `VACATION`, 오프보딩은 `RESIGNED`다. 끝난 뒤의 사람 상태는 흐름 이름과 다르다
+ *    (§도메인 상수: 오프보딩 ↔ 퇴사).
+ */
+export function approveMockHandover(id: number): void {
+  store = store.map((entry) => {
+    if (entry.member.id !== id || !entry.pendingHandover) return entry;
+    const isVacation = entry.pendingHandover.type === HANDOVER_TYPE.VACATION;
+    return {
+      ...entry,
+      member: {
+        ...entry.member,
+        status: isVacation ? MEMBER_STATUS.VACATION : MEMBER_STATUS.RESIGNED,
+      },
+      pendingHandover: null,
+    };
+  });
+}
+
+/** 반려 — 신청을 치우고 사람은 재직으로 되돌린다 */
+export function rejectMockHandover(id: number): void {
+  store = store.map((entry) =>
+    entry.member.id === id && entry.pendingHandover
+      ? {
+          ...entry,
+          member: { ...entry.member, status: MEMBER_STATUS.ACTIVE },
+          pendingHandover: null,
+        }
+      : entry,
+  );
+}
+
+/**
+ * 계정 발급 — 목록 맨 뒤에 붙인다.
+ * ⚠️ 입사일은 **오늘**이 아니라 부르는 쪽이 준다. 여기서 `new Date()`를 부르면 서버 렌더와
+ *    클라이언트가 갈려 하이드레이션이 어긋난다(§저장소 화면과 같은 이유).
+ */
+export function addMockManagedMember(
+  draft: {
+    name: string;
+    email: string;
+    teamName: string;
+    position: string;
+    authority: ManagedMember["authority"];
+    isAdmin: boolean;
+    roleLabel: string;
+  },
+  joinedAt: string,
+): ManagedMember {
+  const id = Math.max(0, ...store.map((entry) => entry.member.id)) + 1;
+  const member: ManagedMember = {
+    id,
+    name: draft.name.trim(),
+    email: draft.email.trim(),
+    teamName: draft.teamName.trim(),
+    position: draft.position.trim(),
+    authority: draft.authority,
+    isAdmin: draft.isAdmin,
+    /*
+      ⚠️ 발급 때 정한다. 전에는 `null`로 두고 "팀장이 붙인다"고 적어 뒀는데,
+         **팀장이 붙일 화면이 없었다** — 온보딩 뒤에 들어온 사람은 계속 `없음`이었다.
+      ⚠️ 빈 값은 `null`로 저장한다 — 화면은 `없음`으로 읽고, 값이 있는 것과 없는 것을 가른다.
+    */
+    roleLabel: draft.roleLabel.trim() || null,
+    status: MEMBER_STATUS.ACTIVE,
+    joinedAt,
+    pendingHandoverType: null,
+  };
+  store = [...store, { member, actions: [], pendingHandover: null }];
+  return clone(member);
+}
+
+/** 이미 쓰고 있는 메일 주소들 — 중복 발급을 막는 데 쓴다 */
+export function listMockMemberEmails(): string[] {
+  return store.map((entry) => entry.member.email);
+}
+
+/**
+ * 계정 탈퇴 — **소프트 딜리트**다.
+ *
+ * ⚠️ 줄을 지우지 않고 상태만 `DELETED`로 바꾼다. 그 사람이 남긴 회의·액션이 참조하는
+ *    id라서, 진짜로 지우면 그 기록들이 가리킬 곳을 잃는다.
+ * ⚠️ `DELETED`는 **상태가 아니라 목록에서 빠지는 일**이라 `MEMBER_STATUS`에 없다 —
+ *    목록을 만드는 쪽이 `isVisibleMemberStatus`로 거른다(§도메인 상수).
+ */
+export function deleteMockManagedMember(id: number): void {
+  store = store.map((entry) =>
+    entry.member.id === id
+      ? { ...entry, member: { ...entry.member, status: DELETED_MEMBER_STATUS as never } }
+      : entry,
+  );
+}
+
+/** 테스트가 앞 테스트의 변경을 물려받지 않게 되돌린다 */
+export function resetMockManagedMembers(): void {
+  store = clone(INITIAL);
+}

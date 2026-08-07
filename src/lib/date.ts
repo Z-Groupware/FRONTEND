@@ -171,3 +171,18 @@ export function formatFullDate(iso: string): string {
 
   return `${iso.slice(0, 4)}년 ${day}`;
 }
+
+/**
+ * `2026년 9월 1일` — **요일 없이.**
+ *
+ * ⚠️ 요일이 **뜻이 없는 자리**에 쓴다. 입사일·가입일처럼 지나간 날짜는 무슨 요일이었는지가
+ *    쓸모없는데, 표에서는 그 세 글자 때문에 칸이 모자라 `2020년 1월 2\n일(목)`처럼 줄이
+ *    깨진다 — 요일은 회의·마감처럼 **앞으로 할 일**을 잡을 때만 필요하다.
+ * ⚠️ 연도는 늘 붙인다. 입사일은 몇 해 전 값이 흔해서 `1월 2일`만 있으면 언제인지 모른다.
+ */
+export function formatYearMonthDay(iso: string): string {
+  const day = formatMonthDayWeekday(iso);
+  if (!day) return iso;
+
+  return `${iso.slice(0, 4)}년 ${day.replace(/\(.\)$/, "")}`;
+}

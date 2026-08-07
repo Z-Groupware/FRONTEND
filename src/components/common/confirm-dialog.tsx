@@ -1,5 +1,6 @@
 "use client";
 
+import { CircleAlert } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { DialogMark } from "@/components/common/dialog-mark";
@@ -48,6 +49,19 @@ interface ConfirmDialogProps {
   isPending?: boolean;
   /** 진행 중에 보여줄 실행 버튼 문구 — 없으면 `confirmLabel`을 그대로 쓴다 */
   pendingLabel?: string;
+  /**
+   * 실패 사유 — 창을 **열어 둔 채** 버튼 위에 적는다.
+   *
+   * ⚠️ 되돌릴 수 없는 일이 막혔을 때는 토스트로만 알리지 않는다. 토스트는 사라지는데
+   *    창은 그대로 떠 있어서, 몇 초 뒤에 온 사람은 아무 일도 안 일어난 줄 알고 같은
+   *    버튼을 다시 누른다(§토스트는 보조다).
+   */
+  error?: string | null;
+  /**
+   * 실행 버튼만 잠근다 — `children`에 **채워야 할 칸**이 있을 때 쓴다(반려 사유).
+   * ⚠️ 취소는 안 잠근다. 못 채워서 못 나가는 창이 되면 갇힌다.
+   */
+  isConfirmDisabled?: boolean;
   onConfirm: () => void;
 }
 
@@ -79,6 +93,8 @@ export function ConfirmDialog({
   mark,
   isPending,
   pendingLabel,
+  isConfirmDisabled,
+  error,
   onConfirm,
 }: ConfirmDialogProps) {
   return (
@@ -108,6 +124,25 @@ export function ConfirmDialog({
         {children && <div className="mt-5">{children}</div>}
 
         {/*
+          ⚠️ 버튼 **바로 위**다 — 다시 누르려는 손이 지나가는 자리에 있어야 읽힌다.
+          ⚠️ 표식은 **동그라미 느낌표**(`CircleAlert`)다. 저장소·구독 화면의 경고와 같은
+             것을 같은 크기로 쓴다 — 빨간 글자만 두면 앞뒤 회색 문장에 묻힌다.
+          ⚠️ 아이콘은 **줄 높이만 한 상자**에 담아 세운다. 그냥 나란히 두면 글자보다
+             살짝 떠 보인다(§아이콘 옆 한글 정렬).
+        */}
+        {error && (
+          <p
+            role="alert"
+            className="text-destructive mt-4 flex items-start justify-center gap-1.5 text-[13px] leading-5 break-keep"
+          >
+            <span className="flex h-5 shrink-0 items-center">
+              <CircleAlert className="size-3.5" aria-hidden />
+            </span>
+            <span>{error}</span>
+          </p>
+        )}
+
+        {/*
           두 버튼이 같은 폭이다 — 한쪽이 넓으면 그쪽을 권하는 것처럼 보인다.
           ⚠️ 높이는 완료 창 버튼(h-11)과 같다. 확인 창만 작으면 같은 무게의 결정으로 안 읽힌다.
         */}
@@ -130,7 +165,7 @@ export function ConfirmDialog({
           <Button
             type="button"
             variant={isDestructive ? "destructive" : "ink"}
-            disabled={isPending}
+            disabled={isPending || isConfirmDisabled}
             onClick={onConfirm}
             className={
               isDestructive

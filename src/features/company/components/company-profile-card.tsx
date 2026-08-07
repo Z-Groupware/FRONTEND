@@ -23,7 +23,12 @@ function Field({
   error,
   children,
 }: {
-  name: keyof CompanyProfileDraft;
+  /**
+   * 칸 이름 — id를 만드는 데 쓴다.
+   * ⚠️ `code`는 폼이 보내는 값이 아니라 **읽기 전용 줄**이라 draft에 없다. 그래도 같은
+   *    `Field`를 쓰는 건, 위 두 칸과 라벨·간격이 한 톨도 어긋나면 안 되기 때문이다.
+   */
+  name: keyof CompanyProfileDraft | "code";
   /**
    * 라벨이 가리킬 입력의 id.
    * ⚠️ 위치 칸만 다르다 — `AddressPicker`가 자기 입력에 `company-address`를 박아 두고 있어서,
@@ -113,19 +118,6 @@ export function CompanyProfileCard({ profile }: { profile: CompanyProfile }) {
       <LeaveGuard hasUnsaved={isDirty} />
       <SettingCard
         title={COMPANY_SECTION_TITLE.PROFILE}
-        /*
-          ⚠️ 기업 코드는 **폼 밖**이다. 고칠 수 없는 값이라 입력칸 자리에 두면 무엇을 해도
-             어색하다 — 상자를 두르면 빈 칸으로, 안 두르면 렌더가 덜 된 칸으로 읽힌다.
-             카드 머리 오른쪽은 저장소·구독 카드가 수치를 놓는 자리이고, 여기서도 회사를
-             가리키는 값이 온다.
-        */
-        aside={
-          <span className="flex items-center gap-2">
-            <span className="text-muted-foreground">{COMPANY_FIELD_LABEL.CODE}</span>
-            {/* ⚠️ 크기는 다른 카드 aside와 같은 12px다 — 강조는 굵기로만 준다 */}
-            <span className="text-foreground font-medium tracking-[0.1em]">{profile.code}</span>
-          </span>
-        }
         description={
           <>
             기업 등록 신청 때 적은 회사 정보입니다. 기업 코드는 사원이 로그인할 때 적는 값이라{" "}
@@ -216,6 +208,24 @@ export function CompanyProfileCard({ profile }: { profile: CompanyProfile }) {
                 inputMode="numeric"
                 aria-invalid={Boolean(errorOf("businessNumber"))}
                 aria-describedby="company-businessNumber-error"
+              />
+            </Field>
+
+            {/*
+              ⚠️ 기업 코드는 **사업자등록번호 바로 아래, 위 두 칸과 같은 모양**이다.
+                 셋이 나란히 서야 한 묶음(회사를 가리키는 값)으로 읽힌다 — 카드 머리로 빼면
+                 수치처럼 보이고, 폼 밖에 두면 어디에 딸린 값인지 알 수 없다.
+              ⚠️ `readOnly`이지 `disabled`가 아니다. `disabled`는 탭 순서에서 빠져 **키보드로
+                 골라 복사할 수 없다** — 대표가 사원에게 알려 줘야 하는 값이라 복사가 막히면
+                 안 된다. 읽기 전용이라는 뜻도 `readOnly`가 정확하다.
+              ⚠️ `name`을 주지 않는다 — 폼이 보내는 값이 아니다(서버는 이 값을 안 받는다).
+            */}
+            <Field name="code" label={COMPANY_FIELD_LABEL.CODE}>
+              <Input
+                id="company-code"
+                value={profile.code}
+                readOnly
+                className="bg-muted text-muted-foreground cursor-default tracking-[0.1em] tabular-nums"
               />
             </Field>
           </div>

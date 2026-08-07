@@ -44,7 +44,7 @@ interface CancelSubscriptionProps {
   ⚠️ 기록을 어떻게 다루는지는 **여기서 약속하지 않는다.** 아직 정해지지 않은 정책이라
      화면에 적으면 그게 계약이 된다 — 정해지면 그때 한 줄 붙인다.
 */
-const DOWNGRADE_NOTE = "종료 후에는 워크스페이스에 접근할 수 없습니다.";
+const DOWNGRADE_NOTE = "그 뒤로는 워크스페이스에 들어올 수 없습니다.";
 
 export function CancelSubscription({
   periodEnd,
@@ -68,38 +68,38 @@ export function CancelSubscription({
 
   return (
     /*
-      ⚠️ **곁 컬럼(360px)에 선다.** 전에는 설명 왼쪽·버튼 오른쪽 한 줄이었는데, 화면이 2컬럼이
-         되면서 그 폭에서는 설명이 눌려 여섯 줄로 접히고 버튼이 구겨졌다. 좁은 칸에서는
-         설명 아래에 버튼을 두고 **오른쪽 끝에 붙인다** — 실행 버튼 자리는 그대로다.
+      ⚠️ **곁 컬럼(360px) 결제 수단 밑에 선다.** 돈에 관한 것들이 여기 모여 있고
+         (플랜 → 결제 수단 → 해지), 해지는 그 이야기의 마지막이다.
+      ⚠️ **설명 왼쪽, 버튼 오른쪽 한 줄**이다. 좁은 칸이라 설명이 두세 줄로 접히지만,
+         버튼이 그 옆에 서야 "이 문장에 대한 행동"으로 읽힌다 — 아래로 내리면 문장과
+         떨어져 카드 오른쪽 아래에 홀로 남는다.
+      ⚠️ 버튼은 `shrink-0`이라 설명이 길어져도 안 눌린다. 세로는 가운데로 맞춘다.
       ⚠️ 그래도 **높이를 키우지 않는다.** 해지가 이 화면의 주요 기능처럼 보이면 안 된다 —
-         제목은 한 줄, 버튼은 하나뿐이다.
+         제목 한 줄, 설명 두 줄, 버튼 하나뿐이다.
     */
-    <section className="border-border bg-card flex flex-col gap-4 rounded-2xl border px-7 py-5">
-      <div className="min-w-0">
-        <h2 className="text-[14px] leading-5 font-semibold tracking-[-0.2px]">구독 해지</h2>
-        <p className="text-muted-foreground pt-1 text-[13px] leading-5 break-keep">
-          {isCanceling ? (
-            <>
-              {endsOn ? (
-                <>
-                  <span className="text-foreground font-medium">{endsOn}</span>까지
-                </>
-              ) : (
-                "현재 결제 주기가 끝날 때까지"
-              )}{" "}
-              이용할 수 있습니다. 계속 이용하시려면 해지를 취소해 주세요.
-            </>
-          ) : (
-            <>
-              해지 시 현재 결제 주기
-              {endsOn && (
-                <>
-                  (<span className="text-foreground font-medium">{endsOn}</span>)
-                </>
-              )}
-              가 끝난 뒤 구독이 종료됩니다. {DOWNGRADE_NOTE}
-            </>
-          )}
+    <section className="border-border bg-card flex items-center gap-4 rounded-2xl border px-7 py-5">
+      <div className="min-w-0 flex-1">
+        {/*
+          ⚠️ **다른 카드 머리와 같은 규격**이다(점 표식 + 15px semibold). 이 카드만 14px에
+             점이 없어서, 곁 컬럼 셋(플랜·결제 수단·해지) 중 하나만 다른 물건처럼 보였다.
+        */}
+        <h2 className="flex items-center gap-2 text-[15px] leading-6 font-semibold tracking-[-0.2px]">
+          <span className="bg-foreground size-2 rounded-full" aria-hidden />
+          구독 해지
+        </h2>
+
+        {/*
+          ⚠️ **한 문장 안에서 굵기를 바꾸지 않는다.** 전에는 날짜만 진하고 나머지가 흐려서
+             한 줄을 읽는데 눈이 두 번 끊겼다 — 위계는 **줄 단위**로 준다.
+             첫 줄이 알아야 할 것(언제까지), 둘째 줄이 그 결과다.
+        */}
+        <p className="pt-1.5 text-[13px] leading-5 break-keep">
+          {isCanceling
+            ? `${endsOn ?? "이번 결제 주기"}까지 이용할 수 있습니다.`
+            : `${endsOn ?? "이번 결제 주기"}까지 쓰고 종료됩니다.`}
+        </p>
+        <p className="text-muted-foreground pt-0.5 text-[12px] leading-4 break-keep">
+          {isCanceling ? "계속 쓰시려면 해지를 취소해 주세요." : DOWNGRADE_NOTE}
         </p>
       </div>
 
@@ -107,7 +107,7 @@ export function CancelSubscription({
         ⚠️ 권한이 없으면 **버튼을 숨기지 않고 잠근다.** 사라지면 "원래 없는 기능"으로 읽히는데
            사실은 권한 문제다 — 왜 못 누르는지 옆에 적는다(§정직성).
       */}
-      <div className="flex shrink-0 items-center justify-end gap-3">
+      <div className="flex shrink-0 flex-col items-end gap-1.5">
         {!canManage && (
           <span className="text-muted-foreground text-[12px] leading-4">
             대표 또는 Admin 권한이 필요합니다
@@ -118,9 +118,18 @@ export function CancelSubscription({
           variant="outline"
           disabled={!canManage}
           onClick={() => setIsOpen(true)}
-          className="border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive h-9"
+          /*
+            ⚠️ **좌우 여백을 넉넉히 준다.** `해지` 두 글자에 높이만 잡아 두면 폭이 글자만큼만
+               나와 정사각형이 된다 — 버튼이 아니라 표식처럼 보인다.
+            ⚠️ 최소 폭은 안 잡는다 — 곁 컬럼이 좁아 그만큼이 설명에서 빠진다.
+          */
+          className="border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive h-9 px-4"
         >
-          {isCanceling ? "해지 취소" : "구독 해지"}
+          {/*
+            ⚠️ 제목이 이미 "구독 해지"다 — 버튼까지 같은 말을 하면 한 카드에 같은 낱말이
+               두 번 뜬다. 버튼은 **하는 일만** 한 낱말로 적는다(§디자인 토큰).
+          */}
+          {isCanceling ? "해지 취소" : "해지"}
         </Button>
       </div>
 
