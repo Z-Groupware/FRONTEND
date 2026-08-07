@@ -1,5 +1,6 @@
 import "server-only";
 
+import { isVisibleMemberStatus } from "@/constants/member";
 import { paginate, type PaginatedResult } from "@/lib/paginate";
 import { isMock } from "@/mocks/config";
 
@@ -49,9 +50,19 @@ export async function getManagedMembersPage(
   return paginate(searchMembers(filterMembers(all, query.filter), query.keyword), page, pageSize);
 }
 
-/** 없는 사람이면 `null` — 화면이 `notFound()`를 부른다 */
+/**
+ * 없는 사람이면 `null` — 화면이 `notFound()`를 부른다.
+ *
+ * ⚠️ **탈퇴 처리된 계정도 없는 사람이다.** 목록만 거르고 상세를 안 거르면 비대칭이 생긴다 —
+ *    목록에서 사라진 계정의 주소를 그대로 열 수 있고(탈퇴 직후 뒤로 가기가 흔한 길이다),
+ *    상태 라벨이 빈칸으로 뜨는 데다 직급·권한 폼까지 열려서 **없는 사람에게 Admin 겸직을
+ *    얹을 수 있다**. 액션들도 이 함수로 대상을 찾으므로 여기서 막으면 서버 재검사까지 함께 닫힌다.
+ */
 export async function getManagedMember(id: number): Promise<ManagedMemberDetail | null> {
-  if (isMock) return findMockManagedMember(id);
+  if (isMock) {
+    const found = findMockManagedMember(id);
+    return found && isVisibleMemberStatus(found.member.status) ? found : null;
+  }
 
   // TODO(BE 협의): `GET /companies/me/members/{id}`
   throw new Error("사원 조회 API가 아직 연결되지 않았습니다.");

@@ -430,14 +430,17 @@ describe("fetchMembersPageAction — 목록 페이지", () => {
     expect(offboarding.items).not.toHaveLength(0);
   });
 
-  /* ⚠️ 권한 없는 사람이 주소만 알고 불러도 목록이 새지 않는다 */
-  it("권한이 없으면 빈 페이지를 준다", async () => {
+  /*
+    ⚠️ 권한 없는 사람이 주소만 알고 불러도 목록이 새지 않는다.
+    ⚠️ **빈 페이지가 아니라 실패다.** 빈 결과를 성공으로 돌려주면 화면은 "전체 0명"으로
+       바뀌고 조용히 멈춘다 — 던져야 [다시 시도]가 뜬다(§목록 3상태).
+  */
+  it("권한이 없으면 실패로 알린다", async () => {
     getViewerMock.mockResolvedValue(MEMBER);
 
-    const page = await fetchMembersPageAction({ keyword: "", filter: MEMBER_FILTER.ALL }, 1);
-
-    expect(page.items).toHaveLength(0);
-    expect(page.totalCount).toBe(0);
+    await expect(
+      fetchMembersPageAction({ keyword: "", filter: MEMBER_FILTER.ALL }, 1),
+    ).rejects.toThrow("사원 목록을 볼 권한이 없습니다");
   });
 
   it("범위를 벗어난 페이지는 안으로 당긴다", async () => {
