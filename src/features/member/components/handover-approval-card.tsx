@@ -102,16 +102,24 @@ export function HandoverApprovalCard({
       </div>
 
       <div className="flex flex-col gap-4 px-7 pb-6">
-        {/* 신청 요약 — 유형·기간·건수 셋뿐이다 */}
-        <dl className="border-border bg-secondary/40 divide-border divide-y rounded-lg border">
-          <div className="flex items-baseline gap-4 px-4 py-2.5">
-            <dt className="text-muted-foreground w-20 shrink-0 text-[12px] leading-5">유형</dt>
+        {/*
+          신청 요약 — 유형·기간·건수 셋뿐이다.
+          ⚠️ **가로로 눕힌다.** 셋을 세로로 쌓으니 라벨 칸(80px) 오른쪽이 통째로 비고 카드만
+             120px 넘게 길어졌다 — 값이 짧은 셋이라 한 줄에 나란히 두는 편이 읽기도 쉽다.
+          ⚠️ 라벨 위·값 아래는 **왼쪽 사람 정보 카드와 같은 문법**이다. 한 화면에서 같은
+             성격의 묶음이 다르게 생기면 다른 물건처럼 보인다.
+          ⚠️ 좁아지면 세로로 돌아온다(`sm:`) — 나란히 두려다 값이 잘리는 것보다 낫다.
+          ⚠️ 오프보딩은 기간이 없다(돌아오지 않는다). `flex-1`이라 남은 둘이 폭을 나눠 갖고,
+             빈 칸을 남기지 않는다 — 빈 자리를 두면 값이 빠진 것처럼 읽힌다.
+        */}
+        <dl className="border-border bg-secondary/40 divide-border flex flex-col divide-y rounded-lg border sm:flex-row sm:divide-x sm:divide-y-0">
+          <div className="flex flex-1 flex-col gap-0.5 px-4 py-2.5">
+            <dt className="text-muted-foreground text-[12px] leading-4">유형</dt>
             <dd className="text-[13px] leading-5">{typeLabel}</dd>
           </div>
-          {/* ⚠️ 오프보딩은 기간이 없다 — 돌아오지 않는다. 빈 줄을 두면 값이 빠진 것처럼 읽힌다 */}
           {handover.period && (
-            <div className="flex items-baseline gap-4 px-4 py-2.5">
-              <dt className="text-muted-foreground w-20 shrink-0 text-[12px] leading-5">기간</dt>
+            <div className="flex flex-1 flex-col gap-0.5 px-4 py-2.5">
+              <dt className="text-muted-foreground text-[12px] leading-4">기간</dt>
               <dd className="text-[13px] leading-5">
                 <time dateTime={handover.period.from}>
                   {formatMonthDayWeekday(handover.period.from)}
@@ -123,8 +131,8 @@ export function HandoverApprovalCard({
               </dd>
             </div>
           )}
-          <div className="flex items-baseline gap-4 px-4 py-2.5">
-            <dt className="text-muted-foreground w-20 shrink-0 text-[12px] leading-5">인계 액션</dt>
+          <div className="flex flex-1 flex-col gap-0.5 px-4 py-2.5">
+            <dt className="text-muted-foreground text-[12px] leading-4">인계 액션</dt>
             <dd className="text-[13px] leading-5 tabular-nums">{handover.actionCount}건</dd>
           </div>
         </dl>
