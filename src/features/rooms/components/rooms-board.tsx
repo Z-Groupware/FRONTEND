@@ -2,7 +2,15 @@
 
 import { useState } from "react";
 
-import type { MeetingRoom, RoomMember, RoomProjectOption, RoomReservation } from "../types";
+import type { Authority } from "@/constants/authority";
+
+import type {
+  MeetingRoom,
+  RoomMember,
+  RoomProjectOption,
+  RoomReservation,
+  RoomTeamActionOption,
+} from "../types";
 import { RoomListPanel } from "./room-list-panel";
 import { RoomReservationDialog } from "./room-reservation-dialog";
 import { WeeklyRoomCalendarLoader } from "./weekly-room-calendar-loader";
@@ -12,6 +20,8 @@ interface RoomsBoardProps {
   rooms: MeetingRoom[];
   members: RoomMember[];
   projects: RoomProjectOption[];
+  hostAuthority: Authority;
+  teamActions: RoomTeamActionOption[];
   /** "YYYY-MM-DD" — 이 주의 월요일. 서버 컴포넌트가 이 주 기준으로 `initialReservations`를 내려준다. */
   week: string;
 }
@@ -29,6 +39,8 @@ export function RoomsBoard({
   rooms,
   members,
   projects,
+  hostAuthority,
+  teamActions,
   week,
 }: RoomsBoardProps) {
   const [reservations, setReservations] = useState(initialReservations);
@@ -50,6 +62,8 @@ export function RoomsBoard({
         rooms={rooms}
         members={members}
         projects={projects}
+        hostAuthority={hostAuthority}
+        teamActions={teamActions}
         onCreated={(created) => setReservations((prev) => [...prev, created])}
       />
     </div>

@@ -4,22 +4,21 @@ import { format } from "date-fns";
 import { useActionState, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
-import { MEETING_TOPIC_SUB, type MeetingTopicMain } from "@/constants/meeting";
-
 import { createRoomReservationAction, type RoomReservationFormState } from "../actions";
-import type { RoomReservation } from "../types";
-
-export const NO_PROJECT_VALUE = "__none__";
+import type { MeetingTopicInput, RoomReservation } from "../types";
 
 const INITIAL_STATE: RoomReservationFormState = { errors: {} };
+
+const EMPTY_TOPIC: MeetingTopicInput = { main: "", sub: "" };
 
 const EMPTY_FORM = {
   title: "",
   roomId: "",
-  projectId: NO_PROJECT_VALUE,
-  topicMain: "",
-  topicSub: "",
+  projectId: "",
+  topics: [EMPTY_TOPIC] as MeetingTopicInput[],
   attendeeIds: [] as number[],
+  /** Select 값은 문자열이라 여기서도 문자열로 든다 — 없으면 빈 문자열("Owner 개설"이거나 아직 안 골랐을 때). */
+  parentTeamActionId: "",
 };
 
 export type RoomReservationFormValues = typeof EMPTY_FORM;
@@ -35,6 +34,8 @@ interface UseRoomReservationFormOptions {
  * (CLAUDE.md §폴더·네이밍: 로직=커스텀훅).
  * ⚠️ shadcn `Select`는 네이티브 `<select>`가 아니라 `FormData`에 자동으로 안 실린다 —
  *    `add-todo-dialog.tsx`와 같은 방식으로 상태를 들고 있다가 제출 시 직접 `FormData`를 만든다.
+ * ⚠️ 회의 안건(`topics`)은 (대주제, 소주제) 자유 텍스트 쌍의 배열이다 — `topicMain`/`topicSub`를
+ *    같은 순서로 반복 추가해서 넘기고, 서버(`readTopics`, `actions.ts`)가 인덱스로 다시 짝짓는다.
  */
 export function useRoomReservationForm({
   slotStart,
@@ -69,23 +70,21 @@ export function useRoomReservationForm({
     formData.set("roomId", form.roomId);
     formData.set("date", format(slotStart, "yyyy-MM-dd"));
     formData.set("startTime", format(slotStart, "HH:mm"));
-    if (form.projectId !== NO_PROJECT_VALUE) formData.set("projectId", form.projectId);
-    formData.set("topicMain", form.topicMain);
-    formData.set("topicSub", form.topicSub);
+    formData.set("projectId", form.projectId);
+    for (const topic of form.topics) {
+      formData.append("topicMain", topic.main);
+      formData.append("topicSub", topic.sub);
+    }
+    if (form.parentTeamActionId) formData.set("parentTeamActionId", form.parentTeamActionId);
     for (const id of form.attendeeIds) formData.append("attendeeIds", String(id));
     formAction(formData);
   }
-
-  const topicSubOptions = form.topicMain
-    ? (MEETING_TOPIC_SUB[form.topicMain as MeetingTopicMain] ?? [])
-    : [];
 
   return {
     state,
     isPending,
     form,
     setForm,
-    topicSubOptions,
     handleOpenChange,
     handleSubmit,
   };

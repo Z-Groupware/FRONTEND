@@ -1,6 +1,10 @@
 import { type PaletteColor, pickPaletteColor } from "@/lib/palette";
 
-/** 프로젝트에 안 묶인 예약(예: 팀 위클리 싱크)의 중립색 — `RoomReservationEvent`의 기본값으로도 쓴다. */
+/**
+ * `RoomReservationEvent`의 기본값 — prop이 비어 오는 순간(예: dev HMR)에도 화면 전체가
+ * 죽는 것보다 중립색으로라도 그리는 쪽을 택한다. 프로젝트 태그는 이제 항상 있어서
+ * (WORKFLOW.md §3-1) 정상 흐름에서는 이 색이 실제로 쓰일 일이 없다.
+ */
 export const NEUTRAL_ACCENT_COLOR: PaletteColor = {
   bgColor: "var(--secondary)",
   textColor: "var(--muted-foreground)",

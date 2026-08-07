@@ -2,8 +2,8 @@
 jest.mock("next/cache", () => ({ revalidatePath: jest.fn() }));
 // isMock은 NEXT_PUBLIC_USE_MOCK 환경변수로 정해진다 — 테스트가 환경에 휘둘리지 않게 고정한다.
 jest.mock("@/mocks/config", () => ({ isMock: true }));
-// 기본은 실제 getMockActor()와 같은 값(OWNER, Admin 아님) — 회의실 관리 권한 테스트에서만
-// Admin 겸직 액터로 덮어쓴다(`canManageRooms`는 Admin 겸직자 전용이라 OWNER로는 절대 못 지나간다).
+// 기본은 실제 getMockActor()와 같은 값(OWNER, Admin 아님) — 회의실 관리·상위 팀 액션 권한
+// 테스트에서만 다른 역할·팀의 액터로 덮어쓴다.
 jest.mock("@/lib/mock-actor", () => ({
   getMockActor: jest.fn(() => ({ id: 1, role: "OWNER" })),
 }));
@@ -27,14 +27,22 @@ const VALID_ENTRIES: Record<string, string> = {
   date: "2026-08-11",
   startTime: "13:00",
   projectId: "1", // TOP_LEVEL_PROJECTS의 GOODS(id=1) — 실존 프로젝트여야 통과한다
-  topicMain: "PRODUCT",
-  topicSub: "ROADMAP_REVIEW",
 };
 
-const form = (entries: Record<string, string>, attendeeIds: number[] = [1]) => {
+const DEFAULT_TOPICS = [{ main: "제품", sub: "로드맵 검토" }];
+
+const form = (
+  entries: Record<string, string>,
+  attendeeIds: number[] = [1],
+  topics: { main: string; sub: string }[] = DEFAULT_TOPICS,
+) => {
   const data = new FormData();
   for (const [key, value] of Object.entries(entries)) data.append(key, value);
   for (const id of attendeeIds) data.append("attendeeIds", String(id));
+  for (const topic of topics) {
+    data.append("topicMain", topic.main);
+    data.append("topicSub", topic.sub);
+  }
   return data;
 };
 
@@ -106,13 +114,14 @@ describe("회의실 추가·수정", () => {
   });
 });
 
-describe("회의실 예약 생성", () => {
+describe("회의실 예약 생성 (Owner 개설 = 프로젝트 회의)", () => {
   it("필수값이 다 있으면 성공하고 생성값을 돌려준다", async () => {
     const result = await createRoomReservationAction({ errors: {} }, form(VALID_ENTRIES));
 
     expect(result.errors).toEqual({});
     expect(result.created?.title).toBe("새 회의");
     expect(result.created?.roomName).toBe("소회의실 B");
+    expect(result.created?.projectTag).toBe("GOODS");
     expect(revalidatePathMock).toHaveBeenCalledWith("/app/rooms");
   });
 
@@ -158,15 +167,52 @@ describe("회의실 예약 생성", () => {
     expect(result.created).toBeDefined();
   });
 
-  it("프로젝트 없이도 생성된다(예: 팀 위클리 싱크 같은 예약)", async () => {
+  it("프로젝트를 안 넣으면 막는다(WORKFLOW.md §3-1: 항상 필수)", async () => {
     const result = await createRoomReservationAction(
       { errors: {} },
       form({ ...VALID_ENTRIES, projectId: "", date: "2026-08-14" }),
     );
 
+    expect(result.errors.projectId).toBe("프로젝트를 선택해 주세요");
+    expect(result.created).toBeUndefined();
+  });
+
+  it("안건을 안 넣으면 막는다", async () => {
+    const result = await createRoomReservationAction(
+      { errors: {} },
+      form({ ...VALID_ENTRIES, date: "2026-08-14" }, [1], []),
+    );
+
+    expect(result.errors.topics).toBeDefined();
+    expect(result.created).toBeUndefined();
+  });
+
+  it("안건을 여러 쌍 넣으면 전부 저장된다", async () => {
+    const result = await createRoomReservationAction(
+      { errors: {} },
+      form(
+        { ...VALID_ENTRIES, date: "2026-08-14" },
+        [1],
+        [
+          { main: "제품", sub: "로드맵 검토" },
+          { main: "마케팅", sub: "캠페인 리뷰" },
+        ],
+      ),
+    );
+
+    expect(result.created?.topics).toEqual([
+      { main: "제품", sub: "로드맵 검토" },
+      { main: "마케팅", sub: "캠페인 리뷰" },
+    ]);
+  });
+
+  it("Owner는 상위 팀 액션 없이도 통과한다", async () => {
+    const result = await createRoomReservationAction(
+      { errors: {} },
+      form({ ...VALID_ENTRIES, date: "2026-08-14", startTime: "09:00" }),
+    );
+
     expect(result.errors).toEqual({});
-    expect(result.created?.projectId).toBeUndefined();
-    expect(result.created?.projectTag).toBeUndefined();
   });
 
   it("폼이 조작돼 존재하지 않는 회의실 id가 오면 막는다", async () => {
@@ -182,7 +228,7 @@ describe("회의실 예약 생성", () => {
   it("폼이 조작돼 존재하지 않는 프로젝트 id가 오면 막는다", async () => {
     const result = await createRoomReservationAction(
       { errors: {} },
-      form({ ...VALID_ENTRIES, projectId: "p-does-not-exist", date: "2026-08-15" }),
+      form({ ...VALID_ENTRIES, projectId: "999", date: "2026-08-15" }),
     );
 
     expect(result.errors.projectId).toBe("존재하지 않는 프로젝트예요");
@@ -199,31 +245,69 @@ describe("회의실 예약 생성", () => {
     expect(result.created).toBeUndefined();
   });
 
-  it("폼이 조작돼 대주제·소주제 조합이 안 맞으면 막는다", async () => {
-    const result = await createRoomReservationAction(
-      { errors: {} },
-      form({
-        ...VALID_ENTRIES,
-        date: "2026-08-15",
-        topicMain: "PRODUCT",
-        topicSub: "CHANNEL_STRATEGY",
-      }),
-    );
-
-    expect(result.errors.topicSub).toBe("대주제와 맞지 않는 소주제예요");
-    expect(result.created).toBeUndefined();
-  });
-
   it("폼이 조작돼 참석자 값이 숫자가 아니면 막는다", async () => {
     const data = new FormData();
     for (const [key, value] of Object.entries({ ...VALID_ENTRIES, date: "2026-08-15" })) {
       data.append(key, value);
     }
     data.append("attendeeIds", "not-a-number");
+    data.append("topicMain", "제품");
+    data.append("topicSub", "로드맵 검토");
 
     const result = await createRoomReservationAction({ errors: {} }, data);
 
     expect(result.errors.attendeeIds).toBe("참석자 값이 올바르지 않아요");
+    expect(result.created).toBeUndefined();
+  });
+});
+
+describe("회의실 예약 생성 (Leader 개설 = 팀 액션 회의)", () => {
+  const LEADER = { id: 5, role: "LEADER", teamId: 7, teamName: "개발팀" };
+
+  beforeEach(() => {
+    getMockActorMock.mockReturnValue(LEADER);
+  });
+
+  it("상위 팀 액션 없이 제출하면 막는다", async () => {
+    const result = await createRoomReservationAction(
+      { errors: {} },
+      form({ ...VALID_ENTRIES, date: "2026-08-16" }),
+    );
+
+    expect(result.errors.parentTeamActionId).toBe("상위 팀 액션을 선택해 주세요");
+    expect(result.created).toBeUndefined();
+  });
+
+  it("자기 팀의 진짜 팀 액션이면 통과하고, 회의에도 그대로 담긴다", async () => {
+    // projectId=1(GOODS)의 팀 액션 id=1("앱 개발 착수")은 team-actions 목데이터상 "개발팀" 소속이다.
+    const result = await createRoomReservationAction(
+      { errors: {} },
+      form({ ...VALID_ENTRIES, date: "2026-08-16", parentTeamActionId: "1" }),
+    );
+
+    expect(result.errors).toEqual({});
+    expect(result.created).toBeDefined();
+  });
+
+  it("다른 팀 소속 팀 액션 id를 끼워 넣으면 막는다(폼 조작 방어)", async () => {
+    // id=3("TV 광고 계약 및 모델 섭외")은 GOODS 프로젝트 소속이지만 팀은 "마케팅팀"이다.
+    const result = await createRoomReservationAction(
+      { errors: {} },
+      form({ ...VALID_ENTRIES, date: "2026-08-16", parentTeamActionId: "3" }),
+    );
+
+    expect(result.errors.parentTeamActionId).toBe("존재하지 않는 상위 팀 액션이에요");
+    expect(result.created).toBeUndefined();
+  });
+
+  it("다른 프로젝트 소속 팀 액션 id를 끼워 넣으면 막는다", async () => {
+    // id=7("협업툴 리뉴얼 착수")은 "개발팀" 소속이지만 COLLAB 프로젝트다 — 지금 고른 프로젝트는 GOODS(1).
+    const result = await createRoomReservationAction(
+      { errors: {} },
+      form({ ...VALID_ENTRIES, date: "2026-08-16", parentTeamActionId: "7" }),
+    );
+
+    expect(result.errors.parentTeamActionId).toBe("존재하지 않는 상위 팀 액션이에요");
     expect(result.created).toBeUndefined();
   });
 });

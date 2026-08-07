@@ -6,8 +6,10 @@ import {
   getMeetingRooms,
   getReservableMembers,
   getReservableProjects,
+  getReservableTeamActions,
   getWeekReservations,
 } from "@/features/rooms/server";
+import { getViewer } from "@/features/shell/viewer";
 
 export const metadata: Metadata = {
   title: "회의실",
@@ -31,11 +33,15 @@ export default async function RoomsPage({ searchParams }: RoomsPageProps) {
   const { week: weekParam } = await searchParams;
   const week = parseWeekParam(weekParam);
 
-  const [reservations, rooms, members, projects] = await Promise.all([
+  // ⚠️ 팀 액션 목록은 지금 보고 있는 사람이 누구인지(권한·소속 팀)에 따라 달라져서 먼저 받는다.
+  const viewer = await getViewer();
+
+  const [reservations, rooms, members, projects, teamActions] = await Promise.all([
     getWeekReservations(week),
     getMeetingRooms(),
     getReservableMembers(),
     getReservableProjects(),
+    getReservableTeamActions(viewer),
   ]);
 
   return (
@@ -47,6 +53,8 @@ export default async function RoomsPage({ searchParams }: RoomsPageProps) {
           rooms={rooms}
           members={members}
           projects={projects}
+          hostAuthority={viewer.role}
+          teamActions={teamActions}
           week={format(week, "yyyy-MM-dd")}
         />
       </div>
