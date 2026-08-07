@@ -1,4 +1,5 @@
 import { PROJECT_DESCRIPTION_MAX_LENGTH, PROJECT_TAG_MAX_LENGTH } from "@/constants/project";
+import { isReadableDate } from "@/lib/date";
 
 import type { ProjectDraft, ProjectFormErrors } from "./types";
 
@@ -25,10 +26,14 @@ export function validateProjectDraft(draft: ProjectDraft): ProjectFormErrors {
     errors.description = `세부 설명은 ${PROJECT_DESCRIPTION_MAX_LENGTH}자를 넘을 수 없어요`;
   }
 
+  // ⚠️ 브라우저 <input type="date"> 검증에 기대지 않는다 — 서버 액션은 폼 우회를 신뢰 안 한다.
+  //    형식만이 아니라 실제 달력 날짜인지도 본다(`2026-02-30`은 정규식은 통과해도 없는 날).
   if (!draft.startDate.trim()) errors.startDate = "시작일을 선택해 주세요";
+  else if (!isReadableDate(draft.startDate)) errors.startDate = "시작일 형식이 올바르지 않아요";
 
   if (!draft.dueDate.trim()) errors.dueDate = "마감 기한을 선택해 주세요";
-  else if (draft.startDate.trim() && draft.dueDate < draft.startDate) {
+  else if (!isReadableDate(draft.dueDate)) errors.dueDate = "마감 기한 형식이 올바르지 않아요";
+  else if (!errors.startDate && draft.dueDate < draft.startDate) {
     errors.dueDate = "마감 기한은 시작일보다 앞설 수 없어요";
   }
 
