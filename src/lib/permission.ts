@@ -31,6 +31,15 @@ export interface Actor {
    *    이 권한 판정에는 쓰지 않는다 — 범위 판정은 teamId 하나로 끝난다.
    */
   teamId?: number;
+  /**
+   * 소속 팀 이름 — `teamId`와 별개다. **팀 registry(id↔이름 매핑)가 아직 없어서** 둘이
+   * 같은 값을 가리키는지 이 파일은 보장하지 않는다.
+   * ⚠️ `teamId`는 권한 범위 비교(`isWithinTeamScope`)에만 쓰고, 이 필드는 프로젝트
+   *    도메인이 팀을 **이름 문자열**로만 다루는 곳(`ProjectTeamAction.team` 등)과 매칭할 때만
+   *    쓴다(예: 회의실 예약의 "상위 팀 액션" select — 그 프로젝트 내 자기 팀에 하달된 팀
+   *    액션만 골라야 하는데, 그 목록이 이름으로만 저장돼 있다). OWNER는 `undefined`.
+   */
+  teamName?: string;
 }
 
 /* ───────── ① 권한 축 ───────── */
