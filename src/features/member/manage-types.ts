@@ -77,8 +77,11 @@ export interface PendingHandover {
 /** 상세 한 사람 */
 export interface ManagedMemberDetail {
   member: ManagedMember;
-  /** 연락처 — 목록에는 없고 상세에서만 본다 */
-  phone: string;
+  /*
+    ⚠️ **연락처는 없다.** 받는 곳이 없어서(계정 발급·마이페이지 어디에도 전화 칸이 없다)
+       화면에 목이 지어낸 번호가 떠 있었다 — 타입에 남겨 두면 "받는 값"으로 오해된다.
+       마이페이지가 본인에게 받게 되면 그때 여기부터 되살린다.
+  */
   actions: ManagedMemberAction[];
   /** 승인을 기다리는 신청. 없으면 `null` */
   pendingHandover: PendingHandover | null;

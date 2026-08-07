@@ -29,7 +29,6 @@ const INITIAL: ManagedMemberDetail[] = [
       status: MEMBER_STATUS.ACTIVE,
       joinedAt: "2020-01-02",
     },
-    phone: "010-1000-0001",
     actions: [],
     pendingHandover: null,
   },
@@ -46,7 +45,6 @@ const INITIAL: ManagedMemberDetail[] = [
       status: MEMBER_STATUS.ACTIVE,
       joinedAt: "2021-03-02",
     },
-    phone: "010-1000-0002",
     actions: [
       {
         id: "a-201",
@@ -74,7 +72,6 @@ const INITIAL: ManagedMemberDetail[] = [
       status: MEMBER_STATUS.WAITING,
       joinedAt: "2022-05-10",
     },
-    phone: "010-1000-0003",
     actions: [
       {
         id: "a-101",
@@ -116,7 +113,6 @@ const INITIAL: ManagedMemberDetail[] = [
       status: MEMBER_STATUS.ACTIVE,
       joinedAt: "2023-01-15",
     },
-    phone: "010-1000-0004",
     actions: [
       {
         id: "a-104",
@@ -140,7 +136,6 @@ const INITIAL: ManagedMemberDetail[] = [
       status: MEMBER_STATUS.ACTIVE,
       joinedAt: "2023-04-20",
     },
-    phone: "010-1000-0005",
     actions: [],
     pendingHandover: null,
   },
@@ -157,7 +152,6 @@ const INITIAL: ManagedMemberDetail[] = [
       status: MEMBER_STATUS.ACTIVE,
       joinedAt: "2020-09-01",
     },
-    phone: "010-1000-0006",
     actions: [],
     pendingHandover: null,
   },
@@ -174,7 +168,6 @@ const INITIAL: ManagedMemberDetail[] = [
       status: MEMBER_STATUS.ACTIVE,
       joinedAt: "2024-02-19",
     },
-    phone: "010-1000-0007",
     actions: [],
     pendingHandover: null,
   },
@@ -192,7 +185,6 @@ const INITIAL: ManagedMemberDetail[] = [
       status: MEMBER_STATUS.WAITING,
       joinedAt: "2024-06-01",
     },
-    phone: "010-1000-0008",
     actions: [
       {
         id: "a-105",
@@ -222,7 +214,6 @@ const INITIAL: ManagedMemberDetail[] = [
       status: MEMBER_STATUS.ACTIVE,
       joinedAt: "2021-11-08",
     },
-    phone: "010-1000-0009",
     actions: [],
     pendingHandover: null,
   },
@@ -239,7 +230,6 @@ const INITIAL: ManagedMemberDetail[] = [
       status: MEMBER_STATUS.ACTIVE,
       joinedAt: "2024-08-12",
     },
-    phone: "010-1000-0010",
     actions: [],
     pendingHandover: null,
   },
@@ -342,7 +332,7 @@ export function addMockManagedMember(
     status: MEMBER_STATUS.ACTIVE,
     joinedAt,
   };
-  store = [...store, { member, phone: "", actions: [], pendingHandover: null }];
+  store = [...store, { member, actions: [], pendingHandover: null }];
   return clone(member);
 }
 

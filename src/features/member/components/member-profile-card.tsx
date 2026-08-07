@@ -16,17 +16,17 @@ import type { ManagedMember } from "../manage-types";
  *    여기서 고치는 건 직급·권한뿐이다(아래 카드) — 한 화면에 두 성격을 섞지 않는다.
  * ⚠️ 사람 카드는 **가운데 정렬**이다. 이름 하나를 보여 주는 자리라 왼쪽에 붙이면 오른쪽이
  *    비고, 아바타가 작아져 목록에서 익힌 색을 알아보기 어렵다.
- * ⚠️ 값은 **따로 카드**다. 사람과 연락처는 성격이 달라서, 한 상자에 넣으면 어디까지가
- *    "누구인가"이고 어디부터가 "어떻게 닿는가"인지 경계가 사라진다.
+ * ⚠️ **연락처는 안 보여준다.** 받는 곳이 없다 — 계정 발급도 마이페이지도 전화번호를 묻지
+ *    않는데 상세에만 값이 떠 있었다(목이 지어낸 값이다). 받은 적 없는 값을 보여주면
+ *    관리자가 그 번호로 연락한다(§정직성). 마이페이지에서 본인이 넣게 되면 그때 되살린다.
  * ⚠️ 아바타는 **공용 훅**(`useProfileAvatar`)이 만든다 — 이름 첫 글자를 직접 그리면
  *    같은 사람이 화면마다 다른 색으로 보인다.
  * ⚠️ 팀이 없는 사람(Owner)은 `-`를 안 적는다. 이 줄은 표가 아니라 문장이라 빈칸 표시가
  *    오히려 어색하다 — 목록 표에서만 `-`로 채운다.
  */
-export function MemberProfileCard({ member, phone }: { member: ManagedMember; phone: string }) {
+export function MemberProfileCard({ member }: { member: ManagedMember }) {
   const rows = [
     { label: "이메일", value: member.email },
-    { label: "연락처", value: phone },
     // ⚠️ 팀 안의 세부 라벨이다 — 권한(위 배지)과 다른 값이라 줄을 나눈다(WORKFLOW §9)
     { label: "역할", value: member.roleLabel ?? "없음" },
     /*

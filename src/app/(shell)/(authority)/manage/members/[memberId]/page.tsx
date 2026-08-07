@@ -81,7 +81,7 @@ export default async function ManageMemberDetailPage({
           ⚠️ 폼을 전폭에 두지 않는다 — 입력칸만 넓어지고 라벨과 값이 멀어진다.
         */}
         <div className="grid grid-cols-1 items-start gap-7 lg:grid-cols-[360px_minmax(0,1fr)]">
-          <MemberProfileCard member={detail.member} phone={detail.phone} />
+          <MemberProfileCard member={detail.member} />
 
           <div className="flex flex-col gap-7">
             <MemberGradeCard
