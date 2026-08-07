@@ -51,12 +51,15 @@ export function ReviewLeaveGuard({ isBlocked }: ReviewLeaveGuardProps) {
       }
       const anchor = (event.target as HTMLElement).closest("a[href]");
       if (!(anchor instanceof HTMLAnchorElement)) return;
-      if (anchor.target === "_blank" || anchor.href.startsWith("mailto:")) return;
+      // ⚠️ 외부 링크·다운로드 링크는 그대로 둔다 — `router.push`는 우리 앱 내부 경로만
+      //    다룰 수 있다. origin이 다르면 절대 URL을 넘겨도 이동이 깨진다.
+      if (anchor.target === "_blank" || anchor.hasAttribute("download")) return;
+      if (anchor.origin !== window.location.origin) return;
       if (anchor.href === window.location.href) return;
 
       event.preventDefault();
       event.stopPropagation();
-      setPendingHref(anchor.href);
+      setPendingHref(`${anchor.pathname}${anchor.search}${anchor.hash}`);
     }
 
     document.addEventListener("click", handleClick, true);
@@ -67,7 +70,8 @@ export function ReviewLeaveGuard({ isBlocked }: ReviewLeaveGuardProps) {
   useEffect(() => {
     if (!isBlocked) return;
 
-    window.history.pushState(null, "", window.location.href);
+    const hrefAtMount = window.location.href;
+    window.history.pushState(null, "", hrefAtMount);
 
     function handlePopState() {
       if (bypassBackRef.current) {
@@ -79,7 +83,15 @@ export function ReviewLeaveGuard({ isBlocked }: ReviewLeaveGuardProps) {
     }
 
     window.addEventListener("popstate", handlePopState);
-    return () => window.removeEventListener("popstate", handlePopState);
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+      // ⚠️ [확정]으로 화면이 바뀌어 언마운트된 경우(주소가 그대로다) 더미를 청산한다 —
+      //    안 지우면 나중에 뒤로 가기를 두 번 눌러야 실제로 벗어난다. 링크·뒤로가기로 이미
+      //    나간 경우는 주소가 바뀌어 있어 이 조건에 걸리지 않는다(중복 소비 방지).
+      if (window.location.href === hrefAtMount) {
+        window.history.back();
+      }
+    };
   }, [isBlocked]);
 
   function handleStay() {

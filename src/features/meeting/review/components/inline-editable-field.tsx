@@ -10,6 +10,8 @@ interface InlineEditableFieldProps {
   onChange: (value: string) => void;
   /** 여러 줄 편집(세부 내용) — 평소엔 한 줄로 말줄임, 클릭하면 textarea로 펼쳐진다. */
   multiline?: boolean;
+  /** 빈 값 저장을 허용한다 — 세부 내용처럼 선택 항목일 때만 켠다(액션명은 항상 꺼둔다). */
+  allowEmpty?: boolean;
   ariaLabel: string;
   placeholder?: string;
   className?: string;
@@ -18,12 +20,14 @@ interface InlineEditableFieldProps {
 /**
  * 클릭하면 그 자리에서 바로 고칠 수 있는 텍스트 — 액션명(한 줄 input)·세부 내용(여러 줄
  * textarea) 둘 다 이걸로 쓴다. 연필 아이콘으로 "눌러서 고칠 수 있다"를 알린다.
- * ⚠️ 빈 값으로 저장하지 않는다 — 지우고 포커스를 옮기면 원래 값으로 되돌린다(빈 제목 방지).
+ * ⚠️ **`allowEmpty`가 꺼져 있으면** 빈 값으로 저장하지 않는다 — 지우고 포커스를 옮기면
+ *    원래 값으로 되돌린다(빈 제목 방지). 세부 내용처럼 선택 항목은 지울 수 있어야 한다.
  */
 export function InlineEditableField({
   value,
   onChange,
   multiline,
+  allowEmpty,
   ariaLabel,
   placeholder,
   className,
@@ -38,7 +42,7 @@ export function InlineEditableField({
 
   function commit() {
     const next = draft.trim();
-    onChange(next.length > 0 ? next : value);
+    onChange(next.length > 0 || allowEmpty ? next : value);
     setIsEditing(false);
   }
 

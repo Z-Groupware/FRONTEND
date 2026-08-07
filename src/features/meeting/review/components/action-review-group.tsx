@@ -25,13 +25,14 @@ export function ActionReviewGroup({ confidence, count, children }: ActionReviewG
         </h2>
         <p className="text-muted-foreground text-[12px] leading-4 tabular-nums">{count}건</p>
       </div>
-      {count > 0 ? (
-        children
-      ) : (
+      {/* ⚠️ count가 0이어도 children은 그린다 — "확인 필요" 그룹은 다 반려해도
+          [+ 액션 직접 추가] 버튼이 children으로 들어와 있어 사라지면 안 된다. */}
+      {count === 0 && (
         <p className="text-muted-foreground px-7 pt-1 pb-6 text-[13px] leading-5">
           여기 해당하는 항목이 없습니다.
         </p>
       )}
+      {children}
     </section>
   );
 }

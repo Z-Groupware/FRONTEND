@@ -21,7 +21,9 @@ export default async function MeetingReviewPage({ params }: MeetingReviewPagePro
   return (
     <main className="scrollbar-hidden min-h-0 flex-1 overflow-y-auto px-8 py-7">
       <div className="mx-auto w-full max-w-[1440px]">
-        {result.kind === "alreadyConfirmed" ? (
+        {result.kind === "ok" ? (
+          <MeetingReviewView review={result.review} />
+        ) : result.kind === "alreadyConfirmed" ? (
           /*
            * ⚠️ 1회성 화면 정책(WORKFLOW.md §3-4)은 원래 회의 상세로 리다이렉트지만,
            *    `/app/meeting/:id` 상세 라우트가 아직 이 브랜치에 없어(#216/PR #218 미머지)
@@ -34,7 +36,12 @@ export default async function MeetingReviewPage({ params }: MeetingReviewPagePro
             </p>
           </section>
         ) : (
-          <MeetingReviewView review={result.review} />
+          <section className="border-border bg-card rounded-2xl border px-7 py-10 text-center">
+            <p className="text-[15px] leading-6 font-medium">Host만 열 수 있는 화면입니다.</p>
+            <p className="text-muted-foreground mt-1 text-[13px] leading-5">
+              이 회의를 개설한 사람만 액션 분배를 검토할 수 있습니다.
+            </p>
+          </section>
         )}
       </div>
     </main>

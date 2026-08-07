@@ -47,6 +47,7 @@ export function RejectReasonDialog({
           <button
             key={candidate}
             type="button"
+            aria-pressed={candidate === reason}
             onClick={() => onReasonChange(candidate)}
             className={cn(
               "cursor-pointer rounded-lg border px-3 py-2 text-left text-[13px] leading-5 transition-colors",

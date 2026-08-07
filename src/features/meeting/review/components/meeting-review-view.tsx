@@ -15,7 +15,10 @@ import { ManualDraftForm } from "./manual-draft-form";
 import { RejectReasonDialog } from "./reject-reason-dialog";
 import { ReviewLeaveGuard } from "./review-leave-guard";
 
-let nextManualId = 1;
+/** 다음 수동 초안 id — updater 밖에서 생성한다(React가 updater를 두 번 부를 수 있어, 안에서 세면 어긋난다). */
+function nextManualDraftId(): string {
+  return `manual-${crypto.randomUUID()}`;
+}
 
 interface MeetingReviewViewProps {
   review: MeetingReviewInfo;
@@ -33,6 +36,7 @@ export function MeetingReviewView({ review }: MeetingReviewViewProps) {
   const [pendingReason, setPendingReason] = useState<ActionRejectReason | null>(null);
   const [isAddingManual, setIsAddingManual] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmError, setConfirmError] = useState<string | null>(null);
   const [isConfirmed, setIsConfirmed] = useState(false);
   const [isPending, startTransition] = useTransition();
 
@@ -59,10 +63,11 @@ export function MeetingReviewView({ review }: MeetingReviewViewProps) {
   }
 
   function addManualDraft(input: ManualDraftInput) {
+    const id = nextManualDraftId();
     setDrafts((prev) => [
       ...prev,
       {
-        id: `manual-${nextManualId++}`,
+        id,
         title: input.title,
         description: input.description,
         assigneeId: input.assigneeId,
@@ -77,33 +82,50 @@ export function MeetingReviewView({ review }: MeetingReviewViewProps) {
   }
 
   function handleConfirm() {
+    setConfirmError(null);
     startTransition(async () => {
-      const result = await confirmActionDistributionAction(review.meetingId, {
-        // ⚠️ 직접 추가한 항목은 `manuallyAdded`로 따로 보낸다 — 여기 넣으면 아래와 겹쳐 이중 집계된다.
-        confirmed: visibleDrafts
-          .filter((draft) => !draft.isManual)
-          .map((draft) => ({
-            id: draft.id,
-            title: draft.title,
-            description: draft.description,
-            assigneeId: draft.assigneeId,
-            startDate: draft.startDate,
-            dueDate: draft.dueDate,
-          })),
-        rejected: Object.entries(rejectedReasons).map(([id, reason]) => ({ id, reason })),
-        manuallyAdded: drafts
-          .filter((draft) => draft.isManual && !(draft.id in rejectedReasons))
-          .map((draft) => ({
-            title: draft.title,
-            description: draft.description,
-            assigneeId: draft.assigneeId,
-            startDate: draft.startDate,
-            dueDate: draft.dueDate,
-          })),
-      });
-      setConfirmOpen(false);
-      setIsConfirmed(true);
-      toast(`${result.createdCount}건의 액션을 분배했습니다`);
+      try {
+        const result = await confirmActionDistributionAction(review.meetingId, {
+          // ⚠️ 직접 추가한 항목은 `manuallyAdded`로 따로 보낸다 — 여기 넣으면 아래와 겹쳐 이중 집계된다.
+          confirmed: visibleDrafts
+            .filter((draft) => !draft.isManual)
+            .map((draft) => ({
+              id: draft.id,
+              title: draft.title,
+              description: draft.description,
+              assigneeId: draft.assigneeId,
+              startDate: draft.startDate,
+              dueDate: draft.dueDate,
+            })),
+          rejected: Object.entries(rejectedReasons).map(([id, reason]) => ({ id, reason })),
+          manuallyAdded: drafts
+            .filter((draft) => draft.isManual && !(draft.id in rejectedReasons))
+            .map((draft) => ({
+              title: draft.title,
+              description: draft.description,
+              assigneeId: draft.assigneeId,
+              startDate: draft.startDate,
+              dueDate: draft.dueDate,
+            })),
+        });
+
+        if (result.status === "notFound") {
+          setConfirmError("회의를 찾을 수 없습니다. 페이지를 새로고침해 주세요.");
+          return;
+        }
+        // "alreadyConfirmed"도 결과적으로 확정된 상태다 — 다른 탭에서 먼저 확정한 경우까지 포함.
+        setConfirmOpen(false);
+        setIsConfirmed(true);
+        toast(
+          result.status === "confirmed"
+            ? `${result.createdCount}건의 액션을 분배했습니다`
+            : "이미 다른 곳에서 확정된 회의입니다",
+        );
+      } catch {
+        // ⚠️ 다이얼로그를 열어 둔 채 원인을 적는다 — 토스트만 띄우면 몇 초 뒤엔 실패했던 사실이
+        //    사라져 사용자가 같은 버튼을 다시 누른다(§confirm-dialog "토스트는 보조다").
+        setConfirmError("액션 분배에 실패했습니다. 잠시 후 다시 시도해 주세요.");
+      }
     });
   }
 
@@ -123,9 +145,10 @@ export function MeetingReviewView({ review }: MeetingReviewViewProps) {
       <ReviewLeaveGuard isBlocked />
 
       <div>
-        <h1 className="text-[22px] leading-[30px] font-semibold tracking-[-0.4px]">
+        {/* ⚠️ h1 아니다 — 셸 `PageHeader`(layout.tsx)가 이미 h1을 그린다(§한 페이지 h1 하나). */}
+        <h2 className="text-[22px] leading-[30px] font-semibold tracking-[-0.4px]">
           AI가 처리한 액션 분배 결과가 나왔습니다!
-        </h1>
+        </h2>
         <p className="text-muted-foreground mt-1 text-[13px] leading-5">
           {review.meetingTitle} · {review.scheduleLabel}
         </p>
@@ -208,12 +231,16 @@ export function MeetingReviewView({ review }: MeetingReviewViewProps) {
 
       <ConfirmDialog
         isOpen={confirmOpen}
-        onOpenChange={setConfirmOpen}
+        onOpenChange={(open) => {
+          setConfirmOpen(open);
+          if (!open) setConfirmError(null);
+        }}
         title="액션 분배를 확정할까요?"
         description={`총 ${visibleDrafts.length}건의 액션이 지금 화면에 보이는 담당자·일정 그대로 생성됩니다. 확정 뒤에는 이 화면을 다시 열 수 없습니다.`}
         confirmLabel="확정"
         isPending={isPending}
         pendingLabel="확정 중"
+        error={confirmError}
         onConfirm={handleConfirm}
       />
     </div>

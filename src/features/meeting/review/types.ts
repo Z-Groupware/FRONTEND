@@ -72,6 +72,7 @@ export interface MeetingReviewInfo {
 export type MeetingReviewResult =
   | { kind: "ok"; review: MeetingReviewInfo }
   | { kind: "alreadyConfirmed"; meetingId: string }
+  | { kind: "notHost" }
   | { kind: "notFound" };
 
 /** [액션 직접 추가]로 새 초안 행을 만들 때 필요한 최소 입력. */
