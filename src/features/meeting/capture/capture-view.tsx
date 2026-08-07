@@ -1,7 +1,8 @@
 "use client";
 
 import { CircleAlert, Mic, Pause, Play, Square } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { toast } from "sonner";
 
 import { ConfirmDialog } from "@/components/common/confirm-dialog";
@@ -32,12 +33,12 @@ import { useCapture } from "./use-capture";
  */
 export function CaptureView({ meeting }: { meeting: MeetingCaptureInfo }) {
   const capture = useCapture();
+  const router = useRouter();
   const [isConfirming, setIsConfirming] = useState(false);
 
   const unsupported = !capture.support.stt || !capture.support.recording;
   const isRecording = capture.phase === CAPTURE_PHASE.RECORDING;
   const isPaused = capture.phase === CAPTURE_PHASE.PAUSED;
-  const isEnded = capture.phase === CAPTURE_PHASE.ENDED;
 
   /*
     ⚠️ **녹음 중에 창을 닫으려 하면 붙잡는다**(공용 `LeaveGuard`). 지금 녹음은 브라우저 안에만
@@ -82,53 +83,44 @@ export function CaptureView({ meeting }: { meeting: MeetingCaptureInfo }) {
             </div>
 
             <div className="flex shrink-0 items-center gap-2">
-              {isEnded ? (
-                /* ⚠️ 토스트는 사라진다 — 끝났다는 사실은 화면에도 남긴다(DESIGN §7) */
-                <p className="text-muted-foreground text-[13px] leading-5">
-                  회의를 종료하고 제출했습니다.
-                </p>
+              {capture.phase === CAPTURE_PHASE.READY ? (
+                <Button
+                  type="button"
+                  variant="ink"
+                  className="h-10 px-4 text-[13px]"
+                  disabled={unsupported}
+                  onClick={() => void capture.start()}
+                >
+                  <Mic className="size-4" aria-hidden />
+                  {/* 아이콘 옆 한글은 1px 내린다(DESIGN §5) */}
+                  <span className="translate-y-[1px]">녹음 시작</span>
+                </Button>
               ) : (
-                <>
-                  {capture.phase === CAPTURE_PHASE.READY ? (
-                    <Button
-                      type="button"
-                      variant="ink"
-                      className="h-10 px-4 text-[13px]"
-                      disabled={unsupported}
-                      onClick={() => void capture.start()}
-                    >
-                      <Mic className="size-4" aria-hidden />
-                      {/* 아이콘 옆 한글은 1px 내린다(DESIGN §5) */}
-                      <span className="translate-y-[1px]">녹음 시작</span>
-                    </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-10 px-4 text-[13px]"
+                  onClick={isPaused ? capture.resume : capture.pause}
+                >
+                  {isPaused ? (
+                    <Play className="size-4" aria-hidden />
                   ) : (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="h-10 px-4 text-[13px]"
-                      onClick={isPaused ? capture.resume : capture.pause}
-                    >
-                      {isPaused ? (
-                        <Play className="size-4" aria-hidden />
-                      ) : (
-                        <Pause className="size-4" aria-hidden />
-                      )}
-                      <span className="translate-y-[1px]">{isPaused ? "재개" : "일시정지"}</span>
-                    </Button>
+                    <Pause className="size-4" aria-hidden />
                   )}
-
-                  <Button
-                    type="button"
-                    variant="destructive"
-                    className="border-destructive/40 h-10 border px-4 text-[13px]"
-                    disabled={!canSubmit(capture.phase)}
-                    onClick={() => setIsConfirming(true)}
-                  >
-                    <Square className="size-3.5" aria-hidden />
-                    <span className="translate-y-[1px]">회의 종료 및 제출</span>
-                  </Button>
-                </>
+                  <span className="translate-y-[1px]">{isPaused ? "재개" : "일시정지"}</span>
+                </Button>
               )}
+
+              <Button
+                type="button"
+                variant="destructive"
+                className="border-destructive/40 h-10 border px-4 text-[13px]"
+                disabled={!canSubmit(capture.phase)}
+                onClick={() => setIsConfirming(true)}
+              >
+                <Square className="size-3.5" aria-hidden />
+                <span className="translate-y-[1px]">회의 종료 및 제출</span>
+              </Button>
             </div>
           </section>
 
@@ -180,41 +172,20 @@ export function CaptureView({ meeting }: { meeting: MeetingCaptureInfo }) {
         onConfirm={() => {
           setIsConfirming(false);
           capture.end();
+
+          /*
+            ⚠️ **바로 목록으로 돌려보낸다**(팀 확정). 요약 API는 응답이 오래 걸려서 서버가
+               백그라운드로 돌린다 — 여기서 기다리게 두면 아무것도 못 하는 화면을 몇 분씩
+               쳐다보게 된다. 창을 닫아도 안전한 일이라 붙잡을 이유가 없다(§3-3 4).
+            ⚠️ 알림은 **토스트**다(DESIGN §7: 끝났다고 알리기만 하면 될 때). 옮겨 간 화면에서
+               뜨도록 이동과 같은 자리에서 띄운다.
+          */
+          toast.success("회의를 제출했습니다 · 요약은 백그라운드에서 진행합니다");
+          router.push("/app/meeting");
         }}
       />
-
-      {isEnded && <SummaryToasts meetingId={meeting.id} />}
     </>
   );
-}
-
-/**
- * 종료 뒤 알림 — **토스트 둘**(WORKFLOW §3-3 5~6, 시안도 토스트다).
- *
- * ⚠️ 창으로 막지 않는다. §3-3이 "다른 작업을 하셔도 된다"고 못박은 자리다 — AI 분석은
- *    프론트가 부르는 게 아니라 서버가 종료 처리 안에서 큐에 걸고 실패해도 재시도한다.
- *    모달로 붙잡으면 안 해도 될 기다림을 만든다.
- * ⚠️ 토스트는 **한 줄**이다(DESIGN §7). 문장이 아니라 결과 한 조각만 적는다.
- * ⚠️ 진행 단계는 3단계로 뭉쳐 있다(§3-3 5) — 계층 정보는 화면에 안 내보낸다.
- */
-function SummaryToasts({ meetingId }: { meetingId: string }) {
-  useEffect(() => {
-    toast.success("회의를 제출했습니다");
-
-    /*
-      ⚠️ **목이다.** 실제로는 `/processing-status`를 폴링해야 한다(§3-3 5).
-         지금은 붙일 서버가 없어 시간으로 흉내만 낸다 — 되는 척하지 않도록 문구에도
-         "목"이라고 적는다(CLAUDE.md §AI 기능: 목이면 명시).
-    */
-    // TODO(BE 협의): `GET /meetings/{id}/processing-status` 폴링으로 바꾼다
-    const timer = window.setTimeout(() => {
-      toast.success("요약이 끝났습니다 (목)");
-    }, 4_000);
-
-    return () => window.clearTimeout(timer);
-  }, [meetingId]);
-
-  return null;
 }
 
 /**

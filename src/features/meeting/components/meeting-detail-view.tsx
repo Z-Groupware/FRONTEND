@@ -50,8 +50,13 @@ function MetaLabels({ detail }: { detail: MeetingDetail }) {
 
 export function MeetingDetailView({ detail }: { detail: MeetingDetail }) {
   return (
-    <div className="mx-auto grid w-full max-w-[1440px] grid-cols-1 gap-7 lg:grid-cols-[minmax(0,1fr)_360px]">
-      {/* 주 컬럼 — 읽을 게 많은 것(§DESIGN 1) */}
+    /*
+      ⚠️ **한 컬럼이다.** 곁 컬럼(360)에 참석자만 두니 이름 몇 줄 아래로 오른쪽이 통째로 비었다 —
+         DESIGN §1이 두 칸으로 가르라는 건 **1440을 채울 것이 있을 때**다. 여기서 폭을 채우는
+         건 산출물 표와 발화 기록인데 둘 다 주 컬럼에 있다.
+      ⚠️ 대신 **읽는 글은 좁게 둔다**(§4 폭) — 발화 기록만 720으로 묶는다.
+    */
+    <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-7">
       <div className="flex min-w-0 flex-col gap-7">
         <section className="border-border bg-card rounded-2xl border p-7">
           <div className="flex flex-col gap-3">
@@ -72,17 +77,48 @@ export function MeetingDetailView({ detail }: { detail: MeetingDetail }) {
             </div>
           </div>
 
-          {/* 회의 안건 — 별도 섹션 유지(§3-2) */}
-          <dl className="border-border mt-5 flex flex-col gap-2 border-t pt-5">
-            {detail.topics.map((topic) => (
-              <div key={`${topic.main}-${topic.sub}`} className="flex items-baseline gap-3">
-                <dt className="text-muted-foreground w-24 shrink-0 truncate text-[12px] leading-5">
-                  {topic.main}
-                </dt>
-                <dd className="text-[13px] leading-5">{topic.sub}</dd>
-              </div>
-            ))}
-          </dl>
+          {/*
+            회의 안건 — 별도 섹션 유지(§3-2).
+            ⚠️ 라벨-값 표로 두지 않는다. 대주제는 값의 이름이 아니라 **묶음 이름**이라
+               `프로젝트 | 킥오프`처럼 두 칸으로 벌려 두면 무엇이 라벨인지 안 읽힌다 —
+               `대주제 · 소주제` 한 줄이 원래 뜻에 맞는다.
+          */}
+          <div className="border-border mt-5 border-t pt-5">
+            <p className="text-muted-foreground text-[12px] leading-4">안건</p>
+            <ul className="flex flex-wrap gap-2 pt-2">
+              {detail.topics.map((topic) => (
+                <li
+                  key={`${topic.main}-${topic.sub}`}
+                  className="border-border rounded-lg border px-2.5 py-1 text-[13px] leading-5"
+                >
+                  <span className="text-muted-foreground">{topic.main}</span>
+                  <span className="text-muted-foreground/50 px-1.5">·</span>
+                  {topic.sub}
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/*
+            참석자 — **머리 카드 안**이다(시안과 같다). 곁 컬럼에 떼어 두면 이름 몇 줄만
+            남고 그 아래가 비는데, 회의를 볼 때 "누가 있었나"는 제목·일정과 함께 읽는 값이다.
+          */}
+          <div className="border-border mt-5 border-t pt-5">
+            <p className="text-muted-foreground text-[12px] leading-4">
+              참석자 <span className="tabular-nums">{detail.attendees.length}명</span>
+            </p>
+            <ul className="flex flex-wrap gap-2 pt-2">
+              {detail.attendees.map((attendee) => (
+                <li
+                  key={attendee.id}
+                  className="border-border flex items-center gap-2 rounded-full border py-1 pr-3 pl-1"
+                >
+                  <ProfileAvatar userId={attendee.id} size={24} />
+                  <span className="text-[13px] leading-5">{attendee.name}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
         </section>
 
         {/* 산출물 — 이 회의에서 하달된 액션(§2·§5) */}
@@ -109,17 +145,22 @@ export function MeetingDetailView({ detail }: { detail: MeetingDetail }) {
                     href={output.href}
                     className="hover:bg-foreground/[0.04] flex items-center gap-4 px-7 py-3.5 transition-colors"
                   >
+                    {/*
+                      ⚠️ **이름이 먼저다.** 상태를 맨 왼쪽에 두니 훑을 때 `진행중·할일·진행중`이
+                         먼저 읽히고 정작 무슨 액션인지가 뒤로 밀렸다 — 왼쪽은 무엇인지,
+                         오른쪽은 어떤 상태인지로 축을 가른다(DESIGN §3).
+                    */}
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-[13px] leading-5">{output.name}</span>
+                      <span className="text-muted-foreground block truncate text-[12px] leading-4">
+                        {output.assignee}
+                      </span>
+                    </span>
                     <StatusDot
                       tone={output.status}
                       label={ACTION_STATUS_LABEL[output.status]}
                       labelClassName="w-[42px] text-left"
                     />
-                    <span className="min-w-0 flex-1 truncate text-[13px] leading-5">
-                      {output.name}
-                    </span>
-                    <span className="text-muted-foreground w-24 shrink-0 truncate text-[12px] leading-4">
-                      {output.assignee}
-                    </span>
                     <span className="text-muted-foreground w-[88px] shrink-0 text-right text-[12px] leading-4 tabular-nums">
                       {formatDate(output.dueDate)}
                     </span>
@@ -147,10 +188,12 @@ export function MeetingDetailView({ detail }: { detail: MeetingDetail }) {
               남아 있는 발화 기록이 없습니다.
             </p>
           ) : (
-            <ul className="flex flex-col gap-4 px-7 pt-2 pb-7">
+            /* ⚠️ 읽는 글은 좁게 둔다(§4 폭 720) — 1440을 가로지르면 눈이 다음 줄을 못 찾는다 */
+            <ul className="flex max-w-[720px] flex-col gap-2.5 px-7 pt-2 pb-7">
               {detail.script.map((chunk, index) => (
-                <li key={`${chunk.at}-${index}`} className="flex items-baseline gap-3">
-                  <span className="text-muted-foreground/70 w-12 shrink-0 text-[12px] leading-5 tabular-nums">
+                <li key={`${chunk.at}-${index}`} className="flex items-baseline gap-4">
+                  {/* 시간은 고정폭 — 숫자가 한 축에 서야 훑을 때 눈이 안 흔들린다 */}
+                  <span className="text-muted-foreground/70 w-10 shrink-0 text-[12px] leading-5 tabular-nums">
                     {chunk.at}
                   </span>
                   <p className="text-[13px] leading-5 break-keep">{chunk.text}</p>
@@ -158,30 +201,6 @@ export function MeetingDetailView({ detail }: { detail: MeetingDetail }) {
               ))}
             </ul>
           )}
-        </section>
-      </div>
-
-      {/* 곁 컬럼 — 값 두어 개짜리(§DESIGN 1) */}
-      <div className="flex flex-col gap-7">
-        <section className="border-border bg-card h-fit rounded-2xl border">
-          <div className="flex items-baseline justify-between gap-3 px-7 pt-6 pb-3">
-            <h2 className="flex items-center gap-2 text-[17px] leading-7 font-semibold tracking-[-0.3px]">
-              <span className="bg-foreground size-2 rounded-full" aria-hidden />
-              참석자
-            </h2>
-            <p className="text-muted-foreground text-[12px] leading-4 tabular-nums">
-              {detail.attendees.length}명
-            </p>
-          </div>
-
-          <ul className="flex flex-col gap-2.5 px-7 pt-1 pb-6">
-            {detail.attendees.map((attendee) => (
-              <li key={attendee.id} className="flex items-center gap-2.5">
-                <ProfileAvatar userId={attendee.id} size={28} />
-                <span className="text-[13px] leading-5">{attendee.name}</span>
-              </li>
-            ))}
-          </ul>
         </section>
       </div>
     </div>

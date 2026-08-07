@@ -6,6 +6,7 @@ import {
   CAPTURE_PHASE,
   type CapturePhase,
   closedSegmentCountOf,
+  formatRecordedTime,
   isCapturing,
   recordedMsOf,
   type RecordingSpan,
@@ -65,6 +66,12 @@ export function useCapture(): UseCaptureResult {
     recording: isRecordingSupported(),
   }));
 
+  /* 콜백이 최신 구간을 읽을 창구 — 상태를 의존성에 걸면 STT가 문장마다 재시작된다 */
+  const spansRef = useRef<RecordingSpan[]>([]);
+  useEffect(() => {
+    spansRef.current = spans;
+  }, [spans]);
+
   const sttRef = useRef<SttEngine | null>(null);
   const recorderRef = useRef<CaptureRecorder | null>(null);
   /** 이미 닫은 세그먼트 수 — 같은 경계에서 두 번 닫지 않으려고 든다 */
@@ -91,20 +98,20 @@ export function useCapture(): UseCaptureResult {
     recorderRef.current?.rotate(closed);
   }, [phase, recordedMs]);
 
+  /*
+    ⚠️ 자막 시각은 **녹음 시작 기준 경과 시간**이다(팀 확정). 벽시계(`10:04`)로 찍으면 나중에
+       기록을 볼 때 녹음의 어느 지점인지 알 수 없다 — 회의 시작 10초 뒤의 말은 `00:10`이다.
+    ⚠️ 일시정지 구간은 빠진다. 위 타이머·10분 세그먼트와 **같은 시계**를 쓴다 — 자막만 다른
+       기준으로 세면 나중에 오디오와 자막이 어긋난다.
+    ⚠️ 구간을 `spansRef`로 읽는다. `spans` 상태를 의존성에 넣으면 문장이 쌓일 때마다 STT
+       엔진에 새 콜백이 물려 재시작이 걸린다.
+  */
   const pushChunk = useCallback((text: string) => {
+    const at = formatRecordedTime(recordedMsOf(spansRef.current, Date.now()));
     setChunks((prev) => [
       ...prev,
-      {
-        // 같은 문장이 반복돼도 키가 겹치지 않게 순번을 쓴다
-        id: `chunk-${prev.length}-${Date.now()}`,
-        at: new Intl.DateTimeFormat("ko-KR", {
-          hour: "2-digit",
-          minute: "2-digit",
-          hour12: false,
-          timeZone: "Asia/Seoul",
-        }).format(new Date()),
-        text,
-      },
+      // 같은 문장이 반복돼도 키가 겹치지 않게 순번을 쓴다
+      { id: `chunk-${prev.length}-${Date.now()}`, at, text },
     ]);
   }, []);
 
