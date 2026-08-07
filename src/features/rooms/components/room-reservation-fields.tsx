@@ -61,6 +61,7 @@ export function RoomReservationFields({
         <Label htmlFor="reservation-title">회의 제목</Label>
         <Input
           id="reservation-title"
+          name="title"
           value={form.title}
           onChange={(event) => setForm((prev) => ({ ...prev, title: event.target.value }))}
           placeholder="회의 제목을 입력하세요"

@@ -44,8 +44,7 @@ describe("RoomAttendeePicker", () => {
     const onChange = jest.fn();
     render(<RoomAttendeePicker members={MEMBERS} selectedIds={[1, 2]} onChange={onChange} />);
 
-    const checkboxes = screen.getAllByRole("checkbox");
-    await user.click(checkboxes[1]!); // 김서준
+    await user.click(screen.getByRole("checkbox", { name: "김서준" }));
 
     expect(onChange).toHaveBeenCalledWith([1]);
   });

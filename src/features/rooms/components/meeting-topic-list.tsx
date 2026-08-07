@@ -42,6 +42,7 @@ export function MeetingTopicList({ topics, onChange, error }: MeetingTopicListPr
           // 안건 줄은 고유 id가 없고 순서만 의미가 있다 — index를 key로 쓴다.
           <div key={index} className="flex items-center gap-2">
             <Input
+              name="topicMain"
               value={topic.main}
               onChange={(event) => updateTopic(index, { main: event.target.value })}
               placeholder="대주제"
@@ -50,6 +51,7 @@ export function MeetingTopicList({ topics, onChange, error }: MeetingTopicListPr
               className="flex-1"
             />
             <Input
+              name="topicSub"
               value={topic.sub}
               onChange={(event) => updateTopic(index, { sub: event.target.value })}
               placeholder="소주제"

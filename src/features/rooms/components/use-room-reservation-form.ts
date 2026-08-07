@@ -1,6 +1,5 @@
 "use client";
 
-import { format } from "date-fns";
 import { useActionState, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -32,17 +31,17 @@ interface UseRoomReservationFormOptions {
 /**
  * 예약 모달의 폼 상태·제출 흐름 — `RoomReservationDialog`를 200줄 아래로 유지하려고 뺐다
  * (CLAUDE.md §폴더·네이밍: 로직=커스텀훅).
- * ⚠️ shadcn `Select`는 네이티브 `<select>`가 아니라 `FormData`에 자동으로 안 실린다 —
- *    `add-todo-dialog.tsx`와 같은 방식으로 상태를 들고 있다가 제출 시 직접 `FormData`를 만든다.
- * ⚠️ 회의 안건(`topics`)은 (대주제, 소주제) 자유 텍스트 쌍의 배열이다 — `topicMain`/`topicSub`를
- *    같은 순서로 반복 추가해서 넘기고, 서버(`readTopics`, `actions.ts`)가 인덱스로 다시 짝짓는다.
+ * ⚠️ 실제 `<form action={formAction}>`으로 제출한다(`notice-form.tsx`와 같은 패턴) — shadcn
+ *    `Select`·`RoomPickerList`처럼 네이티브 입력이 아닌 위젯은 `RoomReservationDialog`가 hidden
+ *    input으로 값을 따로 실어 보낸다. `title`·참석자 체크박스·안건 입력은 전부 진짜 네이티브
+ *    입력이라 `name`만 있으면 된다 — 여기서 `FormData`를 직접 만들지 않는다.
  */
 export function useRoomReservationForm({
   slotStart,
   onCreated,
   onOpenChange,
 }: UseRoomReservationFormOptions) {
-  const [state, formAction, isPending] = useActionState(createRoomReservationAction, INITIAL_STATE);
+  const [state, formAction] = useActionState(createRoomReservationAction, INITIAL_STATE);
   const [form, setForm] = useState<RoomReservationFormValues>(EMPTY_FORM);
   const handledCreatedId = useRef<string | null>(null);
 
@@ -61,31 +60,12 @@ export function useRoomReservationForm({
     onOpenChange(open);
   }
 
-  function handleSubmit() {
-    // ⚠️ 버튼도 `disabled={isPending}`지만, 클릭과 그 disabled가 반영되는 렌더 사이의 좁은 틈에
-    //    두 번째 클릭이 끼어들면 예약이 두 번 생성될 수 있다 — 여기서도 같은 조건으로 막는다.
-    if (isPending || !slotStart) return;
-    const formData = new FormData();
-    formData.set("title", form.title);
-    formData.set("roomId", form.roomId);
-    formData.set("date", format(slotStart, "yyyy-MM-dd"));
-    formData.set("startTime", format(slotStart, "HH:mm"));
-    formData.set("projectId", form.projectId);
-    for (const topic of form.topics) {
-      formData.append("topicMain", topic.main);
-      formData.append("topicSub", topic.sub);
-    }
-    if (form.parentTeamActionId) formData.set("parentTeamActionId", form.parentTeamActionId);
-    for (const id of form.attendeeIds) formData.append("attendeeIds", String(id));
-    formAction(formData);
-  }
-
   return {
     state,
-    isPending,
+    formAction,
     form,
     setForm,
     handleOpenChange,
-    handleSubmit,
+    slotStart,
   };
 }

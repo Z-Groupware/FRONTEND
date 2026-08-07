@@ -33,6 +33,8 @@ function AttendeeRow({
     <label className="hover:bg-muted flex cursor-pointer items-center gap-2.5 px-3 py-2 text-sm transition-colors">
       <input
         type="checkbox"
+        name="attendeeIds"
+        value={member.id}
         checked={checked}
         onChange={onToggle}
         className="accent-foreground size-3.5 shrink-0"
