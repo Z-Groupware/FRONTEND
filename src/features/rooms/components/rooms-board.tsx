@@ -2,8 +2,6 @@
 
 import { useState } from "react";
 
-import type { Authority } from "@/constants/authority";
-
 import type {
   MeetingRoom,
   RoomMember,
@@ -20,7 +18,10 @@ interface RoomsBoardProps {
   rooms: MeetingRoom[];
   members: RoomMember[];
   projects: RoomProjectOption[];
-  hostAuthority: Authority;
+  /** "상위 팀 액션" 필드를 보여줄지 — 서버 컴포넌트(`page.tsx`)가 `requiresParentTeamAction`으로
+   *  미리 계산해 내려준다. `lib/permission.ts`는 `server-only`라 클라이언트 컴포넌트에서 직접
+   *  못 부른다(여기·`RoomReservationDialog`가 전부 client). */
+  showParentTeamAction: boolean;
   teamActions: RoomTeamActionOption[];
   /** "YYYY-MM-DD" — 이 주의 월요일. 서버 컴포넌트가 이 주 기준으로 `initialReservations`를 내려준다. */
   week: string;
@@ -39,7 +40,7 @@ export function RoomsBoard({
   rooms,
   members,
   projects,
-  hostAuthority,
+  showParentTeamAction,
   teamActions,
   week,
 }: RoomsBoardProps) {
@@ -62,7 +63,7 @@ export function RoomsBoard({
         rooms={rooms}
         members={members}
         projects={projects}
-        hostAuthority={hostAuthority}
+        showParentTeamAction={showParentTeamAction}
         teamActions={teamActions}
         onCreated={(created) => setReservations((prev) => [...prev, created])}
       />

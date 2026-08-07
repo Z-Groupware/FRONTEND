@@ -7,9 +7,8 @@ import { useFormStatus } from "react-dom";
 
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import type { Authority } from "@/constants/authority";
-import { requiresParentTeamAction } from "@/lib/permission";
 
+import { RESERVATION_DURATION_MINUTES } from "../constants";
 import type {
   MeetingRoom,
   RoomMember,
@@ -17,7 +16,6 @@ import type {
   RoomReservation,
   RoomTeamActionOption,
 } from "../types";
-import { RESERVATION_DURATION_MINUTES } from "../validate";
 import { RoomAttendeePicker } from "./room-attendee-picker";
 import { RoomReservationFields } from "./room-reservation-fields";
 import { useRoomReservationForm } from "./use-room-reservation-form";
@@ -30,8 +28,10 @@ interface RoomReservationDialogProps {
   rooms: MeetingRoom[];
   members: RoomMember[];
   projects: RoomProjectOption[];
-  /** 지금 모달을 여는 사람의 권한 — Owner가 아니면 "상위 팀 액션" 필드가 뜬다(WORKFLOW.md §3-1). */
-  hostAuthority: Authority;
+  /** "상위 팀 액션" 필드를 보여줄지 — `page.tsx`(서버 컴포넌트)가 `requiresParentTeamAction`으로
+   *  미리 계산해 내려준다. `lib/permission.ts`는 `server-only`라 이 클라이언트 컴포넌트에서
+   *  직접 못 부른다. */
+  showParentTeamAction: boolean;
   teamActions: RoomTeamActionOption[];
   /** 생성 성공 시 호출 — 재조회 없이 부모 화면에 바로 얹는다(§최적화: action 리턴값 그대로 반영). */
   onCreated: (created: RoomReservation) => void;
@@ -97,7 +97,7 @@ export function RoomReservationDialog({
   rooms,
   members,
   projects,
-  hostAuthority,
+  showParentTeamAction,
   teamActions,
   onCreated,
 }: RoomReservationDialogProps) {
@@ -106,7 +106,6 @@ export function RoomReservationDialog({
     onCreated,
     onOpenChange,
   });
-  const showParentTeamAction = requiresParentTeamAction({ role: hostAuthority });
 
   return (
     <Dialog open={slotStart !== null} onOpenChange={handleOpenChange}>

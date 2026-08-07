@@ -36,7 +36,7 @@ function renderDialog(overrides: Partial<React.ComponentProps<typeof RoomReserva
       rooms={ROOMS}
       members={MEMBERS}
       projects={PROJECTS}
-      hostAuthority={AUTHORITY.OWNER}
+      showParentTeamAction={false}
       teamActions={TEAM_ACTIONS}
       onCreated={onCreated}
       {...overrides}
@@ -54,7 +54,7 @@ describe("RoomReservationDialog", () => {
         rooms={ROOMS}
         members={MEMBERS}
         projects={PROJECTS}
-        hostAuthority={AUTHORITY.OWNER}
+        showParentTeamAction={false}
         teamActions={TEAM_ACTIONS}
         onCreated={jest.fn()}
       />,
@@ -80,14 +80,14 @@ describe("RoomReservationDialog", () => {
     expect(onOpenChange).toHaveBeenCalledWith(false);
   });
 
-  it("Owner가 열면 상위 팀 액션 필드가 없다", () => {
-    renderDialog({ hostAuthority: AUTHORITY.OWNER });
+  it("showParentTeamAction이 false면 상위 팀 액션 필드가 없다(Owner 개설)", () => {
+    renderDialog({ showParentTeamAction: false });
 
     expect(screen.queryByRole("combobox", { name: "상위 팀 액션" })).not.toBeInTheDocument();
   });
 
-  it("Leader가 열면 상위 팀 액션 필드가 뜬다", () => {
-    renderDialog({ hostAuthority: AUTHORITY.LEADER });
+  it("showParentTeamAction이 true면 상위 팀 액션 필드가 뜬다(Leader/Member 개설)", () => {
+    renderDialog({ showParentTeamAction: true });
 
     expect(screen.getByRole("combobox", { name: "상위 팀 액션" })).toBeInTheDocument();
   });

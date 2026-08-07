@@ -4,8 +4,8 @@ import type { MeetingDraft, MeetingTopic } from "@/features/meeting/types";
 import { TOP_LEVEL_PROJECTS } from "@/features/project/mock/projects";
 import { type Actor, requiresParentTeamAction } from "@/lib/permission";
 
+import { RESERVATION_DURATION_MINUTES } from "../constants";
 import type { RoomReservation, RoomReservationDraft } from "../types";
-import { RESERVATION_DURATION_MINUTES } from "../validate";
 import { findMockRoom } from "./rooms";
 
 /**

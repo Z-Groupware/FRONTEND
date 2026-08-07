@@ -3,6 +3,7 @@ import { isValid, parse } from "date-fns";
 import type { Authority } from "@/constants/authority";
 import { requiresParentTeamAction } from "@/lib/permission";
 
+import { RESERVATION_DURATION_MINUTES } from "./constants";
 import type {
   MeetingRoomDraft,
   MeetingRoomFormErrors,
@@ -14,9 +15,6 @@ const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const TIME_PATTERN = /^([01]\d|2[0-3]):(00|30)$/;
 /** 회의실 운영 시작·종료 시각용 — 예약 슬롯(`TIME_PATTERN`)과 달리 30분 단위 제약이 없다. */
 const GENERAL_TIME_PATTERN = /^([01]\d|2[0-3]):[0-5]\d$/;
-
-/** 예약 길이 — 팀 확정: 30분 한 타임, 연장하지 않는다(CLAUDE.md §브라우저 API). */
-export const RESERVATION_DURATION_MINUTES = 30;
 
 const OPERATING_START_MINUTES = 9 * 60;
 const OPERATING_END_MINUTES = 18 * 60;
