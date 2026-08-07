@@ -122,8 +122,21 @@ export function useCapture(): UseCaptureResult {
     recorderRef.current = null;
   }, []);
 
+  /**
+   * 이미 화면을 떠났는가.
+   * ⚠️ `recorderRef`를 먼저 채우는 것만으로는 부족하다 — 정리가 먼저 돌면 그 ref를 비우지만
+   *    `getUserMedia`는 그 뒤에 성공해서 **주인 없는 마이크**가 열린 채 남는다.
+   */
+  const unmountedRef = useRef(false);
+
   /* 화면을 떠나면 마이크를 반드시 끈다 — 안 끄면 표시등이 계속 켜져 있다 */
-  useEffect(() => teardown, [teardown]);
+  useEffect(() => {
+    unmountedRef.current = false;
+    return () => {
+      unmountedRef.current = true;
+      teardown();
+    };
+  }, [teardown]);
 
   const enter = useCallback(() => setPhase(CAPTURE_PHASE.READY), []);
 
@@ -160,6 +173,13 @@ export function useCapture(): UseCaptureResult {
     if (!opened) {
       recorderRef.current = null;
       return; // 이유는 `onFatal`이 이미 남겼다
+    }
+
+    /* 기다리는 사이에 떠났으면 방금 연 마이크를 바로 닫는다 */
+    if (unmountedRef.current) {
+      recorder.stop();
+      recorderRef.current = null;
+      return;
     }
 
     const stt = createSttEngine({ onChunk: pushChunk, onFatal: setError });

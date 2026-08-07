@@ -143,7 +143,8 @@ export function MeetingDetailView({ detail }: { detail: MeetingDetail }) {
                 <li key={output.id} className="border-border not-first:border-t">
                   <Link
                     href={output.href}
-                    className="hover:bg-foreground/[0.04] flex items-center gap-4 px-7 py-3.5 transition-colors"
+                    /* ⚠️ 좁은 화면에서는 여백·간격을 줄인다 — 320px에서 고정 폭이 컨테이너를 넘겨 행이 가로로 넘쳤다 */
+                    className="hover:bg-foreground/[0.04] flex items-center gap-3 px-4 py-3.5 transition-colors sm:gap-4 sm:px-7"
                   >
                     {/*
                       ⚠️ **이름이 먼저다.** 상태를 맨 왼쪽에 두니 훑을 때 `진행중·할일·진행중`이
@@ -161,7 +162,7 @@ export function MeetingDetailView({ detail }: { detail: MeetingDetail }) {
                       label={ACTION_STATUS_LABEL[output.status]}
                       labelClassName="w-[42px] text-left"
                     />
-                    <span className="text-muted-foreground w-[88px] shrink-0 text-right text-[12px] leading-4 tabular-nums">
+                    <span className="text-muted-foreground shrink-0 text-right text-[12px] leading-4 tabular-nums sm:w-[88px]">
                       {formatDate(output.dueDate)}
                     </span>
                   </Link>

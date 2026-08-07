@@ -21,11 +21,12 @@ const CaptureView = dynamic(() => import("./capture-view").then((mod) => mod.Cap
   ssr: false,
   /* 로딩도 본문과 같은 골격이다 — 다르면 그려질 때 화면이 튄다(DESIGN §4) */
   loading: () => (
-    <div className="mx-auto grid w-full max-w-[1440px] grid-cols-1 gap-7 lg:grid-cols-[minmax(0,1fr)_360px]">
-      <Skeleton className="h-[420px] rounded-2xl" />
-      <div className="flex flex-col gap-7">
-        <Skeleton className="h-[300px] rounded-2xl" />
-        <Skeleton className="h-[200px] rounded-2xl" />
+    <div className="mx-auto flex min-h-0 w-full max-w-[1440px] flex-1 flex-col gap-7">
+      {/* 조작 줄 — 본문과 같은 높이로 잡아 둔다 */}
+      <Skeleton className="h-[134px] shrink-0 rounded-2xl" />
+      <div className="grid min-h-0 flex-1 grid-cols-1 gap-7 lg:grid-cols-[minmax(0,1fr)_360px]">
+        <Skeleton className="h-full rounded-2xl" />
+        <Skeleton className="h-full rounded-2xl" />
       </div>
     </div>
   ),

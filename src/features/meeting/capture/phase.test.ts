@@ -62,10 +62,11 @@ describe("10분 세그먼트", () => {
     expect(closedSegmentCountOf(SEGMENT_MS * 2 + 1)).toBe(2);
   });
 
-  /* 경계에서 두 번 확정되면 서버가 같은 구간을 두 벌 갖는다 */
-  it("정확히 10분이면 아직 안 닫힌 것으로 본다", () => {
-    expect(closedSegmentCountOf(SEGMENT_MS)).toBe(1);
+  /* 경계를 앞당겨 세면 아직 안 온 조각까지 포함된 파일이 확정된다 */
+  it("정확히 10분이 되는 순간 하나가 닫힌다", () => {
     expect(closedSegmentCountOf(SEGMENT_MS - 1)).toBe(0);
+    expect(closedSegmentCountOf(SEGMENT_MS)).toBe(1);
+    expect(closedSegmentCountOf(SEGMENT_MS + 1)).toBe(1);
   });
 
   /* 30분 쉬었다고 빈 파일 세 개가 생기면 안 된다 */

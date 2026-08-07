@@ -55,8 +55,8 @@ export function ensureMockMeetingsSeeded(): void {
   */
   const kickoff = addMockMeeting({
     title: "연예인 굿즈 쇼핑몰 앱 구축 킥오프",
-    start: new Date("2026-07-14T10:00:00"),
-    end: new Date("2026-07-14T10:30:00"),
+    start: new Date("2026-07-14T10:00:00+09:00"),
+    end: new Date("2026-07-14T10:30:00+09:00"),
     roomId: "room-large",
     roomName: "대회의실",
     projectId: 1,
@@ -93,8 +93,8 @@ export function ensureMockMeetingsSeeded(): void {
   */
   const teamKickoff = addMockMeeting({
     title: "앱 개발 착수 팀 액션 회의",
-    start: new Date("2026-07-21T10:00:00"),
-    end: new Date("2026-07-21T10:30:00"),
+    start: new Date("2026-07-21T10:00:00+09:00"),
+    end: new Date("2026-07-21T10:30:00+09:00"),
     roomId: "room-small",
     roomName: "소회의실",
     projectId: 1,
@@ -129,8 +129,8 @@ export function ensureMockMeetingsSeeded(): void {
   */
   addMockMeeting({
     title: "굿즈 앱 주간 운영 점검",
-    start: new Date("2026-08-14T10:00:00"),
-    end: new Date("2026-08-14T10:30:00"),
+    start: new Date("2026-08-14T10:00:00+09:00"),
+    end: new Date("2026-08-14T10:30:00+09:00"),
     roomId: "room-large",
     roomName: "대회의실",
     projectId: 1,
@@ -148,8 +148,8 @@ export function ensureMockMeetingsSeeded(): void {
   */
   const brand = addMockMeeting({
     title: "3분기 브랜드 리뉴얼 킥오프",
-    start: new Date("2026-07-28T14:00:00"),
-    end: new Date("2026-07-28T14:30:00"),
+    start: new Date("2026-07-28T14:00:00+09:00"),
+    end: new Date("2026-07-28T14:30:00+09:00"),
     roomId: "room-small",
     roomName: "소회의실",
     projectId: 2,

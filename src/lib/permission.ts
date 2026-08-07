@@ -250,6 +250,19 @@ export function canViewMeetingDetail(actor: Actor, meeting: MeetingVisibility): 
   return meeting.hostTeamId !== undefined && meeting.hostTeamId === actor.teamId;
 }
 
+/**
+ * 회의 **캡처**(녹음·자막·종료) — **그 회의를 연 사람 한 명만**(WORKFLOW §3-3 "Host 전용").
+ *
+ * ⚠️ 상세 열람과 **판정이 다르다.** 상세는 참석자·같은 팀·Owner까지 열리지만, 캡처는
+ *    **리소스 소유권**이라 역할이 아무리 높아도 남의 회의를 녹음할 수 없다
+ *    (CLAUDE.md §권한: 축이 2개다 — Owner라도 담당자가 아니면 불가).
+ * ⚠️ 여기 한 곳에 둔다. 캡처 진입 화면과 앞으로 붙을 종료·업로드 API가 각자 세면,
+ *    화면은 막았는데 API는 받아 주는 구멍이 생긴다(§권한: 판정은 `lib/permission.ts` 한 곳에).
+ */
+export function canCaptureMeeting(actor: Actor, meeting: { hostId: number }): boolean {
+  return meeting.hostId === actor.id;
+}
+
 /* ───────── 가드 ───────── */
 
 /** 권한 없음. 호출부에서 잡아 403 화면(`/demo/permission`)이나 error.tsx로 보낸다. */

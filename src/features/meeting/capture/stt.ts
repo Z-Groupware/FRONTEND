@@ -158,7 +158,17 @@ export function createSttEngine(handlers: SttHandlers): SttEngine | null {
     };
 
     recognition = instance;
-    instance.start();
+
+    /*
+      ⚠️ `start()`는 상태가 안 맞으면 **동기 예외**를 던진다(이미 도는 세션이 남아 있을 때 등).
+         `onend` 안에서 던지면 아무도 안 잡아 자동 재시작이 통째로 죽는다 — 여기서 받아
+         다음 물러섬에 맡긴다.
+    */
+    try {
+      instance.start();
+    } catch {
+      recognition = null;
+    }
   };
 
   return {

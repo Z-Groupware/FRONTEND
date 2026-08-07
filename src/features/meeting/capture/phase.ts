@@ -79,8 +79,9 @@ export const SEGMENT_MS = 10 * 60 * 1000;
 /**
  * 지금까지 **닫힌** 세그먼트 수. 실제 녹음 10분을 채울 때마다 하나씩 는다.
  *
- * ⚠️ 정확히 10분이면 아직 안 닫힌 것으로 본다(`floor`) — 경계에서 파일이 두 번 확정되면
- *    서버가 같은 구간을 두 벌 갖는다.
+ * ⚠️ **정확히 10분이 되는 순간 하나가 닫힌다**(`floor(600000/600000) = 1`). 9분 59초까지는
+ *    0이다 — 경계를 `ceil`이나 `round`로 세면 9분 30초에 이미 닫힌 것으로 봐서, 서버가
+ *    아직 안 온 조각까지 포함된 파일을 확정한다.
  */
 export function closedSegmentCountOf(recordedMs: number): number {
   return Math.floor(recordedMs / SEGMENT_MS);

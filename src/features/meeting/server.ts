@@ -4,7 +4,7 @@ import { MEETING_STATUS } from "@/constants/meeting";
 import { PERSONAL_ACTION_DETAIL_MOCK } from "@/features/action/mock/action-detail";
 import { listMockManagedMembers } from "@/features/member/mock/managed";
 import { PROJECT_TEAM_ACTIONS_MOCK } from "@/features/project/mock/team-actions";
-import { type Actor, canViewMeetingDetail } from "@/lib/permission";
+import { type Actor, canCaptureMeeting, canViewMeetingDetail } from "@/lib/permission";
 import { isMock } from "@/mocks/config";
 
 import { formatMeetingSchedule } from "./lib";
@@ -208,8 +208,10 @@ export async function getMeetingDetail(id: string, viewer: Actor): Promise<Meeti
  * 캡처 진입 — **Host만**(WORKFLOW §3-3).
  *
  * ⚠️ 상세와 **판정이 다르다.** 상세는 `canViewMeetingDetail`(참석자·팀·Owner)로 열리지만
- *    캡처는 그 회의를 **여는 사람 한 명**만이다 — 권한(역할)이 아니라 **리소스 소유권**이라
- *    Owner라고 남의 회의를 녹음할 수 있으면 안 된다(CLAUDE.md §권한: 축이 2개다).
+ *    캡처는 `canCaptureMeeting`(그 회의를 연 사람 한 명)이다 — 권한(역할)이 아니라
+ *    **리소스 소유권**이라 Owner라고 남의 회의를 녹음할 수 없다(§권한: 축이 2개다).
+ * ⚠️ 판정은 `lib/permission.ts`에 있다. 여기서 `hostId`를 직접 비교하면, 앞으로 붙을
+ *    종료·업로드 API가 다른 조건을 쓰게 되어 화면과 서버가 갈린다.
  * ⚠️ 끝난 회의는 다시 못 들어간다 — 종료는 되돌릴 수 없다(§3-3 종료 정책).
  * ⚠️ 화면 판정일 뿐이다. 진짜 검사는 종료·업로드 API가 서버에서 다시 한다.
  */
@@ -223,7 +225,7 @@ export async function getMeetingCapture(id: string, viewer: Actor): Promise<Meet
   const meeting = findMockMeeting(id);
   if (!meeting) return { kind: "notFound" };
 
-  if (meeting.hostId !== viewer.id) return { kind: "notHost", title: meeting.title };
+  if (!canCaptureMeeting(viewer, meeting)) return { kind: "notHost", title: meeting.title };
 
   if (meetingStatusOf(meeting, new Date()) === MEETING_STATUS.DONE) {
     return { kind: "alreadyDone", title: meeting.title };

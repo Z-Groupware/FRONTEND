@@ -66,9 +66,11 @@ export function CaptureView({ meeting }: { meeting: MeetingCaptureInfo }) {
                 <ProjectTag tag={meeting.projectTag} />
                 <PhaseBadge phase={capture.phase} />
               </div>
-              <h1 className="truncate pt-2 text-[17px] leading-7 font-semibold tracking-[-0.3px]">
+              {/* ⚠️ `h2`다 — 페이지의 `h1`은 상단바(`MeetingHeader` → `PageHeader`)가 갖고 있다.
+                  둘을 두면 한 화면에 h1이 두 개가 된다(CLAUDE.md §SEO: h1 1개). */}
+              <h2 className="truncate pt-2 text-[17px] leading-7 font-semibold tracking-[-0.3px]">
                 {meeting.title}
-              </h1>
+              </h2>
               <p className="text-muted-foreground pt-0.5 text-[12px] leading-4">
                 {meeting.schedule} · {meeting.roomName}
               </p>
@@ -216,9 +218,10 @@ function EnterCard({
     <div className="mx-auto flex w-full max-w-[560px] flex-col justify-center py-16">
       <section className="border-border bg-card rounded-2xl border p-7 text-center">
         <ProjectTag tag={meeting.projectTag} className="mx-auto" />
-        <h1 className="pt-3 text-[17px] leading-7 font-semibold tracking-[-0.3px] break-keep">
+        {/* ⚠️ `h2`다 — 페이지의 `h1`은 상단바가 갖고 있다(§SEO: h1 1개) */}
+        <h2 className="pt-3 text-[17px] leading-7 font-semibold tracking-[-0.3px] break-keep">
           {meeting.title}
-        </h1>
+        </h2>
         <p className="text-muted-foreground pt-1.5 text-[13px] leading-5">
           {meeting.schedule} · {meeting.roomName}
         </p>
