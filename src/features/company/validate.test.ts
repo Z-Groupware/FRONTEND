@@ -144,6 +144,19 @@ describe("validateDepartments", () => {
 
     expect(validateDepartments(deep)).toBeTruthy();
   });
+
+  /*
+    ⚠️ **깊이 규칙이 먼저 걸려야 한다.** 액션은 주소만 알면 직접 부를 수 있어서 만 단짜리
+       트리도 들어올 수 있다. 검사 순서가 뒤집히면(트리 전체를 먼저 훑으면) 규칙이 걸리기도
+       전에 호출 스택이 넘쳐 `RangeError`로 죽는다 — 막았다는 말도 못 남기고 서버가 터진다.
+  */
+  it("아주 깊은 트리도 스택이 안 넘치고 규칙으로 막는다", () => {
+    let deepest = team("x0", "끝");
+    for (let i = 1; i <= 20_000; i += 1) deepest = team(`x${i}`, "단", [deepest]);
+
+    expect(() => validateDepartments([deepest])).not.toThrow();
+    expect(validateDepartments([deepest])).toBeTruthy();
+  });
 });
 
 describe("validatePositions", () => {

@@ -47,25 +47,6 @@ export function validateCompanyProfile(draft: CompanyProfileDraft): CompanyProfi
 export function validateDepartments(departments: DepartmentNode[]): string | null {
   if (departments.length === 0) return "팀을 하나 이상 두어야 합니다";
 
-  /*
-    ⚠️ **id가 겹치면 안 된다.** 사람이 딸린 팀을 지웠는지 보는 판정(`findBlockedTeamChange`)이
-       id로 트리를 대조하는데, 같은 id가 둘이면 하나가 사라져도 "아직 있다"로 읽혀 그대로
-       저장된다 — 그 팀 사원들의 소속이 조용히 없어진다.
-    ⚠️ 화면이 만드는 id는 `crypto.randomUUID()`라 겹칠 일이 없지만, 액션은 주소만 알면
-       직접 부를 수 있다(§권한: 화면 숨김은 보안이 아니다).
-  */
-  const ids = new Set<string>();
-  let duplicated: string | null = null;
-  const collect = (nodes: DepartmentNode[]) => {
-    for (const node of nodes) {
-      if (ids.has(node.id)) duplicated ??= node.name;
-      ids.add(node.id);
-      collect(node.children);
-    }
-  };
-  collect(departments);
-  if (duplicated) return `같은 식별자를 가진 항목이 둘 있습니다 — ${duplicated}`;
-
   let error: string | null = null;
 
   const walk = (nodes: DepartmentNode[], depth: number) => {
@@ -102,7 +83,31 @@ export function validateDepartments(departments: DepartmentNode[]): string | nul
   };
 
   walk(departments, 0);
-  return error;
+  if (error) return error;
+
+  /*
+    ⚠️ **id가 겹치면 안 된다.** 사람이 딸린 팀을 지웠는지 보는 판정(`findBlockedTeamChange`)이
+       id로 트리를 대조하는데, 같은 id가 둘이면 하나가 사라져도 "아직 있다"로 읽혀 그대로
+       저장된다 — 그 팀 사원들의 소속이 조용히 없어진다.
+    ⚠️ 화면이 만드는 id는 `crypto.randomUUID()`라 겹칠 일이 없지만, 액션은 주소만 알면
+       직접 부를 수 있다(§권한: 화면 숨김은 보안이 아니다).
+    ⚠️ **깊이 검사 뒤에 본다.** 앞에 두면 트리 전체를 먼저 훑는데, 액션에 만 단쯤 되는
+       트리를 직접 넘기면 깊이 규칙이 걸리기도 전에 호출 스택이 넘쳐 `RangeError`로 죽는다.
+       `walk`는 두 단에서 멈추므로, 여기까지 온 트리는 이미 얕은 것이 보장된다.
+  */
+  const ids = new Set<string>();
+  let duplicated: string | null = null;
+  const collect = (nodes: DepartmentNode[]) => {
+    for (const node of nodes) {
+      if (ids.has(node.id)) duplicated ??= node.name;
+      ids.add(node.id);
+      collect(node.children);
+    }
+  };
+  collect(departments);
+  if (duplicated) return `같은 식별자를 가진 항목이 둘 있습니다 — ${duplicated}`;
+
+  return null;
 }
 
 /** 트리 전체(팀 + 그 안의 역할)의 id */
