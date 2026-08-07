@@ -1,5 +1,6 @@
 "use client";
 
+import { CircleAlert } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { DialogMark } from "@/components/common/dialog-mark";
@@ -122,13 +123,22 @@ export function ConfirmDialog({
 
         {children && <div className="mt-5">{children}</div>}
 
-        {/* ⚠️ 버튼 **바로 위**다 — 다시 누르려는 손이 지나가는 자리에 있어야 읽힌다 */}
+        {/*
+          ⚠️ 버튼 **바로 위**다 — 다시 누르려는 손이 지나가는 자리에 있어야 읽힌다.
+          ⚠️ 표식은 **동그라미 느낌표**(`CircleAlert`)다. 저장소·구독 화면의 경고와 같은
+             것을 같은 크기로 쓴다 — 빨간 글자만 두면 앞뒤 회색 문장에 묻힌다.
+          ⚠️ 아이콘은 **줄 높이만 한 상자**에 담아 세운다. 그냥 나란히 두면 글자보다
+             살짝 떠 보인다(§아이콘 옆 한글 정렬).
+        */}
         {error && (
           <p
             role="alert"
-            className="text-destructive mt-4 text-center text-[13px] leading-5 break-keep"
+            className="text-destructive mt-4 flex items-start justify-center gap-1.5 text-[13px] leading-5 break-keep"
           >
-            {error}
+            <span className="flex h-5 shrink-0 items-center">
+              <CircleAlert className="size-3.5" aria-hidden />
+            </span>
+            <span>{error}</span>
           </p>
         )}
 

@@ -1,5 +1,6 @@
 "use client";
 
+import { CircleAlert } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
@@ -331,8 +332,16 @@ export function HandoverApprovalCard({
               ⚠️ 자리는 **글자 수와 같은 줄**이라, 문구가 생겨도 창 높이가 안 변한다.
             */}
             {reasonError ? (
-              <p id="reject-reason-error" role="alert" className="text-destructive break-keep">
-                {reasonError}
+              <p
+                id="reject-reason-error"
+                role="alert"
+                className="text-destructive flex items-start gap-1 break-keep"
+              >
+                {/* ⚠️ 저장소·구독 경고와 **같은 표식**이다. 줄 높이만 한 상자에 담아 세운다 */}
+                <span className="flex h-4 shrink-0 items-center">
+                  <CircleAlert className="size-3.5" aria-hidden />
+                </span>
+                <span>{reasonError}</span>
               </p>
             ) : (
               <span aria-hidden />
