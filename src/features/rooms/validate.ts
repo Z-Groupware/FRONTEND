@@ -1,6 +1,6 @@
 import { isValid, parse } from "date-fns";
 
-import { MEETING_TOPIC_SUB, type MeetingTopicMain } from "@/constants/meeting";
+import { AUTHORITY, type Authority } from "@/constants/authority";
 
 import type {
   MeetingRoomDraft,
@@ -34,9 +34,15 @@ function toMinutes(time: string): number {
  * 회의실 예약 폼 검증 — 화면(모달)과 서버(Server Action)가 **이 함수 하나**로 본다.
  * ⚠️ 같은 회의실·시간대 중복 여부는 여기서 보지 않는다 — 그건 기존 예약 목록이 있어야 판단할 수
  *    있어 `actions.ts`가 목/실서버 조회 뒤에 따로 확인한다.
+ * ⚠️ **참조 무결성도 여기서 안 본다** — `roomId`·`projectId`가 실제로 존재하는지, 골라 낸
+ *    `parentTeamActionId`가 진짜 그 프로젝트·그 팀의 것인지는 `actions.ts`가 목/실서버 조회
+ *    뒤에 따로 확인한다(§권한: 화면 숨김은 UX일 뿐 보안이 아니다). 여기는 **형식**만 본다.
+ * @param host "상위 팀 액션" 필수 여부는 회의를 여는 사람의 권한에 달렸다(WORKFLOW.md §3-1) —
+ *   Owner면 이 필드가 없어도 되고, Leader/Member면 반드시 있어야 한다.
  */
 export function validateRoomReservationDraft(
   draft: RoomReservationDraft,
+  host: { authority: Authority },
 ): RoomReservationFormErrors {
   const errors: RoomReservationFormErrors = {};
 
@@ -60,15 +66,19 @@ export function validateRoomReservationDraft(
     }
   }
 
-  // ⚠️ 프로젝트는 선택값이다 — "팀 위클리 싱크"처럼 프로젝트에 안 묶인 예약도 있다
-  //    (types.ts의 RoomReservation.projectId, mock/reservations.ts 시드가 이미 그렇다).
-  if (!draft.topicMain.trim()) errors.topicMain = "대주제를 선택해 주세요";
-  if (!draft.topicSub.trim()) errors.topicSub = "소주제를 선택해 주세요";
-  else if (draft.topicMain.trim()) {
-    const validSubs = MEETING_TOPIC_SUB[draft.topicMain as MeetingTopicMain];
-    if (!validSubs?.some((sub) => sub.value === draft.topicSub)) {
-      errors.topicSub = "대주제와 맞지 않는 소주제예요";
-    }
+  // ⚠️ 프로젝트는 이제 항상 필수다(WORKFLOW.md §3-1 확정) — 프로젝트에 안 묶인 예약은 없다.
+  if (!draft.projectId.trim()) errors.projectId = "프로젝트를 선택해 주세요";
+
+  if (draft.topics.length === 0 || !draft.topics[0]?.main.trim() || !draft.topics[0]?.sub.trim()) {
+    errors.topics = "회의 안건(대주제·소주제)을 한 쌍 이상 입력해 주세요";
+  } else if (draft.topics.some((topic) => !topic.main.trim() || !topic.sub.trim())) {
+    errors.topics = "빈 안건 칸이 있어요 — 채우거나 삭제해 주세요";
+  }
+
+  // ⚠️ Owner가 개설하면 이 필드가 아예 없다(= 프로젝트 회의) — Leader/Member면 반드시 있어야
+  //    한다(= 팀 액션 회의, WORKFLOW.md §3-1 "상위 팀 액션 노출 조건").
+  if (host.authority !== AUTHORITY.OWNER && !draft.parentTeamActionId) {
+    errors.parentTeamActionId = "상위 팀 액션을 선택해 주세요";
   }
 
   if (draft.attendeeIds.length === 0) {

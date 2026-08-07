@@ -11,16 +11,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { MEETING_TOPIC_MAIN_LABEL, type MeetingTopicSub } from "@/constants/meeting";
+import { AUTHORITY, type Authority } from "@/constants/authority";
 
 import type {
   MeetingRoom,
   RoomMember,
   RoomProjectOption,
   RoomReservationFormErrors,
+  RoomTeamActionOption,
 } from "../types";
+import { MeetingTopicList } from "./meeting-topic-list";
 import { RoomAttendeePicker } from "./room-attendee-picker";
-import { NO_PROJECT_VALUE, type RoomReservationFormValues } from "./use-room-reservation-form";
+import type { RoomReservationFormValues } from "./use-room-reservation-form";
 
 interface RoomReservationFieldsProps {
   form: RoomReservationFormValues;
@@ -29,10 +31,13 @@ interface RoomReservationFieldsProps {
   rooms: MeetingRoom[];
   members: RoomMember[];
   projects: RoomProjectOption[];
-  topicSubOptions: MeetingTopicSub[];
+  /** 지금 예약 모달을 여는 사람의 권한 — Owner가 아니면 "상위 팀 액션"이 뜬다(WORKFLOW.md §3-1). */
+  hostAuthority: Authority;
+  /** Host의 팀에 하달된 팀 액션 전체(프로젝트 무관) — 지금 고른 프로젝트로 화면에서 다시 거른다. */
+  teamActions: RoomTeamActionOption[];
 }
 
-/** 예약 모달의 입력 필드 전부 — 제목·회의실·프로젝트·대주제/소주제·참석자(`room-reservation-dialog.tsx`에서 뺀 조각). */
+/** 예약 모달의 입력 필드 전부 — 제목·회의실·프로젝트·안건·상위 팀 액션·참석자(`room-reservation-dialog.tsx`에서 뺀 조각). */
 export function RoomReservationFields({
   form,
   setForm,
@@ -40,8 +45,14 @@ export function RoomReservationFields({
   rooms,
   members,
   projects,
-  topicSubOptions,
+  hostAuthority,
+  teamActions,
 }: RoomReservationFieldsProps) {
+  const selectedProjectTag = projects.find((project) => project.id === form.projectId)?.tag;
+  const availableTeamActions = teamActions.filter(
+    (teamAction) => teamAction.projectTag === selectedProjectTag,
+  );
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-1.5">
@@ -85,14 +96,18 @@ export function RoomReservationFields({
         <Select
           value={form.projectId}
           onValueChange={(value) =>
-            setForm((prev) => ({ ...prev, projectId: value ?? NO_PROJECT_VALUE }))
+            // 프로젝트를 바꾸면 그 프로젝트 소속이 아닌 상위 팀 액션 선택은 의미가 없어진다.
+            setForm((prev) => ({ ...prev, projectId: value ?? "", parentTeamActionId: "" }))
           }
         >
-          <SelectTrigger id="reservation-project" className="w-full">
+          <SelectTrigger
+            id="reservation-project"
+            aria-invalid={Boolean(errors.projectId)}
+            className="w-full"
+          >
             <SelectValue placeholder="프로젝트를 선택해 주세요" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value={NO_PROJECT_VALUE}>없음</SelectItem>
             {projects.map((project) => (
               <SelectItem key={project.id} value={project.id}>
                 {project.name}
@@ -103,58 +118,46 @@ export function RoomReservationFields({
         {errors.projectId && <p className="text-destructive text-xs">{errors.projectId}</p>}
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      {hostAuthority !== AUTHORITY.OWNER && (
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="reservation-topic-main">대주제</Label>
+          <Label htmlFor="reservation-parent-team-action">상위 팀 액션</Label>
           <Select
-            value={form.topicMain}
+            value={form.parentTeamActionId}
             onValueChange={(value) =>
-              setForm((prev) => ({ ...prev, topicMain: value ?? "", topicSub: "" }))
+              setForm((prev) => ({ ...prev, parentTeamActionId: value ?? "" }))
             }
+            disabled={!form.projectId}
           >
             <SelectTrigger
-              id="reservation-topic-main"
-              aria-invalid={Boolean(errors.topicMain)}
+              id="reservation-parent-team-action"
+              aria-invalid={Boolean(errors.parentTeamActionId)}
               className="w-full"
             >
-              <SelectValue placeholder="대주제" />
+              <SelectValue
+                placeholder={
+                  form.projectId ? "상위 팀 액션을 선택해 주세요" : "프로젝트를 먼저 선택해 주세요"
+                }
+              />
             </SelectTrigger>
             <SelectContent>
-              {Object.entries(MEETING_TOPIC_MAIN_LABEL).map(([value, label]) => (
-                <SelectItem key={value} value={value}>
-                  {label}
+              {availableTeamActions.map((teamAction) => (
+                <SelectItem key={teamAction.id} value={String(teamAction.id)}>
+                  {teamAction.name}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
-          {errors.topicMain && <p className="text-destructive text-xs">{errors.topicMain}</p>}
+          {errors.parentTeamActionId && (
+            <p className="text-destructive text-xs">{errors.parentTeamActionId}</p>
+          )}
         </div>
+      )}
 
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="reservation-topic-sub">소주제</Label>
-          <Select
-            value={form.topicSub}
-            onValueChange={(value) => setForm((prev) => ({ ...prev, topicSub: value ?? "" }))}
-            disabled={!form.topicMain}
-          >
-            <SelectTrigger
-              id="reservation-topic-sub"
-              aria-invalid={Boolean(errors.topicSub)}
-              className="w-full"
-            >
-              <SelectValue placeholder="소주제" />
-            </SelectTrigger>
-            <SelectContent>
-              {topicSubOptions.map((sub) => (
-                <SelectItem key={sub.value} value={sub.value}>
-                  {sub.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {errors.topicSub && <p className="text-destructive text-xs">{errors.topicSub}</p>}
-        </div>
-      </div>
+      <MeetingTopicList
+        topics={form.topics}
+        onChange={(topics) => setForm((prev) => ({ ...prev, topics }))}
+        error={errors.topics}
+      />
 
       <div className="flex flex-col gap-1.5">
         <Label>참석자</Label>

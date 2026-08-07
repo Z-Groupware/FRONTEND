@@ -11,8 +11,15 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import type { Authority } from "@/constants/authority";
 
-import type { MeetingRoom, RoomMember, RoomProjectOption, RoomReservation } from "../types";
+import type {
+  MeetingRoom,
+  RoomMember,
+  RoomProjectOption,
+  RoomReservation,
+  RoomTeamActionOption,
+} from "../types";
 import { RoomReservationFields } from "./room-reservation-fields";
 import { useRoomReservationForm } from "./use-room-reservation-form";
 
@@ -24,6 +31,9 @@ interface RoomReservationDialogProps {
   rooms: MeetingRoom[];
   members: RoomMember[];
   projects: RoomProjectOption[];
+  /** 지금 모달을 여는 사람의 권한 — Owner가 아니면 "상위 팀 액션" 필드가 뜬다(WORKFLOW.md §3-1). */
+  hostAuthority: Authority;
+  teamActions: RoomTeamActionOption[];
   /** 생성 성공 시 호출 — 재조회 없이 부모 화면에 바로 얹는다(§최적화: action 리턴값 그대로 반영). */
   onCreated: (created: RoomReservation) => void;
 }
@@ -41,9 +51,11 @@ export function RoomReservationDialog({
   rooms,
   members,
   projects,
+  hostAuthority,
+  teamActions,
   onCreated,
 }: RoomReservationDialogProps) {
-  const { state, isPending, form, setForm, topicSubOptions, handleOpenChange, handleSubmit } =
+  const { state, isPending, form, setForm, handleOpenChange, handleSubmit } =
     useRoomReservationForm({ slotStart, onCreated, onOpenChange });
 
   return (
@@ -64,7 +76,8 @@ export function RoomReservationDialog({
           rooms={rooms}
           members={members}
           projects={projects}
-          topicSubOptions={topicSubOptions}
+          hostAuthority={hostAuthority}
+          teamActions={teamActions}
         />
 
         <div className="mt-2 flex justify-end gap-2">

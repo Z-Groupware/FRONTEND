@@ -1,92 +1,142 @@
+import { AUTHORITY } from "@/constants/authority";
+
 import { validateMeetingRoomDraft, validateRoomReservationDraft } from "./validate";
+
+const OWNER_HOST = { authority: AUTHORITY.OWNER };
+const LEADER_HOST = { authority: AUTHORITY.LEADER };
 
 const VALID_DRAFT = {
   title: "주간 싱크",
   roomId: "room-large",
   date: "2026-08-10",
   startTime: "10:00",
-  projectId: "p-goods",
-  topicMain: "PRODUCT",
-  topicSub: "ROADMAP_REVIEW",
+  projectId: "1",
+  topics: [{ main: "제품", sub: "로드맵 검토" }],
   attendeeIds: [1],
 };
 
 describe("회의실 예약 검증", () => {
   it("전부 채우면 통과한다", () => {
-    expect(validateRoomReservationDraft(VALID_DRAFT)).toEqual({});
+    expect(validateRoomReservationDraft(VALID_DRAFT, OWNER_HOST)).toEqual({});
   });
 
   it("제목이 비면 막는다", () => {
-    const errors = validateRoomReservationDraft({ ...VALID_DRAFT, title: "   " });
+    const errors = validateRoomReservationDraft({ ...VALID_DRAFT, title: "   " }, OWNER_HOST);
     expect(errors.title).toBe("회의 제목을 입력해 주세요");
   });
 
   it("회의실을 안 고르면 막는다", () => {
-    const errors = validateRoomReservationDraft({ ...VALID_DRAFT, roomId: "" });
+    const errors = validateRoomReservationDraft({ ...VALID_DRAFT, roomId: "" }, OWNER_HOST);
     expect(errors.roomId).toBeDefined();
   });
 
   it("날짜 형식이 아니면 막는다", () => {
-    const errors = validateRoomReservationDraft({ ...VALID_DRAFT, date: "2026/08/10" });
+    const errors = validateRoomReservationDraft({ ...VALID_DRAFT, date: "2026/08/10" }, OWNER_HOST);
     expect(errors.date).toBe("올바른 날짜가 아니에요");
   });
 
   it("존재하지 않는 날짜는 막는다", () => {
-    const errors = validateRoomReservationDraft({ ...VALID_DRAFT, date: "2026-02-30" });
+    const errors = validateRoomReservationDraft({ ...VALID_DRAFT, date: "2026-02-30" }, OWNER_HOST);
     expect(errors.date).toBe("올바른 날짜가 아니에요");
   });
 
   it("30분 단위가 아닌 시작 시각은 막는다", () => {
-    const errors = validateRoomReservationDraft({ ...VALID_DRAFT, startTime: "10:15" });
+    const errors = validateRoomReservationDraft({ ...VALID_DRAFT, startTime: "10:15" }, OWNER_HOST);
     expect(errors.startTime).toBe("예약은 30분 단위로만 가능해요");
   });
 
   it("운영 시작(09:00) 이전은 막는다", () => {
-    const errors = validateRoomReservationDraft({ ...VALID_DRAFT, startTime: "08:30" });
+    const errors = validateRoomReservationDraft({ ...VALID_DRAFT, startTime: "08:30" }, OWNER_HOST);
     expect(errors.startTime).toBe("회의실 운영 시간(09:00~18:00) 안에서 선택해 주세요");
   });
 
   it("30분을 더하면 운영 종료(18:00)를 넘는 시작 시각은 막는다", () => {
-    const errors = validateRoomReservationDraft({ ...VALID_DRAFT, startTime: "17:45" });
+    const errors = validateRoomReservationDraft({ ...VALID_DRAFT, startTime: "17:45" }, OWNER_HOST);
     expect(errors.startTime).toBeDefined();
   });
 
   it("운영 종료 딱 맞춰 끝나는 17:30 시작은 통과한다", () => {
-    const errors = validateRoomReservationDraft({ ...VALID_DRAFT, startTime: "17:30" });
+    const errors = validateRoomReservationDraft({ ...VALID_DRAFT, startTime: "17:30" }, OWNER_HOST);
     expect(errors.startTime).toBeUndefined();
   });
 
-  it("프로젝트 없이도 통과한다(예: 팀 위클리 싱크)", () => {
-    const errors = validateRoomReservationDraft({ ...VALID_DRAFT, projectId: undefined });
-    expect(errors.projectId).toBeUndefined();
+  it("프로젝트를 안 고르면 막는다(WORKFLOW.md §3-1: 항상 필수)", () => {
+    const errors = validateRoomReservationDraft({ ...VALID_DRAFT, projectId: "" }, OWNER_HOST);
+    expect(errors.projectId).toBe("프로젝트를 선택해 주세요");
   });
 
-  it("대주제를 안 고르면 막는다", () => {
-    const errors = validateRoomReservationDraft({ ...VALID_DRAFT, topicMain: "" });
-    expect(errors.topicMain).toBeDefined();
+  it("안건을 하나도 안 채우면 막는다", () => {
+    const errors = validateRoomReservationDraft(
+      { ...VALID_DRAFT, topics: [{ main: "", sub: "" }] },
+      OWNER_HOST,
+    );
+    expect(errors.topics).toBe("회의 안건(대주제·소주제)을 한 쌍 이상 입력해 주세요");
   });
 
-  it("소주제를 안 고르면 막는다", () => {
-    const errors = validateRoomReservationDraft({ ...VALID_DRAFT, topicSub: "" });
-    expect(errors.topicSub).toBeDefined();
+  it("첫 안건의 소주제만 비어도 막는다", () => {
+    const errors = validateRoomReservationDraft(
+      { ...VALID_DRAFT, topics: [{ main: "제품", sub: "" }] },
+      OWNER_HOST,
+    );
+    expect(errors.topics).toBeDefined();
   });
 
-  it("대주제와 안 맞는 소주제 조합은 막는다", () => {
-    const errors = validateRoomReservationDraft({
-      ...VALID_DRAFT,
-      topicMain: "PRODUCT",
-      topicSub: "CHANNEL_STRATEGY",
-    });
-    expect(errors.topicSub).toBe("대주제와 맞지 않는 소주제예요");
+  it("둘째 안건부터는 비어 있으면 막는다(첫 쌍만 있어도 안 됨)", () => {
+    const errors = validateRoomReservationDraft(
+      {
+        ...VALID_DRAFT,
+        topics: [
+          { main: "제품", sub: "로드맵 검토" },
+          { main: "", sub: "" },
+        ],
+      },
+      OWNER_HOST,
+    );
+    expect(errors.topics).toBe("빈 안건 칸이 있어요 — 채우거나 삭제해 주세요");
+  });
+
+  it("안건을 여러 쌍 다 채우면 통과한다", () => {
+    const errors = validateRoomReservationDraft(
+      {
+        ...VALID_DRAFT,
+        topics: [
+          { main: "제품", sub: "로드맵 검토" },
+          { main: "마케팅", sub: "캠페인 리뷰" },
+        ],
+      },
+      OWNER_HOST,
+    );
+    expect(errors.topics).toBeUndefined();
+  });
+
+  it("Host가 Owner면 상위 팀 액션 없이도 통과한다", () => {
+    const errors = validateRoomReservationDraft(VALID_DRAFT, OWNER_HOST);
+    expect(errors.parentTeamActionId).toBeUndefined();
+  });
+
+  it("Host가 Leader면 상위 팀 액션이 없으면 막는다", () => {
+    const errors = validateRoomReservationDraft(VALID_DRAFT, LEADER_HOST);
+    expect(errors.parentTeamActionId).toBe("상위 팀 액션을 선택해 주세요");
+  });
+
+  it("Host가 Leader여도 상위 팀 액션을 채우면 통과한다", () => {
+    const errors = validateRoomReservationDraft(
+      { ...VALID_DRAFT, parentTeamActionId: 1 },
+      LEADER_HOST,
+    );
+    expect(errors.parentTeamActionId).toBeUndefined();
   });
 
   it("참석자가 한 명도 없으면 막는다", () => {
-    const errors = validateRoomReservationDraft({ ...VALID_DRAFT, attendeeIds: [] });
+    const errors = validateRoomReservationDraft({ ...VALID_DRAFT, attendeeIds: [] }, OWNER_HOST);
     expect(errors.attendeeIds).toBe("참석자를 한 명 이상 선택해 주세요");
   });
 
   it("참석자 값이 정수가 아니면 막는다", () => {
-    const errors = validateRoomReservationDraft({ ...VALID_DRAFT, attendeeIds: [Number.NaN] });
+    const errors = validateRoomReservationDraft(
+      { ...VALID_DRAFT, attendeeIds: [Number.NaN] },
+      OWNER_HOST,
+    );
     expect(errors.attendeeIds).toBe("참석자 값이 올바르지 않아요");
   });
 });

@@ -60,46 +60,8 @@ export const MEETING_INVITE_STATUS_LABEL: Record<MeetingInviteStatus, string> = 
   DECLINED: "불참",
 };
 
-/**
- * 회의 주제 대분류 — 회의실 예약 폼의 "회의 주제"(대주제→소주제) 선택에 쓴다.
- * ⚠️ 미확정 목업이다 — 회의 도메인 담당자 문서를 받으면 이 파일부터 맞춘다(CLAUDE.md §연동 검증).
- */
-export const MEETING_TOPIC_MAIN = {
-  PRODUCT: "PRODUCT",
-  MARKETING: "MARKETING",
-  INFRA: "INFRA",
-  TEAM: "TEAM",
-} as const;
-export type MeetingTopicMain = (typeof MEETING_TOPIC_MAIN)[keyof typeof MEETING_TOPIC_MAIN];
-
-export const MEETING_TOPIC_MAIN_LABEL: Record<MeetingTopicMain, string> = {
-  PRODUCT: "제품",
-  MARKETING: "마케팅",
-  INFRA: "인프라",
-  TEAM: "팀 운영",
-};
-
-export interface MeetingTopicSub {
-  value: string;
-  label: string;
-}
-
-/** 대주제별 소주제 목록 — 대주제를 고르면 이 목록으로 소주제 select가 갈린다. */
-export const MEETING_TOPIC_SUB: Record<MeetingTopicMain, MeetingTopicSub[]> = {
-  PRODUCT: [
-    { value: "ROADMAP_REVIEW", label: "로드맵 검토" },
-    { value: "FEATURE_PLANNING", label: "기능 기획" },
-  ],
-  MARKETING: [
-    { value: "CHANNEL_STRATEGY", label: "채널 전략" },
-    { value: "CAMPAIGN_REVIEW", label: "캠페인 리뷰" },
-  ],
-  INFRA: [
-    { value: "MIGRATION_REVIEW", label: "마이그레이션 리뷰" },
-    { value: "INCIDENT_RETRO", label: "장애 회고" },
-  ],
-  TEAM: [
-    { value: "WEEKLY_SYNC", label: "위클리 싱크" },
-    { value: "ONE_ON_ONE", label: "1:1" },
-  ],
-};
+/*
+  ⚠️ 회의 주제(대주제/소주제) 고정 enum은 여기 없다(2026-08-07 제거) — WORKFLOW.md §3-1
+     확정: "대주제 1개+소주제 1개 필수, 나머지는 추가/삭제 버튼으로 늘리고 줄이는" **자유 입력
+     텍스트**다. 타입은 `features/rooms/types.ts`의 `MeetingTopicInput`(자유 텍스트 쌍)을 본다.
+*/

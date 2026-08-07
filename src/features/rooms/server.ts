@@ -2,13 +2,22 @@ import "server-only";
 
 import { endOfWeek, startOfWeek } from "date-fns";
 
+import { AUTHORITY } from "@/constants/authority";
 import { TOP_LEVEL_PROJECTS } from "@/features/project/mock/projects";
+import { PROJECT_TEAM_ACTIONS_MOCK } from "@/features/project/mock/team-actions";
+import type { Actor } from "@/lib/permission";
 import { isMock } from "@/mocks/config";
 
 import { listMockMembers } from "./mock/members";
 import { listMockReservations } from "./mock/reservations";
 import { listMockRooms } from "./mock/rooms";
-import type { MeetingRoom, RoomMember, RoomProjectOption, RoomReservation } from "./types";
+import type {
+  MeetingRoom,
+  RoomMember,
+  RoomProjectOption,
+  RoomReservation,
+  RoomTeamActionOption,
+} from "./types";
 
 /**
  * 그 주(월요일 시작)와 겹치는 예약만 걸러 내려준다. 격리막(CLAUDE.md §Mock 격리막).
@@ -48,4 +57,24 @@ export async function getReservableProjects(): Promise<RoomProjectOption[]> {
     }));
   }
   throw new Error("프로젝트 목록 조회 API가 아직 연결되지 않았습니다.");
+}
+
+/**
+ * 예약 폼의 "상위 팀 액션" select용 — Host가 Owner면 빈 배열(그 필드가 아예 안 뜬다,
+ * WORKFLOW.md §3-1). Leader/Member면 **자기 팀**에 하달된 팀 액션만, 어느 프로젝트 것인지
+ * `projectTag`로 같이 내려줘 화면이 지금 고른 프로젝트로 다시 거른다.
+ */
+export async function getReservableTeamActions(actor: Actor): Promise<RoomTeamActionOption[]> {
+  if (!isMock) throw new Error("팀 액션 목록 조회 API가 아직 연결되지 않았습니다.");
+  if (actor.role === AUTHORITY.OWNER || !actor.teamName) return [];
+
+  const options: RoomTeamActionOption[] = [];
+  for (const [projectTag, teamActions] of Object.entries(PROJECT_TEAM_ACTIONS_MOCK)) {
+    for (const teamAction of teamActions) {
+      if (teamAction.team === actor.teamName) {
+        options.push({ id: teamAction.id, name: teamAction.name, projectTag });
+      }
+    }
+  }
+  return options;
 }

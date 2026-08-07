@@ -2,7 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 
+import { AUTHORITY } from "@/constants/authority";
 import { TOP_LEVEL_PROJECTS } from "@/features/project/mock/projects";
+import { PROJECT_TEAM_ACTIONS_MOCK } from "@/features/project/mock/team-actions";
 import { getMockActor } from "@/lib/mock-actor";
 import { canManageRooms } from "@/lib/permission";
 import { isMock } from "@/mocks/config";
@@ -14,6 +16,7 @@ import type {
   MeetingRoom,
   MeetingRoomDraft,
   MeetingRoomFormErrors,
+  MeetingTopicInput,
   RoomReservation,
   RoomReservationDraft,
   RoomReservationFormErrors,
@@ -34,17 +37,23 @@ export interface RoomReservationFormState {
   created?: RoomReservation;
 }
 
+function readTopics(formData: FormData): MeetingTopicInput[] {
+  const mains = formData.getAll("topicMain");
+  const subs = formData.getAll("topicSub");
+  return mains.map((main, index) => ({ main: String(main), sub: String(subs[index] ?? "") }));
+}
+
 function readDraft(formData: FormData): RoomReservationDraft {
-  const projectId = formData.get("projectId");
+  const parentTeamActionId = formData.get("parentTeamActionId");
   return {
     title: String(formData.get("title") ?? ""),
     roomId: String(formData.get("roomId") ?? ""),
     date: String(formData.get("date") ?? ""),
     startTime: String(formData.get("startTime") ?? ""),
-    projectId: projectId ? String(projectId) : undefined,
-    topicMain: String(formData.get("topicMain") ?? ""),
-    topicSub: String(formData.get("topicSub") ?? ""),
+    projectId: String(formData.get("projectId") ?? ""),
+    topics: readTopics(formData),
     attendeeIds: formData.getAll("attendeeIds").map(Number),
+    parentTeamActionId: parentTeamActionId ? Number(parentTeamActionId) : undefined,
   };
 }
 
@@ -68,7 +77,8 @@ export async function createRoomReservationAction(
   formData: FormData,
 ): Promise<RoomReservationFormState> {
   const draft = readDraft(formData);
-  const errors = validateRoomReservationDraft(draft);
+  const actor = getMockActor();
+  const errors = validateRoomReservationDraft(draft, { authority: actor.role });
   if (Object.keys(errors).length > 0) return { errors };
 
   if (!isMock) {
@@ -81,14 +91,23 @@ export async function createRoomReservationAction(
   if (!findMockRoom(draft.roomId)) {
     return { errors: { roomId: "존재하지 않는 회의실이에요" } };
   }
-  if (
-    draft.projectId &&
-    !TOP_LEVEL_PROJECTS.some((project) => String(project.id) === draft.projectId)
-  ) {
+  const project = TOP_LEVEL_PROJECTS.find((item) => String(item.id) === draft.projectId);
+  if (!project) {
     return { errors: { projectId: "존재하지 않는 프로젝트예요" } };
   }
   if (draft.attendeeIds.some((id) => !findMockMember(id))) {
     return { errors: { attendeeIds: "존재하지 않는 참석자가 있어요" } };
+  }
+  // ⚠️ Owner가 아니면 "상위 팀 액션"이 필수인데, 그 값이 진짜 이 프로젝트 소속이고 **자기
+  //    팀**에 하달된 게 맞는지까지 다시 본다 — 화면이 이미 걸러 보여줘도, 폼은 조작될 수 있어서
+  //    다른 팀의 팀 액션 id를 끼워 넣으면 그 팀 몫으로 회의가 잡히는 걸 여기서 막는다.
+  if (actor.role !== AUTHORITY.OWNER && draft.parentTeamActionId !== undefined) {
+    const teamAction = PROJECT_TEAM_ACTIONS_MOCK[project.tag]?.find(
+      (item) => item.id === draft.parentTeamActionId,
+    );
+    if (!teamAction || teamAction.team !== actor.teamName) {
+      return { errors: { parentTeamActionId: "존재하지 않는 상위 팀 액션이에요" } };
+    }
   }
 
   const { start, end } = toReservedRange(draft);
@@ -99,8 +118,7 @@ export async function createRoomReservationAction(
     return { errors: { roomId: "그 시간에는 이미 예약된 회의실이에요" } };
   }
 
-  const actor = getMockActor();
-  const created = addMockReservation(draft, actor.id);
+  const created = addMockReservation(draft, actor);
   revalidatePath(ROOMS_PATH);
   return { errors: {}, created };
 }
