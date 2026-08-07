@@ -51,7 +51,7 @@ export default async function OwnerSettingPage() {
           ⚠️ 성격도 같다 — 둘 다 온보딩에서 만든 조직 체계를 나중에 고치는 자리다.
         */}
         <div className="grid grid-cols-1 gap-7 lg:grid-cols-2">
-          <CompanyTeamCard initial={setting.departments} />
+          <CompanyTeamCard initial={setting.departments} memberCounts={setting.teamMemberCounts} />
           <CompanyPositionCard initial={setting.positions} />
         </div>
       </div>

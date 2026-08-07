@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { AUTHORITY } from "@/constants/domain";
+import { AUTHORITY, POSITION_AUTHORITIES } from "@/constants/domain";
 import { registerSchema } from "@/features/auth/register-draft";
 import { MAX_DEPARTMENT_DEPTH, MAX_ORG_NAME_LENGTH } from "@/features/onboarding/types";
 
@@ -83,7 +83,81 @@ export function validateDepartments(departments: DepartmentNode[]): string | nul
   };
 
   walk(departments, 0);
-  return error;
+  if (error) return error;
+
+  /*
+    ⚠️ **id가 겹치면 안 된다.** 사람이 딸린 팀을 지웠는지 보는 판정(`findBlockedTeamChange`)이
+       id로 트리를 대조하는데, 같은 id가 둘이면 하나가 사라져도 "아직 있다"로 읽혀 그대로
+       저장된다 — 그 팀 사원들의 소속이 조용히 없어진다.
+    ⚠️ 화면이 만드는 id는 `crypto.randomUUID()`라 겹칠 일이 없지만, 액션은 주소만 알면
+       직접 부를 수 있다(§권한: 화면 숨김은 보안이 아니다).
+    ⚠️ **깊이 검사 뒤에 본다.** 앞에 두면 트리 전체를 먼저 훑는데, 액션에 만 단쯤 되는
+       트리를 직접 넘기면 깊이 규칙이 걸리기도 전에 호출 스택이 넘쳐 `RangeError`로 죽는다.
+       `walk`는 두 단에서 멈추므로, 여기까지 온 트리는 이미 얕은 것이 보장된다.
+  */
+  const ids = new Set<string>();
+  let duplicated: string | null = null;
+  const collect = (nodes: DepartmentNode[]) => {
+    for (const node of nodes) {
+      if (ids.has(node.id)) duplicated ??= node.name;
+      ids.add(node.id);
+      collect(node.children);
+    }
+  };
+  collect(departments);
+  if (duplicated) return `같은 식별자를 가진 항목이 둘 있습니다 — ${duplicated}`;
+
+  return null;
+}
+
+/** 트리 전체(팀 + 그 안의 역할)의 id */
+function collectIds(nodes: DepartmentNode[]): Set<string> {
+  const ids = new Set<string>();
+  const walk = (list: DepartmentNode[]) => {
+    for (const node of list) {
+      ids.add(node.id);
+      walk(node.children);
+    }
+  };
+  walk(nodes);
+  return ids;
+}
+
+/** 사원이 딸린 팀에 손댔을 때 막는 이유 — 없으면 `null` */
+export interface BlockedTeamChange {
+  team: string;
+  /** `removed` = 트리에서 아예 사라짐 · `demoted` = 남의 팀 아래 역할로 들어감 */
+  kind: "removed" | "demoted";
+}
+
+/**
+ * 사원이 딸린 팀에 **못 하는 짓**을 했는지 본다.
+ *
+ * ⚠️ 팀은 인수인계·액션 귀속의 단위다. 워크플로우에서 사람이 빠질 때는 **항상 명시적
+ *    재할당**을 거친다(휴직·오프보딩 → 인수인계 → 새 리더 귀속) — 조용히 붕 뜨는 경로가 없다.
+ *    소속이 사라진 사원은 `isWithinTeamScope`가 `teamId` 비교라 **아무도 관리할 수 없다**.
+ * ⚠️ **두 가지를 갈라 본다.** 예전엔 "최상위에 없으면 삭제"로 뭉뚱그렸는데, 트리는 2계층이고
+ *    강등(`demoteNode`)·드래그(`inside`)가 팀을 남의 역할로 내릴 수 있다 — 지우지도 않았는데
+ *    "사원이 남아 있어 못 지웁니다"가 떠서 저장이 통째로 막혔다. 옮긴 것과 지운 것은
+ *    **다른 사건**이고 사용자가 되돌릴 방법도 다르다.
+ * ⚠️ 강등도 막는 건 같은 이유다 — 역할에는 사원이 소속되지 않는다(§권한 ③).
+ * ⚠️ 우리가 정한 잠정 규칙이다 — BE 확인이 필요하다(§연동 검증).
+ */
+export function findBlockedTeamChange(
+  previous: DepartmentNode[],
+  next: DepartmentNode[],
+  memberCounts: Record<string, number>,
+): BlockedTeamChange | null {
+  const survivingIds = collectIds(next);
+  const roots = new Set(next.map((team) => team.id));
+
+  for (const team of previous) {
+    if ((memberCounts[team.id] ?? 0) === 0) continue;
+    if (!survivingIds.has(team.id)) return { team: team.name, kind: "removed" };
+    if (!roots.has(team.id)) return { team: team.name, kind: "demoted" };
+  }
+
+  return null;
 }
 
 /**
@@ -92,6 +166,20 @@ export function validateDepartments(departments: DepartmentNode[]): string | nul
  */
 export function validatePositions(positions: Position[]): string | null {
   if (positions.length === 0) return "직급을 하나 이상 두어야 합니다";
+
+  /*
+    ⚠️ **권한 값을 화이트리스트로 본다.** 화면 셀렉트는 `POSITION_AUTHORITIES`(Leader·Member)만
+       주지만, Server Action은 주소만 알면 직접 부를 수 있다(§권한: 화면 숨김은 보안이 아니다).
+       여기가 없으면 `role: "OWNER"`인 직급을 심을 수 있고, **권한은 직급에서 오므로**
+       그 직급을 받은 사람 전원이 회사 전체 권한을 얻는다 —
+       `canManageCompany`·`canApproveFinal`·`canManageBilling`이 전부 열린다.
+    ⚠️ 타입으로는 안 막힌다. `AssignableRole`은 `ASSIGNABLE_AUTHORITIES`(OWNER 포함)이고
+       Server Action 인자에는 런타임 검사가 없다.
+  */
+  const allowed: readonly string[] = POSITION_AUTHORITIES;
+  if (positions.some((position) => !allowed.includes(position.role))) {
+    return "직급에 줄 수 없는 권한입니다";
+  }
 
   const seen = new Set<string>();
   for (const position of positions) {

@@ -1,7 +1,12 @@
 import { AUTHORITY } from "@/constants/domain";
 
 import type { CompanyProfileDraft, DepartmentNode, Position } from "./types";
-import { validateCompanyProfile, validateDepartments, validatePositions } from "./validate";
+import {
+  findBlockedTeamChange,
+  validateCompanyProfile,
+  validateDepartments,
+  validatePositions,
+} from "./validate";
 
 /**
  * 기업 설정 검증 — **서버가 마지막으로 보는 곳**이다.
@@ -63,6 +68,17 @@ describe("validateCompanyProfile", () => {
     ⚠️ 규칙은 **기업 등록 신청과 같은 스키마**에서 온다. 여기가 신청보다 느슨해지면
        신청 때 막힌 값이 설정에서는 저장되고, 조이면 그 반대가 된다.
   */
+  /*
+    ⚠️ 한 칸에 오류가 여럿 나와도 **첫 줄만** 쓴다(신청 화면과 같은 규칙). 빈 칸이면
+       "입력해 주세요"와 "형식이 틀렸어요"가 같이 나오는데, 아직 아무것도 안 적은 사람에게
+       형식 얘기는 소음이다. `!(field in errors)` 가드가 지워져도 이 테스트가 잡는다.
+  */
+  it("한 칸에 오류가 여럿이면 첫 줄만 남긴다", () => {
+    const errors = validateCompanyProfile({ ...VALID, businessNumber: "" });
+
+    expect(errors.businessNumber).toBe("사업자등록번호를 입력해 주세요");
+  });
+
   it("신청 화면과 같은 문구로 알린다", () => {
     const errors = validateCompanyProfile({ name: "", businessNumber: "", place: null });
 
@@ -107,10 +123,39 @@ describe("validateDepartments", () => {
     ).toBeNull();
   });
 
+  /*
+    ⚠️ id가 겹치면 `findBlockedTeamChange`가 트리를 id로 대조하다 오판한다 — 사람이 딸린
+       팀이 사라져도 "아직 있다"로 읽혀 그대로 저장된다.
+  */
+  it("같은 id가 둘이면 막는다", () => {
+    const dup = [team("d1", "개발팀"), team("d1", "기획팀")];
+
+    expect(validateDepartments(dup)).toBeTruthy();
+  });
+
+  it("역할에도 같은 id가 있으면 막는다", () => {
+    const dup = [team("d1", "개발팀", [team("d1", "프론트")])];
+
+    expect(validateDepartments(dup)).toBeTruthy();
+  });
+
   it("2계층을 넘는 손자는 막는다", () => {
     const deep = [team("d1", "개발팀", [team("r1", "프론트", [team("x1", "주니어")])])];
 
     expect(validateDepartments(deep)).toBeTruthy();
+  });
+
+  /*
+    ⚠️ **깊이 규칙이 먼저 걸려야 한다.** 액션은 주소만 알면 직접 부를 수 있어서 만 단짜리
+       트리도 들어올 수 있다. 검사 순서가 뒤집히면(트리 전체를 먼저 훑으면) 규칙이 걸리기도
+       전에 호출 스택이 넘쳐 `RangeError`로 죽는다 — 막았다는 말도 못 남기고 서버가 터진다.
+  */
+  it("아주 깊은 트리도 스택이 안 넘치고 규칙으로 막는다", () => {
+    let deepest = team("x0", "끝");
+    for (let i = 1; i <= 20_000; i += 1) deepest = team(`x${i}`, "단", [deepest]);
+
+    expect(() => validateDepartments([deepest])).not.toThrow();
+    expect(validateDepartments([deepest])).toBeTruthy();
   });
 });
 
@@ -143,5 +188,74 @@ describe("validatePositions", () => {
   it("이름이 비거나 5자를 넘으면 막는다", () => {
     expect(validatePositions([{ ...member, name: " " }])).toBeTruthy();
     expect(validatePositions([{ ...member, name: "여섯글자직급" }])).toBeTruthy();
+  });
+});
+
+describe("findBlockedTeamChange", () => {
+  const before = [team("d1", "개발팀", [team("r1", "프론트")]), team("d2", "기획팀")];
+  const counts = { d1: 6, d2: 3 };
+
+  /*
+    ⚠️ 팀은 인수인계·액션 귀속의 단위다. 소속이 사라진 사원은 `isWithinTeamScope`가 teamId
+       비교라 **아무도 관리할 수 없는 상태**가 된다 — 워크플로우가 사람이 빠질 때 늘 명시적
+       재할당을 거치는 것과 같은 이유로 막는다.
+  */
+  it("사람이 남은 팀을 지우면 removed로 잡는다", () => {
+    expect(findBlockedTeamChange(before, [team("d1", "개발팀")], counts)).toEqual({
+      team: "기획팀",
+      kind: "removed",
+    });
+  });
+
+  /*
+    ⚠️ **옮긴 것과 지운 것은 다른 사건이다.** 예전엔 최상위 배열만 보고 "없으면 삭제"로
+       뭉뚱그려서, 팀을 남의 역할로 내리기만 해도 "사원이 남아 있어 못 지웁니다"가 떴다 —
+       지운 적이 없으니 사원 관리에 가도 할 일이 없고 저장은 통째로 막혔다.
+  */
+  it("사람이 남은 팀을 남의 역할로 내리면 demoted로 잡는다 — 삭제가 아니다", () => {
+    const moved = [team("d1", "개발팀", [team("r1", "프론트"), team("d2", "기획팀")])];
+
+    expect(findBlockedTeamChange(before, moved, counts)).toEqual({
+      team: "기획팀",
+      kind: "demoted",
+    });
+  });
+
+  it("빈 팀은 지워도 옮겨도 된다", () => {
+    const removed = [team("d1", "개발팀")];
+    const moved = [team("d1", "개발팀", [team("r1", "프론트"), team("d2", "기획팀")])];
+
+    expect(findBlockedTeamChange(before, removed, { d1: 6, d2: 0 })).toBeNull();
+    expect(findBlockedTeamChange(before, moved, { d1: 6, d2: 0 })).toBeNull();
+  });
+
+  it("인원을 모르는 팀은 0으로 본다 — 없는 키에 걸려 못 지우면 안 된다", () => {
+    expect(findBlockedTeamChange(before, [team("d1", "개발팀")], { d1: 6 })).toBeNull();
+  });
+
+  it("아무것도 안 바꿨으면 막지 않는다", () => {
+    expect(findBlockedTeamChange(before, before, counts)).toBeNull();
+  });
+
+  it("순서만 바꾸는 건 막지 않는다", () => {
+    const reordered = [team("d2", "기획팀"), team("d1", "개발팀", [team("r1", "프론트")])];
+
+    expect(findBlockedTeamChange(before, reordered, counts)).toBeNull();
+  });
+
+  it("이름만 바꾸는 건 막지 않는다 — id가 그대로다", () => {
+    const renamed = [team("d1", "개발본부", [team("r1", "프론트")]), team("d2", "기획팀")];
+
+    expect(findBlockedTeamChange(before, renamed, counts)).toBeNull();
+  });
+
+  /*
+    ⚠️ 역할(트리 아랫단)은 세지 않는다. 사원이 소속되는 건 **팀**이다(§권한 ③) —
+       역할만 지우는 건 사람의 소속을 건드리지 않는다.
+  */
+  it("역할만 지우는 건 막지 않는다", () => {
+    const next = [team("d1", "개발팀"), team("d2", "기획팀")];
+
+    expect(findBlockedTeamChange(before, next, { ...counts, r1: 6 })).toBeNull();
   });
 });

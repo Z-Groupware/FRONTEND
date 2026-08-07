@@ -31,6 +31,11 @@ const INITIAL: CompanySetting = {
     { id: "d2", name: "기획팀", children: [] },
     { id: "d3", name: "디자인팀", children: [] },
   ],
+  /*
+    ⚠️ **빈 팀을 하나 둔다**(디자인팀). 사람이 딸린 팀만 있으면 "지울 수 있는 팀"이 하나도
+       없어서 삭제 경로를 데모에서 못 본다.
+  */
+  teamMemberCounts: { d1: 6, d2: 3, d3: 0 },
   positions: [
     { id: "p1", name: "팀장", role: AUTHORITY.LEADER },
     { id: "p2", name: "매니저", role: AUTHORITY.MEMBER },
@@ -38,10 +43,19 @@ const INITIAL: CompanySetting = {
   ],
 };
 
-let store: CompanySetting = structuredClone(INITIAL);
+/*
+  ⚠️ `structuredClone`을 쓰지 않는다. Node엔 있지만 **jsdom 테스트 환경에는 없어서**
+     이 모듈을 import하는 것만으로 스위트가 죽는다. 여기 값은 전부 평범한 JSON이라
+     이걸로 충분하다.
+*/
+function clone<T>(value: T): T {
+  return JSON.parse(JSON.stringify(value)) as T;
+}
+
+let store: CompanySetting = clone(INITIAL);
 
 export function getMockCompanySetting(): CompanySetting {
-  return structuredClone(store);
+  return clone(store);
 }
 
 export function updateMockCompanyProfile(draft: CompanyProfileDraft): void {
@@ -50,14 +64,14 @@ export function updateMockCompanyProfile(draft: CompanyProfileDraft): void {
 }
 
 export function updateMockDepartments(departments: DepartmentNode[]): void {
-  store = { ...store, departments: structuredClone(departments) };
+  store = { ...store, departments: clone(departments) };
 }
 
 export function updateMockPositions(positions: Position[]): void {
-  store = { ...store, positions: structuredClone(positions) };
+  store = { ...store, positions: clone(positions) };
 }
 
 /** 테스트가 앞 테스트의 저장을 물려받지 않게 되돌린다 */
 export function resetMockCompanySetting(): void {
-  store = structuredClone(INITIAL);
+  store = clone(INITIAL);
 }

@@ -1,9 +1,11 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 
 import { ConfirmDialog } from "@/components/common/confirm-dialog";
+import { LeaveGuard } from "@/components/common/leave-guard";
 import { Button } from "@/components/ui/button";
 import { COMPANY_SECTION_TITLE } from "@/constants/company";
 import { DepartmentAddRow } from "@/features/onboarding/components/department-add-row";
@@ -29,7 +31,14 @@ import { SettingCard } from "./setting-card";
  *    이 화면은 오갈 단계가 없고 저장하면 서버가 정본을 들고 있다.
  * ⚠️ 트리를 **통째로** 보낸다 — 순서와 계층이 값이라 한 줄씩 보내면 중간 상태가 저장된다.
  */
-export function CompanyTeamCard({ initial }: { initial: DepartmentNodeType[] }) {
+interface CompanyTeamCardProps {
+  initial: DepartmentNodeType[];
+  /** 팀 id → 사원 수. 사람이 딸린 팀은 못 지운다 */
+  memberCounts: Record<string, number>;
+}
+
+export function CompanyTeamCard({ initial, memberCounts }: CompanyTeamCardProps) {
+  const router = useRouter();
   const tree = useDepartmentTree(initial);
   /*
     ⚠️ 삭제 확인은 **여기서 직접 받는다.** 온보딩의 `requestRemove`는 안에 역할이 있을 때만
@@ -46,16 +55,47 @@ export function CompanyTeamCard({ initial }: { initial: DepartmentNodeType[] }) 
        어느 줄이 문제인지 담고 있는데, 토스트로 띄우면 한 줄에 잘리고 몇 초 뒤 사라진다 —
        그러면 사라진 문장을 기억해 목록을 눈으로 훑어야 한다(§토스트: 사라지므로 보조다).
   */
-  const [error, setError] = useState<string | null>(null);
+  /**
+   * 마지막으로 **실패한 저장**과 그때 보낸 값.
+   * ⚠️ 문구만 들고 있으면 값을 고쳐도 빨간 글씨가 남는다 — `같은 이름이 둘 있습니다`를
+   *    고쳤는데 화면은 계속 그렇다고 말한다. 되돌려서 [저장]이 잠기면 지울 길조차 없다.
+   *    실패한 값과 지금 값이 **같을 때만** 보여 주면 편집하는 순간 저절로 사라진다.
+   */
+  const [failed, setFailed] = useState<{ snapshot: string; message: string } | null>(null);
+
+  /**
+   * 사원이 딸린 **팀(뿌리)** 인가.
+   * ⚠️ 역할(아랫단)은 사원이 소속되는 곳이 아니라 언제나 `false`다(§권한 ③).
+   */
+  const hasMembers = (id: string) =>
+    tree.departments.some((team) => team.id === id) && (memberCounts[id] ?? 0) > 0;
+
+  /*
+    ⚠️ **강등·이동도 막는다.** 사원이 있는 팀을 남의 팀 아래로 내리면 그 사원들의 소속이
+       역할이 되어 버린다 — 지우는 것과 같은 결과다. 화면에서 안 막으면 서버만 거절해서,
+       사용자는 지운 적도 없는데 "사원이 남아 있습니다"를 보고 무엇을 되돌릴지 모른다.
+    ⚠️ 조용히 무시하지 않고 **왜 안 되는지 말한다**(§정직성).
+  */
+  const blockIfStaffed = (id: string, run: () => void) => {
+    if (!hasMembers(id)) {
+      run();
+      return;
+    }
+    const team = tree.departments.find((node) => node.id === id);
+    toast.error(`'${team?.name ?? ""}'에는 사원이 있어 다른 팀의 역할로 옮길 수 없습니다`);
+  };
 
   const handlers: DepartmentNodeHandlers = {
     onRename: tree.rename,
     onAddChild: tree.addChild,
     onRemove: (id: string) => setPendingTeam(findNode(tree.departments, id) ?? null),
-    onMove: tree.move,
+    onMove: (draggedId, targetId, position) =>
+      position === "inside"
+        ? blockIfStaffed(draggedId, () => tree.move(draggedId, targetId, position))
+        : tree.move(draggedId, targetId, position),
     onShift: tree.shift,
     onPromote: tree.promote,
-    onDemote: tree.demote,
+    onDemote: (id: string) => blockIfStaffed(id, () => tree.demote(id)),
     editingId: tree.editingId,
     onEditingChange: tree.setEditingId,
     dragging,
@@ -72,15 +112,36 @@ export function CompanyTeamCard({ initial }: { initial: DepartmentNodeType[] }) 
   // 안 고친 걸 저장하면 "저장했습니다"가 아무 뜻이 없다 — 바뀐 게 있을 때만 연다
   const isDirty = JSON.stringify(tree.departments) !== JSON.stringify(saved);
 
+  /* 편집하면 스냅샷이 어긋나 문구가 저절로 사라진다 */
+  const error =
+    failed && JSON.stringify(tree.departments) === failed.snapshot ? failed.message : null;
+
+  /**
+   * 지우려는 팀에 남은 사원 수.
+   * ⚠️ 0이면 확인만 받고, 1명이라도 있으면 **막고 갈 곳을 알려 준다** — 팀은 인수인계·액션
+   *    귀속의 단위라 소속이 사라지면 그 사람을 아무도 관리할 수 없다(§validate).
+   */
+  const pendingMembers = pendingTeam ? (memberCounts[pendingTeam.id] ?? 0) : 0;
+  const isBlocked = pendingMembers > 0;
+  /*
+    ⚠️ 삭제 버튼은 **역할에도** 붙어 있다. 전부 "팀"이라 부르면 역할을 지울 때 "'프론트' 팀을
+       지울까요?"가 되어 무엇을 지우는지 잘못 말한다(§권한 ③: 팀과 역할은 다른 단이다).
+  */
+  const isTeam = pendingTeam !== null && tree.departments.some((t) => t.id === pendingTeam.id);
+  const unit = isTeam ? "팀" : "역할";
+
   const handleSave = () => {
     const next = tree.departments;
     startSaving(async () => {
       const result = await saveDepartmentsAction(next);
       if (!result.isSuccess) {
-        setError(result.message ?? "팀 체계를 저장하지 못했습니다");
+        setFailed({
+          snapshot: JSON.stringify(next),
+          message: result.message ?? "팀 체계를 저장하지 못했습니다",
+        });
         return;
       }
-      setError(null);
+      setFailed(null);
       setSaved(next);
       toast.success("팀 체계를 저장했습니다");
     });
@@ -88,6 +149,13 @@ export function CompanyTeamCard({ initial }: { initial: DepartmentNodeType[] }) 
 
   return (
     <>
+      {/*
+        ⚠️ 저장 안 한 편집을 들고 나가면 **조용히 사라진다.** 확인창에서 "[저장]을 눌러야
+           반영됩니다"라고 말해 놓고 저장 없이 나가는 걸 안 막으면 앞뒤가 안 맞는다.
+        ⚠️ 아직 안 누른 입력칸도 센다 — 적다가 닫으면 그것도 사라진다.
+      */}
+      <LeaveGuard hasUnsaved={isDirty || draftName.trim().length > 0} />
+
       <SettingCard
         title={COMPANY_SECTION_TITLE.TEAM}
         aside={aside}
@@ -118,6 +186,9 @@ export function CompanyTeamCard({ initial }: { initial: DepartmentNodeType[] }) 
       >
         {/*
           열 머리 — 표가 있는 다른 카드(저장소 관리)와 같은 모양이다.
+          ⚠️ 면은 `bg-muted`다. 저장소 표 머리는 `bg-secondary/50`이지만 **거긴 아래에 추가 줄이
+             없다** — 이 카드는 머리와 바닥에 회색 면이 둘이라, 강도가 다르면 같은 뜻의 두 줄이
+             다른 밝기로 보인다. 추가 줄은 온보딩 공용이라 `bg-muted`로 고정이므로 머리를 맞춘다.
           ⚠️ 여백은 카드 전체와 같은 28px다. 아래 목록은 `DepartmentNode`가 자기 몫으로
              8px(`px-2`)를 쓰므로 컨테이너가 20px만 대서 합이 28이 된다.
         */}
@@ -161,24 +232,57 @@ export function CompanyTeamCard({ initial }: { initial: DepartmentNodeType[] }) 
         ⚠️ **무엇을 잃는지**와 **언제 그렇게 되는지**를 같이 적는다. 여기서 [삭제]를 눌러도
            화면에서만 빠지고, 카드 밑 [저장]을 눌러야 서버에 간다 — 그 말을 빼면 이미
            지워진 줄 알고 저장 없이 나가서, 지운 팀이 그대로 남는다(§정직성).
+        ⚠️ 사람이 딸린 팀이면 **창이 하는 일이 달라진다** — 확인이 아니라 막는 안내다.
+           워크플로우에서 사람이 빠질 때는 늘 명시적 재할당을 거치므로(휴직·오프보딩 →
+           인수인계 → 귀속), 팀 삭제만 조용히 소속을 지우게 두지 않는다.
       */}
       <ConfirmDialog
         isOpen={pendingTeam !== null}
         onOpenChange={() => setPendingTeam(null)}
-        title={`\u2018${pendingTeam?.name ?? ""}\u2019 팀을 지울까요?`}
-        description={
-          <>
-            {pendingTeam && pendingTeam.children.length > 0
-              ? `안에 있는 역할 ${pendingTeam.children.length}개도 함께 목록에서 빠집니다.`
-              : "목록에서 빠집니다."}
-            <br />
-            [저장]을 눌러야 반영되고, 그때 이 팀 소속 사원은 소속이 없어집니다.
-          </>
+        title={
+          isBlocked
+            ? `\u2018${pendingTeam?.name ?? ""}\u2019 ${unit}은 지울 수 없습니다`
+            : `\u2018${pendingTeam?.name ?? ""}\u2019 ${unit}을 지울까요?`
         }
-        confirmLabel="삭제"
-        isDestructive
+        description={
+          isBlocked ? (
+            <>
+              사원 {pendingMembers}명이 이 팀에 속해 있습니다.
+              <br />
+              사원 관리에서 다른 팀으로 옮긴 뒤 지워 주세요.
+              {isDirty && (
+                <>
+                  <br />
+                  지금 나가면 저장하지 않은 팀 편집은 사라집니다.
+                </>
+              )}
+            </>
+          ) : (
+            <>
+              {pendingTeam && pendingTeam.children.length > 0
+                ? `안에 있는 역할 ${pendingTeam.children.length}개도 함께 목록에서 빠집니다.`
+                : `이 ${unit}에는 사원이 없어 바로 지울 수 있습니다.`}
+              <br />
+              [저장]을 눌러야 반영됩니다.
+            </>
+          )
+        }
+        /* 막힌 창은 **다음 걸음**을 준다 — "안 됩니다"만 말하고 끝내면 갈 곳을 찾아 헤맨다 */
+        confirmLabel={isBlocked ? "사원 관리 열기" : "삭제"}
+        cancelLabel={isBlocked ? "닫기" : undefined}
+        mark={isBlocked ? "alert" : "check"}
+        isDestructive={!isBlocked}
         onConfirm={() => {
           if (!pendingTeam) return;
+          if (isBlocked) {
+            /*
+              ⚠️ `LeaveGuard`는 `beforeunload`만 잡는다 — Next의 클라이언트 이동에는 안 뛴다.
+                 그래서 나가기 전에 **설명으로 한 번 알리고**(위 문장) 창을 닫고 옮긴다.
+            */
+            setPendingTeam(null);
+            router.push("/manage/members");
+            return;
+          }
           tree.confirmRemove(pendingTeam.id);
           setPendingTeam(null);
         }}

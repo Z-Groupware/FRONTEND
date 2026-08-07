@@ -4,6 +4,7 @@ import { ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 
+import { LeaveGuard } from "@/components/common/leave-guard";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -18,7 +19,6 @@ import { DepartmentAddRow } from "./department-add-row";
 import { DepartmentDeleteDialog } from "./department-delete-dialog";
 import { DepartmentIntro } from "./department-intro";
 import { DepartmentNode, type DepartmentNodeHandlers } from "./department-node";
-import { LeaveGuard } from "./leave-guard";
 
 /**
  * 온보딩 1단계 — 부서 체계.
