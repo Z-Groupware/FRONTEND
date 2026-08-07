@@ -7,6 +7,7 @@ import { MemberActionList } from "@/features/member/components/member-action-lis
 import { MemberGradeCard } from "@/features/member/components/member-grade-card";
 import { MemberProfileCard } from "@/features/member/components/member-profile-card";
 import { getManagedMember } from "@/features/member/manage-server";
+import { buildTeamRoles } from "@/features/member/team-roles";
 import { getViewer } from "@/features/shell/viewer";
 import { canApproveFinal, canChangeMemberGrade, canManageMembers } from "@/lib/permission";
 
@@ -48,6 +49,8 @@ export default async function ManageMemberDetailPage({
   */
   const company = await getCompanySetting();
   const positionNames = company.positions.map((position) => position.name);
+  /* ⚠️ **이 사람 팀의 역할만** 준다 — 역할은 팀에 매여 있고 팀은 이 화면에서 안 바꾼다 */
+  const roleOptions = buildTeamRoles(company.departments)[detail.member.teamName ?? ""] ?? [];
 
   return (
     <div className="flex-1 overflow-y-auto px-8 py-7">
@@ -71,20 +74,23 @@ export default async function ManageMemberDetailPage({
         {/*
           ⚠️ 곁 컬럼은 **360px**이다(DESIGN: 곁 컬럼 고정폭). 사람 카드는 폭이 늘어나도
              얻는 게 없다.
-          ⚠️ 직급·권한 변경은 **오른쪽 아래**다. 왼쪽에 셋을 쌓으면 그 칸만 길어져 오른쪽
-             절반이 통째로 비고, 반대로 폼을 전폭에 두면 입력칸만 넓어진다 —
-             담당 액션(짧다) 밑에 두면 두 칸 높이가 얼추 맞는다.
+          ⚠️ **폼이 위, 목록이 아래다.** 한때 반대로 뒀는데 그건 "담당 액션은 짧다"는 전제
+             위에 세운 배치였다 — 액션은 몇 건일지 정해져 있지 않고 스무 건이 될 수도 있다.
+             길이가 변하는 것이 위에 있으면 고정 크기인 폼이 그만큼 아래로 밀려, 직급 하나
+             고치러 온 사람이 목록을 다 지나쳐 스크롤해야 한다.
+          ⚠️ 폼을 전폭에 두지 않는다 — 입력칸만 넓어지고 라벨과 값이 멀어진다.
         */}
         <div className="grid grid-cols-1 items-start gap-7 lg:grid-cols-[360px_minmax(0,1fr)]">
           <MemberProfileCard member={detail.member} phone={detail.phone} />
 
           <div className="flex flex-col gap-7">
-            <MemberActionList actions={detail.actions} />
             <MemberGradeCard
               member={detail.member}
               canEdit={canChangeMemberGrade(viewer)}
               positionNames={positionNames}
+              roleOptions={roleOptions}
             />
+            <MemberActionList actions={detail.actions} />
           </div>
         </div>
       </div>

@@ -23,6 +23,7 @@ import {
   AUTHORITY_LABEL,
   POSITION_AUTHORITIES,
 } from "@/constants/authority";
+import { ROLE_NONE_LABEL } from "@/constants/member";
 
 import { canChangeGradeOf } from "../grade";
 import { changeMemberGradeAction } from "../manage-actions";
@@ -41,6 +42,7 @@ export function MemberGradeCard({
   member,
   canEdit,
   positionNames,
+  roleOptions,
 }: {
   member: ManagedMember;
   canEdit: boolean;
@@ -49,8 +51,11 @@ export function MemberGradeCard({
    * ⚠️ 손으로 적게 두면 회사에 없는 직급이 생긴다 — 직급에는 권한이 매여 있다.
    */
   positionNames: string[];
+  /** 이 사람 팀의 역할들 — 역할은 팀에 매여 있다(`team-roles`) */
+  roleOptions: string[];
 }) {
   const [position, setPosition] = useState(member.position);
+  const [roleLabel, setRoleLabel] = useState(member.roleLabel ?? "");
   const [authority, setAuthority] = useState<Authority>(member.authority);
   const [isAdmin, setIsAdmin] = useState(member.isAdmin);
   const [error, setError] = useState<string | null>(null);
@@ -74,6 +79,7 @@ export function MemberGradeCard({
   const showsAdmin = eligible.includes(authority);
   const isDirty =
     position !== member.position ||
+    roleLabel !== (member.roleLabel ?? "") ||
     authority !== member.authority ||
     (showsAdmin ? isAdmin : false) !== member.isAdmin;
 
@@ -85,6 +91,7 @@ export function MemberGradeCard({
     startTransition(async () => {
       const result = await changeMemberGradeAction(member.id, {
         position,
+        roleLabel,
         authority,
         // Owner에게는 칸 자체가 없다 — 화면에 없는 값을 보내지 않는다
         isAdmin: showsAdmin ? isAdmin : false,
@@ -193,6 +200,39 @@ export function MemberGradeCard({
                     기업 설정에서 직급을 먼저 만들어 주세요
                   </p>
                 )}
+              </div>
+
+              {/*
+                ⚠️ **역할도 여기서 고친다.** 전에는 발급 때만 정할 수 있어서, 팀을 옮기거나
+                   맡은 일이 바뀌어도 첫 값이 그대로 남았다 — 한 번 쓰고 못 고치는 값은
+                   시간이 지나면 화면이 거짓말을 한다.
+                ⚠️ 고를 수 있는 건 **이 사람 팀의 역할**뿐이다. 팀은 여기서 안 바꾸므로
+                   목록이 흔들리지 않는다.
+                ⚠️ 역할이 없는 팀이면 고를 게 `없음`뿐이라 그대로 둔다.
+              */}
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="member-role">역할</Label>
+                <Select
+                  items={{
+                    "": ROLE_NONE_LABEL,
+                    ...Object.fromEntries(roleOptions.map((name) => [name, name])),
+                  }}
+                  value={roleLabel}
+                  onValueChange={(value) => setRoleLabel(value ?? "")}
+                  disabled={!canEdit || isPending || roleOptions.length === 0}
+                >
+                  <SelectTrigger id="member-role" className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent alignItemWithTrigger={false}>
+                    <SelectItem value="">{ROLE_NONE_LABEL}</SelectItem>
+                    {roleOptions.map((name) => (
+                      <SelectItem key={name} value={name}>
+                        {name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 

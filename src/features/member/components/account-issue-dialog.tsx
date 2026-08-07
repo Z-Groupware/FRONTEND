@@ -25,6 +25,7 @@ import {
   AUTHORITY_LABEL,
   POSITION_AUTHORITIES,
 } from "@/constants/authority";
+import { ROLE_NONE_LABEL } from "@/constants/member";
 import { cn } from "@/lib/utils";
 
 import { validateAccount } from "../account-validate";
@@ -49,6 +50,7 @@ import type { AccountDraft, AccountErrors } from "../manage-types";
 export function AccountIssueDialog({
   teamNames,
   positionNames,
+  teamRoles,
 }: {
   teamNames: string[];
   /**
@@ -56,6 +58,8 @@ export function AccountIssueDialog({
    * ⚠️ 손으로 적게 두면 회사에 없는 직급이 생긴다 — 직급에는 권한이 매여 있다.
    */
   positionNames: string[];
+  /** 팀 이름 → 그 팀의 역할들. 역할은 팀에 매여 있다(`team-roles`) */
+  teamRoles: Record<string, string[]>;
 }) {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
@@ -64,6 +68,9 @@ export function AccountIssueDialog({
   const [message, setMessage] = useState<string | null>(null);
   const [issued, setIssued] = useState<{ id: number; name: string; email: string } | null>(null);
   const [isPending, startTransition] = useTransition();
+
+  /** 고른 팀의 역할들 — 팀이 바뀌면 같이 바뀐다 */
+  const roleOptions = teamRoles[draft.teamName] ?? [];
 
   const set = <K extends keyof AccountDraft>(key: K, value: AccountDraft[K]) => {
     setDraft((prev) => ({ ...prev, [key]: value }));
@@ -226,7 +233,13 @@ export function AccountIssueDialog({
               <Select
                 items={Object.fromEntries(teamNames.map((name) => [name, name]))}
                 value={draft.teamName}
-                onValueChange={(value) => set("teamName", value ?? "")}
+                /*
+                  ⚠️ **팀이 바뀌면 역할을 비운다.** 역할은 팀에 매여 있어서, 안 비우면
+                     개발팀의 `프론트엔드`를 단 채로 마케팅팀으로 넘어간다(온보딩과 같은 규칙).
+                */
+                onValueChange={(value) =>
+                  setDraft((prev) => ({ ...prev, teamName: value ?? "", roleLabel: "" }))
+                }
               >
                 <SelectTrigger id="account-teamName" className="w-full">
                   <SelectValue />
@@ -246,6 +259,37 @@ export function AccountIssueDialog({
               </p>
             ),
             teamNames.length > 0,
+          )}
+
+          {/*
+            ⚠️ **역할 칸이다.** 온보딩 3단계 초대는 줄마다 이 칸을 갖는데 발급 창에만 없어서,
+               온보딩 뒤에 들어온 사람은 계속 `없음`이었다 — 그리고 뒤에 고칠 화면도 없었다.
+            ⚠️ 역할은 **고른 팀의 것만** 나온다(`teamRoles`). 팀을 바꾸면 비워진다.
+            ⚠️ **안 골라도 된다.** 역할이 없는 팀도 있고 안 붙인 사람도 있다(WORKFLOW §9) —
+               그래서 목록 맨 위에 `없음`을 둔다. 빈 셀렉트로 두면 "아직 안 골랐다"와
+               "안 붙인다"가 같은 모양이 된다.
+          */}
+          {field(
+            "roleLabel",
+            "역할",
+            <Select
+              items={{ "": ROLE_NONE_LABEL, ...Object.fromEntries(roleOptions.map((n) => [n, n])) }}
+              value={draft.roleLabel}
+              onValueChange={(value) => set("roleLabel", value ?? "")}
+              disabled={roleOptions.length === 0}
+            >
+              <SelectTrigger id="account-roleLabel" className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent alignItemWithTrigger={false}>
+                <SelectItem value="">{ROLE_NONE_LABEL}</SelectItem>
+                {roleOptions.map((name) => (
+                  <SelectItem key={name} value={name}>
+                    {name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>,
           )}
 
           {/*
@@ -282,43 +326,40 @@ export function AccountIssueDialog({
             positionNames.length > 0,
           )}
 
+          {/*
+            ⚠️ **겸직 방패를 권한 칸 안에** 둔다. 역할 칸이 늘면서 칸이 여섯이 됐는데, 방패를
+               따로 한 칸으로 두니 마지막 줄에 라벨도 없이 혼자 남았다 — 겸직은 권한에 얹는
+               표식이라 그 칸 안에 붙어 있는 게 뜻에도 맞는다.
+            ⚠️ 권한 셀렉트에 **넣지는 않는다.** 목록 안에 두면 "Member 대신 Admin"으로
+               읽힌다(§권한: 축이 2개다).
+          */}
           {field(
             "authority",
             "권한",
-            <Select
-              items={AUTHORITY_LABEL}
-              value={draft.authority}
-              onValueChange={(value) => set("authority", value as Authority)}
-            >
-              <SelectTrigger id="account-authority" className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              {/* ⚠️ Owner는 회사에 하나라 발급 대상이 아니다(WORKFLOW §11) */}
-              <SelectContent alignItemWithTrigger={false}>
-                {POSITION_AUTHORITIES.map((value) => (
-                  <SelectItem key={value} value={value}>
-                    {AUTHORITY_LABEL[value]}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>,
-          )}
-
-          {/*
-            ⚠️ **권한 칸 바로 옆이다**(온보딩 초대 줄과 같은 자리). 겸직은 권한을 대체하는
-               값이 아니라 그 위에 덧붙는 플래그라, 권한 셀렉트 안에 넣으면
-               "Member 대신 Admin"으로 읽힌다(§권한: 축이 2개다).
-            ⚠️ **라벨 문구를 두지 않는다.** `관리자 겸직`이라 적으면 권한과 대등한 칸으로
-               보이는데, 이건 권한에 얹는 표식 하나다 — 온보딩 초대 줄도 라벨 없이 방패만 둔다.
-               뜻은 옆의 `?`가 말하고, 스크린 리더는 버튼의 `aria-label`로 읽는다(§a11y).
-            ⚠️ **글자를 붙이지 않는다.** `부여함`/`부여 안 함`은 폭이 달라 누를 때마다 버튼이
-               늘었다 줄었다 했다 — 켜짐은 **채움**이 말한다(온보딩 `InviteAdminToggle`).
-            ⚠️ 라벨 자리는 **비워 두되 높이는 남긴다.** 없애면 방패가 옆 셀렉트보다 위로 올라간다.
-          */}
-          {field(
-            "isAdmin",
-            "",
             <div className="flex items-center gap-2">
+              <Select
+                items={AUTHORITY_LABEL}
+                value={draft.authority}
+                onValueChange={(value) => set("authority", value as Authority)}
+              >
+                <SelectTrigger id="account-authority" className="min-w-0 flex-1">
+                  <SelectValue />
+                </SelectTrigger>
+                {/* ⚠️ Owner는 회사에 하나라 발급 대상이 아니다(WORKFLOW §11) */}
+                <SelectContent alignItemWithTrigger={false}>
+                  {POSITION_AUTHORITIES.map((value) => (
+                    <SelectItem key={value} value={value}>
+                      {AUTHORITY_LABEL[value]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {/*
+                ⚠️ **글자를 붙이지 않는다.** `부여함`/`부여 안 함`은 폭이 달라 누를 때마다
+                   버튼이 늘었다 줄었다 했다 — 켜짐은 **채움**이 말한다(온보딩 `InviteAdminToggle`).
+                ⚠️ 뜻은 옆의 `?`가 말하고, 스크린 리더는 버튼의 `aria-label`로 읽는다(§a11y).
+              */}
               <button
                 type="button"
                 id="account-isAdmin"
@@ -344,16 +385,8 @@ export function AccountIssueDialog({
                   ?
                 </PopoverTrigger>
                 {/*
-                  ⚠️ **한 문장에 다 넣지 않는다.** `켜면 ~로 발급됩니다 — ~할 수 있습니다`처럼
-                     줄표로 이으면 세 줄짜리 한 덩어리가 되어 어디가 요점인지 안 보인다.
-                     **무엇이 열리는지 한 줄**, 그 아래 보조 두 줄로 끊는다.
-                */}
-                {/*
                   ⚠️ **오른쪽으로 편다.** 아래로 펴면 바로 밑의 [계정 발급] 버튼을 덮어서,
-                     설명을 읽는 동안 정작 눌러야 할 것이 가려진다. 창 옆은 비어 있으니
-                     그쪽으로 나가면 폼도 버튼도 그대로 보인다.
-                  ⚠️ 글은 **가운데 정렬**이다 — 창의 제목·설명이 가운데라 이것만 왼쪽이면
-                     따로 붙은 쪽지처럼 보인다. 줄이 짧아 가운데로 둬도 읽기가 나빠지지 않는다.
+                     설명을 읽는 동안 정작 눌러야 할 것이 가려진다.
                 */}
                 <PopoverContent side="right" align="center" className="w-56 text-center">
                   <p className="text-[13px] leading-5 font-medium break-keep">
@@ -429,5 +462,7 @@ function emptyDraft(teamNames: string[], positionNames: string[]): AccountDraft 
     authority: AUTHORITY.MEMBER,
     // ⚠️ 겸직은 **기본 꺼짐**이다. 권한을 주는 값이라 미리 켜 두면 확인 없이 나간다
     isAdmin: false,
+    // ⚠️ 역할은 **안 고른 상태로 시작한다** — 안 붙여도 되는 값이라 기본을 정하면 안 된다
+    roleLabel: "",
   };
 }

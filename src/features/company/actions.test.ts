@@ -36,12 +36,16 @@ const VALID_PROFILE: CompanyProfileDraft = {
 };
 
 /*
-  ⚠️ **사람이 있는 팀(d1·d2)은 남겨 둔다.** 지우면 "사원이 남아 있습니다"로 막히는 게 맞고,
-     그건 아래 전용 테스트가 본다 — 여기서는 정상 저장 경로를 봐야 한다.
+  ⚠️ **사람이 있는 팀은 다 남겨 둔다.** 하나라도 빠지면 "사원이 남아 있습니다"로 막히는데,
+     그건 아래 전용 테스트가 볼 일이다 — 여기서는 정상 저장 경로를 봐야 한다.
+  ⚠️ 목의 팀은 `d1~d5`이고 사람이 없는 건 `d5`뿐이라, 그것만 빼고 그대로 둔다.
+     (역할 이름을 바꾸는 건 사람 수와 무관해서 통과한다.)
 */
 const VALID_TEAMS: DepartmentNode[] = [
-  { id: "d1", name: "개발팀", children: [{ id: "r1", name: "프론트", children: [] }] },
-  { id: "d2", name: "기획팀", children: [] },
+  { id: "d1", name: "개발팀", children: [{ id: "r1", name: "프론트엔드", children: [] }] },
+  { id: "d2", name: "마케팅팀", children: [] },
+  { id: "d3", name: "디자인팀", children: [] },
+  { id: "d4", name: "전략기획팀", children: [] },
 ];
 
 const VALID_POSITIONS: Position[] = [
@@ -188,11 +192,12 @@ describe("saveDepartmentsAction · savePositionsAction", () => {
   /* ⚠️ 옮긴 것과 지운 것은 다른 사건이라 문구도 다르다 */
   it("사원이 남은 팀을 남의 역할로 내리려 하면 다른 말로 막는다", async () => {
     const teams = getMockCompanySetting().departments;
+    /* ⚠️ 자식이 없는 팀을 옮긴다 — 자식 있는 팀을 넣으면 3계층이 되어 다른 규칙에 먼저 걸린다 */
     const moved = teams
-      .filter((team) => team.id !== "d2")
+      .filter((team) => team.id !== "d4")
       .map((team) =>
         team.id === "d1"
-          ? { ...team, children: [...team.children, teams.find((t) => t.id === "d2")!] }
+          ? { ...team, children: [...team.children, teams.find((t) => t.id === "d4")!] }
           : team,
       );
 
@@ -213,7 +218,8 @@ describe("saveDepartmentsAction · savePositionsAction", () => {
   });
 
   it("빈 팀은 지울 수 있다", async () => {
-    const withoutEmpty = getMockCompanySetting().departments.filter((team) => team.id !== "d3");
+    // ⚠️ 사람이 없는 팀은 `d5`다 — `d3`(디자인팀)에는 사원이 있다
+    const withoutEmpty = getMockCompanySetting().departments.filter((team) => team.id !== "d5");
 
     expect(await saveDepartmentsAction(withoutEmpty)).toEqual({ isSuccess: true });
   });

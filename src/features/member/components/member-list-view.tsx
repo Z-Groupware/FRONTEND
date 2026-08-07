@@ -30,6 +30,7 @@ export function MemberListView({
   canIssueAccount,
   teamNames,
   positionNames,
+  teamRoles,
 }: {
   members: ManagedMember[];
   /** 사람 id → 대기 중인 신청 종류. 목록 행에는 종류가 없어 따로 받는다 */
@@ -39,6 +40,8 @@ export function MemberListView({
   teamNames: string[];
   /** 회사가 만든 직급 이름들 — 발급 창이 이 안에서만 고르게 한다 */
   positionNames: string[];
+  /** 팀 이름 → 그 팀의 역할들. 역할은 팀에 매여 있다 */
+  teamRoles: Record<string, string[]>;
 }) {
   const [keyword, setKeyword] = useState("");
   const [filter, setFilter] = useState<MemberFilter>(MEMBER_FILTER.ALL);
@@ -123,7 +126,11 @@ export function MemberListView({
                    만들면 뒤로 가기가 어색해진다(공지 작성과 같은 패턴).
               */}
               {canIssueAccount && (
-                <AccountIssueDialog teamNames={teamNames} positionNames={positionNames} />
+                <AccountIssueDialog
+                  teamNames={teamNames}
+                  positionNames={positionNames}
+                  teamRoles={teamRoles}
+                />
               )}
             </div>
           </div>

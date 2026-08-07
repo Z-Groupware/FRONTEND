@@ -74,3 +74,12 @@ export const DELETED_MEMBER_STATUS = "DELETED";
 export function isVisibleMemberStatus(status: string): status is MemberStatus {
   return (Object.values(MEMBER_STATUS) as string[]).includes(status);
 }
+
+/**
+ * 역할을 안 붙인 사람에게 쓰는 라벨.
+ *
+ * ⚠️ **빈 값과 같은 뜻이다.** 저장은 `null`, 화면은 이 글자다 — 역할은 안 붙여도 되는
+ *    값이라(WORKFLOW §9) 셀렉트에도 이 항목이 있어야 "아직 안 골랐다"와 구분된다.
+ * ⚠️ 문자열을 화면에 손으로 적지 않는다 — 표·프로필·발급 창이 같은 값을 쓴다.
+ */
+export const ROLE_NONE_LABEL = "없음";

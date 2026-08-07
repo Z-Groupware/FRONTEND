@@ -15,6 +15,7 @@ const VALID: AccountDraft = {
   position: "사원",
   authority: AUTHORITY.MEMBER,
   isAdmin: false,
+  roleLabel: "",
 };
 
 describe("validateAccount", () => {

@@ -153,7 +153,7 @@ const INITIAL: ManagedMemberDetail[] = [
       position: "대리",
       authority: AUTHORITY.MEMBER,
       isAdmin: false,
-      roleLabel: "브랜드 전략",
+      roleLabel: "브랜드",
       status: MEMBER_STATUS.ACTIVE,
       joinedAt: "2020-09-01",
     },
@@ -188,7 +188,7 @@ const INITIAL: ManagedMemberDetail[] = [
       position: "사원",
       authority: AUTHORITY.MEMBER,
       isAdmin: false,
-      roleLabel: "캠페인 운영",
+      roleLabel: "캠페인",
       status: MEMBER_STATUS.WAITING,
       joinedAt: "2024-06-01",
     },
@@ -235,7 +235,7 @@ const INITIAL: ManagedMemberDetail[] = [
       position: "사원",
       authority: AUTHORITY.MEMBER,
       isAdmin: false,
-      roleLabel: "비주얼 디자인",
+      roleLabel: "비주얼",
       status: MEMBER_STATUS.ACTIVE,
       joinedAt: "2024-08-12",
     },
@@ -320,6 +320,7 @@ export function addMockManagedMember(
     position: string;
     authority: ManagedMember["authority"];
     isAdmin: boolean;
+    roleLabel: string;
   },
   joinedAt: string,
 ): ManagedMember {
@@ -332,8 +333,12 @@ export function addMockManagedMember(
     position: draft.position.trim(),
     authority: draft.authority,
     isAdmin: draft.isAdmin,
-    // ⚠️ 역할은 발급 때 안 정한다 — 팀에 들어간 뒤 팀장이 붙이는 라벨이다(WORKFLOW §9)
-    roleLabel: null,
+    /*
+      ⚠️ 발급 때 정한다. 전에는 `null`로 두고 "팀장이 붙인다"고 적어 뒀는데,
+         **팀장이 붙일 화면이 없었다** — 온보딩 뒤에 들어온 사람은 계속 `없음`이었다.
+      ⚠️ 빈 값은 `null`로 저장한다 — 화면은 `없음`으로 읽고, 값이 있는 것과 없는 것을 가른다.
+    */
+    roleLabel: draft.roleLabel.trim() || null,
     status: MEMBER_STATUS.ACTIVE,
     joinedAt,
   };

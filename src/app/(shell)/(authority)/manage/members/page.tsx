@@ -8,6 +8,7 @@ import {
   listManagedMembers,
   listTeamNames,
 } from "@/features/member/manage-server";
+import { buildTeamRoles } from "@/features/member/team-roles";
 import { getViewer } from "@/features/shell/viewer";
 import { canIssueAccount, canManageMembers } from "@/lib/permission";
 
@@ -50,6 +51,7 @@ export default async function ManageMembersPage() {
     getCompanySetting(),
   ]);
   const positionNames = company.positions.map((position) => position.name);
+  const teamRoles = buildTeamRoles(company.departments);
 
   // TODO(BE 협의): 목록 응답에 대기 신청 종류를 함께 실어 주면 이 왕복이 사라진다
   const details = await Promise.all(members.map((member) => getManagedMember(member.id)));
@@ -64,6 +66,7 @@ export default async function ManageMembersPage() {
       canIssueAccount={canIssueAccount(viewer)}
       teamNames={teamNames}
       positionNames={positionNames}
+      teamRoles={teamRoles}
     />
   );
 }

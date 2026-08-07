@@ -31,6 +31,7 @@ import {
   rejectMockHandover,
   updateMockMemberGrade,
 } from "./mock/managed";
+import { buildTeamRoles, isRoleOfTeam } from "./team-roles";
 
 /**
  * 사원 관리의 **변경 작업**. 전부 서버에서 돈다(핵심 4원칙 ②).
@@ -79,7 +80,7 @@ async function gate(
  */
 export async function changeMemberGradeAction(
   id: number,
-  next: { position: string; authority: Authority; isAdmin: boolean },
+  next: { position: string; authority: Authority; isAdmin: boolean; roleLabel: string },
 ): Promise<MemberActionResult> {
   const pass = await gate(canChangeMemberGrade, "사원 정보를 바꿀 권한이 없습니다");
   if ("denied" in pass) return { isSuccess: false, message: pass.denied };
@@ -120,6 +121,17 @@ export async function changeMemberGradeAction(
   if (!target) return { isSuccess: false, message: "없는 사원입니다" };
   if (!canGrantAdmin({ role: target.member.authority })) {
     return { isSuccess: false, message: "대표 계정은 이 화면에서 바꿀 수 없습니다" };
+  }
+
+  /*
+    ⚠️ 역할은 **그 사람 팀의 것만** 붙는다. 화면은 그 팀 역할만 주지만 Server Action은
+       직접 부를 수 있다 — 남의 팀 역할이 붙으면 조직도가 거짓말을 한다.
+    ⚠️ **대상을 읽은 뒤에 본다.** 기준이 그 사람이 지금 속한 팀이라, 조회 전에 두면
+       무엇과 견줘야 할지 알 수 없다. 팀은 이 화면에서 안 바꾼다.
+  */
+  const roleLabel = next.roleLabel.trim();
+  if (!isRoleOfTeam(buildTeamRoles(company.departments), target.member.teamName ?? "", roleLabel)) {
+    return { isSuccess: false, message: "그 팀에 없는 역할입니다" };
   }
 
   /*
@@ -261,6 +273,7 @@ export async function issueAccountAction(draft: AccountDraft): Promise<IssueAcco
   const errors = validateAccount(
     draft,
     company.positions.map((position) => position.name),
+    buildTeamRoles(company.departments),
   );
   if (Object.keys(errors).length > 0) return { errors };
 

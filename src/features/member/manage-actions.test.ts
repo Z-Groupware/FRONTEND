@@ -41,6 +41,7 @@ const DRAFT: AccountDraft = {
   position: "사원",
   authority: AUTHORITY.MEMBER,
   isAdmin: false,
+  roleLabel: "",
 };
 
 beforeEach(() => {
@@ -63,6 +64,7 @@ describe("권한 — 화면과 승인이 갈린다", () => {
         position: "선임",
         authority: AUTHORITY.MEMBER,
         isAdmin: false,
+        roleLabel: "",
       }),
     ).toEqual({ isSuccess: true });
 
@@ -78,6 +80,7 @@ describe("권한 — 화면과 승인이 갈린다", () => {
         position: "선임",
         authority: AUTHORITY.MEMBER,
         isAdmin: false,
+        roleLabel: "",
       }),
     ).toMatchObject({ isSuccess: false });
     expect(await issueAccountAction(DRAFT)).toMatchObject({ message: expect.any(String) });
@@ -104,6 +107,7 @@ describe("changeMemberGradeAction", () => {
       position: "사원",
       authority: AUTHORITY.OWNER,
       isAdmin: false,
+      roleLabel: "",
     });
 
     expect(result.isSuccess).toBe(false);
@@ -115,6 +119,7 @@ describe("changeMemberGradeAction", () => {
       position: "  ",
       authority: AUTHORITY.MEMBER,
       isAdmin: false,
+      roleLabel: "",
     });
 
     expect(result.isSuccess).toBe(false);
@@ -126,6 +131,7 @@ describe("changeMemberGradeAction", () => {
       position: "선임",
       authority: AUTHORITY.MEMBER,
       isAdmin: true,
+      roleLabel: "",
     });
 
     const after = findMockManagedMember(4)?.member;
@@ -145,6 +151,7 @@ describe("changeMemberGradeAction", () => {
       position: "팀장",
       authority: AUTHORITY.LEADER,
       isAdmin: true,
+      roleLabel: "",
     });
 
     expect(result.isSuccess).toBe(false);
@@ -161,6 +168,7 @@ describe("changeMemberGradeAction", () => {
       position: "사원",
       authority: AUTHORITY.MEMBER,
       isAdmin: false,
+      roleLabel: "",
     });
 
     expect(result.isSuccess).toBe(false);
@@ -179,6 +187,7 @@ describe("팀당 리더 한 명", () => {
       position: "팀장",
       authority: AUTHORITY.LEADER,
       isAdmin: false,
+      roleLabel: "",
     });
 
     expect(result.isSuccess).toBe(false);
@@ -190,6 +199,7 @@ describe("팀당 리더 한 명", () => {
       position: "선임",
       authority: AUTHORITY.MEMBER,
       isAdmin: false,
+      roleLabel: "",
     });
 
     expect(result.isSuccess).toBe(false);
