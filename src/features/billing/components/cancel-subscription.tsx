@@ -44,7 +44,7 @@ interface CancelSubscriptionProps {
   ⚠️ 기록을 어떻게 다루는지는 **여기서 약속하지 않는다.** 아직 정해지지 않은 정책이라
      화면에 적으면 그게 계약이 된다 — 정해지면 그때 한 줄 붙인다.
 */
-const DOWNGRADE_NOTE = "종료 후에는 워크스페이스에 접근할 수 없습니다.";
+const DOWNGRADE_NOTE = "그 뒤로는 워크스페이스에 들어올 수 없습니다.";
 
 export function CancelSubscription({
   periodEnd,
@@ -78,26 +78,25 @@ export function CancelSubscription({
       <div className="min-w-0">
         <h2 className="text-[14px] leading-5 font-semibold tracking-[-0.2px]">구독 해지</h2>
         <p className="text-muted-foreground pt-1 text-[13px] leading-5 break-keep">
+          {/*
+            ⚠️ **한 문장에 하나씩** 말한다. 전에는 "해지 시 현재 결제 주기(2026년 9월 1일(화))가
+               끝난 뒤 구독이 종료됩니다"처럼 괄호 안에 날짜를 끼워 한 문장에 셋을 담았다 —
+               괄호 앞뒤로 눈이 두 번 끊기고, 정작 중요한 **언제까지**가 괄호 안에 숨었다.
+            ⚠️ 날짜를 **문장 앞으로** 낸다. 이 카드에서 알아야 할 건 그 하나다.
+          */}
           {isCanceling ? (
             <>
-              {endsOn ? (
-                <>
-                  <span className="text-foreground font-medium">{endsOn}</span>까지
-                </>
-              ) : (
-                "현재 결제 주기가 끝날 때까지"
-              )}{" "}
-              이용할 수 있습니다. 계속 이용하시려면 해지를 취소해 주세요.
+              <span className="text-foreground font-medium">{endsOn ?? "이번 결제 주기"}</span>까지
+              이용할 수 있습니다.
+              <br />
+              계속 쓰시려면 해지를 취소해 주세요.
             </>
           ) : (
             <>
-              해지 시 현재 결제 주기
-              {endsOn && (
-                <>
-                  (<span className="text-foreground font-medium">{endsOn}</span>)
-                </>
-              )}
-              가 끝난 뒤 구독이 종료됩니다. {DOWNGRADE_NOTE}
+              <span className="text-foreground font-medium">{endsOn ?? "이번 결제 주기"}</span>까지
+              쓰고 종료됩니다.
+              <br />
+              {DOWNGRADE_NOTE}
             </>
           )}
         </p>

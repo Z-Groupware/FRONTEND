@@ -31,7 +31,7 @@ const COMMON_WORKBENCH: NavItem[] = [
   { href: "/app/meeting", label: "회의", icon: "meeting" },
   { href: "/app/rooms", label: "회의실", icon: "room" },
   { href: "/app/board", label: "보드", icon: "board" },
-  { href: "/app/people", label: "사람", icon: "people" },
+  { href: "/app/people", label: "구성원", icon: "people" },
 ];
 
 /**

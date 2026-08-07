@@ -43,7 +43,8 @@ describe("CancelSubscription", () => {
     (periodEnd) => {
       renderCard(periodEnd);
 
-      expect(screen.getByText(/현재 결제 주기가 끝난 뒤 구독이 종료됩니다/)).toBeInTheDocument();
+      // 날짜 자리에 원문이 아니라 **말로 된 자리표시**가 들어간다
+      expect(screen.getByText("이번 결제 주기")).toBeInTheDocument();
       if (periodEnd) expect(screen.queryByText(periodEnd)).not.toBeInTheDocument();
     },
   );
@@ -51,7 +52,7 @@ describe("CancelSubscription", () => {
   it("해지 예약 상태에서도 날짜 절만 빠지고 문장은 남는다", () => {
     renderCard("2026-02-30", true);
 
-    expect(screen.getByText(/현재 결제 주기가 끝날 때까지/)).toBeInTheDocument();
+    expect(screen.getByText("이번 결제 주기")).toBeInTheDocument();
     expect(screen.queryByText("2026-02-30")).not.toBeInTheDocument();
   });
 });
