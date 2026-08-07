@@ -2,10 +2,17 @@ import { isValid, parse } from "date-fns";
 
 import { MEETING_TOPIC_SUB, type MeetingTopicMain } from "@/constants/meeting";
 
-import type { RoomReservationDraft, RoomReservationFormErrors } from "./types";
+import type {
+  MeetingRoomDraft,
+  MeetingRoomFormErrors,
+  RoomReservationDraft,
+  RoomReservationFormErrors,
+} from "./types";
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const TIME_PATTERN = /^([01]\d|2[0-3]):(00|30)$/;
+/** 회의실 운영 시작·종료 시각용 — 예약 슬롯(`TIME_PATTERN`)과 달리 30분 단위 제약이 없다. */
+const GENERAL_TIME_PATTERN = /^([01]\d|2[0-3]):[0-5]\d$/;
 
 /** 예약 길이 — 팀 확정: 30분 한 타임, 연장하지 않는다(CLAUDE.md §브라우저 API). */
 export const RESERVATION_DURATION_MINUTES = 30;
@@ -68,6 +75,40 @@ export function validateRoomReservationDraft(
     errors.attendeeIds = "참석자를 한 명 이상 선택해 주세요";
   } else if (draft.attendeeIds.some((id) => !Number.isInteger(id))) {
     errors.attendeeIds = "참석자 값이 올바르지 않아요";
+  }
+
+  return errors;
+}
+
+/**
+ * 회의실 추가·수정 폼 검증(`/manage/rooms`) — 화면과 서버(Server Action)가 이 함수 하나로 본다.
+ * ⚠️ 이용 가능 시간은 예약 슬롯과 달리 30분 단위 제약이 없다 — 회의실 자체의 운영시간일 뿐,
+ *    그 안에서 예약은 여전히 30분 단위로만 잡힌다(`validateRoomReservationDraft`가 맡는다).
+ */
+export function validateMeetingRoomDraft(draft: MeetingRoomDraft): MeetingRoomFormErrors {
+  const errors: MeetingRoomFormErrors = {};
+
+  if (!draft.name.trim()) errors.name = "회의실 이름을 입력해 주세요";
+  if (!draft.location.trim()) errors.location = "위치를 입력해 주세요";
+
+  if (!draft.openTime.trim()) {
+    errors.openTime = "이용 시작 시간을 입력해 주세요";
+  } else if (!GENERAL_TIME_PATTERN.test(draft.openTime)) {
+    errors.openTime = "올바른 시간 형식이 아니에요";
+  }
+
+  if (!draft.closeTime.trim()) {
+    errors.closeTime = "이용 종료 시간을 입력해 주세요";
+  } else if (!GENERAL_TIME_PATTERN.test(draft.closeTime)) {
+    errors.closeTime = "올바른 시간 형식이 아니에요";
+  }
+
+  if (
+    !errors.openTime &&
+    !errors.closeTime &&
+    toMinutes(draft.openTime) >= toMinutes(draft.closeTime)
+  ) {
+    errors.closeTime = "종료 시간은 시작 시간보다 늦어야 해요";
   }
 
   return errors;

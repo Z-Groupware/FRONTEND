@@ -7,7 +7,13 @@ import type { MeetingRoom, RoomMember, RoomProjectOption } from "../types";
 import { RoomReservationDialog } from "./room-reservation-dialog";
 
 const ROOMS: MeetingRoom[] = [
-  { id: "room-large", name: "대회의실", capacity: 8, openTime: "09:00", closeTime: "18:00" },
+  {
+    id: "room-large",
+    name: "대회의실",
+    location: "3층 A동",
+    openTime: "09:00",
+    closeTime: "18:00",
+  },
 ];
 const MEMBERS: RoomMember[] = [{ id: 1, name: "박대표" }];
 const PROJECTS: RoomProjectOption[] = [{ id: "p-goods", name: "굿즈 프로젝트", tag: "GOODS" }];

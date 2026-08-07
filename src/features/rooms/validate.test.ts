@@ -1,4 +1,4 @@
-import { validateRoomReservationDraft } from "./validate";
+import { validateMeetingRoomDraft, validateRoomReservationDraft } from "./validate";
 
 const VALID_DRAFT = {
   title: "주간 싱크",
@@ -88,5 +88,56 @@ describe("회의실 예약 검증", () => {
   it("참석자 값이 정수가 아니면 막는다", () => {
     const errors = validateRoomReservationDraft({ ...VALID_DRAFT, attendeeIds: [Number.NaN] });
     expect(errors.attendeeIds).toBe("참석자 값이 올바르지 않아요");
+  });
+});
+
+const VALID_ROOM_DRAFT = {
+  name: "대회의실",
+  location: "3층 A동",
+  openTime: "09:00",
+  closeTime: "18:00",
+};
+
+describe("회의실 추가·수정 검증", () => {
+  it("전부 채우면 통과한다", () => {
+    expect(validateMeetingRoomDraft(VALID_ROOM_DRAFT)).toEqual({});
+  });
+
+  it("이름이 비면 막는다", () => {
+    const errors = validateMeetingRoomDraft({ ...VALID_ROOM_DRAFT, name: "   " });
+    expect(errors.name).toBe("회의실 이름을 입력해 주세요");
+  });
+
+  it("위치가 비면 막는다", () => {
+    const errors = validateMeetingRoomDraft({ ...VALID_ROOM_DRAFT, location: "" });
+    expect(errors.location).toBe("위치를 입력해 주세요");
+  });
+
+  it("시간 형식이 아니면 막는다", () => {
+    const errors = validateMeetingRoomDraft({ ...VALID_ROOM_DRAFT, openTime: "9:00" });
+    expect(errors.openTime).toBe("올바른 시간 형식이 아니에요");
+  });
+
+  it("30분 단위가 아니어도 통과한다(예약 슬롯과 달리 제약 없음)", () => {
+    const errors = validateMeetingRoomDraft({ ...VALID_ROOM_DRAFT, openTime: "09:15" });
+    expect(errors.openTime).toBeUndefined();
+  });
+
+  it("종료 시간이 시작 시간보다 이르면 막는다", () => {
+    const errors = validateMeetingRoomDraft({
+      ...VALID_ROOM_DRAFT,
+      openTime: "18:00",
+      closeTime: "09:00",
+    });
+    expect(errors.closeTime).toBe("종료 시간은 시작 시간보다 늦어야 해요");
+  });
+
+  it("시작과 종료가 같으면 막는다", () => {
+    const errors = validateMeetingRoomDraft({
+      ...VALID_ROOM_DRAFT,
+      openTime: "09:00",
+      closeTime: "09:00",
+    });
+    expect(errors.closeTime).toBe("종료 시간은 시작 시간보다 늦어야 해요");
   });
 });
