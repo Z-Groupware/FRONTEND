@@ -107,3 +107,45 @@ export type MeetingDetailResult =
   | { kind: "locked"; title: string }
   | { kind: "notDone"; title: string; status: MeetingStatus }
   | { kind: "notFound" };
+
+/**
+ * 캡처 화면이 받는 것 — **Host가 회의를 진행하는 데 필요한 만큼만**(WORKFLOW §3-3).
+ *
+ * ⚠️ 산출물·스크립트를 안 싣는다. 캡처는 지금 만드는 중이라 아직 없는 값이고,
+ *    상세(`MeetingDetail`)를 그대로 재사용하면 화면이 쓰지도 않는 걸 실어 나른다.
+ */
+export interface MeetingCaptureInfo {
+  id: string;
+  title: string;
+  /** 이 회의가 어느 프로젝트 아래인지 — 제목 위 작은 줄 */
+  projectTag: string;
+  schedule: string;
+  roomName: string;
+  attendees: CaptureAttendee[];
+}
+
+/**
+ * 캡처 화면의 참가자 한 줄 — 목록보다 한 겹 더 안다.
+ *
+ * ⚠️ 이름만으로는 회의 중에 누가 누군지 모른다. 옆자리 사람을 부르려면 **소속·직급**이
+ *    같이 보여야 한다(피그마 참가자 레일).
+ * ⚠️ 진행자를 표시한다 — 참석자 명단에서 **누가 녹음을 쥐고 있는지**가 드러나야 한다.
+ */
+export interface CaptureAttendee extends MeetingAttendee {
+  /** `개발팀 · 팀장` — 없으면 빈 문자열 */
+  subtitle: string;
+  isHost: boolean;
+}
+
+/**
+ * 캡처 진입 결과 — 못 들어가는 이유를 값으로 돌려준다.
+ *
+ * ⚠️ **Host만 들어간다**(§3-3 "Host 전용. Attendee용 캡처 레이아웃 없음"). 참석자에게는
+ *    입장 개념이 없어서 잠금이 아니라 **아예 다른 말**이 필요하다.
+ * ⚠️ 이미 끝난 회의도 못 들어간다 — 종료는 되돌릴 수 없다(§3-3 종료 정책).
+ */
+export type MeetingCaptureResult =
+  | { kind: "ok"; meeting: MeetingCaptureInfo }
+  | { kind: "notHost"; title: string }
+  | { kind: "alreadyDone"; title: string }
+  | { kind: "notFound" };

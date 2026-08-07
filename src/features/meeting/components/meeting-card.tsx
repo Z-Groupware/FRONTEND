@@ -100,19 +100,19 @@ export function MeetingCard({ meeting }: { meeting: MeetingListItem }) {
 
       {meeting.isHost && (
         /*
-          ⚠️ 시간 제약 없이 노출한다(§3-2). 캡처 화면이 생기면(#217) 이 버튼이
-             `/app/meeting/:id/capture` 링크로 바뀐다 — 그 전까지는 잠그고 이유를 적는다.
+          ⚠️ **시간 제약 없이** 노출한다(§3-2) — 예약 시각 전에도 Host는 들어가 준비할 수 있다.
+          ⚠️ 카드 전체를 링크로 감싸지 않는다. 완료 카드만 상세로 가고(§3-2), 예정 카드는
+             참석자가 눌러도 반응이 없어야 한다 — 입장은 **Host의 버튼 하나**다.
         */
         <div className="flex justify-end pt-1">
-          <button
-            type="button"
-            disabled
-            title="캡처 화면 준비 중입니다"
-            className="border-border text-muted-foreground flex h-8 cursor-not-allowed items-center gap-1.5 rounded-lg border px-3 text-[13px] leading-5 opacity-60"
+          <Link
+            href={`/app/meeting/${meeting.id}/capture`}
+            className="border-border hover:border-foreground/40 hover:text-foreground text-muted-foreground focus-visible:ring-ring flex h-8 items-center gap-1.5 rounded-lg border px-3 text-[13px] leading-5 transition-colors focus-visible:ring-2 focus-visible:outline-hidden"
           >
             <DoorOpen className="size-3.5" aria-hidden />
+            {/* 아이콘 옆 한글은 1px 내린다 — 글자 눈높이가 아이콘보다 위다(§DESIGN 5) */}
             <span className="translate-y-[1px]">입장</span>
-          </button>
+          </Link>
         </div>
       )}
     </div>

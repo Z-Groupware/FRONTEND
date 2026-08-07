@@ -13,6 +13,7 @@ import { ensureMockMeetingsSeeded, findMockMeetingExtras } from "./mock/seed";
 import { meetingStatusOf } from "./status";
 import type { Meeting } from "./types";
 import type {
+  MeetingCaptureResult,
   MeetingDetailResult,
   MeetingDirectory,
   MeetingListItem,
@@ -26,7 +27,8 @@ import type {
  *    매퍼가 shape을 흡수한다 — 화면은 안 바뀐다.
  * ⚠️ 산출물·참석자 이름은 다른 도메인의 목을 **id로 참조**해 조립한다(복사해 두면 두 벌이
  *    어긋난다). 예약 쪽도 같은 방식이다(`rooms/actions.ts` → `TOP_LEVEL_PROJECTS`).
- * ⚠️ 조회 전용이다 — 이 화면에서 바꾸는 일(종료)은 캡처(#217)의 몫이라 `actions.ts`가 없다.
+ * ⚠️ 조회 전용이다 — 녹음·종료처럼 바꾸는 일은 캡처 화면이 브라우저에서 하고, 서버로 보내는
+ *    자리는 아직 BE 협의 전이라 `TODO`로 비워 두었다.
  */
 
 /** Owner 개설 회의의 소속 라벨(WORKFLOW §2) — 옛 문구 "프로젝트 공통"은 폐기됐다 */
@@ -198,6 +200,59 @@ export async function getMeetingDetail(id: string, viewer: Actor): Promise<Meeti
       outputKindLabel: kindLabel,
       outputs,
       script: findMockMeetingExtras(meeting.id)?.script ?? [],
+    },
+  };
+}
+
+/**
+ * 캡처 진입 — **Host만**(WORKFLOW §3-3).
+ *
+ * ⚠️ 상세와 **판정이 다르다.** 상세는 `canViewMeetingDetail`(참석자·팀·Owner)로 열리지만
+ *    캡처는 그 회의를 **여는 사람 한 명**만이다 — 권한(역할)이 아니라 **리소스 소유권**이라
+ *    Owner라고 남의 회의를 녹음할 수 있으면 안 된다(CLAUDE.md §권한: 축이 2개다).
+ * ⚠️ 끝난 회의는 다시 못 들어간다 — 종료는 되돌릴 수 없다(§3-3 종료 정책).
+ * ⚠️ 화면 판정일 뿐이다. 진짜 검사는 종료·업로드 API가 서버에서 다시 한다.
+ */
+export async function getMeetingCapture(id: string, viewer: Actor): Promise<MeetingCaptureResult> {
+  if (!isMock) {
+    // TODO(BE 협의): `GET /meetings/{id}` — 캡처는 Host 판정에 쓸 최소 필드만 받으면 된다
+    throw new Error("회의 캡처 API가 아직 연결되지 않았습니다.");
+  }
+
+  ensureMockMeetingsSeeded();
+  const meeting = findMockMeeting(id);
+  if (!meeting) return { kind: "notFound" };
+
+  if (meeting.hostId !== viewer.id) return { kind: "notHost", title: meeting.title };
+
+  if (meetingStatusOf(meeting, new Date()) === MEETING_STATUS.DONE) {
+    return { kind: "alreadyDone", title: meeting.title };
+  }
+
+  /*
+    ⚠️ 소속·직급까지 든다. 회의 중 참가자 레일은 이름만으로 부족하다 — 명부가 하나라
+       화면마다 같은 사람이 같은 이름·같은 아바타 색으로 나온다(§구성원과 같은 이유).
+  */
+  const roster = new Map(listMockManagedMembers().map((member) => [member.id, member]));
+
+  return {
+    kind: "ok",
+    meeting: {
+      id: meeting.id,
+      title: meeting.title,
+      projectTag: meeting.projectTag,
+      schedule: formatMeetingSchedule(meeting.start, meeting.end),
+      roomName: meeting.roomName,
+      attendees: meeting.attendeeIds.map((attendeeId) => {
+        const member = roster.get(attendeeId);
+        return {
+          id: attendeeId,
+          name: member?.name ?? "알 수 없음",
+          // 팀이 없는 사람(대표)은 직급만 — 빈 가운뎃점을 남기지 않는다
+          subtitle: [member?.teamName, member?.position].filter(Boolean).join(" · "),
+          isHost: attendeeId === meeting.hostId,
+        };
+      }),
     },
   };
 }

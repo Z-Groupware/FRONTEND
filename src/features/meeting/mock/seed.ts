@@ -65,8 +65,12 @@ export function ensureMockMeetingsSeeded(): void {
       { main: "프로젝트", sub: "킥오프" },
       { main: "일정", sub: "팀별 분담" },
     ],
-    // 프로젝트 참여 각 팀의 팀장들(§2) — 김서준·최유진·강서연
-    attendeeIds: [2, 5, 7],
+    /*
+      ⚠️ **개설자도 참석자다**(WORKFLOW §10 "개설자 Host도 참석자이므로 포함").
+         빼 두면 회의 화면 참가자 레일에 정작 진행하는 사람이 안 보이고, 개설 알림도
+         본인에게 안 간다. 프로젝트 참여 각 팀의 팀장들(§2) + 개설자 박대표.
+    */
+    attendeeIds: [1, 2, 5, 7],
     hostId: 1,
     hostAuthority: AUTHORITY.OWNER,
     roomReservationId: "seed-reservation-1",
@@ -132,7 +136,7 @@ export function ensureMockMeetingsSeeded(): void {
     projectId: 1,
     projectTag: "GOODS",
     topics: [{ main: "운영", sub: "주간 점검" }],
-    attendeeIds: [2, 5, 7],
+    attendeeIds: [1, 2, 5, 7],
     hostId: 1,
     hostAuthority: AUTHORITY.OWNER,
     roomReservationId: "seed-reservation-3",
@@ -151,7 +155,7 @@ export function ensureMockMeetingsSeeded(): void {
     projectId: 2,
     projectTag: "BRAND",
     topics: [{ main: "브랜드", sub: "리뉴얼 방향" }],
-    attendeeIds: [5, 7],
+    attendeeIds: [1, 5, 7],
     hostId: 1,
     hostAuthority: AUTHORITY.OWNER,
     roomReservationId: "seed-reservation-4",
