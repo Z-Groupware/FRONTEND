@@ -36,7 +36,7 @@ export function MeetingTopicList({ topics, onChange, error }: MeetingTopicListPr
 
   return (
     <div className="flex flex-col gap-1.5">
-      <Label>회의 안건</Label>
+      <Label>회의 주제</Label>
       <div className="flex flex-col gap-2">
         {topics.map((topic, index) => (
           // 안건 줄은 고유 id가 없고 순서만 의미가 있다 — index를 key로 쓴다.
@@ -72,9 +72,15 @@ export function MeetingTopicList({ topics, onChange, error }: MeetingTopicListPr
         ))}
       </div>
       {error && <p className="text-destructive text-xs">{error}</p>}
-      <Button type="button" variant="outline" size="xs" className="w-fit" onClick={addTopic}>
-        <Plus aria-hidden />
-        안건 추가
+      <Button
+        type="button"
+        variant="link"
+        size="xs"
+        className="w-fit px-0 text-xs"
+        onClick={addTopic}
+      >
+        <Plus aria-hidden className="size-3.5" />
+        주제 추가
       </Button>
     </div>
   );

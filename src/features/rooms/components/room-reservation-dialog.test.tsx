@@ -60,13 +60,15 @@ describe("RoomReservationDialog", () => {
       />,
     );
 
-    expect(screen.queryByText("회의실을 예약할까요?")).not.toBeInTheDocument();
+    expect(screen.queryByText("회의실 예약")).not.toBeInTheDocument();
   });
 
   it("클릭한 슬롯의 날짜·시각을 안내한다", () => {
     renderDialog();
 
-    expect(screen.getByText(/8월 11일\(화\) 10:00부터 30분간 진행됩니다\./)).toBeInTheDocument();
+    expect(screen.getByText("화 8/11")).toBeInTheDocument();
+    expect(screen.getByText("10:00 - 10:30")).toBeInTheDocument();
+    expect(screen.getByText("30분 · 즉시 확정")).toBeInTheDocument();
   });
 
   it("취소를 누르면 onOpenChange(false)를 부른다", async () => {
@@ -95,7 +97,7 @@ describe("RoomReservationDialog", () => {
     const { onCreated } = renderDialog();
 
     await user.type(screen.getByLabelText("회의 제목"), "새 회의");
-    await user.click(screen.getByRole("button", { name: "등록" }));
+    await user.click(screen.getByRole("button", { name: "즉시 예약" }));
 
     await waitFor(() => {
       const roomError = screen.getByText(
