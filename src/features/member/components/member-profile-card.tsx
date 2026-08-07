@@ -2,7 +2,7 @@ import { ShieldCheck } from "lucide-react";
 
 import { ProfileAvatar } from "@/components/common/profile-avatar";
 import { AUTHORITY_BADGE_CLASS, AUTHORITY_LABEL } from "@/constants/authority";
-import { MEMBER_STATUS_LABEL } from "@/constants/member";
+import { MEMBER_STATUS_BADGE_CLASS, MEMBER_STATUS_LABEL } from "@/constants/member";
 import { formatYearMonthDay } from "@/lib/date";
 import { cn } from "@/lib/utils";
 
@@ -66,7 +66,13 @@ export function MemberProfileCard({ member, phone }: { member: ManagedMember; ph
               관리자 겸직
             </span>
           )}
-          <span className="border-border text-muted-foreground shrink-0 rounded border px-1.5 py-0.5 text-[11px] leading-none">
+          {/* ⚠️ 목록 표와 **같은 생김새**를 쓴다 — 화면이 달라도 같은 상태는 같게 보인다 */}
+          <span
+            className={cn(
+              "shrink-0 rounded border px-1.5 py-0.5 text-[11px] leading-none",
+              MEMBER_STATUS_BADGE_CLASS[member.status],
+            )}
+          >
             {MEMBER_STATUS_LABEL[member.status]}
           </span>
         </div>

@@ -75,7 +75,19 @@ export function MemberListView({
               ⚠️ 상태 전부를 칸으로 늘어놓지 않는다. 이 화면에서 **손이 필요한 것**만 추린다 —
                  재직·퇴사는 검색으로 충분하고, 승인 대기는 놓치면 사람이 기다린다.
             */}
-            <div className="flex items-center gap-1" role="group" aria-label="사원 거르기">
+            {/*
+              ⚠️ **하나로 묶은 세그먼트다.** 전에는 고른 칸만 먹색으로 꽉 찬 버튼이고 나머지는
+                 맨 글자였다 — 고른 칸이 [계정 발급]과 무게가 같아 둘 다 "누르면 뭔가 일어나는
+                 버튼"으로 보였고(실제로는 거르기다), 안 고른 칸은 테두리가 없어 누를 수 있는지
+                 안 보였다.
+              ⚠️ 고른 칸은 **띄워서** 알린다(밝은 면 + 옅은 그림자). 색으로 알리는 건 에러뿐이고
+                 (§디자인 토큰), 먹색 채움은 이 화면에서 **행동 버튼**의 몫이다.
+            */}
+            <div
+              className="border-border bg-secondary/60 flex items-center gap-0.5 rounded-lg border p-0.5"
+              role="group"
+              aria-label="사원 거르기"
+            >
               {Object.values(MEMBER_FILTER).map((value) => (
                 <button
                   key={value}
@@ -83,10 +95,10 @@ export function MemberListView({
                   onClick={() => setFilter(value)}
                   aria-pressed={filter === value}
                   className={cn(
-                    "focus-visible:ring-ring h-8 rounded-md px-3 text-[13px] leading-5 transition-colors focus-visible:ring-2 focus-visible:outline-hidden",
+                    "focus-visible:ring-ring h-7 rounded-md px-3 text-[13px] leading-5 transition-colors focus-visible:ring-2 focus-visible:outline-hidden",
                     filter === value
-                      ? "bg-foreground text-background"
-                      : "text-muted-foreground hover:bg-secondary",
+                      ? "bg-card text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground",
                   )}
                 >
                   {MEMBER_FILTER_LABEL[value]}

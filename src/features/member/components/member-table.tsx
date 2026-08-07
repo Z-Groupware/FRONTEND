@@ -3,7 +3,7 @@ import Link from "next/link";
 
 import { ProfileAvatar } from "@/components/common/profile-avatar";
 import { AUTHORITY_BADGE_CLASS, AUTHORITY_LABEL } from "@/constants/authority";
-import { MEMBER_STATUS, MEMBER_STATUS_LABEL } from "@/constants/member";
+import { MEMBER_STATUS_BADGE_CLASS, MEMBER_STATUS_LABEL } from "@/constants/member";
 import { formatYearMonthDay } from "@/lib/date";
 import { cn } from "@/lib/utils";
 
@@ -72,15 +72,18 @@ function AuthorityCell({ member }: { member: ManagedMember }) {
   );
 }
 
-/** 상태 칸 — 퇴사만 흐리게. 색으로 알리는 건 에러뿐이다(§디자인 토큰) */
+/**
+ * 상태 칸 — 생김새는 `MEMBER_STATUS_BADGE_CLASS` 한 곳이 정한다.
+ *
+ * ⚠️ 전에는 넷이 사실상 같은 알약이라 `재직`과 `대기`가 글자 말고는 구분이 안 됐다.
+ *    색이 아니라 **채움과 진하기**로 가른다(§디자인 토큰: 색으로 알리는 건 에러뿐).
+ */
 function StatusCell({ status }: { status: ManagedMember["status"] }) {
   return (
     <span
       className={cn(
         "inline-flex shrink-0 items-center rounded border px-2 py-0.5 text-[11px] leading-4",
-        status === MEMBER_STATUS.RESIGNED
-          ? "border-border/60 text-muted-foreground"
-          : "border-border text-muted-foreground",
+        MEMBER_STATUS_BADGE_CLASS[status],
       )}
     >
       {MEMBER_STATUS_LABEL[status]}

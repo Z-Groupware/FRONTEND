@@ -35,6 +35,26 @@ export const MEMBER_STATUS_LABEL: Record<MemberStatus, string> = {
 };
 
 /**
+ * 상태 배지의 생김새 — **색이 아니라 명도로 가른다.**
+ *
+ * ⚠️ 넷이 전부 같은 테두리 알약이라 `재직`과 `대기`가 글자 말고는 구분이 안 됐다.
+ *    목록을 훑을 때 눈에 잡혀야 하는 건 **손이 필요한 줄**(`대기`)인데 가장 조용했다.
+ * ⚠️ 그렇다고 색을 쓰지 않는다 — 색으로 알리는 건 에러(빨강)뿐이고, 상태마다 색을 칠하면
+ *    목록이 신호등이 된다(§디자인 토큰). 대신 **채움과 진하기**로 층을 만든다:
+ *    대기(가장 진함) > 휴직 > 재직 > 퇴사(가장 흐림).
+ * ⚠️ `퇴사`는 일부러 가장 흐리다. 나간 사람은 기록의 출처라 목록에 남지만, 지금 다룰
+ *    대상은 아니다.
+ * ⚠️ 라벨과 **같은 파일에 둔다.** 상태가 하나 늘 때 라벨만 추가하고 생김새를 빠뜨리면
+ *    타입이 잡아 준다(`Record<MemberStatus, string>`).
+ */
+export const MEMBER_STATUS_BADGE_CLASS: Record<MemberStatus, string> = {
+  ACTIVE: "border-border text-muted-foreground",
+  VACATION: "border-border bg-secondary text-foreground/80",
+  WAITING: "border-foreground/35 bg-foreground/[0.06] text-foreground font-medium",
+  RESIGNED: "border-border/50 text-muted-foreground/60",
+};
+
+/**
  * 소프트 딜리트된 사람이 BE 응답에 실려 오는 값.
  *
  * ⚠️ `MEMBER_STATUS`에 **넣지 않는다.** 상태가 아니라 목록에서 빠지는 일이라,
