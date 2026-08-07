@@ -280,8 +280,15 @@ export function HandoverApprovalCard({
           />
 
           <div className="text-muted-foreground flex items-baseline justify-between gap-3 text-[12px] leading-4">
-            {/* ⚠️ **어디로 가는 글인지 적는다.** 남이 읽는 줄 모르면 메모처럼 쓴다 */}
-            <p className="break-keep">신청자에게 그대로 전달됩니다</p>
+            {/*
+              ⚠️ **"신청자에게 전달됩니다"라고 쓰지 않는다.** 지금 이 값은 액션이 받아서
+                 버린다 — 어디에도 저장되지 않고 보여주는 화면도 없다(알림 화면 자체가
+                 없다, CLAUDE.md §렌더링). 전달을 약속해 두면 승인자는 사유를 적고
+                 신청자는 영영 못 본다(§정직성).
+              ⚠️ 그래서 **무엇을 적을지만** 말한다. 실제로 전달되는 게 확인되면 그때 문구를
+                 되살린다(BE 협의 필요).
+            */}
+            <p className="break-keep">무엇을 고쳐 다시 올려야 하는지 적어 주세요</p>
             {/* ⚠️ 상한이 있는 칸은 어디까지 썼는지 보여준다. `tabular-nums`라 안 흔들린다 */}
             <p className="shrink-0 tabular-nums">
               {reason.length} / {REASON_MAX}

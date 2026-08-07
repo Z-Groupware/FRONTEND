@@ -227,8 +227,17 @@ export async function rejectHandoverAction(
 
   if (!reason.trim()) return { isSuccess: false, message: "반려 사유를 입력해 주세요" };
 
+  /*
+    ⚠️ **사유가 지금은 아무 데도 안 남는다.** 받아서 검사만 하고 버린다 — 저장할 자리도
+       (`PendingHandover`에 필드가 없다) 보여줄 화면도 없다. 그런데도 받는 이유는 BE가
+       이 값을 요구할 자리이고, 빈 사유로 되돌리는 걸 지금부터 막아 두는 편이 낫기
+       때문이다. 연결되면 아래 TODO에서 함께 보낸다.
+    ⚠️ 화면에도 "전달됩니다"라고 쓰지 않는다(§정직성) — `handover-approval-card` 주석 참고.
+  */
+
   if (!isMock) {
-    // TODO(BE 협의): `POST /companies/me/members/{id}/handover/reject`
+    // TODO(BE 협의): `POST /companies/me/members/{id}/handover/reject` — `reason`을 함께 보낸다.
+    //   신청자가 그 사유를 **어디서 보는지**도 같이 정해야 한다(알림 화면이 없다).
     return { isSuccess: false, message: NOT_CONNECTED };
   }
 
