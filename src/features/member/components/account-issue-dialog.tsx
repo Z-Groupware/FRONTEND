@@ -46,10 +46,20 @@ import type { AccountDraft, AccountErrors } from "../manage-types";
  * ⚠️ 끝나면 **결과 창**으로 알린다. 여기서 알아야 할 건 "어디로 메일이 갔는지"라 토스트처럼
  *    사라지면 안 된다 — 다음 걸음(그 사람 보기)도 같이 준다.
  */
-export function AccountIssueDialog({ teamNames }: { teamNames: string[] }) {
+export function AccountIssueDialog({
+  teamNames,
+  positionNames,
+}: {
+  teamNames: string[];
+  /**
+   * 회사가 만든 직급 이름들(온보딩 2단계·기업 설정).
+   * ⚠️ 손으로 적게 두면 회사에 없는 직급이 생긴다 — 직급에는 권한이 매여 있다.
+   */
+  positionNames: string[];
+}) {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
-  const [draft, setDraft] = useState<AccountDraft>(() => emptyDraft(teamNames));
+  const [draft, setDraft] = useState<AccountDraft>(() => emptyDraft(teamNames, positionNames));
   const [errors, setErrors] = useState<AccountErrors>({});
   const [message, setMessage] = useState<string | null>(null);
   const [issued, setIssued] = useState<{ id: number; name: string; email: string } | null>(null);
@@ -67,7 +77,7 @@ export function AccountIssueDialog({ teamNames }: { teamNames: string[] }) {
   };
 
   const reset = () => {
-    setDraft(emptyDraft(teamNames));
+    setDraft(emptyDraft(teamNames, positionNames));
     setErrors({});
     setMessage(null);
   };
@@ -165,8 +175,11 @@ export function AccountIssueDialog({ teamNames }: { teamNames: string[] }) {
         title="계정 발급"
         description={
           <>
-            발급하면 <span className="text-foreground font-medium">아이디와 비밀번호가 메일로</span>{" "}
-            바로 나갑니다. 보낸 메일은 되돌릴 수 없습니다.
+            {/* ⚠️ 문장마다 줄을 나눈다 — 한 덩어리로 두면 되돌릴 수 없다는 말을 지나친다 */}
+            <span className="text-foreground font-medium">아이디와 비밀번호가 메일로</span> 바로
+            나갑니다.
+            <br />
+            보낸 메일은 되돌릴 수 없습니다.
             {/*
               ⚠️ 겸직 설명을 **여기 넣지 않는다.** 켤 때만 한 줄이 늘어나 창이 세로로 커지고,
                  누르는 순간 아래 버튼이 움직인다 — 설명은 라벨 옆 `?`가 맡는다.
@@ -235,17 +248,38 @@ export function AccountIssueDialog({ teamNames }: { teamNames: string[] }) {
             teamNames.length > 0,
           )}
 
+          {/*
+            ⚠️ **직급은 고르는 값이다.** 손으로 적게 두니 회사에 없는 직급(`왕`)도 그대로
+               발급됐다 — 직급은 온보딩 2단계·기업 설정이 만든 **회사 목록**이고 거기에
+               권한이 매여 있다. 목록 밖 값은 어느 권한에도 안 걸린다.
+            ⚠️ 소속 팀과 같은 문법이다 — 고를 게 없으면 빈 셀렉트 대신 **갈 곳을 말한다.**
+          */}
           {field(
             "position",
             "직급",
-            <Input
-              id="account-position"
-              value={draft.position}
-              onChange={(event) => set("position", event.target.value)}
-              placeholder="사원"
-              aria-invalid={Boolean(errors.position)}
-              aria-describedby="account-position-error"
-            />,
+            positionNames.length > 0 ? (
+              <Select
+                items={Object.fromEntries(positionNames.map((name) => [name, name]))}
+                value={draft.position}
+                onValueChange={(value) => set("position", value ?? "")}
+              >
+                <SelectTrigger id="account-position" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent alignItemWithTrigger={false}>
+                  {positionNames.map((name) => (
+                    <SelectItem key={name} value={name}>
+                      {name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : (
+              <p className="text-muted-foreground py-2 text-[13px] leading-5 break-keep">
+                기업 설정에서 직급을 먼저 만들어 주세요
+              </p>
+            ),
+            positionNames.length > 0,
           )}
 
           {field(
@@ -314,7 +348,11 @@ export function AccountIssueDialog({ teamNames }: { teamNames: string[] }) {
                      줄표로 이으면 세 줄짜리 한 덩어리가 되어 어디가 요점인지 안 보인다.
                      **무엇이 열리는지 한 줄**, 그 아래 보조 두 줄로 끊는다.
                 */}
-                <PopoverContent className="w-64 text-left">
+                {/*
+                  ⚠️ `?`가 창 오른쪽에 있어 가운데로 펴면 창 밖으로 나간다 —
+                     **오른쪽 끝을 맞춰**(`align="end"`) 왼쪽으로 펴야 창 안에 들어온다.
+                */}
+                <PopoverContent align="end" className="w-60 text-left">
                   <p className="text-[13px] leading-5 font-medium break-keep">
                     관리자 화면에 들어갈 수 있습니다.
                   </p>
@@ -350,10 +388,20 @@ export function AccountIssueDialog({ teamNames }: { teamNames: string[] }) {
           reset();
         }}
         title="계정을 발급했습니다"
+        /*
+          ⚠️ **메일 주소를 한 줄에 세운다.** 문장 안에 섞으면 주소가 줄 끝에서 잘려
+             `hyun030514@g.eulji.` / `ac.kr으로 아이디와…`처럼 읽힌다 — 어디로 갔는지가
+             이 창의 요점이다.
+          ⚠️ 뒷문장은 **다음에 무슨 일이 생기는지**라 줄을 나눈다. 한 덩어리로 두면
+             주소를 확인하다가 그 말을 지나친다.
+        */
         description={
           <>
-            {issued?.email}으로 아이디와 첫 비밀번호를 보냈습니다.
-            <br />첫 로그인 때 비밀번호를 바꾸게 됩니다.
+            <span className="text-foreground font-medium">{issued?.email}</span>
+            <br />
+            위 주소로 아이디와 비밀번호를 보냈습니다.
+            <br />
+            받는 사람이 처음 로그인할 때 비밀번호를 바꿉니다.
           </>
         }
         action={
@@ -370,12 +418,12 @@ export function AccountIssueDialog({ teamNames }: { teamNames: string[] }) {
 }
 
 /** 팀이 하나뿐이면 고를 것도 없으니 첫 팀을 미리 넣어 둔다 */
-function emptyDraft(teamNames: string[]): AccountDraft {
+function emptyDraft(teamNames: string[], positionNames: string[]): AccountDraft {
   return {
     name: "",
     email: "",
     teamName: teamNames[0] ?? "",
-    position: "",
+    position: positionNames[0] ?? "",
     authority: AUTHORITY.MEMBER,
     // ⚠️ 겸직은 **기본 꺼짐**이다. 권한을 주는 값이라 미리 켜 두면 확인 없이 나간다
     isAdmin: false,

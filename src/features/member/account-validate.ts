@@ -6,12 +6,30 @@ import type { AccountDraft, AccountErrors } from "./manage-types";
  * 계정 발급 검증 — **화면과 서버가 같은 함수를 쓴다.**
  * 규칙이 두 벌이면 화면은 통과시키고 서버는 막는 일이 생긴다.
  */
-export function validateAccount(draft: AccountDraft): AccountErrors {
+export function validateAccount(
+  draft: AccountDraft,
+  /**
+   * 회사가 만든 직급 이름들.
+   *
+   * ⚠️ **넘기지 않으면 이름이 비었는지만 본다.** 목록을 못 구한 자리에서 멀쩡한 발급을
+   *    막지 않으려는 것이다 — 대신 Server Action은 **반드시 넘긴다**(아래 화이트리스트).
+   */
+  positionNames?: readonly string[],
+): AccountErrors {
   const errors: AccountErrors = {};
 
   if (!draft.name.trim()) errors.name = "이름을 입력해 주세요";
   if (!draft.teamName.trim()) errors.teamName = "소속 팀을 골라 주세요";
-  if (!draft.position.trim()) errors.position = "직급을 입력해 주세요";
+  /*
+    ⚠️ 직급도 **화이트리스트로 본다.** 화면은 셀렉트로 회사 목록만 주지만 Server Action은
+       주소만 알면 직접 부를 수 있다 — 없으면 회사에 없는 직급(`왕`)이 그대로 발급된다.
+       권한 화이트리스트와 같은 이유다.
+  */
+  const position = draft.position.trim();
+  if (!position) errors.position = "직급을 골라 주세요";
+  else if (positionNames && !positionNames.includes(position)) {
+    errors.position = "회사에 없는 직급입니다";
+  }
 
   /*
     ⚠️ 이메일은 **`@`가 있는지만** 본다(신청 화면과 같은 규칙). 정규식으로 조이면

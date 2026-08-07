@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
+import { getCompanySetting } from "@/features/company/server";
 import { MemberListView } from "@/features/member/components/member-list-view";
 import {
   getManagedMember,
@@ -39,7 +40,16 @@ export default async function ManageMembersPage() {
   const viewer = await getViewer();
   if (!canManageMembers(viewer)) notFound();
 
-  const [members, teamNames] = await Promise.all([listManagedMembers(), listTeamNames()]);
+  /*
+    ⚠️ **직급 목록을 같이 받는다.** 발급 창에서 직급을 손으로 적게 두면 회사에 없는 직급이
+       생긴다 — 직급은 온보딩 2단계·기업 설정이 만든 **회사 목록**이고, 거기에 권한이 매여 있다.
+  */
+  const [members, teamNames, company] = await Promise.all([
+    listManagedMembers(),
+    listTeamNames(),
+    getCompanySetting(),
+  ]);
+  const positionNames = company.positions.map((position) => position.name);
 
   // TODO(BE 협의): 목록 응답에 대기 신청 종류를 함께 실어 주면 이 왕복이 사라진다
   const details = await Promise.all(members.map((member) => getManagedMember(member.id)));
@@ -53,6 +63,7 @@ export default async function ManageMembersPage() {
       pendingTypeById={pendingTypeById}
       canIssueAccount={canIssueAccount(viewer)}
       teamNames={teamNames}
+      positionNames={positionNames}
     />
   );
 }

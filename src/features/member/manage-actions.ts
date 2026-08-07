@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 
 import type { Authority } from "@/constants/authority";
 import { AUTHORITY, POSITION_AUTHORITIES } from "@/constants/authority";
+import { getCompanySetting } from "@/features/company/server";
 import { getViewer } from "@/features/shell/viewer";
 import { todayIso } from "@/lib/date";
 import {
@@ -240,8 +241,16 @@ export async function issueAccountAction(draft: AccountDraft): Promise<IssueAcco
   const pass = await gate(canIssueAccount, "계정을 발급할 권한이 없습니다");
   if ("denied" in pass) return { errors: {}, message: pass.denied };
 
-  // 화면과 **같은 함수**로 다시 본다 — 규칙이 두 벌이면 어긋난다
-  const errors = validateAccount(draft);
+  /*
+    화면과 **같은 함수**로 다시 본다 — 규칙이 두 벌이면 어긋난다.
+    ⚠️ 직급 목록을 **여기서 구해 넘긴다.** 화면이 보낸 값을 그대로 믿으면 회사에 없는
+       직급으로도 발급된다(§권한: 화면 숨김은 보안이 아니다).
+  */
+  const company = await getCompanySetting();
+  const errors = validateAccount(
+    draft,
+    company.positions.map((position) => position.name),
+  );
   if (Object.keys(errors).length > 0) return { errors };
 
   if (!isMock) {

@@ -29,6 +29,7 @@ export function MemberListView({
   pendingTypeById,
   canIssueAccount,
   teamNames,
+  positionNames,
 }: {
   members: ManagedMember[];
   /** 사람 id → 대기 중인 신청 종류. 목록 행에는 종류가 없어 따로 받는다 */
@@ -36,6 +37,8 @@ export function MemberListView({
   canIssueAccount: boolean;
   /** 계정 발급 모달이 고를 팀 — 목록이 이미 서버에서 받아 온 값이라 같이 내려보낸다 */
   teamNames: string[];
+  /** 회사가 만든 직급 이름들 — 발급 창이 이 안에서만 고르게 한다 */
+  positionNames: string[];
 }) {
   const [keyword, setKeyword] = useState("");
   const [filter, setFilter] = useState<MemberFilter>(MEMBER_FILTER.ALL);
@@ -107,7 +110,9 @@ export function MemberListView({
                    전용 라우트를 두지 않고 **모달**로 연다 — 한 번 쓰고 마는 폼에 주소를
                    만들면 뒤로 가기가 어색해진다(공지 작성과 같은 패턴).
               */}
-              {canIssueAccount && <AccountIssueDialog teamNames={teamNames} />}
+              {canIssueAccount && (
+                <AccountIssueDialog teamNames={teamNames} positionNames={positionNames} />
+              )}
             </div>
           </div>
 
