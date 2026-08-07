@@ -42,7 +42,11 @@ export function MemberProfileCard({ member }: { member: ManagedMember }) {
       <section className="border-border bg-card flex flex-col items-center gap-2 rounded-2xl border px-7 py-7">
         <ProfileAvatar userId={member.id} size={64} />
 
-        <h1 className="pt-1 text-[17px] leading-[26px] font-semibold">{member.name}</h1>
+        {/*
+          ⚠️ `h1`이 아니라 `h2`다. 화면 제목(`사원 관리`)은 상단바가 `h1`으로 말한다 —
+             한 화면에 `h1`이 둘이면 스크린리더가 "여기가 어디인지"를 두 번 다르게 듣는다(§a11y).
+        */}
+        <h2 className="pt-1 text-[17px] leading-[26px] font-semibold">{member.name}</h2>
         <p className="text-muted-foreground text-[13px] leading-5">
           {[member.teamName, member.position].filter(Boolean).join(" · ")}
         </p>

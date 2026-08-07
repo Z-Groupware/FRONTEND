@@ -68,8 +68,10 @@ export function CompanyTeamCard({
    * 사원이 딸린 **팀(뿌리)** 인가.
    * ⚠️ 역할(아랫단)은 사원이 소속되는 곳이 아니라 언제나 `false`다(§권한 ③).
    */
-  const hasMembers = (id: string) =>
-    tree.departments.some((team) => team.id === id) && (memberCounts[id] ?? 0) > 0;
+  /** 뿌리(팀)인가 — 아랫단은 역할이다 */
+  const isRootTeam = (id: string) => tree.departments.some((team) => team.id === id);
+
+  const hasMembers = (id: string) => isRootTeam(id) && (memberCounts[id] ?? 0) > 0;
 
   /*
     ⚠️ **강등·이동도 막는다.** 사원이 있는 팀을 남의 팀 아래로 내리면 그 사원들의 소속이
@@ -90,8 +92,13 @@ export function CompanyTeamCard({
     onRename: tree.rename,
     onAddChild: tree.addChild,
     onRemove: (id: string) => setPendingTeam(findNode(tree.departments, id) ?? null),
+    /*
+      ⚠️ `inside`만 막으면 샌다. 역할 옆에 `before`/`after`로 떨어뜨리면 그 역할의 **부모 아래**로
+         들어가서, 뿌리 팀이 역할 단으로 내려간다 — 결과가 `inside`와 같다.
+         그래서 **떨어뜨리는 자리가 역할 옆인지**를 보고 막는다.
+    */
     onMove: (draggedId, targetId, position) =>
-      position === "inside"
+      position === "inside" || !isRootTeam(targetId)
         ? blockIfStaffed(draggedId, () => tree.move(draggedId, targetId, position))
         : tree.move(draggedId, targetId, position),
     onShift: tree.shift,
@@ -122,8 +129,13 @@ export function CompanyTeamCard({
    * ⚠️ 0이면 확인만 받고, 1명이라도 있으면 **막고 갈 곳을 알려 준다** — 팀은 인수인계·액션
    *    귀속의 단위라 소속이 사라지면 그 사람을 아무도 관리할 수 없다(§validate).
    */
-  const pendingMembers = pendingTeam ? (memberCounts[pendingTeam.id] ?? 0) : 0;
-  const isBlocked = pendingMembers > 0;
+  /*
+    ⚠️ `hasMembers`와 **같은 판정을 쓴다.** 여기서 `memberCounts`를 직접 뒤지면, 역할 id가
+       그 표에 섞여 들어왔을 때 역할 삭제가 막히고 "이 팀에 속해 있습니다"라는 틀린 말을 한다 —
+       사원이 소속되는 건 팀뿐이다(§권한 ③).
+  */
+  const isBlocked = pendingTeam !== null && hasMembers(pendingTeam.id);
+  const pendingMembers = isBlocked ? (memberCounts[pendingTeam.id] ?? 0) : 0;
   /*
     ⚠️ 삭제 버튼은 **역할에도** 붙어 있다. 전부 "팀"이라 부르면 역할을 지울 때 "'프론트' 팀을
        지울까요?"가 되어 무엇을 지우는지 잘못 말한다(§권한 ③: 팀과 역할은 다른 단이다).

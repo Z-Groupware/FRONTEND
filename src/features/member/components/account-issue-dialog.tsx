@@ -241,7 +241,12 @@ export function AccountIssueDialog({
                   setDraft((prev) => ({ ...prev, teamName: value ?? "", roleLabel: "" }))
                 }
               >
-                <SelectTrigger id="account-teamName" className="w-full">
+                <SelectTrigger
+                  id="account-teamName"
+                  className="w-full"
+                  aria-invalid={Boolean(errors.teamName)}
+                  aria-describedby="account-teamName-error"
+                >
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent alignItemWithTrigger={false}>

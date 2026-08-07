@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 
 import { getCompanySetting } from "@/features/company/server";
 import { MemberListView } from "@/features/member/components/member-list-view";
-import { getManagedMembersPage, listTeamNames } from "@/features/member/manage-server";
+import { getManagedMembersPage } from "@/features/member/manage-server";
 import { MEMBER_FILTER, type MemberFilter, type MemberQuery } from "@/features/member/manage-types";
 import { buildTeamRoles } from "@/features/member/team-roles";
 import { getViewer } from "@/features/shell/viewer";
@@ -56,11 +56,16 @@ export default async function ManageMembersPage({
     ⚠️ **직급 목록을 같이 받는다.** 발급 창에서 직급을 손으로 적게 두면 회사에 없는 직급이
        생긴다 — 직급은 온보딩 2단계·기업 설정이 만든 **회사 목록**이고, 거기에 권한이 매여 있다.
   */
-  const [firstPage, teamNames, company] = await Promise.all([
+  /*
+    ⚠️ **팀 이름을 사원 목록에서 뽑지 않는다.** 전에는 `listTeamNames()`가 사원 전체를 한 번 더
+       훑어서, 이 화면 하나에 목록 조회가 두 번 나갔다 — 팀의 정본은 기업 설정의 조직 체계이고
+       이미 여기서 받고 있다.
+  */
+  const [firstPage, company] = await Promise.all([
     getManagedMembersPage(query, 1),
-    listTeamNames(),
     getCompanySetting(),
   ]);
+  const teamNames = company.departments.map((team) => team.name);
 
   return (
     <MemberListView

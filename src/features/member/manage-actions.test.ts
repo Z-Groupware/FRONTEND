@@ -280,6 +280,7 @@ describe("issueAccountAction", () => {
   it("발급하면 목록에 붙고 목록 경로를 다시 읽는다", async () => {
     const result = await issueAccountAction(DRAFT);
 
+    expect(result.issued).toBeTruthy();
     expect(result.issued?.name).toBe("신입");
     expect(findMockManagedMember(result.issued!.id)?.member.email).toBe(DRAFT.email);
     expect(revalidatePathMock).toHaveBeenCalledWith("/manage/members");
@@ -303,6 +304,10 @@ describe("issueAccountAction", () => {
   /* ⚠️ 역할은 발급 때 안 정한다 — 팀에 들어간 뒤 팀장이 붙이는 라벨이다(WORKFLOW §9) */
   it("새 계정은 역할 없이 재직으로 들어간다", async () => {
     const result = await issueAccountAction(DRAFT);
+
+    // ⚠️ 먼저 발급됐는지 본다 — 아니면 아래에서 `!`가 터져 진짜 원인이 가려진다
+    expect(result.issued).toBeTruthy();
+
     const created = findMockManagedMember(result.issued!.id)?.member;
 
     expect(created?.roleLabel).toBeNull();
