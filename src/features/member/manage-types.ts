@@ -44,6 +44,15 @@ export interface ManagedMember {
   status: MemberStatus;
   /** 입사일 `YYYY-MM-DD` */
   joinedAt: string;
+  /**
+   * 승인을 기다리는 신청의 종류. 없으면 `null`.
+   *
+   * ⚠️ **행에 실어 둔다.** 상태만 보면 휴직 대기와 오프보딩 대기가 둘 다 `WAITING`이라
+   *    구분이 안 된다 — 예전에는 이걸 알려고 목록이 상세를 사람 수만큼 훑었다(N+1).
+   *    하나만 실패해도 목록 전체가 오류 화면이 됐다.
+   * ⚠️ 컬럼으로 **보여주지는 않는다**(WORKFLOW §9의 컬럼 목록에 없다). 거르는 데만 쓴다.
+   */
+  pendingHandoverType: HandoverType | null;
 }
 
 /** 그 사람이 맡은 액션 한 줄 — 상세에서만 쓴다 */
@@ -140,6 +149,17 @@ export interface AccountDraft {
 
 /** 칸별 오류 — 칸 밑에 인라인으로 붙는다(§토스트: 폼 검증 오류는 인라인) */
 export type AccountErrors = Partial<Record<keyof AccountDraft, string>>;
+
+/**
+ * 목록 질의 — 검색·필터·페이지를 **서버가** 받는다.
+ *
+ * ⚠️ 화면에서 거르지 않는다. 전부 받아 `slice`하면 사원이 수백 명일 때 그 수백을 다 받는다
+ *    (CLAUDE.md §목록·페이지네이션: 화면만 잘릴 뿐이다).
+ */
+export interface MemberQuery {
+  keyword: string;
+  filter: MemberFilter;
+}
 
 /** 변경 작업의 공통 결과 — 실패를 던지지 않고 값으로 돌려준다(화면이 문구를 고른다) */
 export interface MemberActionResult {

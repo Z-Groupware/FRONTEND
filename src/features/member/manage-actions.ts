@@ -4,24 +4,34 @@ import { revalidatePath } from "next/cache";
 
 import type { Authority } from "@/constants/authority";
 import { AUTHORITY, POSITION_AUTHORITIES } from "@/constants/authority";
+import { MEMBER_STATUS } from "@/constants/member";
 import { getCompanySetting } from "@/features/company/server";
 import { getViewer } from "@/features/shell/viewer";
 import { todayIso } from "@/lib/date";
-import { canApproveFinal, canChangeMemberGrade, canIssueAccount } from "@/lib/permission";
+import type { PaginatedResult } from "@/lib/paginate";
+import {
+  canApproveFinal,
+  canChangeMemberGrade,
+  canDeleteMemberAccount,
+  canIssueAccount,
+  canManageMembers,
+} from "@/lib/permission";
 import { isMock } from "@/mocks/config";
 
 import { isEmailTaken, validateAccount } from "./account-validate";
 import { GRADE_LOCK_NOTE, gradeLockOf } from "./grade";
-import { getManagedMember, listManagedMembers } from "./manage-server";
+import { getManagedMember, getManagedMembersPage, listManagedMembers } from "./manage-server";
 import type {
   AccountDraft,
   AccountErrors,
   ManagedMember,
   MemberActionResult,
+  MemberQuery,
 } from "./manage-types";
 import {
   addMockManagedMember,
   approveMockHandover,
+  deleteMockManagedMember,
   findMockManagedMember,
   listMockMemberEmails,
   rejectMockHandover,
@@ -309,4 +319,65 @@ export async function issueAccountAction(draft: AccountDraft): Promise<IssueAcco
   const issued = addMockManagedMember(draft, todayIso());
   revalidatePath("/manage/members");
   return { errors: {}, issued: { id: issued.id, name: issued.name, email: issued.email } };
+}
+
+/**
+ * 계정 탈퇴 — **오프보딩 최종 승인을 마친 사람만**(WORKFLOW §7).
+ *
+ * ⚠️ 승인은 사람을 퇴사 상태로 옮길 뿐이고, 탈퇴는 그 사람을 **목록에서 지운다.**
+ *    남긴 회의·액션의 출처를 찾을 길이 없어져서, 승인보다 한 걸음 더 뒤에 둔다.
+ * ⚠️ **줄을 지우지 않는다**(소프트 딜리트). 기록들이 그 사람 id를 참조하고 있어서
+ *    진짜로 지우면 가리킬 곳을 잃는다 — 상태만 `DELETED`가 되고 목록에서 빠진다.
+ * ⚠️ 화면은 퇴사자에게만 버튼을 그리지만 액션은 주소만 알면 부를 수 있다 — **상태를
+ *    서버가 다시 본다**(§권한: 화면 숨김은 보안이 아니다).
+ */
+export async function deleteMemberAccountAction(id: number): Promise<MemberActionResult> {
+  const pass = await gate(canDeleteMemberAccount, "계정 탈퇴는 대표만 할 수 있습니다");
+  if ("denied" in pass) return { isSuccess: false, message: pass.denied };
+
+  // ⚠️ 자기 계정은 못 지운다 — 대표가 사라지면 회사를 열 사람이 없다
+  if (pass.viewer.id === id) {
+    return { isSuccess: false, message: "자기 계정은 탈퇴 처리할 수 없습니다" };
+  }
+
+  if (!isMock) {
+    // TODO(BE 협의): `DELETE /companies/me/members/{id}`
+    return { isSuccess: false, message: NOT_CONNECTED };
+  }
+
+  const target = await getManagedMember(id);
+  if (!target) return { isSuccess: false, message: "없는 사원입니다" };
+
+  /*
+    ⚠️ **퇴사 상태가 아니면 막는다**(WORKFLOW §7 "오프보딩 최종 승인 후에만 계정 탈퇴 가능").
+       재직 중인 사람을 바로 지우면 그 사람이 들고 있던 액션이 인수인계 없이 사라진다.
+  */
+  if (target.member.status !== MEMBER_STATUS.RESIGNED) {
+    return {
+      isSuccess: false,
+      message: "오프보딩 최종 승인을 마친 사원만 탈퇴 처리할 수 있습니다",
+    };
+  }
+
+  deleteMockManagedMember(id);
+  revalidatePath(pathOf(id));
+  revalidatePath("/manage/members");
+  return { isSuccess: true };
+}
+
+/**
+ * 목록 다음 페이지 — 무한 스크롤이 부른다.
+ *
+ * ⚠️ 조회지만 **Server Action**이다. 클라이언트가 `server.ts`를 직접 못 부르므로
+ *    (그건 `server-only`다) 얇게 감싼다 — 시스템 화면들과 같은 방식이다.
+ * ⚠️ 권한을 여기서도 본다. 목록 첫 페이지는 화면이 막지만 이 액션은 주소만 알면 부를 수 있다.
+ */
+export async function fetchMembersPageAction(
+  query: MemberQuery,
+  page: number,
+): Promise<PaginatedResult<ManagedMember>> {
+  const pass = await gate(canManageMembers, "사원 목록을 볼 권한이 없습니다");
+  if ("denied" in pass) return { items: [], page: 1, totalPages: 1, totalCount: 0 };
+
+  return getManagedMembersPage(query, Math.max(1, Math.trunc(page)));
 }

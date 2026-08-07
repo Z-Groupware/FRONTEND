@@ -11,10 +11,12 @@ import { getViewer } from "@/features/shell/viewer";
 import {
   approveHandoverAction,
   changeMemberGradeAction,
+  deleteMemberAccountAction,
+  fetchMembersPageAction,
   issueAccountAction,
   rejectHandoverAction,
 } from "./manage-actions";
-import type { AccountDraft } from "./manage-types";
+import { type AccountDraft, MEMBER_FILTER } from "./manage-types";
 import { findMockManagedMember, resetMockManagedMembers } from "./mock/managed";
 
 /**
@@ -335,5 +337,107 @@ describe("계정 발급 — 관리자 겸직", () => {
     });
 
     expect(findMockManagedMember(result.issued!.id)?.member.isAdmin).toBe(false);
+  });
+});
+
+describe("deleteMemberAccountAction — 계정 탈퇴", () => {
+  /*
+    ⚠️ WORKFLOW §7: "오프보딩 최종 승인 후에만 계정 탈퇴 가능." 재직 중인 사람을 바로 지우면
+       그 사람이 들고 있던 액션이 인수인계 없이 사라진다.
+  */
+  it("퇴사 상태가 아니면 막는다", async () => {
+    const result = await deleteMemberAccountAction(4);
+
+    expect(result.isSuccess).toBe(false);
+    expect(result.message).toMatch(/오프보딩/);
+    expect(findMockManagedMember(4)).not.toBeNull();
+  });
+
+  it("오프보딩을 승인한 뒤에는 탈퇴 처리된다", async () => {
+    await approveHandoverAction(8);
+    expect(findMockManagedMember(8)?.member.status).toBe(MEMBER_STATUS.RESIGNED);
+
+    expect(await deleteMemberAccountAction(8)).toEqual({ isSuccess: true });
+  });
+
+  /*
+    ⚠️ **줄을 지우지 않는다**(소프트 딜리트). 그 사람이 남긴 회의·액션이 id를 참조하고 있어서
+       진짜로 지우면 가리킬 곳을 잃는다 — 목록에서만 빠진다.
+  */
+  it("지운 사람은 목록에서 빠지지만 기록은 남는다", async () => {
+    await approveHandoverAction(8);
+    await deleteMemberAccountAction(8);
+
+    const page = await fetchMembersPageAction({ keyword: "", filter: MEMBER_FILTER.ALL }, 1);
+    expect(page.items.some((member) => member.id === 8)).toBe(false);
+    // 상세는 여전히 찾을 수 있다 — 기록이 그 id를 가리킨다
+    expect(findMockManagedMember(8)).not.toBeNull();
+  });
+
+  it("Admin 겸직자는 탈퇴 처리하지 못한다", async () => {
+    getViewerMock.mockResolvedValue(OWNER);
+    await approveHandoverAction(8);
+    getViewerMock.mockResolvedValue(ADMIN);
+
+    expect(await deleteMemberAccountAction(8)).toMatchObject({ isSuccess: false });
+  });
+
+  /* ⚠️ 대표가 사라지면 회사를 열 사람이 없다 */
+  it("자기 계정은 탈퇴 처리할 수 없다", async () => {
+    expect(await deleteMemberAccountAction(OWNER.id)).toMatchObject({ isSuccess: false });
+  });
+});
+
+describe("fetchMembersPageAction — 목록 페이지", () => {
+  /*
+    ⚠️ **서버가 거르고 자른다.** 전부 받아 화면에서 `slice`하면 사원이 수백 명일 때 그
+       수백을 다 받아 온다(CLAUDE.md §목록·페이지네이션).
+  */
+  it("조건에 맞는 전체 수를 함께 준다 — 화면에 그린 줄 수가 아니다", async () => {
+    const all = await fetchMembersPageAction({ keyword: "", filter: MEMBER_FILTER.ALL }, 1);
+
+    expect(all.totalCount).toBeGreaterThan(0);
+    expect(all.items.length).toBeLessThanOrEqual(all.totalCount);
+  });
+
+  it("검색어를 서버가 건다", async () => {
+    const found = await fetchMembersPageAction({ keyword: "김서준", filter: MEMBER_FILTER.ALL }, 1);
+
+    expect(found.items).toHaveLength(1);
+    expect(found.totalCount).toBe(1);
+  });
+
+  it("승인 대기 필터가 휴직과 오프보딩을 가른다", async () => {
+    const vacation = await fetchMembersPageAction(
+      { keyword: "", filter: MEMBER_FILTER.VACATION_PENDING },
+      1,
+    );
+    const offboarding = await fetchMembersPageAction(
+      { keyword: "", filter: MEMBER_FILTER.OFFBOARDING_PENDING },
+      1,
+    );
+
+    expect(vacation.items.every((member) => member.pendingHandoverType === "VACATION")).toBe(true);
+    expect(offboarding.items.every((member) => member.pendingHandoverType === "OFFBOARDING")).toBe(
+      true,
+    );
+    expect(vacation.items).not.toHaveLength(0);
+    expect(offboarding.items).not.toHaveLength(0);
+  });
+
+  /* ⚠️ 권한 없는 사람이 주소만 알고 불러도 목록이 새지 않는다 */
+  it("권한이 없으면 빈 페이지를 준다", async () => {
+    getViewerMock.mockResolvedValue(MEMBER);
+
+    const page = await fetchMembersPageAction({ keyword: "", filter: MEMBER_FILTER.ALL }, 1);
+
+    expect(page.items).toHaveLength(0);
+    expect(page.totalCount).toBe(0);
+  });
+
+  it("범위를 벗어난 페이지는 안으로 당긴다", async () => {
+    const page = await fetchMembersPageAction({ keyword: "", filter: MEMBER_FILTER.ALL }, 999);
+
+    expect(page.page).toBe(page.totalPages);
   });
 });

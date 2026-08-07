@@ -1,8 +1,10 @@
 import "server-only";
 
+import { paginate, type PaginatedResult } from "@/lib/paginate";
 import { isMock } from "@/mocks/config";
 
-import type { ManagedMember, ManagedMemberDetail } from "./manage-types";
+import { filterMembers, searchMembers } from "./manage-filter";
+import type { ManagedMember, ManagedMemberDetail, MemberQuery } from "./manage-types";
 import {
   findMockManagedMember,
   listMockManagedMembers,
@@ -23,6 +25,28 @@ export async function listManagedMembers(): Promise<ManagedMember[]> {
 
   // TODO(BE 협의): `GET /companies/me/members` — 응답 봉투는 아직 모른다(매퍼가 벗긴다)
   throw new Error("사원 목록 조회 API가 아직 연결되지 않았습니다.");
+}
+
+/** 한 화면에 그리는 줄 수 — 첫 페이지를 서버가 렌더하고 그 아래부터 이어 붙인다 */
+export const MEMBER_PAGE_SIZE = 20;
+
+/**
+ * 목록 한 페이지 — **거르기·자르기를 서버가 한다.**
+ *
+ * ⚠️ 전부 받아 화면에서 `slice`하지 않는다(CLAUDE.md §목록·페이지네이션). 사원이 수백
+ *    명이면 그 수백을 다 받아 오고, 화면만 잘릴 뿐이다.
+ * ⚠️ 지금은 목이라 메모리에서 자른다. 연동되면 이 함수만 질의 파라미터를 그대로 넘기면
+ *    되고, 부르는 쪽(page.tsx·액션)은 안 바뀐다(§격리막).
+ * ⚠️ 검색·필터도 **여기서** 건다. 화면에서 걸면 지금 받아 온 페이지 안에서만 찾게 되어,
+ *    "없습니다"가 거짓말이 된다.
+ */
+export async function getManagedMembersPage(
+  query: MemberQuery,
+  page: number,
+  pageSize: number = MEMBER_PAGE_SIZE,
+): Promise<PaginatedResult<ManagedMember>> {
+  const all = await listManagedMembers();
+  return paginate(searchMembers(filterMembers(all, query.filter), query.keyword), page, pageSize);
 }
 
 /** 없는 사람이면 `null` — 화면이 `notFound()`를 부른다 */

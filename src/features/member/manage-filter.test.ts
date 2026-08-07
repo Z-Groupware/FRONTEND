@@ -17,6 +17,7 @@ function member(over: Partial<ManagedMember> & Pick<ManagedMember, "id" | "name"
     roleLabel: null,
     status: MEMBER_STATUS.ACTIVE,
     joinedAt: "2024-01-01",
+    pendingHandoverType: null,
     ...over,
   };
 }
@@ -24,8 +25,19 @@ function member(over: Partial<ManagedMember> & Pick<ManagedMember, "id" | "name"
 const MEMBERS = [
   member({ id: 1, name: "박대표", teamName: null, email: "ceo@zgroup.co.kr" }),
   member({ id: 2, name: "김서준", authority: AUTHORITY.LEADER }),
-  member({ id: 3, name: "이하윤", status: MEMBER_STATUS.WAITING }),
-  member({ id: 4, name: "임지안", teamName: "마케팅팀", status: MEMBER_STATUS.WAITING }),
+  member({
+    id: 3,
+    name: "이하윤",
+    status: MEMBER_STATUS.WAITING,
+    pendingHandoverType: HANDOVER_TYPE.VACATION,
+  }),
+  member({
+    id: 4,
+    name: "임지안",
+    teamName: "마케팅팀",
+    status: MEMBER_STATUS.WAITING,
+    pendingHandoverType: HANDOVER_TYPE.OFFBOARDING,
+  }),
 ];
 
 describe("searchMembers", () => {
@@ -60,13 +72,8 @@ describe("searchMembers", () => {
 });
 
 describe("filterMembers", () => {
-  const pending = {
-    3: HANDOVER_TYPE.VACATION,
-    4: HANDOVER_TYPE.OFFBOARDING,
-  } as Record<number, string | undefined>;
-
   it("전체는 그대로 둔다", () => {
-    expect(filterMembers(MEMBERS, MEMBER_FILTER.ALL, pending)).toHaveLength(4);
+    expect(filterMembers(MEMBERS, MEMBER_FILTER.ALL)).toHaveLength(4);
   });
 
   /*
@@ -74,17 +81,14 @@ describe("filterMembers", () => {
        신청 종류를 함께 봐야 갈린다.
   */
   it("휴직 대기와 오프보딩 대기를 가른다", () => {
-    expect(
-      filterMembers(MEMBERS, MEMBER_FILTER.VACATION_PENDING, pending).map((m) => m.id),
-    ).toEqual([3]);
-    expect(
-      filterMembers(MEMBERS, MEMBER_FILTER.OFFBOARDING_PENDING, pending).map((m) => m.id),
-    ).toEqual([4]);
+    expect(filterMembers(MEMBERS, MEMBER_FILTER.VACATION_PENDING).map((m) => m.id)).toEqual([3]);
+    expect(filterMembers(MEMBERS, MEMBER_FILTER.OFFBOARDING_PENDING).map((m) => m.id)).toEqual([4]);
   });
 
-  it("대기 상태가 아니면 신청이 있어도 안 걸린다", () => {
-    const stale = { 2: HANDOVER_TYPE.VACATION } as Record<number, string | undefined>;
+  /* ⚠️ 종류만 보면 이미 처리된 옛 신청까지 걸린다 — 상태도 함께 본다 */
+  it("대기 상태가 아니면 신청 종류가 남아 있어도 안 걸린다", () => {
+    const stale = [member({ id: 9, name: "옛신청", pendingHandoverType: HANDOVER_TYPE.VACATION })];
 
-    expect(filterMembers(MEMBERS, MEMBER_FILTER.VACATION_PENDING, stale)).toHaveLength(0);
+    expect(filterMembers(stale, MEMBER_FILTER.VACATION_PENDING)).toHaveLength(0);
   });
 });

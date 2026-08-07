@@ -3,11 +3,8 @@ import { notFound } from "next/navigation";
 
 import { getCompanySetting } from "@/features/company/server";
 import { MemberListView } from "@/features/member/components/member-list-view";
-import {
-  getManagedMember,
-  listManagedMembers,
-  listTeamNames,
-} from "@/features/member/manage-server";
+import { getManagedMembersPage, listTeamNames } from "@/features/member/manage-server";
+import { MEMBER_FILTER, type MemberFilter, type MemberQuery } from "@/features/member/manage-types";
 import { buildTeamRoles } from "@/features/member/team-roles";
 import { getViewer } from "@/features/shell/viewer";
 import { canIssueAccount, canManageMembers } from "@/lib/permission";
@@ -23,16 +20,27 @@ export const metadata: Metadata = {
   title: "사원 관리",
 };
 
+/** 주소에 적힌 값이 우리가 아는 필터인지 — 아니면 전체로 되돌린다 */
+function parseFilter(value: string | undefined): MemberFilter {
+  const known = Object.values(MEMBER_FILTER) as string[];
+  return value && known.includes(value) ? (value as MemberFilter) : MEMBER_FILTER.ALL;
+}
+
 /**
  * 사원 관리 목록 — 회사의 사람을 한 줄씩 본다.
  *
  * ⚠️ **화면은 Owner·Admin 둘 다** 들어온다(WORKFLOW §11). 승인·반려 버튼만 Owner 전용이고
  *    그건 상세에서 판정한다 — 화면 접근과 개별 액션의 권한이 갈리는 사례다.
- * ⚠️ 목록 행에는 신청 종류가 없다(컬럼이 아니다). 승인 대기 필터가 휴직과 오프보딩을
- *    구분하려면 종류가 필요해서, **여기서 상세를 훑어 id→종류 표를 만들어** 내려보낸다.
- *    연동되면 목록 API가 함께 주면 될 값이라 `TODO`로 남긴다.
+ * ⚠️ **첫 페이지만 여기서 그린다**(CLAUDE.md §목록·페이지네이션). 그 아래는 화면이
+ *    이어 붙인다 — 첫 화면까지 클라이언트로 만들면 조회 전체가 넘어간다(§핵심 4원칙 ①).
+ * ⚠️ 검색·필터는 **주소에서 읽는다.** 화면 안 상태로 두면 새로고침·뒤로 가기에서 조건이
+ *    날아가고, 무엇보다 **받아 온 페이지 안에서만** 찾게 된다.
  */
-export default async function ManageMembersPage() {
+export default async function ManageMembersPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string; filter?: string }>;
+}) {
   /*
     ⚠️ **판정이 먼저다.** 조회와 나란히 두면 권한 없는 사람의 요청도 BE까지 나간다 —
        연동되면 프론트가 권한 없는 조회를 대신 쏴 주는 경로가 된다(§권한).
@@ -41,32 +49,30 @@ export default async function ManageMembersPage() {
   const viewer = await getViewer();
   if (!canManageMembers(viewer)) notFound();
 
+  const { q, filter } = await searchParams;
+  const query: MemberQuery = { keyword: q ?? "", filter: parseFilter(filter) };
+
   /*
     ⚠️ **직급 목록을 같이 받는다.** 발급 창에서 직급을 손으로 적게 두면 회사에 없는 직급이
        생긴다 — 직급은 온보딩 2단계·기업 설정이 만든 **회사 목록**이고, 거기에 권한이 매여 있다.
   */
-  const [members, teamNames, company] = await Promise.all([
-    listManagedMembers(),
+  const [firstPage, teamNames, company] = await Promise.all([
+    getManagedMembersPage(query, 1),
     listTeamNames(),
     getCompanySetting(),
   ]);
-  const positionNames = company.positions.map((position) => position.name);
-  const teamRoles = buildTeamRoles(company.departments);
-
-  // TODO(BE 협의): 목록 응답에 대기 신청 종류를 함께 실어 주면 이 왕복이 사라진다
-  const details = await Promise.all(members.map((member) => getManagedMember(member.id)));
-  const pendingTypeById = Object.fromEntries(
-    details.map((detail) => [detail?.member.id, detail?.pendingHandover?.type]),
-  );
 
   return (
     <MemberListView
-      members={members}
-      pendingTypeById={pendingTypeById}
+      initialItems={firstPage.items}
+      initialPage={firstPage.page}
+      initialTotalPages={firstPage.totalPages}
+      initialTotalCount={firstPage.totalCount}
+      query={query}
       canIssueAccount={canIssueAccount(viewer)}
       teamNames={teamNames}
-      positionNames={positionNames}
-      teamRoles={teamRoles}
+      positionNames={company.positions.map((position) => position.name)}
+      teamRoles={buildTeamRoles(company.departments)}
     />
   );
 }

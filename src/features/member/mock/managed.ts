@@ -1,7 +1,7 @@
 import { AUTHORITY } from "@/constants/authority";
 import { ACTION_STATUS } from "@/constants/domain";
 import { HANDOVER_TYPE } from "@/constants/handover";
-import { MEMBER_STATUS } from "@/constants/member";
+import { DELETED_MEMBER_STATUS, isVisibleMemberStatus, MEMBER_STATUS } from "@/constants/member";
 
 import type { ManagedMember, ManagedMemberDetail } from "../manage-types";
 
@@ -28,6 +28,7 @@ const INITIAL: ManagedMemberDetail[] = [
       roleLabel: null,
       status: MEMBER_STATUS.ACTIVE,
       joinedAt: "2020-01-02",
+      pendingHandoverType: null,
     },
     actions: [],
     pendingHandover: null,
@@ -44,6 +45,7 @@ const INITIAL: ManagedMemberDetail[] = [
       roleLabel: null,
       status: MEMBER_STATUS.ACTIVE,
       joinedAt: "2021-03-02",
+      pendingHandoverType: null,
     },
     actions: [
       {
@@ -71,6 +73,7 @@ const INITIAL: ManagedMemberDetail[] = [
       roleLabel: "프론트엔드",
       status: MEMBER_STATUS.WAITING,
       joinedAt: "2022-05-10",
+      pendingHandoverType: null,
     },
     actions: [
       {
@@ -112,6 +115,7 @@ const INITIAL: ManagedMemberDetail[] = [
       roleLabel: "백엔드",
       status: MEMBER_STATUS.ACTIVE,
       joinedAt: "2023-01-15",
+      pendingHandoverType: null,
     },
     actions: [
       {
@@ -135,6 +139,7 @@ const INITIAL: ManagedMemberDetail[] = [
       roleLabel: null,
       status: MEMBER_STATUS.ACTIVE,
       joinedAt: "2023-04-20",
+      pendingHandoverType: null,
     },
     actions: [],
     pendingHandover: null,
@@ -151,6 +156,7 @@ const INITIAL: ManagedMemberDetail[] = [
       roleLabel: "브랜드",
       status: MEMBER_STATUS.ACTIVE,
       joinedAt: "2020-09-01",
+      pendingHandoverType: null,
     },
     actions: [],
     pendingHandover: null,
@@ -167,6 +173,7 @@ const INITIAL: ManagedMemberDetail[] = [
       roleLabel: null,
       status: MEMBER_STATUS.ACTIVE,
       joinedAt: "2024-02-19",
+      pendingHandoverType: null,
     },
     actions: [],
     pendingHandover: null,
@@ -184,6 +191,7 @@ const INITIAL: ManagedMemberDetail[] = [
       roleLabel: "캠페인",
       status: MEMBER_STATUS.WAITING,
       joinedAt: "2024-06-01",
+      pendingHandoverType: null,
     },
     actions: [
       {
@@ -213,6 +221,7 @@ const INITIAL: ManagedMemberDetail[] = [
       roleLabel: null,
       status: MEMBER_STATUS.ACTIVE,
       joinedAt: "2021-11-08",
+      pendingHandoverType: null,
     },
     actions: [],
     pendingHandover: null,
@@ -229,6 +238,7 @@ const INITIAL: ManagedMemberDetail[] = [
       roleLabel: "비주얼",
       status: MEMBER_STATUS.ACTIVE,
       joinedAt: "2024-08-12",
+      pendingHandoverType: null,
     },
     actions: [],
     pendingHandover: null,
@@ -245,8 +255,20 @@ function clone<T>(value: T): T {
 
 let store: ManagedMemberDetail[] = clone(INITIAL);
 
+/**
+ * 화면에 내보낼 사원들.
+ *
+ * ⚠️ **지워진 사람은 뺀다**(`isVisibleMemberStatus`). 퇴사자는 남고(기록의 출처라서),
+ *    탈퇴 처리된 사람만 목록에서 사라진다(§도메인 상수).
+ * ⚠️ 대기 중인 신청의 종류를 **행에 실어 준다** — 목록이 상세를 사람 수만큼 훑지 않게.
+ */
 export function listMockManagedMembers(): ManagedMember[] {
-  return clone(store).map((entry) => entry.member);
+  return clone(store)
+    .filter((entry) => isVisibleMemberStatus(entry.member.status))
+    .map((entry) => ({
+      ...entry.member,
+      pendingHandoverType: entry.pendingHandover?.type ?? null,
+    }));
 }
 
 export function findMockManagedMember(id: number): ManagedMemberDetail | null {
@@ -331,6 +353,7 @@ export function addMockManagedMember(
     roleLabel: draft.roleLabel.trim() || null,
     status: MEMBER_STATUS.ACTIVE,
     joinedAt,
+    pendingHandoverType: null,
   };
   store = [...store, { member, actions: [], pendingHandover: null }];
   return clone(member);
@@ -339,6 +362,22 @@ export function addMockManagedMember(
 /** 이미 쓰고 있는 메일 주소들 — 중복 발급을 막는 데 쓴다 */
 export function listMockMemberEmails(): string[] {
   return store.map((entry) => entry.member.email);
+}
+
+/**
+ * 계정 탈퇴 — **소프트 딜리트**다.
+ *
+ * ⚠️ 줄을 지우지 않고 상태만 `DELETED`로 바꾼다. 그 사람이 남긴 회의·액션이 참조하는
+ *    id라서, 진짜로 지우면 그 기록들이 가리킬 곳을 잃는다.
+ * ⚠️ `DELETED`는 **상태가 아니라 목록에서 빠지는 일**이라 `MEMBER_STATUS`에 없다 —
+ *    목록을 만드는 쪽이 `isVisibleMemberStatus`로 거른다(§도메인 상수).
+ */
+export function deleteMockManagedMember(id: number): void {
+  store = store.map((entry) =>
+    entry.member.id === id
+      ? { ...entry, member: { ...entry.member, status: DELETED_MEMBER_STATUS as never } }
+      : entry,
+  );
 }
 
 /** 테스트가 앞 테스트의 변경을 물려받지 않게 되돌린다 */

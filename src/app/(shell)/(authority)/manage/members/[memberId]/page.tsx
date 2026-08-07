@@ -1,15 +1,22 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
+import { MEMBER_STATUS } from "@/constants/member";
 import { getCompanySetting } from "@/features/company/server";
 import { HandoverApprovalCard } from "@/features/member/components/handover-approval-card";
 import { MemberActionList } from "@/features/member/components/member-action-list";
+import { MemberDeleteCard } from "@/features/member/components/member-delete-card";
 import { MemberGradeCard } from "@/features/member/components/member-grade-card";
 import { MemberProfileCard } from "@/features/member/components/member-profile-card";
 import { getManagedMember } from "@/features/member/manage-server";
 import { buildTeamRoles } from "@/features/member/team-roles";
 import { getViewer } from "@/features/shell/viewer";
-import { canApproveFinal, canChangeMemberGrade, canManageMembers } from "@/lib/permission";
+import {
+  canApproveFinal,
+  canChangeMemberGrade,
+  canDeleteMemberAccount,
+  canManageMembers,
+} from "@/lib/permission";
 
 export const dynamic = "force-dynamic";
 
@@ -97,6 +104,17 @@ export default async function ManageMemberDetailPage({
             )}
 
             <MemberActionList actions={detail.actions} />
+
+            {/*
+              ⚠️ **승인이 종점이 아니다.** 오프보딩 최종 승인을 마치면 계정을 닫는 문이
+                 여기서 열린다(WORKFLOW §7 "오프보딩 최종 승인 후에만 계정 탈퇴 가능") —
+                 그 문이 없으면 퇴사자가 목록에 영영 남는다.
+              ⚠️ **퇴사자에게만, OWNER에게만** 보인다. 되돌릴 수 없는 일이라 두 조건이
+                 다 맞을 때만 그린다(서버도 같은 조건을 다시 본다).
+            */}
+            {detail.member.status === MEMBER_STATUS.RESIGNED && canDeleteMemberAccount(viewer) && (
+              <MemberDeleteCard member={detail.member} />
+            )}
           </div>
         </div>
       </div>

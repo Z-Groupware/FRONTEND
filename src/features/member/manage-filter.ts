@@ -23,20 +23,20 @@ export function searchMembers(members: ManagedMember[], keyword: string): Manage
 /**
  * 승인 대기 필터.
  *
- * ⚠️ 목록 행에는 신청 종류가 없다(컬럼이 아니다) — 그래서 **대기 중인 신청의 사람 id**를
- *    따로 받아 거른다. 상태만 보면 휴직 대기와 오프보딩 대기를 구분할 수 없다.
+ * ⚠️ 종류는 **행이 들고 있다**(`pendingHandoverType`). 예전에는 이걸 알려고 목록이 상세를
+ *    사람 수만큼 훑었다 — 하나만 실패해도 목록 전체가 오류 화면이 됐다.
  */
-export function filterMembers(
-  members: ManagedMember[],
-  filter: MemberFilter,
-  pendingTypeById: Record<number, string | undefined>,
-): ManagedMember[] {
+export function filterMembers(members: ManagedMember[], filter: MemberFilter): ManagedMember[] {
   if (filter === MEMBER_FILTER.ALL) return members;
 
   const wanted =
     filter === MEMBER_FILTER.VACATION_PENDING ? HANDOVER_TYPE.VACATION : HANDOVER_TYPE.OFFBOARDING;
 
+  /*
+    ⚠️ 상태와 종류를 **둘 다** 본다. 상태만 보면 휴직 대기와 오프보딩 대기가 안 갈리고,
+       종류만 보면 이미 처리된 옛 신청까지 걸린다.
+  */
   return members.filter(
-    (member) => member.status === MEMBER_STATUS.WAITING && pendingTypeById[member.id] === wanted,
+    (member) => member.status === MEMBER_STATUS.WAITING && member.pendingHandoverType === wanted,
   );
 }
