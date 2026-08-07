@@ -20,10 +20,22 @@ interface MyActionListItemRowProps {
   action: MyActionListItem;
   /** 목록의 첫 항목이 아니면 위쪽 구분선을 그린다 */
   showDivider: boolean;
+  /**
+   * 카드 모서리(rounded-2xl)와 맞물리는 위치인지 — 왼쪽 막대가 카드 곡선과 어긋나면
+   * 위아래 끝이 잘린 것처럼 보인다(2026-08-07 실제로 겪은 문제). 막대 자체를 카드와
+   * 같은 반지름으로 둥글려서 카드의 `overflow-hidden`이 정확히 그 곡선만 잘라내게 한다.
+   */
+  isFirst: boolean;
+  isLast: boolean;
 }
 
 /** 좌: 태그색 막대 / 제목·프로젝트 태그·팀명 라벨 + 세부 설명 한 줄 / 우: 마감일 + 상태 배지. */
-export function MyActionListItemRow({ action, showDivider }: MyActionListItemRowProps) {
+export function MyActionListItemRow({
+  action,
+  showDivider,
+  isFirst,
+  isLast,
+}: MyActionListItemRowProps) {
   const tagColor = pickPaletteColor(action.projectTag);
   const delayed = isDelayed(action);
   const tone = delayed ? "DELAYED" : action.status;
@@ -36,16 +48,16 @@ export function MyActionListItemRow({ action, showDivider }: MyActionListItemRow
         href={`/app/actions/${action.id}`}
         className="hover:bg-muted flex items-stretch transition-colors"
       >
-        {/* 프로젝트 색 왼쪽 막대 — 행 위아래 끝에 딱 붙는 얇은 세로선 */}
+        {/* 프로젝트 색 왼쪽 막대 — 카드 모서리와 만나는 첫·마지막 행만 그만큼 둥글린다 */}
         <span
-          className="w-1 shrink-0"
+          className={cn("w-1 shrink-0", isFirst && "rounded-tl-2xl", isLast && "rounded-bl-2xl")}
           style={{ backgroundColor: tagColor.solidColor }}
           aria-hidden
         />
 
-        <div className="flex min-w-0 flex-1 items-center gap-3 px-4 py-3">
+        <div className="flex min-w-0 flex-1 items-center gap-3 px-4 py-4">
           {/* 좌: 제목 · 프로젝트 태그 · 팀명 라벨 + 세부 설명 한 줄 */}
-          <div className="flex min-w-0 flex-1 flex-col gap-1">
+          <div className="flex min-w-0 flex-1 flex-col gap-1.5">
             <div className="flex min-w-0 items-center gap-2">
               <span className="truncate text-[15px]">{action.title}</span>
               <span

@@ -43,6 +43,7 @@ export interface MyActionListItem {
   description: string;
   team: string;
   projectId: number;
+  projectName: string;
   projectTag: string;
   /** 작업 시작일 `YYYY-MM-DD` — 지연 판정에는 안 쓰지만(`isDelayed`는 마감일만 본다) 계약은 갖춰 둔다. */
   startDate: string;

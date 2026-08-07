@@ -1,3 +1,4 @@
+import { TOP_LEVEL_PROJECTS } from "@/features/project/mock/projects";
 import { TEAM_ACTION_PERSONAL_ITEMS_MOCK } from "@/features/project/mock/team-action-detail";
 import { isMock } from "@/mocks/config";
 
@@ -26,12 +27,15 @@ export async function getMyActionList(assigneeName: string): Promise<MyActionLis
         if (item.assigneeName !== assigneeName) continue;
         const detail = PERSONAL_ACTION_DETAIL_MOCK[item.id];
         if (!detail) continue;
+        const project = TOP_LEVEL_PROJECTS.find((p) => p.id === detail.projectId);
+        if (!project) continue;
         list.push({
           id: item.id,
           title: item.title,
           description: detail.description,
           team: detail.team,
           projectId: detail.projectId,
+          projectName: project.name,
           projectTag: detail.projectTag,
           startDate: item.startDate,
           dueDate: item.dueDate,
