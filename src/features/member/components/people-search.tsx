@@ -40,8 +40,13 @@ export function PeopleSearch({ keyword }: { keyword: string }) {
     [router, searchParams],
   );
 
+  /*
+    ⚠️ **다듬은 값끼리 견준다.** 주소에는 `trim`한 값을 적는데 가드는 원본을 견주면,
+       `김 `처럼 뒤에 공백이 남는 순간(한글 조합·붙여넣기에서 흔하다) `"김 " !== "김"`이라
+       가드가 영영 안 걸린다 — 이미 같은 주소인데 300ms마다 `replace`를 다시 부른다.
+  */
   useEffect(() => {
-    if (value === keyword) return;
+    if (value.trim() === keyword.trim()) return;
     const timer = setTimeout(() => pushKeyword(value), SEARCH_DEBOUNCE_MS);
     return () => clearTimeout(timer);
   }, [value, keyword, pushKeyword]);
