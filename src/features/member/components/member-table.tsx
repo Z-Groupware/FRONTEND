@@ -34,21 +34,33 @@ import type { ManagedMember } from "../manage-types";
  */
 function AuthorityCell({ member }: { member: ManagedMember }) {
   return (
+    /*
+      ⚠️ **묶음을 가운데 두지 않는다.** 그러면 방패가 있는 줄만 배지가 왼쪽으로 밀려,
+         `Member`와 `Leader`의 가운데가 줄마다 어긋난다 — 저장소 표의 상태 점과 같은 문제다.
+      ⚠️ **배지는 배지끼리, 방패는 방패끼리 한 세로선에 선다.** 배지를 고정폭 상자에 넣어
+         그 안에서 가운데 정렬하고, 방패 자리도 **겸직이 아니어도 비워 둔다** —
+         자리를 안 잡아 두면 있는 줄만 폭이 늘어 결국 같은 어긋남이 생긴다.
+    */
     <span className="inline-flex items-center justify-center gap-1.5">
-      <span
-        className={cn(
-          "inline-flex shrink-0 items-center rounded px-1.5 py-0.5 text-[11px] leading-none",
-          AUTHORITY_BADGE_CLASS[member.authority],
-        )}
-      >
-        {AUTHORITY_LABEL[member.authority]}
-      </span>
-      {member.isAdmin && (
-        <span className="text-foreground/70 inline-flex shrink-0 items-center" title="관리자 겸직">
-          <ShieldCheck className="size-3.5" aria-hidden />
-          <span className="sr-only">관리자 겸직</span>
+      <span className="w-[56px] text-center">
+        <span
+          className={cn(
+            "inline-flex shrink-0 items-center rounded px-1.5 py-0.5 text-[11px] leading-none",
+            AUTHORITY_BADGE_CLASS[member.authority],
+          )}
+        >
+          {AUTHORITY_LABEL[member.authority]}
         </span>
-      )}
+      </span>
+
+      <span className="text-foreground/70 inline-flex w-3.5 shrink-0 justify-center">
+        {member.isAdmin && (
+          <span title="관리자 겸직">
+            <ShieldCheck className="size-3.5" aria-hidden />
+            <span className="sr-only">관리자 겸직</span>
+          </span>
+        )}
+      </span>
     </span>
   );
 }
