@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 
-import type { OrgChart, OrgTeam } from "../org-types";
+import type { OrgChart, OrgSummary, OrgTeam } from "../org-types";
 import { MatchText } from "./match-text";
 import { OrgMemberNode } from "./org-member-node";
 import { PeopleSearch } from "./people-search";
@@ -104,7 +104,45 @@ function TeamBranch({
   );
 }
 
-export function OrgChartView({ chart, keyword }: { chart: OrgChart; keyword: string }) {
+/**
+ * 머리 오른쪽 한 줄 — **회사가 지금 어떤 상태인가**.
+ *
+ * ⚠️ 처음엔 이걸 큰 숫자 세 칸짜리 **전폭 카드**로 뒀는데, 값이 셋뿐이라 1440을 못 채우고
+ *    조직도 위에 빈 띠만 얹혔다 — DESIGN.md가 경고한 바로 그 경우다("값 두어 개는 못 채운다").
+ *    카드를 없애고 §DESIGN 2의 "오른쪽 끝에 보조 정보 한 줄" 자리로 옮겼다.
+ * ⚠️ **휴직은 있을 때만 적는다.** 늘 `휴직 0명`이라고 하면 아무 일도 없는 회사에서
+ *    그 글자가 계속 눈에 걸린다.
+ * ⚠️ 찾는 중이면 **찾은 수만** 적는다. 검색을 걸어 놓고 `전체 3명`이라고 하면 회사가
+ *    세 명인 줄 읽힌다.
+ */
+function ChartMeta({
+  summary,
+  chart,
+  isSearching,
+}: {
+  summary: OrgSummary;
+  chart: OrgChart;
+  isSearching: boolean;
+}) {
+  if (isSearching) return <>찾은 {chart.totalCount}명</>;
+
+  return (
+    <>
+      전체 {summary.totalCount}명 · {summary.teamCount}팀
+      {summary.vacationCount > 0 && <> · 휴직 {summary.vacationCount}명</>}
+    </>
+  );
+}
+
+export function OrgChartView({
+  chart,
+  summary,
+  keyword,
+}: {
+  chart: OrgChart;
+  summary: OrgSummary;
+  keyword: string;
+}) {
   const { owner, teams, totalCount } = chart;
   const isSearching = keyword.trim().length > 0;
 
@@ -115,12 +153,8 @@ export function OrgChartView({ chart, keyword }: { chart: OrgChart; keyword: str
           <span className="bg-foreground size-2 rounded-full" aria-hidden />
           조직도
         </h2>
-        {/*
-          ⚠️ 찾는 중이면 **찾은 수**를 적는다. 검색을 걸어 놓고 `전체 3명`이라고 하면
-             회사가 세 명인 줄 읽힌다 — 회사 전체 인원은 위 요약 카드가 말한다.
-        */}
         <p className="text-muted-foreground text-[12px] leading-4 tabular-nums">
-          {isSearching ? `찾은 ${totalCount}명` : `전체 ${totalCount}명`}
+          <ChartMeta summary={summary} chart={chart} isSearching={isSearching} />
         </p>
       </div>
 

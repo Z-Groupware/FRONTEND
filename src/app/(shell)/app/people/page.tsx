@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 
 import { OrgChartView } from "@/features/member/components/org-chart-view";
-import { OrgSummaryCard } from "@/features/member/components/org-summary-card";
 import { getPeopleDirectory } from "@/features/member/org-server";
 
 export const metadata: Metadata = {
@@ -31,10 +30,12 @@ export default async function AppPeoplePage({
 
   return (
     <main className="min-h-0 flex-1 overflow-y-auto px-8 py-7">
-      {/* 위에서 아래로 "지금 상태 → 그 근거" 순서(§DESIGN 1) */}
-      <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-7">
-        <OrgSummaryCard summary={summary} />
-        <OrgChartView chart={chart} keyword={keyword} />
+      {/*
+        ⚠️ **카드 한 장이다.** 인원·팀·휴직을 큰 숫자 카드로 따로 뒀더니 값이 셋뿐이라
+           1440을 못 채우고 빈 띠만 얹혔다 — 조직도 머리 오른쪽 한 줄로 옮겼다(§DESIGN 2).
+      */}
+      <div className="mx-auto w-full max-w-[1440px]">
+        <OrgChartView chart={chart} summary={summary} keyword={keyword} />
       </div>
     </main>
   );
