@@ -35,6 +35,11 @@ export interface TimelineActionInput {
   tone: StatusTone;
   /** 클릭 시 이동할 상세 경로. 상세 라우트가 아직 없으면 비워서 클릭 불가로 둔다. */
   href?: string;
+  /**
+   * 진척율(%, 0~100) — **팀 액션처럼 하위 항목이 있는 행에만** 넘긴다(개인 액션은 더 쪼갤
+   * 하위가 없어 넘기지 않는다). 있으면 행이 살짝 높아지고 제목 아래에 진척 바가 붙는다.
+   */
+  progressPercent?: number;
 }
 
 /** 축의 하루 칸. */

@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import type { StatusTone } from "@/components/common/status-dot";
+import { Progress } from "@/components/ui/progress";
 import { ACTION_DELAYED_LABEL, ACTION_STATUS, ACTION_STATUS_LABEL } from "@/constants/domain";
 import {
   buildActionTimeline,
@@ -90,6 +91,8 @@ const LABEL_COL_PX = 200;
 const LABEL_COL_STYLE = { width: LABEL_COL_PX, minWidth: LABEL_COL_PX };
 /** 행 높이(px) — 그리드 오버레이 높이 계산에 쓴다(행 수 × 이 값). */
 const ROW_HEIGHT_PX = 44;
+/** 진척 바가 붙는 행 높이 — 제목 아래 한 줄이 더 필요하다(팀 액션처럼 하위 항목이 있을 때만). */
+const ROW_HEIGHT_WITH_PROGRESS_PX = 60;
 
 interface ActionTimelineProps {
   items: TimelineActionInput[];
@@ -115,7 +118,11 @@ export function ActionTimeline({
   }
 
   const { days, bars, todayLeftPx, totalWidthPx, monthLabel } = model;
-  const gridHeightPx = bars.length * ROW_HEIGHT_PX;
+  // ⚠️ 한 인스턴스 안에서는 전부 팀 액션이거나 전부 개인 액션이라 섞이지 않는다 — 행 높이는
+  //    균일해야 그리드·오늘선 계산이 맞으므로, 하나라도 진척 바가 있으면 전체를 키운다.
+  const hasProgress = bars.some((bar) => bar.progressPercent !== undefined);
+  const rowHeightPx = hasProgress ? ROW_HEIGHT_WITH_PROGRESS_PX : ROW_HEIGHT_PX;
+  const gridHeightPx = bars.length * rowHeightPx;
 
   return (
     <div className="scrollbar-hidden min-h-0 flex-1 overflow-auto">
@@ -173,22 +180,32 @@ export function ActionTimeline({
             //    막대만 눌리면 클릭 영역이 좁고, 좌측을 눌렀을 때 반응이 없어 헷갈린다.
             const rowContent = (
               <>
-                {/* 좌: 상태점 · 액션명 · 칩(호출부마다 뜻 다름 — 태그 또는 팀명) */}
+                {/* 좌: 상태점 · 액션명 · 칩(호출부마다 뜻 다름 — 태그 또는 팀명) · (있으면) 진척 바 */}
                 <div
-                  className="bg-card sticky left-0 z-10 flex min-w-0 shrink-0 items-center gap-2 px-3"
+                  className="bg-card sticky left-0 z-10 flex min-w-0 shrink-0 flex-col justify-center gap-1 px-3"
                   style={LABEL_COL_STYLE}
                 >
-                  <span
-                    className={cn("size-1.5 shrink-0 rounded-full", DOT_CLASS[bar.tone])}
-                    aria-hidden
-                  />
-                  <span className="min-w-0 truncate text-[13px]">{bar.title}</span>
-                  <span
-                    className="shrink-0 rounded px-1.5 py-0.5 font-mono text-[10px] font-semibold"
-                    style={{ backgroundColor: bar.tagBgColor, color: bar.tagTextColor }}
-                  >
-                    {bar.tag}
-                  </span>
+                  <div className="flex min-w-0 items-center gap-2">
+                    <span
+                      className={cn("size-1.5 shrink-0 rounded-full", DOT_CLASS[bar.tone])}
+                      aria-hidden
+                    />
+                    <span className="min-w-0 truncate text-[13px]">{bar.title}</span>
+                    <span
+                      className="shrink-0 rounded px-1.5 py-0.5 font-mono text-[10px] font-semibold"
+                      style={{ backgroundColor: bar.tagBgColor, color: bar.tagTextColor }}
+                    >
+                      {bar.tag}
+                    </span>
+                  </div>
+                  {bar.progressPercent !== undefined && (
+                    <div className="flex items-center gap-1.5 pl-3.5">
+                      <Progress value={bar.progressPercent} />
+                      <span className="text-muted-foreground shrink-0 text-[10px] tabular-nums">
+                        {bar.progressPercent}%
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 {/* 우: 기간 바 */}
@@ -218,7 +235,7 @@ export function ActionTimeline({
                 href={bar.href}
                 aria-label={barAriaLabel(bar)}
                 className={rowClassName}
-                style={{ height: ROW_HEIGHT_PX }}
+                style={{ height: rowHeightPx }}
               >
                 {rowContent}
               </Link>
@@ -227,7 +244,7 @@ export function ActionTimeline({
                 key={bar.id}
                 aria-label={barAriaLabel(bar)}
                 className={rowClassName}
-                style={{ height: ROW_HEIGHT_PX }}
+                style={{ height: rowHeightPx }}
               >
                 {rowContent}
               </div>
@@ -245,6 +262,7 @@ export function ActionTimelineLegend() {
     { tone: "DELAYED", label: TONE_LABEL.DELAYED },
     { tone: "IN_PROGRESS", label: TONE_LABEL.IN_PROGRESS },
     { tone: "TODO", label: TONE_LABEL.TODO },
+    { tone: "DONE", label: TONE_LABEL.DONE },
   ];
 
   return (
