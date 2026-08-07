@@ -26,7 +26,6 @@ export function MembersPageHeader() {
     <PageHeader
       title="사원 관리"
       icon={Users}
-      reserveBack
       backTo={isDetail ? { href: MEMBERS_LIST_PATH, label: "사원 관리" } : undefined}
     />
   );

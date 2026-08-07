@@ -24,7 +24,6 @@ export function NoticeHeader() {
     <PageHeader
       title="공지"
       icon={Megaphone}
-      reserveBack
       backTo={isDetail ? { href: NOTICE_LIST_PATH, label: "공지" } : undefined}
     />
   );

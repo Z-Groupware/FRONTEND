@@ -17,7 +17,6 @@ export function ApprovalHeader() {
     <PageHeader
       title="기업 가입 승인"
       icon={ClipboardCheck}
-      reserveBack
       backTo={isDetail ? { href: APPROVAL_LIST_PATH, label: "기업 가입 승인" } : undefined}
     />
   );

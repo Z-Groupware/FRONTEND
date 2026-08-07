@@ -41,7 +41,6 @@ export function ProjectsPageHeader() {
     <PageHeader
       title="프로젝트"
       icon={Folder}
-      reserveBack
       backTo={
         isDetail
           ? {

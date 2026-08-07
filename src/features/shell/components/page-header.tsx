@@ -16,11 +16,6 @@ interface PageHeaderProps {
    * 목록에서 상세로 들어가는 것처럼 한 단계 더 깊은 화면에서만 쓴다.
    */
   backTo?: { href: string; label: string };
-  /**
-   * `backTo`가 없어도 뒤로가기 화살표 **자리만 비워 둔다**. 같은 헤더에서 목록↔상세를 오갈 때
-   * 화살표가 생겼다 사라지며 제목이 좌우로 밀리는 덜컥거림을 막는다 — 자리는 늘 같고 화살표만 토글된다.
-   */
-  reserveBack?: boolean;
   /** 오른쪽 액션 — 버튼 하나 또는 몇 개. 없으면 비워둔다 */
   action?: ReactNode;
 }
@@ -41,57 +36,64 @@ interface PageHeaderProps {
  * ⚠️ 높이(56px)는 **사이드바 로고 줄과 같은 값**이다. 한쪽만 고치면 두 경계선이 어긋나
  *    화면 왼쪽 위에 계단이 생긴다 — 바꿀 때 `role-sidebar`·`system-sidebar`를 같이 본다.
  */
-export function PageHeader({
-  title,
-  icon: Icon,
-  meta,
-  backTo,
-  reserveBack,
-  action,
-}: PageHeaderProps) {
+export function PageHeader({ title, icon: Icon, meta, backTo, action }: PageHeaderProps) {
   return (
-    <header className="border-border bg-background flex h-[56px] shrink-0 items-center gap-3 border-b px-8">
-      {/* 화살표는 제목 왼쪽에 나란히 둔다 — 제목 위에 경로를 한 줄 더 쓰지 않는다 */}
-      {backTo ? (
-        <Link
-          href={backTo.href}
-          aria-label={`${backTo.label}(으)로 돌아가기`}
-          className="text-muted-foreground hover:text-foreground hover:bg-foreground/5 focus-visible:ring-ring -ml-1.5 flex size-8 shrink-0 items-center justify-center rounded-md transition-colors focus-visible:ring-2 focus-visible:outline-hidden"
-        >
-          <ArrowLeft className="size-[18px]" />
-        </Link>
-      ) : reserveBack ? (
-        /* 화살표 없이 자리만 차지 — 제목이 밀리지 않게(위 reserveBack 주석). 크기는 위 Link와 같다 */
-        <span aria-hidden className="-ml-1.5 size-8 shrink-0" />
-      ) : null}
-
+    <header className="border-border bg-background flex h-[56px] shrink-0 items-center border-b px-8">
       {/*
+        ⚠️ **본문과 같은 상자를 쓴다**(`mx-auto max-w-[1440px]`). 전에는 머리만 화면 끝까지
+           늘어나서, 화면이 1440보다 넓어지면 본문 카드는 가운데로 모이는데 제목은 왼쪽 끝에
+           남아 **둘이 따로 놀았다** — 그 어긋난 폭이 화면 폭·배율마다 달라져 고정된 값으로는
+           맞출 수도 없었다.
+        ⚠️ 오른쪽 끝(테마 전환·액션)도 같이 안으로 들어온다. 카드 오른쪽 모서리와 한 줄로
+           맞는 게 맞다 — 한쪽만 끝에 붙으면 머리가 본문보다 넓어 보인다.
+      */}
+      <div className="relative mx-auto flex w-full max-w-[1440px] items-center gap-3">
+        {/*
+          화살표는 제목 왼쪽 — 제목 위에 경로를 한 줄 더 쓰지 않는다.
+          ⚠️ **상자 밖(여백 쪽)에 띄운다**(`absolute right-full`). 상자 안에 두면 그만큼 제목이
+             안으로 밀려 **본문 카드와 시작선이 어긋난다** — 목록에서는 화살표가 없는데도
+             자리만 비워 두느라 어긋났다. 밖으로 내보내면 화살표가 있든 없든 제목은 늘
+             카드와 같은 선에 서고, 오갈 때 제목이 밀리지도 않는다.
+          ⚠️ 화살표가 앉는 32px는 헤더의 좌우 여백(`px-8`)이다 — 없는 자리를 만들지 않는다.
+        */}
+        {backTo ? (
+          <Link
+            href={backTo.href}
+            aria-label={`${backTo.label}(으)로 돌아가기`}
+            className="text-muted-foreground hover:text-foreground hover:bg-foreground/5 focus-visible:ring-ring absolute top-1/2 right-full flex size-8 shrink-0 -translate-y-1/2 items-center justify-center rounded-md transition-colors focus-visible:ring-2 focus-visible:outline-hidden"
+          >
+            <ArrowLeft className="size-[18px]" />
+          </Link>
+        ) : null}
+
+        {/*
         ⚠️ 표식과 제목을 **한 덩어리로 묶고 사이를 넉넉히**(16px) 준다. 헤더 기본 간격(12px)을
            그대로 쓰면 22px 굵은 제목 옆에서 아이콘이 글자에 달라붙어 한 글자처럼 보인다.
       */}
-      <div className="flex min-w-0 items-center gap-4">
-        {/* 제목과 같은 색이다 — 흐리게 두면 제목 옆에 붙은 게 아니라 떨어진 장식처럼 보인다 */}
-        {Icon && <Icon className="text-foreground size-5 shrink-0" aria-hidden />}
+        <div className="flex min-w-0 items-center gap-4">
+          {/* 제목과 같은 색이다 — 흐리게 두면 제목 옆에 붙은 게 아니라 떨어진 장식처럼 보인다 */}
+          {Icon && <Icon className="text-foreground size-5 shrink-0" aria-hidden />}
 
-        {/* ⚠️ 한글 글리프가 줄 상자 안에서 위쪽에 앉는다 — 아이콘과 맞추려면 내려야 한다(팀 규칙) */}
-        <h1 className="shrink-0 translate-y-[1.5px] truncate text-[22px] leading-[30px] font-semibold tracking-[-0.4px]">
-          {title}
-        </h1>
+          {/* ⚠️ 한글 글리프가 줄 상자 안에서 위쪽에 앉는다 — 아이콘과 맞추려면 내려야 한다(팀 규칙) */}
+          <h1 className="shrink-0 translate-y-[1.5px] truncate text-[22px] leading-[30px] font-semibold tracking-[-0.4px]">
+            {title}
+          </h1>
+        </div>
+
+        {/* 남는 자리는 비워 둔다 — 선을 그으면 헤더가 시끄러워진다 */}
+        <span className="flex-1" aria-hidden />
+
+        {meta && (
+          <span className="text-muted-foreground/70 shrink-0 pr-1 text-xs leading-[18px]">
+            {meta}
+          </span>
+        )}
+
+        {action && <div className="flex shrink-0 items-center gap-2">{action}</div>}
+
+        {/* 테마 전환은 화면마다 두지 않고 여기 한 자리에 고정한다 — 다른 서비스들이 그렇듯 오른쪽 위 */}
+        <ThemeToggle />
       </div>
-
-      {/* 남는 자리는 비워 둔다 — 선을 그으면 헤더가 시끄러워진다 */}
-      <span className="flex-1" aria-hidden />
-
-      {meta && (
-        <span className="text-muted-foreground/70 shrink-0 pr-1 text-xs leading-[18px]">
-          {meta}
-        </span>
-      )}
-
-      {action && <div className="flex shrink-0 items-center gap-2">{action}</div>}
-
-      {/* 테마 전환은 화면마다 두지 않고 여기 한 자리에 고정한다 — 다른 서비스들이 그렇듯 오른쪽 위 */}
-      <ThemeToggle />
     </header>
   );
 }
