@@ -123,6 +123,22 @@ describe("validateDepartments", () => {
     ).toBeNull();
   });
 
+  /*
+    ⚠️ id가 겹치면 `findBlockedTeamChange`가 트리를 id로 대조하다 오판한다 — 사람이 딸린
+       팀이 사라져도 "아직 있다"로 읽혀 그대로 저장된다.
+  */
+  it("같은 id가 둘이면 막는다", () => {
+    const dup = [team("d1", "개발팀"), team("d1", "기획팀")];
+
+    expect(validateDepartments(dup)).toBeTruthy();
+  });
+
+  it("역할에도 같은 id가 있으면 막는다", () => {
+    const dup = [team("d1", "개발팀", [team("d1", "프론트")])];
+
+    expect(validateDepartments(dup)).toBeTruthy();
+  });
+
   it("2계층을 넘는 손자는 막는다", () => {
     const deep = [team("d1", "개발팀", [team("r1", "프론트", [team("x1", "주니어")])])];
 

@@ -31,14 +31,13 @@ import { SettingCard } from "./setting-card";
  *    이 화면은 오갈 단계가 없고 저장하면 서버가 정본을 들고 있다.
  * ⚠️ 트리를 **통째로** 보낸다 — 순서와 계층이 값이라 한 줄씩 보내면 중간 상태가 저장된다.
  */
-export function CompanyTeamCard({
-  initial,
-  memberCounts,
-}: {
+interface CompanyTeamCardProps {
   initial: DepartmentNodeType[];
   /** 팀 id → 사원 수. 사람이 딸린 팀은 못 지운다 */
   memberCounts: Record<string, number>;
-}) {
+}
+
+export function CompanyTeamCard({ initial, memberCounts }: CompanyTeamCardProps) {
   const router = useRouter();
   const tree = useDepartmentTree(initial);
   /*
