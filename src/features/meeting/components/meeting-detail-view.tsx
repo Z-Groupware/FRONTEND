@@ -56,7 +56,7 @@ export function MeetingDetailView({ detail }: { detail: MeetingDetail }) {
         <section className="border-border bg-card rounded-2xl border p-7">
           <div className="flex flex-col gap-3">
             {/* 제목은 h2 — 페이지의 h1은 PageHeader가 갖고 있다(§a11y: h1은 하나) */}
-            <h2 className="text-[20px] leading-7 font-semibold tracking-[-0.4px]">
+            <h2 className="text-[17px] leading-7 font-semibold tracking-[-0.3px]">
               {detail.title}
             </h2>
             <MetaLabels detail={detail} />

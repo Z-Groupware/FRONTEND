@@ -42,7 +42,7 @@ function CardBody({ meeting }: { meeting: MeetingListItem }) {
       <ProjectAccent tag={meeting.projectTag} />
 
       <div className="flex items-start justify-between gap-3">
-        <p className="min-w-0 flex-1 truncate text-[15px] leading-6 font-semibold">
+        <p className="min-w-0 flex-1 truncate text-[17px] leading-7 font-semibold tracking-[-0.3px]">
           {meeting.title}
         </p>
         <span
@@ -123,7 +123,7 @@ function CardFooter({ meeting }: { meeting: MeetingListItem }) {
 export function MeetingCard({ meeting }: { meeting: MeetingListItem }) {
   /* ⚠️ `h-full`이라 한 줄의 카드가 가장 큰 것에 맞춰 같은 높이로 선다 */
   const frameClass =
-    "border-border bg-card relative flex h-full flex-col overflow-hidden rounded-2xl border p-5 pt-6";
+    "border-border bg-card relative flex h-full flex-col overflow-hidden rounded-2xl border p-7";
 
   if (meeting.status === MEETING_STATUS.DONE) {
     return (

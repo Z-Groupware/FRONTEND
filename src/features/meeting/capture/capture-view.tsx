@@ -59,7 +59,7 @@ export function CaptureView({ meeting }: { meeting: MeetingCaptureInfo }) {
             ⚠️ 왼쪽은 정보, 오른쪽은 조작으로 축을 가른다(DESIGN §3: 열마다 축이 따로 선다).
                타이머는 `tabular-nums`라 숫자가 바뀌어도 옆의 버튼이 안 밀린다.
           */}
-          <section className="border-border bg-card flex flex-wrap items-center gap-x-6 gap-y-4 rounded-2xl border px-7 py-5">
+          <section className="border-border bg-card flex flex-wrap items-center gap-x-6 gap-y-4 rounded-2xl border p-7">
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
                 <ProjectTag tag={meeting.projectTag} />
@@ -238,7 +238,7 @@ function EnterCard({
     <div className="mx-auto flex w-full max-w-[560px] flex-col justify-center py-16">
       <section className="border-border bg-card rounded-2xl border p-7 text-center">
         <ProjectTag tag={meeting.projectTag} className="mx-auto" />
-        <h1 className="pt-3 text-[22px] leading-8 font-semibold tracking-[-0.5px] break-keep">
+        <h1 className="pt-3 text-[17px] leading-7 font-semibold tracking-[-0.3px] break-keep">
           {meeting.title}
         </h1>
         <p className="text-muted-foreground pt-1.5 text-[13px] leading-5">

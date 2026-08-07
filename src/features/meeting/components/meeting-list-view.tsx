@@ -87,7 +87,7 @@ export function MeetingListView({
     tab === MEETING_TAB.HOSTED ? directory.hosted : directory.invited;
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-7">
       <div
         className="border-border bg-secondary/60 flex w-fit items-center gap-0.5 rounded-lg border p-0.5"
         role="group"
@@ -114,7 +114,7 @@ export function MeetingListView({
              읽을 게 있는 카드라 넓게 두는 편이 낫다(시안도 2열이다).
           ⚠️ `items-stretch`(기본값)를 깨지 않는다. 카드가 `h-full`이라 한 줄이 같은 높이로 선다.
         */
-        <ul className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+        <ul className="grid grid-cols-1 gap-7 lg:grid-cols-2">
           {items.map((meeting) => (
             <li key={meeting.id}>
               <MeetingCard meeting={meeting} />
