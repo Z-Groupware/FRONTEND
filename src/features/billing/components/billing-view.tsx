@@ -120,14 +120,31 @@ export function BillingView({ overview, config, canManage }: BillingViewProps) {
            두면 그 줄만 1440을 가로지른다.
         ⚠️ 좁은 화면에서는 한 줄로 돌아간다(`lg:` 아래). 곁 컬럼이 먼저 오지 않게 순서를
            그대로 두었다 — 사용량이 이 화면의 본문이다.
-        ⚠️ **두 컬럼의 아래를 맞춘다.** `items-start`로 두면 곁 컬럼이 내용만큼만 서서 오른쪽
-           아래가 휑하게 남는다. 남는 높이는 **플랜 카드가 먹는다**(`flex-1`) — 지표 줄이
-           그만큼 넉넉해질 뿐, 빈 칸이 생기지 않는다.
+        ⚠️ **곁 컬럼은 제 내용만큼만 선다**(`items-start`). 아래를 맞추려고 늘렸더니 남는
+           높이를 플랜 카드가 먹어 지표 세 줄이 한 뼘씩 벌어졌다 — 빈 칸을 없애려다
+           카드 안이 더 비어 보였다. 오른쪽 아래가 남는 건 그대로 두는 게 낫다.
       */}
-      <div className="mx-auto grid w-full max-w-[1440px] grid-cols-1 gap-7 lg:grid-cols-[minmax(0,1fr)_360px]">
+      <div className="mx-auto grid w-full max-w-[1440px] grid-cols-1 items-start gap-7 lg:grid-cols-[minmax(0,1fr)_360px]">
         <div className="flex min-w-0 flex-col gap-7">
           <UsagePanel subscription={subscription} config={config} />
           <PaymentHistoryPanel payments={overview.payments} />
+
+          {/*
+            ⚠️ 해지 카드는 **본 컬럼 맨 아래**다. 곁 컬럼(360px)에 두었더니 문장이 좁은 왼쪽에
+               몰리고 버튼만 오른쪽 아래에 떨어져 카드 안이 텅 비어 보였다 — 폭이 있으면
+               설명이 한 줄로 펴지고 버튼이 그 줄 끝에 선다.
+            ⚠️ **맨 아래**인 건 그대로다. 해지가 이 화면의 주요 기능처럼 보이면 안 된다 —
+               쓰는 이야기(사용량·결제 내역)를 다 읽은 뒤에 나온다.
+            ⚠️ 아직 못 쓰는 상태(결제 전·만료)에는 해지할 게 없으니 두지 않는다.
+          */}
+          {canUseWorkspace(subscription.status) && (
+            <CancelSubscription
+              periodEnd={subscription.currentPeriodEnd}
+              isCanceling={isCanceling}
+              canManage={canManage}
+              onConfirm={handleToggleCancel}
+            />
+          )}
         </div>
 
         <div className="flex flex-col gap-7">
@@ -137,15 +154,6 @@ export function BillingView({ overview, config, canManage }: BillingViewProps) {
             canManage={canManage}
             onChange={handleChangeMethod}
           />
-          {/* ⚠️ 아직 못 쓰는 상태(결제 전·만료)에는 해지할 게 없으니 두지 않는다 */}
-          {canUseWorkspace(subscription.status) && (
-            <CancelSubscription
-              periodEnd={subscription.currentPeriodEnd}
-              isCanceling={isCanceling}
-              canManage={canManage}
-              onConfirm={handleToggleCancel}
-            />
-          )}
         </div>
       </div>
     </div>

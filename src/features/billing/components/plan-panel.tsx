@@ -30,7 +30,12 @@ export function PlanPanel({ subscription, config }: PlanPanelProps) {
   const isUnpaid = !canUseWorkspace(subscription.status);
 
   return (
-    <section className="border-border bg-card flex flex-1 flex-col rounded-2xl border">
+    /*
+      ⚠️ **늘어나지 않는다.** 전에는 남는 높이를 이 카드가 먹게 했는데(`flex-1`), 해지 카드가
+         본 컬럼으로 내려가 왼쪽이 길어지자 지표 세 줄이 한 뼘씩 벌어져 카드가 텅 비어
+         보였다 — 카드는 제 내용만큼만 선다.
+    */
+    <section className="border-border bg-card flex flex-col rounded-2xl border">
       {/*
           ⚠️ 표식은 **결제 화면(`PlanSummaryCard`)과 같은 것**이다. 랜딩에서 보고, 결제할 때 보고,
              관리 화면에서 다시 보는 게 같은 물건이라 표식도 같아야 한다.
@@ -85,7 +90,7 @@ export function PlanPanel({ subscription, config }: PlanPanelProps) {
              기본료 + 사용량이라, 인원 숫자를 여기 두면 그게 금액을 움직이는 줄 읽힌다.
              남은 셋은 전부 **돈과 직접 이어지는 값**이다.
         */}
-      <dl className="flex flex-1 flex-col justify-end gap-2.5 px-7 pb-7">
+      <dl className="flex flex-col gap-2.5 px-7 pb-7">
         <Metric label="월 기본료" value={formatWon(config.baseFee)} />
         <Metric
           label="다음 결제일"
@@ -123,7 +128,7 @@ export function PlanPanel({ subscription, config }: PlanPanelProps) {
  */
 function Metric({ label, value, hint }: { label: string; value: string; hint?: string }) {
   return (
-    <div className="bg-secondary/40 flex flex-1 items-center justify-between gap-4 rounded-xl px-4 py-3">
+    <div className="bg-secondary/40 flex items-center justify-between gap-4 rounded-xl px-4 py-3">
       <dt className="text-muted-foreground shrink-0 text-[12px] leading-5">{label}</dt>
       <dd className="min-w-0 text-right">
         <span className="block text-[15px] leading-5 font-semibold tracking-[-0.2px] whitespace-nowrap tabular-nums">
