@@ -165,9 +165,8 @@ export function AccountIssueDialog({ teamNames }: { teamNames: string[] }) {
         title="계정 발급"
         description={
           <>
-            발급하면{" "}
-            <span className="text-foreground font-medium">아이디와 첫 비밀번호가 메일로</span> 바로
-            나갑니다. 보낸 메일은 되돌릴 수 없습니다.
+            발급하면 <span className="text-foreground font-medium">아이디와 비밀번호가 메일로</span>{" "}
+            바로 나갑니다. 보낸 메일은 되돌릴 수 없습니다.
             {/*
               ⚠️ 겸직 설명을 **여기 넣지 않는다.** 켤 때만 한 줄이 늘어나 창이 세로로 커지고,
                  누르는 순간 아래 버튼이 움직인다 — 설명은 라벨 옆 `?`가 맡는다.
@@ -310,14 +309,21 @@ export function AccountIssueDialog({ teamNames }: { teamNames: string[] }) {
                 >
                   ?
                 </PopoverTrigger>
+                {/*
+                  ⚠️ **한 문장에 다 넣지 않는다.** `켜면 ~로 발급됩니다 — ~할 수 있습니다`처럼
+                     줄표로 이으면 세 줄짜리 한 덩어리가 되어 어디가 요점인지 안 보인다.
+                     **무엇이 열리는지 한 줄**, 그 아래 보조 두 줄로 끊는다.
+                */}
                 <PopoverContent className="w-64 text-left">
-                  <p className="text-[13px] leading-5 break-keep">
-                    켜면 <span className="font-medium">관리자 겸직</span>으로 발급됩니다 —
-                    사원·회의실 관리와 구독·저장소 화면에 들어갈 수 있습니다.
+                  <p className="text-[13px] leading-5 font-medium break-keep">
+                    관리자 화면에 들어갈 수 있습니다.
                   </p>
-                  <p className="text-muted-foreground text-[12px] leading-4 break-keep">
-                    권한을 대체하지 않고 위에 덧붙습니다. 발급한 뒤에도 사원 상세에서 켜고 끌 수
-                    있습니다.
+                  <p className="text-muted-foreground text-[12px] leading-[18px] break-keep">
+                    사원·회의실 관리, 구독·저장소 화면입니다.
+                    <br />
+                    권한을 대체하지 않고 위에 덧붙습니다.
+                    <br />
+                    발급한 뒤에도 사원 상세에서 바꿀 수 있습니다.
                   </p>
                 </PopoverContent>
               </Popover>

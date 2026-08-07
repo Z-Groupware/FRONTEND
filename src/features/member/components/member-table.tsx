@@ -41,26 +41,33 @@ function AuthorityCell({ member }: { member: ManagedMember }) {
          그 안에서 가운데 정렬하고, 방패 자리도 **겸직이 아니어도 비워 둔다** —
          자리를 안 잡아 두면 있는 줄만 폭이 늘어 결국 같은 어긋남이 생긴다.
     */
-    <span className="inline-flex items-center justify-center gap-1.5">
-      <span className="w-[56px] text-center">
-        <span
-          className={cn(
-            "inline-flex shrink-0 items-center rounded px-1.5 py-0.5 text-[11px] leading-none",
-            AUTHORITY_BADGE_CLASS[member.authority],
-          )}
-        >
-          {AUTHORITY_LABEL[member.authority]}
-        </span>
+    <span className="relative inline-flex w-[56px] items-center justify-center">
+      <span
+        className={cn(
+          "inline-flex shrink-0 items-center rounded px-1.5 py-0.5 text-[11px] leading-none",
+          AUTHORITY_BADGE_CLASS[member.authority],
+        )}
+      >
+        {AUTHORITY_LABEL[member.authority]}
       </span>
 
-      <span className="text-foreground/70 inline-flex w-3.5 shrink-0 justify-center">
-        {member.isAdmin && (
-          <span title="관리자 겸직">
-            <ShieldCheck className="size-3.5" aria-hidden />
-            <span className="sr-only">관리자 겸직</span>
-          </span>
-        )}
-      </span>
+      {/*
+        ⚠️ 방패는 **절대배치**다. 흐름에 두면 묶음(배지+방패)의 가운데가 칸 가운데에 맞아,
+           방패가 붙은 줄만 배지가 왼쪽으로 밀리고 **열 머리(`권한`)와도 어긋난다.**
+           빼내면 가운데에 오는 건 배지뿐이라 머리글 바로 아래에 선다.
+        ⚠️ 고정폭 상자(56px)의 **오른쪽 끝에서 같은 거리**에 두므로 방패끼리도 한 줄로 선다.
+        ⚠️ 아이콘이 배지보다 떠 보여 `translate-y-px`로 내린다 — 배지는 글자가 상자 안에서
+           아래쪽에 앉는데 아이콘은 정확히 가운데라, 같은 축이어도 눈에는 아이콘이 위로 뜬다.
+      */}
+      {member.isAdmin && (
+        <span
+          title="관리자 겸직"
+          className="text-foreground/70 absolute top-1/2 left-full ml-1.5 -translate-y-1/2"
+        >
+          <ShieldCheck className="size-3.5 translate-y-px" aria-hidden />
+          <span className="sr-only">관리자 겸직</span>
+        </span>
+      )}
     </span>
   );
 }
@@ -116,7 +123,19 @@ export function MemberTable({ members }: { members: ManagedMember[] }) {
         </colgroup>
         <thead>
           <tr className="text-muted-foreground bg-secondary/50 border-border border-b text-[12px] leading-4">
-            <th className="px-6 py-3 text-left font-normal">이름</th>
+            {/*
+              ⚠️ 머리글을 칸 왼쪽 끝에 붙이면 **아바타 위**에 선다 — 아래 칸에서 실제로 읽는
+                 건 이름 글자인데 머리글이 그림 위에 있으면 두 줄이 따로 논다.
+                 아바타 자리(28px)와 사이 간격(10px)을 그대로 비워 이름 글자 위에 세운다.
+              ⚠️ 숫자를 손으로 맞추지 않는다 — 아래 칸과 **같은 값**(`size-7`·`gap-2.5`)을 쓴다.
+                 아바타 크기를 바꾸면 두 곳이 같이 움직여야 한다.
+            */}
+            <th className="px-6 py-3 text-left font-normal">
+              <span className="inline-flex items-center gap-2.5">
+                <span className="w-7 shrink-0" aria-hidden />
+                이름
+              </span>
+            </th>
             <th className="px-4 py-3 text-center font-normal">팀</th>
             <th className="px-4 py-3 text-center font-normal">직급</th>
             <th className="px-4 py-3 text-center font-normal">권한</th>
