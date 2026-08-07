@@ -2,30 +2,16 @@
 
 import { revalidatePath } from "next/cache";
 
-import { ACTION_STATUS, type Authority } from "@/constants/domain";
+import { ACTION_STATUS } from "@/constants/domain";
 import { TOP_LEVEL_PROJECTS } from "@/features/project/mock/projects";
 import { TEAM_ACTION_PERSONAL_ITEMS_MOCK } from "@/features/project/mock/team-action-detail";
 import { todayIso } from "@/lib/date";
 import { isMock } from "@/mocks/config";
 
 import { canMoveCard, getBoardColumn } from "./lib";
-import { loadBoardForRole } from "./server";
-import {
-  BOARD_COLUMN,
-  type BoardCard,
-  type BoardChange,
-  type BoardColumnId,
-  type BoardType,
-} from "./types";
+import { BOARD_COLUMN, type BoardChange, type BoardColumnId, type BoardType } from "./types";
 
 const BOARD_PATH = "/app/board";
-
-/** ⚠️ 임시 — 보드 화면의 권한 미리보기 토글이 부르는 서버 액션(§loadBoardForRole 참고). */
-export async function getBoardPreviewAction(
-  role: Authority,
-): Promise<{ boardType: BoardType; cards: BoardCard[] }> {
-  return loadBoardForRole(role);
-}
 
 /**
  * 보드 저장 — 드래그로 만든 변경을 한 번에 반영한다.

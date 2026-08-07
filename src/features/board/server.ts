@@ -65,9 +65,9 @@ export async function getMyActionBoard(assigneeName: string): Promise<BoardCard[
 }
 
 /**
- * ⚠️ 임시 — 권한별 미리보기 전환용(2026-08-06, 실제 로그인 붙기 전 QA 확인용). 실연동 시 이 함수와
- * 호출부(보드 화면의 권한 토글)를 통째로 지운다. Leader·Member는 대시보드 목에서 이미 쓰는
- * 대표 인물(김서준·이하윤)의 액션으로 미리 채운다 — 실제로는 로그인한 그 사람의 액션이 나온다.
+ * 권한에 따라 오너=프로젝트 보드, 팀장·사원=본인 개인 액션 보드를 고른다.
+ * ⚠️ `assigneeName`은 로그인한 그 사람 이름이어야 한다 — 로그인 전인 지금은 대시보드 목에서도
+ *    쓰는 대표 인물(김서준·이하윤)로 대신한다. 세션이 붙으면 `viewer.name`으로 바꾼다.
  */
 export async function loadBoardForRole(
   role: Authority,
@@ -75,6 +75,6 @@ export async function loadBoardForRole(
   if (role === AUTHORITY.OWNER) {
     return { boardType: "project", cards: await getProjectBoard() };
   }
-  const previewAssigneeName = role === AUTHORITY.LEADER ? "김서준" : "이하윤";
-  return { boardType: "my-action", cards: await getMyActionBoard(previewAssigneeName) };
+  const assigneeName = role === AUTHORITY.LEADER ? "김서준" : "이하윤";
+  return { boardType: "my-action", cards: await getMyActionBoard(assigneeName) };
 }
