@@ -134,8 +134,8 @@ export const APPROVAL_RESULT = {
 export type ApprovalResult = (typeof APPROVAL_RESULT)[keyof typeof APPROVAL_RESULT];
 
 export const APPROVAL_RESULT_LABEL: Record<ApprovalResult, string> = {
-  approve: "승인이 완료되었습니다.",
-  reject: "반려 처리되었습니다.",
+  approve: "승인했습니다",
+  reject: "반려했습니다",
 };
 
 export function isApprovalResult(value: string): value is ApprovalResult {

@@ -55,7 +55,7 @@ export function ApprovalDetailActions({ companyId, companyName }: ApprovalDetail
       if (success) {
         router.push(`/system/approval?done=${action}`);
       } else {
-        toast.error(`'${companyName}' 처리에 실패했습니다`);
+        toast.error("처리하지 못했습니다");
       }
     });
   }
