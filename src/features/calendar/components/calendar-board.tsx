@@ -5,7 +5,6 @@ import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { toggleTodoCompletionAction } from "../actions";
-import { getCalendarHeight } from "../calendar-height";
 import type { PersonalCalendarEvent } from "../types";
 import { AddTodoDialog } from "./add-todo-dialog";
 import { CalendarDayDetailPanel } from "./calendar-day-detail-panel";
@@ -38,8 +37,8 @@ function defaultSelectedDate(month: string): Date {
  * ⚠️ 달을 옮기면(`?month=`) 서버가 새 `initialEvents`를 내려주는데, 이 컴포넌트는 그때마다
  *    호출부에서 `key={month}`로 다시 마운트된다 — props를 state로 동기화하는 effect 대신
  *    리마운트로 초기화한다(React 권장 패턴, `useEffect`로 setState하면 캐스케이딩 렌더가 생긴다).
- * ⚠️ "Todo 추가" 버튼은 별도 줄이 아니라 캘린더 툴바 안(범례 옆)에 같은 줄로 넣는다 —
- *    `toolbarAction`으로 RBC 툴바 안까지 전달한다(`personal-calendar.tsx` 참고).
+ * ⚠️ "Todo 추가" 버튼은 오른쪽 **일정 카드 머리**에 산다 —
+ *    아래 `action` prop으로 오른쪽 일정 카드 머리에 넘긴다.
  * ⚠️ 오른쪽 날짜 상세조회 패널은 셀/이벤트 클릭마다 `selectedDate`만 바뀌고 새로 마운트되지
  *    않는다 — 같은 달 안에서 API를 다시 부를 필요가 없어서(이미 이번 달 이벤트를 다 들고 있다).
  * ⚠️ 캘린더 높이를 여기서 **미리 계산해 바깥 행에 명시적으로** 준다 — flex 스트레치에만 기대면
@@ -62,8 +61,6 @@ export function CalendarBoard({ initialEvents, month }: CalendarBoardProps) {
     return events.filter((event) => event.start <= dayEnd && event.end >= dayStart);
   }, [events, selectedDate]);
 
-  const calendarHeight = useMemo(() => getCalendarHeight(parseMonth(month)), [month]);
-
   /**
    * 완료 토글 — 개인 Todo만 다룬다(개인 액션은 다른 화면에서 처리, `calendar-event-list-item.tsx`
    * 가 애초에 액션엔 체크박스를 안 준다). 먼저 화면에 반영하고 서버 액션을 부른 뒤, 실패하면
@@ -82,33 +79,51 @@ export function CalendarBoard({ initialEvents, month }: CalendarBoardProps) {
           event.id === id ? { ...event, isCompleted: !event.isCompleted } : event,
         ),
       );
-      toast.error("완료 처리에 실패했어요");
+      toast.error("완료 처리하지 못했습니다");
     });
   }
 
   return (
     <div
-      className="flex flex-col gap-6 lg:h-[var(--calendar-total-height)] lg:flex-row lg:items-stretch"
-      style={{ "--calendar-total-height": calendarHeight } as React.CSSProperties}
+      /*
+        ⚠️ 곁 컬럼은 **360px 고정**이다(DESIGN §1). 230px은 규격에 없는 숫자였고, 그 폭에서는
+           일정 제목이 두 줄로 접혀 목록이 들쭉날쭉했다.
+        ⚠️ 카드 사이는 `gap-7`이다(§4 여백).
+        ⚠️ **높이를 달마다 계산하지 않는다.** 예전에는 한 행 높이를 5주 기준으로 고정하고
+           6주짜리 달에서 컨테이너를 늘렸는데, 그래서 달을 넘길 때마다 카드가 커졌다 작아지고
+           6주 달은 화면 밖으로 넘쳐 스크롤해야 했다 — 달력은 **한 눈에 보는 화면**이다.
+           지금은 남는 높이를 채우고 그 안에서 행이 나눠 갖는다(다른 달력 앱과 같은 방식).
+      */
+      className="flex min-h-0 flex-1 flex-col gap-7 lg:flex-row lg:items-stretch"
     >
-      <div className="min-w-0 flex-1">
+      {/*
+        ⚠️ 달력도 **카드 위에** 올린다(DESIGN §2). 표만 맨 배경에 떠 있으면 셸과 본문의
+           경계가 없어져, 사이드바 옆에 표 하나가 얹힌 그림처럼 보였다.
+      */}
+      <div className="border-border bg-card flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-2xl border p-7">
         <PersonalCalendarLoader
           events={events}
           month={month}
+          selectedDate={selectedDate}
           onSelectDate={setSelectedDate}
-          toolbarAction={
-            <AddTodoDialog
-              defaultDate={selectedDate}
-              onCreated={(created) => setEvents((prev) => [...prev, created])}
-            />
-          }
         />
       </div>
 
+      {/*
+        ⚠️ [Todo 추가]는 **이 카드**에 있다. 달력 툴바에 뒀을 때는 어느 날짜에 추가되는지가
+           안 보였다 — 고른 날짜를 머리에 띄우는 카드 안에 있어야 그 날짜에 붙는 일이라는
+           게 드러난다(`defaultDate`가 실제로 그 날짜다).
+      */}
       <CalendarDayDetailPanel
         selectedDate={selectedDate}
         events={dayEvents}
         onToggleCompletion={handleToggleCompletion}
+        action={
+          <AddTodoDialog
+            defaultDate={selectedDate}
+            onCreated={(created) => setEvents((prev) => [...prev, created])}
+          />
+        }
       />
     </div>
   );

@@ -31,8 +31,12 @@ export default async function CalendarPage({ searchParams }: CalendarPageProps) 
   const events = await getMonthEvents(month);
 
   return (
-    <main className="min-h-0 flex-1 overflow-y-auto px-8 py-7">
-      <div className="mx-auto flex max-w-[1440px] flex-col gap-4">
+    /*
+      ⚠️ **본문이 스크롤하지 않는다.** 달력은 한 달을 **한 눈에** 보는 화면이라, 아래로
+         내려서 마지막 주를 보게 되면 달력인 의미가 없다 — 남는 높이를 달력이 다 먹는다.
+    */
+    <main className="flex min-h-0 flex-1 flex-col overflow-hidden px-8 py-7">
+      <div className="mx-auto flex min-h-0 w-full max-w-[1440px] flex-1 flex-col gap-7">
         <CalendarBoard
           key={format(month, "yyyy-MM")}
           initialEvents={events}
