@@ -119,7 +119,7 @@ export function MeetingReviewView({ review }: MeetingReviewViewProps) {
         toast(
           result.status === "confirmed"
             ? `${result.createdCount}건의 액션을 분배했습니다`
-            : "이미 다른 곳에서 확정된 회의입니다",
+            : "이미 확정된 회의입니다",
         );
       } catch {
         // ⚠️ 다이얼로그를 열어 둔 채 원인을 적는다 — 토스트만 띄우면 몇 초 뒤엔 실패했던 사실이
@@ -236,7 +236,13 @@ export function MeetingReviewView({ review }: MeetingReviewViewProps) {
           if (!open) setConfirmError(null);
         }}
         title="액션 분배를 확정할까요?"
-        description={`총 ${visibleDrafts.length}건의 액션이 지금 화면에 보이는 담당자·일정 그대로 생성됩니다. 확정 뒤에는 이 화면을 다시 열 수 없습니다.`}
+        description={
+          <>
+            총 {visibleDrafts.length}건의 액션이 지금 화면에 보이는 담당자·일정 그대로 생성됩니다.
+            <br />
+            확정 뒤에는 이 화면을 다시 열 수 없습니다.
+          </>
+        }
         confirmLabel="확정"
         isPending={isPending}
         pendingLabel="확정 중"

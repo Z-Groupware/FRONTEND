@@ -7,6 +7,7 @@ import { useState, useTransition } from "react";
 import { toast } from "sonner";
 
 import { ConfirmDialog } from "@/components/common/confirm-dialog";
+import { FieldError } from "@/components/common/field-error";
 import { ResultDialog } from "@/components/common/result-dialog";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -148,13 +149,7 @@ export function AccountIssueDialog({
         {help}
       </span>
       {control}
-      <p
-        id={`account-${key}-error`}
-        role="alert"
-        className="text-destructive min-h-4 text-[12px] leading-4"
-      >
-        {errors[key]}
-      </p>
+      <FieldError id={`account-${key}-error`} message={errors[key]} reserveSpace />
     </div>
   );
 
@@ -179,7 +174,7 @@ export function AccountIssueDialog({
           setIsOpen(next);
           if (!next) reset();
         }}
-        title="계정 발급"
+        title="계정을 발급할까요?"
         description={
           <>
             {/* ⚠️ 문장마다 줄을 나눈다 — 한 덩어리로 두면 되돌릴 수 없다는 말을 지나친다 */}
@@ -415,14 +410,7 @@ export function AccountIssueDialog({
           )}
 
           {/* 칸과 무관한 실패는 칸 밑이 아니라 여기 — 그 칸이 틀렸다는 뜻이 아니다 */}
-          {message && (
-            <p
-              role="alert"
-              className="text-destructive text-left text-[12px] leading-4 break-keep sm:col-span-2"
-            >
-              {message}
-            </p>
-          )}
+          <FieldError message={message ?? undefined} className="sm:col-span-2" />
         </div>
       </ConfirmDialog>
 

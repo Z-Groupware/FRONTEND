@@ -69,7 +69,7 @@ describe("회의실 추가·수정", () => {
   it("Admin이 아니면 추가를 막는다(OWNER도 예외 없음)", async () => {
     const result = await createMeetingRoomAction({ errors: {} }, roomForm(VALID_ROOM_ENTRIES));
 
-    expect(result.errors.name).toBe("회의실을 추가할 권한이 없어요");
+    expect(result.errors.name).toBe("회의실을 추가할 권한이 없습니다");
     expect(result.room).toBeUndefined();
   });
 
@@ -100,7 +100,7 @@ describe("회의실 추가·수정", () => {
       roomForm({ ...VALID_ROOM_ENTRIES, id: "room-large" }),
     );
 
-    expect(result.errors.name).toBe("회의실을 수정할 권한이 없어요");
+    expect(result.errors.name).toBe("회의실을 수정할 권한이 없습니다");
   });
 
   it("없는 id를 수정하려 하면 오류를 돌려준다", async () => {
@@ -111,7 +111,7 @@ describe("회의실 추가·수정", () => {
       roomForm({ ...VALID_ROOM_ENTRIES, id: "존재하지-않음" }),
     );
 
-    expect(result.errors.name).toBe("수정할 회의실을 찾을 수 없어요");
+    expect(result.errors.name).toBe("수정할 회의실을 찾을 수 없습니다");
   });
 });
 
@@ -160,7 +160,7 @@ describe("회의실 예약 생성 (Owner 개설 = 프로젝트 회의)", () => {
       form({ ...VALID_ENTRIES, roomId: "room-video", date: "2026-08-12", startTime: "10:00" }),
     );
 
-    expect(second.errors.roomId).toBe("그 시간에는 이미 예약된 회의실이에요");
+    expect(second.errors.roomId).toBe("그 시간에는 이미 예약된 회의실입니다");
     expect(second.created).toBeUndefined();
   });
 
@@ -234,7 +234,7 @@ describe("회의실 예약 생성 (Owner 개설 = 프로젝트 회의)", () => {
     );
 
     expect(result.errors.parentTeamActionId).toBe(
-      "Owner가 개설하는 회의에는 상위 팀 액션을 지정할 수 없어요",
+      "Owner가 개설하는 회의에는 상위 팀 액션을 지정할 수 없습니다",
     );
     expect(result.created).toBeUndefined();
   });
@@ -245,7 +245,7 @@ describe("회의실 예약 생성 (Owner 개설 = 프로젝트 회의)", () => {
       form({ ...VALID_ENTRIES, roomId: "room-does-not-exist", date: "2026-08-15" }),
     );
 
-    expect(result.errors.roomId).toBe("존재하지 않는 회의실이에요");
+    expect(result.errors.roomId).toBe("존재하지 않는 회의실입니다");
     expect(result.created).toBeUndefined();
   });
 
@@ -255,7 +255,7 @@ describe("회의실 예약 생성 (Owner 개설 = 프로젝트 회의)", () => {
       form({ ...VALID_ENTRIES, projectId: "999", date: "2026-08-15" }),
     );
 
-    expect(result.errors.projectId).toBe("존재하지 않는 프로젝트예요");
+    expect(result.errors.projectId).toBe("존재하지 않는 프로젝트입니다");
     expect(result.created).toBeUndefined();
   });
 
@@ -265,7 +265,7 @@ describe("회의실 예약 생성 (Owner 개설 = 프로젝트 회의)", () => {
       form({ ...VALID_ENTRIES, date: "2026-08-15" }, [9999]),
     );
 
-    expect(result.errors.attendeeIds).toBe("존재하지 않는 참석자가 있어요");
+    expect(result.errors.attendeeIds).toBe("존재하지 않는 참석자가 있습니다");
     expect(result.created).toBeUndefined();
   });
 
@@ -280,7 +280,7 @@ describe("회의실 예약 생성 (Owner 개설 = 프로젝트 회의)", () => {
 
     const result = await createRoomReservationAction({ errors: {} }, data);
 
-    expect(result.errors.attendeeIds).toBe("참석자 값이 올바르지 않아요");
+    expect(result.errors.attendeeIds).toBe("참석자 값이 올바르지 않습니다");
     expect(result.created).toBeUndefined();
   });
 });
@@ -328,7 +328,7 @@ describe("회의실 예약 생성 (Leader 개설 = 팀 액션 회의)", () => {
       form({ ...VALID_ENTRIES, date: "2026-08-16", parentTeamActionId: "3" }),
     );
 
-    expect(result.errors.parentTeamActionId).toBe("존재하지 않는 상위 팀 액션이에요");
+    expect(result.errors.parentTeamActionId).toBe("존재하지 않는 상위 팀 액션입니다");
     expect(result.created).toBeUndefined();
   });
 
@@ -339,7 +339,7 @@ describe("회의실 예약 생성 (Leader 개설 = 팀 액션 회의)", () => {
       form({ ...VALID_ENTRIES, date: "2026-08-16", parentTeamActionId: "7" }),
     );
 
-    expect(result.errors.parentTeamActionId).toBe("존재하지 않는 상위 팀 액션이에요");
+    expect(result.errors.parentTeamActionId).toBe("존재하지 않는 상위 팀 액션입니다");
     expect(result.created).toBeUndefined();
   });
 });

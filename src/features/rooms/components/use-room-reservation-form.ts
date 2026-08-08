@@ -51,7 +51,7 @@ export function useRoomReservationForm({
       onCreated(state.created);
       onOpenChange(false);
       setForm(EMPTY_FORM);
-      toast.success(`'${state.created.title}' 회의실을 예약했습니다`);
+      toast.success("회의실을 예약했습니다");
     }
   }, [state.created, onCreated, onOpenChange]);
 

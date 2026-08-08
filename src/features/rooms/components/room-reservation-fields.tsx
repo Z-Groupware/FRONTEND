@@ -2,6 +2,7 @@
 
 import type { Dispatch, SetStateAction } from "react";
 
+import { FieldError } from "@/components/common/field-error";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -67,7 +68,7 @@ export function RoomReservationFields({
           placeholder="회의 제목을 입력하세요"
           aria-invalid={Boolean(errors.title)}
         />
-        {errors.title && <p className="text-destructive text-xs">{errors.title}</p>}
+        <FieldError reserveSpace message={errors.title} />
       </div>
 
       <div className="flex flex-col gap-1.5">
@@ -78,7 +79,7 @@ export function RoomReservationFields({
           onChange={(roomId) => setForm((prev) => ({ ...prev, roomId }))}
           error={Boolean(errors.roomId)}
         />
-        {errors.roomId && <p className="text-destructive text-xs">{errors.roomId}</p>}
+        <FieldError reserveSpace message={errors.roomId} />
       </div>
 
       <div className="flex flex-col gap-1.5">
@@ -105,7 +106,7 @@ export function RoomReservationFields({
             ))}
           </SelectContent>
         </Select>
-        {errors.projectId && <p className="text-destructive text-xs">{errors.projectId}</p>}
+        <FieldError reserveSpace message={errors.projectId} />
       </div>
 
       {showParentTeamAction && (
@@ -136,7 +137,7 @@ export function RoomReservationFields({
             </SelectContent>
           </Select>
           {errors.parentTeamActionId && (
-            <p className="text-destructive text-xs">{errors.parentTeamActionId}</p>
+            <FieldError reserveSpace message={errors.parentTeamActionId} />
           )}
         </div>
       )}

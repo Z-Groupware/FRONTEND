@@ -3,10 +3,11 @@
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
 import { Bell } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
 
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ConfirmDialog } from "@/components/common/confirm-dialog";
+import { FieldError } from "@/components/common/field-error";
 
 import { RESERVATION_DURATION_MINUTES } from "../constants";
 import type {
@@ -59,28 +60,27 @@ function SlotSummary({ slotStart }: { slotStart: Date }) {
 }
 
 /**
- * 취소·제출 버튼 — `useFormStatus`는 `<form>`의 **자손** 컴포넌트에서만 호출할 수 있어서
- * `RoomReservationDialog`(그 `<form>`을 직접 그리는 컴포넌트) 안이 아니라 여기로 뺐다.
+ * 제출 중인지를 **창**에 알린다.
+ *
+ * ⚠️ `useFormStatus`는 `<form>`의 **자손**에서만 부를 수 있어서, 그 `<form>`을 그리는
+ *    컴포넌트가 직접 못 읽는다 — 자식으로 한 겹 내려와 렌더 없이 값만 올려 보낸다.
+ * ⚠️ 버튼은 여기서 안 그린다. 창(`ConfirmDialog`)이 그리는 게 다른 모달과 같은 모양이다.
  */
-function DialogActions({ onCancel }: { onCancel: () => void }) {
+function PendingReporter({ onChange }: { onChange: (isPending: boolean) => void }) {
   const { pending } = useFormStatus();
 
-  return (
-    <div className="flex shrink-0 gap-2">
-      <Button type="button" variant="outline" disabled={pending} onClick={onCancel}>
-        취소
-      </Button>
-      <Button type="submit" variant="ink" disabled={pending}>
-        {pending ? "예약 중" : "즉시 예약"}
-      </Button>
-    </div>
-  );
+  useEffect(() => {
+    onChange(pending);
+  }, [pending, onChange]);
+
+  return null;
 }
 
 /**
  * 회의실 예약 모달 — `/app/rooms` 예약이 유일한 회의 개설 진입점이다(CLAUDE.md §라우트 그룹).
- * 왼쪽 열(제목·회의실·프로젝트·상위 팀 액션·회의 주제)과 오른쪽 열(참석자)로 나눈 2단 레이아웃
- * (디자인 반영, 2026-08-07) — 좁은 화면에서는 1열로 쌓이고 `sm` 이상에서만 2열이 된다.
+ * ⚠️ **`ConfirmDialog`를 쓴다**(2026-08-08 정리). 전에는 720px 2단(왼쪽 입력 + 오른쪽 참석자)
+ *    이었는데, 폼 창마다 폭이 갈려(420·480·640·720) 한 화면에서 창을 두 번 열면 상자가
+ *    들썩였다 — 폭은 420 하나로 두고 **칸을 세로로 쌓는다.** 세로는 창이 알아서 스크롤한다.
  * 폼 상태는 `useRoomReservationForm`, 왼쪽 열 필드는 `RoomReservationFields`로 뺐다
  * (CLAUDE.md §폴더·네이밍: 200줄↑ 분리·로직=커스텀훅) — 여기는 모달 뼈대만 조립한다.
  * ⚠️ **실제 `<form action={formAction}>`으로 제출한다.** `title`·회의 주제·참석자는 전부
@@ -107,64 +107,71 @@ export function RoomReservationDialog({
     onOpenChange,
   });
 
+  const formRef = useRef<HTMLFormElement>(null);
+  const [isPending, setIsPending] = useState(false);
+  // ⚠️ `PendingReporter`의 effect 의존성이라 참조를 고정한다 — 안 그러면 매 렌더 다시 돈다
+  const handlePendingChange = useCallback((next: boolean) => setIsPending(next), []);
+
   return (
-    <Dialog open={slotStart !== null} onOpenChange={handleOpenChange}>
-      <DialogContent className="gap-0 p-0 sm:max-w-[720px]">
-        <DialogHeader className="border-border border-b px-6 py-4">
-          <DialogTitle>회의실 예약</DialogTitle>
-        </DialogHeader>
+    <ConfirmDialog
+      isOpen={slotStart !== null}
+      onOpenChange={(next) => {
+        // 제출 중엔 Esc·바깥 클릭으로 안 닫는다 — 요청은 계속 가는데 화면만 사라진다
+        if (!next && isPending) return;
+        handleOpenChange(next);
+      }}
+      title="이 시간에 회의를 잡을까요?"
+      description="예약하면 회의가 함께 만들어집니다."
+      confirmLabel="예약"
+      pendingLabel="예약 중"
+      isPending={isPending}
+      onConfirm={() => formRef.current?.requestSubmit()}
+    >
+      <form ref={formRef} action={formAction} className="text-left">
+        <PendingReporter onChange={handlePendingChange} />
+        <input type="hidden" name="date" value={slotStart ? format(slotStart, "yyyy-MM-dd") : ""} />
+        <input type="hidden" name="startTime" value={slotStart ? format(slotStart, "HH:mm") : ""} />
+        <input type="hidden" name="roomId" value={form.roomId} />
+        <input type="hidden" name="projectId" value={form.projectId} />
+        <input type="hidden" name="parentTeamActionId" value={form.parentTeamActionId} />
 
-        <form action={formAction}>
-          <input
-            type="hidden"
-            name="date"
-            value={slotStart ? format(slotStart, "yyyy-MM-dd") : ""}
+        {/*
+          ⚠️ **한 열로 쌓는다.** 참석자 고르는 칸만 오른쪽에 떼어 두었었는데, 그러려면 창이
+             720이어야 했다 — 참석자는 고르고 나면 칩으로 접히는 자리라 계속 곁에 둘 필요가 없다.
+          ⚠️ 창 자체가 화면 높이에 맞춰 스크롤하므로 여기서 `max-h`를 따로 잡지 않는다.
+        */}
+        <div className="flex flex-col gap-4">
+          {slotStart && <SlotSummary slotStart={slotStart} />}
+
+          <RoomReservationFields
+            form={form}
+            setForm={setForm}
+            errors={state.errors}
+            rooms={rooms}
+            projects={projects}
+            showParentTeamAction={showParentTeamAction}
+            teamActions={teamActions}
           />
-          <input
-            type="hidden"
-            name="startTime"
-            value={slotStart ? format(slotStart, "HH:mm") : ""}
-          />
-          <input type="hidden" name="roomId" value={form.roomId} />
-          <input type="hidden" name="projectId" value={form.projectId} />
-          <input type="hidden" name="parentTeamActionId" value={form.parentTeamActionId} />
 
-          <div className="flex max-h-[70vh] flex-col gap-4 overflow-y-auto px-6 py-4">
-            {slotStart && <SlotSummary slotStart={slotStart} />}
-
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-[1fr_260px]">
-              <RoomReservationFields
-                form={form}
-                setForm={setForm}
-                errors={state.errors}
-                rooms={rooms}
-                projects={projects}
-                showParentTeamAction={showParentTeamAction}
-                teamActions={teamActions}
-              />
-
-              <div className="flex flex-col gap-1.5">
-                <RoomAttendeePicker
-                  members={members}
-                  selectedIds={form.attendeeIds}
-                  onChange={(attendeeIds) => setForm((prev) => ({ ...prev, attendeeIds }))}
-                />
-                {state.errors.attendeeIds && (
-                  <p className="text-destructive text-xs">{state.errors.attendeeIds}</p>
-                )}
-              </div>
-            </div>
+          <div className="flex flex-col gap-1.5">
+            <RoomAttendeePicker
+              members={members}
+              selectedIds={form.attendeeIds}
+              onChange={(attendeeIds) => setForm((prev) => ({ ...prev, attendeeIds }))}
+            />
+            {state.errors.attendeeIds && (
+              <FieldError reserveSpace message={state.errors.attendeeIds} />
+            )}
           </div>
 
-          <div className="border-border flex items-center justify-between gap-4 border-t px-6 py-4">
-            <p className="text-muted-foreground flex min-w-0 items-center gap-1.5 text-[11px] break-keep">
-              <Bell className="size-3.5 shrink-0" aria-hidden />
-              예약 확정·시작 10분 전 알림 발송 기능은 아직 준비 중입니다.
-            </p>
-            <DialogActions onCancel={() => handleOpenChange(false)} />
-          </div>
-        </form>
-      </DialogContent>
-    </Dialog>
+          <p className="text-muted-foreground flex items-start gap-1.5 text-[11px] leading-4 break-keep">
+            <span className="flex h-4 shrink-0 items-center">
+              <Bell className="size-3.5" aria-hidden />
+            </span>
+            예약 확정·시작 10분 전 알림 발송 기능은 아직 준비 중입니다.
+          </p>
+        </div>
+      </form>
+    </ConfirmDialog>
   );
 }

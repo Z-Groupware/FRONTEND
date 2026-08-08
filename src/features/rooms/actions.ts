@@ -85,14 +85,14 @@ export async function createRoomReservationAction(
   // ⚠️ 화면 select·피커가 이미 실제 목록에서만 고르게 해도, 폼은 조작될 수 있다
   //    (§권한: 화면 숨김은 UX일 뿐 보안이 아니다) — 참조값이 실제로 존재하는지 서버에서 다시 본다.
   if (!findMockRoom(draft.roomId)) {
-    return { errors: { roomId: "존재하지 않는 회의실이에요" } };
+    return { errors: { roomId: "존재하지 않는 회의실입니다" } };
   }
   const project = TOP_LEVEL_PROJECTS.find((item) => String(item.id) === draft.projectId);
   if (!project) {
-    return { errors: { projectId: "존재하지 않는 프로젝트예요" } };
+    return { errors: { projectId: "존재하지 않는 프로젝트입니다" } };
   }
   if (draft.attendeeIds.some((id) => !findMockMember(id))) {
-    return { errors: { attendeeIds: "존재하지 않는 참석자가 있어요" } };
+    return { errors: { attendeeIds: "존재하지 않는 참석자가 있습니다" } };
   }
   // ⚠️ Owner가 아니면 "상위 팀 액션"이 필수인데, 그 값이 진짜 이 프로젝트 소속이고 **자기
   //    팀**에 하달된 게 맞는지까지 다시 본다 — 화면이 이미 걸러 보여줘도, 폼은 조작될 수 있어서
@@ -102,7 +102,7 @@ export async function createRoomReservationAction(
       (item) => item.id === draft.parentTeamActionId,
     );
     if (!teamAction || teamAction.team !== actor.teamName) {
-      return { errors: { parentTeamActionId: "존재하지 않는 상위 팀 액션이에요" } };
+      return { errors: { parentTeamActionId: "존재하지 않는 상위 팀 액션입니다" } };
     }
   }
 
@@ -111,7 +111,7 @@ export async function createRoomReservationAction(
     (reservation) => reservation.start < end && reservation.end > start,
   );
   if (overlapping) {
-    return { errors: { roomId: "그 시간에는 이미 예약된 회의실이에요" } };
+    return { errors: { roomId: "그 시간에는 이미 예약된 회의실입니다" } };
   }
 
   const created = addMockReservation(draft, actor);
@@ -145,7 +145,7 @@ export async function createMeetingRoomAction(
   formData: FormData,
 ): Promise<MeetingRoomFormState> {
   if (!canManageRooms(getMockActor())) {
-    return { errors: { name: "회의실을 추가할 권한이 없어요" } };
+    return { errors: { name: "회의실을 추가할 권한이 없습니다" } };
   }
 
   const draft = readRoomDraft(formData);
@@ -169,7 +169,7 @@ export async function updateMeetingRoomAction(
   formData: FormData,
 ): Promise<MeetingRoomFormState> {
   if (!canManageRooms(getMockActor())) {
-    return { errors: { name: "회의실을 수정할 권한이 없어요" } };
+    return { errors: { name: "회의실을 수정할 권한이 없습니다" } };
   }
 
   const id = String(formData.get("id") ?? "");
@@ -183,7 +183,7 @@ export async function updateMeetingRoomAction(
   }
 
   const room = updateMockRoom(id, draft);
-  if (!room) return { errors: { name: "수정할 회의실을 찾을 수 없어요" } };
+  if (!room) return { errors: { name: "수정할 회의실을 찾을 수 없습니다" } };
 
   revalidatePath(MANAGE_ROOMS_PATH);
   revalidatePath(ROOMS_PATH);

@@ -33,7 +33,13 @@ export function NoticeMailDialog({
       isOpen={target !== null}
       onOpenChange={(open) => !open && onCancel()}
       title="안내 메일을 보낼까요?"
-      description={`${target?.companyName ?? ""} 담당자(${target?.ownerEmail ?? ""})에게 미납 안내 메일이 갑니다.`}
+      description={
+        <>
+          {target?.companyName} 담당자에게 미납 안내 메일이 갑니다.
+          <br />
+          {target?.ownerEmail}
+        </>
+      }
       confirmLabel="발송"
       isPending={isPending}
       pendingLabel="발송 중"

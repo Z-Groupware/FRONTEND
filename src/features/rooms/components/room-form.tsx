@@ -2,6 +2,7 @@
 
 import { useActionState, useEffect, useRef, useState } from "react";
 
+import { FieldError } from "@/components/common/field-error";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,6 +19,16 @@ interface RoomFormProps {
   onCancel: () => void;
   onSuccess: (room: MeetingRoom) => void;
   onPendingChange?: (isPending: boolean) => void;
+  /**
+   * 창이 제출을 부를 수 있게 내어 주는 `<form>` 참조.
+   *
+   * ⚠️ 이 폼은 `ConfirmDialog` 안에서 쓰인다(2026-08-08 정리). 실행 버튼은 **창**이 그리므로
+   *    폼은 버튼을 감추고(`hideActions`), 창이 `formRef.current?.requestSubmit()`으로 제출을 건다 —
+   *    `useActionState`는 폼이 그대로 들고 있어야 검증 오류가 칸 밑에 남는다.
+   */
+  formRef?: React.RefObject<HTMLFormElement | null>;
+  /** 창이 버튼을 그릴 때 켠다 — 폼 안의 [취소]/[저장]을 감춘다 */
+  hideActions?: boolean;
 }
 
 /**
@@ -31,17 +42,14 @@ export function RoomForm({
   onCancel,
   onSuccess,
   onPendingChange,
+  formRef,
+  hideActions,
 }: RoomFormProps) {
   const [state, formAction, isPending] = useActionState(action, { errors: {} });
   const [name, setName] = useState(room?.name ?? "");
   const [location, setLocation] = useState(room?.location ?? "");
   const [openTime, setOpenTime] = useState(room?.openTime ?? "");
   const [closeTime, setCloseTime] = useState(room?.closeTime ?? "");
-  const canSubmit =
-    name.trim().length > 0 &&
-    location.trim().length > 0 &&
-    openTime.length > 0 &&
-    closeTime.length > 0;
   const handledRoomId = useRef<string | null>(null);
 
   useEffect(() => {
@@ -56,7 +64,7 @@ export function RoomForm({
   }, [isPending, onPendingChange]);
 
   return (
-    <form action={formAction} className="flex flex-col gap-4">
+    <form ref={formRef} action={formAction} className="flex flex-col gap-4 text-left">
       {room && <input type="hidden" name="id" value={room.id} />}
 
       <div className="flex flex-col gap-1.5">
@@ -69,7 +77,7 @@ export function RoomForm({
           placeholder="예: 대회의실"
           aria-invalid={Boolean(state.errors.name)}
         />
-        {state.errors.name && <p className="text-destructive text-xs">{state.errors.name}</p>}
+        <FieldError reserveSpace message={state.errors.name} />
       </div>
 
       <div className="flex flex-col gap-1.5">
@@ -82,9 +90,7 @@ export function RoomForm({
           placeholder="예: 3층 A동"
           aria-invalid={Boolean(state.errors.location)}
         />
-        {state.errors.location && (
-          <p className="text-destructive text-xs">{state.errors.location}</p>
-        )}
+        {state.errors.location && <FieldError reserveSpace message={state.errors.location} />}
       </div>
 
       <div className="grid grid-cols-2 gap-3">
@@ -98,9 +104,7 @@ export function RoomForm({
             onChange={(event) => setOpenTime(event.target.value)}
             aria-invalid={Boolean(state.errors.openTime)}
           />
-          {state.errors.openTime && (
-            <p className="text-destructive text-xs">{state.errors.openTime}</p>
-          )}
+          {state.errors.openTime && <FieldError reserveSpace message={state.errors.openTime} />}
         </div>
 
         <div className="flex flex-col gap-1.5">
@@ -113,20 +117,20 @@ export function RoomForm({
             onChange={(event) => setCloseTime(event.target.value)}
             aria-invalid={Boolean(state.errors.closeTime)}
           />
-          {state.errors.closeTime && (
-            <p className="text-destructive text-xs">{state.errors.closeTime}</p>
-          )}
+          {state.errors.closeTime && <FieldError reserveSpace message={state.errors.closeTime} />}
         </div>
       </div>
 
-      <div className="flex justify-end gap-2">
-        <Button type="button" variant="outline" size="sm" disabled={isPending} onClick={onCancel}>
-          취소
-        </Button>
-        <Button type="submit" size="sm" variant="ink" disabled={isPending || !canSubmit}>
-          {isPending ? "저장 중…" : submitLabel}
-        </Button>
-      </div>
+      {!hideActions && (
+        <div className="flex justify-end gap-2">
+          <Button type="button" variant="outline" size="sm" disabled={isPending} onClick={onCancel}>
+            취소
+          </Button>
+          <Button type="submit" size="sm" variant="ink" disabled={isPending}>
+            {isPending ? "저장 중…" : submitLabel}
+          </Button>
+        </div>
+      )}
     </form>
   );
 }

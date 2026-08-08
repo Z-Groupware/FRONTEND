@@ -2,6 +2,7 @@
 
 import { Plus, X } from "lucide-react";
 
+import { FieldError } from "@/components/common/field-error";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -73,7 +74,7 @@ export function MeetingTopicList({ topics, onChange, error }: MeetingTopicListPr
           </div>
         ))}
       </div>
-      {error && <p className="text-destructive text-xs">{error}</p>}
+      <FieldError reserveSpace message={error} />
       <Button
         type="button"
         variant="link"
