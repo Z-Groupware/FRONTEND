@@ -31,7 +31,7 @@ describe("validateProjectDraft — 날짜", () => {
 
   it("마감 기한이 시작일보다 앞서면 막는다", () => {
     const errors = validateProjectDraft(draft({ startDate: "2026-09-01", dueDate: "2026-08-01" }));
-    expect(errors.dueDate).toBe("마감 기한은 시작일보다 앞설 수 없어요");
+    expect(errors.dueDate).toBe("마감 기한은 시작일보다 앞설 수 없습니다");
   });
 
   it("시작일 자체가 잘못됐으면 순서 비교 오류를 덧씌우지 않는다", () => {
