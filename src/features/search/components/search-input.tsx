@@ -2,7 +2,7 @@
 
 import { Search, X } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { Input } from "@/components/ui/input";
 
@@ -10,6 +10,10 @@ import { recordSearchAction } from "../actions";
 
 /** 적기를 멈춘 뒤 이만큼 지나면 보낸다 — 짧으면 요청이 줄줄이 나가고 길면 굼떠 보인다 */
 const SEARCH_DEBOUNCE_MS = 300;
+
+interface SearchInputProps {
+  keyword: string;
+}
 
 /**
  * 검색창 — **상호작용 잎사귀만** 클라이언트다(§핵심 4원칙 1).
@@ -19,11 +23,14 @@ const SEARCH_DEBOUNCE_MS = 300;
  * ⚠️ **적는 동안 기록하지 않는다.** 한 글자마다 최근 검색어를 남기면 "ㅈ"·"제"·"제품"이
  *    전부 기록된다 — 잠깐 멈추면 그때 주소를 바꾸고, 그때 딱 한 번만 기록한다.
  */
-export function SearchInput({ keyword }: { keyword: string }) {
+export function SearchInput({ keyword }: SearchInputProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
   const [value, setValue] = useState(keyword);
+  /* 마지막으로 `value`를 맞춘 주소값 — 아래 렌더 중 동기화가 한 번만 일어나게 지키는 표시다 */
+  const [syncedKeyword, setSyncedKeyword] = useState(keyword);
+  const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const commit = useCallback(
     (next: string) => {
@@ -38,10 +45,26 @@ export function SearchInput({ keyword }: { keyword: string }) {
     [router, searchParams],
   );
 
+  /*
+    ⚠️ **주소가 바깥에서 바뀌면 입력칸도 맞춘다 — 렌더 중에, 이펙트가 아니다**
+       (react.dev "Adjusting some state when a prop changes"). 최근 검색어 칩·탭처럼
+       `Link`로 `q`가 바뀌는 경로가 따로 있다 — 그때 입력칸이 옛 글자를 그대로 들고 있으면
+       주소와 화면이 다른 말을 한다.
+    ⚠️ 여기서 타이머를 직접 건드리지 않는다(ref는 렌더 중에 못 읽는다) — `value`가 이
+       렌더에서 `keyword`로 맞춰지면 아래 디바운스 이펙트가 다시 돌면서 **그 이펙트의
+       클린업이** 밀린 타이머를 알아서 지운다.
+  */
+  if (keyword !== syncedKeyword) {
+    setSyncedKeyword(keyword);
+    setValue(keyword);
+  }
+
   useEffect(() => {
     if (value.trim() === keyword.trim()) return;
-    const timer = setTimeout(() => commit(value), SEARCH_DEBOUNCE_MS);
-    return () => clearTimeout(timer);
+    debounceTimer.current = setTimeout(() => commit(value), SEARCH_DEBOUNCE_MS);
+    return () => {
+      if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    };
   }, [value, keyword, commit]);
 
   return (

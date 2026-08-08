@@ -3,8 +3,12 @@ import { BrowsePeople, BrowseProjects } from "./browse-lists";
 import { RecentSearchChips } from "./recent-search-chips";
 import { RecentlyViewedGrid } from "./recently-viewed-grid";
 
+interface SearchLandingProps {
+  home: SearchHome;
+}
+
 /** 검색어가 없을 때의 화면 — 최근 검색어 → 최근 본 항목 → 둘러보기 순서(CLAUDE.md §화면은 위에서 아래로) */
-export function SearchLanding({ home }: { home: SearchHome }) {
+export function SearchLanding({ home }: SearchLandingProps) {
   const isEmpty =
     home.recentSearches.length === 0 &&
     home.recentlyViewed.length === 0 &&

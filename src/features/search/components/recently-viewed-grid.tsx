@@ -5,6 +5,10 @@ import { formatDate } from "@/lib/date";
 import type { SearchResultItem } from "../types";
 import { KindBadge } from "./kind-badge";
 
+interface RecentlyViewedGridProps {
+  items: SearchResultItem[];
+}
+
 /**
  * 최근 본 항목 — 2열 카드. 순수 표시(+ 프로젝트만 이동)라 서버에서 그린다.
  *
@@ -12,7 +16,7 @@ import { KindBadge } from "./kind-badge";
  *    실제 회의·액션 상세 화면의 id 체계와 안 이어져 있다 — 안 되는 이동을 만드느니
  *    지금은 정보만 보여준다(§명세에 없는 기능은 안 만든다). 연동되면 실제 id로 이어 붙인다.
  */
-export function RecentlyViewedGrid({ items }: { items: SearchResultItem[] }) {
+export function RecentlyViewedGrid({ items }: RecentlyViewedGridProps) {
   if (items.length === 0) return null;
 
   return (
@@ -51,7 +55,11 @@ function title(item: SearchResultItem): string {
   }
 }
 
-function RecentlyViewedCard({ item }: { item: SearchResultItem }) {
+interface RecentlyViewedCardProps {
+  item: SearchResultItem;
+}
+
+function RecentlyViewedCard({ item }: RecentlyViewedCardProps) {
   const inner = (
     <>
       <KindBadge kind={item.kind} />

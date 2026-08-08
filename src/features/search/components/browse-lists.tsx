@@ -5,8 +5,14 @@ import { pickPaletteColor } from "@/lib/palette";
 
 import type { PersonBrowseItem, ProjectBrowseItem } from "../types";
 
+interface BrowseProjectsProps {
+  projects: ProjectBrowseItem[];
+}
+
 /** 검색어 없이 프로젝트를 훑어보는 목록 — 순수 이동이라 서버에서 그린다 */
-export function BrowseProjects({ projects }: { projects: ProjectBrowseItem[] }) {
+export function BrowseProjects({ projects }: BrowseProjectsProps) {
+  if (projects.length === 0) return null;
+
   return (
     <div>
       <h2 className="text-muted-foreground mb-3 text-[12px] leading-4">프로젝트로 찾기</h2>
@@ -37,11 +43,17 @@ export function BrowseProjects({ projects }: { projects: ProjectBrowseItem[] }) 
   );
 }
 
+interface BrowsePeopleProps {
+  people: PersonBrowseItem[];
+}
+
 /**
  * 검색어 없이 사람을 훑어보는 목록.
  * ⚠️ **구성원 상세 화면이 없다** — 눌러도 갈 곳이 없어 링크로 만들지 않는다(§명세에 없는 기능은 안 만든다).
  */
-export function BrowsePeople({ people }: { people: PersonBrowseItem[] }) {
+export function BrowsePeople({ people }: BrowsePeopleProps) {
+  if (people.length === 0) return null;
+
   return (
     <div>
       <h2 className="text-muted-foreground mb-3 text-[12px] leading-4">사람으로 찾기</h2>

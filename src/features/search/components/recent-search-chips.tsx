@@ -3,8 +3,12 @@ import Link from "next/link";
 
 import type { RecentSearchEntry } from "../types";
 
+interface RecentSearchChipsProps {
+  entries: RecentSearchEntry[];
+}
+
 /** 최근 검색어 — 누르면 그 검색어로 바로 찾는다. 순수 이동이라 서버에서 그린다. */
-export function RecentSearchChips({ entries }: { entries: RecentSearchEntry[] }) {
+export function RecentSearchChips({ entries }: RecentSearchChipsProps) {
   if (entries.length === 0) return null;
 
   return (

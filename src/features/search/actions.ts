@@ -1,5 +1,7 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
+
 import { isMock } from "@/mocks/config";
 
 import { addMockRecentSearch } from "./mock/recent-searches";
@@ -16,6 +18,8 @@ export async function recordSearchAction(keyword: string): Promise<void> {
 
   if (isMock) {
     addMockRecentSearch(trimmed, new Date().toISOString());
+    // 랜딩(검색어 없음)이 최근 검색어를 보여주는 화면이라, 그 경로를 다시 검증하게 한다.
+    revalidatePath("/app/search");
     return;
   }
 

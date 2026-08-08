@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { AUTHORITY_BADGE_CLASS, AUTHORITY_LABEL } from "@/constants/authority";
 import { formatDate } from "@/lib/date";
 import { pickPaletteColor } from "@/lib/palette";
@@ -9,10 +11,22 @@ import { MatchText } from "./match-text";
 
 const ROW_SHAPE = "flex items-start gap-3 px-6 py-4";
 
-/** 결과 한 줄 — 종류마다 제목·발췌·보조 정보가 달라 안에서 갈라 그린다. 순수 표시라 서버에서 그린다. */
-export function SearchResultRow({ item, keyword }: { item: SearchResultItem; keyword: string }) {
-  return (
-    <li className={cn(ROW_SHAPE, "border-border not-first:border-t")}>
+interface SearchResultRowProps {
+  item: SearchResultItem;
+  keyword: string;
+}
+
+/**
+ * 결과 한 줄 — 종류마다 제목·발췌·보조 정보가 달라 안에서 갈라 그린다. 순수 표시(+ 프로젝트만
+ * 이동)라 서버에서 그린다.
+ *
+ * ⚠️ **프로젝트만 링크다.** 회의·액션 상세는 이 검색 목이 별도로 부여한 값이라 실제 상세
+ *    화면의 id 체계와 안 이어져 있다(`recently-viewed-grid.tsx`와 같은 이유) — 프로젝트는
+ *    실제 프로젝트 id를 그대로 쓰므로 `/app/projects/:id`가 유효하다.
+ */
+export function SearchResultRow({ item, keyword }: SearchResultRowProps) {
+  const content = (
+    <>
       <KindBadge kind={item.kind} />
 
       <div className="min-w-0 flex-1">
@@ -21,12 +35,12 @@ export function SearchResultRow({ item, keyword }: { item: SearchResultItem; key
         </p>
         {rowSnippet(item) && (
           <p className="text-muted-foreground mt-1 truncate text-[12px] leading-4">
-            {rowSnippet(item)}
+            <MatchText text={rowSnippet(item) ?? ""} keyword={keyword} />
           </p>
         )}
         <p className="text-muted-foreground/70 mt-1.5 flex items-center gap-1.5 text-[11px] leading-4">
           <ProjectDot item={item} />
-          {rowMeta(item)}
+          <MatchText text={rowMeta(item)} keyword={keyword} />
         </p>
       </div>
 
@@ -40,8 +54,23 @@ export function SearchResultRow({ item, keyword }: { item: SearchResultItem; key
           {AUTHORITY_LABEL[item.authority]}
         </span>
       )}
-    </li>
+    </>
   );
+
+  if (item.kind === "PROJECT") {
+    return (
+      <li className="border-border not-first:border-t">
+        <Link
+          href={`/app/projects/${item.id}`}
+          className={cn(ROW_SHAPE, "hover:bg-foreground/[0.03] transition-colors")}
+        >
+          {content}
+        </Link>
+      </li>
+    );
+  }
+
+  return <li className={cn(ROW_SHAPE, "border-border not-first:border-t")}>{content}</li>;
 }
 
 function ProjectDot({ item }: { item: SearchResultItem }) {

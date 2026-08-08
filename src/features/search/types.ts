@@ -76,7 +76,10 @@ export interface SearchCategoryCounts {
 /** 검색 결과 화면이 한 번에 받는 것 */
 export interface SearchResults {
   keyword: string;
-  /** 카테고리·프로젝트·기간 필터와 무관하게 **키워드만으로** 센 전체 건수 — 탭 숫자용 */
+  /**
+   * 탭 숫자용 건수 — **프로젝트·기간 필터는 반영하고 카테고리(탭)만 무시하고** 센다.
+   * 그래서 탭을 눌러도 숫자 자체는 안 흔들리지만, 프로젝트·기간을 바꾸면 같이 바뀐다.
+   */
   counts: SearchCategoryCounts;
   /** 지금 고른 탭·필터로 걸러진 목록 */
   items: SearchResultItem[];
