@@ -48,10 +48,7 @@ export function RoomCreateDialog() {
       >
         <RoomForm
           action={createMeetingRoomAction}
-          submitLabel="추가"
           formRef={formRef}
-          hideActions
-          onCancel={() => setOpen(false)}
           onPendingChange={setIsSubmitting}
           onSuccess={() => {
             setOpen(false);

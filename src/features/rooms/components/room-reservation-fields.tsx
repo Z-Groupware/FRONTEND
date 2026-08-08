@@ -136,9 +136,7 @@ export function RoomReservationFields({
               ))}
             </SelectContent>
           </Select>
-          {errors.parentTeamActionId && (
-            <FieldError reserveSpace message={errors.parentTeamActionId} />
-          )}
+          <FieldError reserveSpace message={errors.parentTeamActionId} />
         </div>
       )}
 

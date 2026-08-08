@@ -146,7 +146,18 @@ function DayCell({
       type="button"
       onClick={() => onSelect(day)}
       aria-pressed={isSelected}
-      aria-label={format(day, "M월 d일(EEE)", { locale: ko })}
+      /*
+        ⚠️ **일정 수까지 이름에 넣는다.** `aria-label`은 자식 텍스트를 통째로 덮어써서,
+           날짜만 적어 두면 스크린리더에는 "8월 5일(수) 버튼"만 읽히고 그 칸에 일정이
+           있다는 사실 자체가 사라진다 — 눈으로는 칩이 보이는데 귀로는 빈 칸이다.
+        ⚠️ 제목까지 다 읽지는 않는다. 칸을 훑는 단계에서는 **있다/없다와 몇 건**이면 되고,
+           제목·상태는 그 날을 고르면 오른쪽 일정 카드가 목록으로 읽어 준다.
+      */
+      aria-label={
+        events.length > 0
+          ? `${format(day, "M월 d일(EEE)", { locale: ko })}, 일정 ${events.length}건`
+          : format(day, "M월 d일(EEE)", { locale: ko })
+      }
       className={cn(
         "focus-visible:ring-ring relative flex min-w-0 flex-col overflow-hidden text-left transition-colors not-first:border-l",
         "border-border focus-visible:z-10 focus-visible:ring-2 focus-visible:outline-hidden",

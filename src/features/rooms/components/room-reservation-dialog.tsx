@@ -159,9 +159,7 @@ export function RoomReservationDialog({
               selectedIds={form.attendeeIds}
               onChange={(attendeeIds) => setForm((prev) => ({ ...prev, attendeeIds }))}
             />
-            {state.errors.attendeeIds && (
-              <FieldError reserveSpace message={state.errors.attendeeIds} />
-            )}
+            <FieldError reserveSpace message={state.errors.attendeeIds} />
           </div>
 
           <p className="text-muted-foreground flex items-start gap-1.5 text-[11px] leading-4 break-keep">

@@ -41,13 +41,11 @@ function defaultSelectedDate(month: string): Date {
  *    아래 `action` prop으로 오른쪽 일정 카드 머리에 넘긴다.
  * ⚠️ 오른쪽 날짜 상세조회 패널은 셀/이벤트 클릭마다 `selectedDate`만 바뀌고 새로 마운트되지
  *    않는다 — 같은 달 안에서 API를 다시 부를 필요가 없어서(이미 이번 달 이벤트를 다 들고 있다).
- * ⚠️ 캘린더 높이를 여기서 **미리 계산해 바깥 행에 명시적으로** 준다 — flex 스트레치에만 기대면
- *    (`items-stretch`) 오른쪽 패널의 `border-l`이 캘린더가 아니라 안쪽 콘텐츠 높이만큼만
- *    그려지는 문제가 있었다. 캘린더(`personal-calendar.tsx`)도 같은 계산 함수로 같은 값을
- *    쓰니 항상 일치한다.
- * ⚠️ 이 고정 높이·좌우 배치는 **`lg` 이상에서만** 켠다. 좁은 화면에서 캘린더와 패널을
- *    나란히 두면 둘 다 찌그러진다 — 그 아래에서는 위아래로 쌓고 높이도 내용에 맞춘다
- *    (`--calendar-total-height`는 CSS 변수로만 내려두고, `lg:` 접두사가 붙은 높이 클래스로 그 폭에서만 켠다).
+ * ⚠️ 높이를 **계산하지 않는다**(2026-08-08). 예전에는 주 수로 픽셀을 미리 재서 바깥 행에
+ *    내려 줬는데(`--calendar-total-height`), 그래서 달을 넘길 때마다 카드가 커졌다 작아졌다.
+ *    지금은 `flex-1`로 남는 높이를 채우고 그 안에서 주들이 나눠 갖는다(`month-grid.tsx`).
+ * ⚠️ 좌우 배치는 **`lg` 이상에서만** 켠다. 좁은 화면에서 캘린더와 패널을 나란히 두면 둘 다
+ *    찌그러진다 — 그 아래에서는 위아래로 쌓는다.
  */
 export function CalendarBoard({ initialEvents, month }: CalendarBoardProps) {
   const [events, setEvents] = useState(initialEvents);
@@ -62,9 +60,11 @@ export function CalendarBoard({ initialEvents, month }: CalendarBoardProps) {
   }, [events, selectedDate]);
 
   /**
-   * 완료 토글 — 개인 Todo만 다룬다(개인 액션은 다른 화면에서 처리, `calendar-event-list-item.tsx`
-   * 가 애초에 액션엔 체크박스를 안 준다). 먼저 화면에 반영하고 서버 액션을 부른 뒤, 실패하면
-   * 되돌리고 토스트로 알린다.
+   * 완료 토글 — **개인 Todo만** 다룬다. 개인 액션은 완료 처리 화면이 따로 있어서,
+   * `calendar-event-list-item.tsx`가 체크박스를 **그리되 `disabled`로 둔다**(모양은 같고
+   * 권한만 다르다). 먼저 화면에 반영하고 서버 액션을 부른 뒤, 실패하면 되돌리고 토스트로 알린다.
+   * ⚠️ 그 `disabled`를 지우면 여기로 액션 id가 들어오는데, 서버는
+   *    "개인 Todo만 완료 처리할 수 있습니다"로 거절한다.
    */
   function handleToggleCompletion(id: string) {
     setEvents((prev) =>

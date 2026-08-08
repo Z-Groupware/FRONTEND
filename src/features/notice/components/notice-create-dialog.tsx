@@ -54,10 +54,7 @@ export function NoticeCreateDialog() {
       >
         <NoticeForm
           action={createNoticeAction}
-          submitLabel={LABEL.submitLabel}
           formRef={formRef}
-          hideActions
-          onCancel={() => setOpen(false)}
           onPendingChange={setIsSubmitting}
           onSuccess={() => {
             setOpen(false);

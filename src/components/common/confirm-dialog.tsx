@@ -115,8 +115,15 @@ export function ConfirmDialog({
       {/*
         ⚠️ `gap-0` — DialogContent가 자체 `gap-4`를 갖고 있어 아래 `mt-*`와 겹쳐 간격이 두 배가 된다.
            여백은 여기서 한 곳으로만 준다(§success-dialog와 같은 이유).
+        ⚠️ **높이를 화면 안으로 묶고 넘치면 스크롤한다.** 공용 `DialogContent`에는 `max-h`도
+           `overflow`도 없다 — 폼이 들어오면서 창이 길어졌는데(회의실 예약은 안건을 몇 개만
+           더해도 늘어난다), 창은 `top-1/2 -translate-y-1/2`로 **가운데 고정**이라 넘치면
+           위아래가 동시에 잘린다. 그러면 [예약]·[취소] 버튼에 닿을 방법이 없어 창에 갇힌다.
+        ⚠️ `2rem`은 위아래 여백이다 — 창이 화면에 딱 붙으면 잘린 것처럼 보인다.
       */}
-      <DialogContent className={cn("gap-0 p-8", DIALOG_WIDTH)}>
+      <DialogContent
+        className={cn("max-h-[calc(100dvh-2rem)] gap-0 overflow-y-auto p-8", DIALOG_WIDTH)}
+      >
         <DialogHeader className="items-center gap-5 text-center">
           {/*
             ⚠️ 완료 창과 **같은 표식**을 쓴다(`DialogMark`) — 표식이 다르게 뜨면 두 창이

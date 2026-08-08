@@ -3,7 +3,6 @@
 import { useActionState, useEffect, useRef, useState } from "react";
 
 import { FieldError } from "@/components/common/field-error";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
@@ -15,9 +14,6 @@ interface NoticeFormProps {
   action: (prev: NoticeFormState, formData: FormData) => Promise<NoticeFormState>;
   /** 수정일 때만 — 기존 값 채우기 + id 전달 */
   notice?: Notice;
-  submitLabel: string;
-  /** 취소 버튼 — 모달을 닫는다(페이지 이동 아님) */
-  onCancel: () => void;
   /** 성공 시 호출 — 생성/수정된 공지를 그대로 받는다(캘린더 `AddTodoDialog`와 같은 패턴) */
   onSuccess: (notice: Notice) => void;
   /**
@@ -30,12 +26,10 @@ interface NoticeFormProps {
    * 창이 제출을 부를 수 있게 내어 주는 `<form>` 참조.
    *
    * ⚠️ 이 폼은 `ConfirmDialog` 안에서 쓰인다(2026-08-08 정리). 실행 버튼은 **창**이 그리므로
-   *    폼은 버튼을 감추고(`hideActions`), 창이 `formRef.current?.requestSubmit()`으로 제출을 건다 —
+   *    실행 버튼은 **창**이 그리고, 창이 `formRef.current?.requestSubmit()`으로 제출을 건다 —
    *    `useActionState`는 폼이 그대로 들고 있어야 검증 오류가 칸 밑에 남는다.
    */
   formRef?: React.RefObject<HTMLFormElement | null>;
-  /** 창이 버튼을 그릴 때 켠다 — 폼 안의 [취소]/[저장]을 감춘다 */
-  hideActions?: boolean;
 }
 
 /**
@@ -50,12 +44,9 @@ interface NoticeFormProps {
 export function NoticeForm({
   action,
   notice,
-  submitLabel,
-  onCancel,
   onSuccess,
   onPendingChange,
   formRef,
-  hideActions,
 }: NoticeFormProps) {
   const [state, formAction, isPending] = useActionState(action, { errors: {} });
   const [title, setTitle] = useState(notice?.title ?? "");
@@ -104,17 +95,6 @@ export function NoticeForm({
         />
         <FieldError reserveSpace message={state.errors.body} />
       </div>
-
-      {!hideActions && (
-        <div className="flex justify-end gap-2">
-          <Button type="button" variant="outline" size="sm" disabled={isPending} onClick={onCancel}>
-            취소
-          </Button>
-          <Button type="submit" size="sm" variant="ink" disabled={isPending}>
-            {isPending ? "저장 중…" : submitLabel}
-          </Button>
-        </div>
-      )}
     </form>
   );
 }

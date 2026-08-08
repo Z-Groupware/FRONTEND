@@ -153,7 +153,7 @@ export function ProjectForm({ action, teamOptions, cancelHref }: ProjectFormProp
         <p className="text-muted-foreground text-right text-xs tabular-nums">
           {description.length}/{PROJECT_DESCRIPTION_MAX_LENGTH}
         </p>
-        {state.errors.description && <FieldError message={state.errors.description} />}
+        <FieldError message={state.errors.description} />
       </div>
 
       <div className="grid grid-cols-[minmax(0,1fr)_120px_120px] items-start gap-4">
@@ -240,7 +240,7 @@ export function ProjectForm({ action, teamOptions, cancelHref }: ProjectFormProp
             max={dueDate || undefined}
             aria-invalid={Boolean(state.errors.startDate)}
           />
-          {state.errors.startDate && <FieldError message={state.errors.startDate} />}
+          <FieldError message={state.errors.startDate} />
         </div>
 
         <div className="flex flex-col gap-1.5">
@@ -256,7 +256,7 @@ export function ProjectForm({ action, teamOptions, cancelHref }: ProjectFormProp
             min={startDate || undefined}
             aria-invalid={Boolean(state.errors.dueDate)}
           />
-          {state.errors.dueDate && <FieldError message={state.errors.dueDate} />}
+          <FieldError message={state.errors.dueDate} />
         </div>
       </div>
 
@@ -313,7 +313,7 @@ export function ProjectForm({ action, teamOptions, cancelHref }: ProjectFormProp
               <Plus />팀 추가
             </Button>
           </div>
-          {state.errors.teamNames && <FieldError message={state.errors.teamNames} />}
+          <FieldError message={state.errors.teamNames} />
         </div>
 
         <div className="flex flex-col gap-1.5">

@@ -47,10 +47,7 @@ export function RoomEditDialog({ room }: RoomEditDialogProps) {
         <RoomForm
           action={updateMeetingRoomAction}
           room={room}
-          submitLabel="저장"
           formRef={formRef}
-          hideActions
-          onCancel={() => setOpen(false)}
           onPendingChange={setIsSubmitting}
           onSuccess={() => {
             setOpen(false);

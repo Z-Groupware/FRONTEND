@@ -56,10 +56,7 @@ export function NoticeEditDialog({ notice }: NoticeEditDialogProps) {
         <NoticeForm
           action={updateNoticeAction}
           notice={notice}
-          submitLabel={LABEL.submitLabel}
           formRef={formRef}
-          hideActions
-          onCancel={() => setOpen(false)}
           onPendingChange={setIsSubmitting}
           onSuccess={() => {
             setOpen(false);
