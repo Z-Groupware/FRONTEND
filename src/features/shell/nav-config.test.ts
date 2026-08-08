@@ -176,6 +176,7 @@ describe("화면이 있으면 자동으로 이어진다", () => {
     ["/team", "대시보드"],
     ["/my", "대시보드"],
     ["/app/projects", "프로젝트"],
+    ["/app/search", "검색"],
     ["/app/calendar", "캘린더"],
     ["/app/notice", "공지"],
     ["/app/me", "마이페이지"],
@@ -189,10 +190,6 @@ describe("화면이 있으면 자동으로 이어진다", () => {
 
     expect(item).toBeDefined();
     expect(item?.isReady).toBe(true);
-  });
-
-  it.each([["/app/search", "검색"]])("아직 없는 화면 `%s`(%s)는 준비 중으로 남는다", (href) => {
-    expect(everyItem.find((candidate) => candidate.href === href)?.isReady).toBe(false);
   });
 
   /*
