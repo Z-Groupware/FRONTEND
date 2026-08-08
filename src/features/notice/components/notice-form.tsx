@@ -77,8 +77,13 @@ export function NoticeForm({
           onChange={(event) => setTitle(event.target.value)}
           placeholder="공지 제목"
           aria-invalid={Boolean(state.errors.title)}
+          aria-describedby="notice-title-error"
         />
-        <FieldError reserveSpace message={state.errors.title} />
+        {/*
+          ⚠️ 오류에 **id를 주고 칸이 가리키게** 한다. `role="alert"`은 오류가 뜨는 그 순간만
+             읽어 줘서, 나중에 칸으로 돌아온 사람은 무엇이 잘못됐는지 다시 들을 방법이 없다.
+        */}
+        <FieldError reserveSpace id="notice-title-error" message={state.errors.title} />
       </div>
 
       <div className="flex flex-col gap-1.5">
@@ -89,11 +94,12 @@ export function NoticeForm({
           rows={6}
           value={body}
           onChange={(event) => setBody(event.target.value)}
-          placeholder="공지 내용을 입력하세요"
+          placeholder="공지 내용을 입력해 주세요"
           aria-invalid={Boolean(state.errors.body)}
+          aria-describedby="notice-body-error"
           className="border-input placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:border-destructive min-h-[132px] w-full resize-none rounded-lg border bg-transparent px-2.5 py-2 text-sm transition-colors outline-none focus-visible:ring-3"
         />
-        <FieldError reserveSpace message={state.errors.body} />
+        <FieldError reserveSpace id="notice-body-error" message={state.errors.body} />
       </div>
     </form>
   );

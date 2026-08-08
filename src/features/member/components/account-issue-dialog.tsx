@@ -278,7 +278,12 @@ export function AccountIssueDialog({
               onValueChange={(value) => set("roleLabel", value ?? "")}
               disabled={roleOptions.length === 0}
             >
-              <SelectTrigger id="account-roleLabel" className="w-full">
+              <SelectTrigger
+                id="account-roleLabel"
+                className="w-full"
+                aria-invalid={Boolean(errors.roleLabel)}
+                aria-describedby="account-roleLabel-error"
+              >
                 <SelectValue />
               </SelectTrigger>
               <SelectContent alignItemWithTrigger={false}>
@@ -307,7 +312,12 @@ export function AccountIssueDialog({
                 value={draft.position}
                 onValueChange={(value) => set("position", value ?? "")}
               >
-                <SelectTrigger id="account-position" className="w-full">
+                <SelectTrigger
+                  id="account-position"
+                  className="w-full"
+                  aria-invalid={Boolean(errors.position)}
+                  aria-describedby="account-position-error"
+                >
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent alignItemWithTrigger={false}>

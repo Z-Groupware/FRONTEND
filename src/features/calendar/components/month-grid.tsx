@@ -34,6 +34,13 @@ import type { PersonalCalendarEvent } from "../types";
 
 const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"] as const;
 
+/**
+ * 이 수를 넘기면 그 칸이 스크롤될 수 있다고 본다 — 그때만 일정 상자가 포인터·포커스를 받는다.
+ * ⚠️ 정확한 값이 아니라 **어림수**다. 칸 높이는 화면 높이와 주 수에 따라 달라져 미리 계산할
+ *    수 없다 — 넉넉히 잡아 두고, 실제로 안 넘치면 포커스가 한 번 더 갈 뿐이다.
+ */
+const MAX_VISIBLE_CHIPS = 3;
+
 const DAY_KEY = "yyyy-MM-dd";
 
 /**
@@ -137,38 +144,46 @@ function DayCell({
   isSelected: boolean;
   onSelect: (date: Date) => void;
 }) {
+  const dateLabel = format(day, "M월 d일(EEE)", { locale: ko });
+  const mayOverflow = events.length > MAX_VISIBLE_CHIPS;
+
   return (
     /*
-      ⚠️ 칸 전체가 **버튼**이다 — 빈 곳을 눌러도 그날이 골라져야 한다. 키보드로도 짚을 수
-         있어야 해서 `div`가 아니라 `button`이다(§a11y: 클릭은 button/a).
+      ⚠️ **버튼을 칸 바닥에 깐다.** 예전엔 칸 전체가 `<button>`이고 일정 목록이 그 안에
+         있었는데, 그러면 두 가지가 막혔다 —
+         ① `aria-label`이 자식 텍스트를 덮어써서 스크린리더에 칸 안 일정이 통째로 안 읽혔다.
+         ② 넘치는 일정의 스크롤 상자에 포커스를 줄 수가 없었다. 버튼 안에 포커스 가능한
+            요소를 넣는 건 유효한 HTML이 아니다 — 키보드만 쓰는 사람은 넘친 일정을 못 봤다.
+      ⚠️ 그래서 버튼은 **빈 곳을 누르는 판**으로만 남기고(`absolute inset-0`), 날짜 숫자와
+         일정 목록은 그 위 형제로 올린다. 클릭 대상은 그대로 칸 전체다.
     */
-    <button
-      type="button"
-      onClick={() => onSelect(day)}
-      aria-pressed={isSelected}
-      /*
-        ⚠️ **일정 수까지 이름에 넣는다.** `aria-label`은 자식 텍스트를 통째로 덮어써서,
-           날짜만 적어 두면 스크린리더에는 "8월 5일(수) 버튼"만 읽히고 그 칸에 일정이
-           있다는 사실 자체가 사라진다 — 눈으로는 칩이 보이는데 귀로는 빈 칸이다.
-        ⚠️ 제목까지 다 읽지는 않는다. 칸을 훑는 단계에서는 **있다/없다와 몇 건**이면 되고,
-           제목·상태는 그 날을 고르면 오른쪽 일정 카드가 목록으로 읽어 준다.
-      */
-      aria-label={
-        events.length > 0
-          ? `${format(day, "M월 d일(EEE)", { locale: ko })}, 일정 ${events.length}건`
-          : format(day, "M월 d일(EEE)", { locale: ko })
-      }
+    <div
       className={cn(
-        "focus-visible:ring-ring relative flex min-w-0 flex-col overflow-hidden text-left transition-colors not-first:border-l",
-        "border-border focus-visible:z-10 focus-visible:ring-2 focus-visible:outline-hidden",
-        /*
-          ⚠️ **고른 칸을 회색으로 칠하지 않는다.** 칸이 통째로 어두워지면 그 안의 칩까지 눌려
-             보이고, 달력에 회색 덩어리가 하나 생긴다 — 고른 날은 **숫자의 채운 원**이 말한다.
-        */
-        "hover:bg-foreground/[0.02]",
+        "group border-border relative flex min-w-0 flex-col overflow-hidden not-first:border-l",
+        "focus-within:z-10",
       )}
     >
-      <div className="flex shrink-0 justify-end px-2 pt-1.5 pb-1">
+      <button
+        type="button"
+        onClick={() => onSelect(day)}
+        aria-pressed={isSelected}
+        /*
+          ⚠️ **일정 수까지 이름에 넣는다.** 칸을 훑는 단계에서는 있다/없다와 몇 건이면 되고,
+             제목·상태는 그 날을 고르면 오른쪽 일정 카드가 목록으로 읽어 준다.
+        */
+        aria-label={events.length > 0 ? `${dateLabel}, 일정 ${events.length}건` : dateLabel}
+        className={cn(
+          "focus-visible:ring-ring absolute inset-0 transition-colors focus-visible:ring-2 focus-visible:outline-hidden",
+          /*
+            ⚠️ **고른 칸을 회색으로 칠하지 않는다.** 칸이 통째로 어두워지면 그 안의 칩까지 눌려
+               보이고, 달력에 회색 덩어리가 하나 생긴다 — 고른 날은 **숫자의 채운 원**이 말한다.
+          */
+          "hover:bg-foreground/[0.02]",
+        )}
+      />
+
+      {/* ⚠️ `pointer-events-none` — 숫자를 눌러도 아래 버튼이 받는다 */}
+      <div className="pointer-events-none relative flex shrink-0 justify-end px-2 pt-1.5 pb-1">
         {/*
           아이폰 달력과 같은 문법 — **오늘은 테두리 원, 고른 날은 채운 원.**
           ⚠️ 오늘을 빨강으로 두지 않았다. 우리 빨강은 **에러 전용**이라(DESIGN §5) 달력에
@@ -188,13 +203,34 @@ function DayCell({
         </span>
       </div>
 
-      {/* 일정 — 넘치면 여기서만 스크롤한다 */}
-      <div className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto px-1.5 pb-1.5">
-        {events.map((event) => (
-          <EventChip key={event.id} event={event} />
-        ))}
-      </div>
-    </button>
+      {/*
+        일정 — 넘치면 **여기서만** 스크롤한다.
+        ⚠️ 넘칠 때만 `tabIndex={0}`을 준다. 키보드로 짚어 스크롤할 수 있어야 하는데
+           (§a11y: 드래그·스크롤만으로 되는 조작은 대체 경로가 있어야 한다), 안 넘치는
+           칸까지 포커스를 받으면 달력을 지나가는 데 탭을 70번 눌러야 한다.
+        ⚠️ 일정이 없으면 상자 자체를 안 그린다 — 빈 칸에 포커스 대상이 생기지 않게.
+      */}
+      {events.length > 0 && (
+        <div
+          role="group"
+          aria-label={`${dateLabel} 일정`}
+          tabIndex={mayOverflow ? 0 : undefined}
+          className={cn(
+            "focus-visible:ring-ring relative flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto px-1.5 pb-1.5 focus-visible:ring-2 focus-visible:outline-hidden",
+            /*
+              ⚠️ **넘칠 때만 포인터를 받는다.** 이 상자는 버튼 위에 얹혀 있어서, 늘 포인터를
+                 받으면 칩을 눌렀을 때 아래 버튼에 안 닿아 그날이 안 골라진다. 반대로 늘
+                 안 받으면 넘치는 칸을 휠로 못 굴린다 — 굴릴 게 있을 때만 받는다.
+            */
+            mayOverflow ? "pointer-events-auto" : "pointer-events-none",
+          )}
+        >
+          {events.map((event) => (
+            <EventChip key={event.id} event={event} />
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 

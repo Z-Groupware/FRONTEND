@@ -66,7 +66,12 @@ function SlotSummary({ slotStart }: { slotStart: Date }) {
  *    컴포넌트가 직접 못 읽는다 — 자식으로 한 겹 내려와 렌더 없이 값만 올려 보낸다.
  * ⚠️ 버튼은 여기서 안 그린다. 창(`ConfirmDialog`)이 그리는 게 다른 모달과 같은 모양이다.
  */
-function PendingReporter({ onChange }: { onChange: (isPending: boolean) => void }) {
+interface PendingReporterProps {
+  /** ⚠️ 참조가 고정돼야 한다 — 매 렌더 새 함수면 아래 effect가 매번 돈다 */
+  onChange: (isPending: boolean) => void;
+}
+
+function PendingReporter({ onChange }: PendingReporterProps) {
   const { pending } = useFormStatus();
 
   useEffect(() => {

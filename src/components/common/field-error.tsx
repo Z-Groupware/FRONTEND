@@ -17,18 +17,21 @@ import { cn } from "@/lib/utils";
  * `reserveSpace`를 켜면 오류가 없어도 한 줄 높이를 비워 둔다. 타이핑하다 오류가 생길 때
  * 아래 칸이 밀려 내려가는 걸 막는다 — 칸이 여럿 쌓인 폼에서 쓴다.
  */
-export function FieldError({
-  message,
-  id,
-  reserveSpace = false,
-  className,
-}: {
+interface FieldErrorProps {
   message?: string;
-  /** 입력칸의 `aria-describedby`가 가리킬 id */
+  /**
+   * 입력칸의 `aria-describedby`가 가리킬 id.
+   *
+   * ⚠️ **웬만하면 준다.** `role="alert"`은 오류가 뜨는 **그 순간**만 읽어 준다 — 나중에
+   *    입력칸으로 돌아온 사람은 무엇이 잘못됐는지 다시 들을 방법이 없다. 칸에
+   *    `aria-describedby`로 이 id를 걸어 두면 칸에 초점이 갈 때마다 함께 읽힌다.
+   */
   id?: string;
   reserveSpace?: boolean;
   className?: string;
-}) {
+}
+
+export function FieldError({ message, id, reserveSpace = false, className }: FieldErrorProps) {
   if (!message && !reserveSpace) return null;
 
   return (

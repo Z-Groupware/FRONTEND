@@ -32,10 +32,13 @@ export default async function CalendarPage({ searchParams }: CalendarPageProps) 
 
   return (
     /*
-      ⚠️ **본문이 스크롤하지 않는다.** 달력은 한 달을 **한 눈에** 보는 화면이라, 아래로
-         내려서 마지막 주를 보게 되면 달력인 의미가 없다 — 남는 높이를 달력이 다 먹는다.
+      ⚠️ **`lg` 이상에서만 본문이 안 흐른다.** 달력은 한 달을 **한 눈에** 보는 화면이라,
+         아래로 내려서 마지막 주를 보게 되면 달력인 의미가 없다 — 남는 높이를 달력이 다 먹는다.
+      ⚠️ 그 아래에서는 **스크롤을 연다.** `lg` 미만에서는 달력과 일정 카드가 위아래로 쌓이는데
+         (`calendar-board.tsx`), 그때도 `overflow-hidden`이면 격자가 잘린 채 갈 방법이 없다 —
+         짧은 화면에서 마지막 주가 통째로 사라진다.
     */
-    <main className="flex min-h-0 flex-1 flex-col overflow-hidden px-8 py-7">
+    <main className="flex min-h-0 flex-1 flex-col overflow-y-auto px-8 py-7 lg:overflow-hidden">
       <div className="mx-auto flex min-h-0 w-full max-w-[1440px] flex-1 flex-col gap-7">
         <CalendarBoard
           key={format(month, "yyyy-MM")}
