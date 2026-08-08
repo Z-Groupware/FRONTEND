@@ -69,7 +69,7 @@ export async function toggleTodoCompletionAction(id: string): Promise<void> {
 
   const target = findMockEvent(id);
   if (!target || target.tag !== CALENDAR_ITEM_TAG.PERSONAL_TODO) {
-    throw new Error("개인 Todo만 완료 처리할 수 있어요.");
+    throw new Error("개인 Todo만 완료 처리할 수 있습니다");
   }
 
   toggleMockCompletion(id);

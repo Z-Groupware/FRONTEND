@@ -77,7 +77,7 @@ export function BoardView({ boardType, cards, todayIso }: BoardViewProps) {
     const to = event.over.id as BoardColumnId;
     if (from === to) return;
     if (!canMoveCard(from, to)) {
-      toast(`${BOARD_COLUMN_LABEL[from]}에서 ${BOARD_COLUMN_LABEL[to]}(으)로는 옮길 수 없어요`);
+      toast("여기로는 옮길 수 없습니다");
       return;
     }
     setOverrides((prev) => ({ ...prev, [card.id]: to }));

@@ -72,9 +72,9 @@ export function SubscriptionTable({ subscriptions }: SubscriptionTableProps) {
     startTransition(async () => {
       const response = await sendUnpaidNoticeAction(companyId);
       if (response.success) {
-        toast(`${target.companyName} 담당자에게 안내 메일을 발송했습니다`);
+        toast("안내 메일을 발송했습니다");
       } else {
-        toast(`${target.companyName} 정보를 찾을 수 없어 발송하지 못했습니다`);
+        toast("발송하지 못했습니다");
       }
       setNoticeTarget(null);
     });

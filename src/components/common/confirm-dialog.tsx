@@ -12,6 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { cn } from "@/lib/utils";
 
 interface ConfirmDialogProps {
   isOpen: boolean;
@@ -66,6 +67,18 @@ interface ConfirmDialogProps {
 }
 
 /**
+ * 창 폭 — **하나뿐이다.** 폼이 들어가도 이 폭을 쓴다.
+ *
+ * ⚠️ 폼 창들이 저마다 `Dialog`를 조립하면서 420·480·640·720 넷으로 갈렸는데(감사 2026-08-08),
+ *    왜 이 창이 480이고 저 창이 420인지 설명할 수 있는 근거가 없었다. 한 화면에서 창을 두 번
+ *    열면 상자가 172px씩 커졌다 작아진다.
+ * ⚠️ **좁으면 폭을 늘리지 말고 칸을 세로로 쌓는다.** 창은 이미 화면 높이에 맞춰 스크롤되므로
+ *    세로는 늘려도 되지만, 가로는 넓힐수록 입력칸만 길어져 읽고 쓰기가 나빠진다
+ *    (DESIGN §1이 폼을 720에서 끊는 것과 같은 이유). 2열 격자도 칸이 홀수면 마지막만 반쪽이 남는다.
+ */
+const DIALOG_WIDTH = "sm:max-w-[420px]";
+
+/**
  * 확인을 받는 창 — **되돌리기 어려운 일은 전부 이걸 쓴다.**
  *
  * 모양은 `ResultDialog`와 **한 식구**다: 원 표식 → 제목 → 설명 → 버튼으로 가운데 정렬.
@@ -102,8 +115,15 @@ export function ConfirmDialog({
       {/*
         ⚠️ `gap-0` — DialogContent가 자체 `gap-4`를 갖고 있어 아래 `mt-*`와 겹쳐 간격이 두 배가 된다.
            여백은 여기서 한 곳으로만 준다(§success-dialog와 같은 이유).
+        ⚠️ **높이를 화면 안으로 묶고 넘치면 스크롤한다.** 공용 `DialogContent`에는 `max-h`도
+           `overflow`도 없다 — 폼이 들어오면서 창이 길어졌는데(회의실 예약은 안건을 몇 개만
+           더해도 늘어난다), 창은 `top-1/2 -translate-y-1/2`로 **가운데 고정**이라 넘치면
+           위아래가 동시에 잘린다. 그러면 [예약]·[취소] 버튼에 닿을 방법이 없어 창에 갇힌다.
+        ⚠️ `2rem`은 위아래 여백이다 — 창이 화면에 딱 붙으면 잘린 것처럼 보인다.
       */}
-      <DialogContent className="gap-0 p-8 sm:max-w-[420px]">
+      <DialogContent
+        className={cn("max-h-[calc(100dvh-2rem)] gap-0 overflow-y-auto p-8", DIALOG_WIDTH)}
+      >
         <DialogHeader className="items-center gap-5 text-center">
           {/*
             ⚠️ 완료 창과 **같은 표식**을 쓴다(`DialogMark`) — 표식이 다르게 뜨면 두 창이

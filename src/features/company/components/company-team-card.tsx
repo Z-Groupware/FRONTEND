@@ -83,8 +83,7 @@ export function CompanyTeamCard({ initial, memberCounts }: CompanyTeamCardProps)
       run();
       return;
     }
-    const team = tree.departments.find((node) => node.id === id);
-    toast.error(`'${team?.name ?? ""}'에는 사원이 있어 다른 팀의 역할로 옮길 수 없습니다`);
+    toast.error("사원이 있어 옮길 수 없습니다");
   };
 
   const handlers: DepartmentNodeHandlers = {

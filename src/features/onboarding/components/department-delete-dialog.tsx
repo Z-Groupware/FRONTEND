@@ -30,7 +30,13 @@ export function DepartmentDeleteDialog({
       isOpen={target !== null}
       onOpenChange={onCancel}
       title={`\u2018${target?.name ?? ""}\u2019 팀을 지울까요?`}
-      description={`역할 ${childCount}개도 함께 사라집니다. 되돌릴 수 없습니다.`}
+      description={
+        <>
+          역할 {childCount}개도 함께 사라집니다.
+          <br />
+          되돌릴 수 없습니다.
+        </>
+      }
       confirmLabel="삭제"
       isDestructive
       onConfirm={() => target && onConfirm(target.id)}

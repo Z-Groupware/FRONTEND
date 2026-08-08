@@ -36,7 +36,13 @@ export function RejectReasonDialog({
       isOpen={isOpen}
       onOpenChange={onOpenChange}
       title="이 액션을 반려할까요?"
-      description={`"${actionTitle}"이(가) 확정 대상에서 제외됩니다. 사유를 골라주세요.`}
+      description={
+        <>
+          &lsquo;{actionTitle}&rsquo;이(가) 확정 대상에서 제외됩니다.
+          <br />
+          사유를 골라 주세요.
+        </>
+      }
       confirmLabel="반려"
       isDestructive
       isConfirmDisabled={reason === null}

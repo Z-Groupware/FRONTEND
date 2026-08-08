@@ -13,23 +13,32 @@ export const NOTICE_ACTION_LABEL: Record<
   {
     /** 트리거 버튼 글자 */
     trigger: string;
+    /** 확인 창 제목 — **물음꼴**이다(DESIGN §7) */
     dialogTitle: string;
+    /** 확인 창 설명 — 무엇이 일어나는지. 빠지면 스크린리더가 제목만 읽는다 */
+    dialogDescription: string;
     submitLabel: string;
-    /** 성공 토스트 — 공지 제목을 끼워 넣는다 */
-    successToast: (noticeTitle: string) => string;
+    /**
+     * 성공 토스트.
+     * ⚠️ 공지 제목을 **안 끼운다**(2026-08-08). 220px 한 줄이라 제목이 길면 잘렸고, 방금 쓴
+     *    제목은 화면에 이미 있다 — 토스트는 결과 한 조각만 적는다(DESIGN §7).
+     */
+    successToast: () => string;
   }
 > = {
   CREATE: {
     trigger: "새 공지",
-    dialogTitle: "새 공지 작성",
+    dialogTitle: "공지를 올릴까요?",
+    dialogDescription: "올리면 사내 전원에게 보입니다.",
     submitLabel: "발행",
-    successToast: (noticeTitle) => `'${noticeTitle}' 공지를 발행했습니다`,
+    successToast: () => "공지를 발행했습니다",
   },
   EDIT: {
     trigger: "수정",
-    dialogTitle: "공지 수정",
+    dialogTitle: "공지를 수정할까요?",
+    dialogDescription: "바뀐 내용이 사내 전원에게 바로 보입니다.",
     submitLabel: "수정",
-    successToast: (noticeTitle) => `'${noticeTitle}' 공지를 수정했습니다`,
+    successToast: () => "공지를 수정했습니다",
   },
 };
 

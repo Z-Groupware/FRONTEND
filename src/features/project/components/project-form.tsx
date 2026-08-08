@@ -5,6 +5,7 @@ import Link from "next/link";
 import type { CSSProperties } from "react";
 import { useActionState, useRef, useState } from "react";
 
+import { FieldError } from "@/components/common/field-error";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -108,7 +109,7 @@ export function ProjectForm({ action, teamOptions, cancelHref }: ProjectFormProp
             placeholder="예: 온라인 굿즈샵 웹 구축"
             aria-invalid={Boolean(state.errors.name)}
           />
-          {state.errors.name && <p className="text-destructive text-xs">{state.errors.name}</p>}
+          <FieldError message={state.errors.name} />
         </div>
 
         <div className="flex w-40 flex-col gap-1.5">
@@ -128,7 +129,7 @@ export function ProjectForm({ action, teamOptions, cancelHref }: ProjectFormProp
           <p className="text-muted-foreground text-xs">
             영문 대문자만, 최대 {PROJECT_TAG_MAX_LENGTH}자
           </p>
-          {state.errors.tag && <p className="text-destructive text-xs">{state.errors.tag}</p>}
+          <FieldError message={state.errors.tag} />
         </div>
       </div>
 
@@ -152,9 +153,7 @@ export function ProjectForm({ action, teamOptions, cancelHref }: ProjectFormProp
         <p className="text-muted-foreground text-right text-xs tabular-nums">
           {description.length}/{PROJECT_DESCRIPTION_MAX_LENGTH}
         </p>
-        {state.errors.description && (
-          <p className="text-destructive text-xs">{state.errors.description}</p>
-        )}
+        <FieldError message={state.errors.description} />
       </div>
 
       <div className="grid grid-cols-[minmax(0,1fr)_120px_120px] items-start gap-4">
@@ -241,9 +240,7 @@ export function ProjectForm({ action, teamOptions, cancelHref }: ProjectFormProp
             max={dueDate || undefined}
             aria-invalid={Boolean(state.errors.startDate)}
           />
-          {state.errors.startDate && (
-            <p className="text-destructive text-xs">{state.errors.startDate}</p>
-          )}
+          <FieldError message={state.errors.startDate} />
         </div>
 
         <div className="flex flex-col gap-1.5">
@@ -259,9 +256,7 @@ export function ProjectForm({ action, teamOptions, cancelHref }: ProjectFormProp
             min={startDate || undefined}
             aria-invalid={Boolean(state.errors.dueDate)}
           />
-          {state.errors.dueDate && (
-            <p className="text-destructive text-xs">{state.errors.dueDate}</p>
-          )}
+          <FieldError message={state.errors.dueDate} />
         </div>
       </div>
 
@@ -318,9 +313,7 @@ export function ProjectForm({ action, teamOptions, cancelHref }: ProjectFormProp
               <Plus />팀 추가
             </Button>
           </div>
-          {state.errors.teamNames && (
-            <p className="text-destructive text-xs">{state.errors.teamNames}</p>
-          )}
+          <FieldError message={state.errors.teamNames} />
         </div>
 
         <div className="flex flex-col gap-1.5">

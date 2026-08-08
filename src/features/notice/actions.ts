@@ -63,7 +63,8 @@ export async function createNoticeAction(
   _prev: NoticeFormState,
   formData: FormData,
 ): Promise<NoticeFormState> {
-  if (!canManageNotice(getMockActor())) return { errors: { title: "공지를 작성할 권한이 없어요" } };
+  if (!canManageNotice(getMockActor()))
+    return { errors: { title: "공지를 작성할 권한이 없습니다" } };
 
   const draft = readDraft(formData);
   const errors = validateNoticeDraft(draft);
@@ -88,7 +89,8 @@ export async function updateNoticeAction(
   _prev: NoticeFormState,
   formData: FormData,
 ): Promise<NoticeFormState> {
-  if (!canManageNotice(getMockActor())) return { errors: { title: "공지를 수정할 권한이 없어요" } };
+  if (!canManageNotice(getMockActor()))
+    return { errors: { title: "공지를 수정할 권한이 없습니다" } };
 
   const id = String(formData.get("id") ?? "");
   const draft = readDraft(formData);
@@ -101,7 +103,7 @@ export async function updateNoticeAction(
   }
 
   const updated = updateMockNotice(id, draft);
-  if (!updated) return { errors: { title: "수정할 공지를 찾을 수 없어요" } };
+  if (!updated) return { errors: { title: "수정할 공지를 찾을 수 없습니다" } };
 
   revalidatePath(LIST_PATH);
   revalidatePath(`${LIST_PATH}/${id}`);
@@ -115,7 +117,7 @@ export async function updateNoticeAction(
  */
 export async function deleteNoticeAction(formData: FormData): Promise<void> {
   if (!canManageNotice(getMockActor())) {
-    throw new Error("공지를 삭제할 권한이 없어요");
+    throw new Error("공지를 삭제할 권한이 없습니다");
   }
 
   if (!isMock) {

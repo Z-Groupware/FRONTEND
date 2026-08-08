@@ -2,7 +2,7 @@
 
 import { useActionState, useEffect, useRef, useState } from "react";
 
-import { Button } from "@/components/ui/button";
+import { FieldError } from "@/components/common/field-error";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
@@ -14,9 +14,6 @@ interface NoticeFormProps {
   action: (prev: NoticeFormState, formData: FormData) => Promise<NoticeFormState>;
   /** 수정일 때만 — 기존 값 채우기 + id 전달 */
   notice?: Notice;
-  submitLabel: string;
-  /** 취소 버튼 — 모달을 닫는다(페이지 이동 아님) */
-  onCancel: () => void;
   /** 성공 시 호출 — 생성/수정된 공지를 그대로 받는다(캘린더 `AddTodoDialog`와 같은 패턴) */
   onSuccess: (notice: Notice) => void;
   /**
@@ -25,6 +22,14 @@ interface NoticeFormProps {
    * (`approval-detail-actions.tsx`의 `ConfirmDialog` 처리 중 닫힘 방지와 같은 이유).
    */
   onPendingChange?: (isPending: boolean) => void;
+  /**
+   * 창이 제출을 부를 수 있게 내어 주는 `<form>` 참조.
+   *
+   * ⚠️ 이 폼은 `ConfirmDialog` 안에서 쓰인다(2026-08-08 정리). 실행 버튼은 **창**이 그리므로
+   *    실행 버튼은 **창**이 그리고, 창이 `formRef.current?.requestSubmit()`으로 제출을 건다 —
+   *    `useActionState`는 폼이 그대로 들고 있어야 검증 오류가 칸 밑에 남는다.
+   */
+  formRef?: React.RefObject<HTMLFormElement | null>;
 }
 
 /**
@@ -39,15 +44,13 @@ interface NoticeFormProps {
 export function NoticeForm({
   action,
   notice,
-  submitLabel,
-  onCancel,
   onSuccess,
   onPendingChange,
+  formRef,
 }: NoticeFormProps) {
   const [state, formAction, isPending] = useActionState(action, { errors: {} });
   const [title, setTitle] = useState(notice?.title ?? "");
   const [body, setBody] = useState(notice?.body ?? "");
-  const canSubmit = title.trim().length > 0 && body.trim().length > 0;
   const handledNoticeId = useRef<string | null>(null);
 
   useEffect(() => {
@@ -62,7 +65,7 @@ export function NoticeForm({
   }, [isPending, onPendingChange]);
 
   return (
-    <form action={formAction} className="flex flex-col gap-4">
+    <form ref={formRef} action={formAction} className="flex flex-col gap-4 text-left">
       {notice && <input type="hidden" name="id" value={notice.id} />}
 
       <div className="flex flex-col gap-1.5">
@@ -74,8 +77,13 @@ export function NoticeForm({
           onChange={(event) => setTitle(event.target.value)}
           placeholder="공지 제목"
           aria-invalid={Boolean(state.errors.title)}
+          aria-describedby="notice-title-error"
         />
-        {state.errors.title && <p className="text-destructive text-xs">{state.errors.title}</p>}
+        {/*
+          ⚠️ 오류에 **id를 주고 칸이 가리키게** 한다. `role="alert"`은 오류가 뜨는 그 순간만
+             읽어 줘서, 나중에 칸으로 돌아온 사람은 무엇이 잘못됐는지 다시 들을 방법이 없다.
+        */}
+        <FieldError reserveSpace id="notice-title-error" message={state.errors.title} />
       </div>
 
       <div className="flex flex-col gap-1.5">
@@ -83,23 +91,15 @@ export function NoticeForm({
         <textarea
           id="notice-body"
           name="body"
-          rows={8}
+          rows={6}
           value={body}
           onChange={(event) => setBody(event.target.value)}
-          placeholder="공지 내용을 입력하세요"
+          placeholder="공지 내용을 입력해 주세요"
           aria-invalid={Boolean(state.errors.body)}
-          className="border-input placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:border-destructive min-h-[180px] w-full resize-none rounded-lg border bg-transparent px-2.5 py-2 text-sm transition-colors outline-none focus-visible:ring-3"
+          aria-describedby="notice-body-error"
+          className="border-input placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:border-destructive min-h-[132px] w-full resize-none rounded-lg border bg-transparent px-2.5 py-2 text-sm transition-colors outline-none focus-visible:ring-3"
         />
-        {state.errors.body && <p className="text-destructive text-xs">{state.errors.body}</p>}
-      </div>
-
-      <div className="flex justify-end gap-2">
-        <Button type="button" variant="outline" size="sm" disabled={isPending} onClick={onCancel}>
-          취소
-        </Button>
-        <Button type="submit" size="sm" variant="ink" disabled={isPending || !canSubmit}>
-          {isPending ? "저장 중…" : submitLabel}
-        </Button>
+        <FieldError reserveSpace id="notice-body-error" message={state.errors.body} />
       </div>
     </form>
   );

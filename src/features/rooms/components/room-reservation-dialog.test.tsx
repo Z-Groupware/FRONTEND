@@ -97,7 +97,7 @@ describe("RoomReservationDialog", () => {
     const { onCreated } = renderDialog();
 
     await user.type(screen.getByLabelText("회의 제목"), "새 회의");
-    await user.click(screen.getByRole("button", { name: "즉시 예약" }));
+    await user.click(screen.getByRole("button", { name: "예약" }));
 
     await waitFor(() => {
       const roomError = screen.getByText(

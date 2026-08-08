@@ -33,7 +33,7 @@ export function MemberDeleteCard({ member }: { member: ManagedMember }) {
         return;
       }
       setIsConfirming(false);
-      toast.success(`${member.name} 님의 계정을 탈퇴 처리했습니다`);
+      toast.success("계정을 탈퇴 처리했습니다");
       /*
         ⚠️ 목록으로 **돌려보낸다.** 지운 사람의 상세에 그대로 있으면 다음 새로고침에
            "없는 사원"이 되어 오류 화면이 뜬다.

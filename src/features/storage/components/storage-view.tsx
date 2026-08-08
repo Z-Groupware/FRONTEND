@@ -87,7 +87,7 @@ export function StorageView({ overview, config, canManage, today }: StorageViewP
       */
       setProjects((prev) => prev.filter((project) => project.tag !== target.tag));
       setTarget(null);
-      toast(`${target.name} · ${formatGb(freed)}를 삭제했습니다`);
+      toast(`${formatGb(freed)}를 삭제했습니다`);
     } catch {
       toast("삭제하지 못했습니다");
     } finally {

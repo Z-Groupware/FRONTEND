@@ -42,7 +42,7 @@ describe("회의실 예약 검증", () => {
 
   it("30분 단위가 아닌 시작 시각은 막는다", () => {
     const errors = validateRoomReservationDraft({ ...VALID_DRAFT, startTime: "10:15" }, OWNER_HOST);
-    expect(errors.startTime).toBe("예약은 30분 단위로만 가능해요");
+    expect(errors.startTime).toBe("예약은 30분 단위로만 가능합니다");
   });
 
   it("운영 시작(09:00) 이전은 막는다", () => {
@@ -92,7 +92,7 @@ describe("회의실 예약 검증", () => {
       },
       OWNER_HOST,
     );
-    expect(errors.topics).toBe("빈 안건 칸이 있어요 — 채우거나 삭제해 주세요");
+    expect(errors.topics).toBe("빈 안건 칸을 채우거나 삭제해 주세요");
   });
 
   it("안건을 여러 쌍 다 채우면 통과한다", () => {
@@ -133,7 +133,7 @@ describe("회의실 예약 검증", () => {
       OWNER_HOST,
     );
     expect(errors.parentTeamActionId).toBe(
-      "Owner가 개설하는 회의에는 상위 팀 액션을 지정할 수 없어요",
+      "Owner가 개설하는 회의에는 상위 팀 액션을 지정할 수 없습니다",
     );
   });
 
@@ -147,7 +147,7 @@ describe("회의실 예약 검증", () => {
       { ...VALID_DRAFT, attendeeIds: [Number.NaN] },
       OWNER_HOST,
     );
-    expect(errors.attendeeIds).toBe("참석자 값이 올바르지 않아요");
+    expect(errors.attendeeIds).toBe("참석자 값이 올바르지 않습니다");
   });
 });
 
@@ -189,7 +189,7 @@ describe("회의실 추가·수정 검증", () => {
       openTime: "18:00",
       closeTime: "09:00",
     });
-    expect(errors.closeTime).toBe("종료 시간은 시작 시간보다 늦어야 해요");
+    expect(errors.closeTime).toBe("종료 시간은 시작 시간보다 늦어야 합니다");
   });
 
   it("시작과 종료가 같으면 막는다", () => {
@@ -198,6 +198,6 @@ describe("회의실 추가·수정 검증", () => {
       openTime: "09:00",
       closeTime: "09:00",
     });
-    expect(errors.closeTime).toBe("종료 시간은 시작 시간보다 늦어야 해요");
+    expect(errors.closeTime).toBe("종료 시간은 시작 시간보다 늦어야 합니다");
   });
 });

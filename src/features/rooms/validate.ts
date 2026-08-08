@@ -54,7 +54,7 @@ export function validateRoomReservationDraft(
   if (!draft.startTime.trim()) {
     errors.startTime = "시작 시간을 선택해 주세요";
   } else if (!TIME_PATTERN.test(draft.startTime)) {
-    errors.startTime = "예약은 30분 단위로만 가능해요";
+    errors.startTime = "예약은 30분 단위로만 가능합니다";
   } else {
     const startMinutes = toMinutes(draft.startTime);
     if (
@@ -71,7 +71,7 @@ export function validateRoomReservationDraft(
   if (draft.topics.length === 0 || !draft.topics[0]?.main.trim() || !draft.topics[0]?.sub.trim()) {
     errors.topics = "회의 안건(대주제·소주제)을 한 쌍 이상 입력해 주세요";
   } else if (draft.topics.some((topic) => !topic.main.trim() || !topic.sub.trim())) {
-    errors.topics = "빈 안건 칸이 있어요 — 채우거나 삭제해 주세요";
+    errors.topics = "빈 안건 칸을 채우거나 삭제해 주세요";
   }
 
   // ⚠️ Owner가 개설하면 이 필드가 아예 없다(= 프로젝트 회의) — Leader/Member면 반드시 있어야
@@ -81,13 +81,13 @@ export function validateRoomReservationDraft(
   } else if (draft.parentTeamActionId !== undefined) {
     // ⚠️ Owner는 반대로 이 필드를 아예 못 넣는다 — Owner 개설 회의(프로젝트 회의)엔 상위 팀
     //    액션 개념이 없다(WORKFLOW.md §2). 폼이 조작돼 값이 들어와도 여기서 막는다.
-    errors.parentTeamActionId = "Owner가 개설하는 회의에는 상위 팀 액션을 지정할 수 없어요";
+    errors.parentTeamActionId = "Owner가 개설하는 회의에는 상위 팀 액션을 지정할 수 없습니다";
   }
 
   if (draft.attendeeIds.length === 0) {
     errors.attendeeIds = "참석자를 한 명 이상 선택해 주세요";
   } else if (draft.attendeeIds.some((id) => !Number.isInteger(id))) {
-    errors.attendeeIds = "참석자 값이 올바르지 않아요";
+    errors.attendeeIds = "참석자 값이 올바르지 않습니다";
   }
 
   return errors;
@@ -121,7 +121,7 @@ export function validateMeetingRoomDraft(draft: MeetingRoomDraft): MeetingRoomFo
     !errors.closeTime &&
     toMinutes(draft.openTime) >= toMinutes(draft.closeTime)
   ) {
-    errors.closeTime = "종료 시간은 시작 시간보다 늦어야 해요";
+    errors.closeTime = "종료 시간은 시작 시간보다 늦어야 합니다";
   }
 
   return errors;

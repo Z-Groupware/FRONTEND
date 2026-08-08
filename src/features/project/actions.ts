@@ -42,7 +42,7 @@ export async function createProjectAction(
   formData: FormData,
 ): Promise<ProjectFormState> {
   const viewer = await getViewer();
-  if (!canCreateProject(viewer)) return { errors: { name: "프로젝트를 생성할 권한이 없어요" } };
+  if (!canCreateProject(viewer)) return { errors: { name: "프로젝트를 생성할 권한이 없습니다" } };
 
   const draft = readDraft(formData);
   const errors = validateProjectDraft(draft);

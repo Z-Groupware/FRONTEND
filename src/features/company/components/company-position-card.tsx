@@ -97,7 +97,7 @@ export function CompanyPositionCard({ initial }: { initial: Position[] }) {
       }
       setFailed(null);
       setSaved(next);
-      toast.success("직급·권한을 저장했습니다");
+      toast.success("직급 체계를 저장했습니다");
     });
   };
 

@@ -3,6 +3,7 @@
 import { useActionState, useEffect, useState } from "react";
 import { toast } from "sonner";
 
+import { FieldError } from "@/components/common/field-error";
 import { LeaveGuard } from "@/components/common/leave-guard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -51,9 +52,7 @@ function Field({
            `AuthField`가 같은 이유로 달아 뒀다).
         ⚠️ 비어 있어도 노드는 남긴다 — 없다 생겼다 하면 읽히지 않고 높이도 출렁인다.
       */}
-      <p id={`${id}-error`} role="alert" className="text-destructive min-h-4 text-[12px] leading-4">
-        {error}
-      </p>
+      <FieldError id={`${id}-error`} message={error} reserveSpace />
     </div>
   );
 }

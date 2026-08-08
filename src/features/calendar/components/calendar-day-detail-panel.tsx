@@ -2,7 +2,7 @@
 
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
-import { useEffect, useRef, useState } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 
 import type { PersonalCalendarEvent } from "../types";
 import { CalendarEventListItem } from "./calendar-event-list-item";
@@ -13,6 +13,8 @@ interface CalendarDayDetailPanelProps {
   events: PersonalCalendarEvent[];
   /** PERSONAL_TODO 완료 토글 — `calendar-event-list-item.tsx`로 그대로 흘려보낸다. */
   onToggleCompletion?: (id: string) => void;
+  /** 카드 머리 오른쪽에 붙는 액션 — [Todo 추가] */
+  action?: ReactNode;
 }
 
 /**
@@ -25,6 +27,7 @@ export function CalendarDayDetailPanel({
   selectedDate,
   events,
   onToggleCompletion,
+  action,
 }: CalendarDayDetailPanelProps) {
   const listRef = useRef<HTMLUListElement>(null);
   const [hasMoreBelow, setHasMoreBelow] = useState(false);
@@ -53,21 +56,39 @@ export function CalendarDayDetailPanel({
   }, [events]);
 
   return (
-    <aside className="border-border flex min-h-[240px] w-full shrink-0 flex-col border-t pt-6 lg:h-full lg:min-h-0 lg:w-[230px] lg:max-w-[230px] lg:border-t-0 lg:border-l lg:pt-0 lg:pl-6">
-      <div className="flex items-baseline justify-between gap-2 pb-4">
-        <h2 className="text-base font-semibold">
-          {format(selectedDate, "yyyy년 M월 d일(EEE)", { locale: ko })}
+    /*
+      ⚠️ **카드다**(DESIGN §2). 세로 구분선 하나로 갈라 두니 달력의 연장처럼 보여, 오른쪽이
+         잘린 표인지 다른 묶음인지 알 수 없었다.
+      ⚠️ 폭은 **360px 고정**(§1). 230px에서는 제목이 두 줄로 접혔다.
+    */
+    <aside className="border-border bg-card flex min-h-[240px] w-full shrink-0 flex-col overflow-hidden rounded-2xl border lg:h-full lg:min-h-0 lg:w-[360px] lg:max-w-[360px]">
+      {/* 카드 머리 — 다른 화면과 같은 문법(px-7 · pt-6 pb-3 · 점 표식) */}
+      <div className="flex items-center justify-between gap-3 px-7 pt-6 pb-3">
+        <h2 className="flex min-w-0 items-center gap-2 text-[17px] leading-7 font-semibold tracking-[-0.3px]">
+          <span className="bg-foreground size-2 shrink-0 rounded-full" aria-hidden />
+          <span className="truncate">
+            {format(selectedDate, "yyyy년 M월 d일(EEE)", { locale: ko })}
+          </span>
         </h2>
-        <span className="text-muted-foreground shrink-0 text-xs">{events.length}건</span>
+        <div className="flex shrink-0 items-center gap-4">
+          <span className="text-muted-foreground text-[12px] leading-4 tabular-nums">
+            {events.length}건
+          </span>
+          {action}
+        </div>
       </div>
 
       {events.length === 0 ? (
-        <p className="text-muted-foreground flex flex-1 items-center justify-center text-center text-sm">
+        <p className="text-muted-foreground flex flex-1 items-center justify-center px-7 pb-10 text-center text-[13px] leading-5">
           이 날짜에 일정이 없습니다
         </p>
       ) : (
         <div className="relative min-h-0 flex-1">
-          <ul ref={listRef} className="flex h-full flex-col gap-2 overflow-y-auto">
+          {/* ⚠️ `overflow-x-hidden`은 못 박아 둔다 — 긴 제목 하나가 카드 밖으로 밀고 나가 좌우 스크롤을 만든 적이 있다 */}
+          <ul
+            ref={listRef}
+            className="flex h-full flex-col gap-2 overflow-x-hidden overflow-y-auto px-7 pb-6"
+          >
             {events.map((event) => (
               <CalendarEventListItem
                 key={event.id}

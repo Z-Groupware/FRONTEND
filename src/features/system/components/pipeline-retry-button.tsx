@@ -10,7 +10,6 @@ import { retryPipelineAction } from "../actions";
 
 interface PipelineRetryButtonProps {
   meetingId: string;
-  companyName: string;
 }
 
 /**
@@ -20,7 +19,7 @@ interface PipelineRetryButtonProps {
  *    재처리는 큐에 잡을 다시 넣는 조작이라 연타로 중복 투입되면 곤란하다.
  * ⚠️ 지금은 목이라 실제 재처리가 돌지 않는다(§정직성) — 결과는 토스트로만 알린다.
  */
-export function PipelineRetryButton({ meetingId, companyName }: PipelineRetryButtonProps) {
+export function PipelineRetryButton({ meetingId }: PipelineRetryButtonProps) {
   const [isDone, setIsDone] = useState(false);
   const [isPending, startTransition] = useTransition();
 
@@ -38,9 +37,9 @@ export function PipelineRetryButton({ meetingId, companyName }: PipelineRetryBut
       const response = await retryPipelineAction(meetingId);
       if (response.success) {
         setIsDone(true);
-        toast(`${companyName} 회의 재처리를 요청했습니다`);
+        toast("재처리를 요청했습니다");
       } else {
-        toast(`${companyName} 회의를 찾을 수 없어 재처리하지 못했습니다`);
+        toast("재처리하지 못했습니다");
       }
     });
   };

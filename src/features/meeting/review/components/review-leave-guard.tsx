@@ -121,8 +121,14 @@ export function ReviewLeaveGuard({ isBlocked }: ReviewLeaveGuardProps) {
       <ConfirmDialog
         isOpen={isOpen}
         onOpenChange={(open) => !open && handleStay()}
-        title="이 화면을 나가시겠어요?"
-        description="확정하지 않으면 액션이 분배되지 않습니다. 미확정 상태로 나가도 '마이페이지'에서 이어서 처리할 수 있습니다."
+        title="이 화면을 나갈까요?"
+        description={
+          <>
+            확정하지 않으면 액션이 분배되지 않습니다.
+            <br />
+            미확정 상태로 나가도 &lsquo;마이페이지&rsquo;에서 이어서 처리할 수 있습니다.
+          </>
+        }
         confirmLabel="나가기"
         isDestructive
         onConfirm={handleLeave}

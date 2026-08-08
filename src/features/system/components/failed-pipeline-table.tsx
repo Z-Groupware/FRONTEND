@@ -101,7 +101,7 @@ export function FailedPipelineTable({ items }: { items: FailedPipelineItem[] }) 
                   {item.errorMessage}
                 </TableCell>
                 <TableCell className="pr-4 text-center">
-                  <PipelineRetryButton meetingId={item.meetingId} companyName={item.companyName} />
+                  <PipelineRetryButton meetingId={item.meetingId} />
                 </TableCell>
               </TableRow>
             ))}
