@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { CreditCard } from "lucide-react";
+import { type ReactNode, useState, useTransition } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -22,9 +23,15 @@ import { TABLE_HEAD_ROW_CLASS } from "../table-style";
 import type { SubscriptionRecord } from "../types";
 import { NoticeMailDialog } from "./notice-mail-dialog";
 import { StatusBadge, type StatusTone } from "./status-badge";
+import { SystemCardHeading } from "./system-card-heading";
 
 interface SubscriptionTableProps {
   subscriptions: SubscriptionRecord[];
+  /**
+   * 제목 줄 오른쪽에 붙는 이동 링크 — 부르는 화면이 넘긴다.
+   * ⚠️ 표가 아는 일이 아니라 **화면이 아는 일**이다(어디로 보낼지는 화면 맥락이다).
+   */
+  action?: ReactNode;
 }
 
 /** 행 하나의 높이 — 고정 클래스로 못박아 내용에 따라 늘어나지 않게 한다(`company-table.tsx`와 같은 이유). */
@@ -58,7 +65,7 @@ const COLUMN_WIDTH = {
  *    토스트만으로 확인받지 않는다(CLAUDE.md §토스트: 파괴적 작업은 Dialog). "예"를 누른
  *    뒤 발송 결과는 토스트로 알린다(§토스트: 변경 결과 피드백).
  */
-export function SubscriptionTable({ subscriptions }: SubscriptionTableProps) {
+export function SubscriptionTable({ subscriptions, action }: SubscriptionTableProps) {
   const [isPending, startTransition] = useTransition();
   const [noticeTarget, setNoticeTarget] = useState<{
     companyId: string;
@@ -91,6 +98,9 @@ export function SubscriptionTable({ subscriptions }: SubscriptionTableProps) {
 
   return (
     <div className="border-border bg-card overflow-hidden rounded-2xl border">
+      <SystemCardHeading icon={CreditCard} action={action}>
+        구독 목록
+      </SystemCardHeading>
       <div className="overflow-x-auto">
         <Table className="min-w-[680px] table-fixed text-xs">
           {/* 각 컬럼 폭을 %로 고정 — 기업명 길이가 달라져도 다른 컬럼이 밀리지 않는다(위 COLUMN_WIDTH 참고) */}

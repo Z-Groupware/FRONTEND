@@ -43,17 +43,26 @@ export default async function SystemBillingPage() {
 
         <MrrChartCard data={monthlyMrr} />
 
-        <div className="flex flex-col gap-2">
-          <SubscriptionTable subscriptions={subscriptions} />
-
-          <Link
-            href="/system/companies"
-            className="text-muted-foreground hover:text-foreground focus-visible:ring-ring inline-flex items-center gap-1 self-end rounded text-xs transition-colors focus-visible:ring-2 focus-visible:outline-none"
-          >
-            전체 기업 목록 보기
-            <ArrowRight className="size-3" aria-hidden />
-          </Link>
-        </div>
+        {/*
+          ⚠️ 이동 링크를 **카드 제목 줄에** 둔다. 전에는 카드 아래 허공에 오른쪽 정렬로
+             떠 있었는데, 어느 카드에 딸린 것인지 모양으로 알 수 없고 카드 모서리 밖으로
+             삐져나와 마감이 안 된 것처럼 보였다.
+        */}
+        <SubscriptionTable
+          subscriptions={subscriptions}
+          action={
+            <Link
+              href="/system/companies"
+              className="text-muted-foreground hover:text-foreground focus-visible:ring-ring group inline-flex shrink-0 items-center gap-1 rounded text-xs transition-colors focus-visible:ring-2 focus-visible:outline-none"
+            >
+              전체 기업 목록 보기
+              <ArrowRight
+                className="size-3 transition-transform duration-150 group-hover:translate-x-0.5"
+                aria-hidden
+              />
+            </Link>
+          }
+        />
       </div>
     </main>
   );

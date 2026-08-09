@@ -45,10 +45,6 @@ export default async function SystemCompaniesPage({ searchParams }: SystemCompan
   return (
     <main className="min-h-0 flex-1 overflow-y-auto px-8 py-7">
       <div className="mx-auto flex max-w-[1440px] flex-col gap-7">
-        <Suspense>
-          <CompanyFilterBar />
-        </Suspense>
-
         {/*
           ⚠️ 검색·정렬이 바뀌면 새로 마운트돼야 한다(누적된 예전 결과가 섞이지 않게) —
              필터 값으로 만든 key로 그걸 보장한다(`company-list.tsx` 주석 참고).
@@ -62,6 +58,11 @@ export default async function SystemCompaniesPage({ searchParams }: SystemCompan
           pageSize={PAGE_SIZE}
           filter={filter}
           query={query}
+          filterBar={
+            <Suspense>
+              <CompanyFilterBar />
+            </Suspense>
+          }
         />
       </div>
 
