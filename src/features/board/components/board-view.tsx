@@ -77,7 +77,7 @@ export function BoardView({ boardType, cards, todayIso }: BoardViewProps) {
     const to = event.over.id as BoardColumnId;
     if (from === to) return;
     if (!canMoveCard(from, to)) {
-      toast("여기로는 옮길 수 없습니다");
+      toast.error("여기로는 옮길 수 없습니다");
       return;
     }
     setOverrides((prev) => ({ ...prev, [card.id]: to }));
@@ -92,7 +92,7 @@ export function BoardView({ boardType, cards, todayIso }: BoardViewProps) {
       await commitBoardChangesAction(boardType, changes);
       setOverrides({});
       setConfirmOpen(false);
-      toast(`${changes.length}건 반영했습니다`);
+      toast.success(`${changes.length}건 반영했습니다`);
     });
   }
 

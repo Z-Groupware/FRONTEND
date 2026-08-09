@@ -37,9 +37,9 @@ export function PipelineRetryButton({ meetingId }: PipelineRetryButtonProps) {
       const response = await retryPipelineAction(meetingId);
       if (response.success) {
         setIsDone(true);
-        toast("재처리를 요청했습니다");
+        toast.success("재처리를 요청했습니다");
       } else {
-        toast("재처리하지 못했습니다");
+        toast.error("재처리하지 못했습니다");
       }
     });
   };
