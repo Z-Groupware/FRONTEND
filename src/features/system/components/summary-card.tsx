@@ -3,6 +3,14 @@ import { cn } from "@/lib/utils";
 interface SummaryItem {
   label: string;
   value: string;
+  /**
+   * 값 뒤에 붙는 단위(`건`·`명` 등).
+   *
+   * ⚠️ **값에 붙여 쓰지 않는다.** `"3건"`으로 한 덩이면 `건`까지 30px로 커져 숫자와 같은
+   *    무게로 읽힌다 — 먼저 읽혀야 하는 건 숫자다. 갈라 두면 단위를 작고 흐리게 붙일 수 있다.
+   * ⚠️ **없던 단위를 만들지 않는다.** 원래 안 붙던 값(`62`·`₩8.4M`)은 그대로 둔다.
+   */
+  unit?: string;
   meta: string;
 }
 
@@ -38,8 +46,15 @@ export function SummaryCard({ items }: SummaryCardProps) {
             )}
           >
             <p className="text-muted-foreground text-[12px] leading-4">{item.label}</p>
-            <p className="text-[30px] leading-9 font-semibold tracking-[-0.8px] tabular-nums">
-              {item.value}
+            <p className="flex items-baseline justify-center gap-0.5">
+              <span className="text-[30px] leading-9 font-semibold tracking-[-0.8px] tabular-nums">
+                {item.value}
+              </span>
+              {item.unit && (
+                <span className="text-muted-foreground text-[14px] leading-5 font-medium">
+                  {item.unit}
+                </span>
+              )}
             </p>
             <p className="text-muted-foreground text-[12px] leading-4">{item.meta}</p>
           </div>

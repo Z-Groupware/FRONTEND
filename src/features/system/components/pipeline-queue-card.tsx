@@ -1,7 +1,8 @@
-import { ChevronRight } from "lucide-react";
+import { Activity, ChevronRight } from "lucide-react";
 import Link from "next/link";
 
 import type { PipelineQueueSummary } from "../types";
+import { SystemCardHeading } from "./system-card-heading";
 
 interface PipelineQueueCardProps {
   queue: PipelineQueueSummary;
@@ -22,22 +23,20 @@ interface PipelineQueueCardProps {
  *    위아래 카드와 오른쪽 끝이 어긋나 중간 줄만 안쪽으로 들어가 보였다.
  */
 export function PipelineQueueCard({ queue }: PipelineQueueCardProps) {
+  /** ⚠️ 단위(`건`)는 값과 갈라 둔다 — 붙여 쓰면 `건`까지 20px로 커져 숫자와 같은 무게로 읽힌다. */
   const rows = [
-    { label: "대기", value: `${queue.waitingCount}건`, meta: "처리 예정" },
+    { label: "대기", value: queue.waitingCount, meta: "처리 예정" },
     {
       label: "처리 중",
-      value: `${queue.processingCount}건`,
+      value: queue.processingCount,
       meta: `평균 ${queue.processingAvgSeconds}초`,
     },
-    { label: "재처리 필요", value: `${queue.failedCount}건`, meta: "처리 실패", isFailure: true },
+    { label: "재처리 필요", value: queue.failedCount, meta: "처리 실패", isFailure: true },
   ];
 
   return (
     <section className="border-border bg-card flex w-full flex-col rounded-2xl border">
-      <h2 className="flex items-center gap-2 px-7 pt-6 pb-3 text-[17px] leading-7 font-semibold tracking-[-0.3px]">
-        <span className="bg-foreground size-2 rounded-full" aria-hidden />
-        처리 큐
-      </h2>
+      <SystemCardHeading icon={Activity}>처리 큐</SystemCardHeading>
 
       {/*
         ⚠️ 남는 높이는 목록이 먹는다 — 옆 차트 카드가 늘 더 길어서, 내용을 위에 몰아 두면
@@ -61,11 +60,14 @@ export function PipelineQueueCard({ queue }: PipelineQueueCardProps) {
                  실패가 0건이면 알릴 게 없으므로 빨강도 안 쓴다 — 늘 빨간 줄은 곧 안 읽힌다.
             */}
             <span
-              className={`text-[20px] leading-7 font-semibold tracking-[-0.4px] tabular-nums ${
+              className={`flex items-baseline gap-0.5 ${
                 row.isFailure && queue.failedCount > 0 ? "text-destructive" : "text-foreground"
               }`}
             >
-              {row.value}
+              <span className="text-[20px] leading-7 font-semibold tracking-[-0.4px] tabular-nums">
+                {row.value}
+              </span>
+              <span className="text-[13px] leading-5">건</span>
             </span>
           </li>
         ))}

@@ -27,11 +27,17 @@ export default async function SystemBillingPage() {
             },
             {
               label: "결제 완료",
-              value: `${summary.paidCount}건`,
+              value: `${summary.paidCount}`,
+              unit: "건",
               meta: formatCompactKrw(summary.paidAmount),
             },
-            { label: "미납", value: `${summary.unpaidCount}건`, meta: "안내 발송 필요" },
-            { label: "해지", value: `${summary.canceledCountThisMonth}건`, meta: "이번 달" },
+            { label: "미납", value: `${summary.unpaidCount}`, unit: "건", meta: "안내 발송 필요" },
+            {
+              label: "해지",
+              value: `${summary.canceledCountThisMonth}`,
+              unit: "건",
+              meta: "이번 달",
+            },
           ]}
         />
 

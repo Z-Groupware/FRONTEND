@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Send } from "lucide-react";
+import { Check, PenLine, Send } from "lucide-react";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 
@@ -19,6 +19,7 @@ import { NOTICE_TARGET, NOTICE_TARGET_LABEL, type NoticeTarget } from "@/constan
 import { publishNoticeAction } from "../actions";
 import type { NoticeTargetCompany } from "../types";
 import { NoticeCompanyPicker } from "./notice-company-picker";
+import { SystemCardHeading } from "./system-card-heading";
 
 const TARGET_OPTIONS = Object.values(NOTICE_TARGET);
 
@@ -60,10 +61,7 @@ export function NoticeComposeCard({ companies }: { companies: NoticeTargetCompan
 
   return (
     <section className="border-border bg-card rounded-2xl border">
-      <h2 className="flex items-center gap-2 px-7 pt-6 pb-3 text-[17px] leading-7 font-semibold tracking-[-0.3px]">
-        <span className="bg-foreground size-2 rounded-full" aria-hidden />
-        공지 작성
-      </h2>
+      <SystemCardHeading icon={PenLine}>공지 작성</SystemCardHeading>
 
       <div className="flex flex-col gap-3 px-7 pb-6">
         <div className="flex flex-col gap-1.5">

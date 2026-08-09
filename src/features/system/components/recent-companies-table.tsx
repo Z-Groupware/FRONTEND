@@ -1,3 +1,5 @@
+import { Building2 } from "lucide-react";
+
 import {
   Table,
   TableBody,
@@ -9,9 +11,7 @@ import {
 
 import { TABLE_HEAD_ROW_CLASS } from "../table-style";
 import type { RecentCompany } from "../types";
-
-const CARD_HEADER_CLASS =
-  "flex items-center gap-2 px-7 pt-6 pb-3 text-[17px] leading-7 font-semibold tracking-[-0.3px]";
+import { SystemCardHeading } from "./system-card-heading";
 
 /**
  * 표 머리 셀.
@@ -34,10 +34,7 @@ export function RecentCompaniesTable({ companies }: { companies: RecentCompany[]
     // 크기는 develop의 개편(#74)을 따르고, 문구만 합니다체로 둔다(2026-08-04 카피 변경)
     return (
       <section className="border-border bg-card rounded-2xl border">
-        <h2 className={CARD_HEADER_CLASS}>
-          <span className="bg-foreground size-2 rounded-full" aria-hidden />
-          최근 가입 기업
-        </h2>
+        <SystemCardHeading icon={Building2}>최근 가입 기업</SystemCardHeading>
         <p className="text-muted-foreground px-7 pb-10 text-center text-[13px] leading-5">
           아직 가입한 기업이 없습니다
         </p>
@@ -47,10 +44,7 @@ export function RecentCompaniesTable({ companies }: { companies: RecentCompany[]
 
   return (
     <section className="border-border bg-card overflow-hidden rounded-2xl border">
-      <h2 className={CARD_HEADER_CLASS}>
-        <span className="bg-foreground size-2 rounded-full" aria-hidden />
-        최근 가입 기업
-      </h2>
+      <SystemCardHeading icon={Building2}>최근 가입 기업</SystemCardHeading>
 
       <div className="overflow-x-auto">
         <Table className="min-w-[520px] text-[13px]">

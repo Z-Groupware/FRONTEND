@@ -1,16 +1,16 @@
+import { History } from "lucide-react";
+
 import { NOTICE_TARGET_LABEL } from "@/constants/domain";
 import { formatDate } from "@/lib/date";
 
 import type { NoticeHistoryItem } from "../types";
+import { SystemCardHeading } from "./system-card-heading";
 
 /** "발행 이력" 카드 — 순수 표시라 서버에서 그린다. 비어있으면 안내 문구로 대체한다(§정직성). */
 export function NoticeHistoryCard({ items }: { items: NoticeHistoryItem[] }) {
   return (
     <section className="border-border bg-card overflow-hidden rounded-2xl border">
-      <h2 className="flex items-center gap-2 px-7 pt-6 pb-3 text-[17px] leading-7 font-semibold tracking-[-0.3px]">
-        <span className="bg-foreground size-2 rounded-full" aria-hidden />
-        발행 이력
-      </h2>
+      <SystemCardHeading icon={History}>발행 이력</SystemCardHeading>
 
       {items.length === 0 ? (
         <p className="text-muted-foreground px-7 pb-6 text-center text-xs">

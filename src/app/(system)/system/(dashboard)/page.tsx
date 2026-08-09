@@ -41,7 +41,8 @@ export default async function SystemDashboardPage() {
             },
             {
               label: "승인 대기",
-              value: `${summary.pendingApprovalCount}건`,
+              value: `${summary.pendingApprovalCount}`,
+              unit: "건",
               meta: "기업 가입 신청",
             },
           ]}

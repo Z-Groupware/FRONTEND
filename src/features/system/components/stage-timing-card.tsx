@@ -1,6 +1,9 @@
+import { Timer } from "lucide-react";
+
 import { PIPELINE_STAGE_LABEL, type PipelineStage } from "@/constants/domain";
 
 import type { StageTiming } from "../types";
+import { SystemCardHeading } from "./system-card-heading";
 
 /**
  * 단계별 막대 색 — 파이프라인 4단계를 **색상이 아니라 명도**로 구분한다(§5·§10 — 색으로
@@ -18,10 +21,7 @@ export function StageTimingCard({ timings }: { timings: StageTiming[] }) {
   if (timings.length === 0) {
     return (
       <section className="border-border bg-card rounded-2xl border">
-        <h2 className="flex items-center gap-2 px-7 pt-6 pb-3 text-[17px] leading-7 font-semibold tracking-[-0.3px]">
-          <span className="bg-foreground size-2 rounded-full" aria-hidden />
-          단계별 평균 소요 시간
-        </h2>
+        <SystemCardHeading icon={Timer}>단계별 평균 소요 시간</SystemCardHeading>
         <p className="text-muted-foreground px-7 pb-6 text-center text-xs">
           아직 집계된 처리 기록이 없어요
         </p>
@@ -34,10 +34,7 @@ export function StageTimingCard({ timings }: { timings: StageTiming[] }) {
 
   return (
     <section className="border-border bg-card rounded-2xl border">
-      <h2 className="flex items-center gap-2 px-7 pt-6 pb-3 text-[17px] leading-7 font-semibold tracking-[-0.3px]">
-        <span className="bg-foreground size-2 rounded-full" aria-hidden />
-        단계별 평균 소요 시간
-      </h2>
+      <SystemCardHeading icon={Timer}>단계별 평균 소요 시간</SystemCardHeading>
 
       <div className="flex flex-col gap-3 px-7 pb-6">
         {timings.map((timing) => (

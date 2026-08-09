@@ -1,5 +1,7 @@
 "use client";
 
+import { TriangleAlert } from "lucide-react";
+
 import {
   Table,
   TableBody,
@@ -14,6 +16,7 @@ import { cn } from "@/lib/utils";
 import { TABLE_HEAD_ROW_CLASS } from "../table-style";
 import type { FailedPipelineItem } from "../types";
 import { PipelineRetryButton } from "./pipeline-retry-button";
+import { SystemCardHeading } from "./system-card-heading";
 
 /** 행/헤더 높이 — 다른 SYSTEM 표(구독·매출·기업 관리)와 같은 값으로 못박는다. */
 const ROW_HEIGHT_CLASS = "h-[42px]";
@@ -49,10 +52,7 @@ export function FailedPipelineTable({ items }: { items: FailedPipelineItem[] }) 
 
   return (
     <section className="border-border bg-card overflow-hidden rounded-2xl border">
-      <h2 className="flex items-center gap-2 px-7 pt-6 pb-3 text-[17px] leading-7 font-semibold tracking-[-0.3px]">
-        <span className="bg-foreground size-2 rounded-full" aria-hidden />
-        실패 목록
-      </h2>
+      <SystemCardHeading icon={TriangleAlert}>실패 목록</SystemCardHeading>
 
       <div className="overflow-x-auto">
         <Table className="table-fixed text-xs">
