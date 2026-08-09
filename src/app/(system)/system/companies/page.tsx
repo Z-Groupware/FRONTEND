@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 
 import { isCompanySort, isCompanyStatus } from "@/constants/domain";
-import { CompanyDetailSheet } from "@/features/system/components/company-detail-sheet";
+import { CompanyDetailDialog } from "@/features/system/components/company-detail-dialog";
 import { CompanyFilterBar } from "@/features/system/components/company-filter-bar";
 import { CompanyList } from "@/features/system/components/company-list";
 import { buildCompanyHref } from "@/features/system/lib/company-href";
@@ -66,7 +66,7 @@ export default async function SystemCompaniesPage({ searchParams }: SystemCompan
         />
       </div>
 
-      <CompanyDetailSheet company={selected} closeHref={currentPath} currentPath={currentPath} />
+      <CompanyDetailDialog company={selected} closeHref={currentPath} currentPath={currentPath} />
     </main>
   );
 }
