@@ -1727,4 +1727,26 @@
     -webkit-text-fill-color: var(--foreground);
     caret-color: var(--foreground);
   }
+
+  /*
+    차트를 **클릭했을 때 뜨는 회색 테두리**를 지운다.
+
+    ⚠️ recharts는 조각을 담는 `<g>`(`recharts-zIndex-layer_*`)와 툴팁 상자에 `tabindex="-1"`을
+       달아 둔다. 마우스로 누르면 그 `<g>`가 초점을 받고, 브라우저가 **자기 bbox**에 기본
+       테두리를 그린다 — 그래서 막대차트는 막대 영역이, 도넛은 도넛이 통째로 네모로 감싸여
+       고르지도 않은 게 선택된 것처럼 보인다.
+    ⚠️ `tabindex="-1"`은 **애초에 키보드로 갈 수 없는 자리**다. 여기 테두리를 지워도 잃는 게 없다.
+    ⚠️ 키보드 초점은 차트 표면(`.recharts-surface`, `tabindex="0"`)이 받는다 — 링은 거기만
+       남기고, 그것도 `:focus-visible`에만 건다. 통째로 끄면 키보드로 다니는 사람이 지금
+       어디 있는지 알 수 없다(CLAUDE.md §a11y).
+    ⚠️ 전역에 둔다. 차트를 새로 놓을 때마다 같은 버그를 다시 만나기 때문이다.
+  */
+  .recharts-wrapper [tabindex="-1"]:focus,
+  .recharts-surface:focus {
+    outline: none;
+  }
+  .recharts-surface:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
 }
