@@ -13,11 +13,20 @@ const CARD_HEADER_CLASS =
   "flex items-center gap-2 px-7 pt-6 pb-3 text-[17px] leading-7 font-semibold tracking-[-0.3px]";
 
 /**
+ * 표 머리 셀.
+ *
+ * ⚠️ **`h-9`를 행이 아니라 셀에 건다.** `<tr>`에 걸어 봤자 `TableHead`가 `<th>`마다
+ *    기본 `h-10`을 얹어서(`components/ui/table.tsx`) 머리 높이가 40px로 남는다 —
+ *    행 높이를 정하는 건 셀이다. 눈에 안 보이는 채로 한 칸 두꺼웠다.
+ */
+const HEAD_CELL_CLASS = "text-muted-foreground h-9 text-[12px] font-normal";
+
+/**
  * "최근 가입 기업" 표. 비어있으면 안내 문구로 대체한다(CLAUDE.md §정직성 · loading/error/empty).
  *
- * ⚠️ 셀 규격을 **기준 화면과 같게** 맞춘다(DESIGN §3·§4) — 본문 13px, 이름 열 `px-6`,
- *    나머지 `px-4`. 한때 전부 12px에 `pl-4`라, 카드 제목(`px-7`)보다 표가 안쪽으로 들어가
- *    왼쪽 끝이 어긋나 보였다.
+ * ⚠️ 셀 규격을 **기준 화면과 같게** 맞춘다(DESIGN §3·§4) — 본문 13px, **양 끝 열**(기업명·가입일)
+ *    `px-6`, 가운데 열 `px-4`. 양 끝만 넓은 건 카드 제목(`px-7`)과 왼쪽·오른쪽 끝을 맞추기
+ *    위해서다. 한때 전부 12px에 `pl-4`라 표가 제목보다 안쪽으로 들어가 끝이 어긋나 보였다.
  */
 export function RecentCompaniesTable({ companies }: { companies: RecentCompany[] }) {
   if (companies.length === 0) {
@@ -45,19 +54,11 @@ export function RecentCompaniesTable({ companies }: { companies: RecentCompany[]
       <div className="overflow-x-auto">
         <Table className="min-w-[520px] text-[13px]">
           <TableHeader>
-            <TableRow className="text-muted-foreground bg-secondary/50 h-9 hover:bg-transparent">
-              <TableHead className="text-muted-foreground px-6 text-[12px] font-normal">
-                기업명
-              </TableHead>
-              <TableHead className="text-muted-foreground px-4 text-center text-[12px] font-normal">
-                기업 코드
-              </TableHead>
-              <TableHead className="text-muted-foreground px-4 text-center text-[12px] font-normal">
-                구성원
-              </TableHead>
-              <TableHead className="text-muted-foreground px-6 text-center text-[12px] font-normal">
-                가입일
-              </TableHead>
+            <TableRow className="bg-secondary/50 hover:bg-transparent">
+              <TableHead className={`${HEAD_CELL_CLASS} px-6`}>기업명</TableHead>
+              <TableHead className={`${HEAD_CELL_CLASS} px-4 text-center`}>기업 코드</TableHead>
+              <TableHead className={`${HEAD_CELL_CLASS} px-4 text-center`}>구성원</TableHead>
+              <TableHead className={`${HEAD_CELL_CLASS} px-6 text-center`}>가입일</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
