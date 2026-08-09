@@ -9,7 +9,7 @@ export function MrrChartCard({ data }: { data: MonthlyMrr[] }) {
   return (
     <section className="border-border bg-card rounded-2xl border">
       <SystemCardHeading icon={BarChart3}>월별 MRR 추이</SystemCardHeading>
-      <div className="px-7 pb-6">
+      <div className="px-7 pt-5 pb-6">
         <MrrChartLoader data={data} />
       </div>
     </section>

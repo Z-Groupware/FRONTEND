@@ -37,29 +37,34 @@ interface SystemCardHeadingProps {
  *    대비는 두 테마 모두 3:1 위다(다크 3.4:1 · 라이트 3.2:1 — 그래픽 기준).
  */
 export function SystemCardHeading({ icon: Icon, children, action }: SystemCardHeadingProps) {
-  /*
-    ⚠️ `action`이 없으면 상자를 덧대지 않는다. `h2` 하나만 남아야 다른 카드와 여백이
-       완전히 같다 — 감싸는 순간 줄 높이가 미세하게 달라진다.
-  */
   if (!action) {
-    return <h2 className={HEADING_CLASS}>{renderTitle(Icon, children)}</h2>;
+    return (
+      <div className={HEADING_ROW_CLASS}>
+        <h2 className={HEADING_CLASS}>{renderTitle(Icon, children)}</h2>
+      </div>
+    );
   }
 
   return (
-    <div className="flex items-center justify-between gap-3 pr-7">
+    <div className={`${HEADING_ROW_CLASS} flex items-center justify-between gap-3 pr-7`}>
       <h2 className={HEADING_CLASS}>{renderTitle(Icon, children)}</h2>
       {action}
     </div>
   );
 }
 
-/**
- * ⚠️ **아래 여백이 위보다 넉넉하다**(`pt-5 pb-5` — 한때 `pt-6 pb-3`). 제목 아래가 12px뿐이라
- *    본문(표 머리 띠·막대 첫 줄)이 제목에 달라붙어, 제목이 카드의 머리가 아니라 첫 줄처럼
- *    읽혔다. 제목은 위로 4px 올리고 본문과는 8px 더 떼어 놓는다 — 카드 높이는 4px만 는다.
- */
 const HEADING_CLASS =
-  "flex min-w-0 items-center gap-2 px-7 pt-5 pb-5 text-[17px] leading-7 font-semibold tracking-[-0.3px]";
+  "flex min-w-0 items-center gap-2 px-7 pt-5 pb-4 text-[17px] leading-7 font-semibold tracking-[-0.3px]";
+
+/**
+ * ⚠️ **제목 줄에 경계선을 둔다.** 여백만으로는 제목이 안 섰다 — 위 24px·아래 23px로 거의
+ *    대칭이라, 카드의 머리가 아니라 본문 첫 줄처럼 읽혔다(위아래를 벌려 봐도 마찬가지였다).
+ *    선을 그으면 "여기까지가 머리"가 모양으로 정해져서, 아래에 표 머리 띠가 붙든 차트가
+ *    붙든 제목이 흔들리지 않는다.
+ * ⚠️ 선이 나누는 몫을 하므로 아래 여백은 **줄인다**(`pb-4`). 선 밑 간격은 본문이 정한다 —
+ *    표는 머리 띠가 선에 바로 붙는 게 맞고, 차트·목록은 자기 `pt`를 갖는다.
+ */
+const HEADING_ROW_CLASS = "border-border border-b";
 
 function renderTitle(Icon: LucideIcon, children: ReactNode) {
   return (

@@ -36,7 +36,7 @@ export default async function ApprovalDetailPage({ params }: ApprovalDetailPageP
         <div className="border-border bg-card rounded-2xl border">
           <SystemCardHeading icon={Building2}>{company.companyName}</SystemCardHeading>
 
-          <div className="px-7 pt-3 pb-7">
+          <div className="px-7 pt-5 pb-7">
             <dl className="grid grid-cols-2 gap-x-6 gap-y-5">
               <Field label="사업자등록번호" value={company.businessRegistrationNumber} />
               <Field label="신청일" value={formatDate(company.appliedAt)} />

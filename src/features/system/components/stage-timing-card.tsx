@@ -36,7 +36,7 @@ export function StageTimingCard({ timings }: { timings: StageTiming[] }) {
     <section className="border-border bg-card rounded-2xl border">
       <SystemCardHeading icon={Timer}>단계별 평균 소요 시간</SystemCardHeading>
 
-      <div className="flex flex-col gap-3 px-7 pb-6">
+      <div className="flex flex-col gap-3 px-7 pt-5 pb-6">
         {timings.map((timing) => (
           <div key={timing.stage} className="flex items-center gap-3">
             <span className="text-muted-foreground w-20 shrink-0 text-xs">

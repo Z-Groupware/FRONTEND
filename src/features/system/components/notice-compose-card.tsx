@@ -63,7 +63,7 @@ export function NoticeComposeCard({ companies }: { companies: NoticeTargetCompan
     <section className="border-border bg-card rounded-2xl border">
       <SystemCardHeading icon={PenLine}>공지 작성</SystemCardHeading>
 
-      <div className="flex flex-col gap-3 px-7 pb-6">
+      <div className="flex flex-col gap-3 px-7 pt-5 pb-6">
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="notice-title">제목</Label>
           <Input
