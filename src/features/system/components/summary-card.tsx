@@ -19,7 +19,7 @@ interface SummaryCardProps {
  */
 export function SummaryCard({ items }: SummaryCardProps) {
   return (
-    <section className="border-border bg-card rounded-2xl border p-7">
+    <section className="border-border bg-card rounded-2xl border px-7 py-6">
       <div
         className={cn(
           "grid gap-6 lg:items-center lg:gap-0",

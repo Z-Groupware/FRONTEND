@@ -11,18 +11,23 @@ interface SignupChartProps {
 /**
  * 월별 신규 가입 기업 막대그래프. 단일 계열이라 범례는 두지 않는다.
  *
- * ⚠️ **막대는 색이 아니라 명도다**(DESIGN §10 "조각은 색이 아니라 명도로 나눈다").
- *    한때 `--chart-1`(주황)이었는데 두 가지가 어긋났다 — 바로 옆 도넛은 이미 명도로 갈라 둬서
- *    같은 화면에서 규칙이 둘이었고, **주황은 이미 Owner라는 뜻**이라(§5) 데이터에 쓰면 뜻이
- *    두 개가 된다. 계열이 하나뿐이라 색으로 가를 것도 없다.
+ * ⚠️ **막대에만 액센트(`--chart-1`)를 쓴다.** 제품 화면(로그인 뒤 워크스페이스)은 "색으로
+ *    알리는 건 에러뿐"이지만(DESIGN §5), `/system`은 **운영자만 보는 다른 면**이고 이미 자기
+ *    색 언어를 갖고 있다(사이드바·발행 버튼). 여기서 액센트는 장식이 아니라 **이 화면의 주인공
+ *    계열**이라는 표시다 — 한 화면에 액센트는 이것과 도넛의 유료 조각 둘뿐이고, 나머지는 전부
+ *    무채색이다. 전문적으로 보이는 건 색을 많이 써서가 아니라 **한 색만 뜻있게 써서**다.
+ * ⚠️ 다크 카드(#242120) 위 대비 **5.00:1** — 그래픽 기준 3:1을 넘는다.
  * ⚠️ hover 커서를 **아주 옅게** 둔다. `--muted`로 채우면 막대 뒤에 큰 회색 덩어리가 생겨
  *    정작 봐야 할 막대보다 눈에 먼저 들어온다.
+ * ⚠️ **막대 굵기는 40px다.** 26px은 한 칸(≈120px)에 비해 가늘어 사이가 휑했고, 56px까지
+ *    올리니 이번엔 기둥처럼 뭉툭해졌다 — 칸의 3분의 1쯤이 눈에 편하다.
  */
 export function SignupChart({ data }: SignupChartProps) {
   return (
     <ResponsiveContainer width="100%" height={224}>
       <BarChart data={data} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
-        <CartesianGrid vertical={false} stroke="var(--border)" />
+        {/* 눈금선은 배경이다 — 막대보다 도드라지면 안 된다 */}
+        <CartesianGrid vertical={false} stroke="var(--border)" strokeOpacity={0.6} />
         <XAxis
           dataKey="month"
           tickLine={false}
@@ -53,7 +58,7 @@ export function SignupChart({ data }: SignupChartProps) {
           labelStyle={{ color: "var(--muted-foreground)", marginBottom: 2 }}
           formatter={(value) => [`${value}개사`, "신규 가입"]}
         />
-        <Bar dataKey="count" fill="var(--foreground)" radius={[4, 4, 0, 0]} maxBarSize={32} />
+        <Bar dataKey="count" fill="var(--chart-1)" radius={[6, 6, 0, 0]} maxBarSize={40} />
       </BarChart>
     </ResponsiveContainer>
   );
