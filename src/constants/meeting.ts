@@ -36,6 +36,14 @@ export const AI_SUMMARY_STATUS = {
   SUMMARIZING: "SUMMARIZING",
   REVIEWED: "REVIEWED",
   DISTRIBUTED: "DISTRIBUTED",
+  /**
+   * ⚠️ BE #177(2026-08-08): 서버가 죽어 끊긴 것도, 실제로 분석이 실패한 것도 전부
+   *    이 값으로 온다. 둘을 가르는 건 `stalled` 플래그(층별)다 — 상태 하나 더 만들지
+   *    않는다(§도메인 상수: 파생값은 계산). 이 상수엔 `stalled` 자체를 안 담는다 —
+   *    회의 하나 안의 여러 층 중 일부만 stalled일 수 있어서, 그 판정은 화면(마이페이지
+   *    "요약이 중단된 회의")이 층 목록을 보고 계산한다.
+   */
+  FAILED: "FAILED",
 } as const;
 export type AiSummaryStatus = (typeof AI_SUMMARY_STATUS)[keyof typeof AI_SUMMARY_STATUS];
 
@@ -44,6 +52,7 @@ export const AI_SUMMARY_STATUS_LABEL: Record<AiSummaryStatus, string> = {
   SUMMARIZING: "요약 중",
   REVIEWED: "검토 완료",
   DISTRIBUTED: "분배 완료",
+  FAILED: "실패",
 };
 
 /*
