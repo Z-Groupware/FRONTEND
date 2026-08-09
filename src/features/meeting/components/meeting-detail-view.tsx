@@ -68,11 +68,11 @@ export function MeetingDetailView({ detail }: { detail: MeetingDetail }) {
             <div className="text-muted-foreground flex flex-wrap items-center gap-x-4 gap-y-1 text-[12px] leading-4">
               <span className="flex items-center gap-1.5">
                 <CalendarClock className="size-3.5" aria-hidden />
-                <span className="translate-y-[1px] tabular-nums">{detail.schedule}</span>
+                <span className="tabular-nums">{detail.schedule}</span>
               </span>
               <span className="flex items-center gap-1.5">
                 <MapPin className="size-3.5" aria-hidden />
-                <span className="translate-y-[1px]">{detail.roomName}</span>
+                <span>{detail.roomName}</span>
               </span>
             </div>
           </div>

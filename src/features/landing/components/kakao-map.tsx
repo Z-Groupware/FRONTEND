@@ -128,7 +128,7 @@ export function KakaoMap({ lat, lng, label, address, mapUrl, searchKeyword }: Ka
               className="text-landing-accent flex items-center gap-1 text-[13px] leading-5 hover:underline"
             >
               {/* 한글 글자가 상자 안에서 위쪽에 앉아 아이콘보다 떠 보인다 — 1px 내려 맞춘다 */}
-              <span className="translate-y-px">카카오맵에서 열기</span>
+              <span>카카오맵에서 열기</span>
               <ExternalLink className="size-3.5" aria-hidden />
             </a>
           </div>
@@ -165,9 +165,7 @@ export function KakaoMap({ lat, lng, label, address, mapUrl, searchKeyword }: Ka
           */}
           <div className="absolute top-3 left-3 z-10 flex items-center gap-2 rounded-full border border-white/20 bg-[#0a0a0a]/62 px-3.5 py-2 backdrop-blur-md [.landing-night_&]:border-white/30 [.landing-night_&]:bg-white/12">
             <MapPin className="size-4 shrink-0 text-white/90" aria-hidden />
-            <span className="translate-y-px text-[12px] leading-4 font-medium text-white">
-              {address}
-            </span>
+            <span className="text-[12px] leading-4 font-medium text-white">{address}</span>
           </div>
           {/* 지도 위에 바로가기 하나 — 길찾기는 결국 카카오맵 앱에서 한다 */}
           <a
@@ -177,7 +175,7 @@ export function KakaoMap({ lat, lng, label, address, mapUrl, searchKeyword }: Ka
             className="focus-visible:ring-ring absolute right-3 bottom-3 z-10 flex items-center gap-1.5 rounded-full border border-white/20 bg-[#0a0a0a]/62 px-3.5 py-2 text-[12px] leading-4 font-medium text-white backdrop-blur-md transition-colors hover:bg-[#0a0a0a]/80 focus-visible:ring-2 focus-visible:outline-hidden [.landing-night_&]:border-white/30 [.landing-night_&]:bg-white/12 [.landing-night_&]:hover:bg-white/20"
           >
             {/* 한글 글자가 상자 안에서 위쪽에 앉아 아이콘보다 떠 보인다 — 1px 내려 맞춘다 */}
-            <span className="translate-y-px">카카오맵에서 열기</span>
+            <span>카카오맵에서 열기</span>
             <ExternalLink className="size-3.5" aria-hidden />
           </a>
         </>

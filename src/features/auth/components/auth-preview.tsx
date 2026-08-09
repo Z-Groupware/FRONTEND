@@ -45,8 +45,8 @@ export function AuthPreview() {
       <div className="flex flex-col gap-3 p-4">
         <p className="flex items-center gap-1.5 text-[11px] leading-4">
           <span className="size-[7px] animate-pulse rounded-full bg-[#4ade80]" />
-          <span className="translate-y-px font-medium text-[#4ade80]">LIVE</span>
-          <span className="translate-y-px text-white/90">스프린트 회의 · 제품팀</span>
+          <span className="font-medium text-[#4ade80]">LIVE</span>
+          <span className="text-white/90">스프린트 회의 · 제품팀</span>
         </p>
 
         {SPEAKERS.map((speaker) => (

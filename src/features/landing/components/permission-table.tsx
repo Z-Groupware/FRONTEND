@@ -92,15 +92,15 @@ export function PermissionTable() {
       <ul className="text-foreground/75 flex flex-wrap items-center gap-x-5 gap-y-2 pb-4 text-[12px] leading-5">
         <li className="flex items-center gap-2">
           <AccessMark value="yes" />
-          <span className="translate-y-px">가능</span>
+          <span>가능</span>
         </li>
         <li className="flex items-center gap-2">
           <AccessMark value="partial" />
-          <span className="translate-y-px">조건부 — 표 아래 설명 참고</span>
+          <span>조건부 — 표 아래 설명 참고</span>
         </li>
         <li className="flex items-center gap-2">
           <AccessMark value="no" />
-          <span className="translate-y-px">불가</span>
+          <span>불가</span>
         </li>
       </ul>
 
@@ -135,7 +135,7 @@ export function PermissionTable() {
                     <span className="flex items-center gap-3">
                       <GroupIcon title={group.title} />
                       {/* 한글 글자가 상자 안에서 위쪽에 앉아 아이콘보다 떠 보인다 — 1px 내려 맞춘다 */}
-                      <span className="translate-y-px">{group.title}</span>
+                      <span>{group.title}</span>
                     </span>
                   </th>
                 </tr>

@@ -162,7 +162,7 @@ export function SupportWidget() {
                 className="text-muted-foreground hover:text-popover-foreground focus-visible:ring-ring/40 ml-auto flex shrink-0 items-center gap-1 rounded-md px-1.5 py-1 text-[11px] leading-4 transition-colors focus-visible:ring-2 focus-visible:outline-hidden"
               >
                 <RotateCcw className="size-3" aria-hidden />
-                <span className="translate-y-px">처음으로</span>
+                <span>처음으로</span>
               </button>
             )}
           </div>

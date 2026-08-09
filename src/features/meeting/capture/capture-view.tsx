@@ -95,7 +95,7 @@ export function CaptureView({ meeting }: { meeting: MeetingCaptureInfo }) {
                 >
                   <Mic className="size-4" aria-hidden />
                   {/* 아이콘 옆 한글은 1px 내린다(DESIGN §5) */}
-                  <span className="translate-y-[1px]">녹음 시작</span>
+                  <span>녹음 시작</span>
                 </Button>
               ) : (
                 <Button
@@ -109,7 +109,7 @@ export function CaptureView({ meeting }: { meeting: MeetingCaptureInfo }) {
                   ) : (
                     <Pause className="size-4" aria-hidden />
                   )}
-                  <span className="translate-y-[1px]">{isPaused ? "재개" : "일시정지"}</span>
+                  <span>{isPaused ? "재개" : "일시정지"}</span>
                 </Button>
               )}
 
@@ -121,7 +121,7 @@ export function CaptureView({ meeting }: { meeting: MeetingCaptureInfo }) {
                 onClick={() => setIsConfirming(true)}
               >
                 <Square className="size-3.5" aria-hidden />
-                <span className="translate-y-[1px]">회의 종료 및 제출</span>
+                <span>회의 종료 및 제출</span>
               </Button>
             </div>
           </section>

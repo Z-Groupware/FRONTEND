@@ -87,15 +87,15 @@ function CardFooter({ meeting }: { meeting: MeetingListItem }) {
         <span className="flex items-center gap-1.5">
           <CalendarClock className="size-3.5 shrink-0" aria-hidden />
           {/* 아이콘 옆 한글은 1px 내린다(DESIGN §5) */}
-          <span className="translate-y-[1px] tabular-nums">{meeting.schedule}</span>
+          <span className="tabular-nums">{meeting.schedule}</span>
         </span>
         <span className="flex items-center gap-1.5">
           <MapPin className="size-3.5 shrink-0" aria-hidden />
-          <span className="translate-y-[1px]">{meeting.roomName}</span>
+          <span>{meeting.roomName}</span>
         </span>
         <span className="flex items-center gap-1.5">
           <Users className="size-3.5 shrink-0" aria-hidden />
-          <span className="translate-y-[1px] tabular-nums">{meeting.attendeeCount}명</span>
+          <span className="tabular-nums">{meeting.attendeeCount}명</span>
         </span>
       </div>
 
@@ -112,7 +112,7 @@ function CardFooter({ meeting }: { meeting: MeetingListItem }) {
             className="border-border hover:border-foreground/40 hover:text-foreground text-muted-foreground focus-visible:ring-ring flex h-8 items-center gap-1.5 rounded-lg border px-3 text-[13px] leading-5 transition-colors focus-visible:ring-2 focus-visible:outline-hidden"
           >
             <DoorOpen className="size-3.5" aria-hidden />
-            <span className="translate-y-[1px]">입장</span>
+            <span>입장</span>
           </Link>
         )}
       </div>

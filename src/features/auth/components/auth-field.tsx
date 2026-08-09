@@ -56,7 +56,7 @@ export function AuthField({
     <div className="flex flex-col gap-1.5">
       <Label htmlFor={id} className="flex items-center gap-1.5">
         <Icon className="text-muted-foreground size-3.5" aria-hidden />
-        <span className="translate-y-px">{label}</span>
+        <span>{label}</span>
       </Label>
 
       {children ?? (
@@ -79,7 +79,7 @@ export function AuthField({
         className="text-destructive flex min-h-4 items-center gap-1.5 text-[12px] leading-4 break-keep"
       >
         {error && <AlertCircle className="size-3.5 shrink-0" aria-hidden />}
-        <span className="translate-y-px">{error}</span>
+        <span>{error}</span>
       </p>
     </div>
   );

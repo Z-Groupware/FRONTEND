@@ -56,7 +56,7 @@ export function AppPreview() {
       <div className="border-foreground/25 landing-light:border-border bg-popover landing-light:bg-card animate-float absolute top-10 -left-12 z-10 rounded-2xl border px-4 py-3.5 shadow-lg lg:-left-16">
         <span className="bg-landing-violet/10 text-landing-violet inline-flex items-center gap-1 rounded-full py-0.5 pr-2.5 pl-2 text-[10px] leading-4 font-semibold">
           <Sparkles className="size-3 shrink-0" aria-hidden />
-          <span className="translate-y-px">AI 요약</span>
+          <span>AI 요약</span>
         </span>
         <p className="pt-2 text-[12px] leading-[18px] font-semibold">스프린트 킥오프</p>
         <p className="text-muted-foreground flex items-center gap-1.5 pt-1.5 text-[11px] leading-4">

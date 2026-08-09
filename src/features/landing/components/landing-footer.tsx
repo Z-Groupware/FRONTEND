@@ -53,7 +53,7 @@ export function LandingFooter() {
                 <Scale className="text-foreground/70 size-3.5" aria-hidden />
               )}
               {/* 한글 글자가 상자 안에서 위쪽에 앉아 아이콘보다 떠 보인다 — 1px 내려 맞춘다 */}
-              <span className="translate-y-px">{column.title}</span>
+              <span>{column.title}</span>
             </p>
             <ul className="flex flex-col gap-[7px] pt-2.5">
               {column.items.map((item) => (
