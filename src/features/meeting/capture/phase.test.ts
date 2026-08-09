@@ -4,6 +4,7 @@ import {
   closedSegmentCountOf,
   formatRecordedTime,
   isCapturing,
+  nextUtteranceStart,
   recordedMsOf,
   SEGMENT_MS,
   showsWorkspace,
@@ -90,5 +91,30 @@ describe("경과 시간 표기", () => {
 
   it("음수는 0으로 본다", () => {
     expect(formatRecordedTime(-5_000)).toBe("00:00");
+  });
+});
+
+describe("발화 시작 시각", () => {
+  it("첫 중간 결과에서 지금 시각을 잡는다", () => {
+    expect(nextUtteranceStart(null, "안녕하", 10_000)).toBe(10_000);
+  });
+
+  /* ⚠️ 한 문장이 자라는 동안 시작 시각은 처음 그대로여야 한다 — 말 끝이 아니라 말 시작이다 */
+  it("이미 잡았으면 덮어쓰지 않는다", () => {
+    expect(nextUtteranceStart(10_000, "안녕하세요 반갑", 12_000)).toBe(10_000);
+  });
+
+  /*
+    ⚠️ 여기가 이 함수의 존재 이유다. 일시정지·세션 종료로 중간 결과가 확정 없이 사라질 때
+       안 지우면 **다음 문장이 앞 문장의 시각을 물려받는다**.
+  */
+  it("빈 문자열이 오면 지운다 — 다음 문장이 옛 시각을 물려받지 않게", () => {
+    expect(nextUtteranceStart(20_000, "", 320_000)).toBeNull();
+  });
+
+  it("지운 뒤 새 문장은 그때 시각을 잡는다", () => {
+    const cleared = nextUtteranceStart(20_000, "", 320_000);
+
+    expect(nextUtteranceStart(cleared, "다시 말하면", 320_000)).toBe(320_000);
   });
 });
