@@ -35,8 +35,17 @@ interface SubscriptionTableProps {
 }
 
 /** 행 하나의 높이 — 고정 클래스로 못박아 내용에 따라 늘어나지 않게 한다(`company-table.tsx`와 같은 이유). */
-const ROW_HEIGHT_CLASS = "h-[42px]";
-const HEADER_HEIGHT_CLASS = "h-[34px]";
+const ROW_HEIGHT_CLASS = "h-12";
+const HEADER_HEIGHT_CLASS = "h-9";
+
+/**
+ * 값 칸 — **오른쪽 레일**로 세운다.
+ *
+ * ⚠️ 전부 가운데 정렬이었다. 숫자는 자릿수가 제각각이라(`8명`·`130명`, `₩79,200`·`₩435,600`)
+ *    가운데로 두면 줄마다 좌우로 흔들려 세로선이 안 생긴다 — 표가 "떠 있는 섬" 여러 개로
+ *    읽힌다(DESIGN §3: 자릿수가 섞이면 오른쪽 정렬).
+ */
+const VALUE_CELL_CLASS = "text-muted-foreground text-right tabular-nums";
 
 const STATUS_TONE: Record<SubscriptionRecord["paymentStatus"], StatusTone> = {
   PAID: "positive",
@@ -49,12 +58,12 @@ const STATUS_TONE: Record<SubscriptionRecord["paymentStatus"], StatusTone> = {
  * 기업 관리·기업 승인 표에서 겪은 "페이지 전환 시 열 밀림"과 같은 문제를 처음부터 막는다.
  */
 const COLUMN_WIDTH = {
-  company: "30%",
-  members: "12%",
-  amount: "18%",
-  billingDate: "18%",
-  status: "10%",
-  action: "12%",
+  company: "26%",
+  members: "10%",
+  amount: "16%",
+  billingDate: "20%",
+  status: "14%",
+  action: "14%",
 } as const;
 
 /**
@@ -102,7 +111,7 @@ export function SubscriptionTable({ subscriptions, action }: SubscriptionTablePr
         구독 목록
       </SystemCardHeading>
       <div className="overflow-x-auto">
-        <Table className="min-w-[680px] table-fixed text-xs">
+        <Table className="min-w-[680px] table-fixed text-[13px]">
           {/* 각 컬럼 폭을 %로 고정 — 기업명 길이가 달라져도 다른 컬럼이 밀리지 않는다(위 COLUMN_WIDTH 참고) */}
           <colgroup>
             <col style={{ width: COLUMN_WIDTH.company }} />
@@ -115,11 +124,11 @@ export function SubscriptionTable({ subscriptions, action }: SubscriptionTablePr
           <TableHeader>
             <TableRow className={cn(HEADER_HEIGHT_CLASS, TABLE_HEAD_ROW_CLASS)}>
               <TableHead className="pl-7 text-xs">기업명</TableHead>
-              <TableHead className="text-center text-xs">인원</TableHead>
-              <TableHead className="text-center text-xs">금액</TableHead>
-              <TableHead className="text-center text-xs">결제일</TableHead>
-              <TableHead className="text-center text-xs">상태</TableHead>
-              <TableHead className="pr-7 text-center text-xs">액션</TableHead>
+              <TableHead className="text-right text-xs">인원</TableHead>
+              <TableHead className="text-right text-xs">금액</TableHead>
+              <TableHead className="text-right text-xs">결제일</TableHead>
+              <TableHead className="text-right text-xs">상태</TableHead>
+              <TableHead className="pr-7 text-right text-xs">액션</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -128,24 +137,28 @@ export function SubscriptionTable({ subscriptions, action }: SubscriptionTablePr
                 key={subscription.companyId}
                 className={cn(ROW_HEIGHT_CLASS, "hover:bg-foreground/[0.04]")}
               >
-                <TableCell className="max-w-0 truncate pl-7" title={subscription.companyName}>
+                {/*
+                  ⚠️ **이 줄의 주인공은 기업명이다.** 전에는 이름도 나머지 값과 같은 12px
+                     흐린 글씨라 무엇을 보는 표인지 드러나지 않았다 — 먹색·medium으로 세운다.
+                */}
+                <TableCell
+                  className="text-foreground max-w-0 truncate pl-7 font-medium"
+                  title={subscription.companyName}
+                >
                   {subscription.companyName}
                 </TableCell>
-                <TableCell className="text-muted-foreground text-center tabular-nums">
-                  {subscription.memberCount}명
-                </TableCell>
-                <TableCell className="text-muted-foreground text-center tabular-nums">
-                  {formatWon(subscription.amount)}
-                </TableCell>
-                <TableCell className="text-muted-foreground text-center tabular-nums">
+                <TableCell className={VALUE_CELL_CLASS}>{subscription.memberCount}명</TableCell>
+                <TableCell className={VALUE_CELL_CLASS}>{formatWon(subscription.amount)}</TableCell>
+                <TableCell className={VALUE_CELL_CLASS}>
                   {subscription.billingDate ? formatDate(subscription.billingDate) : "–"}
                 </TableCell>
-                <TableCell className="text-center">
+                {/* 뱃지도 오른쪽 레일에 세운다 — 가운데로 두면 양옆 오른쪽 정렬 사이에서 혼자 떠 보인다 */}
+                <TableCell className="text-right">
                   <StatusBadge tone={STATUS_TONE[subscription.paymentStatus]}>
                     {PAYMENT_STATUS_LABEL[subscription.paymentStatus]}
                   </StatusBadge>
                 </TableCell>
-                <TableCell className="pr-7 text-center">
+                <TableCell className="pr-7 text-right">
                   <Button
                     type="button"
                     variant="secondary"

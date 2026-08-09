@@ -52,26 +52,26 @@ export function RecentCompaniesTable({ companies }: { companies: RecentCompany[]
             <TableRow className={TABLE_HEAD_ROW_CLASS}>
               <TableHead className={`${HEAD_CELL_CLASS} px-7`}>기업명</TableHead>
               <TableHead className={`${HEAD_CELL_CLASS} px-4 text-center`}>기업 코드</TableHead>
-              <TableHead className={`${HEAD_CELL_CLASS} px-4 text-center`}>구성원</TableHead>
-              <TableHead className={`${HEAD_CELL_CLASS} px-7 text-center`}>가입일</TableHead>
+              <TableHead className={`${HEAD_CELL_CLASS} px-4 text-right`}>구성원</TableHead>
+              <TableHead className={`${HEAD_CELL_CLASS} px-7 text-right`}>가입일</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {companies.map((company) => (
               <TableRow key={company.id} className="hover:bg-foreground/[0.04] h-12">
-                <TableCell className="text-foreground px-7">{company.name}</TableCell>
+                <TableCell className="text-foreground px-7 font-medium">{company.name}</TableCell>
                 <TableCell
                   className="text-muted-foreground px-4 text-center font-mono"
                   title={company.code}
                 >
                   {company.code}
                 </TableCell>
-                <TableCell className="text-muted-foreground px-4 text-center tabular-nums">
+                <TableCell className="text-muted-foreground px-4 text-right tabular-nums">
                   {company.memberCount}명
                 </TableCell>
                 {/* ⚠️ 관리자 화면 표기라 일반 화면의 "8월 5일(화)" 형식을 안 따른다(`types.ts`
                     `RecentCompany.joinedAt` 주석) — 원문 "YYYY-MM-DD" 그대로 보여준다. */}
-                <TableCell className="text-muted-foreground px-7 text-center font-mono tabular-nums">
+                <TableCell className="text-muted-foreground px-7 text-right font-mono tabular-nums">
                   {company.joinedAt}
                 </TableCell>
               </TableRow>

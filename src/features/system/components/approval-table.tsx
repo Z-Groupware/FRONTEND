@@ -80,8 +80,8 @@ export function ApprovalTable({ companies, pageSize }: ApprovalTableProps) {
               <TableHead className="text-center text-xs">사업자 번호</TableHead>
               <TableHead className="text-center text-xs">대표자</TableHead>
               <TableHead className="text-center text-xs">담당자 이메일</TableHead>
-              <TableHead className="text-center text-xs">구성원</TableHead>
-              <TableHead className="pr-7 text-center text-xs">신청일</TableHead>
+              <TableHead className="text-right text-xs">구성원</TableHead>
+              <TableHead className="pr-7 text-right text-xs">신청일</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -94,7 +94,7 @@ export function ApprovalTable({ companies, pageSize }: ApprovalTableProps) {
                 <TableCell className="max-w-0 pl-7">
                   <Link
                     href={`/system/approval/${company.id}`}
-                    className="text-foreground focus-visible:ring-ring block truncate rounded after:absolute after:inset-0 hover:underline focus-visible:ring-2 focus-visible:outline-none"
+                    className="text-foreground focus-visible:ring-ring block truncate rounded font-medium after:absolute after:inset-0 hover:underline focus-visible:ring-2 focus-visible:outline-none"
                     title={company.companyName}
                   >
                     {company.companyName}
@@ -112,10 +112,10 @@ export function ApprovalTable({ companies, pageSize }: ApprovalTableProps) {
                 >
                   {company.contactEmail}
                 </TableCell>
-                <TableCell className="text-muted-foreground text-center tabular-nums">
+                <TableCell className="text-muted-foreground text-right tabular-nums">
                   {company.memberCount}명
                 </TableCell>
-                <TableCell className="text-muted-foreground pr-7 text-center tabular-nums">
+                <TableCell className="text-muted-foreground pr-7 text-right tabular-nums">
                   {formatDate(company.appliedAt)}
                 </TableCell>
               </TableRow>

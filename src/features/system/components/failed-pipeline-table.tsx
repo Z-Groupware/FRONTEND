@@ -69,9 +69,9 @@ export function FailedPipelineTable({ items }: { items: FailedPipelineItem[] }) 
               <TableHead className="pl-7 text-xs">회의 ID</TableHead>
               <TableHead className="text-center text-xs">기업</TableHead>
               <TableHead className="text-center text-xs">실패 단계</TableHead>
-              <TableHead className="text-center text-xs">시각</TableHead>
+              <TableHead className="text-right text-xs">시각</TableHead>
               <TableHead className="text-center text-xs">오류</TableHead>
-              <TableHead className="pr-7 text-center text-xs">액션</TableHead>
+              <TableHead className="pr-7 text-right text-xs">액션</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -80,7 +80,7 @@ export function FailedPipelineTable({ items }: { items: FailedPipelineItem[] }) 
                 key={item.meetingId}
                 className={cn(ROW_HEIGHT_CLASS, "hover:bg-foreground/[0.04]")}
               >
-                <TableCell className="text-muted-foreground pl-7 font-mono">
+                <TableCell className="text-foreground pl-7 font-mono font-medium">
                   {item.meetingId}
                 </TableCell>
                 <TableCell
@@ -92,7 +92,7 @@ export function FailedPipelineTable({ items }: { items: FailedPipelineItem[] }) 
                 <TableCell className="text-destructive text-center">
                   {PIPELINE_STAGE_LABEL[item.stage]}
                 </TableCell>
-                <TableCell className="text-muted-foreground text-center font-mono tabular-nums">
+                <TableCell className="text-muted-foreground text-right font-mono tabular-nums">
                   {item.failedAt}
                 </TableCell>
                 <TableCell
@@ -101,7 +101,7 @@ export function FailedPipelineTable({ items }: { items: FailedPipelineItem[] }) 
                 >
                   {item.errorMessage}
                 </TableCell>
-                <TableCell className="pr-7 text-center">
+                <TableCell className="pr-7 text-right">
                   <PipelineRetryButton meetingId={item.meetingId} />
                 </TableCell>
               </TableRow>

@@ -86,10 +86,10 @@ export function CompanyTable({ companies, buildDetailHref, pageSize }: CompanyTa
             <TableRow className={cn(HEADER_HEIGHT_CLASS, TABLE_HEAD_ROW_CLASS)}>
               <TableHead className="pl-7 text-xs">기업명</TableHead>
               <TableHead className="text-center text-xs">기업 코드</TableHead>
-              <TableHead className="text-center text-xs">구성원</TableHead>
-              <TableHead className="text-center text-xs">이번달 회의</TableHead>
-              <TableHead className="text-center text-xs">가입일</TableHead>
-              <TableHead className="pr-7 text-center text-xs">상태</TableHead>
+              <TableHead className="text-right text-xs">구성원</TableHead>
+              <TableHead className="text-right text-xs">이번달 회의</TableHead>
+              <TableHead className="text-right text-xs">가입일</TableHead>
+              <TableHead className="pr-7 text-right text-xs">상태</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -102,7 +102,7 @@ export function CompanyTable({ companies, buildDetailHref, pageSize }: CompanyTa
                 <TableCell className="max-w-0 pl-7">
                   <Link
                     href={buildDetailHref(company.id)}
-                    className="text-foreground focus-visible:ring-ring block truncate rounded after:absolute after:inset-0 hover:underline focus-visible:ring-2 focus-visible:outline-none"
+                    className="text-foreground focus-visible:ring-ring block truncate rounded font-medium after:absolute after:inset-0 hover:underline focus-visible:ring-2 focus-visible:outline-none"
                     title={company.name}
                   >
                     {company.name}
@@ -123,7 +123,7 @@ export function CompanyTable({ companies, buildDetailHref, pageSize }: CompanyTa
                 <TableCell className="text-muted-foreground text-center tabular-nums">
                   {formatDate(company.joinedAt)}
                 </TableCell>
-                <TableCell className="pr-7 text-center">
+                <TableCell className="pr-7 text-right">
                   <StatusBadge tone={STATUS_TONE[company.status]}>
                     {COMPANY_STATUS_LABEL[company.status]}
                   </StatusBadge>
