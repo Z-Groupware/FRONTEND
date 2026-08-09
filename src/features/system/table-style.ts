@@ -10,6 +10,10 @@
  * ⚠️ **6%다.** 행 hover가 4%(`hover:bg-foreground/[0.04]`)라, 머리가 그보다 옅으면
  *    마우스를 얹은 행이 머리보다 진해져 위아래가 뒤집혀 보인다.
  * ⚠️ 아래 보더를 같이 둔다. 띠만으로는 어느 테마에서든 경계가 흐리다.
+ * ⚠️ **hover에도 같은 띠를 유지한다.** `TableRow`가 기본으로 `hover:bg-muted/50`을 걸어서
+ *    그걸 지워야 하는데, `hover:bg-transparent`로 지웠더니 **마우스를 얹는 순간 띠가 통째로
+ *    사라졌다.** 머리 줄은 누르는 자리가 아니라 반응할 이유가 없다 — 같은 값을 다시 줘서
+ *    아무 일도 일어나지 않게 한다. (띠가 안 보이던 때는 이 버그도 안 보였다.)
  */
 export const TABLE_HEAD_ROW_CLASS =
-  "bg-foreground/[0.06] border-border border-b hover:bg-transparent";
+  "bg-foreground/[0.06] border-border border-b hover:bg-foreground/[0.06]";
