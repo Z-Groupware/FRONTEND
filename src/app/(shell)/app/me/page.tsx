@@ -1,11 +1,15 @@
+import { ClipboardList, RotateCcw } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 
 import { ScreenScaleCard } from "@/features/appearance/components/screen-scale-card";
 import { ThemeCard } from "@/features/appearance/components/theme-card";
 import { listPendingReviewsForViewer } from "@/features/meeting/review/server";
+import { listStalledSummariesForViewer } from "@/features/meeting/summary/server";
 import { ProfileHeader } from "@/features/profile/components/profile-header";
 import { ProfileInfoCard } from "@/features/profile/components/profile-info-card";
+import { StalledSummaryList } from "@/features/profile/components/stalled-summary-list";
+import { TaskGroupSection } from "@/features/profile/components/task-group-section";
 import { UnconfirmedActionList } from "@/features/profile/components/unconfirmed-action-list";
 import { parseProfileTab, PROFILE_TABS } from "@/features/profile/lib";
 import { getMyProfile } from "@/features/profile/server";
@@ -27,17 +31,20 @@ interface AppMePageProps {
  *    "기본 정보"는 팀 디자인(피그마)을 그대로 반영했지만, 이 화면에서 값을 고칠 수 있다는
  *    뜻은 아니다 — 편집 API·정책이 확정되면 그때 붙인다.
  * ⚠️ 배율은 **기기 설정**이라 서버에 저장하지 않는다(`ScreenScaleCard` 그대로 유지).
- * ⚠️ "미확정 액션" 탭은 **여기 있어야 한다** — "내 액션"(`/app/my/actions`)은 Owner가
+ * ⚠️ "처리할 일" 탭은 **여기 있어야 한다** — "내 액션"(`/app/my/actions`)은 Owner가
  *    접근 못 하는데, 회의 Host는 Owner일 수 있다(2026-08-07 사용자 확정, WORKFLOW.md 미기재
- *    — 이 화면 자체가 이번에 새로 나온 정책).
+ *    — 이 화면 자체가 새로 나온 정책). "요약이 중단된 회의" 그룹도 같은 이유로 여기 둔다
+ *    (BE #177 대응, 2026-08-08 — 실시간 진행 배너를 놓친 사람이 뒤늦게 발견하는 자리).
  */
 export default async function AppMePage({ searchParams }: AppMePageProps) {
   const activeTab = parseProfileTab((await searchParams).tab);
   const viewer = await getViewer();
+  const isTaskTab = activeTab === "unconfirmed";
 
-  const [profile, pendingReviews] = await Promise.all([
+  const [profile, pendingReviews, stalledSummaries] = await Promise.all([
     getMyProfile(),
-    activeTab === "unconfirmed" ? listPendingReviewsForViewer(viewer.id) : Promise.resolve([]),
+    isTaskTab ? listPendingReviewsForViewer(viewer.id) : Promise.resolve([]),
+    isTaskTab ? listStalledSummariesForViewer(viewer.id) : Promise.resolve([]),
   ]);
 
   return (
@@ -62,8 +69,26 @@ export default async function AppMePage({ searchParams }: AppMePageProps) {
             ))}
           </nav>
 
-          {activeTab === "unconfirmed" ? (
-            <UnconfirmedActionList reviews={pendingReviews} />
+          {isTaskTab ? (
+            <div className="flex flex-col gap-5">
+              <TaskGroupSection
+                icon={ClipboardList}
+                title="미확정 액션"
+                count={pendingReviews.length}
+                emptyMessage="미확정 액션이 없습니다."
+              >
+                <UnconfirmedActionList reviews={pendingReviews} />
+              </TaskGroupSection>
+
+              <TaskGroupSection
+                icon={RotateCcw}
+                title="요약이 중단된 회의"
+                count={stalledSummaries.length}
+                emptyMessage="요약이 중단된 회의가 없습니다."
+              >
+                <StalledSummaryList summaries={stalledSummaries} />
+              </TaskGroupSection>
+            </div>
           ) : (
             <div className="flex flex-col gap-7">
               <div className="flex flex-col gap-5">

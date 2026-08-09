@@ -10,9 +10,13 @@ export const PROFILE_INFO_ROW_LABEL = {
 } as const;
 
 /**
- * 마이페이지 탭 — "미확정 액션"은 2026-08-07 사용자 확정. "내 액션"(`/app/my/actions`)에
- * 두려 했으나 Owner가 접근 못 하는 화면이라, 회의 Host가 Owner여도 항상 볼 수 있는
- * 마이페이지 쪽으로 옮겼다(WORKFLOW.md 미기재 — 이 화면 자체가 이번에 새로 확정된 정책).
+ * 마이페이지 탭 — "처리할 일"은 2026-08-07 사용자 확정(당시 라벨은 "미확정 액션").
+ * "내 액션"(`/app/my/actions`)에 두려 했으나 Owner가 접근 못 하는 화면이라, 회의
+ * Host가 Owner여도 항상 볼 수 있는 마이페이지 쪽으로 옮겼다(WORKFLOW.md 미기재 —
+ * 이 화면 자체가 새로 확정된 정책).
+ * ⚠️ 2026-08-08 "요약이 중단된 회의" 그룹이 추가되면서 라벨을 "미확정 액션"→
+ *    "처리할 일"로 넓혔다 — 값(`unconfirmed`)은 그대로 두고 라벨만 바꿨다(URL·분기
+ *    코드 안 건드림).
  */
 export const PROFILE_TAB = {
   INFO: "info",
@@ -22,7 +26,7 @@ export type ProfileTab = (typeof PROFILE_TAB)[keyof typeof PROFILE_TAB];
 
 export const PROFILE_TAB_LABEL: Record<ProfileTab, string> = {
   info: "기본 정보",
-  unconfirmed: "미확정 액션",
+  unconfirmed: "처리할 일",
 };
 
 export const DEFAULT_PROFILE_TAB: ProfileTab = PROFILE_TAB.INFO;
