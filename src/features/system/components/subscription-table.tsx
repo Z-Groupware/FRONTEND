@@ -18,6 +18,7 @@ import { cn } from "@/lib/utils";
 
 import { sendUnpaidNoticeAction } from "../actions";
 import { formatWon } from "../format";
+import { TABLE_HEAD_ROW_CLASS } from "../table-style";
 import type { SubscriptionRecord } from "../types";
 import { NoticeMailDialog } from "./notice-mail-dialog";
 import { StatusBadge, type StatusTone } from "./status-badge";
@@ -102,7 +103,7 @@ export function SubscriptionTable({ subscriptions }: SubscriptionTableProps) {
             <col style={{ width: COLUMN_WIDTH.action }} />
           </colgroup>
           <TableHeader>
-            <TableRow className={cn(HEADER_HEIGHT_CLASS, "bg-secondary/50 hover:bg-transparent")}>
+            <TableRow className={cn(HEADER_HEIGHT_CLASS, TABLE_HEAD_ROW_CLASS)}>
               <TableHead className="pl-4 text-xs">기업명</TableHead>
               <TableHead className="text-center text-xs">인원</TableHead>
               <TableHead className="text-center text-xs">금액</TableHead>

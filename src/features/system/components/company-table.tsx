@@ -12,6 +12,7 @@ import { COMPANY_STATUS_LABEL } from "@/constants/domain";
 import { formatDate } from "@/lib/date";
 import { cn } from "@/lib/utils";
 
+import { TABLE_HEAD_ROW_CLASS } from "../table-style";
 import type { ManagedCompany } from "../types";
 import { StatusBadge, type StatusTone } from "./status-badge";
 
@@ -82,7 +83,7 @@ export function CompanyTable({ companies, buildDetailHref, pageSize }: CompanyTa
             <col style={{ width: COLUMN_WIDTH.status }} />
           </colgroup>
           <TableHeader>
-            <TableRow className={cn(HEADER_HEIGHT_CLASS, "bg-secondary/50 hover:bg-transparent")}>
+            <TableRow className={cn(HEADER_HEIGHT_CLASS, TABLE_HEAD_ROW_CLASS)}>
               <TableHead className="pl-4 text-xs">기업명</TableHead>
               <TableHead className="text-center text-xs">기업 코드</TableHead>
               <TableHead className="text-center text-xs">구성원</TableHead>

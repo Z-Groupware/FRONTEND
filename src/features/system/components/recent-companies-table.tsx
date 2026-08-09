@@ -7,6 +7,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
+import { TABLE_HEAD_ROW_CLASS } from "../table-style";
 import type { RecentCompany } from "../types";
 
 const CARD_HEADER_CLASS =
@@ -20,16 +21,6 @@ const CARD_HEADER_CLASS =
  *    행 높이를 정하는 건 셀이다. 눈에 안 보이는 채로 한 칸 두꺼웠다.
  */
 const HEAD_CELL_CLASS = "text-muted-foreground h-9 text-[12px] font-normal";
-
-/**
- * 머리 줄.
- *
- * ⚠️ **띠가 아니라 선으로 가른다.** `bg-secondary/50`을 깔고 있었는데, 라이트에서
- *    `--secondary`(`#fafaf9`)가 카드 흰색과 거의 같아 반투명까지 씌우면 대비가 1.02:1이다 —
- *    머리 줄이 있는지도 안 보였다. 띠는 그대로 두되(다크에선 보인다) **아래 보더**를
- *    더해 어느 테마에서도 머리와 본문이 갈리게 한다.
- */
-const HEAD_ROW_CLASS = "bg-secondary border-border border-b hover:bg-transparent";
 
 /**
  * "최근 가입 기업" 표. 비어있으면 안내 문구로 대체한다(CLAUDE.md §정직성 · loading/error/empty).
@@ -64,7 +55,7 @@ export function RecentCompaniesTable({ companies }: { companies: RecentCompany[]
       <div className="overflow-x-auto">
         <Table className="min-w-[520px] text-[13px]">
           <TableHeader>
-            <TableRow className={HEAD_ROW_CLASS}>
+            <TableRow className={TABLE_HEAD_ROW_CLASS}>
               <TableHead className={`${HEAD_CELL_CLASS} px-6`}>기업명</TableHead>
               <TableHead className={`${HEAD_CELL_CLASS} px-4 text-center`}>기업 코드</TableHead>
               <TableHead className={`${HEAD_CELL_CLASS} px-4 text-center`}>구성원</TableHead>

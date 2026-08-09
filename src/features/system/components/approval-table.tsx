@@ -11,6 +11,7 @@ import {
 import { formatDate } from "@/lib/date";
 import { cn } from "@/lib/utils";
 
+import { TABLE_HEAD_ROW_CLASS } from "../table-style";
 import type { PendingCompanyApproval } from "../types";
 
 interface ApprovalTableProps {
@@ -74,7 +75,7 @@ export function ApprovalTable({ companies, pageSize }: ApprovalTableProps) {
             <col style={{ width: COLUMN_WIDTH.appliedAt }} />
           </colgroup>
           <TableHeader>
-            <TableRow className={cn(HEADER_HEIGHT_CLASS, "bg-secondary/50 hover:bg-transparent")}>
+            <TableRow className={cn(HEADER_HEIGHT_CLASS, TABLE_HEAD_ROW_CLASS)}>
               <TableHead className="pl-4 text-xs">회사명</TableHead>
               <TableHead className="text-center text-xs">사업자 번호</TableHead>
               <TableHead className="text-center text-xs">대표자</TableHead>

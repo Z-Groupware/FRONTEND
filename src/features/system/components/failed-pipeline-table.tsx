@@ -11,6 +11,7 @@ import {
 import { PIPELINE_STAGE_LABEL } from "@/constants/domain";
 import { cn } from "@/lib/utils";
 
+import { TABLE_HEAD_ROW_CLASS } from "../table-style";
 import type { FailedPipelineItem } from "../types";
 import { PipelineRetryButton } from "./pipeline-retry-button";
 
@@ -64,7 +65,7 @@ export function FailedPipelineTable({ items }: { items: FailedPipelineItem[] }) 
             <col style={{ width: COLUMN_WIDTH.action }} />
           </colgroup>
           <TableHeader>
-            <TableRow className={cn(HEADER_HEIGHT_CLASS, "bg-secondary/50 hover:bg-transparent")}>
+            <TableRow className={cn(HEADER_HEIGHT_CLASS, TABLE_HEAD_ROW_CLASS)}>
               <TableHead className="pl-4 text-xs">회의 ID</TableHead>
               <TableHead className="text-center text-xs">기업</TableHead>
               <TableHead className="text-center text-xs">실패 단계</TableHead>
