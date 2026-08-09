@@ -67,50 +67,78 @@ const STATUS_TONE: Record<ManagedCompany["status"], StatusTone> = {
  */
 export function CompanyDetailDialog({ company, closeHref, currentPath }: CompanyDetailDialogProps) {
   const router = useRouter();
-  const [isConfirming, setIsConfirming] = useState(false);
+  /*
+    확인창에 쓸 값은 **누르는 순간 베껴 둔다**(열림 여부까지 이 값 하나가 정한다).
+
+    ⚠️ 전에는 확인창 문구를 살아 있는 `company`에서 바로 뽑았다. 그런데 실행이 끝나면
+       그 값이 **발밑에서 바뀐다** — `revalidatePath`로 상태가 뒤집히고(정지↔활성),
+       목록 필터에서 빠지면 아예 `null`이 된다. 그 사이 확인창은 닫히는 애니메이션 중이라
+       화면에 남아 있어서, 사라지는 0.2초 동안 제목이 `'undefined'을(를) 정지할까요?`로,
+       버튼이 빨간 `정지`로 **홱 바뀌었다** — 방금 누른 것과 정반대 문구가 스쳐 지나간다.
+    ⚠️ 베껴 두면 창이 뜬 순간의 말이 닫힐 때까지 그대로다. 실행할 대상도 여기 든 id라
+       화면이 어떻게 바뀌든 엉뚱한 회사를 건드리지 않는다.
+  */
+  const [confirmed, setConfirmed] = useState<{
+    id: string;
+    name: string;
+    isSuspended: boolean;
+  } | null>(null);
+  /*
+    ⚠️ 열림 여부는 **따로 둔다.** 닫을 때 위 값을 같이 비우면, 사라지는 애니메이션 동안
+       화면에 남아 있는 창이 곧바로 다시 그려져 제목이 `'undefined'`, 버튼이 반대쪽 말로
+       홱 바뀐다 — 사라지는 창이 마지막에 딴소리를 한다. 값은 남기고 깃발만 내린다.
+  */
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+
   const [isPending, startTransition] = useTransition();
   const isSuspended = company?.status === COMPANY_STATUS.SUSPENDED;
 
   /*
     보고 있던 기업이 바뀌거나 사라지면 확인창도 같이 내린다 — `approval-detail-dialog.tsx`와
-    같은 이유다. 확인창이 뜬 채 뒤로가기를 누르면 주소에서 id만 빠져 제목이
-    `'undefined'을(를) 정지할까요?`가 되고, 실행을 눌러도 아래 `if (!company) return`에 걸려
-    아무 일도 안 일어난다.
+    같은 이유다. 확인창이 뜬 채 뒤로가기를 누르면 주소에서 id만 빠지는데, state는 그대로라
+    확인창이 남고 실행을 눌러도 아무 일도 안 일어난다.
   */
   const currentId = company?.id ?? null;
   const [shownId, setShownId] = useState(currentId);
 
   if (shownId !== currentId) {
     setShownId(currentId);
-    setIsConfirming(false);
+    setIsConfirmOpen(false);
   }
 
   function handleConfirm() {
-    if (!company) return;
+    const target = confirmed;
+    if (!target) return;
 
     const formData = new FormData();
-    formData.set("companyId", company.id);
+    formData.set("companyId", target.id);
     formData.set("path", currentPath);
 
     startTransition(async () => {
       let success = true;
 
       try {
-        await (isSuspended ? unsuspendCompanyAction(formData) : suspendCompanyAction(formData));
+        await (target.isSuspended
+          ? unsuspendCompanyAction(formData)
+          : suspendCompanyAction(formData));
       } catch {
         // 미구현(!isMock) 분기가 던지는 에러가 여기로 온다 — 조용히 삼키지 않는다
         success = false;
       }
 
-      setIsConfirming(false);
-
       if (success) {
-        toast.success(isSuspended ? "정지를 해제했습니다" : "기업을 정지했습니다");
-        // 끝났으면 닫는다 — 바뀐 상태는 목록에서 본다
+        toast.success(target.isSuspended ? "정지를 해제했습니다" : "기업을 정지했습니다");
+        /*
+          ⚠️ **여기서 확인창을 내리지 않는다.** 내리면 주소가 바뀌기 전 한 프레임 동안
+             `company`가 아직 남아 있어 **상세가 다시 열렸다가** 곧바로 닫힌다 —
+             창이 두 번 깜빡이는 것처럼 보인다. 주소에서 id가 빠질 때(위 렌더 중 정리)
+             확인창·상세가 **한 번에** 닫히는 게 맞다. 그때까지는 진행 중 문구가 떠 있다.
+        */
         router.push(closeHref);
       } else {
-        // 실패면 열어 둔다 — 닫아 버리면 무엇이 안 됐는지 확인할 자리가 없다
-        toast.error(isSuspended ? "정지를 해제하지 못했습니다" : "정지하지 못했습니다");
+        // 실패면 상세로 되돌아온다 — 닫아 버리면 무엇이 안 됐는지 확인할 자리가 없다
+        setIsConfirmOpen(false);
+        toast.error(target.isSuspended ? "정지를 해제하지 못했습니다" : "정지하지 못했습니다");
       }
     });
   }
@@ -118,10 +146,10 @@ export function CompanyDetailDialog({ company, closeHref, currentPath }: Company
   return (
     <>
       <Dialog
-        open={company !== null && !isConfirming}
+        open={company !== null && !isConfirmOpen}
         onOpenChange={(open) => {
           // 확인창을 띄우느라 닫히는 것은 진짜로 닫는 게 아니다 — 주소를 건드리지 않는다
-          if (open || isConfirming || isPending) return;
+          if (open || isConfirmOpen || isPending) return;
           router.push(closeHref);
         }}
       >
@@ -162,7 +190,10 @@ export function CompanyDetailDialog({ company, closeHref, currentPath }: Company
                 <Button
                   type="button"
                   variant={isSuspended ? "ink" : "destructive"}
-                  onClick={() => setIsConfirming(true)}
+                  onClick={() => {
+                    setConfirmed({ id: company.id, name: company.name, isSuspended });
+                    setIsConfirmOpen(true);
+                  }}
                   className={
                     isSuspended
                       ? "border-foreground h-11 w-full border text-[14px]"
@@ -182,24 +213,24 @@ export function CompanyDetailDialog({ company, closeHref, currentPath }: Company
         ⚠️ 취소하면 상세로 되돌아온다 — 실수로 눌렀을 때 값 화면을 다시 찾지 않아도 된다.
       */}
       <ConfirmDialog
-        isOpen={company !== null && isConfirming}
+        isOpen={isConfirmOpen}
         onOpenChange={(open) => {
           // 처리 중엔 안 닫는다 — 창만 사라지고 요청은 계속 가면 결과를 못 본다
-          if (!open && !isPending) setIsConfirming(false);
+          if (!open && !isPending) setIsConfirmOpen(false);
         }}
         title={
-          isSuspended
-            ? `'${company?.name}' 정지를 해제할까요?`
-            : `'${company?.name}'을(를) 정지할까요?`
+          confirmed?.isSuspended
+            ? `'${confirmed.name}' 정지를 해제할까요?`
+            : `'${confirmed?.name}'을(를) 정지할까요?`
         }
         description={
-          isSuspended
+          confirmed?.isSuspended
             ? "해제하면 이 회사 사람들이 다시 워크스페이스를 쓸 수 있습니다."
             : "정지하면 이 회사 사람 전원이 워크스페이스에 들어올 수 없습니다."
         }
-        confirmLabel={isSuspended ? "정지 해제" : "정지"}
-        pendingLabel={isSuspended ? "해제 중" : "정지 중"}
-        isDestructive={!isSuspended}
+        confirmLabel={confirmed?.isSuspended ? "정지 해제" : "정지"}
+        pendingLabel={confirmed?.isSuspended ? "해제 중" : "정지 중"}
+        isDestructive={!confirmed?.isSuspended}
         isPending={isPending}
         onConfirm={handleConfirm}
       />
