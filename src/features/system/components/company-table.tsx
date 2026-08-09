@@ -40,13 +40,18 @@ const STATUS_TONE: Record<ManagedCompany["status"], StatusTone> = {
  * 비율이 깨진다. `table-fixed` + `colgroup`과 짝을 이뤄야 실제로 적용된다 — `table-fixed` 없이는
  * 브라우저가 내용 길이를 보고 폭을 다시 계산해 버려 이 값이 무시된다.
  */
+/**
+ * ⚠️ 폭은 **가장 긴 내용에 남는 폭을 고르게 얹어** 정한다. 눈대중으로 정하면 어느 열은
+ *    내용이 칸을 꽉 채워 옆 열과 붙는다 — `기업명`이 26%라 긴 이름이 칸을 다 먹고 다음
+ *    열과 16px까지 붙었다. 열 사이가 16·193·84·90·43px로 제각각이었다(실측).
+ */
 const COLUMN_WIDTH = {
-  name: "26%",
-  code: "22%",
-  members: "12%",
-  meetings: "14%",
-  joinedAt: "16%",
-  status: "10%",
+  name: "32%",
+  code: "17%",
+  members: "11%",
+  meetings: "13%",
+  joinedAt: "14%",
+  status: "13%",
 } as const;
 
 /**
@@ -85,7 +90,7 @@ export function CompanyTable({ companies, buildDetailHref, pageSize }: CompanyTa
           <TableHeader>
             <TableRow className={cn(HEADER_HEIGHT_CLASS, TABLE_HEAD_ROW_CLASS)}>
               <TableHead className="pl-7 text-xs">기업명</TableHead>
-              <TableHead className="text-center text-xs">기업 코드</TableHead>
+              <TableHead className="text-xs">기업 코드</TableHead>
               <TableHead className="text-right text-xs">구성원</TableHead>
               <TableHead className="text-right text-xs">이번달 회의</TableHead>
               <TableHead className="text-right text-xs">가입일</TableHead>
@@ -108,19 +113,16 @@ export function CompanyTable({ companies, buildDetailHref, pageSize }: CompanyTa
                     {company.name}
                   </Link>
                 </TableCell>
-                <TableCell
-                  className="text-muted-foreground max-w-0 truncate text-center"
-                  title={company.code}
-                >
+                <TableCell className="text-muted-foreground max-w-0 truncate" title={company.code}>
                   {company.code}
                 </TableCell>
-                <TableCell className="text-muted-foreground text-center tabular-nums">
+                <TableCell className="text-muted-foreground text-right tabular-nums">
                   {company.memberCount}명
                 </TableCell>
-                <TableCell className="text-muted-foreground text-center tabular-nums">
+                <TableCell className="text-muted-foreground text-right tabular-nums">
                   {company.meetingCountThisMonth}회
                 </TableCell>
-                <TableCell className="text-muted-foreground text-center tabular-nums">
+                <TableCell className="text-muted-foreground text-right tabular-nums">
                   {formatDate(company.joinedAt)}
                 </TableCell>
                 <TableCell className="pr-7 text-right">

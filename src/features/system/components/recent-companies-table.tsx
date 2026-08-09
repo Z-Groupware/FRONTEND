@@ -51,7 +51,7 @@ export function RecentCompaniesTable({ companies }: { companies: RecentCompany[]
           <TableHeader>
             <TableRow className={TABLE_HEAD_ROW_CLASS}>
               <TableHead className={`${HEAD_CELL_CLASS} px-7`}>기업명</TableHead>
-              <TableHead className={`${HEAD_CELL_CLASS} px-4 text-center`}>기업 코드</TableHead>
+              <TableHead className={`${HEAD_CELL_CLASS} px-4`}>기업 코드</TableHead>
               <TableHead className={`${HEAD_CELL_CLASS} px-4 text-right`}>구성원</TableHead>
               <TableHead className={`${HEAD_CELL_CLASS} px-7 text-right`}>가입일</TableHead>
             </TableRow>
@@ -60,10 +60,7 @@ export function RecentCompaniesTable({ companies }: { companies: RecentCompany[]
             {companies.map((company) => (
               <TableRow key={company.id} className="hover:bg-foreground/[0.04] h-12">
                 <TableCell className="text-foreground px-7 font-medium">{company.name}</TableCell>
-                <TableCell
-                  className="text-muted-foreground px-4 text-center font-mono"
-                  title={company.code}
-                >
+                <TableCell className="text-muted-foreground px-4 font-mono" title={company.code}>
                   {company.code}
                 </TableCell>
                 <TableCell className="text-muted-foreground px-4 text-right tabular-nums">

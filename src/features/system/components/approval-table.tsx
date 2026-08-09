@@ -32,13 +32,18 @@ const HEADER_HEIGHT_PX = 34;
  * 이메일 길이)을 보고 폭을 다시 계산해 버려, 페이지를 넘길 때마다 회사명 길이에 따라 옆 컬럼이
  * 밀리는 덜컥거림이 생긴다(`company-table.tsx`에서 같은 문제를 같은 방식으로 고쳤다).
  */
+/**
+ * ⚠️ 폭은 **내용 길이에 남는 폭을 고르게 얹어** 정한다. 눈대중으로 정하면 어느 열은
+ *    내용이 칸을 꽉 채워 옆 열과 붙는다 — `회사명`이 20%라 가장 긴 회사명이 칸을 다 먹고
+ *    다음 열과 16px까지 붙어 있었다(실측). 열 사이가 16·53·108·157·97px로 제각각이었다.
+ */
 const COLUMN_WIDTH = {
-  name: "20%",
-  businessRegistrationNumber: "14%",
-  representative: "14%",
-  email: "22%",
-  members: "12%",
-  appliedAt: "18%",
+  name: "26%",
+  businessRegistrationNumber: "16%",
+  representative: "11%",
+  email: "21%",
+  members: "10%",
+  appliedAt: "16%",
 } as const;
 
 /**
@@ -77,9 +82,9 @@ export function ApprovalTable({ companies, pageSize }: ApprovalTableProps) {
           <TableHeader>
             <TableRow className={cn(HEADER_HEIGHT_CLASS, TABLE_HEAD_ROW_CLASS)}>
               <TableHead className="pl-7 text-xs">회사명</TableHead>
-              <TableHead className="text-center text-xs">사업자 번호</TableHead>
-              <TableHead className="text-center text-xs">대표자</TableHead>
-              <TableHead className="text-center text-xs">담당자 이메일</TableHead>
+              <TableHead className="text-xs">사업자 번호</TableHead>
+              <TableHead className="text-xs">대표자</TableHead>
+              <TableHead className="text-xs">담당자 이메일</TableHead>
               <TableHead className="text-right text-xs">구성원</TableHead>
               <TableHead className="pr-7 text-right text-xs">신청일</TableHead>
             </TableRow>
@@ -100,14 +105,14 @@ export function ApprovalTable({ companies, pageSize }: ApprovalTableProps) {
                     {company.companyName}
                   </Link>
                 </TableCell>
-                <TableCell className="text-muted-foreground text-center font-mono tabular-nums">
+                <TableCell className="text-muted-foreground font-mono tabular-nums">
                   {company.businessRegistrationNumber}
                 </TableCell>
-                <TableCell className="text-muted-foreground max-w-0 truncate text-center">
+                <TableCell className="text-muted-foreground max-w-0 truncate">
                   {company.representativeName}
                 </TableCell>
                 <TableCell
-                  className="text-muted-foreground max-w-0 truncate text-center"
+                  className="text-muted-foreground max-w-0 truncate"
                   title={company.contactEmail}
                 >
                   {company.contactEmail}

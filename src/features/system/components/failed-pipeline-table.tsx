@@ -26,12 +26,21 @@ const HEADER_HEIGHT_CLASS = "h-[34px]";
  * 컬럼 폭 — %로 고정(합 100). `table-fixed` + `colgroup`과 짝을 이뤄 회의 ID·오류 문구
  * 길이가 달라져도 다른 컬럼이 밀리지 않게 한다(`subscription-table.tsx`와 같은 이유).
  */
+/**
+ * 컬럼 폭 — 내용 길이에 맞춰 나눈다.
+ *
+ * ⚠️ 폭을 안 정하면 브라우저가 내용대로 잡는데, 거기에 오른쪽 정렬이 섞이면 그 열만
+ *    제 칸 끝으로 밀려 **옆 열과 붙는다** — 실측으로 열 사이 간격이 123·101·142·**16**·83px로
+ *    한 곳만 무너져 있었다.
+ * ⚠️ 그래서 `시각`도 왼쪽으로 둔다. `2025-07-21 14:32`은 늘 같은 폭이라 왼쪽에 붙여도
+ *    흔들리지 않는다 — 오른쪽 정렬은 **자릿수가 실제로 다른 값**에만 쓴다.
+ */
 const COLUMN_WIDTH = {
-  meetingId: "26%",
-  company: "16%",
+  meetingId: "21%",
+  company: "15%",
   stage: "14%",
-  failedAt: "18%",
-  error: "14%",
+  failedAt: "20%",
+  error: "18%",
   action: "12%",
 } as const;
 
@@ -67,10 +76,10 @@ export function FailedPipelineTable({ items }: { items: FailedPipelineItem[] }) 
           <TableHeader>
             <TableRow className={cn(HEADER_HEIGHT_CLASS, TABLE_HEAD_ROW_CLASS)}>
               <TableHead className="pl-7 text-xs">회의 ID</TableHead>
-              <TableHead className="text-center text-xs">기업</TableHead>
-              <TableHead className="text-center text-xs">실패 단계</TableHead>
-              <TableHead className="text-right text-xs">시각</TableHead>
-              <TableHead className="text-center text-xs">오류</TableHead>
+              <TableHead className="text-xs">기업</TableHead>
+              <TableHead className="text-xs">실패 단계</TableHead>
+              <TableHead className="text-xs">시각</TableHead>
+              <TableHead className="text-xs">오류</TableHead>
               <TableHead className="pr-7 text-right text-xs">액션</TableHead>
             </TableRow>
           </TableHeader>
@@ -83,20 +92,17 @@ export function FailedPipelineTable({ items }: { items: FailedPipelineItem[] }) 
                 <TableCell className="text-foreground pl-7 font-mono font-medium">
                   {item.meetingId}
                 </TableCell>
-                <TableCell
-                  className="text-foreground max-w-0 truncate text-center"
-                  title={item.companyName}
-                >
+                <TableCell className="text-foreground max-w-0 truncate" title={item.companyName}>
                   {item.companyName}
                 </TableCell>
-                <TableCell className="text-destructive text-center">
+                <TableCell className="text-destructive">
                   {PIPELINE_STAGE_LABEL[item.stage]}
                 </TableCell>
-                <TableCell className="text-muted-foreground text-right font-mono tabular-nums">
+                <TableCell className="text-muted-foreground font-mono tabular-nums">
                   {item.failedAt}
                 </TableCell>
                 <TableCell
-                  className="text-muted-foreground max-w-0 truncate text-center"
+                  className="text-muted-foreground max-w-0 truncate"
                   title={item.errorMessage}
                 >
                   {item.errorMessage}
