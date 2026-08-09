@@ -31,11 +31,19 @@ export function PipelineQueueCard({ queue }: { queue: PipelineQueueSummary }) {
         처리 큐
       </h2>
 
-      {/* ⚠️ 남는 높이는 목록이 먹는다 — 옆 차트 카드가 늘 더 길어서, 내용을 위에 몰아 두면
-          이 카드만 아래가 통째로 빈다(DESIGN §1: `items-start`를 쓰지 않는다). */}
-      <ul className="flex flex-1 flex-col justify-center gap-5 px-7 py-2">
+      {/*
+        ⚠️ 남는 높이는 목록이 먹는다 — 옆 차트 카드가 늘 더 길어서, 내용을 위에 몰아 두면
+           이 카드만 아래가 통째로 빈다(DESIGN §1: `items-start`를 쓰지 않는다).
+        ⚠️ 가운데로 모으지 않고 **고르게 벌린다**(`justify-between`). 가운데로 모으면 첫 줄이
+           옆 카드 내용보다 한참 내려가 두 카드가 서로 다른 높이에서 시작하는 것처럼 보인다.
+      */}
+      <ul className="flex flex-1 flex-col justify-between gap-4 px-7 pt-1 pb-4">
         {rows.map((row) => (
-          <li key={row.label} className="flex items-baseline justify-between gap-3">
+          /*
+            ⚠️ `items-baseline`이 아니라 `items-center`다. 왼쪽이 **두 줄**(라벨+보조)이라
+               숫자를 첫 줄 베이스라인에 맞추면 숫자만 위로 떠서 줄이 안 맞아 보인다.
+          */
+          <li key={row.label} className="flex items-center justify-between gap-3">
             <span className="flex flex-col">
               <span className="text-foreground text-[13px] leading-5">{row.label}</span>
               <span className="text-muted-foreground text-xs leading-4">{row.meta}</span>
