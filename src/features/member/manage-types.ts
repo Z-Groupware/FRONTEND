@@ -81,6 +81,13 @@ export interface PendingHandover {
   /** 넘긴 액션 수 */
   actionCount: number;
   midApproval: { approverName: string; approvedAt: string } | null;
+  /**
+   * **신청 당시** 그 사람이 팀장이었는지 — 지금(`member.authority`)이 아니라 그때 값을
+   * 그대로 굳혀 둔다(CodeRabbit 지적, 2026-08-09). 팀장 공석 중엔 일반 팀원도 승급될 수
+   * 있는데, 승인 카드가 그때그때의 권한을 다시 읽으면 승급 전 일반 팀원 신청이 승급 후엔
+   * "팀장 본인 신청"으로 잘못 표시된다.
+   */
+  requesterAuthority: Authority;
 }
 
 /** 상세 한 사람 */

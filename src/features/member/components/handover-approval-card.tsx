@@ -28,6 +28,12 @@ interface HandoverApprovalCardProps {
   handover: PendingHandover;
   /** OWNER만 참이다 — Admin 겸직자는 화면엔 들어와도 이 버튼이 없다(WORKFLOW §11) */
   canApprove: boolean;
+  /**
+   * **신청 당시** 그 사람이 팀장이었는지(`handover.requesterAuthority` 기준) — 중간 승인
+   * 문구·귀속 안내 링크의 분기에 쓴다. `memberAuthority`(지금 권한, 제목용)와는 값이 갈릴
+   * 수 있다 — 팀장 공석 중 승급되면 신청 당시엔 일반 팀원이었어도 지금은 팀장이라서다.
+   */
+  isRequesterLeader: boolean;
 }
 
 /**
@@ -57,6 +63,7 @@ export function HandoverApprovalCard({
   memberAuthority,
   handover,
   canApprove,
+  isRequesterLeader,
 }: HandoverApprovalCardProps) {
   const [reason, setReason] = useState("");
   /**
@@ -173,16 +180,18 @@ export function HandoverApprovalCard({
         <p className="border-border bg-secondary/40 text-muted-foreground rounded-lg border px-4 py-3 text-[13px] leading-5 break-keep">
           {handover.midApproval
             ? `${handover.midApproval.approverName} 리더가 ${formatMonthDayWeekday(handover.midApproval.approvedAt)} 중간 승인했습니다.`
-            : isVacation
-              ? "팀장 본인 신청이라 중간 승인 단계 없이 올라왔습니다. 재할당은 본인이 마쳤습니다."
-              : "팀장 오프보딩이라 중간 승인 단계 없이 올라왔습니다. 승인 뒤 인수인계서를 새 팀장에게 귀속해야 합니다."}
+            : isRequesterLeader
+              ? isVacation
+                ? "팀장 본인 신청이라 중간 승인 단계 없이 올라왔습니다. 재할당은 본인이 마쳤습니다."
+                : "팀장 오프보딩이라 중간 승인 단계 없이 올라왔습니다. 승인 뒤 인수인계서를 새 팀장에게 귀속해야 합니다."
+              : "아직 팀장의 중간 승인을 기다리고 있습니다. 팀장이 인수인계서 관리에서 재배정을 마치면 여기 표시됩니다."}
         </p>
 
         {/*
           ⚠️ 팀장 오프보딩은 승인이 끝이 아니다 — 인수인계서를 새 팀장에게 귀속해야 완결된다
              (WORKFLOW §7). 갈 곳을 여기서 알려 준다.
         */}
-        {!isVacation && !handover.midApproval && (
+        {isRequesterLeader && !isVacation && !handover.midApproval && (
           <Link
             href="/owner/leader-handovers"
             className="text-muted-foreground hover:text-foreground text-[12px] leading-4 underline underline-offset-2"

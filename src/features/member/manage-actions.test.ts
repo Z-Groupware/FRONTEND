@@ -17,7 +17,11 @@ import {
   rejectHandoverAction,
 } from "./manage-actions";
 import { type AccountDraft, MEMBER_FILTER } from "./manage-types";
-import { findMockManagedMember, resetMockManagedMembers } from "./mock/managed";
+import {
+  completeMockHandoverMidApproval,
+  findMockManagedMember,
+  resetMockManagedMembers,
+} from "./mock/managed";
 
 /**
  * 사원 관리의 변경 작업.
@@ -239,7 +243,20 @@ describe("승인 · 반려", () => {
     ⚠️ 흐름 이름과 끝난 뒤 상태가 다르다 — 휴직은 `VACATION`, 오프보딩은 `RESIGNED`다
        (§도메인 상수: 오프보딩 ↔ 퇴사).
   */
+  /*
+    ⚠️ **일반 팀원 신청은 팀장 중간 승인이 끝나야 최종 승인할 수 있다** — `WAITING_ID`(이하윤)는
+       `/team/handover`가 처리해야 하는 데모 대상이라 `midApproval`이 `null`로 시작한다.
+       그래서 여기서 먼저 중간 승인을 흉내 낸다(`completeMockHandoverMidApproval`).
+  */
+  it("중간 승인 전에는 최종 승인을 막는다", async () => {
+    const result = await approveHandoverAction(WAITING_ID);
+    expect(result.isSuccess).toBe(false);
+    expect(findMockManagedMember(WAITING_ID)?.pendingHandover).not.toBeNull();
+  });
+
   it("휴직을 승인하면 휴직 상태가 되고 신청이 사라진다", async () => {
+    completeMockHandoverMidApproval(WAITING_ID, "김서준", "2026-08-08");
+
     expect(await approveHandoverAction(WAITING_ID)).toEqual({ isSuccess: true });
 
     const after = findMockManagedMember(WAITING_ID);
