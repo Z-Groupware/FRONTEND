@@ -50,14 +50,18 @@ export function ScopedThemeProvider({
 }: ScopedThemeProviderProps) {
   const [isDark, setIsDark] = useState(initialDark);
 
+  /*
+    쿠키는 **업데이터 밖에서** 쓴다.
+    업데이터는 순수해야 하고 Strict Mode는 개발 중에 일부러 두 번 부른다 — 안에 두면
+    부수 효과가 두 번 돈다. 값이 같아 눈에 띄진 않지만, React가 한쪽 호출을 버리는
+    구조라 기대면 안 되는 자리다. 부수 효과는 이벤트 핸들러에서 한다.
+  */
   const toggle = useCallback(() => {
-    setIsDark((prev) => {
-      const next = !prev;
-      // 1년 — 다음 방문에 서버가 같은 밝기로 그려 보낸다
-      document.cookie = `${cookieName}=${next ? "dark" : "light"}; path=/; max-age=31536000; samesite=lax`;
-      return next;
-    });
-  }, [cookieName]);
+    const next = !isDark;
+    setIsDark(next);
+    // 1년 — 다음 방문에 서버가 같은 밝기로 그려 보낸다
+    document.cookie = `${cookieName}=${next ? "dark" : "light"}; path=/; max-age=31536000; samesite=lax`;
+  }, [isDark, cookieName]);
 
   return (
     <ScopedThemeContext.Provider value={{ isDark, toggle }}>
