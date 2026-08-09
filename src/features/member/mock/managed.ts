@@ -100,7 +100,11 @@ const INITIAL: ManagedMemberDetail[] = [
       type: HANDOVER_TYPE.VACATION,
       period: { from: "2026-08-05", to: "2026-08-09" },
       actionCount: 3,
-      midApproval: { approverName: "김서준", approvedAt: "2026-07-29" },
+      /*
+        ⚠️ 아직 팀장 중간 승인 전이다(`null`) — `/team/handover`에서 김서준이 이 신청을
+           처리해야 하는 데모 대상이다. 이미 중간 승인된 신청 데모는 임지안(id 8)이 맡는다.
+      */
+      midApproval: null,
     },
   },
   {
@@ -311,6 +315,25 @@ export function approveMockHandover(id: number): void {
       pendingHandover: null,
     };
   });
+}
+
+/**
+ * 팀장 중간 승인 — `/team/handover`에서 팀원 보드로 재배정을 마치고 [인수인계 확정]을
+ * 누른 순간 호출된다. 신청 자체는 그대로 두고(최종 승인은 오너 몫) `midApproval`만 채운다.
+ */
+export function completeMockHandoverMidApproval(
+  id: number,
+  approverName: string,
+  approvedAt: string,
+): void {
+  store = store.map((entry) =>
+    entry.member.id === id && entry.pendingHandover
+      ? {
+          ...entry,
+          pendingHandover: { ...entry.pendingHandover, midApproval: { approverName, approvedAt } },
+        }
+      : entry,
+  );
 }
 
 /** 반려 — 신청을 치우고 사람은 재직으로 되돌린다 */

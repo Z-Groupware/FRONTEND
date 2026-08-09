@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
+import { AUTHORITY } from "@/constants/authority";
 import { MEMBER_STATUS } from "@/constants/member";
 import { getCompanySetting } from "@/features/company/server";
 import { HandoverApprovalCard } from "@/features/member/components/handover-approval-card";
@@ -100,6 +101,7 @@ export default async function ManageMemberDetailPage({
                 memberName={detail.member.name}
                 handover={detail.pendingHandover}
                 canApprove={canApproveFinal(viewer)}
+                isRequesterLeader={detail.member.authority === AUTHORITY.LEADER}
               />
             )}
 
