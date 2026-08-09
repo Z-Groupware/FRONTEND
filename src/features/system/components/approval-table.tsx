@@ -112,7 +112,7 @@ export function ApprovalTable({ companies, pageSize }: ApprovalTableProps) {
                   {company.representativeName}
                 </TableCell>
                 <TableCell
-                  className="text-muted-foreground max-w-0 truncate"
+                  className="text-muted-foreground max-w-0 truncate text-center"
                   title={company.contactEmail}
                 >
                   {company.contactEmail}
