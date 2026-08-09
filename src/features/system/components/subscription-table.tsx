@@ -104,12 +104,12 @@ export function SubscriptionTable({ subscriptions }: SubscriptionTableProps) {
           </colgroup>
           <TableHeader>
             <TableRow className={cn(HEADER_HEIGHT_CLASS, TABLE_HEAD_ROW_CLASS)}>
-              <TableHead className="pl-4 text-xs">기업명</TableHead>
+              <TableHead className="pl-7 text-xs">기업명</TableHead>
               <TableHead className="text-center text-xs">인원</TableHead>
               <TableHead className="text-center text-xs">금액</TableHead>
               <TableHead className="text-center text-xs">결제일</TableHead>
               <TableHead className="text-center text-xs">상태</TableHead>
-              <TableHead className="pr-4 text-center text-xs">액션</TableHead>
+              <TableHead className="pr-7 text-center text-xs">액션</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -118,7 +118,7 @@ export function SubscriptionTable({ subscriptions }: SubscriptionTableProps) {
                 key={subscription.companyId}
                 className={cn(ROW_HEIGHT_CLASS, "hover:bg-foreground/[0.04]")}
               >
-                <TableCell className="max-w-0 truncate pl-4" title={subscription.companyName}>
+                <TableCell className="max-w-0 truncate pl-7" title={subscription.companyName}>
                   {subscription.companyName}
                 </TableCell>
                 <TableCell className="text-muted-foreground text-center tabular-nums">
@@ -135,7 +135,7 @@ export function SubscriptionTable({ subscriptions }: SubscriptionTableProps) {
                     {PAYMENT_STATUS_LABEL[subscription.paymentStatus]}
                   </StatusBadge>
                 </TableCell>
-                <TableCell className="pr-4 text-center">
+                <TableCell className="pr-7 text-center">
                   <Button
                     type="button"
                     variant="secondary"

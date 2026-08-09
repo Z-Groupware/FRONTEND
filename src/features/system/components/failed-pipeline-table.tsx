@@ -66,12 +66,12 @@ export function FailedPipelineTable({ items }: { items: FailedPipelineItem[] }) 
           </colgroup>
           <TableHeader>
             <TableRow className={cn(HEADER_HEIGHT_CLASS, TABLE_HEAD_ROW_CLASS)}>
-              <TableHead className="pl-4 text-xs">회의 ID</TableHead>
+              <TableHead className="pl-7 text-xs">회의 ID</TableHead>
               <TableHead className="text-center text-xs">기업</TableHead>
               <TableHead className="text-center text-xs">실패 단계</TableHead>
               <TableHead className="text-center text-xs">시각</TableHead>
               <TableHead className="text-center text-xs">오류</TableHead>
-              <TableHead className="pr-4 text-center text-xs">액션</TableHead>
+              <TableHead className="pr-7 text-center text-xs">액션</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -80,7 +80,7 @@ export function FailedPipelineTable({ items }: { items: FailedPipelineItem[] }) 
                 key={item.meetingId}
                 className={cn(ROW_HEIGHT_CLASS, "hover:bg-foreground/[0.04]")}
               >
-                <TableCell className="text-muted-foreground pl-4 font-mono">
+                <TableCell className="text-muted-foreground pl-7 font-mono">
                   {item.meetingId}
                 </TableCell>
                 <TableCell
@@ -101,7 +101,7 @@ export function FailedPipelineTable({ items }: { items: FailedPipelineItem[] }) 
                 >
                   {item.errorMessage}
                 </TableCell>
-                <TableCell className="pr-4 text-center">
+                <TableCell className="pr-7 text-center">
                   <PipelineRetryButton meetingId={item.meetingId} />
                 </TableCell>
               </TableRow>

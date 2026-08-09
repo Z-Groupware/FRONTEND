@@ -26,7 +26,7 @@ const HEAD_CELL_CLASS = "text-muted-foreground h-9 text-[12px] font-normal";
  * "최근 가입 기업" 표. 비어있으면 안내 문구로 대체한다(CLAUDE.md §정직성 · loading/error/empty).
  *
  * ⚠️ 셀 규격을 **기준 화면과 같게** 맞춘다(DESIGN §3·§4) — 본문 13px, **양 끝 열**(기업명·가입일)
- *    `px-6`, 가운데 열 `px-4`. 양 끝만 넓은 건 카드 제목(`px-7`)과 왼쪽·오른쪽 끝을 맞추기
+ *    `px-7`, 가운데 열 `px-4`. 양 끝만 넓은 건 카드 제목(`px-7`)과 왼쪽·오른쪽 끝을 맞추기
  *    위해서다. 한때 전부 12px에 `pl-4`라 표가 제목보다 안쪽으로 들어가 끝이 어긋나 보였다.
  */
 export function RecentCompaniesTable({ companies }: { companies: RecentCompany[] }) {
@@ -50,16 +50,16 @@ export function RecentCompaniesTable({ companies }: { companies: RecentCompany[]
         <Table className="min-w-[520px] text-[13px]">
           <TableHeader>
             <TableRow className={TABLE_HEAD_ROW_CLASS}>
-              <TableHead className={`${HEAD_CELL_CLASS} px-6`}>기업명</TableHead>
+              <TableHead className={`${HEAD_CELL_CLASS} px-7`}>기업명</TableHead>
               <TableHead className={`${HEAD_CELL_CLASS} px-4 text-center`}>기업 코드</TableHead>
               <TableHead className={`${HEAD_CELL_CLASS} px-4 text-center`}>구성원</TableHead>
-              <TableHead className={`${HEAD_CELL_CLASS} px-6 text-center`}>가입일</TableHead>
+              <TableHead className={`${HEAD_CELL_CLASS} px-7 text-center`}>가입일</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {companies.map((company) => (
               <TableRow key={company.id} className="hover:bg-foreground/[0.04] h-12">
-                <TableCell className="text-foreground px-6">{company.name}</TableCell>
+                <TableCell className="text-foreground px-7">{company.name}</TableCell>
                 <TableCell
                   className="text-muted-foreground px-4 text-center font-mono"
                   title={company.code}
@@ -71,7 +71,7 @@ export function RecentCompaniesTable({ companies }: { companies: RecentCompany[]
                 </TableCell>
                 {/* ⚠️ 관리자 화면 표기라 일반 화면의 "8월 5일(화)" 형식을 안 따른다(`types.ts`
                     `RecentCompany.joinedAt` 주석) — 원문 "YYYY-MM-DD" 그대로 보여준다. */}
-                <TableCell className="text-muted-foreground px-6 text-center font-mono tabular-nums">
+                <TableCell className="text-muted-foreground px-7 text-center font-mono tabular-nums">
                   {company.joinedAt}
                 </TableCell>
               </TableRow>
