@@ -57,6 +57,27 @@ export function ApprovalDetailDialog({ company, closeHref }: ApprovalDetailDialo
 
   const isReject = pendingAction === APPROVAL_RESULT.REJECT;
 
+  /*
+    보고 있던 신청서가 바뀌거나 사라지면 확인창도 같이 내린다.
+
+    ⚠️ 확인창의 열림은 로컬 state가 정하는데 **내용은 주소(`?id=`)가 정한다.** 확인창이 뜬
+       상태에서 브라우저 뒤로가기를 누르면 주소에서 id만 빠져 `company`가 `null`이 되는데,
+       state는 그대로라 확인창이 남는다 — 제목이 `'undefined' 가입을 승인할까요?`가 되고,
+       실행을 눌러도 아래 `if (!company …) return`에 걸려 **아무 일도 안 일어난다**(취소로만
+       빠져나온다). 모달을 주소로 여닫는 이상 뒤로가기는 자연스러운 조작이라 막을 게 아니다.
+    ⚠️ **이펙트가 아니라 렌더 중에 맞춘다**(React: prop이 바뀔 때 state 조정). 이펙트는
+       그려진 뒤에 도는지라 그 사이 한 프레임 동안 `undefined` 제목이 스친다.
+    ⚠️ id를 비교한다 — 사라질 때뿐 아니라 **다른 신청서로 갈아탈 때도** 내려야 한다.
+       안 내리면 새로 연 상세 위에 앞 사람의 확인창이 그대로 떠 있는다.
+  */
+  const currentId = company?.id ?? null;
+  const [shownId, setShownId] = useState(currentId);
+
+  if (shownId !== currentId) {
+    setShownId(currentId);
+    setPendingAction(null);
+  }
+
   function handleConfirm() {
     const action = pendingAction;
     if (!company || !action) return;
@@ -172,7 +193,7 @@ export function ApprovalDetailDialog({ company, closeHref }: ApprovalDetailDialo
         ⚠️ 취소하면 상세로 되돌아온다 — 실수로 눌렀을 때 값 화면을 다시 찾지 않아도 된다.
       */}
       <ConfirmDialog
-        isOpen={pendingAction !== null}
+        isOpen={company !== null && pendingAction !== null}
         onOpenChange={(open) => {
           // 처리 중엔 안 닫는다 — 창만 사라지고 요청은 계속 가면 결과를 못 본다
           if (!open && !isPending) setPendingAction(null);

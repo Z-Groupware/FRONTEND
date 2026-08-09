@@ -19,7 +19,7 @@ import { cn } from "@/lib/utils";
 
 import { sendUnpaidNoticeAction } from "../actions";
 import { formatWon } from "../format";
-import { TABLE_HEAD_ROW_CLASS } from "../table-style";
+import { TABLE_HEAD_CELL_CLASS, TABLE_HEAD_ROW_CLASS } from "../table-style";
 import type { SubscriptionRecord } from "../types";
 import { NoticeMailDialog } from "./notice-mail-dialog";
 import { StatusBadge, type StatusTone } from "./status-badge";
@@ -36,14 +36,15 @@ interface SubscriptionTableProps {
 
 /** 행 하나의 높이 — 고정 클래스로 못박아 내용에 따라 늘어나지 않게 한다(`company-table.tsx`와 같은 이유). */
 const ROW_HEIGHT_CLASS = "h-12";
-const HEADER_HEIGHT_CLASS = "h-9";
 
 /**
- * 값 칸 — **오른쪽 레일**로 세운다.
+ * 값 칸 — **가운데**로 세운다(`table-style.ts`의 열 정렬 규칙: 첫 열만 왼쪽, 나머지는
+ * 머리글·값 둘 다 가운데). 자릿수는 `tabular-nums`가 잡아 준다.
  *
- * ⚠️ 전부 가운데 정렬이었다. 숫자는 자릿수가 제각각이라(`8명`·`130명`, `₩79,200`·`₩435,600`)
- *    가운데로 두면 줄마다 좌우로 흔들려 세로선이 안 생긴다 — 표가 "떠 있는 섬" 여러 개로
- *    읽힌다(DESIGN §3: 자릿수가 섞이면 오른쪽 정렬).
+ * ⚠️ 한때 이 자리에 "오른쪽 레일로 세운다"고 적혀 있었는데 코드는 처음부터 가운데였다 —
+ *    설명만 반대로 남아 있으면 다음 사람이 이 파일을 정본으로 삼아 **다른 표 넷을**
+ *    오른쪽으로 고친다. 양끝 정렬은 이미 해 보고 버린 방식이다(머리글이 값의 한쪽 끝에
+ *    붙어 서서 어느 값을 가리키는지 눈으로 안 잡혔다).
  */
 const VALUE_CELL_CLASS = "text-muted-foreground text-center tabular-nums";
 
@@ -122,13 +123,13 @@ export function SubscriptionTable({ subscriptions, action }: SubscriptionTablePr
             <col style={{ width: COLUMN_WIDTH.action }} />
           </colgroup>
           <TableHeader>
-            <TableRow className={cn(HEADER_HEIGHT_CLASS, TABLE_HEAD_ROW_CLASS)}>
-              <TableHead className="pl-7 text-xs">기업명</TableHead>
-              <TableHead className="text-center text-xs">인원</TableHead>
-              <TableHead className="text-center text-xs">금액</TableHead>
-              <TableHead className="text-center text-xs">결제일</TableHead>
-              <TableHead className="text-center text-xs">상태</TableHead>
-              <TableHead className="pr-7 text-center text-xs">액션</TableHead>
+            <TableRow className={TABLE_HEAD_ROW_CLASS}>
+              <TableHead className={cn(TABLE_HEAD_CELL_CLASS, "pl-7")}>기업명</TableHead>
+              <TableHead className={cn(TABLE_HEAD_CELL_CLASS, "text-center")}>인원</TableHead>
+              <TableHead className={cn(TABLE_HEAD_CELL_CLASS, "text-center")}>금액</TableHead>
+              <TableHead className={cn(TABLE_HEAD_CELL_CLASS, "text-center")}>결제일</TableHead>
+              <TableHead className={cn(TABLE_HEAD_CELL_CLASS, "text-center")}>상태</TableHead>
+              <TableHead className={cn(TABLE_HEAD_CELL_CLASS, "pr-7 text-center")}>액션</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -152,7 +153,7 @@ export function SubscriptionTable({ subscriptions, action }: SubscriptionTablePr
                 <TableCell className={VALUE_CELL_CLASS}>
                   {subscription.billingDate ? formatDate(subscription.billingDate) : "–"}
                 </TableCell>
-                {/* 뱃지도 오른쪽 레일에 세운다 — 가운데로 두면 양옆 오른쪽 정렬 사이에서 혼자 떠 보인다 */}
+                {/* 뱃지도 가운데다 — 상자를 한쪽 끝에 맞추면 안쪽 여백만큼 글자끼리 어긋난다(§table-style) */}
                 <TableCell className="text-center">
                   <StatusBadge tone={STATUS_TONE[subscription.paymentStatus]}>
                     {PAYMENT_STATUS_LABEL[subscription.paymentStatus]}

@@ -12,7 +12,7 @@ import { COMPANY_STATUS_LABEL } from "@/constants/domain";
 import { formatDate } from "@/lib/date";
 import { cn } from "@/lib/utils";
 
-import { TABLE_HEAD_ROW_CLASS } from "../table-style";
+import { TABLE_HEAD_CELL_CLASS, TABLE_HEAD_HEIGHT_PX, TABLE_HEAD_ROW_CLASS } from "../table-style";
 import type { ManagedCompany } from "../types";
 import { StatusBadge, type StatusTone } from "./status-badge";
 
@@ -26,8 +26,6 @@ interface CompanyTableProps {
 /** 행 하나의 높이 — `py-4`가 아니라 고정 클래스로 못박아 내용에 따라 늘어나지 않게 한다. */
 const ROW_HEIGHT_CLASS = "h-[42px]";
 const ROW_HEIGHT_PX = 42;
-const HEADER_HEIGHT_CLASS = "h-[34px]";
-const HEADER_HEIGHT_PX = 34;
 
 const STATUS_TONE: Record<ManagedCompany["status"], StatusTone> = {
   ACTIVE: "positive",
@@ -72,7 +70,7 @@ export function CompanyTable({ companies, buildDetailHref, pageSize }: CompanyTa
     return (
       <div
         className="border-border bg-card flex flex-col items-center justify-center rounded-2xl border p-10 text-center"
-        style={{ height: HEADER_HEIGHT_PX + pageSize * ROW_HEIGHT_PX }}
+        style={{ height: TABLE_HEAD_HEIGHT_PX + pageSize * ROW_HEIGHT_PX }}
       >
         <p className="text-muted-foreground text-sm">조건에 맞는 기업이 없습니다</p>
       </div>
@@ -93,13 +91,15 @@ export function CompanyTable({ companies, buildDetailHref, pageSize }: CompanyTa
             <col style={{ width: COLUMN_WIDTH.status }} />
           </colgroup>
           <TableHeader>
-            <TableRow className={cn(HEADER_HEIGHT_CLASS, TABLE_HEAD_ROW_CLASS)}>
-              <TableHead className="pl-7 text-xs">기업명</TableHead>
-              <TableHead className="text-center text-xs">기업 코드</TableHead>
-              <TableHead className="text-center text-xs">구성원</TableHead>
-              <TableHead className="text-center text-xs">이번달 회의</TableHead>
-              <TableHead className="text-center text-xs">가입일</TableHead>
-              <TableHead className="pr-7 text-center text-xs">상태</TableHead>
+            <TableRow className={TABLE_HEAD_ROW_CLASS}>
+              <TableHead className={cn(TABLE_HEAD_CELL_CLASS, "pl-7")}>기업명</TableHead>
+              <TableHead className={cn(TABLE_HEAD_CELL_CLASS, "text-center")}>기업 코드</TableHead>
+              <TableHead className={cn(TABLE_HEAD_CELL_CLASS, "text-center")}>구성원</TableHead>
+              <TableHead className={cn(TABLE_HEAD_CELL_CLASS, "text-center")}>
+                이번달 회의
+              </TableHead>
+              <TableHead className={cn(TABLE_HEAD_CELL_CLASS, "text-center")}>가입일</TableHead>
+              <TableHead className={cn(TABLE_HEAD_CELL_CLASS, "pr-7 text-center")}>상태</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>

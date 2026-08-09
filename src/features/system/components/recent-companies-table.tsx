@@ -8,19 +8,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { cn } from "@/lib/utils";
 
-import { TABLE_HEAD_ROW_CLASS } from "../table-style";
+import { TABLE_HEAD_CELL_CLASS, TABLE_HEAD_ROW_CLASS } from "../table-style";
 import type { RecentCompany } from "../types";
 import { SystemCardHeading } from "./system-card-heading";
 
-/**
- * 표 머리 셀.
- *
- * ⚠️ **`h-9`를 행이 아니라 셀에 건다.** `<tr>`에 걸어 봤자 `TableHead`가 `<th>`마다
- *    기본 `h-10`을 얹어서(`components/ui/table.tsx`) 머리 높이가 40px로 남는다 —
- *    행 높이를 정하는 건 셀이다. 눈에 안 보이는 채로 한 칸 두꺼웠다.
- */
-const HEAD_CELL_CLASS = "text-muted-foreground h-9 text-[12px] font-normal";
+/** 표 머리 셀 — 높이·글자 크기는 `table-style.ts`가 정한다(표 다섯 개가 같은 값). */
+const HEAD_CELL_CLASS = cn(TABLE_HEAD_CELL_CLASS, "text-muted-foreground font-normal");
 
 /**
  * "최근 가입 기업" 표. 비어있으면 안내 문구로 대체한다(CLAUDE.md §정직성 · loading/error/empty).

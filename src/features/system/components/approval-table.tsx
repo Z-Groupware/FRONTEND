@@ -11,7 +11,7 @@ import {
 import { formatDate } from "@/lib/date";
 import { cn } from "@/lib/utils";
 
-import { TABLE_HEAD_ROW_CLASS } from "../table-style";
+import { TABLE_HEAD_CELL_CLASS, TABLE_HEAD_HEIGHT_PX, TABLE_HEAD_ROW_CLASS } from "../table-style";
 import type { PendingCompanyApproval } from "../types";
 
 interface ApprovalTableProps {
@@ -23,8 +23,6 @@ interface ApprovalTableProps {
 /** 행 하나의 높이 — `py-4`가 아니라 고정 클래스로 못박아 내용에 따라 늘어나지 않게 한다. */
 const ROW_HEIGHT_CLASS = "h-[42px]";
 const ROW_HEIGHT_PX = 42;
-const HEADER_HEIGHT_CLASS = "h-[34px]";
-const HEADER_HEIGHT_PX = 34;
 
 /**
  * 컬럼 폭 — **%로 고정**한다(합 100). 픽셀 고정이면 화면 폭이 다른 환경에서 비율이 깨진다.
@@ -61,7 +59,7 @@ export function ApprovalTable({ companies, pageSize }: ApprovalTableProps) {
     return (
       <div
         className="border-border bg-card flex flex-col items-center justify-center rounded-2xl border p-10 text-center"
-        style={{ height: HEADER_HEIGHT_PX + pageSize * ROW_HEIGHT_PX }}
+        style={{ height: TABLE_HEAD_HEIGHT_PX + pageSize * ROW_HEIGHT_PX }}
       >
         <p className="text-muted-foreground text-sm">승인 대기 중인 기업이 없습니다</p>
       </div>
@@ -82,13 +80,19 @@ export function ApprovalTable({ companies, pageSize }: ApprovalTableProps) {
             <col style={{ width: COLUMN_WIDTH.appliedAt }} />
           </colgroup>
           <TableHeader>
-            <TableRow className={cn(HEADER_HEIGHT_CLASS, TABLE_HEAD_ROW_CLASS)}>
-              <TableHead className="pl-7 text-xs">회사명</TableHead>
-              <TableHead className="text-center text-xs">사업자 번호</TableHead>
-              <TableHead className="text-center text-xs">대표자</TableHead>
-              <TableHead className="text-center text-xs">담당자 이메일</TableHead>
-              <TableHead className="text-center text-xs">구성원</TableHead>
-              <TableHead className="pr-7 text-center text-xs">신청일</TableHead>
+            <TableRow className={TABLE_HEAD_ROW_CLASS}>
+              <TableHead className={cn(TABLE_HEAD_CELL_CLASS, "pl-7")}>회사명</TableHead>
+              <TableHead className={cn(TABLE_HEAD_CELL_CLASS, "text-center")}>
+                사업자 번호
+              </TableHead>
+              <TableHead className={cn(TABLE_HEAD_CELL_CLASS, "text-center")}>대표자</TableHead>
+              <TableHead className={cn(TABLE_HEAD_CELL_CLASS, "text-center")}>
+                담당자 이메일
+              </TableHead>
+              <TableHead className={cn(TABLE_HEAD_CELL_CLASS, "text-center")}>구성원</TableHead>
+              <TableHead className={cn(TABLE_HEAD_CELL_CLASS, "pr-7 text-center")}>
+                신청일
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>

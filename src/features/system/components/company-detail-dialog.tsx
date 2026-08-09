@@ -71,6 +71,20 @@ export function CompanyDetailDialog({ company, closeHref, currentPath }: Company
   const [isPending, startTransition] = useTransition();
   const isSuspended = company?.status === COMPANY_STATUS.SUSPENDED;
 
+  /*
+    보고 있던 기업이 바뀌거나 사라지면 확인창도 같이 내린다 — `approval-detail-dialog.tsx`와
+    같은 이유다. 확인창이 뜬 채 뒤로가기를 누르면 주소에서 id만 빠져 제목이
+    `'undefined'을(를) 정지할까요?`가 되고, 실행을 눌러도 아래 `if (!company) return`에 걸려
+    아무 일도 안 일어난다.
+  */
+  const currentId = company?.id ?? null;
+  const [shownId, setShownId] = useState(currentId);
+
+  if (shownId !== currentId) {
+    setShownId(currentId);
+    setIsConfirming(false);
+  }
+
   function handleConfirm() {
     if (!company) return;
 
@@ -168,7 +182,7 @@ export function CompanyDetailDialog({ company, closeHref, currentPath }: Company
         ⚠️ 취소하면 상세로 되돌아온다 — 실수로 눌렀을 때 값 화면을 다시 찾지 않아도 된다.
       */}
       <ConfirmDialog
-        isOpen={isConfirming}
+        isOpen={company !== null && isConfirming}
         onOpenChange={(open) => {
           // 처리 중엔 안 닫는다 — 창만 사라지고 요청은 계속 가면 결과를 못 본다
           if (!open && !isPending) setIsConfirming(false);
@@ -193,7 +207,7 @@ export function CompanyDetailDialog({ company, closeHref, currentPath }: Company
   );
 }
 
-/** 값 한 줄 — 승인 상세(`approval/[companyId]/page.tsx`)와 같은 규격이다 */
+/** 값 한 줄 — 승인 상세(`approval-detail-dialog.tsx`)와 같은 규격이다 */
 function Field({
   label,
   value,

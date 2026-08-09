@@ -13,14 +13,13 @@ import {
 import { PIPELINE_STAGE_LABEL } from "@/constants/domain";
 import { cn } from "@/lib/utils";
 
-import { TABLE_HEAD_ROW_CLASS } from "../table-style";
+import { TABLE_HEAD_CELL_CLASS, TABLE_HEAD_ROW_CLASS } from "../table-style";
 import type { FailedPipelineItem } from "../types";
 import { PipelineRetryButton } from "./pipeline-retry-button";
 import { SystemCardHeading } from "./system-card-heading";
 
-/** 행/헤더 높이 — 다른 SYSTEM 표(구독·매출·기업 관리)와 같은 값으로 못박는다. */
+/** 행 높이 — 다른 SYSTEM 표(구독·매출·기업 관리)와 같은 값으로 못박는다. 머리 높이는 `table-style.ts`가 정한다. */
 const ROW_HEIGHT_CLASS = "h-[42px]";
-const HEADER_HEIGHT_CLASS = "h-[34px]";
 
 /**
  * 컬럼 폭 — %로 고정(합 100). `table-fixed` + `colgroup`과 짝을 이뤄 회의 ID·오류 문구
@@ -74,13 +73,13 @@ export function FailedPipelineTable({ items }: { items: FailedPipelineItem[] }) 
             <col style={{ width: COLUMN_WIDTH.action }} />
           </colgroup>
           <TableHeader>
-            <TableRow className={cn(HEADER_HEIGHT_CLASS, TABLE_HEAD_ROW_CLASS)}>
-              <TableHead className="pl-7 text-xs">회의 ID</TableHead>
-              <TableHead className="text-center text-xs">기업</TableHead>
-              <TableHead className="text-center text-xs">실패 단계</TableHead>
-              <TableHead className="text-center text-xs">시각</TableHead>
-              <TableHead className="text-center text-xs">오류</TableHead>
-              <TableHead className="pr-7 text-center text-xs">액션</TableHead>
+            <TableRow className={TABLE_HEAD_ROW_CLASS}>
+              <TableHead className={cn(TABLE_HEAD_CELL_CLASS, "pl-7")}>회의 ID</TableHead>
+              <TableHead className={cn(TABLE_HEAD_CELL_CLASS, "text-center")}>기업</TableHead>
+              <TableHead className={cn(TABLE_HEAD_CELL_CLASS, "text-center")}>실패 단계</TableHead>
+              <TableHead className={cn(TABLE_HEAD_CELL_CLASS, "text-center")}>시각</TableHead>
+              <TableHead className={cn(TABLE_HEAD_CELL_CLASS, "text-center")}>오류</TableHead>
+              <TableHead className={cn(TABLE_HEAD_CELL_CLASS, "pr-7 text-center")}>액션</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>

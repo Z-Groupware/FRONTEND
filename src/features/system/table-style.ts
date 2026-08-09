@@ -19,6 +19,21 @@ export const TABLE_HEAD_ROW_CLASS =
   "bg-foreground/[0.06] border-border border-b hover:bg-foreground/[0.06]";
 
 /**
+ * 표 머리 **셀** 규격 — 높이는 여기 있다.
+ *
+ * ⚠️ **높이를 `<tr>`에 걸면 안 먹는다.** `TableHead`가 `<th>`마다 `h-10`을 얹고
+ *    (`components/ui/table.tsx`), 행 높이는 셀이 정한다 — 표 다섯 개가 저마다
+ *    `h-9`·`h-[34px]`를 행에 걸어 두고 실제로는 전부 40px로 그려지고 있었다.
+ *    눈에 안 보이는 채로 한 칸씩 두꺼웠다.
+ * ⚠️ 그래서 값을 **한 자리로 모은다.** 다섯 표가 같은 화면군에 있어 머리 높이가 갈리면
+ *    사이드바로 옮겨 다닐 때 표가 한 칸씩 뛴다.
+ */
+export const TABLE_HEAD_CELL_CLASS = "h-9 text-xs";
+
+/** 위 클래스의 픽셀값 — 빈 목록 자리를 잡을 때 쓴다(`h-9` = 36px). */
+export const TABLE_HEAD_HEIGHT_PX = 36;
+
+/**
  * 열 정렬 규칙 — 시스템 표 다섯 개가 같이 지킨다.
  *
  * ⚠️ **머리글은 값의 가운데에 온다.** 첫 열(그 줄의 주인공)만 왼쪽이고, 나머지 열은

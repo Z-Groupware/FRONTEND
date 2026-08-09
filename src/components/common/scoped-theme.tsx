@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, type ReactNode, useCallback, useContext, useState } from "react";
+import { createContext, type ReactNode, useCallback, useContext, useEffect, useState } from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -74,9 +74,35 @@ export function ScopedThemeProvider({
     document.cookie = `${cookieName}=${next ? "dark" : "light"}; path=/; max-age=31536000; samesite=lax`;
   }, [isDark, cookieName]);
 
+  /*
+    같은 밝기를 **`<body>`에도 걸어 둔다.**
+
+    ⚠️ 상자 밖에서 사는 것이 하나 있다 — **토스트**다. `<Toaster />`는 루트 레이아웃에
+       하나만 두는 규칙이라(CLAUDE.md §토스트) 이 상자 안으로 들일 수 없고, 그래서 전역
+       밝기로 색을 계산한다. 그 결과 다크로 보는 운영자 화면 위에 **라이트 값으로 만든
+       알약**이 떠서 바탕과 거의 안 갈렸다(실측 1.4:1 — 글자는 읽히지만 알약 모양이 사라진다).
+    ⚠️ 상자가 화면을 통째로 차지하는 동안만이다 — 벗어나면 지운다(아래 cleanup).
+       Dialog·Select처럼 `container`를 받는 것들은 지금도 상자 안으로 들어가므로
+       이 손질이 필요 없다.
+    ⚠️ 첫 페인트에는 안 걸린다(이펙트라서). 토스트는 조작한 뒤에 뜨는 것이라 늦지 않다.
+  */
+  useEffect(() => {
+    const { classList } = document.body;
+    const applied = isDark ? "dark" : "light";
+
+    classList.add(applied);
+    return () => classList.remove(applied);
+  }, [isDark]);
+
   return (
     <ScopedThemeContext.Provider value={{ isDark, toggle, portalContainer: scopeElement }}>
-      <div ref={setScopeElement} className={cn(className, isDark && "dark")}>
+      {/*
+        ⚠️ 밝을 때도 **클래스를 명시한다**(`light`). 다크만 붙이고 라이트는 비워 두면,
+           전역이 다크인 사람이 이 화면을 밝게 돌렸을 때 상자에 아무 선언이 없어
+           `html.dark`의 값을 그대로 물려받는다 — 토글을 눌러도 안 밝아진다.
+           (`globals.css`의 `:root, .light` 참고.)
+      */}
+      <div ref={setScopeElement} className={cn(className, isDark ? "dark" : "light")}>
         {children}
       </div>
     </ScopedThemeContext.Provider>
