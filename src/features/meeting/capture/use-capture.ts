@@ -8,6 +8,7 @@ import {
   closedSegmentCountOf,
   formatRecordedTime,
   isCapturing,
+  nextUtteranceStart,
   recordedMsOf,
   type RecordingSpan,
 } from "./phase";
@@ -119,7 +120,14 @@ export function useCapture(): UseCaptureResult {
   */
   const markPartial = useCallback(
     (text: string) => {
-      if (text && utteranceStartRef.current === null) utteranceStartRef.current = elapsedNow();
+      /*
+        ⚠️ **빈 문자열로 오면 시작 시각도 지운다.** 중간 결과는 확정 없이 사라지는 길이 여럿이다
+           — 일시정지(`stt.stop()`), 세션이 조용해서 스스로 닫히는 경우. 그때 지우지 않으면
+           그 문장의 시작 ms가 남아 **다음 문장이 앞 문장의 시각을 물려받는다**:
+           00:20에 말하다 멈추고 5분 쉰 뒤 한 말이 `00:20`으로 찍힌다.
+           시각을 "감지한 시점"으로 맞추려던 것이 오히려 정반대가 된다.
+      */
+      utteranceStartRef.current = nextUtteranceStart(utteranceStartRef.current, text, elapsedNow());
       setPartial(text);
     },
     [elapsedNow],
@@ -234,6 +242,9 @@ export function useCapture(): UseCaptureResult {
 
   const pause = useCallback(() => {
     sttRef.current?.stop();
+    // ⚠️ `stt.stop()`이 `onPartial("")`로 이미 비우지만, STT가 없는 경우(미지원·이미 죽음)엔
+    //    그 경로가 안 돈다 — 여기서 한 번 더 확실히 끊는다.
+    utteranceStartRef.current = null;
     recorderRef.current?.pause();
     // TODO(BE 협의): CAP-02 일시정지 이벤트
     const at = Date.now();

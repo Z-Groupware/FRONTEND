@@ -103,3 +103,25 @@ export function formatRecordedTime(ms: number): string {
   const ss = String(seconds).padStart(2, "0");
   return hours > 0 ? `${hours}:${mm}:${ss}` : `${mm}:${ss}`;
 }
+
+/**
+ * 다음 **발화 시작 시각** — 자막 한 줄에 찍히는 값이다.
+ *
+ * 자막 시각은 문장이 확정된 순간(= 말이 **끝난** 시각)이 아니라 **감지한 시점**이다(팀 확정).
+ * 10초에 시작해 2초간 말하면 `00:10`이지 `00:12`가 아니다.
+ *
+ * ⚠️ **빈 문자열은 시작 시각을 지운다.** 중간 결과는 확정 없이 사라지는 길이 여럿이다 —
+ *    일시정지, 세션이 조용해서 스스로 닫히는 경우, STT가 죽는 경우. 그때 안 지우면 그 문장의
+ *    시작 ms가 남아 **다음 문장이 앞 문장의 시각을 물려받는다**(00:20에 말하다 멈추고 5분 쉰 뒤
+ *    한 말이 `00:20`으로 찍힌다) — 고치려던 것이 정반대가 된다.
+ * ⚠️ 이미 잡아 둔 값은 **덮어쓰지 않는다.** 한 문장이 여러 중간 결과로 자라는 동안 시작 시각은
+ *    처음 그대로여야 한다.
+ */
+export function nextUtteranceStart(
+  current: number | null,
+  text: string,
+  elapsedMs: number,
+): number | null {
+  if (!text) return null;
+  return current ?? elapsedMs;
+}

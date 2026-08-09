@@ -153,6 +153,9 @@ export function createSttEngine(handlers: SttHandlers): SttEngine | null {
     instance.onerror = (event) => {
       if (!isFatalSttError(event.error)) return;
       stopped = true;
+      // ⚠️ 비추던 문장을 지운다 — 안 지우면 받아쓰기가 죽었는데 점선 줄이 계속 깜빡여
+      //    **아직 듣고 있는 것처럼** 보인다(§정직성). 어차피 확정 안 돼 서버로도 안 간다.
+      handlers.onPartial("");
       handlers.onFatal(FATAL_MESSAGE[event.error] ?? "자막을 받지 못했습니다.");
     };
 
@@ -168,9 +171,16 @@ export function createSttEngine(handlers: SttHandlers): SttEngine | null {
       emptyRestarts += 1;
       if (emptyRestarts > MAX_EMPTY_RESTARTS) {
         stopped = true;
+        handlers.onPartial("");
         handlers.onFatal("자막을 계속 받지 못했습니다. 마이크와 네트워크를 확인해 주세요.");
         return;
       }
+
+      /*
+        ⚠️ 다시 열기 전에 비춘 문장을 지운다. 세션이 닫히면 그 중간 결과는 **확정되지 않는다** —
+           그대로 두면 다음 결과가 올 때까지(몇 분이든) 낡은 문장이 깜빡이며 남는다.
+      */
+      handlers.onPartial("");
 
       const delay = Math.min(200 * 2 ** (emptyRestarts - 1), 5_000);
       retryTimer = window.setTimeout(() => {
