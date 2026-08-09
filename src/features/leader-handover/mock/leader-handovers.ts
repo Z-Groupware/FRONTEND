@@ -61,7 +61,7 @@ function seedStore(): LeaderHandoverStore {
         title: "김서준 개발팀장 오프보딩 인수인계서",
         formerLeaderName: "김서준",
         teamName: "개발팀",
-        offboardingApprovedAt: "2026-08-12",
+        offboardingApprovedAt: "2026-08-08",
         actionCount: actions.length,
         custodyStatus: LEADER_HANDOVER_CUSTODY_STATUS.PENDING,
         actions,

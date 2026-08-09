@@ -35,7 +35,7 @@ export function TeamHandoverActionChip({
   assignedTo,
   onAssign,
 }: TeamHandoverActionChipProps) {
-  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+  const { listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: action.id,
   });
   const color = pickPaletteColor(action.projectTag);
@@ -54,11 +54,12 @@ export function TeamHandoverActionChip({
       {/*
         ⚠️ **포커스를 안 받는다.** 마우스 드래그 전용 손잡이다 — 키보드 배정은 옆의
            `<Select>`가 맡는다(dnd-kit `PointerSensor`만 붙어 있어 이 손잡이 자체는 키보드로
-           작동하지 않는다). `tabIndex`를 주면 아무것도 못 하는 포커스 정지점만 생긴다.
+           작동하지 않는다). ⚠️ **`attributes`는 안 뿌린다** — dnd-kit 기본값에 `tabIndex={0}`·
+           `role="button"`이 들어 있어, `aria-hidden`과 같이 두면 "숨겨졌는데 포커스는 받는"
+           위반이 된다(CodeRabbit 지적, 2026-08-09). `listeners`(포인터 핸들러)만 필요하다.
       */}
       <div
         {...listeners}
-        {...attributes}
         aria-hidden
         className="flex min-w-0 flex-1 cursor-grab items-center gap-3 active:cursor-grabbing"
       >

@@ -21,12 +21,18 @@ export function buildTimelineInput(actions: TeamHandoverAction[]): TimelineActio
   });
 }
 
-/** 모든 액션이 배정됐는지 — [인수인계 확정] 버튼 활성 조건. */
+/**
+ * 모든 액션이 배정됐는지 — [인수인계 확정] 버튼 활성 조건.
+ * ⚠️ 액션이 하나도 없으면(전부 이미 완료 처리됨) **그 자체로 확정 가능**이다 — 서버
+ *    (`completeTeamHandoverAction`)도 같은 기준(`every`는 빈 배열에서 참)이라, 여기서만
+ *    `length > 0`을 더 걸면 버튼이 영영 안 눌리는데 서버는 통과하는 불일치가 생긴다
+ *    (CodeRabbit 지적, 2026-08-09).
+ */
 export function isReadyToComplete(
   actions: TeamHandoverAction[],
   assignments: Record<number, number>,
 ): boolean {
-  return actions.length > 0 && actions.every((action) => assignments[action.id] !== undefined);
+  return actions.every((action) => assignments[action.id] !== undefined);
 }
 
 /** 배정 맵 → 서버로 보낼 배열. */

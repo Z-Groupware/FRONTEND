@@ -44,12 +44,29 @@ export async function completeTeamHandoverAction(
   const handover = await getTeamHandoverDetail(memberId);
   if (!handover) return { isSuccess: false, message: "이미 처리됐거나 없는 인수인계서입니다" };
 
-  // ⚠️ 화면의 "전부 배정" 제약은 UX일 뿐이다 — 여기서도 다시 본다(§권한: 화면 숨김은 보안이 아니다).
-  const assignedIds = new Set(assignments.map((entry) => entry.actionId));
-  const allAssigned = handover.actions.every((action) => assignedIds.has(action.id));
-  if (!allAssigned) return { isSuccess: false, message: "아직 배정하지 않은 액션이 있습니다" };
-
+  /*
+    ⚠️ 화면의 "전부 배정" 제약은 UX일 뿐이다 — 여기서도 다시 본다(§권한: 화면 숨김은
+       보안이 아니다). **꼭 이 인수인계서의 액션만, 정확히 한 번씩** 와야 한다(CodeRabbit
+       지적, 2026-08-09) — 조작된 요청이 이 신청자 아닌 다른 사람의 액션 id를 끼워 넣거나
+       같은 액션을 중복으로 보낼 수 있다. 하나라도 어긋나면 **부분 처리하지 않고 전체를
+       막는다** — 일부만 반영되면 "N/M건 배정 완료"가 실제와 달라진다.
+  */
+  const validActionIds = new Set(handover.actions.map((action) => action.id));
   const teammateById = new Map(handover.teammates.map((teammate) => [teammate.id, teammate]));
+
+  if (assignments.length !== handover.actions.length) {
+    return { isSuccess: false, message: "배정 요청이 인계 액션 수와 맞지 않습니다" };
+  }
+  const seenActionIds = new Set<number>();
+  for (const { actionId, assigneeId } of assignments) {
+    if (!validActionIds.has(actionId) || seenActionIds.has(actionId)) {
+      return { isSuccess: false, message: "이 인수인계서의 액션이 아니거나 중복됐습니다" };
+    }
+    if (!teammateById.has(assigneeId)) {
+      return { isSuccess: false, message: "이 팀의 담당자가 아닙니다" };
+    }
+    seenActionIds.add(actionId);
+  }
 
   for (const { actionId, assigneeId } of assignments) {
     const teammate = teammateById.get(assigneeId);

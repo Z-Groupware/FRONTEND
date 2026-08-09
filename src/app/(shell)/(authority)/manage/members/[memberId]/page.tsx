@@ -101,7 +101,13 @@ export default async function ManageMemberDetailPage({
                 memberName={detail.member.name}
                 handover={detail.pendingHandover}
                 canApprove={canApproveFinal(viewer)}
-                isRequesterLeader={detail.member.authority === AUTHORITY.LEADER}
+                /*
+                  ⚠️ **신청 당시** 권한을 쓴다(`pendingHandover.requesterAuthority`) —
+                     지금 권한(`detail.member.authority`)을 쓰면 팀장 공석 중 승급된
+                     사람의 예전 일반 팀원 신청이 "팀장 본인 신청"으로 잘못 보인다
+                     (CodeRabbit 지적, 2026-08-09).
+                */
+                isRequesterLeader={detail.pendingHandover.requesterAuthority === AUTHORITY.LEADER}
               />
             )}
 

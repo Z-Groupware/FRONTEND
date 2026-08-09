@@ -105,6 +105,11 @@ const INITIAL: ManagedMemberDetail[] = [
            처리해야 하는 데모 대상이다. 이미 중간 승인된 신청 데모는 임지안(id 8)이 맡는다.
       */
       midApproval: null,
+      /*
+        ⚠️ **신청 당시** 값을 굳혀 둔다(CodeRabbit 지적, 2026-08-09) — 나중에 이 사람의
+           `authority`가 바뀌어도(팀장 승급 등) 이 신청은 그때 기준을 그대로 유지한다.
+      */
+      requesterAuthority: AUTHORITY.MEMBER,
     },
   },
   {
@@ -211,6 +216,7 @@ const INITIAL: ManagedMemberDetail[] = [
       period: null,
       actionCount: 5,
       midApproval: { approverName: "최유진", approvedAt: "2026-08-01" },
+      requesterAuthority: AUTHORITY.MEMBER,
     },
   },
   {
