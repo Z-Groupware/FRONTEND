@@ -51,7 +51,7 @@ export default async function LeaderHandoversPage({ searchParams }: LeaderHandov
                   ? "/owner/leader-handovers"
                   : `/owner/leader-handovers?status=${tab.value}`
               }
-              aria-pressed={activeFilter === tab.value}
+              aria-current={activeFilter === tab.value ? "page" : undefined}
               className={cn(
                 "rounded-lg px-2.5 py-1.5 text-[13px] leading-5 transition-colors",
                 activeFilter === tab.value

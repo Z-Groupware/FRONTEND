@@ -41,13 +41,22 @@ export function LeaderHandoverAssignForm({ handover }: LeaderHandoverAssignFormP
   function handleConfirm() {
     setError(null);
     startTransition(async () => {
-      const result = await assignLeaderHandoverAction(handover.id, selectedId);
-      if (!result.isSuccess) {
+      /*
+        ⚠️ **던질 수 있는 호출이다.** `isMock`이 꺼지면 Action이 예외를 던지는데, 여기서
+           안 잡으면 이 창이 아니라 페이지 전체 error.tsx로 넘어가 확인 창이 통째로
+           사라진다(§토스트: 페이지 전체 실패는 error.tsx, 이건 그 자리가 아니다).
+      */
+      try {
+        const result = await assignLeaderHandoverAction(handover.id, selectedId);
+        if (!result.isSuccess) {
+          setError("귀속 처리에 실패했습니다. 잠시 후 다시 시도해 주세요.");
+          return;
+        }
+        setConfirmOpen(false);
+        toast.success(`${selectedCandidate?.name} 님에게 귀속했습니다`);
+      } catch {
         setError("귀속 처리에 실패했습니다. 잠시 후 다시 시도해 주세요.");
-        return;
       }
-      setConfirmOpen(false);
-      toast.success(`${selectedCandidate?.name} 님에게 귀속했습니다`);
     });
   }
 
