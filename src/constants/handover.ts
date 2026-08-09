@@ -44,6 +44,24 @@ export const HANDOVER_TYPE_LABEL: Record<HandoverType, string> = {
 };
 
 /**
+ * "팀장급 인수인계서 관리"(`/owner/leader-handovers`)의 상태 — **오프보딩 최종 승인
+ * 뒤에만** 생긴다(WORKFLOW.md §7). `HANDOVER_STATUS`와 다른 축이다: 저건 신청→승인
+ * 흐름이고, 이건 승인이 끝난 뒤 "담당자 없는 액션 뭉치를 누구에게 넘길지"의 흐름이다.
+ * ⚠️ 팀장 **휴직**은 여기 안 온다 — 휴직은 본인이 재할당을 마치고 올라간다(§7).
+ */
+export const LEADER_HANDOVER_CUSTODY_STATUS = {
+  PENDING: "PENDING",
+  ASSIGNED: "ASSIGNED",
+} as const;
+export type LeaderHandoverCustodyStatus =
+  (typeof LEADER_HANDOVER_CUSTODY_STATUS)[keyof typeof LEADER_HANDOVER_CUSTODY_STATUS];
+
+export const LEADER_HANDOVER_CUSTODY_STATUS_LABEL: Record<LeaderHandoverCustodyStatus, string> = {
+  PENDING: "귀속 대기",
+  ASSIGNED: "귀속 완료",
+};
+
+/**
  * 승인 카드 제목에 붙는 신청자 서술어 — **권한 배지(Leader/Member, 영문)가 아니라
  * 한글 서술어다**(`handover-approval-card.tsx` 참고). 신청은 OWNER 제외 전원이 할 수
  * 있지만(`canWriteHandover`) 제목에서 가르는 건 팀장 본인 신청인지 여부뿐이라 둘로 충분하다.
