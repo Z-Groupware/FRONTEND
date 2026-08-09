@@ -3,6 +3,10 @@ import Link from "next/link";
 
 import type { PipelineQueueSummary } from "../types";
 
+interface PipelineQueueCardProps {
+  queue: PipelineQueueSummary;
+}
+
 /**
  * 대시보드 곁 컬럼의 "처리 큐" 카드.
  *
@@ -17,7 +21,7 @@ import type { PipelineQueueSummary } from "../types";
  *    또 정하고 있었는데, 격자와 둘이 싸워 카드가 제 칸보다 100px 좁게 그려졌다 —
  *    위아래 카드와 오른쪽 끝이 어긋나 중간 줄만 안쪽으로 들어가 보였다.
  */
-export function PipelineQueueCard({ queue }: { queue: PipelineQueueSummary }) {
+export function PipelineQueueCard({ queue }: PipelineQueueCardProps) {
   const rows = [
     { label: "대기", value: `${queue.waitingCount}건`, meta: "처리 예정" },
     {
