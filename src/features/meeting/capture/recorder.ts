@@ -73,7 +73,20 @@ export function createCaptureRecorder(handlers: RecorderHandlers): CaptureRecord
   return {
     async start() {
       try {
-        stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        /*
+          ⚠️ **기본값에 맡기지 않는다.** 회의실 노트북 마이크는 에어컨·타자 소리를 그대로
+             담는데, 이 파일이 곧 **정본 자막의 재료**다 — 회의 중 서버가 하는 일이
+             받아쓰기와 적재이기 때문이다(§3-3). 화면의 실시간 자막보다 이쪽이 중요하다.
+          ⚠️ 말소리는 단일 채널이면 충분하다. 스테레오로 담으면 파일만 두 배가 된다.
+        */
+        stream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true,
+            channelCount: 1,
+          },
+        });
       } catch {
         handlers.onFatal("마이크를 열지 못했습니다. 브라우저 권한을 확인해 주세요.");
         return false;

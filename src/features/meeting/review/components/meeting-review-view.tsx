@@ -116,11 +116,16 @@ export function MeetingReviewView({ review }: MeetingReviewViewProps) {
         // "alreadyConfirmed"도 결과적으로 확정된 상태다 — 다른 탭에서 먼저 확정한 경우까지 포함.
         setConfirmOpen(false);
         setIsConfirmed(true);
-        toast(
-          result.status === "confirmed"
-            ? `${result.createdCount}건의 액션을 분배했습니다`
-            : "이미 확정된 회의입니다",
-        );
+        /*
+          ⚠️ 둘은 **다른 일**이다 — 내가 방금 확정한 것과, 다른 탭에서 이미 확정돼 있던 것.
+             앞은 성공(체크)이고 뒤는 알림이라 아이콘 없이 둔다. 뒤를 성공으로 띄우면
+             내가 분배한 것처럼 읽힌다(§정직성).
+        */
+        if (result.status === "confirmed") {
+          toast.success(`${result.createdCount}건의 액션을 분배했습니다`);
+        } else {
+          toast("이미 확정된 회의입니다");
+        }
       } catch {
         // ⚠️ 다이얼로그를 열어 둔 채 원인을 적는다 — 토스트만 띄우면 몇 초 뒤엔 실패했던 사실이
         //    사라져 사용자가 같은 버튼을 다시 누른다(§confirm-dialog "토스트는 보조다").
