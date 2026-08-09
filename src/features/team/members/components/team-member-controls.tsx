@@ -30,15 +30,15 @@ function buildHref(sort: TeamMemberSort, filter: TeamMemberFilter): string {
  */
 export function TeamMemberControls({ activeSort, activeFilter }: TeamMemberControlsProps) {
   return (
-    <div className="flex items-center justify-between gap-4">
-      <div className="flex items-center gap-3">
+    <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
+      <div className="flex flex-wrap items-center gap-3">
         <span className="text-muted-foreground text-[12px] leading-4">정렬</span>
-        <div role="group" aria-label="정렬" className="flex items-center gap-1">
+        <div role="group" aria-label="정렬" className="flex flex-wrap items-center gap-1">
           {TEAM_MEMBER_SORT_TABS.map((tab) => (
             <Link
               key={tab.sort}
               href={buildHref(tab.sort, activeFilter)}
-              aria-pressed={activeSort === tab.sort}
+              aria-current={activeSort === tab.sort ? "page" : undefined}
               className={cn(
                 "rounded-lg px-2.5 py-1.5 text-[13px] leading-5 transition-colors",
                 activeSort === tab.sort
@@ -52,14 +52,14 @@ export function TeamMemberControls({ activeSort, activeFilter }: TeamMemberContr
         </div>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <span className="text-muted-foreground text-[12px] leading-4">필터</span>
-        <div role="group" aria-label="필터" className="flex items-center gap-1">
+        <div role="group" aria-label="필터" className="flex flex-wrap items-center gap-1">
           {TEAM_MEMBER_FILTER_TABS.map((tab) => (
             <Link
               key={tab.filter}
               href={buildHref(activeSort, tab.filter)}
-              aria-pressed={activeFilter === tab.filter}
+              aria-current={activeFilter === tab.filter ? "page" : undefined}
               className={cn(
                 "rounded-lg px-2.5 py-1.5 text-[13px] leading-5 transition-colors",
                 activeFilter === tab.filter
