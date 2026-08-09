@@ -190,7 +190,25 @@ export function CaptureView({ meeting }: { meeting: MeetingCaptureInfo }) {
         mark="alert"
         onConfirm={() => {
           setIsConfirming(false);
-          capture.end();
+
+          /*
+            ⚠️ **끄는 일이 실패해도 화면은 넘어가야 한다.** `capture.end()`는 지금 로컬 정리다
+               — 녹음기·STT를 멈추고 상태를 `ENDED`로 바꾼다. 그런데 `MediaRecorder.stop()`은
+               상태가 어긋나면 던지고(`InvalidStateError`), 여기서 던지면 **토스트도 이동도
+               안 일어난 채** 이미 닫힌 확인 창만 남는다 — 종료를 눌렀는데 아무 일도 안 난
+               것처럼 보이고, 되돌릴 수 없는 동작이라 다시 누르지도 못한다.
+            ⚠️ 그래서 잡고 넘어간다. 마이크 표시등이 남는 건 화면을 떠날 때 정리 효과가
+               한 번 더 끈다(`use-capture`의 unmount 정리).
+            ⚠️ **연동 때 여기가 갈린다.** 종료 알림 API(§3-3 4)가 붙으면 `end()`가 서버를
+               부르게 되고, 그때는 **실패를 삼키면 안 된다** — 마지막 세그먼트가 확정되지
+               않았는데 "요약을 시작했습니다"라고 말하게 된다. 그 시점에 이 자리를
+               `try { await ... } catch { toast.error(...) }`로 바꾸고 이동을 막아야 한다.
+          */
+          try {
+            capture.end();
+          } catch {
+            // 로컬 정리 실패는 사용자가 할 수 있는 일이 없다 — 흐름만 잇는다
+          }
 
           /*
             ⚠️ **바로 목록으로 돌려보낸다**(팀 확정). 요약 API는 응답이 오래 걸려서 서버가
