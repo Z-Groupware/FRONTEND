@@ -61,16 +61,26 @@ export function ApprovalDetailActions({ companyId, companyName }: ApprovalDetail
   }
 
   return (
-    <div className="flex justify-end gap-2">
+    /*
+      ⚠️ 두 버튼이 **같은 폭·같은 높이(44)** 다 — 공용 확인창과 같은 규격이다. 한쪽이 넓으면
+         그쪽을 권하는 것처럼 보이고, 낮으면 같은 무게의 결정으로 안 읽힌다.
+      ⚠️ 물러나는 쪽(반려)이 왼쪽이다.
+    */
+    <div className="flex gap-2">
       <Button
         type="button"
         variant="outline"
-        className="border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
+        className="border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive h-11 flex-1 text-[14px]"
         onClick={() => setPendingAction(APPROVAL_RESULT.REJECT)}
       >
         반려
       </Button>
-      <Button type="button" variant="ink" onClick={() => setPendingAction(APPROVAL_RESULT.APPROVE)}>
+      <Button
+        type="button"
+        variant="ink"
+        className="border-foreground h-11 flex-1 border text-[14px]"
+        onClick={() => setPendingAction(APPROVAL_RESULT.APPROVE)}
+      >
         승인
       </Button>
 

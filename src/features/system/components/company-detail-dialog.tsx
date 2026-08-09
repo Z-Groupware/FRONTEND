@@ -1,17 +1,16 @@
 "use client";
 
-import { Building2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 
 import { ConfirmDialog } from "@/components/common/confirm-dialog";
+import { DialogMark } from "@/components/common/dialog-mark";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -42,8 +41,12 @@ const STATUS_TONE: Record<ManagedCompany["status"], StatusTone> = {
  * ⚠️ **옆에서 밀려나오는 시트가 아니라 가운데 모달이다**(2026-08-10 변경). 담는 값이
  *    여섯 줄뿐이라 화면 높이를 다 쓰는 시트에서는 아래가 통째로 비었다 — 내용만큼만
  *    차지하는 모달이 맞다.
- * ⚠️ 값 줄은 **승인 상세와 같은 모양**이다(라벨 왼쪽·값 오른쪽·줄 사이 선). 같은 성격의
- *    화면이 둘인데 모양이 다르면 옮겨 다닐 때마다 다시 읽어야 한다.
+ * ⚠️ **공용 창(`ConfirmDialog`·`ResultDialog`)과 같은 옷을 입는다** — 원 표식 → 가운데 제목
+ *    → 내용 → 버튼, 폭 420, 안쪽 여백 32. 같은 서비스의 창이 저마다 다르게 생기면
+ *    열 때마다 새 화면처럼 읽힌다.
+ *    ⚠️ 표식 배지는 `none`이다. 이 창은 묻지도 알리지도 않고 값만 보여준다 — 체크를 달면
+ *       "이미 끝났다", 느낌표를 달면 "잘못됐다"로 읽힌다.
+ * ⚠️ 값 줄은 **승인 상세와 같은 모양**이다(라벨 왼쪽·값 오른쪽·줄 사이 선).
  * ⚠️ **끝나면 모달을 닫는다.** 열어 두면 방금 정지한 것을 그 자리에서 바로 해제할 수 있어
  *    (정지 ↔ 해제를 무한히 오갈 수 있었다) 확인창을 거친 의미가 옅어진다 — 승인·반려도
  *    끝나면 목록으로 돌아간다. 바뀐 상태는 목록에서 보고, 결과는 토스트가 알린다.
@@ -108,24 +111,23 @@ export function CompanyDetailDialog({ company, closeHref, currentPath }: Company
           router.push(closeHref);
         }}
       >
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="max-h-[calc(100dvh-2rem)] gap-0 overflow-y-auto p-8 sm:max-w-[420px]">
           {company && (
             <>
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-2.5">
-                  <span
-                    className="bg-chart-1/10 flex size-7 shrink-0 items-center justify-center rounded-lg"
-                    aria-hidden
-                  >
-                    <Building2 className="text-chart-1 size-[15px]" />
-                  </span>
-                  <span className="truncate">{company.name}</span>
-                </DialogTitle>
-                {/* 코드는 제목 옆이 아니라 아래 — 이름과 나란히 두면 어느 쪽이 이름인지 흐리다 */}
-                <DialogDescription className="sr-only">기업 상세 정보</DialogDescription>
+              <DialogHeader className="items-center gap-5 text-center">
+                <DialogMark badge="none" />
+
+                <span className="flex flex-col items-center gap-2">
+                  <DialogTitle className="text-xl leading-[26px] font-semibold tracking-[-0.4px]">
+                    {company.name}
+                  </DialogTitle>
+                  <DialogDescription className="text-center text-[13px] leading-[21px] break-keep">
+                    가입한 기업의 현황입니다.
+                  </DialogDescription>
+                </span>
               </DialogHeader>
 
-              <dl className="flex flex-col">
+              <dl className="mt-5 flex flex-col">
                 <Field label="기업 코드" value={company.code} isMono />
                 <Field label="가입일" value={formatDate(company.joinedAt)} />
                 <Field label="구성원 수" value={`${company.memberCount}명`} />
@@ -141,15 +143,21 @@ export function CompanyDetailDialog({ company, closeHref, currentPath }: Company
                 <Field label="오너 이메일" value={company.ownerEmail} />
               </dl>
 
-              <DialogFooter>
+              {/* 공용 창과 같은 버튼 규격 — 높이 44, 테두리 있음(§confirm-dialog) */}
+              <div className="mt-5">
                 <Button
                   type="button"
                   variant={isSuspended ? "ink" : "destructive"}
                   onClick={() => setIsConfirming(true)}
+                  className={
+                    isSuspended
+                      ? "border-foreground h-11 w-full border text-[14px]"
+                      : "border-destructive/40 h-11 w-full border text-[14px]"
+                  }
                 >
                   {isSuspended ? "정지 해제" : "정지"}
                 </Button>
-              </DialogFooter>
+              </div>
             </>
           )}
         </DialogContent>

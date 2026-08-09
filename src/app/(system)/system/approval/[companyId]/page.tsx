@@ -1,9 +1,9 @@
-import { Building2, Info } from "lucide-react";
+import { Info } from "lucide-react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
+import { DialogMark } from "@/components/common/dialog-mark";
 import { ApprovalDetailActions } from "@/features/system/components/approval-detail-actions";
-import { SystemCardHeading } from "@/features/system/components/system-card-heading";
 import { getPendingApprovalById } from "@/features/system/server";
 import { formatDate } from "@/lib/date";
 
@@ -27,22 +27,35 @@ export default async function ApprovalDetailPage({ params }: ApprovalDetailPageP
 
   return (
     <main className="min-h-0 flex-1 overflow-y-auto px-8 py-7">
-      <div className="mx-auto max-w-[720px]">
-        {/*
-          제목 줄은 다른 시스템 카드와 **같은 컴포넌트**를 쓴다(`SystemCardHeading`).
-          여기만 먹색 점을 직접 그리고 있어서, 나머지가 아이콘으로 바뀐 뒤 이 화면만 튀었다.
-          그래서 카드에 `p-7`을 한 번에 주지 않고 제목·본문이 각자 여백을 갖게 나눈다.
-        */}
-        <div className="border-border bg-card rounded-2xl border">
-          <SystemCardHeading icon={Building2}>{company.companyName}</SystemCardHeading>
+      {/*
+        ⚠️ **공용 창(`ConfirmDialog`·`ResultDialog`)과 같은 옷을 입는다** — 원 표식 →
+           가운데 제목 → 내용 → 버튼, 폭 420, 안쪽 여백 32. 이 화면은 모달이 아니라
+           페이지지만(승인·반려는 상세 페이지에서 끝낸다, 2026-08-06 팀 확정), 같은 일을
+           하는 창과 다르게 생기면 옮겨 다닐 때마다 새 화면처럼 읽힌다.
+        ⚠️ 표식 배지는 `none`이다 — 아직 승인도 반려도 안 했다. 체크를 달면 "이미 끝났다"로
+           읽힌다.
+      */}
+      <div className="mx-auto max-w-[420px]">
+        <div className="border-border bg-card rounded-2xl border p-8">
+          <div className="flex flex-col items-center gap-5 text-center">
+            <DialogMark badge="none" />
+
+            <div className="flex flex-col items-center gap-2">
+              <h2 className="text-xl leading-[26px] font-semibold tracking-[-0.4px]">
+                {company.companyName}
+              </h2>
+              <p className="text-muted-foreground text-[13px] leading-[21px] break-keep">
+                가입을 신청한 기업입니다.
+              </p>
+            </div>
+          </div>
 
           {/*
             ⚠️ **한 줄에 한 항목**이다. 2열 격자로 두면 값 길이가 제각각이라 오른쪽 칸이
                통째로 비고(담당자 이메일 줄이 그랬다) 어느 라벨의 값인지 눈이 한 번 더 찾는다.
-               라벨 왼쪽·값 오른쪽으로 세우고 줄 사이를 선으로 끊으면 대장처럼 읽힌다.
           */}
-          <div className="px-7 pb-7">
-            <dl className="flex flex-col">
+          <div>
+            <dl className="mt-5 flex flex-col">
               <Field label="사업자등록번호" value={company.businessRegistrationNumber} isMono />
               <Field label="신청일" value={formatDate(company.appliedAt)} />
               <Field label="대표자" value={company.representativeName} />
@@ -60,13 +73,15 @@ export default async function ApprovalDetailPage({ params }: ApprovalDetailPageP
                  줄에 서 있으면 항목 하나가 더 있는 것처럼 읽혔다 — 누를 자리 위에 둬야
                  무엇에 대한 경고인지가 자리로 드러난다.
             */}
-            <p className="text-muted-foreground mt-5 flex items-center justify-end gap-1.5 text-xs leading-[18px]">
-              <Info className="size-3.5 shrink-0" aria-hidden />
-              승인하면 이 신청은 대기 목록에서 사라집니다.
+            {/* 버튼 바로 위 — 다시 누르려는 손이 지나가는 자리에 있어야 읽힌다(§confirm-dialog) */}
+            <p className="text-muted-foreground mt-5 flex items-start justify-center gap-1.5 text-[13px] leading-5 break-keep">
+              <span className="flex h-5 shrink-0 items-center">
+                <Info className="size-3.5" aria-hidden />
+              </span>
+              <span>승인하면 이 신청은 대기 목록에서 사라집니다.</span>
             </p>
 
-            {/* 실행 줄은 선으로 끊어 붙인다 — 값과 같은 흐름에 두면 어디까지가 내용인지 흐리다 */}
-            <div className="border-border mt-5 border-t pt-5">
+            <div className="mt-5">
               <ApprovalDetailActions companyId={company.id} companyName={company.companyName} />
             </div>
           </div>
