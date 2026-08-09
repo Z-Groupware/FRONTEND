@@ -78,14 +78,14 @@ export function PipelineQueueCard({ queue }: PipelineQueueCardProps) {
         ⚠️ 밑줄만 그어 둔 글자였는데, 하얀 카드 바닥에 회색 글씨 한 줄이라 마감이 안 된 것처럼
            보였다. **칸 전체를 누를 자리로** 만들고(보더도 카드 폭까지 늘린다) 오른쪽에
            방향 표시를 둬서, 읽는 줄이 아니라 가는 줄이라는 게 모양으로 드러나게 한다.
-        ⚠️ 아이콘 옆 한글은 **1px 내린다** — 라틴 글자 기준으로 맞춘 아이콘과 한글 글자의
-           시각 중심이 어긋나 한글만 위로 떠 보인다.
+        ⚠️ 한글을 내리지 않는다 — 내렸더니 글자가 화살표보다 0.73px 아래로 갔다(13px에서 실측).
+           `items-center`가 이미 맞춰 준다(`system-card-heading.tsx`와 같은 이유).
       */}
       <Link
         href="/system/monitor"
         className="text-muted-foreground hover:text-foreground hover:bg-foreground/[0.03] focus-visible:ring-ring border-border group mt-auto flex items-center justify-between gap-2 rounded-b-2xl border-t px-7 py-4 text-xs transition-colors duration-150 focus-visible:ring-2 focus-visible:outline-none"
       >
-        <span className="translate-y-px">시스템 모니터링에서 보기</span>
+        <span>시스템 모니터링에서 보기</span>
         <ChevronRight
           className="size-3.5 shrink-0 transition-transform duration-150 group-hover:translate-x-0.5"
           aria-hidden
