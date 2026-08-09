@@ -45,18 +45,12 @@ export const NOTICE_TARGET_LABEL: Record<NoticeTarget, string> = {
      (`SUBSCRIPTION_STATUS`). 아래는 **운영자가 남의 회사를 볼 때** 쓰는 값이라 축이 다르다.
 */
 
-/**
- * ⚠️ `FREE`는 **우리 요금제가 아니다.** 유료 하나뿐이고 무료도 체험도 없다(CLAUDE.md §요금제).
- *    운영자 목 데이터에 남아 있어 값만 유지한다 — 기업 사용자 화면에는 절대 내보내지 않는다.
- */
-export const PLAN = { FREE: "FREE", TEAM: "TEAM" } as const;
-export type Plan = (typeof PLAN)[keyof typeof PLAN];
-
-/** 요금제명은 영문을 그대로 쓴다(역할 워딩과 같은 이유). */
-export const PLAN_LABEL: Record<Plan, string> = {
-  FREE: "Free",
-  TEAM: "Team",
-};
+/*
+  ⚠️ **요금제 상수는 여기 없다.** 유료 하나뿐이라 고를 것이 없다(CLAUDE.md §요금제) —
+     `PLAN`/`PLAN_LABEL`을 두면 화면이 "어느 플랜이냐"를 묻기 시작하고, 그 순간
+     없는 무료 요금제가 다시 생긴다. 결제 전·해지 후는 플랜이 아니라 **구독 상태**다
+     (`features/billing/subscription.ts`의 `SUBSCRIPTION_STATUS`).
+*/
 
 export const PAYMENT_STATUS = {
   PAID: "PAID",
