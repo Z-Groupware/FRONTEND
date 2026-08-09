@@ -57,6 +57,29 @@ export function Toaster(props: ToasterProps) {
           */
           title: "font-medium! line-clamp-1",
           description: "text-background/70! text-xs! leading-[18px]!",
+          /*
+            **실패는 알약째 빨강이다.**
+
+            ⚠️ 아이콘만 빨갛게 칠하는 방법을 먼저 봤는데, **한 색으로는 두 모드를 못 맞춘다.**
+               이 알약은 배경이 `--foreground` 기반이라 모드마다 뒤집힌다 — 라이트에서는
+               거의 검정(51,48,46), 다크에서는 거의 흰색(220,219,218)이다. 같은 빨강의
+               대비가 정반대로 움직여서, `#ef4444`는 라이트 3.48로 되지만 다크 2.72로 미달이고
+               (아이콘 기준 3:1), 더 진한 `#dc2626`은 그 반대다.
+            ⚠️ 배경을 `--destructive`로 칠하고 글자를 흰색으로 두면 **두 모드가 같은 조합**이
+               되어 뒤집힘이 사라진다. 흰 글자 위 `#ef4444`는 어느 모드에서나 같은 대비다.
+            ⚠️ 빨강을 여기 쓰는 건 규칙 위반이 아니다 — DESIGN §5가 색으로 알리도록 허용한
+               유일한 자리가 **에러**다. 토스트는 사라지는 보조 알림인데 실패는 놓치면 안 된다.
+            ⚠️ 글자·아이콘은 **`--destructive-foreground` 토큰**이다. 생 `white`를 쓰면
+               토큰만 쓴다는 규칙이 깨지고, 나중에 에러 면 색을 바꿀 때 짝이 따로 논다.
+            ⚠️ 면은 `--destructive`가 아니라 **`--destructive-surface`**(한 단 어둡다)다.
+               `--destructive`(#ef4444) 위 흰 글자는 **3.76:1**이라 본문 기준 4.5:1에 못 미친다 —
+               처음에 아이콘 기준 3:1만 따지다 놓쳤다. #dc2626은 4.83:1이라 통과한다.
+            ⚠️ **설명줄의 `/70` 감쇠를 걷었다.** 기본 토스트는 먹색 면이라 흐려도 읽히지만
+               이 면에서는 2.98:1까지 떨어진다. 층은 **글자 크기**(13px/12px)가 이미 만든다.
+            ⚠️ 인라인 `style`이 클래스를 이기므로 `!`로 되받는다.
+          */
+          error:
+            "bg-destructive-surface! text-destructive-foreground! [&_[data-description]]:text-destructive-foreground! [&_[data-icon]]:text-destructive-foreground!",
           // ⚠️ sonner 기본 성공 아이콘은 **초록**이다. 색으로 알리는 건 에러뿐이라 글자색을 따르게 한다.
           icon: "text-background! m-0! size-4! shrink-0 [&>svg]:size-4 [&_*]:fill-current [&_*]:stroke-current",
           actionButton: "bg-background! text-foreground!",
