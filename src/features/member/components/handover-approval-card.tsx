@@ -9,12 +9,26 @@ import { ConfirmDialog } from "@/components/common/confirm-dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { AUTHORITY, type Authority } from "@/constants/authority";
-import { HANDOVER_TYPE, HANDOVER_TYPE_LABEL } from "@/constants/handover";
+import {
+  HANDOVER_APPLICANT_TYPE_LABEL,
+  HANDOVER_TYPE,
+  HANDOVER_TYPE_LABEL,
+} from "@/constants/handover";
 import { formatMonthDayWeekday } from "@/lib/date";
 import { cn } from "@/lib/utils";
 
 import { approveHandoverAction, rejectHandoverAction } from "../manage-actions";
 import type { PendingHandover } from "../manage-types";
+
+interface HandoverApprovalCardProps {
+  memberId: number;
+  memberName: string;
+  /** 제목에 "팀장/사원"을 붙이는 데만 쓴다 — 승인 판정과는 무관하다(그건 `canApprove`). */
+  memberAuthority: Authority;
+  handover: PendingHandover;
+  /** OWNER만 참이다 — Admin 겸직자는 화면엔 들어와도 이 버튼이 없다(WORKFLOW §11) */
+  canApprove: boolean;
+}
 
 /**
  * 최종 승인 카드 — 인수인계의 **마지막 관문**.
@@ -43,15 +57,7 @@ export function HandoverApprovalCard({
   memberAuthority,
   handover,
   canApprove,
-}: {
-  memberId: number;
-  memberName: string;
-  /** 제목에 "팀장/사원"을 붙이는 데만 쓴다 — 승인 판정과는 무관하다(그건 `canApprove`). */
-  memberAuthority: Authority;
-  handover: PendingHandover;
-  /** OWNER만 참이다 — Admin 겸직자는 화면엔 들어와도 이 버튼이 없다(WORKFLOW §11) */
-  canApprove: boolean;
-}) {
+}: HandoverApprovalCardProps) {
   const [reason, setReason] = useState("");
   /**
    * 지금 확인을 기다리는 일.
@@ -86,9 +92,14 @@ export function HandoverApprovalCard({
     ⚠️ **제목에 팀장/사원을 박아 넣는다**(사용자 확정, 2026-08-08) — 전에는 본문을 읽어야만
        팀장 본인 신청인지 알 수 있었다. "팀장 휴직"·"사원 오프보딩"처럼 넷을 한눈에
        가르는 게 목적이라 여기 값은 권한 배지(Leader/Member, 영문)가 아니라 그 옆에서
-       쓰는 한글 서술어다 — `이 화면 제목`이지 `권한 라벨`이 아니다.
+       쓰는 한글 서술어다 — `이 화면 제목`이지 `권한 라벨`이 아니다. `AUTHORITY_LABEL`(영문)을
+       재사용하지 않는 것도 같은 이유 — 라벨 하드코딩 금지는 지키되 값은 `constants/handover.ts`
+       (이 서술어를 쓰는 도메인)에 둔다.
   */
-  const applicantTypeLabel = memberAuthority === AUTHORITY.LEADER ? "팀장" : "사원";
+  const applicantTypeLabel =
+    memberAuthority === AUTHORITY.LEADER
+      ? HANDOVER_APPLICANT_TYPE_LABEL.LEADER
+      : HANDOVER_APPLICANT_TYPE_LABEL.MEMBER;
 
   const run = (task: () => Promise<{ isSuccess: boolean; message?: string }>, done: string) =>
     startTransition(async () => {
