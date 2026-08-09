@@ -56,8 +56,11 @@ export default async function ApprovalDetailPage({ params }: ApprovalDetailPageP
             {/*
               ⚠️ 채운 상자를 걷어내고 한 줄로 둔다. 짧은 주의 문구인데 상자를 씌우니 값보다
                  무거워 보였다 — 지금은 확인창이 같은 말을 한 번 더 하므로 여기선 가볍게 알린다.
+              ⚠️ **오른쪽에 붙인다.** 이 문구는 값이 아니라 **버튼에 딸린 설명**이라, 왼쪽 라벨
+                 줄에 서 있으면 항목 하나가 더 있는 것처럼 읽혔다 — 누를 자리 위에 둬야
+                 무엇에 대한 경고인지가 자리로 드러난다.
             */}
-            <p className="text-muted-foreground mt-5 flex items-center gap-1.5 text-xs leading-[18px]">
+            <p className="text-muted-foreground mt-5 flex items-center justify-end gap-1.5 text-xs leading-[18px]">
               <Info className="size-3.5 shrink-0" aria-hidden />
               승인하면 이 신청은 대기 목록에서 사라집니다.
             </p>
