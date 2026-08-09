@@ -49,8 +49,10 @@ const COLUMN_WIDTH = {
 /**
  * 승인 대기 기업 표.
  *
- * ⚠️ 행을 누르면 상세 페이지(`/system/approval/:id`)로 간다 — 승인·반려 버튼은 거기 있다
- *    (2026-08-06 팀 확정, `company-table.tsx`와 같은 stretched-link 패턴).
+ * ⚠️ 행을 누르면 **주소에 `?id=`가 붙고** 상세 모달이 뜬다 — 승인·반려 버튼은 거기 있다
+ *    (`company-table.tsx`와 같은 stretched-link 패턴).
+ *    ⚠️ 모달이어도 **링크**다. 새 탭·주소 공유가 되고, 스크린리더가 "누를 것"으로 읽는다 —
+ *       `onClick` 핸들러로 바꾸면 그 셋이 전부 사라진다.
  * ⚠️ 무한 스크롤 목록이라 채움 행(filler row)을 두지 않는다 — 페이지를 갈아 끼우던 방식과
  *    달리 항목이 아래로 이어붙기만 해서, 마지막 묶음이 `pageSize`보다 적어도 자연스럽다.
  */
@@ -98,7 +100,7 @@ export function ApprovalTable({ companies, pageSize }: ApprovalTableProps) {
               >
                 <TableCell className="max-w-0 pl-7">
                   <Link
-                    href={`/system/approval/${company.id}`}
+                    href={`/system/approval?id=${company.id}`}
                     className="text-foreground focus-visible:ring-ring block truncate rounded font-medium after:absolute after:inset-0 hover:underline focus-visible:ring-2 focus-visible:outline-none"
                     title={company.companyName}
                   >

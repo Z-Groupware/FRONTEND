@@ -120,7 +120,7 @@ export const COMPANY_SIZE_LABEL: Record<CompanySize, string> = {
   LARGE: "101명 이상",
 };
 
-/** 기업 승인 처리 결과 — 상세 페이지가 목록으로 돌아올 때 `?done=` 쿼리로 넘긴다. */
+/** 기업 승인 처리 결과 — 상세 모달이 어느 쪽을 실행했는지 가리고, 결과 토스트 문구를 고른다. */
 export const APPROVAL_RESULT = {
   APPROVE: "approve",
   REJECT: "reject",
@@ -131,7 +131,3 @@ export const APPROVAL_RESULT_LABEL: Record<ApprovalResult, string> = {
   approve: "승인했습니다",
   reject: "반려했습니다",
 };
-
-export function isApprovalResult(value: string): value is ApprovalResult {
-  return (Object.values(APPROVAL_RESULT) as string[]).includes(value);
-}
