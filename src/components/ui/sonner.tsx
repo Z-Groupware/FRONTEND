@@ -71,10 +71,15 @@ export function Toaster(props: ToasterProps) {
                유일한 자리가 **에러**다. 토스트는 사라지는 보조 알림인데 실패는 놓치면 안 된다.
             ⚠️ 글자·아이콘은 **`--destructive-foreground` 토큰**이다. 생 `white`를 쓰면
                토큰만 쓴다는 규칙이 깨지고, 나중에 에러 면 색을 바꿀 때 짝이 따로 논다.
+            ⚠️ 면은 `--destructive`가 아니라 **`--destructive-surface`**(한 단 어둡다)다.
+               `--destructive`(#ef4444) 위 흰 글자는 **3.76:1**이라 본문 기준 4.5:1에 못 미친다 —
+               처음에 아이콘 기준 3:1만 따지다 놓쳤다. #dc2626은 4.83:1이라 통과한다.
+            ⚠️ **설명줄의 `/70` 감쇠를 걷었다.** 기본 토스트는 먹색 면이라 흐려도 읽히지만
+               이 면에서는 2.98:1까지 떨어진다. 층은 **글자 크기**(13px/12px)가 이미 만든다.
             ⚠️ 인라인 `style`이 클래스를 이기므로 `!`로 되받는다.
           */
           error:
-            "bg-destructive! text-destructive-foreground! [&_[data-description]]:text-destructive-foreground/70! [&_[data-icon]]:text-destructive-foreground!",
+            "bg-destructive-surface! text-destructive-foreground! [&_[data-description]]:text-destructive-foreground! [&_[data-icon]]:text-destructive-foreground!",
           // ⚠️ sonner 기본 성공 아이콘은 **초록**이다. 색으로 알리는 건 에러뿐이라 글자색을 따르게 한다.
           icon: "text-background! m-0! size-4! shrink-0 [&>svg]:size-4 [&_*]:fill-current [&_*]:stroke-current",
           actionButton: "bg-background! text-foreground!",

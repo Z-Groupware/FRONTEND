@@ -41,6 +41,7 @@
   --color-border: var(--border);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
+  --color-destructive-surface: var(--destructive-surface);
   --color-accent-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
   --color-muted-foreground: var(--muted-foreground);
@@ -131,6 +132,15 @@
        면을 빨강으로 칠하고 글자를 흰색으로 고정해야 두 모드가 같은 조합이 된다.
   */
   --destructive-foreground: #ffffff;
+  /*
+    **글자를 얹는** 에러 면. `--destructive`(#ef4444)보다 한 단 어둡다.
+    ⚠️ 나누는 이유는 **기준이 다르기 때문**이다. `--destructive`는 상태점·막대처럼 글자가 안
+       얹히는 자리에 쓰여 3:1이면 되는데, 그 위에 흰 글자를 올리면 **3.76:1**이라 본문 기준
+       4.5:1에 못 미친다. 한 단 어두운 #dc2626은 **4.83:1**이라 통과한다.
+    ⚠️ DESIGN §명도·대비의 "팔레트 원색은 600단계"와 같은 이야기다 — #ef4444는 500,
+       #dc2626이 600이다.
+  */
+  --destructive-surface: #dc2626;
   --border: #e7e5e4;
   --input: #e7e5e4;
   /* 포커스 링 = 먹색. 파랑(액센트)은 강조가 과했다 — 빨강(에러)만 색으로 알린다 */
@@ -260,6 +270,7 @@
   --accent-foreground: #fafaf9;
   --destructive: #ef4444;
   --destructive-foreground: #ffffff;
+  --destructive-surface: #dc2626;
   --border: #33302d;
   --input: #33302d;
   /* 다크에서는 먹색이 안 보인다 — 밝은 회백색으로 뒤집는다 */
@@ -461,6 +472,7 @@
     --warning: #f59e0b;
     --destructive: #dc2626;
     --destructive-foreground: #ffffff;
+    --destructive-surface: #dc2626;
     --primary: #3b82f6;
     --primary-foreground: #fafaf9;
     --status-todo: #a8a29e;
@@ -518,6 +530,7 @@
     --ring: #1c1917;
     --destructive: #dc2626;
     --destructive-foreground: #ffffff;
+    --destructive-surface: #dc2626;
     --primary: #3b82f6;
     --primary-foreground: #fafaf9;
 
@@ -583,6 +596,7 @@
     --warning: #f59e0b;
     --destructive: #ef4444;
     --destructive-foreground: #ffffff;
+    --destructive-surface: #dc2626;
     --primary: #3b82f6;
     --primary-foreground: #ffffff;
     --status-todo: #8a827d;
