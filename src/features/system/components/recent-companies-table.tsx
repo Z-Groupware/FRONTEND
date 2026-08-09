@@ -22,6 +22,16 @@ const CARD_HEADER_CLASS =
 const HEAD_CELL_CLASS = "text-muted-foreground h-9 text-[12px] font-normal";
 
 /**
+ * 머리 줄.
+ *
+ * ⚠️ **띠가 아니라 선으로 가른다.** `bg-secondary/50`을 깔고 있었는데, 라이트에서
+ *    `--secondary`(`#fafaf9`)가 카드 흰색과 거의 같아 반투명까지 씌우면 대비가 1.02:1이다 —
+ *    머리 줄이 있는지도 안 보였다. 띠는 그대로 두되(다크에선 보인다) **아래 보더**를
+ *    더해 어느 테마에서도 머리와 본문이 갈리게 한다.
+ */
+const HEAD_ROW_CLASS = "bg-secondary border-border border-b hover:bg-transparent";
+
+/**
  * "최근 가입 기업" 표. 비어있으면 안내 문구로 대체한다(CLAUDE.md §정직성 · loading/error/empty).
  *
  * ⚠️ 셀 규격을 **기준 화면과 같게** 맞춘다(DESIGN §3·§4) — 본문 13px, **양 끝 열**(기업명·가입일)
@@ -54,7 +64,7 @@ export function RecentCompaniesTable({ companies }: { companies: RecentCompany[]
       <div className="overflow-x-auto">
         <Table className="min-w-[520px] text-[13px]">
           <TableHeader>
-            <TableRow className="bg-secondary/50 hover:bg-transparent">
+            <TableRow className={HEAD_ROW_CLASS}>
               <TableHead className={`${HEAD_CELL_CLASS} px-6`}>기업명</TableHead>
               <TableHead className={`${HEAD_CELL_CLASS} px-4 text-center`}>기업 코드</TableHead>
               <TableHead className={`${HEAD_CELL_CLASS} px-4 text-center`}>구성원</TableHead>

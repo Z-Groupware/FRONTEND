@@ -12,6 +12,9 @@ import type { PipelineQueueSummary } from "../types";
  *    운영자가 처음 여는 화면이니 여기 있는 편이 맞다.
  * ⚠️ **숫자만 보여주고 조작은 안 한다.** 재처리는 시스템 모니터링에서 한다 — 같은 버튼을
  *    두 곳에 두면 어디서 눌렀는지에 따라 결과가 다른 것처럼 보인다.
+ * ⚠️ **폭은 페이지 격자가 정한다**(곁 컬럼 360px, DESIGN §1). 한때 `lg:w-64`(256px)로 여기서
+ *    또 정하고 있었는데, 격자와 둘이 싸워 카드가 제 칸보다 100px 좁게 그려졌다 —
+ *    위아래 카드와 오른쪽 끝이 어긋나 중간 줄만 안쪽으로 들어가 보였다.
  */
 export function PipelineQueueCard({ queue }: { queue: PipelineQueueSummary }) {
   const rows = [
@@ -25,7 +28,7 @@ export function PipelineQueueCard({ queue }: { queue: PipelineQueueSummary }) {
   ];
 
   return (
-    <section className="border-border bg-card flex w-full flex-col rounded-2xl border lg:w-64 lg:shrink-0">
+    <section className="border-border bg-card flex w-full flex-col rounded-2xl border">
       <h2 className="flex items-center gap-2 px-7 pt-6 pb-3 text-[17px] leading-7 font-semibold tracking-[-0.3px]">
         <span className="bg-foreground size-2 rounded-full" aria-hidden />
         처리 큐
@@ -53,7 +56,7 @@ export function PipelineQueueCard({ queue }: { queue: PipelineQueueSummary }) {
                  실패가 0건이면 알릴 게 없으므로 빨강도 안 쓴다 — 늘 빨간 줄은 곧 안 읽힌다.
             */}
             <span
-              className={`text-[17px] leading-7 font-semibold tabular-nums ${
+              className={`text-[20px] leading-7 font-semibold tracking-[-0.4px] tabular-nums ${
                 row.isFailure && queue.failedCount > 0 ? "text-destructive" : "text-foreground"
               }`}
             >
