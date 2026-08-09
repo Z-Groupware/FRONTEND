@@ -3,6 +3,7 @@
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
 import { Bell } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
 import { useFormStatus } from "react-dom";
 
 import { FieldError } from "@/components/common/field-error";
@@ -59,11 +60,15 @@ function SlotSummary({ slotStart }: { slotStart: Date }) {
   );
 }
 
+interface DialogActionsProps {
+  onCancel: () => void;
+}
+
 /**
  * 취소·제출 버튼 — `useFormStatus`는 `<form>`의 **자손** 컴포넌트에서만 호출할 수 있어서
  * `RoomReservationDialog`(그 `<form>`을 직접 그리는 컴포넌트) 안이 아니라 여기로 뺐다.
  */
-function DialogActions({ onCancel }: { onCancel: () => void }) {
+function DialogActions({ onCancel }: DialogActionsProps) {
   const { pending } = useFormStatus();
 
   return (
@@ -76,6 +81,27 @@ function DialogActions({ onCancel }: { onCancel: () => void }) {
       </Button>
     </div>
   );
+}
+
+interface PendingReporterProps {
+  /** ⚠️ 참조가 고정돼야 한다 — 매 렌더 새 함수면 아래 effect가 매번 돈다. */
+  onChange: (pending: boolean) => void;
+}
+
+/**
+ * 제출 중인지를 **창**(`RoomReservationDialog`)에 올려 보낸다.
+ * ⚠️ `useFormStatus`는 `<form>`의 자손에서만 읽을 수 있는데, 창을 닫아도 되는지 판단하는
+ *    `Dialog`의 `onOpenChange`는 `<form>` 바깥(그 `<form>`을 그리는 조상)에 있다 — 그래서
+ *    렌더 없이 값만 부모로 올려 보내는 자리가 하나 더 필요하다.
+ */
+function PendingReporter({ onChange }: PendingReporterProps) {
+  const { pending } = useFormStatus();
+
+  useEffect(() => {
+    onChange(pending);
+  }, [pending, onChange]);
+
+  return null;
 }
 
 /**
@@ -107,14 +133,27 @@ export function RoomReservationDialog({
     onOpenChange,
   });
 
+  const [isPending, setIsPending] = useState(false);
+  // ⚠️ `PendingReporter`의 effect 의존성이라 참조를 고정한다 — 안 그러면 매 렌더 다시 돈다.
+  const handlePendingChange = useCallback((next: boolean) => setIsPending(next), []);
+
   return (
-    <Dialog open={slotStart !== null} onOpenChange={handleOpenChange}>
+    <Dialog
+      open={slotStart !== null}
+      onOpenChange={(next) => {
+        // ⚠️ 제출 중엔 X 버튼·Esc·바깥 클릭 전부 막는다 — 요청은 계속 가는데 창만 사라지면
+        //    결과를 못 본다(§토스트는 보조 — 놓치면 안 되는 결과를 창으로 안 남기면 안 된다).
+        if (!next && isPending) return;
+        handleOpenChange(next);
+      }}
+    >
       <DialogContent className="gap-0 p-0 sm:max-w-[720px]">
         <DialogHeader className="border-border border-b px-6 py-4">
           <DialogTitle>회의실 예약</DialogTitle>
         </DialogHeader>
 
         <form action={formAction}>
+          <PendingReporter onChange={handlePendingChange} />
           <input
             type="hidden"
             name="date"
