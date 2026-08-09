@@ -2,6 +2,7 @@ import { ClipboardList, RotateCcw } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { TASK_GROUP } from "@/constants/profile";
 import { ScreenScaleCard } from "@/features/appearance/components/screen-scale-card";
 import { ThemeCard } from "@/features/appearance/components/theme-card";
 import { listPendingReviewsForViewer } from "@/features/meeting/review/server";
@@ -51,6 +52,9 @@ export default async function AppMePage({ searchParams }: AppMePageProps) {
     <div className="flex-1 overflow-y-auto px-8 py-7">
       <div className="mx-auto w-full max-w-[1440px]">
         <div className="mx-auto flex w-full max-w-[600px] flex-col gap-5">
+          {/* ⚠️ 화면 전체에 보이는 제목은 없지만 `h1`은 페이지당 하나 있어야 한다(§SEO·a11y) */}
+          <h1 className="sr-only">마이페이지</h1>
+
           <nav aria-label="마이페이지 탭" className="border-border flex gap-4 border-b">
             {PROFILE_TABS.map((t) => (
               <Link
@@ -73,18 +77,18 @@ export default async function AppMePage({ searchParams }: AppMePageProps) {
             <div className="flex flex-col gap-5">
               <TaskGroupSection
                 icon={ClipboardList}
-                title="미확정 액션"
+                title={TASK_GROUP.UNCONFIRMED_ACTION.title}
                 count={pendingReviews.length}
-                emptyMessage="미확정 액션이 없습니다."
+                emptyMessage={TASK_GROUP.UNCONFIRMED_ACTION.emptyMessage}
               >
                 <UnconfirmedActionList reviews={pendingReviews} />
               </TaskGroupSection>
 
               <TaskGroupSection
                 icon={RotateCcw}
-                title="요약이 중단된 회의"
+                title={TASK_GROUP.STALLED_SUMMARY.title}
                 count={stalledSummaries.length}
-                emptyMessage="요약이 중단된 회의가 없습니다."
+                emptyMessage={TASK_GROUP.STALLED_SUMMARY.emptyMessage}
               >
                 <StalledSummaryList summaries={stalledSummaries} />
               </TaskGroupSection>

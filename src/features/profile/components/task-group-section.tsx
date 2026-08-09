@@ -24,10 +24,10 @@ export function TaskGroupSection({
   return (
     <section className="border-border bg-card rounded-2xl border">
       <div className="flex items-baseline justify-between gap-3 px-7 pt-6 pb-3">
-        <h3 className="flex items-center gap-2 text-[15px] leading-6 font-semibold tracking-[-0.2px]">
+        <h2 className="flex items-center gap-2 text-[15px] leading-6 font-semibold tracking-[-0.2px]">
           <Icon className="text-foreground size-4" aria-hidden />
           {title}
-        </h3>
+        </h2>
         <p className="text-muted-foreground text-[12px] leading-4 tabular-nums">{count}건</p>
       </div>
       {count === 0 ? (

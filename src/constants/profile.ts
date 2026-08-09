@@ -30,3 +30,15 @@ export const PROFILE_TAB_LABEL: Record<ProfileTab, string> = {
 };
 
 export const DEFAULT_PROFILE_TAB: ProfileTab = PROFILE_TAB.INFO;
+
+/** "처리할 일" 탭의 그룹 카드 문구 — 화면(`page.tsx`)에 한글을 직접 적지 않는다(§도메인 상수). */
+export const TASK_GROUP = {
+  UNCONFIRMED_ACTION: {
+    title: "미확정 액션",
+    emptyMessage: "미확정 액션이 없습니다.",
+  },
+  STALLED_SUMMARY: {
+    title: "요약이 중단된 회의",
+    emptyMessage: "요약이 중단된 회의가 없습니다.",
+  },
+} as const;

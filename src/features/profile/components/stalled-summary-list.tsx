@@ -49,7 +49,12 @@ export function StalledSummaryList({ summaries }: StalledSummaryListProps) {
               type="button"
               variant="outline"
               size="sm"
-              disabled={isRowPending}
+              /*
+                ⚠️ **행 하나가 아니라 전부 잠근다.** `pendingId`만 보고 잠그면 요청이 도는
+                   동안 다른 행을 눌러 `pendingId`가 바뀌는 순간 첫 행의 버튼이 다시 풀려
+                   같은 회의에 중복 요청을 보낼 수 있다(CodeRabbit 지적, 2026-08-09).
+              */
+              disabled={isPending}
               onClick={() => handleRetry(summary.meetingId)}
             >
               {isRowPending ? "요청 중" : "다시 분석"}
