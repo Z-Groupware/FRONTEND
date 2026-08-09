@@ -1,4 +1,4 @@
-import { Building2 } from "lucide-react";
+import { Building2, Info } from "lucide-react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
@@ -36,23 +36,34 @@ export default async function ApprovalDetailPage({ params }: ApprovalDetailPageP
         <div className="border-border bg-card rounded-2xl border">
           <SystemCardHeading icon={Building2}>{company.companyName}</SystemCardHeading>
 
-          <div className="px-7 pt-5 pb-7">
-            <dl className="grid grid-cols-2 gap-x-6 gap-y-5">
-              <Field label="사업자등록번호" value={company.businessRegistrationNumber} />
+          {/*
+            ⚠️ **한 줄에 한 항목**이다. 2열 격자로 두면 값 길이가 제각각이라 오른쪽 칸이
+               통째로 비고(담당자 이메일 줄이 그랬다) 어느 라벨의 값인지 눈이 한 번 더 찾는다.
+               라벨 왼쪽·값 오른쪽으로 세우고 줄 사이를 선으로 끊으면 대장처럼 읽힌다.
+          */}
+          <div className="px-7 pb-7">
+            <dl className="flex flex-col">
+              <Field label="사업자등록번호" value={company.businessRegistrationNumber} isMono />
               <Field label="신청일" value={formatDate(company.appliedAt)} />
               <Field label="대표자" value={company.representativeName} />
               <Field label="구성원" value={`${company.memberCount}명`} />
-              <Field label="담당자 이메일" value={company.contactEmail} className="col-span-2" />
+              <Field label="담당자 이메일" value={company.contactEmail} />
             </dl>
 
             {/* ⚠️ "기업 코드 자동 발급·이메일 발송"이라 적지 않는다 — 지금은 목이라 대기 목록에서
               지우기만 한다(`../actions.ts`의 `approveCompanyAction` 주석 참고). 실제로 안 하는
               일을 약속하지 않는다(§정직성). */}
-            <p className="text-muted-foreground bg-secondary mt-6 rounded-lg p-3.5 text-xs leading-[18px]">
+            {/*
+              ⚠️ 채운 상자를 걷어내고 한 줄로 둔다. 짧은 주의 문구인데 상자를 씌우니 값보다
+                 무거워 보였다 — 지금은 확인창이 같은 말을 한 번 더 하므로 여기선 가볍게 알린다.
+            */}
+            <p className="text-muted-foreground mt-5 flex items-center gap-1.5 text-xs leading-[18px]">
+              <Info className="size-3.5 shrink-0" aria-hidden />
               승인하면 이 신청은 대기 목록에서 사라집니다.
             </p>
 
-            <div className="mt-6">
+            {/* 실행 줄은 선으로 끊어 붙인다 — 값과 같은 흐름에 두면 어디까지가 내용인지 흐리다 */}
+            <div className="border-border mt-5 border-t pt-5">
               <ApprovalDetailActions companyId={company.id} companyName={company.companyName} />
             </div>
           </div>
@@ -65,14 +76,21 @@ export default async function ApprovalDetailPage({ params }: ApprovalDetailPageP
 interface FieldProps {
   label: string;
   value: string;
-  className?: string;
+  /** 자릿수가 있는 값(사업자번호)은 고정폭으로 — 숫자가 흔들리지 않는다 */
+  isMono?: boolean;
 }
 
-function Field({ label, value, className }: FieldProps) {
+function Field({ label, value, isMono }: FieldProps) {
   return (
-    <div className={className}>
-      <dt className="text-muted-foreground text-xs leading-4">{label}</dt>
-      <dd className="text-foreground mt-0.5 text-sm leading-5">{value}</dd>
+    <div className="border-border flex items-baseline justify-between gap-6 border-b py-3 last:border-b-0">
+      <dt className="text-muted-foreground shrink-0 text-[13px] leading-5">{label}</dt>
+      <dd
+        className={`text-foreground min-w-0 truncate text-right text-[13px] leading-5 ${
+          isMono ? "font-mono tabular-nums" : ""
+        }`}
+      >
+        {value}
+      </dd>
     </div>
   );
 }

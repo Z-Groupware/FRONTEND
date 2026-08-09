@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { toast } from "sonner";
 
 import { InfiniteListFooter } from "@/components/common/infinite-list-footer";
@@ -46,9 +46,26 @@ export function ApprovalList({
   const searchParams = useSearchParams();
   const done = searchParams.get("done");
 
+  /*
+    결과 토스트는 **한 번만** 띄운다.
+
+    ⚠️ 이펙트는 한 번만 도는 게 보장되지 않는다 — 개발 모드(Strict Mode)는 일부러 두 번
+       돌리고, Fast Refresh나 리마운트로도 다시 돈다. 그때마다 `done`이 URL에 그대로 있어서
+       **같은 토스트가 두 개 쌓였다**(`router.replace`는 이 이펙트가 끝난 뒤에나 반영된다).
+    ⚠️ `id`를 주면 sonner가 같은 토스트를 **새로 쌓지 않고 갱신한다** — 리마운트까지 막힌다.
+       ref 플래그만 두면 같은 인스턴스 안에서만 막혀서 리마운트에는 뚫린다.
+    ⚠️ ref는 `replace`를 두 번 부르지 않으려고 같이 둔다(주소만 계속 갈아 끼우는 걸 막는다).
+  */
+  const handledRef = useRef<string | null>(null);
+
   useEffect(() => {
     if (!done) return;
-    if (isApprovalResult(done)) toast.success(APPROVAL_RESULT_LABEL[done]);
+    if (handledRef.current === done) return;
+    handledRef.current = done;
+
+    if (isApprovalResult(done)) {
+      toast.success(APPROVAL_RESULT_LABEL[done], { id: `approval-done-${done}` });
+    }
     router.replace("/system/approval");
   }, [done, router]);
 
