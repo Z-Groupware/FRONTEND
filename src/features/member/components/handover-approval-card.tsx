@@ -1,6 +1,6 @@
 "use client";
 
-import { CircleAlert } from "lucide-react";
+import { CircleAlert, Download } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/common/confirm-dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { AUTHORITY, type Authority } from "@/constants/authority";
 import { HANDOVER_TYPE, HANDOVER_TYPE_LABEL } from "@/constants/handover";
 import { formatMonthDayWeekday } from "@/lib/date";
 import { cn } from "@/lib/utils";
@@ -39,11 +40,14 @@ const REASON_MAX = 200;
 export function HandoverApprovalCard({
   memberId,
   memberName,
+  memberAuthority,
   handover,
   canApprove,
 }: {
   memberId: number;
   memberName: string;
+  /** 제목에 "팀장/사원"을 붙이는 데만 쓴다 — 승인 판정과는 무관하다(그건 `canApprove`). */
+  memberAuthority: Authority;
   handover: PendingHandover;
   /** OWNER만 참이다 — Admin 겸직자는 화면엔 들어와도 이 버튼이 없다(WORKFLOW §11) */
   canApprove: boolean;
@@ -78,6 +82,13 @@ export function HandoverApprovalCard({
 
   const isVacation = handover.type === HANDOVER_TYPE.VACATION;
   const typeLabel = HANDOVER_TYPE_LABEL[handover.type];
+  /*
+    ⚠️ **제목에 팀장/사원을 박아 넣는다**(사용자 확정, 2026-08-08) — 전에는 본문을 읽어야만
+       팀장 본인 신청인지 알 수 있었다. "팀장 휴직"·"사원 오프보딩"처럼 넷을 한눈에
+       가르는 게 목적이라 여기 값은 권한 배지(Leader/Member, 영문)가 아니라 그 옆에서
+       쓰는 한글 서술어다 — `이 화면 제목`이지 `권한 라벨`이 아니다.
+  */
+  const applicantTypeLabel = memberAuthority === AUTHORITY.LEADER ? "팀장" : "사원";
 
   const run = (task: () => Promise<{ isSuccess: boolean; message?: string }>, done: string) =>
     startTransition(async () => {
@@ -101,7 +112,7 @@ export function HandoverApprovalCard({
       <div className="flex items-center justify-between gap-3 px-7 pt-6 pb-5">
         <h2 className="flex items-center gap-2 text-[15px] leading-6 font-semibold tracking-[-0.2px]">
           <span className="bg-foreground size-2 rounded-full" aria-hidden />
-          {typeLabel} 최종 승인 대기
+          {applicantTypeLabel} {typeLabel} 최종 승인 대기
         </h2>
         <span className="border-warning/40 text-warning shrink-0 rounded border px-2 py-0.5 text-[11px] leading-4">
           검토 필요
@@ -167,6 +178,27 @@ export function HandoverApprovalCard({
           >
             팀장급 인수인계서 관리로 가기
           </Link>
+        )}
+
+        {/*
+          ⚠️ **오프보딩만** PDF를 준다 — 휴직은 재직 상태로 되돌아오는 일이라 문서로 남길
+             필요가 없다고 정리했다(§7). 승인 여부와 무관하게 보인다 — Admin 겸직자도
+             내용은 몰라도 되지만(WORKFLOW §11) 파일을 미리 받아 둘 수는 있어야 한다.
+          ⚠️ 실제 PDF 생성 API는 아직 BE와 경로가 확정 전이다(§연동 검증) — 지금은 버튼만
+             두고 눌렀을 때 "연동 전"임을 그대로 알린다. 조용히 아무 일도 안 일어나면
+             고장 난 것처럼 보인다(§정직성).
+        */}
+        {!isVacation && (
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="w-fit"
+            onClick={() => toast("PDF 생성은 아직 연동되지 않았습니다")}
+          >
+            <Download />
+            인수인계서 PDF 다운로드
+          </Button>
         )}
 
         {canApprove && (
