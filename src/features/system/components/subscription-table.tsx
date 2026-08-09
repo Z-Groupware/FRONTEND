@@ -19,7 +19,7 @@ import { cn } from "@/lib/utils";
 
 import { sendUnpaidNoticeAction } from "../actions";
 import { formatWon } from "../format";
-import { TABLE_HEAD_ROW_CLASS } from "../table-style";
+import { HEAD_PAD_BADGE, HEAD_PAD_BUTTON_LAST, TABLE_HEAD_ROW_CLASS } from "../table-style";
 import type { SubscriptionRecord } from "../types";
 import { NoticeMailDialog } from "./notice-mail-dialog";
 import { StatusBadge, type StatusTone } from "./status-badge";
@@ -127,8 +127,8 @@ export function SubscriptionTable({ subscriptions, action }: SubscriptionTablePr
               <TableHead className="text-right text-xs">인원</TableHead>
               <TableHead className="text-right text-xs">금액</TableHead>
               <TableHead className="text-right text-xs">결제일</TableHead>
-              <TableHead className="text-right text-xs">상태</TableHead>
-              <TableHead className="pr-7 text-right text-xs">액션</TableHead>
+              <TableHead className={cn(HEAD_PAD_BADGE, "text-right text-xs")}>상태</TableHead>
+              <TableHead className={cn(HEAD_PAD_BUTTON_LAST, "text-right text-xs")}>액션</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>

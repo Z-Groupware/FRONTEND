@@ -12,7 +12,7 @@ import { COMPANY_STATUS_LABEL } from "@/constants/domain";
 import { formatDate } from "@/lib/date";
 import { cn } from "@/lib/utils";
 
-import { TABLE_HEAD_ROW_CLASS } from "../table-style";
+import { HEAD_PAD_BADGE_LAST, TABLE_HEAD_ROW_CLASS } from "../table-style";
 import type { ManagedCompany } from "../types";
 import { StatusBadge, type StatusTone } from "./status-badge";
 
@@ -94,7 +94,7 @@ export function CompanyTable({ companies, buildDetailHref, pageSize }: CompanyTa
               <TableHead className="text-right text-xs">구성원</TableHead>
               <TableHead className="text-right text-xs">이번달 회의</TableHead>
               <TableHead className="text-right text-xs">가입일</TableHead>
-              <TableHead className="pr-7 text-right text-xs">상태</TableHead>
+              <TableHead className={cn(HEAD_PAD_BADGE_LAST, "text-right text-xs")}>상태</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>

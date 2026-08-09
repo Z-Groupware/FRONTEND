@@ -13,7 +13,7 @@ import {
 import { PIPELINE_STAGE_LABEL } from "@/constants/domain";
 import { cn } from "@/lib/utils";
 
-import { TABLE_HEAD_ROW_CLASS } from "../table-style";
+import { HEAD_PAD_BUTTON_LAST, TABLE_HEAD_ROW_CLASS } from "../table-style";
 import type { FailedPipelineItem } from "../types";
 import { PipelineRetryButton } from "./pipeline-retry-button";
 import { SystemCardHeading } from "./system-card-heading";
@@ -80,7 +80,7 @@ export function FailedPipelineTable({ items }: { items: FailedPipelineItem[] }) 
               <TableHead className="text-xs">실패 단계</TableHead>
               <TableHead className="text-xs">시각</TableHead>
               <TableHead className="text-xs">오류</TableHead>
-              <TableHead className="pr-7 text-right text-xs">액션</TableHead>
+              <TableHead className={cn(HEAD_PAD_BUTTON_LAST, "text-right text-xs")}>액션</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
