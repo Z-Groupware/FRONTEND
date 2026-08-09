@@ -1,5 +1,5 @@
 import { Skeleton } from "@/components/ui/skeleton";
-import { MEETING_BOX_HEIGHT, MEMBER_BOX_HEIGHT } from "@/features/team/lib";
+import { MEETING_BOX_SKELETON_HEIGHT, MEMBER_BOX_MAX_HEIGHT } from "@/features/team/lib";
 
 /** 대시보드를 불러오는 동안. 실제 화면과 같은 골격(고정 높이 박스 포함)이라 레이아웃이 흔들리지 않는다. */
 export default function Loading() {
@@ -12,8 +12,8 @@ export default function Loading() {
           ))}
         </div>
 
-        <Skeleton className="rounded-2xl" style={{ height: MEMBER_BOX_HEIGHT }} />
-        <Skeleton className="rounded-2xl" style={{ height: MEETING_BOX_HEIGHT }} />
+        <Skeleton className="rounded-2xl" style={{ height: MEMBER_BOX_MAX_HEIGHT }} />
+        <Skeleton className="rounded-2xl" style={{ height: MEETING_BOX_SKELETON_HEIGHT }} />
       </div>
     </main>
   );

@@ -21,7 +21,7 @@ export function MemberStatusRow({ member }: MemberStatusRowProps) {
 
   return (
     <TableRow className="h-14">
-      <TableCell className="pl-4">
+      <TableCell className="pl-6">
         <div className="flex items-center gap-2">
           {avatar}
           <span className="truncate">{member.name}</span>
@@ -32,7 +32,7 @@ export function MemberStatusRow({ member }: MemberStatusRowProps) {
       <TableCell className="text-muted-foreground text-center font-mono tabular-nums">
         {member.assignedActionCount}건
       </TableCell>
-      <TableCell className="pr-4 text-center">
+      <TableCell className="pr-6 text-center">
         <Badge
           variant={isOnVacation ? "outline" : "secondary"}
           className={isOnVacation ? "border-warning text-warning" : undefined}
