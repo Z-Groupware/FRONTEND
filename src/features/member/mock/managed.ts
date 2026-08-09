@@ -290,16 +290,23 @@ export function updateMockMemberGrade(
  * 최종 승인 — 신청을 치우고 사람 상태를 옮긴다.
  * ⚠️ 휴직은 `VACATION`, 오프보딩은 `RESIGNED`다. 끝난 뒤의 사람 상태는 흐름 이름과 다르다
  *    (§도메인 상수: 오프보딩 ↔ 퇴사).
+ * ⚠️ **팀장이 오프보딩되면 `authority`도 같이 내린다**(2026-08-08 정정) — 안 내리면
+ *    이 사람은 퇴사했는데도 시스템엔 여전히 그 팀 LEADER로 남아, 후임을 승급하려 하면
+ *    "이미 팀장이 있다"로 막히고 본인을 내리려 해도 "유일한 팀장"이라 막혀 순환 잠금에
+ *    빠진다(WORKFLOW §7 "리더 공석"은 실제로 비어 있어야 다음 사람을 앉힐 수 있다).
+ *    휴직은 복귀를 전제로 하므로 권한을 안 건드린다 — 휴직 중에도 팀장 자리는 그대로다.
  */
 export function approveMockHandover(id: number): void {
   store = store.map((entry) => {
     if (entry.member.id !== id || !entry.pendingHandover) return entry;
     const isVacation = entry.pendingHandover.type === HANDOVER_TYPE.VACATION;
+    const wasLeader = entry.member.authority === AUTHORITY.LEADER;
     return {
       ...entry,
       member: {
         ...entry.member,
         status: isVacation ? MEMBER_STATUS.VACATION : MEMBER_STATUS.RESIGNED,
+        authority: !isVacation && wasLeader ? AUTHORITY.MEMBER : entry.member.authority,
       },
       pendingHandover: null,
     };

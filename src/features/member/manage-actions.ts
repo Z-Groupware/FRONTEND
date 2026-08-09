@@ -179,6 +179,10 @@ export async function changeMemberGradeAction(
  * ⚠️ 올릴 때는 **그 팀에 이미 리더가 있나**, 내릴 때는 **그 팀의 마지막 리더인가**를 본다.
  *    한쪽만 막으면 리더가 둘이 되거나 아예 없어진다.
  * ⚠️ 팀이 없는 사람(Owner)은 해당 없다 — 여기 오기 전에 이미 걸러진다.
+ * ⚠️ **퇴사자는 리더 수에서 뺀다**(2026-08-08 정정) — 팀장이 오프보딩 최종 승인되면
+ *    그 팀은 실제로 공석이어야 한다(WORKFLOW §7 "리더 공석 중에도... 막히지 않음").
+ *    `approveMockHandover`가 그 사람의 `authority`도 같이 내리지만, 혹시 놓치는 경로가
+ *    생겨도 여기서 한 번 더 걸러야 유령 팀장 때문에 승급이 영영 막히지 않는다.
  */
 async function findTeamLeaderClash(
   target: ManagedMember,
@@ -194,7 +198,10 @@ async function findTeamLeaderClash(
   const members = await listManagedMembers();
   const leaders = members.filter(
     (member) =>
-      member.teamName === team && member.authority === AUTHORITY.LEADER && member.id !== target.id,
+      member.teamName === team &&
+      member.authority === AUTHORITY.LEADER &&
+      member.status !== MEMBER_STATUS.RESIGNED &&
+      member.id !== target.id,
   );
 
   const existing = leaders[0];

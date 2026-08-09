@@ -85,6 +85,15 @@ export function canManageCompany(actor: Actor): boolean {
 }
 
 /**
+ * 팀장급 인수인계서 관리(`/owner/leader-handovers`) — **OWNER 전용, Admin도 불가**
+ * (CLAUDE.md §라우트 그룹). 다른 팀장급의 오프보딩을 처리하는 일이라 위계상 Admin
+ * 겸직으로는 성립하지 않는다 — `canManageBilling`처럼 Admin을 끼워 주지 않는다.
+ */
+export function canManageLeaderHandovers(actor: Actor): boolean {
+  return actor.role === AUTHORITY.OWNER;
+}
+
+/**
  * 구독·결제 — OWNER이거나 Admin을 겸한 사람.
  *
  * ⚠️ 이 판정 때문에 관리 기능이 `/owner/*`가 아니라 **`/manage/*`** 하나로 모여 있다
