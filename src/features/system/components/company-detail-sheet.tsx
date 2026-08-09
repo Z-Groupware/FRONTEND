@@ -1,8 +1,10 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useFormStatus } from "react-dom";
+import { useState, useTransition } from "react";
+import { toast } from "sonner";
 
+import { ConfirmDialog } from "@/components/common/confirm-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -27,10 +29,43 @@ interface CompanyDetailSheetProps {
  *    정지는 그 자리에서 상태만 바꾸는 조작이라 `redirect` 대신 `revalidatePath`를 쓴다.
  * ⚠️ `company`가 `null`이어도 항상 렌더링한다 — Sheet가 닫히는 애니메이션 동안
  *    내용이 먼저 사라지면 어색하다. 열림 여부는 `open` prop 하나로만 정한다.
+ * ⚠️ **정지는 묻고 나서 한다.** 그 회사 사람 전원이 워크스페이스에 못 들어오는 조작이라
+ *    파괴적 작업 확인은 Dialog가 맡는다(CLAUDE.md §렌더링·데이터). 한때 폼 제출로 바로
+ *    실행되고 결과 알림도 없었다 — 눌렀는데 아무 말이 없어 됐는지 알 수 없었다.
+ * ⚠️ 결과는 **토스트**로 알린다. 성공도 실패도 말한다(§정직성).
  */
 export function CompanyDetailSheet({ company, closeHref, currentPath }: CompanyDetailSheetProps) {
   const router = useRouter();
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [isPending, startTransition] = useTransition();
   const isSuspended = company?.status === COMPANY_STATUS.SUSPENDED;
+
+  function handleConfirm() {
+    if (!company) return;
+
+    const formData = new FormData();
+    formData.set("companyId", company.id);
+    formData.set("path", currentPath);
+
+    startTransition(async () => {
+      let success = true;
+
+      try {
+        await (isSuspended ? unsuspendCompanyAction(formData) : suspendCompanyAction(formData));
+      } catch {
+        // 미구현(!isMock) 분기가 던지는 에러가 여기로 온다 — 조용히 삼키지 않는다
+        success = false;
+      }
+
+      setIsConfirmOpen(false);
+
+      if (success) {
+        toast.success(isSuspended ? "정지를 해제했습니다" : "기업을 정지했습니다");
+      } else {
+        toast.error(isSuspended ? "정지를 해제하지 못했습니다" : "정지하지 못했습니다");
+      }
+    });
+  }
 
   return (
     <Sheet
@@ -63,15 +98,39 @@ export function CompanyDetailSheet({ company, closeHref, currentPath }: CompanyD
             </div>
 
             <SheetFooter>
-              <form
-                action={isSuspended ? unsuspendCompanyAction : suspendCompanyAction}
+              <Button
+                type="button"
+                variant={isSuspended ? "default" : "destructive"}
+                disabled={isPending}
                 className="w-full"
+                onClick={() => setIsConfirmOpen(true)}
               >
-                <input type="hidden" name="companyId" value={company.id} />
-                <input type="hidden" name="path" value={currentPath} />
-                <SubmitButton isSuspended={isSuspended} />
-              </form>
+                {isSuspended ? "정지 해제" : "정지"}
+              </Button>
             </SheetFooter>
+
+            <ConfirmDialog
+              isOpen={isConfirmOpen}
+              onOpenChange={(open) => {
+                // 처리 중엔 안 닫는다 — 창만 사라지고 요청은 계속 가면 결과를 못 본다
+                if (!open && !isPending) setIsConfirmOpen(false);
+              }}
+              title={
+                isSuspended
+                  ? `'${company.name}' 정지를 해제할까요?`
+                  : `'${company.name}'을(를) 정지할까요?`
+              }
+              description={
+                isSuspended
+                  ? "해제하면 이 회사 사람들이 다시 워크스페이스를 쓸 수 있습니다."
+                  : "정지하면 이 회사 사람 전원이 워크스페이스에 들어올 수 없습니다."
+              }
+              confirmLabel={isSuspended ? "정지 해제" : "정지"}
+              pendingLabel={isSuspended ? "해제 중" : "정지 중"}
+              isDestructive={!isSuspended}
+              isPending={isPending}
+              onConfirm={handleConfirm}
+            />
           </>
         )}
       </SheetContent>
@@ -85,20 +144,5 @@ function Field({ label, value }: { label: string; value: string }) {
       <p className="text-muted-foreground text-xs leading-4">{label}</p>
       <p className="text-foreground text-sm leading-5">{value}</p>
     </div>
-  );
-}
-
-function SubmitButton({ isSuspended }: { isSuspended: boolean }) {
-  const { pending } = useFormStatus();
-
-  return (
-    <Button
-      type="submit"
-      variant={isSuspended ? "default" : "destructive"}
-      disabled={pending}
-      className="w-full"
-    >
-      {pending ? "처리 중…" : isSuspended ? "정지 해제" : "정지"}
-    </Button>
   );
 }

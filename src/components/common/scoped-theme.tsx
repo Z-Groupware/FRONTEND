@@ -7,6 +7,15 @@ import { cn } from "@/lib/utils";
 interface ScopedTheme {
   isDark: boolean;
   toggle: () => void;
+  /**
+   * 이 범위의 상자 — **포털이 여기로 들어가야** 다크가 따라온다.
+   *
+   * ⚠️ Dialog·Sheet·Select는 기본으로 `<body>`에 그려진다. 그러면 범위 밖이라 전역 밝기를
+   *    쓰고, 다크로 보는 운영자 화면 위에 **흰 창**이 뜬다(실제로 그랬다).
+   * ⚠️ 상자에 `overflow-hidden`이 있어도 `position: fixed`인 창은 안 잘린다 — 자르려면
+   *    조상에 `transform`·`filter` 같은 것이 있어야 하는데 이 상자엔 없다.
+   */
+  portalContainer: HTMLElement | null;
 }
 
 const ScopedThemeContext = createContext<ScopedTheme | null>(null);
@@ -49,6 +58,8 @@ export function ScopedThemeProvider({
   children,
 }: ScopedThemeProviderProps) {
   const [isDark, setIsDark] = useState(initialDark);
+  // ⚠️ ref가 아니라 state다 — 첫 렌더에 `null`이던 것이 채워질 때 포털이 다시 그려져야 한다
+  const [scopeElement, setScopeElement] = useState<HTMLElement | null>(null);
 
   /*
     쿠키는 **업데이터 밖에서** 쓴다.
@@ -64,8 +75,10 @@ export function ScopedThemeProvider({
   }, [isDark, cookieName]);
 
   return (
-    <ScopedThemeContext.Provider value={{ isDark, toggle }}>
-      <div className={cn(className, isDark && "dark")}>{children}</div>
+    <ScopedThemeContext.Provider value={{ isDark, toggle, portalContainer: scopeElement }}>
+      <div ref={setScopeElement} className={cn(className, isDark && "dark")}>
+        {children}
+      </div>
     </ScopedThemeContext.Provider>
   );
 }
