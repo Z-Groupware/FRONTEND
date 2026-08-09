@@ -60,3 +60,13 @@ export const LEADER_HANDOVER_CUSTODY_STATUS_LABEL: Record<LeaderHandoverCustodyS
   PENDING: "귀속 대기",
   ASSIGNED: "귀속 완료",
 };
+
+/**
+ * 승인 카드 제목에 붙는 신청자 서술어 — **권한 배지(Leader/Member, 영문)가 아니라
+ * 한글 서술어다**(`handover-approval-card.tsx` 참고). 신청은 OWNER 제외 전원이 할 수
+ * 있지만(`canWriteHandover`) 제목에서 가르는 건 팀장 본인 신청인지 여부뿐이라 둘로 충분하다.
+ */
+export const HANDOVER_APPLICANT_TYPE_LABEL = {
+  LEADER: "팀장",
+  MEMBER: "사원",
+} as const;

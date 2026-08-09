@@ -98,6 +98,7 @@ export default async function ManageMemberDetailPage({
               <HandoverApprovalCard
                 memberId={detail.member.id}
                 memberName={detail.member.name}
+                memberAuthority={detail.member.authority}
                 handover={detail.pendingHandover}
                 canApprove={canApproveFinal(viewer)}
               />

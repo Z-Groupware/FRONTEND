@@ -56,7 +56,7 @@ export function BillingView({ overview, config, canManage }: BillingViewProps) {
   const handleToggleCancel = async () => {
     const result = await toggleCancelAction(isCanceling).catch(() => null);
     if (!result?.isSuccess) {
-      toast(result?.message ?? "구독 상태를 바꾸지 못했습니다");
+      toast.error(result?.message ?? "구독 상태를 바꾸지 못했습니다");
       return;
     }
     setSubscription((prev) => ({
@@ -67,7 +67,7 @@ export function BillingView({ overview, config, canManage }: BillingViewProps) {
       ⚠️ **한 줄로 끝낸다.** 언제까지 쓸 수 있는지·언제 청구되는지는 화면의 해지 카드가
          계속 보여 준다 — 사라지는 토스트에 옮겨 적으면 읽기도 전에 없어진다(DECISIONS §토스트).
     */
-    toast(isCanceling ? "구독을 계속 이어갑니다" : "구독을 해지했습니다");
+    toast.success(isCanceling ? "구독을 계속 이어갑니다" : "구독을 해지했습니다");
   };
 
   /*
@@ -95,15 +95,15 @@ export function BillingView({ overview, config, canManage }: BillingViewProps) {
 
       if (!result.isSuccess || !result.method) {
         // ⚠️ 토스트는 한 줄(220px)이라 짧게 쓴다 — 길면 잘린다(`sonner.tsx`)
-        toast(result.message ?? "결제 수단을 바꾸지 못했습니다");
+        toast.error(result.message ?? "결제 수단을 바꾸지 못했습니다");
         return;
       }
 
       setMethod(result.method);
-      toast(isFirst ? "결제 수단을 등록했습니다" : "결제 수단을 변경했습니다");
+      toast.success(isFirst ? "결제 수단을 등록했습니다" : "결제 수단을 변경했습니다");
     } catch {
       // 결제사 창을 닫은 경우 — 여기서만 예외로 온다
-      toast("결제 수단을 바꾸지 못했습니다");
+      toast.error("결제 수단을 바꾸지 못했습니다");
     }
   };
 
