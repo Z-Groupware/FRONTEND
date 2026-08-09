@@ -13,7 +13,7 @@ import {
 import { PIPELINE_STAGE_LABEL } from "@/constants/domain";
 import { cn } from "@/lib/utils";
 
-import { HEAD_PAD_BUTTON_LAST, TABLE_HEAD_ROW_CLASS } from "../table-style";
+import { TABLE_HEAD_ROW_CLASS } from "../table-style";
 import type { FailedPipelineItem } from "../types";
 import { PipelineRetryButton } from "./pipeline-retry-button";
 import { SystemCardHeading } from "./system-card-heading";
@@ -76,11 +76,11 @@ export function FailedPipelineTable({ items }: { items: FailedPipelineItem[] }) 
           <TableHeader>
             <TableRow className={cn(HEADER_HEIGHT_CLASS, TABLE_HEAD_ROW_CLASS)}>
               <TableHead className="pl-7 text-xs">회의 ID</TableHead>
-              <TableHead className="text-xs">기업</TableHead>
-              <TableHead className="text-xs">실패 단계</TableHead>
-              <TableHead className="text-xs">시각</TableHead>
-              <TableHead className="text-xs">오류</TableHead>
-              <TableHead className={cn(HEAD_PAD_BUTTON_LAST, "text-right text-xs")}>액션</TableHead>
+              <TableHead className="text-center text-xs">기업</TableHead>
+              <TableHead className="text-center text-xs">실패 단계</TableHead>
+              <TableHead className="text-center text-xs">시각</TableHead>
+              <TableHead className="text-center text-xs">오류</TableHead>
+              <TableHead className="pr-7 text-center text-xs">액션</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -92,22 +92,25 @@ export function FailedPipelineTable({ items }: { items: FailedPipelineItem[] }) 
                 <TableCell className="text-foreground pl-7 font-mono font-medium">
                   {item.meetingId}
                 </TableCell>
-                <TableCell className="text-foreground max-w-0 truncate" title={item.companyName}>
+                <TableCell
+                  className="text-foreground max-w-0 truncate text-center"
+                  title={item.companyName}
+                >
                   {item.companyName}
                 </TableCell>
-                <TableCell className="text-destructive">
+                <TableCell className="text-destructive text-center">
                   {PIPELINE_STAGE_LABEL[item.stage]}
                 </TableCell>
-                <TableCell className="text-muted-foreground font-mono tabular-nums">
+                <TableCell className="text-muted-foreground text-center font-mono tabular-nums">
                   {item.failedAt}
                 </TableCell>
                 <TableCell
-                  className="text-muted-foreground max-w-0 truncate"
+                  className="text-muted-foreground max-w-0 truncate text-center"
                   title={item.errorMessage}
                 >
                   {item.errorMessage}
                 </TableCell>
-                <TableCell className="pr-7 text-right">
+                <TableCell className="pr-7 text-center">
                   <PipelineRetryButton meetingId={item.meetingId} />
                 </TableCell>
               </TableRow>

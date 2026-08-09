@@ -19,7 +19,7 @@ import { cn } from "@/lib/utils";
 
 import { sendUnpaidNoticeAction } from "../actions";
 import { formatWon } from "../format";
-import { HEAD_PAD_BADGE, HEAD_PAD_BUTTON_LAST, TABLE_HEAD_ROW_CLASS } from "../table-style";
+import { TABLE_HEAD_ROW_CLASS } from "../table-style";
 import type { SubscriptionRecord } from "../types";
 import { NoticeMailDialog } from "./notice-mail-dialog";
 import { StatusBadge, type StatusTone } from "./status-badge";
@@ -45,7 +45,7 @@ const HEADER_HEIGHT_CLASS = "h-9";
  *    가운데로 두면 줄마다 좌우로 흔들려 세로선이 안 생긴다 — 표가 "떠 있는 섬" 여러 개로
  *    읽힌다(DESIGN §3: 자릿수가 섞이면 오른쪽 정렬).
  */
-const VALUE_CELL_CLASS = "text-muted-foreground text-right tabular-nums";
+const VALUE_CELL_CLASS = "text-muted-foreground text-center tabular-nums";
 
 const STATUS_TONE: Record<SubscriptionRecord["paymentStatus"], StatusTone> = {
   PAID: "positive",
@@ -124,11 +124,11 @@ export function SubscriptionTable({ subscriptions, action }: SubscriptionTablePr
           <TableHeader>
             <TableRow className={cn(HEADER_HEIGHT_CLASS, TABLE_HEAD_ROW_CLASS)}>
               <TableHead className="pl-7 text-xs">기업명</TableHead>
-              <TableHead className="text-right text-xs">인원</TableHead>
-              <TableHead className="text-right text-xs">금액</TableHead>
-              <TableHead className="text-right text-xs">결제일</TableHead>
-              <TableHead className={cn(HEAD_PAD_BADGE, "text-right text-xs")}>상태</TableHead>
-              <TableHead className={cn(HEAD_PAD_BUTTON_LAST, "text-right text-xs")}>액션</TableHead>
+              <TableHead className="text-center text-xs">인원</TableHead>
+              <TableHead className="text-center text-xs">금액</TableHead>
+              <TableHead className="text-center text-xs">결제일</TableHead>
+              <TableHead className="text-center text-xs">상태</TableHead>
+              <TableHead className="pr-7 text-center text-xs">액션</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -153,12 +153,12 @@ export function SubscriptionTable({ subscriptions, action }: SubscriptionTablePr
                   {subscription.billingDate ? formatDate(subscription.billingDate) : "–"}
                 </TableCell>
                 {/* 뱃지도 오른쪽 레일에 세운다 — 가운데로 두면 양옆 오른쪽 정렬 사이에서 혼자 떠 보인다 */}
-                <TableCell className="text-right">
+                <TableCell className="text-center">
                   <StatusBadge tone={STATUS_TONE[subscription.paymentStatus]}>
                     {PAYMENT_STATUS_LABEL[subscription.paymentStatus]}
                   </StatusBadge>
                 </TableCell>
-                <TableCell className="pr-7 text-right">
+                <TableCell className="pr-7 text-center">
                   <Button
                     type="button"
                     variant="secondary"

@@ -12,7 +12,7 @@ import { COMPANY_STATUS_LABEL } from "@/constants/domain";
 import { formatDate } from "@/lib/date";
 import { cn } from "@/lib/utils";
 
-import { HEAD_PAD_BADGE_LAST, TABLE_HEAD_ROW_CLASS } from "../table-style";
+import { TABLE_HEAD_ROW_CLASS } from "../table-style";
 import type { ManagedCompany } from "../types";
 import { StatusBadge, type StatusTone } from "./status-badge";
 
@@ -90,11 +90,11 @@ export function CompanyTable({ companies, buildDetailHref, pageSize }: CompanyTa
           <TableHeader>
             <TableRow className={cn(HEADER_HEIGHT_CLASS, TABLE_HEAD_ROW_CLASS)}>
               <TableHead className="pl-7 text-xs">기업명</TableHead>
-              <TableHead className="text-xs">기업 코드</TableHead>
-              <TableHead className="text-right text-xs">구성원</TableHead>
-              <TableHead className="text-right text-xs">이번달 회의</TableHead>
-              <TableHead className="text-right text-xs">가입일</TableHead>
-              <TableHead className={cn(HEAD_PAD_BADGE_LAST, "text-right text-xs")}>상태</TableHead>
+              <TableHead className="text-center text-xs">기업 코드</TableHead>
+              <TableHead className="text-center text-xs">구성원</TableHead>
+              <TableHead className="text-center text-xs">이번달 회의</TableHead>
+              <TableHead className="text-center text-xs">가입일</TableHead>
+              <TableHead className="pr-7 text-center text-xs">상태</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -113,19 +113,22 @@ export function CompanyTable({ companies, buildDetailHref, pageSize }: CompanyTa
                     {company.name}
                   </Link>
                 </TableCell>
-                <TableCell className="text-muted-foreground max-w-0 truncate" title={company.code}>
+                <TableCell
+                  className="text-muted-foreground max-w-0 truncate text-center"
+                  title={company.code}
+                >
                   {company.code}
                 </TableCell>
-                <TableCell className="text-muted-foreground text-right tabular-nums">
+                <TableCell className="text-muted-foreground text-center tabular-nums">
                   {company.memberCount}명
                 </TableCell>
-                <TableCell className="text-muted-foreground text-right tabular-nums">
+                <TableCell className="text-muted-foreground text-center tabular-nums">
                   {company.meetingCountThisMonth}회
                 </TableCell>
-                <TableCell className="text-muted-foreground text-right tabular-nums">
+                <TableCell className="text-muted-foreground text-center tabular-nums">
                   {formatDate(company.joinedAt)}
                 </TableCell>
-                <TableCell className="pr-7 text-right">
+                <TableCell className="pr-7 text-center">
                   <StatusBadge tone={STATUS_TONE[company.status]}>
                     {COMPANY_STATUS_LABEL[company.status]}
                   </StatusBadge>

@@ -82,11 +82,11 @@ export function ApprovalTable({ companies, pageSize }: ApprovalTableProps) {
           <TableHeader>
             <TableRow className={cn(HEADER_HEIGHT_CLASS, TABLE_HEAD_ROW_CLASS)}>
               <TableHead className="pl-7 text-xs">회사명</TableHead>
-              <TableHead className="text-xs">사업자 번호</TableHead>
-              <TableHead className="text-xs">대표자</TableHead>
-              <TableHead className="text-xs">담당자 이메일</TableHead>
-              <TableHead className="text-right text-xs">구성원</TableHead>
-              <TableHead className="pr-7 text-right text-xs">신청일</TableHead>
+              <TableHead className="text-center text-xs">사업자 번호</TableHead>
+              <TableHead className="text-center text-xs">대표자</TableHead>
+              <TableHead className="text-center text-xs">담당자 이메일</TableHead>
+              <TableHead className="text-center text-xs">구성원</TableHead>
+              <TableHead className="pr-7 text-center text-xs">신청일</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -105,10 +105,10 @@ export function ApprovalTable({ companies, pageSize }: ApprovalTableProps) {
                     {company.companyName}
                   </Link>
                 </TableCell>
-                <TableCell className="text-muted-foreground font-mono tabular-nums">
+                <TableCell className="text-muted-foreground text-center font-mono tabular-nums">
                   {company.businessRegistrationNumber}
                 </TableCell>
-                <TableCell className="text-muted-foreground max-w-0 truncate">
+                <TableCell className="text-muted-foreground max-w-0 truncate text-center">
                   {company.representativeName}
                 </TableCell>
                 <TableCell
@@ -117,10 +117,10 @@ export function ApprovalTable({ companies, pageSize }: ApprovalTableProps) {
                 >
                   {company.contactEmail}
                 </TableCell>
-                <TableCell className="text-muted-foreground text-right tabular-nums">
+                <TableCell className="text-muted-foreground text-center tabular-nums">
                   {company.memberCount}명
                 </TableCell>
-                <TableCell className="text-muted-foreground pr-7 text-right tabular-nums">
+                <TableCell className="text-muted-foreground pr-7 text-center tabular-nums">
                   {formatDate(company.appliedAt)}
                 </TableCell>
               </TableRow>
