@@ -44,7 +44,7 @@ export function PipelineQueueCard({ queue }: PipelineQueueCardProps) {
         ⚠️ 가운데로 모으지 않고 **고르게 벌린다**(`justify-between`). 가운데로 모으면 첫 줄이
            옆 카드 내용보다 한참 내려가 두 카드가 서로 다른 높이에서 시작하는 것처럼 보인다.
       */}
-      <ul className="flex flex-1 flex-col justify-between gap-4 px-7 pt-1 pb-4">
+      <ul className="flex flex-1 flex-col justify-between gap-4 px-7 pb-4">
         {rows.map((row) => (
           /*
             ⚠️ `items-baseline`이 아니라 `items-center`다. 왼쪽이 **두 줄**(라벨+보조)이라

@@ -53,8 +53,13 @@ export function SystemCardHeading({ icon: Icon, children, action }: SystemCardHe
   );
 }
 
+/**
+ * ⚠️ **아래 여백이 위보다 넉넉하다**(`pt-5 pb-5` — 한때 `pt-6 pb-3`). 제목 아래가 12px뿐이라
+ *    본문(표 머리 띠·막대 첫 줄)이 제목에 달라붙어, 제목이 카드의 머리가 아니라 첫 줄처럼
+ *    읽혔다. 제목은 위로 4px 올리고 본문과는 8px 더 떼어 놓는다 — 카드 높이는 4px만 는다.
+ */
 const HEADING_CLASS =
-  "flex min-w-0 items-center gap-2 px-7 pt-6 pb-3 text-[17px] leading-7 font-semibold tracking-[-0.3px]";
+  "flex min-w-0 items-center gap-2 px-7 pt-5 pb-5 text-[17px] leading-7 font-semibold tracking-[-0.3px]";
 
 function renderTitle(Icon: LucideIcon, children: ReactNode) {
   return (

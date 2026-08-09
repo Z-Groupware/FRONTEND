@@ -9,7 +9,7 @@ export function SignupChartCard({ data }: { data: MonthlySignup[] }) {
   return (
     <section className="border-border bg-card flex-1 rounded-2xl border">
       <SystemCardHeading icon={TrendingUp}>월별 신규 가입 기업</SystemCardHeading>
-      <div className="px-7 pt-2 pb-7">
+      <div className="px-7 pb-7">
         <SignupChartLoader data={data} />
       </div>
     </section>
