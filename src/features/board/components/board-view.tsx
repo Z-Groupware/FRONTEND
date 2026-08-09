@@ -89,10 +89,26 @@ export function BoardView({ boardType, cards, todayIso }: BoardViewProps) {
       toColumn,
     }));
     startTransition(async () => {
-      await commitBoardChangesAction(boardType, changes);
-      setOverrides({});
-      setConfirmOpen(false);
-      toast.success(`${changes.length}건 반영했습니다`);
+      /*
+        ⚠️ **요청 수가 아니라 반영 수를 말한다.** 카드가 그 사이 사라졌거나 옮길 수 없는 칸이면
+           액션이 조용히 건너뛴다 — 요청 수를 그대로 적으면 안 옮겨진 것까지 옮겼다고 말한다.
+        ⚠️ **던지는 경우도 잡는다.** 돌려주는 실패 값만 보면 Server Action이 reject될 때
+           아무 말도 없이 창만 닫힌다 — 사용자는 저장된 줄 안다(§정직성).
+      */
+      try {
+        const { appliedCount } = await commitBoardChangesAction(boardType, changes);
+        setOverrides({});
+        setConfirmOpen(false);
+
+        if (appliedCount === 0) {
+          toast.error("옮기지 못했습니다");
+          return;
+        }
+        toast.success(`${appliedCount}건 반영했습니다`);
+      } catch {
+        setConfirmOpen(false);
+        toast.error("옮기지 못했습니다");
+      }
     });
   }
 

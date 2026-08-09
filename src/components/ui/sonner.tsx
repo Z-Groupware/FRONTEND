@@ -69,10 +69,12 @@ export function Toaster(props: ToasterProps) {
                되어 뒤집힘이 사라진다. 흰 글자 위 `#ef4444`는 어느 모드에서나 같은 대비다.
             ⚠️ 빨강을 여기 쓰는 건 규칙 위반이 아니다 — DESIGN §5가 색으로 알리도록 허용한
                유일한 자리가 **에러**다. 토스트는 사라지는 보조 알림인데 실패는 놓치면 안 된다.
+            ⚠️ 글자·아이콘은 **`--destructive-foreground` 토큰**이다. 생 `white`를 쓰면
+               토큰만 쓴다는 규칙이 깨지고, 나중에 에러 면 색을 바꿀 때 짝이 따로 논다.
             ⚠️ 인라인 `style`이 클래스를 이기므로 `!`로 되받는다.
           */
           error:
-            "bg-destructive! text-white! [&_[data-description]]:text-white/70! [&_[data-icon]]:text-white!",
+            "bg-destructive! text-destructive-foreground! [&_[data-description]]:text-destructive-foreground/70! [&_[data-icon]]:text-destructive-foreground!",
           // ⚠️ sonner 기본 성공 아이콘은 **초록**이다. 색으로 알리는 건 에러뿐이라 글자색을 따르게 한다.
           icon: "text-background! m-0! size-4! shrink-0 [&>svg]:size-4 [&_*]:fill-current [&_*]:stroke-current",
           actionButton: "bg-background! text-foreground!",

@@ -40,6 +40,7 @@
   --color-input: var(--input);
   --color-border: var(--border);
   --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
   --color-accent-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
   --color-muted-foreground: var(--muted-foreground);
@@ -123,6 +124,13 @@
   --accent: #fafaf9;
   --accent-foreground: #1c1917;
   --destructive: #ef4444; /* 에러 */
+  /*
+    에러 면 **위에** 얹는 글자·아이콘. 두 모드 모두 흰색이다 — 뒤집지 않는다.
+    ⚠️ 이 짝이 있어야 실패 토스트가 성립한다. 빨강을 글자에 쓰면 알약 배경이 모드마다
+       뒤집혀(라이트 거의 검정 · 다크 거의 흰색) 같은 빨강의 대비가 정반대로 움직인다.
+       면을 빨강으로 칠하고 글자를 흰색으로 고정해야 두 모드가 같은 조합이 된다.
+  */
+  --destructive-foreground: #ffffff;
   --border: #e7e5e4;
   --input: #e7e5e4;
   /* 포커스 링 = 먹색. 파랑(액센트)은 강조가 과했다 — 빨강(에러)만 색으로 알린다 */
@@ -251,6 +259,7 @@
   --accent: #2e2a28;
   --accent-foreground: #fafaf9;
   --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
   --border: #33302d;
   --input: #33302d;
   /* 다크에서는 먹색이 안 보인다 — 밝은 회백색으로 뒤집는다 */
@@ -451,6 +460,7 @@
     --success: #22c55e;
     --warning: #f59e0b;
     --destructive: #dc2626;
+    --destructive-foreground: #ffffff;
     --primary: #3b82f6;
     --primary-foreground: #fafaf9;
     --status-todo: #a8a29e;
@@ -507,6 +517,7 @@
     --input: #e7e5e4;
     --ring: #1c1917;
     --destructive: #dc2626;
+    --destructive-foreground: #ffffff;
     --primary: #3b82f6;
     --primary-foreground: #fafaf9;
 
@@ -571,6 +582,7 @@
     --success: #22c55e;
     --warning: #f59e0b;
     --destructive: #ef4444;
+    --destructive-foreground: #ffffff;
     --primary: #3b82f6;
     --primary-foreground: #ffffff;
     --status-todo: #8a827d;

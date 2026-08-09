@@ -70,13 +70,23 @@ export function SubscriptionTable({ subscriptions }: SubscriptionTableProps) {
     if (!target) return;
 
     startTransition(async () => {
-      const response = await sendUnpaidNoticeAction(companyId);
-      if (response.success) {
-        toast.success("안내 메일을 발송했습니다");
-      } else {
+      /*
+        ⚠️ **던지는 경우도 잡는다.** 돌려주는 실패 값만 보면 Server Action이 reject될 때
+           토스트도 없고 확인 창도 안 닫혀, 사용자가 같은 버튼을 다시 누른다(메일이 두 번 나간다).
+        ⚠️ 그래서 창 닫기는 `finally`다 — 성공이든 실패든 창은 닫고, 결과는 토스트가 말한다.
+      */
+      try {
+        const response = await sendUnpaidNoticeAction(companyId);
+        if (response.success) {
+          toast.success("안내 메일을 발송했습니다");
+          return;
+        }
         toast.error("발송하지 못했습니다");
+      } catch {
+        toast.error("발송하지 못했습니다");
+      } finally {
+        setNoticeTarget(null);
       }
-      setNoticeTarget(null);
     });
   };
 

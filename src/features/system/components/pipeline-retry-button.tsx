@@ -34,11 +34,19 @@ export function PipelineRetryButton({ meetingId }: PipelineRetryButtonProps) {
 
   const handleRetry = () => {
     startTransition(async () => {
-      const response = await retryPipelineAction(meetingId);
-      if (response.success) {
-        setIsDone(true);
-        toast.success("재처리를 요청했습니다");
-      } else {
+      /*
+        ⚠️ **던지는 경우도 잡는다.** 돌려주는 실패 값만 보면 Server Action이 reject될 때
+           아무 말도 없이 버튼만 되살아난다 — 눌렀는데 아무 일도 안 일어난 것처럼 보인다.
+      */
+      try {
+        const response = await retryPipelineAction(meetingId);
+        if (response.success) {
+          setIsDone(true);
+          toast.success("재처리를 요청했습니다");
+          return;
+        }
+        toast.error("재처리하지 못했습니다");
+      } catch {
         toast.error("재처리하지 못했습니다");
       }
     });
