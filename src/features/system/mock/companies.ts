@@ -1,4 +1,4 @@
-import { COMPANY_SIZE, COMPANY_STATUS, PLAN } from "@/constants/domain";
+import { COMPANY_SIZE, COMPANY_STATUS } from "@/constants/domain";
 
 import type { ManagedCompany } from "../types";
 
@@ -9,7 +9,6 @@ const BASE_COMPANIES: ManagedCompany[] = [
     name: "(주)테크스타트",
     code: "TECHSTART-2025",
     size: COMPANY_SIZE.MEDIUM,
-    plan: PLAN.TEAM,
     memberCount: 12,
     meetingCountThisMonth: 47,
     status: COMPANY_STATUS.ACTIVE,
@@ -21,7 +20,6 @@ const BASE_COMPANIES: ManagedCompany[] = [
     name: "그린로직스",
     code: "GREENLOGICS-25",
     size: COMPANY_SIZE.SMALL,
-    plan: PLAN.FREE,
     memberCount: 4,
     meetingCountThisMonth: 8,
     status: COMPANY_STATUS.ACTIVE,
@@ -33,7 +31,6 @@ const BASE_COMPANIES: ManagedCompany[] = [
     name: "(주)레이어원",
     code: "LAYERONE-2025",
     size: COMPANY_SIZE.MEDIUM,
-    plan: PLAN.TEAM,
     memberCount: 27,
     meetingCountThisMonth: 83,
     status: COMPANY_STATUS.ACTIVE,
@@ -45,7 +42,6 @@ const BASE_COMPANIES: ManagedCompany[] = [
     name: "모멘텀랩",
     code: "MOMENTUM-2025",
     size: COMPANY_SIZE.SMALL,
-    plan: PLAN.TEAM,
     memberCount: 8,
     meetingCountThisMonth: 19,
     status: COMPANY_STATUS.UNPAID,
@@ -57,7 +53,6 @@ const BASE_COMPANIES: ManagedCompany[] = [
     name: "엔드포인트",
     code: "ENDPOINT-2025",
     size: COMPANY_SIZE.MICRO,
-    plan: PLAN.FREE,
     memberCount: 3,
     meetingCountThisMonth: 2,
     status: COMPANY_STATUS.ACTIVE,
@@ -69,7 +64,6 @@ const BASE_COMPANIES: ManagedCompany[] = [
     name: "(주)블루스톤",
     code: "BLUESTONE-2025",
     size: COMPANY_SIZE.MEDIUM,
-    plan: PLAN.TEAM,
     memberCount: 14,
     meetingCountThisMonth: 31,
     status: COMPANY_STATUS.SUSPENDED,
@@ -139,7 +133,6 @@ const EXTRA_COMPANY_NAMES = [
 ] as const;
 
 const SIZES = [COMPANY_SIZE.MICRO, COMPANY_SIZE.SMALL, COMPANY_SIZE.MEDIUM, COMPANY_SIZE.LARGE];
-const PLANS = [PLAN.FREE, PLAN.TEAM];
 /**
  * ⚠️ 미납(UNPAID)은 **드물게만** 나오게 한다 — "구독·매출" 화면의 요약 카드·목록이
  *    "미납 1건" 수준을 전제로 만들어졌다(화면 시안 기준). 비율이 높으면(예전엔 5칸 중
@@ -172,7 +165,6 @@ const STATUSES = [
 const EXTRA_COMPANIES: ManagedCompany[] = EXTRA_COMPANY_NAMES.map((name, index) => {
   const seed = index + 1;
   const size = SIZES[seed % SIZES.length]!;
-  const plan = PLANS[seed % PLANS.length]!;
   const status = STATUSES[seed % STATUSES.length]!;
   const slug = name.replace(/[()·]/g, "").slice(0, 6).toUpperCase();
 
@@ -181,8 +173,7 @@ const EXTRA_COMPANIES: ManagedCompany[] = EXTRA_COMPANY_NAMES.map((name, index) 
     name,
     code: `${slug}-${2020 + (seed % 6)}`,
     size,
-    plan,
-    memberCount: plan === PLAN.FREE ? (seed % 5) + 1 : (seed % 40) + 5,
+    memberCount: (seed % 40) + 5,
     meetingCountThisMonth: (seed * 3) % 90,
     status,
     joinedAt: `2025-${String((seed % 12) + 1).padStart(2, "0")}-${String((seed % 27) + 1).padStart(2, "0")}`,

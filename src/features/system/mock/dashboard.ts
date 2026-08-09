@@ -1,6 +1,5 @@
-import { PLAN } from "@/constants/domain";
-
 import type { DashboardOverview } from "../types";
+import { MOCK_MONITORING_OVERVIEW } from "./monitoring";
 
 /** ⚠️ 목 데이터 — BE 연동 전. SYSTEM 대시보드 진입 시 보여줄 예시 값이다. */
 export const MOCK_DASHBOARD_OVERVIEW: DashboardOverview = {
@@ -10,7 +9,6 @@ export const MOCK_DASHBOARD_OVERVIEW: DashboardOverview = {
     activeUserCount: 841,
     activeUserDeltaPercent: 12,
     mrr: 8_400_000,
-    teamPlanCompanyCount: 38,
     pendingApprovalCount: 3,
   },
   monthlySignups: [
@@ -20,10 +18,6 @@ export const MOCK_DASHBOARD_OVERVIEW: DashboardOverview = {
     { month: "5월", count: 8 },
     { month: "6월", count: 10 },
     { month: "7월", count: 8 },
-  ],
-  planDistribution: [
-    { plan: PLAN.TEAM, companyCount: 38 },
-    { plan: PLAN.FREE, companyCount: 24 },
   ],
   recentCompanies: [
     {
@@ -51,4 +45,9 @@ export const MOCK_DASHBOARD_OVERVIEW: DashboardOverview = {
       joinedAt: "2025-07-13",
     },
   ],
+  /*
+    ⚠️ 대시보드가 처리 큐를 **따로 들고 있지 않다.** 시스템 모니터링과 같은 값을 읽는다 —
+       두 벌로 두면 같은 순간에 두 화면이 다른 건수를 말한다(CLAUDE.md §도메인 상수).
+  */
+  pipelineQueue: MOCK_MONITORING_OVERVIEW.queue,
 };

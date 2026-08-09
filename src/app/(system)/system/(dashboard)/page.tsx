@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-import { PlanDistributionCard } from "@/features/system/components/plan-distribution-card";
+import { PipelineQueueCard } from "@/features/system/components/pipeline-queue-card";
 import { RecentCompaniesTable } from "@/features/system/components/recent-companies-table";
 import { SignupChartCard } from "@/features/system/components/signup-chart-card";
 import { SummaryCard } from "@/features/system/components/summary-card";
@@ -12,8 +12,7 @@ export const metadata: Metadata = {
 };
 
 export default async function SystemDashboardPage() {
-  const { summary, monthlySignups, planDistribution, recentCompanies } =
-    await getDashboardOverview();
+  const { summary, monthlySignups, recentCompanies, pipelineQueue } = await getDashboardOverview();
 
   return (
     <main className="min-h-0 flex-1 overflow-y-auto px-8 py-7">
@@ -33,7 +32,12 @@ export default async function SystemDashboardPage() {
             {
               label: "MRR",
               value: formatCompactKrw(summary.mrr),
-              meta: `Team ${summary.teamPlanCompanyCount}개사`,
+              /*
+                ⚠️ 한때 `Team N개사`였다. 요금제가 하나뿐이라 굳이 밝힐 플랜이 없고
+                   (CLAUDE.md §요금제), 자리를 채우려고 없던 지표를 지어내지도 않는다 —
+                   약어를 풀어 적는 데 쓴다.
+              */
+              meta: "월 반복 매출",
             },
             {
               label: "승인 대기",
@@ -45,7 +49,7 @@ export default async function SystemDashboardPage() {
 
         <div className="flex flex-col gap-3 lg:flex-row">
           <SignupChartCard data={monthlySignups} />
-          <PlanDistributionCard data={planDistribution} />
+          <PipelineQueueCard queue={pipelineQueue} />
         </div>
 
         <RecentCompaniesTable companies={recentCompanies} />
