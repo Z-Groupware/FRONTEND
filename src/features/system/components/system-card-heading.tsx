@@ -54,7 +54,19 @@ export function SystemCardHeading({ icon: Icon, children, action }: SystemCardHe
 }
 
 const HEADING_CLASS =
-  "flex min-w-0 items-center gap-2 px-7 pt-5 pb-4 text-[17px] leading-7 font-semibold tracking-[-0.3px]";
+  "flex min-w-0 items-center gap-2.5 px-7 pt-4 pb-4 text-[17px] leading-7 font-semibold tracking-[-0.3px]";
+
+/**
+ * 표식 상자.
+ *
+ * ⚠️ 아이콘을 글자 옆에 그냥 두면 **글머리 기호처럼** 읽힌다 — 16px 아이콘과 17px 글자가
+ *    크기가 비슷해 같은 줄의 한 글자로 보였다. 상자에 담아 크기와 무게를 주면 글자와
+ *    다른 층이 되어, 제목을 가리키는 표식이라는 게 드러난다.
+ * ⚠️ 바탕은 **액센트를 아주 옅게** 깐다(10%). 아이콘만 색이면 점 하나가 떠 있는 것 같은데,
+ *    상자까지 같은 색조면 표식 하나로 뭉쳐 보인다. 옅어서 색으로 뭘 알리지도 않는다
+ *    (알리는 건 에러(빨강)뿐 — CLAUDE.md §디자인 토큰).
+ */
+const MARK_CLASS = "bg-chart-1/10 flex size-7 shrink-0 items-center justify-center rounded-lg";
 
 /**
  * ⚠️ **제목 줄에 경계선을 둔다.** 여백만으로는 제목이 안 섰다 — 위 24px·아래 23px로 거의
@@ -69,7 +81,9 @@ const HEADING_ROW_CLASS = "border-border border-b";
 function renderTitle(Icon: LucideIcon, children: ReactNode) {
   return (
     <>
-      <Icon className="text-chart-1 size-4 shrink-0" aria-hidden />
+      <span className={MARK_CLASS} aria-hidden>
+        <Icon className="text-chart-1 size-[15px]" />
+      </span>
       <span className="truncate">{children}</span>
     </>
   );
