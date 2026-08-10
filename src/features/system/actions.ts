@@ -17,8 +17,9 @@ const APPROVAL_LIST_PATH = "/system/approval";
 /** 클라이언트가 부르는 값이라 그대로 믿지 않는다 — 범위를 벗어나면 안으로 당긴다. */
 const MAX_PAGE_SIZE = 50;
 
+// ⚠️ `page`는 0-base다(BE 표준 확정, 2026-08-10) — `page=0`이 첫 페이지.
 function clampPage(page: number): number {
-  return Number.isFinite(page) && page >= 1 ? Math.floor(page) : 1;
+  return Number.isFinite(page) && page >= 0 ? Math.floor(page) : 0;
 }
 
 function clampPageSize(pageSize: number): number {

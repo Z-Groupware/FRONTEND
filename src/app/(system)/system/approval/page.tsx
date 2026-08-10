@@ -21,7 +21,7 @@ export default async function SystemApprovalPage({ searchParams }: SystemApprova
   const params = await searchParams;
 
   const [{ items, page, totalPages, totalCount }, selected] = await Promise.all([
-    getPendingApprovals(1, PAGE_SIZE),
+    getPendingApprovals(0, PAGE_SIZE),
     // 없는 id로 들어와도 404를 내지 않는다 — 상세가 안 뜰 뿐 목록은 그대로 보여야 한다
     params.id ? getPendingApprovalById(params.id) : Promise.resolve(null),
   ]);

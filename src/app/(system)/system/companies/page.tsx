@@ -36,7 +36,7 @@ export default async function SystemCompaniesPage({ searchParams }: SystemCompan
   const filter = { keyword: params.q, status, sort };
 
   const [{ items, page, totalPages, totalCount }, selected] = await Promise.all([
-    getManagedCompanies(filter, 1, PAGE_SIZE),
+    getManagedCompanies(filter, 0, PAGE_SIZE),
     params.id ? getManagedCompanyById(params.id) : Promise.resolve(null),
   ]);
 
