@@ -41,6 +41,18 @@ export const ep = {
   /* 조직 */
   members: () => "/api/members",
   member: (id: number) => `/api/members/${id}`,
+  /**
+   * 팀 — [확인] identity/team/presentation/api/TeamController.java
+   *
+   * ⚠️ **한 건씩 다룬다**(`POST`·`PATCH /{id}`·`DELETE /{id}`). 트리를 통째로 넣는
+   *    `PUT`은 BE에 없다 — 화면은 통째로 저장하므로 부르는 쪽이 **차이를 계산해** 나눠 부른다.
+   * ⚠️ 조회 응답에 `memberCount`가 들어 있다 — 사람이 딸린 팀을 못 지우는 판정에 그대로 쓴다.
+   */
+  teams: () => "/api/teams",
+  team: (id: number) => `/api/teams/${id}`,
+  /** 직급 — [확인] identity/position/presentation/api/PositionController.java */
+  jobPositions: () => "/api/job-positions",
+  jobPosition: (id: number) => `/api/job-positions/${id}`,
   departments: () => "/api/departments",
   rooms: () => "/api/rooms",
 
