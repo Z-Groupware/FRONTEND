@@ -11,7 +11,7 @@ import { isMock } from "@/mocks/config";
 import { RESERVATION_DURATION_MINUTES } from "./constants";
 import { findMockMember } from "./mock/members";
 import { addMockReservation, listMockReservationsByRoom } from "./mock/reservations";
-import { addMockRoom, findMockRoom, updateMockRoom } from "./mock/rooms";
+import { addMockRoom, deleteMockRoom, findMockRoom, updateMockRoom } from "./mock/rooms";
 import type {
   MeetingRoom,
   MeetingRoomDraft,
@@ -188,4 +188,26 @@ export async function updateMeetingRoomAction(
   revalidatePath(MANAGE_ROOMS_PATH);
   revalidatePath(ROOMS_PATH);
   return { errors: {}, room };
+}
+
+/**
+ * 회의실 삭제 — 추가·수정과 같은 규칙(권한·`isMock` 분기). 되돌릴 수 없는 조작이라 화면
+ * (`RoomDeleteDialog`)에서 확인 Dialog를 먼저 띄운 뒤에만 이 액션이 실행된다(§토스트: 파괴적
+ * 작업은 Dialog). 같은 화면에 머무르므로 `deleteNoticeAction`과 달리 `redirect`는 없다.
+ */
+export async function deleteMeetingRoomAction(formData: FormData): Promise<void> {
+  if (!canManageRooms(getMockActor())) {
+    throw new Error("회의실을 삭제할 권한이 없습니다");
+  }
+
+  if (!isMock) {
+    // ⚠️ 미구현 — API 스펙 확정 후 BFF 경로로 회의실 삭제 요청을 보낸다.
+    throw new Error("회의실 삭제 API가 아직 연결되지 않았습니다.");
+  }
+
+  const id = String(formData.get("id") ?? "");
+  deleteMockRoom(id);
+
+  revalidatePath(MANAGE_ROOMS_PATH);
+  revalidatePath(ROOMS_PATH);
 }
