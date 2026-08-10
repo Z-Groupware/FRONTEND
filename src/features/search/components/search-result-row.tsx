@@ -56,22 +56,25 @@ export function SearchResultRow({ item, keyword }: SearchResultRowProps) {
       {item.kind === "PERSON" && <ProfileAvatar userId={item.id} size={26} />}
 
       <div className="min-w-0 flex-1">
-        <p className="text-foreground truncate text-[13px] leading-5 font-semibold">
-          <MatchText text={rowTitle(item)} keyword={keyword} />
+        {/*
+          ⚠️ **제목 줄에 다 세운다.** 제목만 한 줄, 태그·보조값은 아랫줄로 내렸더니 한 항목이
+             세 줄을 먹으면서 오른쪽은 통째로 비었다 — 위아래로는 길고 좌우로는 텅 빈 모양이다.
+             한 줄에 이어 붙이면 그 줄이 문장으로 읽히고 카드도 낮아진다.
+        */}
+        <p className="flex min-w-0 items-center gap-2">
+          <span className="text-foreground shrink-0 truncate text-[13px] leading-5 font-semibold">
+            <MatchText text={rowTitle(item)} keyword={keyword} />
+          </span>
+          <ProjectTagOf item={item} />
+          <span className="text-muted-foreground truncate text-[12px] leading-4">
+            <MatchText text={rowMeta(item)} keyword={keyword} />
+          </span>
         </p>
         {rowSnippet(item) && (
           <p className="text-muted-foreground mt-1 truncate text-[12px] leading-4">
             <MatchText text={rowSnippet(item) ?? ""} keyword={keyword} />
           </p>
         )}
-        <p className="text-muted-foreground/70 mt-1.5 flex items-center gap-2 text-[11px] leading-4">
-          {/*
-            ⚠️ **색 점 대신 태그 칩을 세운다.** 팔레트가 열한 색뿐이라 프로젝트가 겹치면
-               점만으로는 어느 쪽인지 알 수 없다(§palette) — 칩은 색과 이름을 같이 들고 있다.
-          */}
-          <ProjectTagOf item={item} />
-          <MatchText text={rowMeta(item)} keyword={keyword} />
-        </p>
       </div>
 
       {item.kind === "PERSON" && (
