@@ -114,7 +114,17 @@ export const ACTION_REJECT_REASON_LABEL: Record<ActionRejectReason, string> = {
  *    다르게 보인다(§도메인 상수: 라벨·색은 한 곳).
  */
 export const MEETING_STATUS_BADGE_CLASS: Record<MeetingStatus, string> = {
-  SCHEDULED: "border-border text-muted-foreground",
-  IN_PROGRESS: "border-foreground/35 bg-foreground/[0.06] text-foreground font-medium",
-  DONE: "border-border/60 text-muted-foreground/70",
+  /*
+    ⚠️ **명도 사다리를 벌린다**(2026-08-10). 셋 다 테두리만 있는 옅은 글씨라 **상태가 눈에
+       안 걸렸다** — 예정인지 완료인지가 이 목록에서 제일 먼저 보여야 하는 값인데도 그랬다.
+       색을 쓸 수 없으니(위 주석) 대신 **면·굵기·대비**를 셋 사이에서 확실히 갈라 놓는다.
+    ⚠️ 지금 도는 회의가 제일 진하고, 다가올 회의가 그다음, 끝난 회의가 제일 옅다 —
+       손이 필요한 순서다.
+  */
+  /** 지금 도는 것 — 먹색 면. 이 목록에서 제일 강하다 */
+  IN_PROGRESS: "border-transparent bg-foreground text-background font-semibold",
+  /** 다가올 것 — 옅은 면 + 진한 글씨. 테두리만 있던 때는 배경에 묻혔다 */
+  SCHEDULED: "border-transparent bg-foreground/[0.08] text-foreground font-semibold",
+  /** 끝난 것 — 테두리만. 더 볼 일이 없다는 뜻이라 일부러 물러나 있다 */
+  DONE: "border-border text-muted-foreground font-medium",
 };

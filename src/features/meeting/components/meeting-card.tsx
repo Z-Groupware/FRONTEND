@@ -2,7 +2,6 @@ import { CalendarClock, DoorOpen, MapPin, Users } from "lucide-react";
 import Link from "next/link";
 
 import { ProjectTag } from "@/components/common/project-tag";
-import { Badge } from "@/components/ui/badge";
 import {
   MEETING_STATUS,
   MEETING_STATUS_BADGE_CLASS,
@@ -46,13 +45,24 @@ function CardBody({ meeting }: { meeting: MeetingListItem }) {
            한 카드가 네 덩이로 읽혔다 — 층이 많을수록 눈이 어디를 먼저 볼지 못 정한다.
            칩과 안건은 둘 다 "무슨 회의인지"를 말하므로 한 줄로 묶는다.
       */}
+      {/*
+        ⚠️ **태그를 제목 옆에 붙인다.** 아랫줄에 두면 그 줄에 칩·배지·평문 셋이 섞여
+           높이도 모양도 제각각이라 지저분했다 — 다른 화면(액션 상세·검색)도 태그는 제목 옆이다.
+      */}
       <div className="flex items-center justify-between gap-3">
-        <p className="min-w-0 flex-1 truncate text-[17px] leading-7 font-semibold tracking-[-0.3px]">
-          {meeting.title}
+        <p className="flex min-w-0 flex-1 items-center gap-2">
+          <ProjectTag tag={meeting.projectTag} />
+          <span className="truncate text-[17px] leading-7 font-semibold tracking-[-0.3px]">
+            {meeting.title}
+          </span>
         </p>
         <span
           className={cn(
-            "shrink-0 rounded-md border px-2 py-0.5 text-[11px] leading-4",
+            /*
+              ⚠️ **12px·h-6으로 키운다.** 11px 배지는 카드 구석의 꼬리표처럼 읽혀 상태가
+                 눈에 안 걸렸다 — 이 카드에서 제목 다음으로 먼저 봐야 하는 값이다.
+            */
+            "inline-flex h-6 shrink-0 items-center rounded-md border px-2.5 text-[12px] leading-4",
             MEETING_STATUS_BADGE_CLASS[meeting.status],
           )}
         >
@@ -60,21 +70,17 @@ function CardBody({ meeting }: { meeting: MeetingListItem }) {
         </span>
       </div>
 
-      <div className="flex min-w-0 items-center gap-2 pt-2.5">
-        {/*
-          ⚠️ **공용 칩을 쓴다**(`components/common/project-tag`). 손으로 그린 칩이 여러 파일에
-             흩어져 있어 한 군데를 다듬으면 나머지가 남았다 — 같은 태그가 화면마다 다른
-             모양으로 뜬다.
-        */}
-        <ProjectTag tag={meeting.projectTag} />
-        <Badge variant="outline" className="shrink-0 font-normal">
-          {meeting.originLabel}
-        </Badge>
-        {/* 안건 요약 — 무슨 회의인지 한 줄(§3-2 안건은 별도 항목이다) */}
-        <span className="text-muted-foreground min-w-0 truncate text-[13px] leading-5">
-          {meeting.topicSummary}
-        </span>
-      </div>
+      {/*
+        ⚠️ **둘째 줄은 평문 한 줄이다.** 출처(`Owner 개설`)를 배지로 두니 옆 칩과 높이·모서리가
+           달라 한 줄에 두 종류의 상자가 섞였다 — 둘 다 "이 회의가 어디서 왔나"를 말하는
+           **곁 정보**라 같은 무게의 글로 이어 붙인다.
+        ⚠️ 가운뎃점으로 잇는다. 상자를 없앤 자리에 구분자가 필요하다.
+      */}
+      <p className="text-muted-foreground truncate pt-2 text-[13px] leading-5">
+        {meeting.originLabel}
+        <span className="px-1.5 opacity-50">·</span>
+        {meeting.topicSummary}
+      </p>
     </>
   );
 }
