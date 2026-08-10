@@ -39,8 +39,20 @@ export const ep = {
   handover: (id: number) => `/api/handovers/${id}`,
 
   /* 조직 */
+  /* 조직 — [확인] identity/member/presentation/api/{Member,ManageMember}Controller.java */
   members: () => "/api/members",
   member: (id: number) => `/api/members/${id}`,
+  /** 조직도 — OWNER·ADMIN 전용 */
+  memberOrgChart: () => "/api/members/org-chart",
+  /**
+   * 관리자 겸직 토글 — **OWNER 전용**이고 경로가 따로다.
+   *
+   * ⚠️ 역할·직급 변경(`member`)에 `isAdmin`을 실어 보내면 BE가 400(`FIELD_NOT_ALLOWED`)으로
+   *    막는다. 어드민이 자기를 복제하는 것을 끊으려고 일부러 갈라 둔 경로다.
+   */
+  memberAdmin: (id: number) => `/api/members/${id}/admin`,
+  /** 계정 발급 — 첫 비밀번호는 서버가 메일로 보낸다 */
+  manageMembers: () => "/api/manage/members",
   departments: () => "/api/departments",
   rooms: () => "/api/rooms",
 
