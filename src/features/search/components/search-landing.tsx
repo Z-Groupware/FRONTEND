@@ -8,11 +8,14 @@ interface SearchLandingProps {
 
 /** 검색어가 없을 때의 화면 — 최근 검색어 → 최근 본 항목 → 둘러보기 순서(CLAUDE.md §화면은 위에서 아래로) */
 export function SearchLanding({ home }: SearchLandingProps) {
+  /*
+    ⚠️ **최근 검색어는 세지 않는다**(2026-08-10 리뷰). 이 화면에서 최근 검색어를 걷어내
+       입력창 드롭다운으로 옮겼는데 조건만 남아 있었다 — 검색만 해 보고 아무것도 안 열어 본
+       사람에게 "아직 둘러본 것이 없습니다" 대신 **텅 빈 화면**이 떴다. 세는 것은 이 화면이
+       실제로 그리는 것뿐이다.
+  */
   const isEmpty =
-    home.recentSearches.length === 0 &&
-    home.recentlyViewed.length === 0 &&
-    home.projects.length === 0 &&
-    home.people.length === 0;
+    home.recentlyViewed.length === 0 && home.projects.length === 0 && home.people.length === 0;
 
   if (isEmpty) {
     return (

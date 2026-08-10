@@ -10,11 +10,9 @@ import { NoticeListItem } from "./notice-list-item";
 export function NoticeList({ notices, action }: { notices: NoticeSummary[]; action?: ReactNode }) {
   return (
     <div className="border-border bg-card overflow-hidden rounded-2xl border">
-      <div className="border-border flex items-center justify-between gap-3 border-b px-7 pt-5 pb-4">
-        <h2 className="flex items-center gap-2 text-[17px] leading-7 font-semibold tracking-[-0.3px]">
-          <span className="bg-foreground size-2 rounded-full" aria-hidden />
-          공지 목록
-        </h2>
+      <div className="border-border flex items-center justify-between gap-3 border-b px-7 pt-6 pb-3">
+        {/* ⚠️ 제목 앞 검은 점을 뺀다 — 상태점과 같은 생김새라 뜻이 있는 표식처럼 읽혔다(DESIGN §5) */}
+        <h2 className="text-[17px] leading-7 font-semibold tracking-[-0.3px]">공지 목록</h2>
         {/*
           ⚠️ **[새 공지]를 카드 머리 안에 둔다.** 카드 밖 위쪽에 혼자 떠 있으면 그 줄이
              빈 띠가 되고, 다른 목록 화면(프로젝트·사원)은 전부 머리 안에 둔다 —

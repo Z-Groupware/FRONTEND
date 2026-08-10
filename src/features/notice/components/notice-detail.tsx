@@ -23,7 +23,7 @@ export function NoticeDetail({ notice, canManage }: { notice: Notice; canManage:
         ⚠️ **가운데 정렬이다**(`items-center`). 위에 붙여 뒀더니 11px짜리 날짜가 28px 버튼
            옆에서 혼자 천장에 매달려 보였다 — 한 줄에 선 것들은 가운데를 맞춘다.
       */}
-      <div className="border-border flex items-center justify-between gap-3 border-b px-7 pt-5 pb-4">
+      <div className="border-border flex items-center justify-between gap-3 border-b px-7 pt-6 pb-3">
         <div className="min-w-0">
           {/* ⚠️ 날짜는 라벨 크기(12px)다. 11px는 칩·꼬리표 자리라 홀로 선 값에는 너무 작다 */}
           <p className="text-muted-foreground text-[12px] leading-4">
@@ -51,7 +51,13 @@ export function NoticeDetail({ notice, canManage }: { notice: Notice; canManage:
            넉넉히(22px) 준다.
         ⚠️ 색을 본문색으로 올린다. 보조색으로 깔아 두니 **정작 읽으라고 띄운 글이 제일 흐렸다**.
       */}
-      <p className="text-foreground/85 px-7 py-6 text-[13px] leading-[22px] whitespace-pre-line">
+      {/*
+        ⚠️ **`break-words`가 필요하다**(2026-08-10 리뷰). 카드에 `overflow-hidden`이 걸려 있는데
+           `whitespace-pre-line`은 **띄어쓰기 없는 긴 문자열을 못 나눈다** — 붙여 넣은 URL 하나가
+           720px을 넘으면 넘친 만큼 조용히 잘려 나가고 스크롤도 안 생겨, 글자가 있었다는 것조차
+           안 보인다(§정직성). 공지 본문은 사용자가 쓰는 글이라 무엇이 들어올지 모른다.
+      */}
+      <p className="text-foreground/85 px-7 py-6 text-[13px] leading-[22px] break-words whitespace-pre-line">
         {notice.body}
       </p>
     </article>
