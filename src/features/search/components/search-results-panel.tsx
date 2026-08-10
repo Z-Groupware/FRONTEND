@@ -27,7 +27,13 @@ export function SearchResultsPanel({
          화면인데 검색 전과 후의 생김새가 달랐다 — 탭·필터는 조작하는 자리라 위에 두고,
          결과는 랜딩처럼 **줄마다 낱장**으로 쌓는다.
     */
-    <section className="flex flex-col gap-4">
+    /*
+      ⚠️ **검색창과 같은 720 한 칸에 세운다.** 960으로 두니 한 항목이 짧아 오른쪽이 계속
+         비었다 — 결과는 `제목 · 어디 · 언제` 한 문장이라 열이 여럿인 표가 아니다.
+         입력·탭·결과가 한 세로선에 서면 눈이 위에서 아래로 그대로 내려온다.
+      ⚠️ 랜딩은 960 그대로다 — 거기는 두 칸(프로젝트·사람)이 나란히 서야 한다.
+    */
+    <section className="mx-auto flex w-full max-w-[720px] flex-col gap-4">
       <div>
         <SearchTabs counts={results.counts} active={query.category} searchParams={baseParams} />
       </div>
