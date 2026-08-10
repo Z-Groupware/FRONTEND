@@ -1,5 +1,5 @@
 import type { MeetingRoom } from "../types";
-import { RoomEditDialog } from "./room-edit-dialog";
+import { RoomRowActions } from "./room-row-actions";
 
 interface RoomsManageTableProps {
   rooms: MeetingRoom[];
@@ -58,7 +58,7 @@ export function RoomsManageTable({ rooms, canManage }: RoomsManageTableProps) {
                     {room.openTime} - {room.closeTime}
                   </td>
                   <td className="px-4 py-3.5 text-center">
-                    {canManage && <RoomEditDialog room={room} />}
+                    {canManage && <RoomRowActions room={room} />}
                   </td>
                 </tr>
               ))}

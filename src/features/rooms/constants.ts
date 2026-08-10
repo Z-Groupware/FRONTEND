@@ -18,3 +18,13 @@ export const TIME_OPTIONS = Array.from({ length: 48 }, (_, index) => {
   const minute = index % 2 === 0 ? "00" : "30";
   return `${hour}:${minute}`;
 });
+
+/** 회의실 삭제 확인창 문구 — `room-delete-dialog.tsx` 하나만 쓰지만, 카피 하드코딩 금지
+ * 원칙(CLAUDE.md §도메인 상수)에 맞춰 컴포넌트 밖으로 뺐다(`NOTICE_DELETE_CONFIRM`과 같은 자리). */
+export const ROOM_DELETE_CONFIRM = {
+  /** 확인창 제목 — 회의실 이름을 끼워 넣는다 */
+  title: (roomName: string) => `'${roomName}'을 삭제할까요?`,
+  description: "삭제하면 예약 화면 목록에서도 사라집니다. 되돌릴 수 없습니다.",
+  confirmLabel: "삭제",
+  pendingLabel: "삭제 중",
+} as const;
