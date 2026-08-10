@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import type { MouseEvent } from "react";
 
 import { hasInAppHistory } from "@/components/common/nav-history";
+import { directionParticle } from "@/lib/korean";
 
 interface BackLinkProps {
   /** 되돌아갈 자리 — 앱 안 이력이 없을 때(주소로 바로 들어온 경우) 갈 곳 */
@@ -45,7 +46,12 @@ export function BackLink({ href, label, className }: BackLinkProps) {
   return (
     <Link
       href={href}
-      aria-label={`${label}(으)로 돌아가기`}
+      /*
+        ⚠️ 조사는 **받침을 보고 고른다**(`lib/korean.ts`). `(으)로`로 박아 두면
+           스크린리더가 괄호까지 읽어 `회의 상세(으)로 돌아가기`가 된다 — 이 자리는
+           #252에서 한 번 걷어낸 곳이라, 컴포넌트로 옮기면서 되살리지 않는다.
+      */
+      aria-label={`${label}${directionParticle(label)} 돌아가기`}
       className={className}
       onClick={handleClick}
     >

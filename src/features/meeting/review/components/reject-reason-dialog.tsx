@@ -6,6 +6,7 @@ import {
   ACTION_REJECT_REASON_LABEL,
   type ActionRejectReason,
 } from "@/constants/meeting";
+import { subjectParticle } from "@/lib/korean";
 import { cn } from "@/lib/utils";
 
 const REASONS = Object.values(ACTION_REJECT_REASON);
@@ -38,7 +39,9 @@ export function RejectReasonDialog({
       title="이 액션을 반려할까요?"
       description={
         <>
-          &lsquo;{actionTitle}&rsquo;이(가) 확정 대상에서 제외됩니다.
+          {/* 조사는 받침을 보고 고른다(`lib/korean.ts`) — `이(가)`로 두면 괄호가 그대로 보인다 */}
+          &lsquo;{actionTitle}&rsquo;
+          {subjectParticle(actionTitle)} 확정 대상에서 제외됩니다.
           <br />
           사유를 골라 주세요.
         </>

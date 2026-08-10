@@ -33,6 +33,15 @@ export function MeetingReviewView({ review }: MeetingReviewViewProps) {
   const [drafts, setDrafts] = useState<AiActionDraft[]>(review.drafts);
   const [rejectedReasons, setRejectedReasons] = useState<Record<string, ActionRejectReason>>({});
   const [rejectTargetId, setRejectTargetId] = useState<string | null>(null);
+  /*
+    ⚠️ **제목은 베껴 두고 열림 깃발만 내린다**(2026-08-10). 전에는 제목을 `rejectTargetId`에서
+       그때그때 찾아 썼는데, 닫을 때 id가 먼저 비어서 **닫힘 애니메이션이 도는 동안**
+       창에 `''이 확정 대상에서 제외됩니다`가 스쳤다 — 방금 보던 제목이 빈 따옴표로 바뀐다.
+       창이 아직 화면에 있는 동안에는 마지막에 보던 값이 그대로 있어야 한다
+       (기업 상세 확인창이 같은 이유로 쓰는 방식 — `system/company-detail-dialog.tsx`).
+  */
+  const [isRejectOpen, setIsRejectOpen] = useState(false);
+  const [rejectTitle, setRejectTitle] = useState("");
   const [pendingReason, setPendingReason] = useState<ActionRejectReason | null>(null);
   const [isAddingManual, setIsAddingManual] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -43,23 +52,21 @@ export function MeetingReviewView({ review }: MeetingReviewViewProps) {
   const visibleDrafts = drafts.filter((draft) => !(draft.id in rejectedReasons));
   const highConfidence = visibleDrafts.filter((d) => d.confidence === AI_CONFIDENCE.HIGH);
   const needsReview = visibleDrafts.filter((d) => d.confidence === AI_CONFIDENCE.NEEDS_REVIEW);
-  const rejectTarget = rejectTargetId
-    ? (drafts.find((d) => d.id === rejectTargetId) ?? null)
-    : null;
-
   function updateDraft(id: string, patch: Partial<AiActionDraft>) {
     setDrafts((prev) => prev.map((draft) => (draft.id === id ? { ...draft, ...patch } : draft)));
   }
 
   function openRejectDialog(id: string) {
     setRejectTargetId(id);
+    setRejectTitle(drafts.find((d) => d.id === id)?.title ?? "");
     setPendingReason(null);
+    setIsRejectOpen(true);
   }
 
   function confirmReject() {
     if (!rejectTargetId || !pendingReason) return;
     setRejectedReasons((prev) => ({ ...prev, [rejectTargetId]: pendingReason }));
-    setRejectTargetId(null);
+    setIsRejectOpen(false);
   }
 
   function addManualDraft(input: ManualDraftInput) {
@@ -226,9 +233,9 @@ export function MeetingReviewView({ review }: MeetingReviewViewProps) {
       </div>
 
       <RejectReasonDialog
-        isOpen={rejectTarget !== null}
-        onOpenChange={(open) => !open && setRejectTargetId(null)}
-        actionTitle={rejectTarget?.title ?? ""}
+        isOpen={isRejectOpen}
+        onOpenChange={(open) => !open && setIsRejectOpen(false)}
+        actionTitle={rejectTitle}
         reason={pendingReason}
         onReasonChange={setPendingReason}
         onConfirm={confirmReject}

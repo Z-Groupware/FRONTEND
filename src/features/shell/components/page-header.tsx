@@ -61,6 +61,7 @@ export function PageHeader({ title, icon: Icon, meta, backTo, action }: PageHead
         {backTo ? (
           <BackLink
             href={backTo.href}
+            /* 접근성 이름은 `BackLink`가 조사까지 골라 만든다(`lib/korean.ts`) */
             label={backTo.label}
             className="text-muted-foreground hover:text-foreground hover:bg-foreground/5 focus-visible:ring-ring absolute top-1/2 right-full flex size-8 shrink-0 -translate-y-1/2 items-center justify-center rounded-md transition-colors focus-visible:ring-2 focus-visible:outline-hidden"
           />
