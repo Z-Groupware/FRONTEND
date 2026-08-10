@@ -31,6 +31,14 @@ export interface CaptureRecorder {
   /** 세그먼트를 닫고 다음 구간을 연다 — 10분 경계에서 부른다 */
   rotate(index: number): void;
   stop(): void;
+  /**
+   * 열려 있는 마이크 스트림 — `start()`가 성공한 뒤에만 있다.
+   *
+   * ⚠️ 음량계(`level.ts`)가 **같은 스트림**을 물어야 한다. 따로 `getUserMedia`를 부르면
+   *    마이크가 두 번 열려 장치 점유·표시등이 어긋나고, 무엇보다 **녹음과 다른 소리를
+   *    재게 된다** — 그 값이 화자 판정의 근거라 어긋나면 엉뚱한 사람이 붙는다.
+   */
+  readonly stream: MediaStream | null;
 }
 
 /** 15초 조각(§3-3) */
@@ -116,6 +124,9 @@ export function createCaptureRecorder(handlers: RecorderHandlers): CaptureRecord
       };
       closing.stop();
       recorder = null;
+    },
+    get stream() {
+      return stream;
     },
     stop() {
       if (recorder && recorder.state !== "inactive") recorder.stop();
