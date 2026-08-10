@@ -105,7 +105,7 @@ describe("RoomAttendeePicker", () => {
 
     await user.type(screen.getByRole("textbox", { name: "참석자 검색" }), "존재하지않는이름");
 
-    expect(screen.getByText("검색 결과가 없어요")).toBeInTheDocument();
+    expect(screen.getByText("검색 결과가 없습니다")).toBeInTheDocument();
   });
 
   it("'팀장급만'을 고르면 LEADER만 남는다", async () => {

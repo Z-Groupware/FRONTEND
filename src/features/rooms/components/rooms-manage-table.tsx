@@ -25,7 +25,7 @@ export function RoomsManageTable({ rooms, canManage }: RoomsManageTableProps) {
 
       {rooms.length === 0 ? (
         <div className="flex items-center justify-center p-10 text-center">
-          <p className="text-muted-foreground text-sm">등록된 회의실이 없어요</p>
+          <p className="text-muted-foreground text-sm">등록된 회의실이 없습니다</p>
         </div>
       ) : (
         <div className="border-border overflow-x-auto border-t">

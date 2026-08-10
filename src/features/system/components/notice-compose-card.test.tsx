@@ -57,7 +57,7 @@ describe("NoticeComposeCard", () => {
     const { user } = setup();
 
     await user.type(screen.getByLabelText("제목"), "점검 안내");
-    await user.type(screen.getByLabelText("내용"), "오늘 밤 점검이 있어요");
+    await user.type(screen.getByLabelText("내용"), "오늘 밤 점검이 있습니다");
 
     const button = publishButton();
     expect(button).toBeEnabled();
@@ -70,7 +70,7 @@ describe("NoticeComposeCard", () => {
 
     expect(publishNoticeAction).toHaveBeenCalledWith({
       title: "점검 안내",
-      content: "오늘 밤 점검이 있어요",
+      content: "오늘 밤 점검이 있습니다",
       target: NOTICE_TARGET.ALL,
     });
     expect(await screen.findByText("공지를 발행했습니다")).toBeInTheDocument();
