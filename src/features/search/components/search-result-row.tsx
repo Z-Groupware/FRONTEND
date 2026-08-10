@@ -72,13 +72,10 @@ export function SearchResultRow({ item, keyword }: SearchResultRowProps) {
              한 줄에 이어 붙이면 그 줄이 문장으로 읽히고 카드도 낮아진다.
         */}
         <p className="flex min-w-0 items-center gap-2">
-          <span className="text-foreground shrink-0 truncate text-[13px] leading-5 font-semibold">
+          <span className="text-foreground truncate text-[13px] leading-5 font-semibold">
             <MatchText text={rowTitle(item)} keyword={keyword} />
           </span>
           <ProjectTagOf item={item} />
-          <span className="text-muted-foreground truncate text-[12px] leading-4">
-            <MatchText text={rowMeta(item)} keyword={keyword} />
-          </span>
         </p>
         {rowSnippet(item) && (
           /*
@@ -91,6 +88,16 @@ export function SearchResultRow({ item, keyword }: SearchResultRowProps) {
           </p>
         )}
       </div>
+
+      {/*
+        ⚠️ **보조값은 오른쪽 끝이다.** 제목 뒤에 이어 붙였더니 줄은 1440인데 내용이 왼쪽에만
+           뭉쳐 오른쪽 절반이 통째로 비었다 — 양쪽 끝에 닻이 있어야 줄이 줄로 읽힌다.
+        ⚠️ 제목 줄이 아니라 **항목 전체의 세로 중앙**에 선다(배지와 같은 높이) — 두 줄짜리
+           항목에서 첫 줄에만 매달리면 다시 기울어 보인다.
+      */}
+      <span className="text-muted-foreground shrink-0 truncate text-[12px] leading-4">
+        <MatchText text={rowMeta(item)} keyword={keyword} />
+      </span>
 
       {item.kind === "PERSON" && (
         <span
