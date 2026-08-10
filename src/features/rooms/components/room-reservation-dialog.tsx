@@ -3,6 +3,7 @@
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
 import { Bell } from "lucide-react";
+import type { FormEvent } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
 
@@ -153,6 +154,24 @@ export function RoomReservationDialog({
    */
   const formRef = useRef<HTMLFormElement>(null);
   const [showConfirm, setShowConfirm] = useState(false);
+  /**
+   * ⚠️ [즉시 예약]은 `type="button"`이라 클릭으로는 절대 제출이 안 걸리지만, 이 폼처럼
+   *    텍스트 입력이 여러 개면(제목·안건·참석자 검색) 보통은 Enter로도 안 제출되는 게 맞다
+   *    (HTML 암시적 제출 규칙 — 텍스트류 입력이 둘 이상이면 브라우저가 자동 제출하지 않는다).
+   *    다만 그 규칙은 **필드 개수에 의존하는 우연**이라, 나중에 필드가 줄면(안건 UI가 단순해지는
+   *    등) 조용히 깨질 수 있다 — `onSubmit`에서 한 번 더 막아 "확인 모달을 거쳤을 때만 진짜
+   *    제출"을 필드 구성과 무관하게 보장한다.
+   */
+  const confirmedSubmitRef = useRef(false);
+
+  function handleFormSubmit(event: FormEvent<HTMLFormElement>) {
+    if (confirmedSubmitRef.current) {
+      confirmedSubmitRef.current = false;
+      return;
+    }
+    event.preventDefault();
+    setShowConfirm(true);
+  }
 
   return (
     <Dialog
@@ -169,7 +188,7 @@ export function RoomReservationDialog({
           <DialogTitle>회의실 예약</DialogTitle>
         </DialogHeader>
 
-        <form ref={formRef} action={formAction}>
+        <form ref={formRef} action={formAction} onSubmit={handleFormSubmit}>
           <PendingReporter onChange={handlePendingChange} />
           <input
             type="hidden"
@@ -236,6 +255,7 @@ export function RoomReservationDialog({
         confirmLabel="예약"
         onConfirm={() => {
           setShowConfirm(false);
+          confirmedSubmitRef.current = true;
           formRef.current?.requestSubmit();
         }}
       />
