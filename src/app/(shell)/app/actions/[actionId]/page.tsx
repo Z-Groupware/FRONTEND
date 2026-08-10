@@ -1,6 +1,5 @@
 import { Folder, GitBranch, User, Video } from "lucide-react";
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import {

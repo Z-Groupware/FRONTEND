@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 
+import { SummaryCard } from "@/components/common/summary-card";
 import { PipelineQueueCard } from "@/features/system/components/pipeline-queue-card";
 import { RecentCompaniesTable } from "@/features/system/components/recent-companies-table";
 import { SignupChartCard } from "@/features/system/components/signup-chart-card";
-import { SummaryCard } from "@/components/common/summary-card";
 import { formatCompactKrw } from "@/features/system/format";
 import { getDashboardOverview } from "@/features/system/server";
 

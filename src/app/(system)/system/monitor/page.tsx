@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 
+import { SummaryCard } from "@/components/common/summary-card";
 import { FailedPipelineTableLoader } from "@/features/system/components/failed-pipeline-table-loader";
 import { StageTimingCard } from "@/features/system/components/stage-timing-card";
-import { SummaryCard } from "@/components/common/summary-card";
 import { getMonitoringOverview } from "@/features/system/server";
 
 export const metadata: Metadata = {
