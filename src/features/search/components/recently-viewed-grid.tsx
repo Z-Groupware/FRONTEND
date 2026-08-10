@@ -97,8 +97,8 @@ function RecentlyViewedCard({ item }: RecentlyViewedCardProps) {
         ⚠️ **왼쪽에 프로젝트 색 막대를 세운다.** 한 줄짜리 행이 넷 쌓이니 전부 같은 무게로
            읽혀 눈에 안 걸렸다 — 색 한 줄이 행마다 다른 표식이 되어 훑을 때 걸린다
            (대시보드 회의 줄이 쓰는 것과 같은 방식).
-        ⚠️ 프로젝트 자신은 태그가 곧 제목이라 막대를 세우지 않는다 — 자리는 비워 둬야
-           오와 열이 맞는다.
+        ⚠️ **프로젝트 항목에도 선다.** 태그가 곧 제목이라 칩은 안 붙지만(아래 자리는 비운다)
+           막대는 그 프로젝트 색이다 — 여기만 비우면 넷 중 하나에 표식이 없어 오히려 튄다.
       */}
       <span
         /* ⚠️ `h-full`은 부모 높이가 auto라 0이 된다 — 늘어나야 하므로 `self-stretch`다 */
@@ -112,7 +112,12 @@ function RecentlyViewedCard({ item }: RecentlyViewedCardProps) {
            그 줄만 제목이 앞으로 당겨져 오와 열이 어긋난다.
       */}
       <span className="flex w-[76px] shrink-0 items-center">{tag && <ProjectTag tag={tag} />}</span>
-      <span className="text-foreground shrink-0 truncate text-[13px] leading-5 font-semibold">
+      {/*
+        ⚠️ **줄어들 수 있어야 말줄임이 듣는다**(2026-08-10 리뷰). `shrink-0 truncate`는 서로
+           어긋나는 조합이라 — 못 줄이는 상자에는 넘칠 일이 없으니 `truncate`가 아무 일도
+           안 한다 — 긴 제목이 그대로 카드를 밀고 나갔다. 줄어드는 쪽은 제목이다.
+      */}
+      <span className="text-foreground min-w-0 truncate text-[13px] leading-5 font-semibold">
         {title(item)}
       </span>
       {/*
@@ -121,7 +126,7 @@ function RecentlyViewedCard({ item }: RecentlyViewedCardProps) {
            검색 결과는 "무엇 · 어디 · 언제"가 한 문장처럼 이어져야 읽힌다.
         ⚠️ 그래서 제목도 `flex-1`이 아니다. 늘어나면 다시 벌어진다.
       */}
-      <span className="text-muted-foreground truncate text-[12px] leading-4">
+      <span className="text-muted-foreground min-w-0 shrink-0 truncate text-[12px] leading-4">
         {parts.lead}
         {parts.trail && <span className="px-1.5 opacity-50">·</span>}
         {parts.trail}
@@ -130,21 +135,13 @@ function RecentlyViewedCard({ item }: RecentlyViewedCardProps) {
   );
 
   /*
-    ⚠️ **같은 화면의 다른 카드와 같은 라운드를 쓴다**(`rounded-2xl`). 여기만 `xl`(18px)이라
-       바로 아래 목록 카드(26px)와 모서리가 갈렸다 — 한 화면에 두 종류가 있으면 어느 쪽이
-       규격인지 알 수 없다. 레포 전체도 `2xl`이 관례다.
+    ⚠️ **항목이 스스로 카드다.** 한때 바깥에 카드를 하나 더 두르고 이 안쪽은 면으로만
+       갈랐는데(카드 안의 카드 금지 — §DESIGN 2), 바깥 카드를 걷어내면서 여기가 카드가 됐다.
+       그래서 테두리·바탕(`bg-card`)이 다시 있다. 그림자는 `.app-shell .bg-card`가 얕게 깐다.
+    ⚠️ 라운드는 `rounded-xl`(14px)이다. `2xl`(18px)은 화면을 나누는 **큰 카드**의 값이고,
+       이건 그 안에 줄지어 서는 작은 카드라 한 단계 작다.
+    ⚠️ 색 막대가 위아래로 꽉 차야 표식이 되므로 `items-stretch`다 — 가운데 정렬은 안쪽에서 한다.
   */
-  /*
-    ⚠️ **카드에 바탕을 준다**(`bg-card`). 테두리만 있던 때는 바탕이 셸과 같은 흰색이라
-       카드가 아니라 그어 둔 네모로 보였다 — 같은 화면의 목록 카드는 이미 `bg-card`다.
-    ⚠️ 그림자는 `.app-shell .bg-card`가 알아서 얕게 깐다(§디자인 토큰) — 여기서 따로 얹지 않는다.
-  */
-  /*
-    ⚠️ **카드 안에 카드를 얹지 않는다**(§DESIGN 2). 바깥이 이제 카드라 여기까지 테두리를
-       두르면 네모 안에 네모가 된다 — 옅은 면으로 갈라 두면 덩이는 보이면서 층은 하나다.
-  */
-  /* ⚠️ 바깥 카드가 사라졌으니 항목이 스스로 카드다 — 테두리를 되돌린다(카드 안의 카드 아님) */
-  /* ⚠️ 색 막대가 위아래로 꽉 차야 표식이 되므로 `items-stretch`다 — 가운데 정렬은 안쪽에서 한다 */
   const shape =
     "border-border bg-card flex items-stretch gap-2.5 rounded-xl border py-3 pr-4 pl-3 text-[13px] [&>*:not(:first-child)]:self-center";
 
