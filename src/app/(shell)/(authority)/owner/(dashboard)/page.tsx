@@ -95,7 +95,19 @@ export default async function OwnerDashboardPage() {
                 */}
                 <TableHeader>
                   <TableRow className="bg-foreground/[0.06] border-border hover:bg-foreground/[0.06] border-b">
-                    <TableHead className={`${HEAD_CELL_CLASS} pl-6`}>이름</TableHead>
+                    {/*
+                      ⚠️ **아바타가 아니라 이름 글자 위에 세운다.** 그냥 `pl-6`으로 두면 머리글이
+                         아바타 위에 서고, 정작 읽는 건 그 옆 이름 글자라 세로선이 어긋난다 —
+                         사원 관리 표가 같은 이유로 쓰는 방식이다(`member-table.tsx`).
+                      ⚠️ 숫자를 손으로 맞추지 않는다. 아래 칸과 **같은 값**(아바타 28px·`gap-2`)을
+                         빈 자리로 두어, 아바타 크기를 바꾸면 두 곳이 같이 움직이게 한다.
+                    */}
+                    <TableHead className={`${HEAD_CELL_CLASS} pl-6`}>
+                      <span className="inline-flex items-center gap-2">
+                        <span className="w-7 shrink-0" aria-hidden />
+                        이름
+                      </span>
+                    </TableHead>
                     <TableHead className={`${HEAD_CELL_CLASS} text-center`}>이메일</TableHead>
                     <TableHead className={`${HEAD_CELL_CLASS} text-center`}>팀</TableHead>
                     <TableHead className={`${HEAD_CELL_CLASS} text-center`}>상태</TableHead>

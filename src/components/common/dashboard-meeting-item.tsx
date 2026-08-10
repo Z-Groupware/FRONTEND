@@ -136,8 +136,11 @@ export function DashboardMeetingItem({ meeting, showDivider }: DashboardMeetingI
                그쪽을 맞춰야 눈이 한 세로선을 따라간다.
             ⚠️ 가운뎃점(`·`)을 걷어냈다. 열이 갈리면 구분자가 할 일이 없고, 점까지 있으면
                값 사이가 8px로 좁아져 넷이 한 덩이로 뭉친다.
+            ⚠️ **열 사이는 28px다**(`gap-7`). 16px로 뒀더니 열을 갈라 놓고도 넷이 오른쪽에
+               한 덩이로 몰려 보였다 — 값이 짧아(`완료` 35px·`4명` 30px) 상자가 붙으면
+               사이 여백이 글자 폭보다 작아진다. 열이 갈렸다는 게 눈에 보여야 갈라 둔 값이 있다.
           */}
-          <div className="text-muted-foreground flex shrink-0 items-center gap-4 text-[12px] leading-4">
+          <div className="text-muted-foreground flex shrink-0 items-center gap-7 text-[12px] leading-4">
             <span className="w-[52px] truncate">{meeting.room}</span>
             <span className="w-[104px] text-right tabular-nums">
               {formatMeetingDate(meeting.scheduledAt)}
