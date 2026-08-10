@@ -17,7 +17,8 @@ export interface TeamMemberAction {
 
 /** 명단 한 줄(액션 제외) — 로스터 mock과 조회 결과가 이 모양을 공유한다. */
 export interface TeamMemberRosterEntry {
-  id: string;
+  /** BE 자동증가 정수 PK(모든 고유 id는 오토 인크리먼트, 2026-08-10 백엔드 확인). */
+  id: number;
   name: string;
   position: string;
   /** 팀 내 세부 역할(프론트엔드 등). 없으면 "없음". */
