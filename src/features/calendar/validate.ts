@@ -35,7 +35,13 @@ export function validatePersonalTodoDraft(draft: PersonalTodoDraft): PersonalTod
   else if (title.length > PERSONAL_TODO_TITLE_MAX)
     errors.title = `제목은 ${PERSONAL_TODO_TITLE_MAX}자까지 입력할 수 있습니다`;
 
-  if (!draft.date.trim()) errors.date = "날짜를 선택해 주세요";
-  else if (!isValidCalendarDate(draft.date)) errors.date = "올바른 날짜가 아닙니다";
+  if (!draft.date.trim()) errors.date = "시작 날짜를 선택해 주세요";
+  else if (!isValidCalendarDate(draft.date)) errors.date = "올바른 시작 날짜가 아닙니다";
+
+  if (!draft.endDate.trim()) errors.endDate = "끝 날짜를 선택해 주세요";
+  else if (!isValidCalendarDate(draft.endDate)) errors.endDate = "올바른 끝 날짜가 아닙니다";
+  else if (!errors.date && draft.endDate < draft.date)
+    errors.endDate = "끝 날짜는 시작 날짜보다 이전일 수 없습니다";
+
   return errors;
 }

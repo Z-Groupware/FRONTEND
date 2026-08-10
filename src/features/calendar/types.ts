@@ -41,11 +41,17 @@ export interface PersonalCalendarEvent {
   color?: string;
 }
 
-/** 개인 Todo 작성 폼 입력 — 화면과 서버가 같은 스키마(`validate.ts`)로 검증한다. */
+/**
+ * 개인 Todo 작성 폼 입력 — 화면과 서버가 같은 스키마(`validate.ts`)로 검증한다.
+ * ⚠️ `date`~`endDate` 기간으로 캘린더에 연속 막대로 표시된다(2026-08-10) — 끝 날짜가
+ *    시작 날짜와 같으면 기존처럼 하루짜리 항목이 된다.
+ */
 export interface PersonalTodoDraft {
   title: string;
-  /** "YYYY-MM-DD" */
+  /** 시작 날짜 "YYYY-MM-DD" */
   date: string;
+  /** 끝 날짜 "YYYY-MM-DD" — 시작 날짜보다 이전일 수 없다. */
+  endDate: string;
   color?: string;
 }
 

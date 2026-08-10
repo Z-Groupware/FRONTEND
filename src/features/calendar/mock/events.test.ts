@@ -11,7 +11,11 @@ describe("개인 캘린더 mock 스토어", () => {
   it("Todo를 추가하면 앞뒤 공백을 지우고 미완료 상태로 목록에 붙는다", () => {
     const before = listMockEvents().length;
 
-    const created = addMockTodo({ title: "  새 할일  ", date: "2026-09-10" });
+    const created = addMockTodo({
+      title: "  새 할일  ",
+      date: "2026-09-10",
+      endDate: "2026-09-10",
+    });
 
     expect(created.title).toBe("새 할일");
     expect(created.tag).toBe(CALENDAR_ITEM_TAG.PERSONAL_TODO);
@@ -22,8 +26,23 @@ describe("개인 캘린더 mock 스토어", () => {
     expect(findMockEvent(created.id)).toEqual(created);
   });
 
+  it("끝 날짜가 시작 날짜보다 나중이면 여러 날에 걸친 항목으로 만든다", () => {
+    const created = addMockTodo({
+      title: "여러 날 Todo",
+      date: "2026-09-10",
+      endDate: "2026-09-12",
+    });
+
+    expect(created.start).toEqual(new Date("2026-09-10T00:00:00"));
+    expect(created.end).toEqual(new Date("2026-09-12T00:00:00"));
+  });
+
   it("완료 토글은 isCompleted를 뒤집는다", () => {
-    const created = addMockTodo({ title: "토글 테스트", date: "2026-09-11" });
+    const created = addMockTodo({
+      title: "토글 테스트",
+      date: "2026-09-11",
+      endDate: "2026-09-11",
+    });
 
     const toggled = toggleMockCompletion(created.id);
     expect(toggled?.isCompleted).toBe(true);
