@@ -37,6 +37,14 @@ export function ReviewLeaveGuard({ isBlocked }: ReviewLeaveGuardProps) {
   const [pendingHref, setPendingHref] = useState<string | null>(null);
   const [pendingBack, setPendingBack] = useState(false);
   const bypassBackRef = useRef(false);
+  /**
+   * ⚠️ **Strict Mode 이중 실행 대비**(2026-08-10 버그#308). 개발 모드에서 React가 아래
+   * popstate effect를 mount→cleanup→mount로 두 번 도는데, 1차 클린업의 `history.back()`이
+   * 만드는 `popstate`는 비동기라 2차 mount가 새로 단 리스너가 이걸 "진짜 사용자가 뒤로
+   * 갔다"로 착각해 진입 즉시 모달을 띄운다. `useRef`는 이 이중 실행 동안 값이 유지되므로,
+   * 클린업이 `back()`을 부르기 직전에 표시해 두고 다음 리스너가 자기 신호를 구분해 무시한다.
+   */
+  const suppressNextPopRef = useRef(false);
 
   const isOpen = pendingHref !== null || pendingBack;
 
@@ -74,6 +82,11 @@ export function ReviewLeaveGuard({ isBlocked }: ReviewLeaveGuardProps) {
     window.history.pushState(null, "", hrefAtMount);
 
     function handlePopState() {
+      if (suppressNextPopRef.current) {
+        // 우리 자신의 클린업이 만든 back() — 사용자가 뒤로 간 게 아니니 조용히 넘긴다.
+        suppressNextPopRef.current = false;
+        return;
+      }
       if (bypassBackRef.current) {
         bypassBackRef.current = false;
         return;
@@ -89,6 +102,7 @@ export function ReviewLeaveGuard({ isBlocked }: ReviewLeaveGuardProps) {
       //    안 지우면 나중에 뒤로 가기를 두 번 눌러야 실제로 벗어난다. 링크·뒤로가기로 이미
       //    나간 경우는 주소가 바뀌어 있어 이 조건에 걸리지 않는다(중복 소비 방지).
       if (window.location.href === hrefAtMount) {
+        suppressNextPopRef.current = true;
         window.history.back();
       }
     };
