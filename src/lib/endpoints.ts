@@ -4,14 +4,21 @@
  * 규칙: `fetch`/`serverApi`에 문자열 URL 리터럴을 쓰지 않는다. **반드시 `ep.*`만.**
  *   경로가 여기 없으면 "아직 합의되지 않은 경로"라는 뜻이다. 지어내지 말고 팀에 확인한다.
  *
- * ⚠️ 미확정(CONVENTIONS §21): ERD·API 스펙이 없어 아래는 **FE 제안 경로**다.
- *   BE 합류 시 **이 파일을 가장 먼저** 실제 컨트롤러와 맞춘다.
+ * ⚠️ 아래 **[확인]** 표시가 붙은 경로는 BE 레포 실코드로 대조했다(2026-08-10).
+ *   나머지는 아직 **FE 제안 경로**다 — 쓰기 전에 컨트롤러를 먼저 본다(§연동 검증).
  */
 export const ep = {
-  /* 인증 */
+  /* 인증 — [확인] identity/auth/presentation/api/AuthController.java */
   login: () => "/api/auth/login",
+  refresh: () => "/api/auth/refresh",
   logout: () => "/api/auth/logout",
   me: () => "/api/auth/me",
+
+  /* 기업 — [확인] identity/company/presentation/api/CompanyController.java */
+  companyLookup: () => "/api/companies/lookup",
+  companyRegistrations: () => "/api/companies/registrations",
+  companyMe: () => "/api/companies/me",
+  companyOnboarding: () => "/api/companies/me/onboarding",
 
   /* 회의 */
   meetings: () => "/api/meetings",
