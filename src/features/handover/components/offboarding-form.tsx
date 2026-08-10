@@ -3,6 +3,7 @@
 import { useMemo, useState, useTransition } from "react";
 
 import { ConfirmDialog } from "@/components/common/confirm-dialog";
+import { DatePickerField } from "@/components/common/date-picker-field";
 import { ResultDialog } from "@/components/common/result-dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -28,12 +29,13 @@ export function OffboardingForm({ context }: OffboardingFormProps) {
   const selectedIds = useMemo(() => new Set(actions.map((action) => action.id)), [actions]);
 
   const [description, setDescription] = useState("");
+  const [lastWorkingDay, setLastWorkingDay] = useState("");
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmError, setConfirmError] = useState<string | null>(null);
   const [resultOpen, setResultOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
 
-  const canSubmit = description.trim().length > 0 && actions.length > 0;
+  const canSubmit = description.trim().length > 0 && Boolean(lastWorkingDay) && actions.length > 0;
 
   function handleConfirm() {
     setConfirmError(null);
@@ -43,6 +45,7 @@ export function OffboardingForm({ context }: OffboardingFormProps) {
           type: HANDOVER_TYPE.OFFBOARDING,
           description: description.trim(),
           actionIds: actions.map((action) => action.id),
+          lastWorkingDay,
         });
         setConfirmOpen(false);
         setResultOpen(true);
@@ -54,6 +57,18 @@ export function OffboardingForm({ context }: OffboardingFormProps) {
 
   return (
     <div className="flex flex-col gap-5">
+      <section className="border-border bg-card flex flex-col gap-1.5 rounded-2xl border p-7">
+        <Label htmlFor="offboarding-last-working-day">
+          마지막 근무일 <span className="text-destructive">*</span>
+        </Label>
+        <DatePickerField
+          id="offboarding-last-working-day"
+          value={lastWorkingDay}
+          onChange={setLastWorkingDay}
+          className="w-full"
+        />
+      </section>
+
       <section className="border-border bg-card flex flex-col gap-1.5 rounded-2xl border p-7">
         <Label htmlFor="offboarding-description">
           담당 업무 및 인수인계 상세 설명 <span className="text-destructive">*</span>

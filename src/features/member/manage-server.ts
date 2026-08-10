@@ -70,14 +70,13 @@ export async function getManagedMembersPage(
     ⚠️ 회사는 **토큰의 `companyId`** 로 정해진다 — 파라미터로 안 보낸다. 보내면 남의 회사
        사원을 조회할 수 있는 구멍이 된다(BE도 principal에서만 읽는다).
     ⚠️ `filter`는 이름이 갈린다 — 우리 `VACATION_PENDING` ↔ BE `LEAVE_PENDING`(`toBeFilter`).
-    ⚠️ **번호 기준이 다르다.** 우리 `paginate`는 1부터, BE는 **0부터**다 — 그대로 넘기면
-       첫 페이지를 건너뛰고 두 번째부터 보여준다. 여기서 한 칸 내려 보내고, 돌려줄 때
-       다시 올린다.
+    ⚠️ **번호 기준은 같다.** `page`는 우리 쪽도 BE도 0-base다(BE 표준 확정, 2026-08-10) —
+       변환 없이 그대로 넘긴다.
   */
   const accessToken = await requireAccessToken();
   const params = new URLSearchParams({
     filter: toBeFilter(query.filter),
-    page: String(Math.max(0, page - 1)),
+    page: String(Math.max(0, page)),
     size: String(pageSize),
   });
   if (query.keyword.trim()) params.set("q", query.keyword.trim());
@@ -106,7 +105,7 @@ export async function getManagedMembersPage(
 
   return {
     items,
-    page: response.page + 1,
+    page: response.page,
     /* ⚠️ `size`가 0으로 오면 0으로 나눠 `Infinity`가 된다 — 요청한 값으로 되돌린다 */
     totalPages: Math.max(1, Math.ceil(response.totalCount / (response.size || pageSize))),
     totalCount: response.totalCount,
