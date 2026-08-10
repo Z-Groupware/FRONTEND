@@ -41,7 +41,6 @@ const SETTING_PATH = "/owner/setting";
 
 const FORBIDDEN = "기업 설정을 바꿀 권한이 없습니다";
 
-
 /**
  * 세션을 못 읽었을 때.
  * ⚠️ **권한 없음과 다른 말이다.** 쿠키가 만료된 OWNER에게 "권한이 없습니다"라고 하면
@@ -133,7 +132,12 @@ export async function saveCompanyProfileAction(
         json: {
           name: draft.name,
           businessNumber: draft.businessNumber,
-          address: draft.place?.address ?? null,
+          /*
+            ⚠️ **`null`을 보내면 안 지워진다.** BE는 부분 수정이라 `null`을 "이 필드는 건드리지
+               말라"로 읽는다 — 주소를 비우려고 지운 사람에게는 옛 주소가 그대로 남는다.
+               빈 문자열을 보내야 실제로 비워진다(`@Size`만 걸려 있어 통과한다).
+          */
+          address: draft.place?.address ?? "",
         },
       });
     } catch (error) {
@@ -198,16 +202,45 @@ export async function saveDepartmentsAction(
     /*
       ⚠️ **통째로 넣는 API가 없다.** BE는 팀을 한 건씩 다룬다(`POST` · `PATCH /{id}` ·
          `DELETE /{id}`) — 화면은 트리를 통째로 저장하므로 여기서 **차이를 계산해** 나눠 부른다.
-      ⚠️ **지우기를 마지막에 한다.** 이름 바꾸기·새로 만들기가 먼저 끝나야, 중간에 실패해도
-         남는 쪽이 더 안전하다 — 먼저 지우면 실패했을 때 팀만 사라진 상태가 된다.
+      ⚠️ **지우기를 먼저 한다.** 처음엔 마지막에 뒀는데, 지운 팀의 이름을 다른 팀에 다시
+         쓰거나 두 팀 이름을 맞바꾸면 **같은 이름이 잠깐 둘**이 되어 서버가 막는다 —
+         지우고 나서 만들면 그 자리가 비어 있다.
+      ⚠️ 대신 **사람이 딸린 팀은 위에서 이미 걸렀다**(`findBlockedTeamChange`). 지우기가
+         먼저여도 사람이 붕 뜨지 않는다.
       ⚠️ 새로 만든 팀은 화면에서 붙인 임시 id를 들고 온다. 서버 id가 아니므로
          **숫자로 읽히지 않는 것**을 새 팀으로 본다.
     */
+    /*
+      ⚠️ **팀 안 '역할' 라벨은 저장할 곳이 없다.** BE에 그걸 다루는 API가 없다(전 레포에
+         `roleLabel` 관리 경로 0건) — 팀만 저장하고 성공이라고 말하면 **역할을 고친 사람이
+         저장됐다고 믿는다**(§정직성). 바뀐 게 있으면 그 사실을 말하고 멈춘다.
+    */
+    const roleSignature = (nodes: DepartmentNode[]) =>
+      nodes
+        .map((node) => `${node.name}:${node.children.map((child) => child.name).join(",")}`)
+        .join("|");
+    if (roleSignature(current.departments) !== roleSignature(departments)) {
+      const namesChanged =
+        current.departments.map((n) => n.name).join("|") !==
+        departments.map((n) => n.name).join("|");
+      if (!namesChanged) {
+        return {
+          isSuccess: false,
+          message: "팀 안 역할은 아직 저장할 수 없습니다. 팀 이름만 바꿔 주세요",
+        };
+      }
+    }
+
     const before = new Map(current.departments.map((node) => [node.id, node.name]));
     const after = new Map(departments.map((node) => [node.id, node.name]));
 
     try {
       const accessToken = await requireAccessToken();
+
+      for (const id of before.keys()) {
+        if (after.has(id)) continue;
+        await serverApi<unknown>(ep.team(Number(id)), { method: "DELETE", accessToken });
+      }
 
       for (const [id, name] of after) {
         const serverId = Number(id);
@@ -221,12 +254,13 @@ export async function saveDepartmentsAction(
           });
         }
       }
-
-      for (const id of before.keys()) {
-        if (after.has(id)) continue;
-        await serverApi<unknown>(ep.team(Number(id)), { method: "DELETE", accessToken });
-      }
     } catch (error) {
+      /*
+        ⚠️ **실패해도 화면을 다시 읽는다.** 한 건씩 부르므로 **중간까지는 이미 반영돼 있다** —
+           그대로 두면 화면은 옛 트리를 들고 있고 서버는 반쯤 바뀐 상태라, 사람이 다시 저장을
+           누르면 이미 만든 팀을 또 만든다.
+      */
+      revalidatePath(SETTING_PATH);
       return { isSuccess: false, message: toUserMessage(error) };
     }
 
@@ -257,13 +291,28 @@ export async function savePositionsAction(positions: Position[]): Promise<Compan
     try {
       const accessToken = await requireAccessToken();
 
+      for (const id of before.keys()) {
+        if (after.has(id)) continue;
+        await serverApi<unknown>(ep.jobPosition(Number(id)), { method: "DELETE", accessToken });
+      }
+
       for (const [id, position] of after) {
         const serverId = Number(id);
         const previous = before.get(id);
-        const body = { name: position.name, authority: position.role, description: null };
+        /*
+          ⚠️ **`description`은 필수다**(BE `@NotBlank`). `null`을 보내면 **항상 400**이다.
+             화면에 그 칸이 없어 사람이 적을 길이 없으므로, 서버에서 읽어 온 값을 그대로
+             되돌려 보내고 새 직급이면 이름으로 채운다 — 빈 문자열도 `@NotBlank`에 걸린다.
+        */
+        const description = position.description?.trim() || position.name;
+        const body = { name: position.name, authority: position.role, description };
         if (!Number.isInteger(serverId) || !previous) {
           await serverApi<unknown>(ep.jobPositions(), { method: "POST", accessToken, json: body });
-        } else if (previous.name !== position.name || previous.role !== position.role) {
+        } else if (
+          previous.name !== position.name ||
+          previous.role !== position.role ||
+          (previous.description ?? "") !== description
+        ) {
           await serverApi<unknown>(ep.jobPosition(serverId), {
             method: "PATCH",
             accessToken,
@@ -271,12 +320,9 @@ export async function savePositionsAction(positions: Position[]): Promise<Compan
           });
         }
       }
-
-      for (const id of before.keys()) {
-        if (after.has(id)) continue;
-        await serverApi<unknown>(ep.jobPosition(Number(id)), { method: "DELETE", accessToken });
-      }
     } catch (error) {
+      /* 팀과 같은 이유 — 중간까지 반영됐으므로 실패해도 화면을 다시 읽는다 */
+      revalidatePath(SETTING_PATH);
       return { isSuccess: false, message: toUserMessage(error) };
     }
 

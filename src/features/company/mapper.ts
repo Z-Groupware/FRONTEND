@@ -31,9 +31,12 @@ export interface BeTeam {
   memberCount: number;
 }
 
-/** [확인] BE `PositionSummary` */
+/**
+ * [확인] BE `PositionResponse` — ⚠️ **`id`가 아니라 `jobPositionId`다.**
+ * 이름을 잘못 읽으면 모든 직급 id가 `undefined`가 되어, 저장할 때 전부 **새 직급으로 잡힌다**.
+ */
 export interface BePosition {
-  id: number;
+  jobPositionId: number;
   name: string;
   authority: string;
   description: string | null;
@@ -85,5 +88,15 @@ export function toTeamMemberCounts(teams: BeTeam[]): Record<string, number> {
  */
 export function toPosition(position: BePosition): Position {
   const role: AssignableRole = position.authority === "LEADER" ? "LEADER" : "MEMBER";
-  return { id: String(position.id), name: position.name, role };
+  /*
+    ⚠️ **`description`을 들고 다닌다.** BE가 `@NotBlank`로 필수라 저장할 때 다시 보내야 하는데,
+       여기서 버리면 왕복 한 번에 남의 설명이 지워진다 — 화면이 안 보여 주는 값이라도
+       **되돌려 보낼 책임**은 남는다.
+  */
+  return {
+    id: String(position.jobPositionId),
+    name: position.name,
+    role,
+    description: position.description ?? "",
+  };
 }
