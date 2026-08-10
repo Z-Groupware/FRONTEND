@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  differenceInCalendarDays,
   eachDayOfInterval,
   endOfMonth,
   endOfWeek,
@@ -16,8 +17,13 @@ import { useSyncExternalStore } from "react";
 
 import { cn } from "@/lib/utils";
 
-import { CALENDAR_TAG_BG, CALENDAR_TAG_FG, calendarStatusDotColor } from "../tag-colors";
-import type { PersonalCalendarEvent } from "../types";
+import {
+  CALENDAR_TAG_BG,
+  CALENDAR_TAG_FG,
+  calendarStatusDotColor,
+  getTodoTitleColor,
+} from "../tag-colors";
+import { CALENDAR_ITEM_TAG, type PersonalCalendarEvent } from "../types";
 
 /**
  * 월간 격자 — **직접 그린다.**
@@ -63,6 +69,65 @@ function getEventSpanEdge(event: PersonalCalendarEvent, day: Date): EventSpanEdg
   if (isSameDay(day, event.start)) return "start";
   if (isSameDay(day, event.end)) return "end";
   return "middle";
+}
+
+/** 항목이 걸치는 날수 — 하루짜리는 0. 줄 배정 우선순위(길수록 위)와 정렬에 쓴다. */
+function eventSpanDays(event: PersonalCalendarEvent): number {
+  return differenceInCalendarDays(startOfDay(event.end), startOfDay(event.start));
+}
+
+/**
+ * 같은 주(週) 안에서 항목을 줄 순서로 세운다 — **긴 항목이 항상 위 줄**이다(2026-08-14 확정).
+ * 시작일이 이른 쪽, 그래도 같으면 id로 안정 정렬한다(같은 입력이면 항상 같은 결과가 나와야
+ * 화면을 새로고침해도 줄이 안 흔들린다).
+ */
+function compareEventsForStacking(a: PersonalCalendarEvent, b: PersonalCalendarEvent): number {
+  const spanDiff = eventSpanDays(b) - eventSpanDays(a);
+  if (spanDiff !== 0) return spanDiff;
+  const startDiff = a.start.getTime() - b.start.getTime();
+  if (startDiff !== 0) return startDiff;
+  return a.id.localeCompare(b.id);
+}
+
+/**
+ * 한 주(週, 7일) 안에서 항목마다 **고정 줄 번호**를 매긴다.
+ *
+ * ⚠️ **왜 필요한가.** 하루 칸마다 그날 걸리는 항목만 따로 나열하면, 옆 항목이 있다 없다에 따라
+ *    같은 항목이 어느 날은 2번째, 어느 날은 3번째 줄로 밀려 보인다 — 이어진 막대가 삐뚤어
+ *    보이는 원인이다(§DESIGN 잔버그, 2026-08-14). 줄 번호를 이 항목이 걸치는 **모든 날에
+ *    똑같이** 매겨 두고, 그 줄이 빈 날엔 자리만 채우는 빈 칸을 넣어야 막대가 안 흔들린다.
+ * ⚠️ 탐욕(그리디) 배정이다 — `compareEventsForStacking` 순서로 훑으며, 그 항목이 걸치는
+ *    요일들에서 **아직 아무도 안 쓴 가장 낮은 줄**을 고른다. 달력 라이브러리들이 흔히 쓰는
+ *    "day-of-week 점유표" 방식과 같다.
+ */
+function computeWeekEventRows(
+  weekDays: Date[],
+  events: PersonalCalendarEvent[],
+): Map<string, number> {
+  const relevant = events.filter((event) => weekDays.some((day) => eventOccursOnDay(event, day)));
+  const sorted = [...relevant].sort(compareEventsForStacking);
+
+  const rowOccupancy: boolean[][] = [];
+  const rowByEventId = new Map<string, number>();
+
+  for (const event of sorted) {
+    const dayIndexes = weekDays
+      .map((day, index) => (eventOccursOnDay(event, day) ? index : -1))
+      .filter((index) => index >= 0);
+
+    let row = 0;
+    for (;;) {
+      const occupied = (rowOccupancy[row] ??= new Array(weekDays.length).fill(false));
+      if (dayIndexes.every((index) => !occupied[index])) {
+        dayIndexes.forEach((index) => (occupied[index] = true));
+        rowByEventId.set(event.id, row);
+        break;
+      }
+      row += 1;
+    }
+  }
+
+  return rowByEventId;
 }
 
 /**
@@ -124,21 +189,29 @@ export function MonthGrid({ events, month, selectedDate, onSelectDate }: MonthGr
         className="grid min-h-0 flex-1"
         style={{ gridTemplateRows: `repeat(${weekCount}, minmax(0, 1fr))` }}
       >
-        {Array.from({ length: weekCount }, (_, week) => (
-          <div key={week} className="border-border grid grid-cols-7 not-first:border-t">
-            {days.slice(week * 7, week * 7 + 7).map((day) => (
-              <DayCell
-                key={day.toISOString()}
-                day={day}
-                events={events.filter((event) => eventOccursOnDay(event, day))}
-                isOutside={!isSameMonth(day, month)}
-                isToday={format(day, DAY_KEY) === todayKey}
-                isSelected={isSameDay(day, selectedDate)}
-                onSelect={onSelectDate}
-              />
-            ))}
-          </div>
-        ))}
+        {Array.from({ length: weekCount }, (_, week) => {
+          const weekDays = days.slice(week * 7, week * 7 + 7);
+          // ⚠️ 줄 번호는 **주 단위**로 다시 매긴다 — 주가 바뀌면 이어지는 막대도 새로 시작하는
+          //    모양이라(월간 격자가 주마다 행을 새로 그리므로), 줄도 주마다 새로 세는 게 맞다.
+          const rowByEventId = computeWeekEventRows(weekDays, events);
+
+          return (
+            <div key={week} className="border-border grid grid-cols-7 not-first:border-t">
+              {weekDays.map((day) => (
+                <DayCell
+                  key={day.toISOString()}
+                  day={day}
+                  events={events.filter((event) => eventOccursOnDay(event, day))}
+                  rowByEventId={rowByEventId}
+                  isOutside={!isSameMonth(day, month)}
+                  isToday={format(day, DAY_KEY) === todayKey}
+                  isSelected={isSameDay(day, selectedDate)}
+                  onSelect={onSelectDate}
+                />
+              ))}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -154,6 +227,7 @@ export function MonthGrid({ events, month, selectedDate, onSelectDate }: MonthGr
 function DayCell({
   day,
   events,
+  rowByEventId,
   isOutside,
   isToday,
   isSelected,
@@ -161,13 +235,27 @@ function DayCell({
 }: {
   day: Date;
   events: PersonalCalendarEvent[];
+  /** 이 주(週) 안에서 항목마다 매긴 고정 줄 번호 — `computeWeekEventRows` 참고. */
+  rowByEventId: Map<string, number>;
   isOutside: boolean;
   isToday: boolean;
   isSelected: boolean;
   onSelect: (date: Date) => void;
 }) {
   const dateLabel = format(day, "M월 d일(EEE)", { locale: ko });
-  const mayOverflow = events.length > MAX_VISIBLE_CHIPS;
+
+  /*
+    ⚠️ **줄 번호만큼 자리를 채운다.** 이 날의 최고 줄 번호까지는 빈 줄도 자리를 차지해야,
+       그 줄을 쓰는 다른 날의 항목과 세로 위치가 맞아 이어진 막대처럼 보인다
+       (`computeWeekEventRows` 주석 — "밤티현상" 수정, 2026-08-14).
+    ⚠️ 최고 줄 **뒤**는 채우지 않는다 — 이 날엔 아무것도 없어 맞출 대상이 없다.
+  */
+  const maxRow = events.reduce((max, event) => Math.max(max, rowByEventId.get(event.id) ?? 0), -1);
+  const slots: (PersonalCalendarEvent | null)[] = Array.from(
+    { length: maxRow + 1 },
+    (_, row) => events.find((event) => rowByEventId.get(event.id) === row) ?? null,
+  );
+  const mayOverflow = slots.length > MAX_VISIBLE_CHIPS;
 
   return (
     /*
@@ -247,9 +335,14 @@ function DayCell({
             mayOverflow ? "pointer-events-auto" : "pointer-events-none",
           )}
         >
-          {events.map((event) => (
-            <EventChip key={event.id} event={event} spanEdge={getEventSpanEdge(event, day)} />
-          ))}
+          {slots.map((event, row) =>
+            event ? (
+              <EventChip key={event.id} event={event} spanEdge={getEventSpanEdge(event, day)} />
+            ) : (
+              // 줄만 비었을 뿐 항목은 없다 — 자리만 채우고 스크린리더엔 아무것도 안 알린다.
+              <div key={`gap-${row}`} aria-hidden className="h-4 shrink-0" />
+            ),
+          )}
         </div>
       )}
     </div>
@@ -277,13 +370,16 @@ function DayCell({
 function EventChip({ event, spanEdge }: { event: PersonalCalendarEvent; spanEdge: EventSpanEdge }) {
   const done = event.isCompleted;
   const showContent = spanEdge === "single" || spanEdge === "start";
+  // ⚠️ 개인 Todo는 제목마다 색이 갈린다(2026-08-14) — 개인 액션은 여전히 fuchsia 고정이다.
+  const isTodo = event.tag === CALENDAR_ITEM_TAG.PERSONAL_TODO;
+  const todoColor = isTodo ? getTodoTitleColor(event.title) : null;
 
   return (
     <span
       title={event.title}
       style={{
-        color: CALENDAR_TAG_FG[event.tag],
-        backgroundColor: event.color ?? CALENDAR_TAG_BG[event.tag],
+        color: todoColor?.textColor ?? CALENDAR_TAG_FG[event.tag],
+        backgroundColor: event.color ?? todoColor?.bgColor ?? CALENDAR_TAG_BG[event.tag],
       }}
       className={cn(
         /*
@@ -303,9 +399,15 @@ function EventChip({ event, spanEdge }: { event: PersonalCalendarEvent; spanEdge
         /*
           ⚠️ 취소선을 **칩 전체**에 긋는다. `line-through`는 글자 위에만 그어져서, 제목이
              짧거나 잘리면 선이 중간에 끊겨 지저분했다 — 가운데를 가로지르는 선 하나로 둔다.
+          ⚠️ 좌우 인셋도 배경 여백(`-ml-1.5`/`-mr-1.5`)과 **같은 규칙**을 따른다(2026-08-14) —
+             안 그러면 이어진 칸끼리 배경은 맞붙어도 취소선만 각 칸 여백(6px)에서 멈춰서,
+             완료된 여러 날 Todo가 하루마다 선이 끊긴 것처럼 보인다.
         */
         done &&
-          "after:absolute after:inset-x-1.5 after:top-1/2 after:h-px after:-translate-y-1/2 after:bg-current after:opacity-70",
+          "after:absolute after:top-1/2 after:h-px after:-translate-y-1/2 after:bg-current after:opacity-70",
+        done && (spanEdge === "middle" || spanEdge === "end" ? "after:left-0" : "after:left-1.5"),
+        done &&
+          (spanEdge === "middle" || spanEdge === "start" ? "after:right-0" : "after:right-1.5"),
       )}
     >
       {showContent ? (

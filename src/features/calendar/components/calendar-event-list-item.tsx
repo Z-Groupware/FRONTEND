@@ -1,7 +1,7 @@
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 
-import { CALENDAR_TAG_DOT_COLOR, calendarStatusDotColor } from "../tag-colors";
+import { CALENDAR_TAG_DOT_COLOR, calendarStatusDotColor, getTodoTitleColor } from "../tag-colors";
 import {
   CALENDAR_ITEM_TAG,
   CALENDAR_ITEM_TAG_LABEL,
@@ -30,7 +30,10 @@ interface CalendarEventListItemProps {
  */
 export function CalendarEventListItem({ event, onToggleCompletion }: CalendarEventListItemProps) {
   const isTodo = event.tag === CALENDAR_ITEM_TAG.PERSONAL_TODO;
-  const tagColor = event.color ?? CALENDAR_TAG_DOT_COLOR[event.tag];
+  // ⚠️ 개인 Todo는 제목마다 색이 갈린다(2026-08-14) — 달력 칩(`month-grid.tsx`)과 같은 규칙.
+  const tagColor =
+    event.color ??
+    (isTodo ? getTodoTitleColor(event.title).solidColor : CALENDAR_TAG_DOT_COLOR[event.tag]);
 
   return (
     <li className="border-border bg-secondary/40 flex items-center gap-3 rounded-lg border px-3.5 py-3">
