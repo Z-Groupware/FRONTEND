@@ -45,10 +45,10 @@ describe("RoomsBoard", () => {
       />,
     );
 
-    expect(screen.queryByText("회의실 예약")).not.toBeInTheDocument();
+    expect(screen.queryByRole("dialog", { name: "회의실 예약" })).not.toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "예약하기" }));
 
-    expect(screen.getByText("회의실 예약")).toBeInTheDocument();
+    expect(screen.getByRole("dialog", { name: "회의실 예약" })).toBeInTheDocument();
   });
 });

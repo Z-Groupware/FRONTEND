@@ -143,4 +143,28 @@ describe("RoomAttendeePicker", () => {
     expect(screen.getByText("이하윤")).toBeInTheDocument();
     expect(screen.queryByText("박대표")).not.toBeInTheDocument();
   });
+
+  it("방향키로 필터 라디오를 옮기면 그 필터가 바로 적용된다", async () => {
+    const user = userEvent.setup();
+    render(
+      <RoomAttendeePicker
+        members={MEMBERS}
+        selectedIds={[]}
+        onChange={jest.fn()}
+        viewerTeamName="개발팀"
+      />,
+    );
+
+    await user.click(screen.getByRole("radio", { name: "전체" }));
+    await user.keyboard("{ArrowRight}");
+
+    expect(screen.getByRole("radio", { name: "팀장급만" })).toBeChecked();
+    expect(screen.getByText("김서준")).toBeInTheDocument();
+    expect(screen.queryByText("박대표")).not.toBeInTheDocument();
+
+    await user.keyboard("{ArrowRight}");
+
+    expect(screen.getByRole("radio", { name: "내 부서만" })).toBeChecked();
+    expect(screen.getByText("이하윤")).toBeInTheDocument();
+  });
 });

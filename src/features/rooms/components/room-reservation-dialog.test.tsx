@@ -102,7 +102,7 @@ describe("RoomReservationDialog", () => {
 
     await user.click(screen.getByRole("button", { name: "즉시 예약" }));
 
-    expect(screen.getByText("이대로 등록하시겠습니까?")).toBeInTheDocument();
+    expect(screen.getByRole("dialog", { name: "이대로 등록하시겠습니까?" })).toBeInTheDocument();
     expect(onCreated).not.toHaveBeenCalled();
   });
 
@@ -115,7 +115,9 @@ describe("RoomReservationDialog", () => {
     const cancelButtons = screen.getAllByRole("button", { name: "취소" });
     await user.click(cancelButtons.at(-1)!);
 
-    expect(screen.queryByText("이대로 등록하시겠습니까?")).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("dialog", { name: "이대로 등록하시겠습니까?" }),
+    ).not.toBeInTheDocument();
     expect(onCreated).not.toHaveBeenCalled();
   });
 
