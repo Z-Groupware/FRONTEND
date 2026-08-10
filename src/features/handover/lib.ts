@@ -20,6 +20,8 @@ export interface SubmitOffboardingHandoverPayload {
   type: typeof HANDOVER_TYPE.OFFBOARDING;
   description: string;
   actionIds: number[];
+  /** 마지막 근무일 `YYYY-MM-DD` — BE 필수(없으면 `HO-011`, BE 인수인계 문서 §2·§5). */
+  lastWorkingDay: string;
 }
 
 export type SubmitHandoverPayload =
@@ -28,21 +30,24 @@ export type SubmitHandoverPayload =
 /**
  * FE 내부 payload → BE 생성 요청 바디. 경계에서만 이름을 바꾼다 — FE 내부 필드명(위 두 타입)은
  * 그대로 두고 fetch 직전에만 변환해 BE 계약을 흡수한다(BE 인수인계 문서, 2026-08-10).
- * `startDate`/`endDate`→`leaveStartAt`/`leaveEndAt`(자정 시각 붙임), `description`→`note`,
- * `actionIds`→`selectedActionIds`.
+ * `type`→`handoverType`, `startDate`/`endDate`→`leaveStartAt`/`leaveEndAt`(자정 시각 붙임),
+ * `description`→`note`, `actionIds`→`selectedActionIds`.
+ * ⚠️ `assignments`(팀장 본인 휴직의 자가 재배정)는 **생성 바디에 안 실린다** — BE POST 바디엔
+ *    그런 필드가 없다. 생성 뒤 건별 `PATCH .../items/{actionId}/reassign`으로 따로 보내야
+ *    한다(§4 재배정 오케스트레이션, 아직 미구현 — 별도 작업).
  */
 export function toHandoverCreateRequestBody(payload: SubmitHandoverPayload) {
   if (payload.type === HANDOVER_TYPE.VACATION) {
     return {
-      type: payload.type,
+      handoverType: payload.type,
       leaveStartAt: `${payload.startDate}T00:00:00`,
       leaveEndAt: `${payload.endDate}T00:00:00`,
       selectedActionIds: payload.actionIds,
-      assignments: payload.assignments,
     };
   }
   return {
-    type: payload.type,
+    handoverType: payload.type,
+    lastWorkingDay: payload.lastWorkingDay,
     note: payload.description,
     selectedActionIds: payload.actionIds,
   };
