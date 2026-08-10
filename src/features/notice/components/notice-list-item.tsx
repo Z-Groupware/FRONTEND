@@ -24,12 +24,22 @@ export function NoticeListItem({ notice }: { notice: NoticeSummary }) {
       />
       {!notice.isRead && <span className="sr-only">안 읽음</span>}
 
-      <div className="min-w-0 flex-1">
-        <p className="text-foreground truncate text-sm font-semibold">{notice.title}</p>
-        <p className="text-muted-foreground mt-1 text-[11px]">{formatDate(notice.publishedAt)}</p>
-      </div>
+      {/*
+        ⚠️ **제목을 제목답게 세운다.** 13px 반굵게로 두니 아래 날짜와 무게가 비슷해 한 덩이로
+           뭉쳤다 — 목록에서 먼저 읽혀야 하는 건 제목이다. 카드 제목(17px) 바로 아래 단계인
+           15px로 올린다.
+        ⚠️ **날짜를 아래로 내리지 않고 오른쪽 끝에 세운다.** 아래에 두면 한 줄이 두 줄을 먹고,
+           줄마다 제목 길이가 달라 날짜가 들쭉날쭉했다 — 오른쪽 고정이면 한 세로선에 선다.
+      */}
+      <span className="text-foreground min-w-0 flex-1 truncate text-[15px] leading-6 font-semibold">
+        {notice.title}
+      </span>
 
-      <ChevronRight className="text-muted-foreground size-4 shrink-0" aria-hidden />
+      <span className="text-muted-foreground shrink-0 text-[12px] leading-4 tabular-nums">
+        {formatDate(notice.publishedAt)}
+      </span>
+
+      <ChevronRight className="text-muted-foreground/70 size-4 shrink-0" aria-hidden />
     </Link>
   );
 }

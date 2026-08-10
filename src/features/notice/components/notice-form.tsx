@@ -97,7 +97,7 @@ export function NoticeForm({
           placeholder="공지 내용을 입력해 주세요"
           aria-invalid={Boolean(state.errors.body)}
           aria-describedby="notice-body-error"
-          className="border-input placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:border-destructive min-h-[132px] w-full resize-none rounded-lg border bg-transparent px-2.5 py-2 text-sm transition-colors outline-none focus-visible:ring-3"
+          className="border-input placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:border-destructive min-h-[132px] w-full resize-none rounded-lg border bg-transparent px-2.5 py-2 text-[13px] leading-[22px] transition-colors outline-none focus-visible:ring-3"
         />
         <FieldError reserveSpace id="notice-body-error" message={state.errors.body} />
       </div>

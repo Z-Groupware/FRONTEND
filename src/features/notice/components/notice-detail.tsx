@@ -26,7 +26,14 @@ export function NoticeDetail({ notice, canManage }: { notice: Notice; canManage:
 
       <div className="border-border my-4 border-t" />
 
-      <p className="text-muted-foreground text-sm leading-7 whitespace-pre-line">{notice.body}</p>
+      {/*
+        ⚠️ **본문은 13px이다**(다섯 크기 — DESIGN §4). 14px은 규격 밖이고, 이 글은 읽는 글이라
+           줄 간격을 넉넉히(22px) 준다.
+        ⚠️ 색을 본문색으로 올린다. 보조색으로 깔아 두니 **정작 읽으라고 띄운 글이 제일 흐렸다**.
+      */}
+      <p className="text-foreground/85 text-[13px] leading-[22px] whitespace-pre-line">
+        {notice.body}
+      </p>
     </article>
   );
 }
