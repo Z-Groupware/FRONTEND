@@ -134,7 +134,7 @@ function CardBody({
            **곁 정보**라 같은 무게의 글로 이어 붙인다.
         ⚠️ 가운뎃점으로 잇는다. 상자를 없앤 자리에 구분자가 필요하다.
       */}
-      <p className="text-muted-foreground truncate pt-1.5 pb-5 text-[13px] leading-5">
+      <p className="text-muted-foreground truncate pt-1.5 pb-6 text-[13px] leading-5">
         {meeting.originLabel}
         <span className="px-1.5 opacity-50">·</span>
         {meeting.topicSummary}
@@ -160,7 +160,15 @@ function CardFooter({
   affordance: MeetingCardAffordance;
 }) {
   return (
-    <div className="border-border mt-auto flex items-center justify-between gap-3 border-t pt-4">
+    /*
+      ⚠️ **발치를 카드 폭 끝까지 빼고 옅은 띠를 깐다**(`-mx-7 -mb-7`). 안쪽에 선만 그으니
+         내용과 정보가 한 통에 담겨 어디까지가 회의 이야기이고 어디부터가 일정인지 안 보였다 —
+         공지 상세도 같은 해부(머리 / 폭 전체 선 / 본문)를 쓴다.
+      ⚠️ 띠 색은 **표 머리와 같은 것**(`bg-secondary/50`, DESIGN §표)이다. 새 회색을 만들면
+         화면마다 다른 회색이 는다.
+      ⚠️ 아래 모서리는 `frameClass`의 `overflow-hidden`이 잘라 준다.
+    */
+    <div className="border-border bg-secondary/50 -mx-7 mt-auto -mb-7 flex items-center justify-between gap-3 border-t px-7 py-4">
       {/*
         ⚠️ **발치 안에서도 층을 가른다.** 셋을 다 12px 회색으로 두니 한 덩이 회색 띠로 뭉개져
            정작 제일 먼저 봐야 할 **언제**가 안 읽혔다 — 일시는 13px 본문색, 장소·인원은
@@ -261,7 +269,11 @@ export function MeetingCard({ meeting }: { meeting: MeetingListItem }) {
     return (
       <Link
         href={`/app/meeting/${meeting.id}`}
-        className={cn(frameClass, "hover:border-foreground/25 transition-colors")}
+        className={cn(
+          frameClass,
+          /* ⚠️ 뜨는 건 **열리는 카드뿐**이다 — 안 눌리는 카드가 눌리는 척하면 안 된다(§정직성) */
+          "hover:border-foreground/25 transition-[color,box-shadow,border-color] hover:shadow-md",
+        )}
       >
         <CardBody meeting={meeting} affordance={affordance} />
         <CardFooter meeting={meeting} affordance={affordance} />
