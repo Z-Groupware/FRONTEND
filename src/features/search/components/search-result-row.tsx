@@ -9,7 +9,11 @@ import type { SearchResultItem } from "../types";
 import { KindBadge } from "./kind-badge";
 import { MatchText } from "./match-text";
 
-const ROW_SHAPE = "flex items-start gap-3 px-6 py-4";
+/*
+  ⚠️ **줄마다 낱장 카드다**(랜딩 목록과 같은 결). 구분선으로 이은 한 덩이는 값을 **비교하는**
+     표의 생김새인데, 검색 결과는 훑다가 **하나를 고르는** 자리다.
+*/
+const ROW_SHAPE = "border-border bg-card flex items-start gap-3 rounded-xl border px-4 py-3.5";
 
 interface SearchResultRowProps {
   item: SearchResultItem;
@@ -63,10 +67,10 @@ export function SearchResultRow({ item, keyword }: SearchResultRowProps) {
 
   if (item.kind === "PROJECT") {
     return (
-      <li className="border-border not-first:border-t">
+      <li>
         <Link
           href={`/app/projects/${item.id}`}
-          className={cn(ROW_SHAPE, "hover:bg-foreground/[0.03] transition-colors")}
+          className={cn(ROW_SHAPE, "hover:border-foreground/25 transition-colors")}
         >
           {content}
         </Link>
@@ -74,7 +78,11 @@ export function SearchResultRow({ item, keyword }: SearchResultRowProps) {
     );
   }
 
-  return <li className={cn(ROW_SHAPE, "border-border not-first:border-t")}>{content}</li>;
+  return (
+    <li>
+      <div className={ROW_SHAPE}>{content}</div>
+    </li>
+  );
 }
 
 function ProjectTagOf({ item }: { item: SearchResultItem }) {

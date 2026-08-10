@@ -42,16 +42,23 @@ export function RecentlyViewedGrid({ items }: RecentlyViewedGridProps) {
   );
 }
 
-function meta(item: SearchResultItem): string {
+/**
+ * 보조값을 **둘로 가른다** — 왼쪽은 사람·프로젝트 같은 '누구/무엇', 오른쪽은 날짜·개수 같은 '언제/얼마'.
+ *
+ * ⚠️ 전에는 `A · B` 한 문장이라 통째로 오른쪽 끝에 붙었고, 제목이 짧은 줄은 **가운데가
+ *    400px 넘게 비었다** — 눈이 그 사이를 건너뛰어야 했다.
+ * ⚠️ 갈라서 각자 열에 세우면 줄 전체로 퍼지면서도 **열마다 축이 선다**(DESIGN §3).
+ */
+function metaParts(item: SearchResultItem): { lead: string; trail: string } {
   switch (item.kind) {
     case "MEETING":
-      return `${item.projectName} · ${formatDate(item.meetingDate)}`;
+      return { lead: item.projectName, trail: formatDate(item.meetingDate) };
     case "ACTION":
-      return `${item.assigneeName} · 마감 ${formatDate(item.dueDate)}`;
+      return { lead: item.assigneeName, trail: `마감 ${formatDate(item.dueDate)}` };
     case "PROJECT":
-      return `회의 ${item.meetingCount}건 · 액션 ${item.actionCount}건`;
+      return { lead: `회의 ${item.meetingCount}건`, trail: `액션 ${item.actionCount}건` };
     case "PERSON":
-      return item.team ?? "소속 없음";
+      return { lead: item.team ?? "소속 없음", trail: "" };
   }
 }
 
@@ -71,7 +78,18 @@ interface RecentlyViewedCardProps {
 }
 
 function RecentlyViewedCard({ item }: RecentlyViewedCardProps) {
-  const tag = item.kind === "MEETING" || item.kind === "ACTION" ? item.projectTag : null;
+  /*
+    ⚠️ **프로젝트도 자기 태그와 색이 있다.** 전에는 "제목이 곧 프로젝트"라며 뺐는데, 그러면
+       그 줄만 막대·칩 자리가 비어 **혼자 텅 빈 것처럼** 보였다 — 태그(`GOODS`)는 짧은
+       코드고 제목은 긴 이름이라 서로 대신하지 못한다.
+  */
+  const tag =
+    item.kind === "MEETING" || item.kind === "ACTION"
+      ? item.projectTag
+      : item.kind === "PROJECT"
+        ? item.tag
+        : null;
+  const parts = metaParts(item);
 
   const inner = (
     <>
@@ -94,12 +112,19 @@ function RecentlyViewedCard({ item }: RecentlyViewedCardProps) {
            그 줄만 제목이 앞으로 당겨져 오와 열이 어긋난다.
       */}
       <span className="flex w-[76px] shrink-0 items-center">{tag && <ProjectTag tag={tag} />}</span>
-      <span className="text-foreground min-w-0 flex-1 truncate text-[13px] leading-5 font-semibold">
+      <span className="text-foreground shrink-0 truncate text-[13px] leading-5 font-semibold">
         {title(item)}
       </span>
-      {/* ⚠️ 보조값은 **오른쪽 끝**이다 — 제목 길이가 달라도 눈이 한 세로선을 따라간다 */}
-      <span className="text-muted-foreground shrink-0 truncate text-[12px] leading-4">
-        {meta(item)}
+      {/*
+        ⚠️ **제목 뒤에 이어 붙인다.** 오른쪽 끝에 고정 열로 세워 봤더니 제목과 너무 멀어
+           한 줄인데 두 덩이로 읽혔다 — 눈이 가운데 빈 자리를 건너뛰어야 했다.
+           검색 결과는 "무엇 · 어디 · 언제"가 한 문장처럼 이어져야 읽힌다.
+        ⚠️ 그래서 제목도 `flex-1`이 아니다. 늘어나면 다시 벌어진다.
+      */}
+      <span className="text-muted-foreground truncate text-[12px] leading-4">
+        {parts.lead}
+        {parts.trail && <span className="px-1.5 opacity-50">·</span>}
+        {parts.trail}
       </span>
     </>
   );
