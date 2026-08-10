@@ -1,18 +1,22 @@
 "use client";
 
-import { Search, X } from "lucide-react";
+import { Clock, Search, X } from "lucide-react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { Input } from "@/components/ui/input";
 
 import { recordSearchAction } from "../actions";
+import type { RecentSearchEntry } from "../types";
 
 /** 적기를 멈춘 뒤 이만큼 지나면 보낸다 — 짧으면 요청이 줄줄이 나가고 길면 굼떠 보인다 */
 const SEARCH_DEBOUNCE_MS = 300;
 
 interface SearchInputProps {
   keyword: string;
+  /** 입력을 눌렀을 때 아래로 펼칠 최근 검색어 */
+  recentSearches?: RecentSearchEntry[];
 }
 
 /**
@@ -23,7 +27,7 @@ interface SearchInputProps {
  * ⚠️ **적는 동안 기록하지 않는다.** 한 글자마다 최근 검색어를 남기면 "ㅈ"·"제"·"제품"이
  *    전부 기록된다 — 잠깐 멈추면 그때 주소를 바꾸고, 그때 딱 한 번만 기록한다.
  */
-export function SearchInput({ keyword }: SearchInputProps) {
+export function SearchInput({ keyword, recentSearches = [] }: SearchInputProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -31,6 +35,15 @@ export function SearchInput({ keyword }: SearchInputProps) {
   /* 마지막으로 `value`를 맞춘 주소값 — 아래 렌더 중 동기화가 한 번만 일어나게 지키는 표시다 */
   const [syncedKeyword, setSyncedKeyword] = useState(keyword);
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /*
+    입력을 눌렀을 때 아래로 펴는 최근 검색어.
+    ⚠️ **적기 시작하면 닫는다.** 글자를 치는 중에도 떠 있으면 결과를 가린다 — 이 목록은
+       "무엇을 찾을지 고르는" 자리이지 결과가 아니다.
+    ⚠️ **밖을 누르면 닫는다.** 포커스가 빠질 때(`blur`)만 닫으면, 목록 안 항목을 누르는 손짓이
+       blur를 먼저 일으켜 **눌리기 전에 사라진다** — 그래서 마우스 다운을 막고 바깥 클릭을 본다.
+  */
+  const [isOpen, setIsOpen] = useState(false);
+  const boxRef = useRef<HTMLDivElement>(null);
 
   const commit = useCallback(
     (next: string) => {
@@ -67,8 +80,26 @@ export function SearchInput({ keyword }: SearchInputProps) {
     };
   }, [value, keyword, commit]);
 
+  useEffect(() => {
+    if (!isOpen) return;
+    function closeOnOutside(event: MouseEvent) {
+      if (!boxRef.current?.contains(event.target as Node)) setIsOpen(false);
+    }
+    function closeOnEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") setIsOpen(false);
+    }
+    document.addEventListener("mousedown", closeOnOutside);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("mousedown", closeOnOutside);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [isOpen]);
+
+  const canOpen = recentSearches.length > 0 && value.trim().length === 0;
+
   return (
-    <div className="relative w-full">
+    <div ref={boxRef} className="relative w-full">
       <Search
         className="text-muted-foreground/70 pointer-events-none absolute top-1/2 left-5 size-[18px] -translate-y-1/2"
         aria-hidden
@@ -76,7 +107,16 @@ export function SearchInput({ keyword }: SearchInputProps) {
       <Input
         id="workbench-search"
         value={value}
-        onChange={(event) => setValue(event.target.value)}
+        onChange={(event) => {
+          setValue(event.target.value);
+          /* 적기 시작하면 닫는다 — 목록이 결과를 가리면 안 된다 */
+          if (event.target.value.trim().length > 0) setIsOpen(false);
+        }}
+        onFocus={() => canOpen && setIsOpen(true)}
+        onClick={() => canOpen && setIsOpen(true)}
+        role="combobox"
+        aria-expanded={isOpen}
+        aria-controls="recent-search-list"
         placeholder="회의·액션·프로젝트·사람을 검색해 주세요"
         /*
           ⚠️ **찾으러 온 사람이 제일 먼저 보는 것**이라 크게 세운다(h-13·완전 둥근 모서리).
@@ -90,6 +130,36 @@ export function SearchInput({ keyword }: SearchInputProps) {
       <label htmlFor="workbench-search" className="sr-only">
         검색
       </label>
+
+      {isOpen && (
+        /*
+          ⚠️ **입력과 같은 폭·같은 모서리 결로 붙인다.** 폭이 다르면 입력에 딸린 것이 아니라
+             따로 뜬 창처럼 보인다.
+          ⚠️ `z-20`이다 — 아래 목록 카드 위에 떠야 한다.
+        */
+        <ul
+          id="recent-search-list"
+          className="border-border bg-popover absolute top-full right-0 left-0 z-20 mt-2 overflow-hidden rounded-2xl border py-1.5 shadow-[0_4px_16px_color-mix(in_oklch,var(--foreground)_8%,transparent)]"
+        >
+          <li className="text-muted-foreground/70 px-4 pt-1 pb-1.5 text-[11px] leading-4">
+            최근 검색어
+          </li>
+          {recentSearches.map((entry) => (
+            <li key={entry.keyword}>
+              <Link
+                href={`/app/search?q=${encodeURIComponent(entry.keyword)}`}
+                /* ⚠️ 마우스 다운이 포커스를 빼앗아 목록이 먼저 닫히는 것을 막는다 */
+                onMouseDown={(event) => event.preventDefault()}
+                onClick={() => setIsOpen(false)}
+                className="hover:bg-foreground/5 focus-visible:bg-foreground/5 flex items-center gap-2.5 px-4 py-2 text-[13px] leading-5 outline-hidden"
+              >
+                <Clock className="text-muted-foreground/70 size-3.5 shrink-0" aria-hidden />
+                <span className="truncate">{entry.keyword}</span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
 
       {value.length > 0 && (
         <button

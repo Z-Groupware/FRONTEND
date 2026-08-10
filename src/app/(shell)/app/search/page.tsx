@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
-import { RecentSearchChips } from "@/features/search/components/recent-search-chips";
 import { SearchInput } from "@/features/search/components/search-input";
 import { SearchLanding } from "@/features/search/components/search-landing";
 import { SearchResultsPanel } from "@/features/search/components/search-results-panel";
@@ -63,7 +62,13 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
         ⚠️ **입력만 좁게 둔다.** 한 줄 입력이 1440까지 늘어나면 글자가 왼쪽 끝에만 붙고
            오른쪽이 통째로 빈다 — 결과 목록은 넓을수록 좋지만 입력은 아니다.
       */}
-      <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-7">
+      {/*
+        ⚠️ **1440을 다 쓰지 않는다.** 검색 결과 줄은 `제목 … 보조값` 두 덩이뿐이라, 폭이 넓을수록
+           가운데가 휑해진다 — 표처럼 열이 여럿인 화면이 아니다. 1040은 목록 카드가 시원하면서도
+           제목과 보조값이 서로 보이는 거리다.
+        ⚠️ 가운데 세운다 — 위 검색창이 가운데라 본문만 왼쪽에 붙으면 축이 둘이 된다.
+      */}
+      <div className="mx-auto flex w-full max-w-[1040px] flex-col gap-7">
         {/*
           ⚠️ **입력은 가운데 세운다.** 왼쪽에 붙여 두니 넓은 화면에서 한쪽으로 몰려 보였다 —
              찾으러 온 사람이 제일 먼저 보는 것이라 화면 한복판에 서는 게 맞다.
@@ -74,9 +79,8 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
              하는데 따로 떨어져 있으면 최근 검색어가 "목록 중 하나"로 보인다.
           ⚠️ 위아래 여백을 넉넉히 준다 — 이 자리가 화면의 주인공이라 붐비면 안 된다.
         */}
-        <div className="mx-auto flex w-full max-w-[720px] flex-col gap-4 pt-4 pb-2">
-          <SearchInput keyword={query.keyword} />
-          <RecentSearchChips entries={recentSearches} />
+        <div className="mx-auto w-full max-w-[720px] pt-4 pb-2">
+          <SearchInput keyword={query.keyword} recentSearches={recentSearches} />
         </div>
         {content}
       </div>
