@@ -1,5 +1,7 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
+
 import { requireAccessToken } from "@/features/auth/session";
 import { serverApi, toUserMessage } from "@/lib/api";
 import { ep } from "@/lib/endpoints";
@@ -69,6 +71,17 @@ export async function commitOnboardingAction(input: {
       json: payload,
       accessToken: token,
     });
+
+    /*
+      ⚠️ **온보딩이 끝나면 화면 전체를 다시 그린다**(§핵심 4원칙 ②: 변경 뒤 `revalidatePath`).
+         이 한 번으로 `isOnboarded`가 뒤집히는데, 그 값을 보는 곳이 온보딩 가드
+         (`guardOnboardingStep`)와 워크스페이스 셸(`guardWorkspaceEntry`) 둘이다 —
+         캐시된 화면이 남아 있으면 방금 끝낸 사람이 "아직 온보딩 전"인 화면을 다시 만난다.
+      ⚠️ 경로 하나가 아니라 **`layout` 통째**다. 부서·직급·계정이 한꺼번에 생겨서
+         사이드바부터 사원 목록까지 다 바뀐다 — 어디를 고를지 고민할 이유가 없고,
+         온보딩은 회사당 한 번뿐이라 통째로 날려도 비싸지 않다.
+    */
+    revalidatePath("/", "layout");
 
     return {
       ok: true,
