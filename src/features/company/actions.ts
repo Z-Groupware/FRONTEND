@@ -186,7 +186,19 @@ export async function saveDepartmentsAction(
        액션은 직접 부를 수 있다(§권한). 지금 저장된 트리와 견줘야 무엇이 바뀌었는지 알 수 있다 —
        클라이언트가 보낸 값만 보면 "무엇이 사라졌는지"를 모른다.
   */
-  const current = await getCompanySetting();
+  /*
+    ⚠️ **여기서 던지면 카드가 아니라 페이지가 죽는다.** `getCompanySetting()`은 서버를
+       세 번 부르므로 얼마든지 실패할 수 있는데, `try` 밖에 두면 그 예외가 그대로 올라가
+       error boundary가 화면을 통째로 갈아치운다 — 방금 짠 팀 구조가 다 날아간다.
+       이 파일이 세 번 적어 둔 "던지지 않는다"를 스스로 깨는 자리였다.
+  */
+  let current: Awaited<ReturnType<typeof getCompanySetting>>;
+  try {
+    current = await getCompanySetting();
+  } catch (error) {
+    return { isSuccess: false, message: toUserMessage(error) };
+  }
+
   const blocked = findBlockedTeamChange(current.departments, departments, current.teamMemberCounts);
   if (blocked) {
     return {
@@ -215,20 +227,21 @@ export async function saveDepartmentsAction(
          `roleLabel` 관리 경로 0건) — 팀만 저장하고 성공이라고 말하면 **역할을 고친 사람이
          저장됐다고 믿는다**(§정직성). 바뀐 게 있으면 그 사실을 말하고 멈춘다.
     */
-    const roleSignature = (nodes: DepartmentNode[]) =>
+    /*
+      ⚠️ **이름 변경 여부와 무관하게 막는다.** 처음엔 "이름도 같이 바뀌었으면 통과"로 뒀는데,
+         보내는 본문은 `{ name }`뿐이라 그때도 역할은 안 저장된다 — 이름만 바뀌고 역할은
+         사라진 채 **성공**이라고 말하게 된다. 역할은 팀과 따로 세어야 한다.
+    */
+    const rolesOf = (nodes: DepartmentNode[]) =>
       nodes
-        .map((node) => `${node.name}:${node.children.map((child) => child.name).join(",")}`)
+        .map((node) => `${node.id}:${node.children.map((child) => child.name).join(",")}`)
+        .sort()
         .join("|");
-    if (roleSignature(current.departments) !== roleSignature(departments)) {
-      const namesChanged =
-        current.departments.map((n) => n.name).join("|") !==
-        departments.map((n) => n.name).join("|");
-      if (!namesChanged) {
-        return {
-          isSuccess: false,
-          message: "팀 안 역할은 아직 저장할 수 없습니다. 팀 이름만 바꿔 주세요",
-        };
-      }
+    if (rolesOf(current.departments) !== rolesOf(departments)) {
+      return {
+        isSuccess: false,
+        message: "팀 안 역할은 아직 저장할 수 없습니다. 팀 이름만 바꿔 주세요",
+      };
     }
 
     const before = new Map(current.departments.map((node) => [node.id, node.name]));
@@ -283,8 +296,14 @@ export async function savePositionsAction(positions: Position[]): Promise<Compan
 
   // ⚠️ 던지지 않는다 — 저장 실패는 화면 전체 실패가 아니다
   if (!isMock) {
-    /* 팀과 같은 이유로 차이를 계산해 한 건씩 부른다 — 지우기는 마지막이다 */
-    const current = await getCompanySetting();
+    /* 팀과 같은 이유로 차이를 계산해 한 건씩 부른다. 지우기가 먼저다 */
+    let current: Awaited<ReturnType<typeof getCompanySetting>>;
+    try {
+      current = await getCompanySetting();
+    } catch (error) {
+      /* 팀 저장과 같은 이유 — 던지면 카드가 아니라 페이지가 죽는다 */
+      return { isSuccess: false, message: toUserMessage(error) };
+    }
     const before = new Map(current.positions.map((item) => [item.id, item]));
     const after = new Map(positions.map((item) => [item.id, item]));
 
