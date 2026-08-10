@@ -1,7 +1,5 @@
 import "server-only";
 
-import { isMock } from "@/mocks/config";
-
 import {
   type BillingOverview,
   PAYMENT_STATUS,
@@ -135,24 +133,26 @@ const MOCK_CONFIG: BillingConfig = {
   isVatIncluded: false,
 };
 
-export async function getBillingConfig(): Promise<BillingConfig> {
-  if (isMock) return MOCK_CONFIG;
+/*
+  ⚠️ **결제·구독은 BE에 아직 없다**(2026-08-10 BACKEND 레포 확인 — 결제 컨트롤러가 없고
+     `CompanyProfileResponse.plan`은 `"FREE"` 고정이다). 그래서 아래 셋은 목을 끄더라도
+     목값을 그대로 내준다.
+  ⚠️ **전에는 여기서 던졌는데, 그게 흐름을 끊었다.** 온보딩 [완료]는 되돌릴 수 없고
+     그 다음 화면이 곧바로 4단계(결제)다 — 커밋은 성공했는데 결제 화면이 에러로 뜨면
+     사용자는 조직이 저장됐는지조차 알 수 없고, 돌아갈 단계도 없다.
+  ⚠️ **화면에 "목"이라고 적지는 않는다** — 금액은 실제로 청구할 값의 v0 가정치이고,
+     결제 버튼이 실제로 결제하지 않는다는 사실은 결제 화면이 따로 말한다(§정직성).
+     BE 경로가 생기면 `isMock` 분기를 되살리고 여기에 fetch를 붙인다.
+*/
 
-  // TODO(BE 연동): GET /companies/me/billing-config — 실측값이 나오면 여기서 받는다.
-  throw new Error("요금 설정 API가 아직 연결되지 않았습니다.");
+export async function getBillingConfig(): Promise<BillingConfig> {
+  return MOCK_CONFIG;
 }
 
 export async function getOnboardingSubscription(): Promise<Subscription> {
-  if (isMock) return MOCK_PENDING;
-
-  // TODO(BE 연동): GET /companies/me/subscription — 온보딩 직후엔 `UNPAID`로 내려온다.
-  throw new Error("구독 API가 아직 연결되지 않았습니다.");
+  return MOCK_PENDING;
 }
 
 export async function getBillingOverview(): Promise<BillingOverview> {
-  if (isMock) return MOCK;
-
-  // TODO(BE 연동): GET /companies/me/billing — 응답 shape 확정 후 매퍼를 여기 붙인다.
-  //   ⚠️ Swagger·구두 추측으로 만들지 않는다. BE 레포 실코드로 경로·shape을 확인한다(CLAUDE.md §연동 검증).
-  throw new Error("구독 API가 아직 연결되지 않았습니다.");
+  return MOCK;
 }

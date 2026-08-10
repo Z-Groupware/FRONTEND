@@ -1,4 +1,5 @@
 import { AUTHORITY } from "@/constants/authority";
+import { getMe } from "@/features/auth/me";
 import type { Actor } from "@/lib/permission";
 import { isMock } from "@/mocks/config";
 
@@ -25,6 +26,23 @@ export async function getViewer(): Promise<Viewer> {
     return { id: 1, name: "대표 계정", role: AUTHORITY.OWNER, isAdmin: false };
   }
 
-  // TODO(BE 협의): 쿠키의 세션으로 `GET /me` → { id, name, role, isAdmin, departmentId }
-  throw new Error("세션을 읽을 수 없습니다");
+  /*
+    ⚠️ **여기서 던지는 건 의도한 것이다.** 누군지 모르는 채로 그린 사이드바는 메뉴도 권한도
+       틀린 화면이라, 조용히 빈 값으로 넘기면 더 나쁘다(셸 레이아웃 주석과 같은 판단).
+       로그인 안 한 사람은 `middleware.ts`가 이 앞에서 막으므로 여기까지 오지 않는다.
+    ⚠️ `teamId`·`teamName`은 **온보딩 전 오너에게 없다** — `null`을 `undefined`로 옮긴다.
+       `Actor`는 "없음"을 `undefined`로 적기 때문에, `null`을 그대로 넣으면
+       `isWithinTeamScope`가 `null === null`로 **팀이 같다고 판정**한다.
+  */
+  const me = await getMe();
+  if (!me) throw new Error("세션을 읽을 수 없습니다");
+
+  return {
+    id: me.id,
+    name: me.name,
+    role: me.authority,
+    isAdmin: me.isAdmin,
+    teamId: me.teamId ?? undefined,
+    teamName: me.teamName ?? undefined,
+  };
 }

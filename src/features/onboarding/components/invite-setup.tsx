@@ -34,7 +34,7 @@ interface InviteSetupProps {
  *    나간 메일은 취소되지 않으니 화면만 고칠 수 있게 두면 그게 거짓말이 된다.
  */
 export function InviteSetup({ departments, positions }: InviteSetupProps) {
-  const { isReady, departmentOptions, rolesOf, positionOptions, isLeaderPosition } =
+  const { isReady, source, departmentOptions, rolesOf, positionOptions, isLeaderPosition } =
     useInviteOptions(departments, positions);
 
   /*
@@ -53,7 +53,6 @@ export function InviteSetup({ departments, positions }: InviteSetupProps) {
     rolesOf,
     positionOptions,
     isLeaderPosition,
-    rules,
   });
 
   const duplicatedLeaders = duplicatedLeaderIds(list.invites, isLeaderPosition);
@@ -79,11 +78,30 @@ export function InviteSetup({ departments, positions }: InviteSetupProps) {
   }, [isReady, departmentOptions, positionOptions]);
 
   useCommittedRedirect();
-  const { isConfirmOpen, setConfirmOpen, unfilledCount, flaggedCount, commit } = useInviteCommit({
+  const {
+    isConfirmOpen,
+    setConfirmOpen,
+    unfilledCount,
+    flaggedCount,
+    commit,
+    isCommitting,
+    error: commitError,
+  } = useInviteCommit({
     invites: list.invites,
     sendable: list.sendable,
+    // ⚠️ props가 아니라 `source`다 — 보관함에 담긴 **방금 고친 값**이 저장돼야 한다
+    departments: source.departments,
+    positions: source.positions,
     markSent: list.markSent,
   });
+
+  /*
+    ⚠️ **주소를 적은 줄 수** — 확인 창의 요약 알약이 이 값을 쓴다. `sendable`을 쓰면
+       세 칸을 다 못 고른 줄이 있을 때 `초대 0`이 떠서, 사람을 넷 적어 놓고도
+       적은 게 다 날아간 줄 안다. 실제로 몇 명에게 나가는지는 그 아래 문장이 말한다.
+    ⚠️ 기준은 **주소**다. 이름만 적힌 줄은 아직 누구인지 정해지지 않았다(주소가 계정이 된다).
+  */
+  const writtenCount = list.invites.filter((invite) => invite.email.trim().length > 0).length;
 
   const handlers: InviteRowHandlers = {
     onChangeName: list.changeName,
@@ -161,10 +179,13 @@ export function InviteSetup({ departments, positions }: InviteSetupProps) {
         onOpenChange={setConfirmOpen}
         departmentCount={departmentOptions.length}
         positionCount={positionOptions.length}
-        inviteCount={list.sendable.length}
+        writtenCount={writtenCount}
+        sendableCount={list.sendable.length}
         unfilledCount={unfilledCount}
         flaggedCount={flaggedCount}
         onConfirm={commit}
+        isPending={isCommitting}
+        error={commitError}
       />
     </div>
   );

@@ -1,4 +1,5 @@
 import { AUTHORITY_BADGE_CLASS, AUTHORITY_LABEL } from "@/constants/authority";
+import { LogoutButton } from "@/features/auth/components/logout-button";
 import { cn } from "@/lib/utils";
 
 import type { MyProfile } from "../types";
@@ -15,7 +16,7 @@ export function ProfileHeader({ profile }: ProfileHeaderProps) {
         {profile.name.charAt(0)}
       </div>
 
-      <div className="flex flex-col gap-1">
+      <div className="flex min-w-0 flex-1 flex-col gap-1">
         <p className="text-[17px] leading-[26px] font-semibold">{profile.name}</p>
         <p className="text-muted-foreground text-xs">{profile.email}</p>
 
@@ -33,6 +34,12 @@ export function ProfileHeader({ profile }: ProfileHeaderProps) {
           </span>
         </div>
       </div>
+
+      {/*
+        ⚠️ **나갈 문은 여기 하나뿐이다.** 사이드바 계정 줄(49px)에 끼우면 이름이 밀려 잘리고,
+           로그아웃은 하루에 한 번 쓰는 일이라 늘 보이는 자리를 차지할 만큼 잦지 않다.
+      */}
+      <LogoutButton />
     </div>
   );
 }

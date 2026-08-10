@@ -56,6 +56,7 @@ export default async function RoomsPage({ searchParams }: RoomsPageProps) {
           projects={projects}
           showParentTeamAction={requiresParentTeamAction(viewer)}
           teamActions={teamActions}
+          viewerTeamName={viewer.teamName ?? null}
           week={format(week, "yyyy-MM-dd")}
         />
       </div>

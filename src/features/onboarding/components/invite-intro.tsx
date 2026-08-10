@@ -42,9 +42,14 @@ export function InviteIntro({ invites, departments, rolesOf, positions }: Invite
           보내면 <span className="text-muted-foreground">계정이 바로 만들어집니다.</span> 아이디와
           첫 비밀번호가 메일로 갑니다.
         </StepNote>
+        {/*
+          ⚠️ **팀장을 어떻게 지정하는지 여기서 말한다.** 전에는 `리더`를 고를 자리가 없어서
+             직급을 먼저 고르는 우회로밖에 없었다(2026-08-10 수정) — 이제 역할 목록에
+             `리더`가 있으므로, 그걸 모르면 여전히 못 찾는다.
+        */}
         <StepNote>
-          <span className="text-muted-foreground">역할은 팀을 고른 뒤</span> 정합니다. Leader 권한을
-          준 직급을 고르면 역할이 &lsquo;리더&rsquo;로 자동으로 채워집니다.
+          <span className="text-muted-foreground">역할은 팀을 고른 뒤</span> 정합니다. 팀장은 역할에
+          &lsquo;리더&rsquo;를, 세부 역할이 없으면 &lsquo;없음&rsquo;을 고르면 됩니다.
         </StepNote>
         <StepNote>
           직급은 <span className="text-muted-foreground">2단계에서 만든 것</span>만 고를 수

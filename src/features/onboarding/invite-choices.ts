@@ -1,4 +1,4 @@
-import { departmentsWithLeader, type InviteRules } from "./invite-rules";
+import { departmentsWithLeader } from "./invite-rules";
 import type { Invite, SelectOption } from "./types";
 import { LEADER_ROLE_ID, LEADER_ROLE_LABEL, NO_ROLE_ID, NO_ROLE_LABEL } from "./types";
 
@@ -16,7 +16,6 @@ interface ChoiceSources {
   /** 2단계에서 만든 직급 전부 */
   positionOptions: SelectOption[];
   isLeaderPosition: (positionId: string) => boolean;
-  rules: InviteRules;
 }
 
 export interface InviteChoices {
@@ -30,16 +29,19 @@ export function createInviteChoices({
   rolesOf,
   positionOptions,
   isLeaderPosition,
-  rules,
 }: ChoiceSources): InviteChoices {
   /**
-   * 그 줄에서 고를 수 있는 역할.
+   * 그 줄에서 고를 수 있는 역할 — **`리더`·`없음`을 목록에 직접 띄운다**(2026-08-10).
    *
-   * ⚠️ **리더 직급이면 `리더` 하나뿐이다.** 고르는 게 아니라 이미 정해진 값이고 칸은 잠긴다
-   *    (`isRoleLocked`). 목록에 그 값이 있어야 잠긴 칸이 무엇으로 정해졌는지 보여 줄 수 있다 —
-   *    전에는 여기 `없음`이 들어가서, 팀장 줄이 "역할을 안 정했다"로 읽혔다.
-   * ⚠️ `없음`은 **역할이 하나도 없는 부서**에서만 나온다. 그런 부서에서는 그게 유일한
-   *    선택지이고 직급도 전부 열린다(`fitsRoleAndPosition`).
+   * ⚠️ **전에는 `리더`를 고를 방법이 없어서 팀장을 못 지정했다.** 직급 칸은 역할을 고른
+   *    뒤에 열리는데(`InviteRowSelects`), `리더`는 리더 직급을 골라야 채워지는 값이었다 —
+   *    팀장을 만들려면 **뜻하지도 않은 역할**(프론트엔드 등)을 일단 고르고 직급을 바꿔
+   *    덮어쓰는 수밖에 없었다. 고르는 순서 하나 때문에 안 되는 일이 있으면 안 된다.
+   * ⚠️ **리더 직급이면 `리더` 하나뿐이다.** 그때는 고르는 게 아니라 이미 정해진 값이고
+   *    칸도 잠긴다(`isRoleLocked`) — 목록에 그 값이 있어야 잠긴 칸이 무엇으로 정해졌는지
+   *    보여 줄 수 있다.
+   * ⚠️ 순서가 뜻을 만든다: **`리더`(팀 전체) → 팀 안의 역할들 → `없음`(역할 미지정).**
+   *    특별한 둘을 위아래 끝에 두면 가운데 진짜 역할들이 한 덩어리로 읽힌다.
    * ⚠️ `없음`도 빈 값이 아니라 **고른 결과**다(`NO_ROLE_ID`). 빈 값은 "아직 안 골랐다"라서,
    *    둘을 같은 값으로 두면 직급 칸을 언제 열지 알 수 없다.
    */
@@ -48,10 +50,11 @@ export function createInviteChoices({
       return [{ id: LEADER_ROLE_ID, name: LEADER_ROLE_LABEL }];
     }
 
-    const departmentRoles = rolesOf(invite.departmentId);
-    if (departmentRoles.length > 0) return departmentRoles;
-
-    return [{ id: NO_ROLE_ID, name: NO_ROLE_LABEL }];
+    return [
+      { id: LEADER_ROLE_ID, name: LEADER_ROLE_LABEL },
+      ...rolesOf(invite.departmentId),
+      { id: NO_ROLE_ID, name: NO_ROLE_LABEL },
+    ];
   };
 
   /**
@@ -77,15 +80,19 @@ export function createInviteChoices({
   };
 
   /**
-   * 역할 칸을 통째로 잠글지.
-   * - **리더 직급**이면 역할은 `리더`로 자동으로 채워진다(`changeInvitePosition`).
-   * - **역할이 없는 부서**면 고를 게 `없음`뿐이라 이미 정해져 있다(`changeInviteDepartment`).
+   * 역할 칸을 통째로 잠글지 — **리더 직급일 때뿐이다.**
    *
+   * 리더 직급이면 역할은 `리더`로 자동으로 채워진다(`changeInvitePosition`). 부서 전체를
+   * 맡는 자리라 부서 안의 한 역할에 매일 수 없어서, 고르는 게 아니라 정해지는 값이다.
+   *
+   * ⚠️ **역할이 없는 부서를 더는 잠그지 않는다**(2026-08-10). 전에는 "고를 게 `없음`뿐"이라
+   *    잠갔는데, 이제 `리더`도 목록에 있어서 고를 게 둘이다 — 잠가 두면 역할 없는 부서에서는
+   *    팀장을 **직급 칸으로 우회해서만** 지정할 수 있다.
+   *    (부서를 고르면 `없음`이 기본으로 채워지는 건 그대로다 — `changeInviteDepartment`.)
    * ⚠️ 항목을 하나씩 잠그지 않는다. 고를 수 없는 줄이 목록을 채우면 무엇이 남았는지
    *    읽히지 않는다 — 칸 자체를 잠그면 정해진 값이 그대로 보인다.
    */
-  const isRoleLocked = (invite: Invite) =>
-    isLeaderPosition(invite.positionId) || !rules.hasRoles(invite.departmentId);
+  const isRoleLocked = (invite: Invite) => isLeaderPosition(invite.positionId);
 
   return { rolesFor, positionsFor, isRoleLocked };
 }

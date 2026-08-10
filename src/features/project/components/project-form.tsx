@@ -5,6 +5,7 @@ import Link from "next/link";
 import type { CSSProperties } from "react";
 import { useActionState, useRef, useState } from "react";
 
+import { DatePickerField } from "@/components/common/date-picker-field";
 import { FieldError } from "@/components/common/field-error";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -231,14 +232,14 @@ export function ProjectForm({ action, teamOptions, cancelHref }: ProjectFormProp
           <Label htmlFor="project-start-date">
             시작일 <span className="text-destructive">*</span>
           </Label>
-          <Input
+          <DatePickerField
             id="project-start-date"
             name="startDate"
-            type="date"
             value={startDate}
-            onChange={(event) => setStartDate(event.target.value)}
+            onChange={setStartDate}
             max={dueDate || undefined}
             aria-invalid={Boolean(state.errors.startDate)}
+            className="w-full"
           />
           <FieldError message={state.errors.startDate} />
         </div>
@@ -247,14 +248,14 @@ export function ProjectForm({ action, teamOptions, cancelHref }: ProjectFormProp
           <Label htmlFor="project-due-date">
             마감 기한 <span className="text-destructive">*</span>
           </Label>
-          <Input
+          <DatePickerField
             id="project-due-date"
             name="dueDate"
-            type="date"
             value={dueDate}
-            onChange={(event) => setDueDate(event.target.value)}
+            onChange={setDueDate}
             min={startDate || undefined}
             aria-invalid={Boolean(state.errors.dueDate)}
+            className="w-full"
           />
           <FieldError message={state.errors.dueDate} />
         </div>
