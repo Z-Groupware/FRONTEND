@@ -62,7 +62,7 @@ export default async function ManageMembersPage({
        이미 여기서 받고 있다.
   */
   const [firstPage, company] = await Promise.all([
-    getManagedMembersPage(query, 1),
+    getManagedMembersPage(query, 0),
     getCompanySetting(),
   ]);
   const teamNames = company.departments.map((team) => team.name);
