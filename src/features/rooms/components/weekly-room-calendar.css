@@ -70,6 +70,7 @@
 }
 
 .rbc-time-slot {
+  z-index: 9;
   color: var(--muted-foreground);
   border-top: none;
 }
