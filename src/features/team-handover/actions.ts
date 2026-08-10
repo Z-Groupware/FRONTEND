@@ -58,9 +58,12 @@ function reassignHandoverItem(
  * ⚠️ 중간에 하나라도 실패하면 그 assignment에서 예외가 그대로 던져진다 — 이미 성공한
  *    앞쪽 reassign은 BE에 반영된 채로 남는다(부분 성공). 호출부가 이 상태를 다시 열었을 때
  *    `reassigneeId`로 복원하는 건 화면(§4 "재배정 오케스트레이션") 몫이다.
+ * ⚠️ `memberId`는 API 호출엔 안 쓴다 — `completeTeamHandoverAction`과 같은 캐시 경로
+ *    (`revalidatePath`)를 무효화하는 데만 쓴다(라우트가 아직 사원 id 기준이라서, 위 주석 참고).
  */
 export async function commitHandoverReassignments(
   handoverId: number,
+  memberId: number,
   assignments: TeamHandoverAssignment[],
 ): Promise<void> {
   const accessToken = await requireAccessToken();
@@ -77,6 +80,10 @@ export async function commitHandoverReassignments(
     method: "PATCH",
     accessToken,
   });
+
+  revalidatePath(LIST_PATH);
+  revalidatePath(`${LIST_PATH}/${memberId}`);
+  revalidatePath(`${MANAGE_PATH}/${memberId}`);
 }
 
 /**
