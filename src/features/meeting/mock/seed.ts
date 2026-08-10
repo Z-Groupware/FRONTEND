@@ -150,6 +150,29 @@ export function ensureMockMeetingsSeeded(): void {
   });
 
   /*
+    m5 — Owner의 **진행중** 회의. 시드에 하나도 없어서 세 상태 중 하나를 화면에서 확인할
+         길이 없었다(§정직한 목업).
+    ⚠️ **끝난 시각을 안 적는다.** 진행중은 저장되는 값이 아니라 "시작 시각은 지났는데
+       [회의 종료 및 제출]을 안 눌렀다"로 계산되는 상태다(§status) — `endMockMeeting`을
+       부르지 않는 것이 곧 진행중이다.
+    ⚠️ 지난 날짜로 잡는다. 미래로 잡으면 그날이 오기 전까지는 예정으로 뜬다.
+  */
+  addMockMeeting({
+    title: "굿즈 앱 8월 스프린트 점검",
+    start: new Date("2026-08-10T09:00:00+09:00"),
+    end: new Date("2026-08-10T09:30:00+09:00"),
+    roomId: "room-small",
+    roomName: "소회의실",
+    projectId: 1,
+    projectTag: "GOODS",
+    topics: [{ main: "운영", sub: "스프린트 점검" }],
+    attendeeIds: [1, 2, 5],
+    hostId: 1,
+    hostAuthority: AUTHORITY.OWNER,
+    roomReservationId: "seed-reservation-5",
+  });
+
+  /*
     m4 — Owner의 BRAND 회의, 완료. 프로젝트가 하나뿐이면 태그 색·필터가 늘 같은 값이라
     화면이 맞는지 알 수 없다.
   */

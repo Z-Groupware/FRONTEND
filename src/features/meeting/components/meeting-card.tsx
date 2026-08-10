@@ -1,12 +1,4 @@
-import {
-  CalendarClock,
-  ChevronRight,
-  DoorOpen,
-  Loader2,
-  MapPin,
-  Sparkles,
-  Users,
-} from "lucide-react";
+import { CalendarClock, ChevronRight, DoorOpen, MapPin, Sparkles, Users } from "lucide-react";
 import Link from "next/link";
 
 import { ProjectTag } from "@/components/common/project-tag";
@@ -49,12 +41,21 @@ function StatusBadge({
       ⚠️ **12px·h-6으로 키운다.** 11px 배지는 카드 구석의 꼬리표처럼 읽혀 상태가 눈에 안
          걸렸다 — 이 카드에서 제목 다음으로 먼저 봐야 하는 값이다.
     */
-    "inline-flex h-6 shrink-0 items-center gap-1.5 rounded-md border px-2.5 text-[12px] leading-4";
+    /*
+      ⚠️ **배지는 다 글자만이다.** 예정·완료엔 아이콘이 없는데 요약 중·검토 대기에만 붙이니
+         같은 자리의 배지가 두 종류로 보여, 상태를 견주기 전에 생김새부터 갈렸다.
+    */
+    "inline-flex h-6 shrink-0 items-center rounded-md border px-2.5 text-[12px] leading-4";
 
+  /*
+    ⚠️ **도는 표식을 쓰지 않는다**(2026-08-10 고침). 화면은 그릴 때 상태를 한 번 읽을 뿐
+       계속 물어보지 않는다(폴링·스트림을 안 쓰기로 한 팀 협의) — 그런데 배지가 돌고 있으면
+       **지금 이 자리에서 진행되는 중**으로 읽혀서, 끝날 때까지 이 화면을 쳐다보게 된다.
+       실제로는 새로고침해야 바뀐다. 돌지 않는 글자 배지가 그 사실에 맞는다(§정직성).
+  */
   if (affordance === "summarizing") {
     return (
       <span className={cn(badgeClass, "bg-foreground/[0.08] border-transparent font-semibold")}>
-        <Loader2 className="size-3.5 animate-spin" aria-hidden />
         요약 중
       </span>
     );
@@ -66,7 +67,6 @@ function StatusBadge({
       <span
         className={cn(badgeClass, "bg-foreground text-background border-transparent font-semibold")}
       >
-        <Sparkles className="size-3.5" aria-hidden />
         검토 대기
       </span>
     );
