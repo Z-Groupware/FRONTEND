@@ -1,4 +1,4 @@
-import { objectParticle, subjectParticle, topicParticle } from "./korean";
+import { directionParticle, objectParticle, subjectParticle, topicParticle } from "./korean";
 
 /**
  * 조사 고르기 — **사이드바 라벨이 실제로 지나가는 값**으로 묶는다.
@@ -43,5 +43,33 @@ describe("나머지 조사", () => {
   it("목적격 — 받침 유무로 갈린다", () => {
     expect(objectParticle("프로젝트")).toBe("를");
     expect(objectParticle("검색")).toBe("을");
+  });
+});
+
+/**
+ * 방향 조사 — **받침 `ㄹ`만 예외**라 다른 조사와 같이 묶을 수 없다.
+ * 실제로 지나가는 값은 뒤로가기 라벨(화면 이름)이다.
+ */
+describe("directionParticle", () => {
+  it.each(["회의", "공지", "회의 상세", "프로젝트", "대시보드", "저장소 관리"])(
+    "받침 없는 `%s`에는 `로`",
+    (word) => {
+      expect(directionParticle(word)).toBe("로");
+    },
+  );
+
+  it.each(["회의실", "메일", "프로필"])("받침 `ㄹ`도 `로`다 — `%s`", (word) => {
+    expect(directionParticle(word)).toBe("로");
+  });
+
+  it.each(["기업 가입 승인", "검색", "인수인계 목록"])("그 밖의 받침에는 `으로` — `%s`", (word) => {
+    expect(directionParticle(word)).toBe("으로");
+  });
+
+  it("괄호가 문구에 남지 않는다 — 이 조사가 없어서 `(으)로`가 박혀 있었다", () => {
+    expect(`회의 상세${directionParticle("회의 상세")} 돌아가기`).toBe("회의 상세로 돌아가기");
+    expect(`기업 가입 승인${directionParticle("기업 가입 승인")} 돌아가기`).toBe(
+      "기업 가입 승인으로 돌아가기",
+    );
   });
 });
