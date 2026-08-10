@@ -33,10 +33,18 @@ export async function GET(
   }
 
   const { meetingId } = await params;
+  /*
+    ⚠️ **숫자인지 본다.** 그냥 `Number()`하면 `NaN`이 경로에 박혀 BE에 뜻 없는 요청이 나가고,
+       돌아오는 오류가 "무엇이 잘못됐는지"를 말해 주지 못한다.
+  */
+  const meetingIdNumber = Number(meetingId);
+  if (!Number.isInteger(meetingIdNumber) || meetingIdNumber <= 0) {
+    return new Response("잘못된 회의 주소입니다.", { status: 400 });
+  }
 
   let upstream: Response;
   try {
-    upstream = await fetch(`${BASE_URL}${ep.captionsStream(Number(meetingId))}`, {
+    upstream = await fetch(`${BASE_URL}${ep.captionsStream(meetingIdNumber)}`, {
       headers: {
         Authorization: `Bearer ${accessToken}`,
         Accept: "text/event-stream",

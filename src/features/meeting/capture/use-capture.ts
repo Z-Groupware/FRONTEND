@@ -135,12 +135,23 @@ export function useCapture(meetingId: string, initialSeq = 0): UseCaptureResult 
     sendingRef.current = true;
     const batch = pendingRef.current;
     pendingRef.current = [];
-    const result = await submitCaptionsAction(Number(meetingId), batch);
-    if (!result.ok) {
-      /* 보낸 순서를 지켜 되돌린다 — 뒤에 쌓인 것보다 앞이다 */
+    /*
+      ⚠️ **`finally`로 잠금을 반드시 푼다.** Server Action 호출은 액션 안의 `try`와 별개로
+         **전송 자체가 거부될 수 있다**(네트워크 끊김·직렬화 실패). 그때 잠금이 `true`로
+         남으면 이후 모든 전송이 조용히 no-op이 되어 **회의 내내 자막이 한 줄도 안 나간다.**
+      ⚠️ 거부된 배치도 큐로 되돌린다 — 같은 `seq`는 BE가 건너뛰므로 재전송이 안전하다.
+    */
+    try {
+      const result = await submitCaptionsAction(Number(meetingId), batch);
+      if (!result.ok) {
+        /* 보낸 순서를 지켜 되돌린다 — 뒤에 쌓인 것보다 앞이다 */
+        pendingRef.current = [...batch, ...pendingRef.current];
+      }
+    } catch {
       pendingRef.current = [...batch, ...pendingRef.current];
+    } finally {
+      sendingRef.current = false;
     }
-    sendingRef.current = false;
   }, [meetingId]);
 
   /**
@@ -389,13 +400,20 @@ export function useCapture(meetingId: string, initialSeq = 0): UseCaptureResult 
       ⚠️ 실패해도 **녹음은 계속한다.** 여기서 멈추면 마이크는 열렸는데 아무것도 안 담기는
          회의가 된다 — 이유만 남기고 진행한다(§정직성).
     */
-    const session = await startCaptureSessionAction(Number(meetingId));
-    if (!session.ok) setError(session.error ?? "녹음 시작을 서버에 알리지 못했습니다.");
-
+    /*
+      ⚠️ **시계를 먼저 돌리고 서버에 알린다.** 전에는 CAP-01 응답을 기다린 뒤 구간을 열었는데,
+         STT는 이미 켜져 있어서 그 왕복(수백 ms) 사이에 확정된 문장이 **`00:00`으로 찍혔다** —
+         `elapsedNow()`가 볼 구간이 아직 없어서다. 오프셋은 우리 시계(`recordedMs`) 기준이라
+         서버 응답을 기다릴 이유가 없다.
+    */
     const at = Date.now();
     setNow(at);
     setSpans((prev) => [...prev, { from: at, to: null }]);
     setPhase(CAPTURE_PHASE.RECORDING);
+
+    /* 오디오는 안 보내고 상태만 알린다(§3-3). 실패해도 녹음은 계속한다 — 이유만 남긴다 */
+    const session = await startCaptureSessionAction(Number(meetingId));
+    if (!session.ok) setError(session.error ?? "녹음 시작을 서버에 알리지 못했습니다.");
   }, [pushChunk, markPartial, meetingId]);
 
   const pause = useCallback(() => {
@@ -408,7 +426,12 @@ export function useCapture(meetingId: string, initialSeq = 0): UseCaptureResult 
       CAP-02 — ⚠️ BE 주석대로 **모인 자막을 먼저 내보낸 뒤** 일시정지를 알린다.
       먼저 알리면 서버가 그 구간을 닫아 버려 뒤늦게 올라온 것이 갈 곳을 잃는다.
     */
-    void drainCaptions().then(() => pauseCaptureSessionAction(Number(meetingId)));
+    void drainCaptions()
+      .then(() => pauseCaptureSessionAction(Number(meetingId)))
+      /* ⚠️ 조용히 삼키지 않는다 — 서버가 모르면 새로고침 복구·이어받기가 어긋난다 */
+      .then((result) => {
+        if (!result.ok) setError(result.error ?? "일시정지를 서버에 알리지 못했습니다.");
+      });
     const at = Date.now();
     setSpans((prev) => prev.map((span) => (span.to === null ? { ...span, to: at } : span)));
     setNow(at);
@@ -420,7 +443,9 @@ export function useCapture(meetingId: string, initialSeq = 0): UseCaptureResult 
     recorderRef.current?.resume();
     /* ⚠️ 쉬는 동안 마이크가 조용했으니 음량 창을 새로 연다 — 안 그러면 첫 문장이 무음으로 잡힌다 */
     levelRef.current?.mark();
-    void resumeCaptureSessionAction(Number(meetingId));
+    void resumeCaptureSessionAction(Number(meetingId)).then((result) => {
+      if (!result.ok) setError(result.error ?? "재개를 서버에 알리지 못했습니다.");
+    });
     const at = Date.now();
     setNow(at);
     setSpans((prev) => [...prev, { from: at, to: null }]);
@@ -435,7 +460,11 @@ export function useCapture(meetingId: string, initialSeq = 0): UseCaptureResult 
          실패해도 재시도한다 — 사용자가 창을 닫아도 안전하다.
       ⚠️ 되돌릴 수 없다. 확인 창을 거친 뒤에만 여기로 온다(§3-3 종료 정책).
     */
-    void drainCaptions().then(() => completeMeetingAction(Number(meetingId)));
+    void drainCaptions()
+      .then(() => completeMeetingAction(Number(meetingId)))
+      .then((result) => {
+        if (!result.ok) setError(result.error ?? "회의 종료를 서버에 알리지 못했습니다.");
+      });
     const at = Date.now();
     /*
       ⚠️ **열려 있는 구간만 닫는다.** 무조건 마지막 구간의 `to`를 덮어쓰면, 일시정지해 둔
