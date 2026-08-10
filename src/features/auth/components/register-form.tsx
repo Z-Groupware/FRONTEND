@@ -21,7 +21,7 @@ import { SubmitButton } from "./submit-button";
  *    거기서 끝나고 이 파일은 어느 쪽인지 모른다(§Mock 격리막).
  * ⚠️ 브라우저 기본 검증(`required` 말풍선)을 쓰지 않는다 — `noValidate` + 필드 인라인.
  */
-const INITIAL: RegisterState = { errors: {} };
+const INITIAL: RegisterState = { errors: {}, attempt: 0 };
 
 interface SectionLabelProps {
   title: string;
@@ -40,6 +40,45 @@ function SectionLabel({ title, hint }: SectionLabelProps) {
       <h2 className="text-[13px] leading-5 font-medium">{title}</h2>
       <span className="text-muted-foreground text-[12px] leading-5 break-keep">{hint}</span>
     </div>
+  );
+}
+
+/**
+ * 동의 한 줄.
+ * ⚠️ 체크박스와 글자를 **하나의 `label`**로 묶는다 — 글자를 눌러도 켜져야 하고,
+ *    스크린리더가 무엇에 동의하는지 함께 읽는다(§a11y).
+ * ⚠️ 링크는 `target="_blank"`다. 약관을 보러 나갔다 오면 적던 신청서가 날아간다.
+ */
+function ConsentRow({
+  name,
+  id,
+  required,
+  defaultChecked,
+  children,
+}: {
+  name: string;
+  id: string;
+  required?: boolean;
+  /** 제출이 실패했을 때 눌러 뒀던 동의를 되살린다 — 체크박스도 리셋 대상이다 */
+  defaultChecked?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <label htmlFor={id} className="flex items-center gap-2 text-[12px] leading-5">
+      <input
+        id={id}
+        name={name}
+        type="checkbox"
+        defaultChecked={defaultChecked}
+        className="border-border accent-foreground size-3.5 shrink-0 rounded border"
+      />
+      <span className="text-muted-foreground break-keep">
+        <span className={required ? "text-destructive" : "text-muted-foreground/70"}>
+          {required ? "[필수]" : "[선택]"}
+        </span>{" "}
+        {children}
+      </span>
+    </label>
   );
 }
 
@@ -86,7 +125,9 @@ export function RegisterForm() {
         <SectionLabel title="회사 정보" hint="사업자등록증에 적힌 대로" />
 
         <AuthField
+          key={`companyName-${state.attempt}`}
           id="company-name"
+          defaultValue={state.values?.companyName}
           name="companyName"
           label="기업명"
           icon={Building2}
@@ -139,7 +180,9 @@ export function RegisterForm() {
         <SectionLabel title="관리자 정보" hint="회사 설정과 사원 초대를 맡을 분" />
 
         <AuthField
+          key={`managerName-${state.attempt}`}
           id="manager-name"
+          defaultValue={state.values?.managerName}
           name="managerName"
           label="담당자 이름"
           icon={User}
@@ -150,7 +193,9 @@ export function RegisterForm() {
         />
 
         <AuthField
+          key={`email-${state.attempt}`}
           id="manager-email"
+          defaultValue={state.values?.email}
           name="email"
           label="담당자 이메일"
           icon={Mail}
@@ -162,7 +207,9 @@ export function RegisterForm() {
         />
 
         <AuthField
+          key={`phone-${state.attempt}`}
           id="manager-phone"
+          defaultValue={state.values?.phone}
           name="phone"
           label="연락처"
           icon={Phone}
@@ -172,6 +219,64 @@ export function RegisterForm() {
           autoComplete="tel"
           error={errorOf("phone")}
         />
+
+        {/*
+          ⚠️ **동의는 값이 아니라 행위다.** BE가 `agreedTerms`·`agreedPrivacy`를 필수로 받고
+             안 켜면 `TERMS_NOT_AGREED`로 거절한다 — 화면에 칸이 없으면 신청 자체가 안 된다.
+          ⚠️ 기본으로 켜 두지 않는다. 미리 켜 둔 동의는 동의가 아니다.
+          ⚠️ 시각은 안 보낸다 — 서버가 찍는다(클라이언트가 준 시각은 증거가 못 된다).
+        */}
+        <fieldset className="border-border flex flex-col gap-2 rounded-lg border px-3.5 py-3">
+          <legend className="text-muted-foreground px-1 text-[11px] leading-4">약관 동의</legend>
+
+          <ConsentRow
+            key={`agreedTerms-${state.attempt}`}
+            defaultChecked={state.values?.agreedTerms}
+            name="agreedTerms"
+            id="agreed-terms"
+            required
+          >
+            <Link href="/terms" target="_blank" className="text-foreground hover:underline">
+              이용약관
+            </Link>
+            에 동의합니다
+          </ConsentRow>
+
+          <ConsentRow
+            key={`agreedPrivacy-${state.attempt}`}
+            defaultChecked={state.values?.agreedPrivacy}
+            name="agreedPrivacy"
+            id="agreed-privacy"
+            required
+          >
+            <Link href="/privacy" target="_blank" className="text-foreground hover:underline">
+              개인정보 처리방침
+            </Link>
+            에 동의합니다
+          </ConsentRow>
+
+          <ConsentRow
+            key={`agreedMarketing-${state.attempt}`}
+            defaultChecked={state.values?.agreedMarketing}
+            name="agreedMarketing"
+            id="agreed-marketing"
+          >
+            제품 소식·안내 메일 수신에 동의합니다
+          </ConsentRow>
+        </fieldset>
+
+        {/*
+          ⚠️ 동의 누락·중복 사업자번호처럼 **칸 하나에 못 매기는 실패**는 여기 적는다.
+             버리면 [신청하기]가 아무 반응 없는 버튼이 된다(§정직성).
+        */}
+        {state.error && (
+          <p
+            role="alert"
+            className="border-destructive/30 bg-destructive/5 text-destructive flex items-start gap-2 rounded-lg border px-3.5 py-3 text-[12px] leading-[18px] break-keep"
+          >
+            {state.error}
+          </p>
+        )}
 
         <div className="flex flex-col pt-2">
           <SubmitButton>

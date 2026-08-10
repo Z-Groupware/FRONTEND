@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 
 import { getUnreadNoticeCount } from "@/features/notice/server";
+import { guardWorkspaceEntry } from "@/features/onboarding/guard";
 import { RoleSidebar } from "@/features/shell/components/role-sidebar";
 import type { NavSection } from "@/features/shell/nav";
 import { dashboardFor, navFor } from "@/features/shell/nav-config";
@@ -40,6 +41,14 @@ export default async function ShellLayout({ children }: { children: ReactNode })
        반대로 **사용자를 못 읽으면 그건 터뜨린다.** 누군지 모르는 채로 그린 사이드바는
        메뉴·권한이 틀린 화면이라, 조용히 넘기면 더 나쁘다.
   */
+  /*
+    ⚠️ **온보딩을 안 끝냈으면 워크스페이스에 못 들어온다.** 부서·직급이 하나도 없는 회사에서
+       셸을 그리면 사이드바 메뉴는 뜨는데 안쪽 화면마다 빈 목록이 나온다 — 무엇이 잘못됐는지
+       알 수 없는 상태다. 판정은 `isOnboarded`(BE가 매번 DB에서 읽는 값) 하나로 끝난다.
+    ⚠️ `redirect`는 예외를 던진다 — `Promise.all` **앞**에서 끝낸다.
+  */
+  await guardWorkspaceEntry();
+
   const [viewer, unreadNoticeCount] = await Promise.all([
     getViewer(),
     getUnreadNoticeCount().catch(() => 0),

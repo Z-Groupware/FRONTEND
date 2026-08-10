@@ -46,20 +46,26 @@ const choicesOf = (invites: Invite[]) =>
     rolesOf: (departmentId) => ROLES[departmentId] ?? [],
     positionOptions: POSITIONS,
     isLeaderPosition: rules.isLeaderPosition,
-    rules,
   });
 
 const names = (options: SelectOption[]) => options.map((option) => option.name);
 
 describe("rolesFor", () => {
   /*
-    ⚠️ **`없음`은 더 이상 기본 선택지가 아니다.** 전에는 역할 목록 맨 앞에 늘 얹어 두고
-       팀장이 그걸 골랐는데, BE에서 `리더`와 `없음`은 서로 다른 역할이라(전역 시드 1·2)
-       하나로 뭉뚱그리면 팀장인지 무라벨 팀원인지 구분이 안 된다.
+    ⚠️ **`리더`와 `없음`을 목록에 직접 띄운다**(2026-08-10). 전에는 `리더`를 고를 자리가
+       없어서, 팀장을 만들려면 뜻하지도 않은 역할을 일단 고르고 직급으로 덮어써야 했다 —
+       직급 칸이 역할을 고른 뒤에 열리기 때문이다.
+    ⚠️ 그래도 **둘은 서로 다른 값이다**(BE 전역 시드 1·2). 하나로 뭉뚱그리면 팀장인지
+       무라벨 팀원인지 구분이 안 된다.
   */
-  it("역할이 있는 부서는 그 역할들만 준다 — `없음`은 얹지 않는다", () => {
+  it("리더 → 팀 안의 역할들 → 없음 순서로 준다", () => {
     const row = invite();
-    expect(names(choicesOf([row]).rolesFor(row))).toEqual(["프론트엔드", "백엔드"]);
+    expect(names(choicesOf([row]).rolesFor(row))).toEqual([
+      LEADER_ROLE_LABEL,
+      "프론트엔드",
+      "백엔드",
+      NO_ROLE_LABEL,
+    ]);
   });
 
   it("리더 직급이면 `리더` 하나뿐이다 — 고르는 게 아니라 정해진 값이다", () => {
@@ -67,9 +73,9 @@ describe("rolesFor", () => {
     expect(names(choicesOf([row]).rolesFor(row))).toEqual([LEADER_ROLE_LABEL]);
   });
 
-  it("역할이 없는 부서는 `없음` 하나뿐이다", () => {
+  it("역할이 없는 부서에도 `리더`는 남는다 — 그 팀에도 팀장은 있다", () => {
     const row = invite({ departmentId: "ops" });
-    expect(names(choicesOf([row]).rolesFor(row))).toEqual([NO_ROLE_LABEL]);
+    expect(names(choicesOf([row]).rolesFor(row))).toEqual([LEADER_ROLE_LABEL, NO_ROLE_LABEL]);
   });
 });
 
@@ -108,9 +114,13 @@ describe("isRoleLocked", () => {
     expect(choicesOf([row]).isRoleLocked(row)).toBe(true);
   });
 
-  it("역할이 없는 부서면 잠근다 — 이미 `없음`으로 정해져 있다", () => {
+  /*
+    ⚠️ 전에는 "고를 게 `없음`뿐"이라 잠갔는데, 이제 `리더`도 있어서 고를 게 둘이다 —
+       잠가 두면 그 팀은 팀장을 직급 칸으로 우회해서만 지정할 수 있다.
+  */
+  it("역할이 없는 부서는 잠그지 않는다 — `리더`를 고를 수 있어야 한다", () => {
     const row = invite({ departmentId: "ops" });
-    expect(choicesOf([row]).isRoleLocked(row)).toBe(true);
+    expect(choicesOf([row]).isRoleLocked(row)).toBe(false);
   });
 
   it("그 밖에는 열어 둔다", () => {

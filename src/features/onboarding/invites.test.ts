@@ -316,21 +316,23 @@ describe("duplicateEmails", () => {
 });
 
 /*
-  역할이 하나도 없는 부서는 규칙에서 빠진다 — 고를 역할이 `없음`뿐이라
-  그대로 적용하면 그 부서에 팀장 한 명밖에 못 들어간다(팀 결정: 예외 허용).
+  ⚠️ **`없음`은 어느 팀에서나 고를 수 있다**(2026-08-10 변경). 전에는 역할이 있는 팀에서
+     일반 팀원이 `없음`을 고르는 걸 막았는데, 이제 목록에 띄워 놓고 고르게 하므로
+     막으면 화면과 발송 판정이 다른 말을 한다. BE도 `subTeamTempId: null`을 허용한다.
 */
-describe("역할 없는 부서 — 짝 규칙에서 빠진다", () => {
+describe("`없음` — 팀에 역할이 있든 없든 고를 수 있다", () => {
   const noRoles: InviteRules = { isLeaderPosition: (id) => id === "lead", hasRoles: () => false };
 
-  it("역할이 `없음`이어도 일반 직급을 그대로 둔다", () => {
+  it("역할 없는 팀 — 일반 직급을 그대로 둔다", () => {
     const next = changeInviteRole(makeList(), "a", NO_ROLE_ID, noRoles);
     expect(next[0]?.roleId).toBe(NO_ROLE_ID);
     expect(next[0]?.positionId).toBe("staff");
   });
 
-  it("역할이 있는 부서라면 같은 조작에서 직급이 비워진다 — 예외인지 아닌지가 갈린다", () => {
+  it("역할 있는 팀에서도 직급이 그대로 남는다 — 더는 예외가 갈리지 않는다", () => {
     const next = changeInviteRole(makeList(), "a", NO_ROLE_ID, isLeader);
-    expect(next[0]?.positionId).toBe("");
+    expect(next[0]?.roleId).toBe(NO_ROLE_ID);
+    expect(next[0]?.positionId).toBe("staff");
   });
 });
 
@@ -342,13 +344,14 @@ describe("changeInviteRole", () => {
   });
 
   /*
-    역할과 직급은 짝이 맞아야 한다: 리더는 `없음`, 나머지는 역할이 있어야 한다.
+    역할과 직급은 짝이 맞아야 한다: **`리더`는 리더 직급하고만** 붙는다.
     ⚠️ 어긋나면 **직급을 비운다.** 막기만 하면 어느 쪽도 못 고치는 줄이 생긴다.
+    ⚠️ `없음`은 이제 짝을 안 가린다 — 위의 describe 참고.
   */
-  it("리더가 아닌 직급인데 역할을 `없음`으로 바꾸면 직급이 비워진다", () => {
+  it("리더가 아닌 직급인데 역할을 `리더`로 바꾸면 직급이 비워진다", () => {
     const staff = changeInviteRole(makeList(), "a", "fe", isLeader);
-    const next = changeInviteRole(staff, "a", NO_ROLE_ID, isLeader);
-    expect(next[0]?.roleId).toBe(NO_ROLE_ID);
+    const next = changeInviteRole(staff, "a", LEADER_ROLE_ID, isLeader);
+    expect(next[0]?.roleId).toBe(LEADER_ROLE_ID);
     expect(next[0]?.positionId).toBe("");
   });
 
@@ -580,11 +583,16 @@ describe("remapInvite — 1·2단계 편집분 반영", () => {
     expect(sendableInvites([next], isLeader)).toEqual([]);
   });
 
-  it("팀에 역할이 생기면 `없음`을 비운다 — 고를 수 있는데 안 고른 셈이다", () => {
+  /*
+    ⚠️ 전에는 팀에 역할이 생기면 `없음`을 비웠다 — "고를 수 있는데 안 고른 셈"이라서다.
+       이제 `없음`은 어느 팀에서나 **직접 고르는 값**이라(`rolesFor`), 1단계에서 역할이
+       늘었다고 사용자가 고른 값을 지우면 안 된다.
+  */
+  it("팀에 역할이 생겨도 `없음`은 남는다 — 직접 고른 값이다", () => {
     const hasRoles: InviteRules = { isLeaderPosition: () => false, hasRoles: () => true };
     const next = remapInvite(row({ roleId: NO_ROLE_ID, positionId: "staff" }), options, hasRoles);
 
-    expect(next.roleId).toBe("");
+    expect(next.roleId).toBe(NO_ROLE_ID);
   });
 
   it("팀에 역할이 없으면 `없음`이 남는다", () => {

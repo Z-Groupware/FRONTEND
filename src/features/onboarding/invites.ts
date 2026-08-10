@@ -206,9 +206,18 @@ export function remapInvite(
   const departmentId = options.departmentIds.has(invite.departmentId) ? invite.departmentId : "";
   const positionId = options.positionIds.has(invite.positionId) ? invite.positionId : "";
 
+  /*
+    ⚠️ **예약값 둘이 살아남는 조건이 느슨해졌다**(2026-08-10). 이제 둘 다 목록에서
+       **직접 고르는 값**이라(`rolesFor`), 전제가 예전만큼 빡빡하지 않다.
+       - `리더`: 리더 직급이거나, **아직 직급을 안 고른** 줄. 직급보다 역할을 먼저 고를 수
+         있게 됐으므로 "직급이 리더일 때만"으로 두면 방금 고른 `리더`가 곧바로 지워진다.
+       - `없음`: 팀만 정해져 있으면 된다. 역할이 있는 팀에서도 고를 수 있다
+         (`fitsRoleAndPosition` 참고 — BE도 `subTeamTempId: null`을 허용한다).
+  */
   const keepsReserved =
-    (invite.roleId === LEADER_ROLE_ID && rules.isLeaderPosition(positionId)) ||
-    (invite.roleId === NO_ROLE_ID && departmentId !== "" && !rules.hasRoles(departmentId));
+    (invite.roleId === LEADER_ROLE_ID &&
+      (positionId === "" || rules.isLeaderPosition(positionId))) ||
+    (invite.roleId === NO_ROLE_ID && departmentId !== "");
 
   return {
     ...invite,
