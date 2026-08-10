@@ -1,0 +1,81 @@
+"use server";
+
+import { requireAccessToken } from "@/features/auth/session";
+import { serverApi, toUserMessage } from "@/lib/api";
+import { ep } from "@/lib/endpoints";
+import { isMock } from "@/mocks/config";
+
+import { findPayloadProblem, toOnboardingPayload } from "./mapper";
+import type { DepartmentNode, Invite, Position } from "./types";
+
+/**
+ * 온보딩 커밋 창구 — 격리막(§Mock 격리막).
+ *
+ * 1·2·3단계 입력을 [완료]에서 **한 번에** 보낸다(`POST /api/companies/me/onboarding`,
+ * [확인] BE `CompanyController.onboard`). 부서·역할·직급이 만들어지고 초대 명단은
+ * **그 자리에서 계정이 된다** — 수락 단계가 없다.
+ *
+ * ⚠️ **한 번뿐이다.** 재호출은 409(`ALREADY_ONBOARDED`)다 — 되돌리는 경로가 없다.
+ * ⚠️ 이메일이 겹치면 400이 아니라 `skipped`로 돌아온다. 조용히 버리지 말고 화면에 띄운다
+ *    (§정직성) — 오너는 누가 빠졌는지 알아야 계정 발급 화면에서 다시 만든다.
+ */
+
+export interface OnboardingCommitResult {
+  ok: boolean;
+  /** 실패했을 때 화면에 그대로 띄울 한 줄 */
+  error?: string;
+  /** 실제로 계정이 나간 주소 — 이 줄에만 `isSent` 도장을 찍는다 */
+  issuedEmails: string[];
+  /** 빠진 주소와 사유 — 확인 창이 아니라 완료 화면에서 알린다 */
+  skipped: { email: string; reason: string }[];
+}
+
+interface OnboardingResponse {
+  onboardedAt: string;
+  teamCount: number;
+  subTeamCount: number;
+  jobPositionCount: number;
+  issued: { email: string; status: string }[];
+  skipped: { email: string; reason: string }[];
+}
+
+export async function commitOnboardingAction(input: {
+  departments: DepartmentNode[];
+  positions: Position[];
+  /** 이번에 실제로 나갈 줄만 넘긴다 — 발송 판정은 화면의 `sendableInvites`가 이미 했다 */
+  invites: Invite[];
+}): Promise<OnboardingCommitResult> {
+  const payload = toOnboardingPayload(input);
+
+  /*
+    ⚠️ 화면이 이미 걸렀더라도 **여기서 다시 본다.** 화면 검증은 편의일 뿐이고 판정은
+       서버가 한다(§권한: 화면 숨김은 보안이 아니다).
+  */
+  const problem = findPayloadProblem(payload);
+  if (problem) return { ok: false, error: problem, issuedEmails: [], skipped: [] };
+
+  if (isMock) {
+    return {
+      ok: true,
+      issuedEmails: payload.invites.map((invite) => invite.email),
+      skipped: [],
+    };
+  }
+
+  try {
+    const token = await requireAccessToken();
+    const data = await serverApi<OnboardingResponse>(ep.companyOnboarding(), {
+      method: "POST",
+      json: payload,
+      accessToken: token,
+    });
+
+    return {
+      ok: true,
+      issuedEmails: data.issued.map((item) => item.email),
+      skipped: data.skipped,
+    };
+  } catch (error) {
+    return { ok: false, error: toUserMessage(error), issuedEmails: [], skipped: [] };
+  }
+}

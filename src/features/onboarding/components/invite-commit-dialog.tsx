@@ -15,6 +15,10 @@ interface InviteCommitDialogProps {
   /** 다 골랐는데 규칙에 걸린 줄 — 그 줄에 문구가 떠 있다 */
   flaggedCount: number;
   onConfirm: () => void;
+  /** 서버에 보내는 중 — 두 버튼이 다 잠긴다 */
+  isPending?: boolean;
+  /** 저장 실패 사유 — 창을 **열어 둔 채** 버튼 위에 적는다 */
+  error?: string | null;
 }
 
 /**
@@ -35,6 +39,8 @@ export function InviteCommitDialog({
   unfilledCount,
   flaggedCount,
   onConfirm,
+  isPending,
+  error,
 }: InviteCommitDialogProps) {
   return (
     <ConfirmDialog
@@ -48,6 +54,9 @@ export function InviteCommitDialog({
       }
       confirmLabel="등록"
       onConfirm={onConfirm}
+      isPending={isPending}
+      pendingLabel="등록 중"
+      error={error}
     >
       {/*
         ⚠️ 칸을 나눠 상자 세 개로 그리지 않는다. 가운데 정렬 창 안에서 테두리 상자가 더 생기면

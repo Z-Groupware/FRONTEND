@@ -76,6 +76,13 @@ export function useInviteOptions(departments: DepartmentNode[], positions: Posit
   return {
     /** 보관함까지 읽어 선택지가 확정됐는가 */
     isReady,
+    /**
+     * 실제로 쓰이는 1·2단계 값 — **보관함이 있으면 그쪽**이다.
+     *
+     * ⚠️ [완료]가 서버로 보내는 것도 이 값이어야 한다. props(서버 값)를 보내면
+     *    화면에서 방금 고친 부서·직급이 아니라 **고치기 전 값**이 저장된다.
+     */
+    source,
     departmentOptions,
     rolesOf,
     positionOptions,

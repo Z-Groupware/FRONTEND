@@ -34,7 +34,7 @@ interface InviteSetupProps {
  *    나간 메일은 취소되지 않으니 화면만 고칠 수 있게 두면 그게 거짓말이 된다.
  */
 export function InviteSetup({ departments, positions }: InviteSetupProps) {
-  const { isReady, departmentOptions, rolesOf, positionOptions, isLeaderPosition } =
+  const { isReady, source, departmentOptions, rolesOf, positionOptions, isLeaderPosition } =
     useInviteOptions(departments, positions);
 
   /*
@@ -79,9 +79,20 @@ export function InviteSetup({ departments, positions }: InviteSetupProps) {
   }, [isReady, departmentOptions, positionOptions]);
 
   useCommittedRedirect();
-  const { isConfirmOpen, setConfirmOpen, unfilledCount, flaggedCount, commit } = useInviteCommit({
+  const {
+    isConfirmOpen,
+    setConfirmOpen,
+    unfilledCount,
+    flaggedCount,
+    commit,
+    isCommitting,
+    error: commitError,
+  } = useInviteCommit({
     invites: list.invites,
     sendable: list.sendable,
+    // ⚠️ props가 아니라 `source`다 — 보관함에 담긴 **방금 고친 값**이 저장돼야 한다
+    departments: source.departments,
+    positions: source.positions,
     markSent: list.markSent,
   });
 
@@ -165,6 +176,8 @@ export function InviteSetup({ departments, positions }: InviteSetupProps) {
         unfilledCount={unfilledCount}
         flaggedCount={flaggedCount}
         onConfirm={commit}
+        isPending={isCommitting}
+        error={commitError}
       />
     </div>
   );
