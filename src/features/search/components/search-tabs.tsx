@@ -49,7 +49,11 @@ export function SearchTabs({
             replace
             scroll={false}
             className={cn(
-              "focus-visible:ring-ring -mb-px flex items-center gap-1.5 border-b-2 px-3 py-2.5 text-[13px] leading-5 transition-colors focus-visible:ring-2 focus-visible:outline-hidden",
+              /*
+                ⚠️ 포커스 링에 **모서리를 준다.** 각진 검은 네모가 탭을 감싸면 눌린 상태처럼
+                   보인다 — 링은 "지금 키보드가 여기 있다"는 표시지 선택 표시가 아니다.
+              */
+              "focus-visible:ring-ring -mb-px flex items-center gap-1.5 rounded-t-md border-b-2 px-3 py-2.5 text-[13px] leading-5 transition-colors focus-visible:ring-2 focus-visible:outline-hidden",
               isActive
                 ? "border-foreground text-foreground font-semibold"
                 : "text-muted-foreground hover:text-foreground border-transparent",
