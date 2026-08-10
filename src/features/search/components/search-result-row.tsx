@@ -1,6 +1,5 @@
 import Link from "next/link";
 
-import { ProfileAvatar } from "@/components/common/profile-avatar";
 import { ProjectTag } from "@/components/common/project-tag";
 import { AUTHORITY_BADGE_CLASS, AUTHORITY_LABEL } from "@/constants/authority";
 import { formatDate } from "@/lib/date";
@@ -51,9 +50,13 @@ export function SearchResultRow({ item, keyword }: SearchResultRowProps) {
         }}
         aria-hidden
       />
+      {/*
+        ⚠️ **얼굴을 여기 끼우지 않는다.** 사람 줄에만 아바타를 넣었더니 그 줄만 제목이
+           오른쪽으로 밀려 **줄마다 제목이 다른 자리에서 시작했다** — 목록은 한 세로선을
+           따라 읽는다. 종류는 이미 왼쪽 배지가 말한다.
+        ⚠️ 랜딩의 `사람으로 찾기`는 **모든 줄이 사람**이라 아바타를 넣어도 열이 안 흔들린다.
+      */}
       <KindBadge kind={item.kind} />
-      {/* ⚠️ 사람은 태그가 없다 — 대신 얼굴이 그 자리를 맡는다(랜딩 사람 목록과 같다) */}
-      {item.kind === "PERSON" && <ProfileAvatar userId={item.id} size={26} />}
 
       <div className="min-w-0 flex-1">
         {/*
