@@ -1,9 +1,12 @@
 import Link from "next/link";
 
+import { ProjectTag } from "@/components/common/project-tag";
 import { formatDate } from "@/lib/date";
+import { pickPaletteColor } from "@/lib/palette";
 
 import type { SearchResultItem } from "../types";
 import { KindBadge } from "./kind-badge";
+import { SearchSection } from "./search-section";
 
 interface RecentlyViewedGridProps {
   items: SearchResultItem[];
@@ -20,27 +23,42 @@ export function RecentlyViewedGrid({ items }: RecentlyViewedGridProps) {
   if (items.length === 0) return null;
 
   return (
-    <div>
-      <h2 className="text-muted-foreground mb-3 text-[12px] leading-4">최근 본 항목</h2>
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+    <SearchSection title="최근 본 항목" meta={`${items.length}건`}>
+      {/*
+        ⚠️ **한 줄에 하나씩 쌓는다**(2026-08-10 바꿈). 두 칸 격자로 두니 제목 길이가 제각각인
+           카드 넷이 어긋나 보였고, 아래 `프로젝트로 찾기`·`사람으로 찾기`가 이미 낱장 목록이라
+           이 덩이만 격자여서 화면 안에서 혼자 놀았다 — 같은 화면은 같은 결로 읽혀야 한다.
+        ⚠️ 대신 **한 줄로 눕힌다.** 세로로 쌓기만 하면 넷이 화면을 길게 끌므로, 제목·태그·
+           보조값을 한 줄에 세워 줄 높이를 낮춘다(대시보드 회의 줄과 같은 결).
+      */}
+      <ul className="flex flex-col gap-2">
         {items.map((item) => (
-          <RecentlyViewedCard key={`${item.kind}-${item.id}`} item={item} />
+          <li key={`${item.kind}-${item.id}`}>
+            <RecentlyViewedCard item={item} />
+          </li>
         ))}
-      </div>
-    </div>
+      </ul>
+    </SearchSection>
   );
 }
 
-function meta(item: SearchResultItem): string {
+/**
+ * 보조값을 **둘로 가른다** — 왼쪽은 사람·프로젝트 같은 '누구/무엇', 오른쪽은 날짜·개수 같은 '언제/얼마'.
+ *
+ * ⚠️ 전에는 `A · B` 한 문장이라 통째로 오른쪽 끝에 붙었고, 제목이 짧은 줄은 **가운데가
+ *    400px 넘게 비었다** — 눈이 그 사이를 건너뛰어야 했다.
+ * ⚠️ 갈라서 각자 열에 세우면 줄 전체로 퍼지면서도 **열마다 축이 선다**(DESIGN §3).
+ */
+function metaParts(item: SearchResultItem): { lead: string; trail: string } {
   switch (item.kind) {
     case "MEETING":
-      return `${item.projectName} · ${formatDate(item.meetingDate)}`;
+      return { lead: item.projectName, trail: formatDate(item.meetingDate) };
     case "ACTION":
-      return `${item.assigneeName} · 마감 ${formatDate(item.dueDate)}`;
+      return { lead: item.assigneeName, trail: `마감 ${formatDate(item.dueDate)}` };
     case "PROJECT":
-      return `회의 ${item.meetingCount}건 · 액션 ${item.actionCount}건`;
+      return { lead: `회의 ${item.meetingCount}건`, trail: `액션 ${item.actionCount}건` };
     case "PERSON":
-      return item.team ?? "소속 없음";
+      return { lead: item.team ?? "소속 없음", trail: "" };
   }
 }
 
@@ -60,25 +78,82 @@ interface RecentlyViewedCardProps {
 }
 
 function RecentlyViewedCard({ item }: RecentlyViewedCardProps) {
+  /*
+    ⚠️ **프로젝트도 자기 태그와 색이 있다.** 전에는 "제목이 곧 프로젝트"라며 뺐는데, 그러면
+       그 줄만 막대·칩 자리가 비어 **혼자 텅 빈 것처럼** 보였다 — 태그(`GOODS`)는 짧은
+       코드고 제목은 긴 이름이라 서로 대신하지 못한다.
+  */
+  const tag =
+    item.kind === "MEETING" || item.kind === "ACTION"
+      ? item.projectTag
+      : item.kind === "PROJECT"
+        ? item.tag
+        : null;
+  const parts = metaParts(item);
+
   const inner = (
     <>
+      {/*
+        ⚠️ **왼쪽에 프로젝트 색 막대를 세운다.** 한 줄짜리 행이 넷 쌓이니 전부 같은 무게로
+           읽혀 눈에 안 걸렸다 — 색 한 줄이 행마다 다른 표식이 되어 훑을 때 걸린다
+           (대시보드 회의 줄이 쓰는 것과 같은 방식).
+        ⚠️ 프로젝트 자신은 태그가 곧 제목이라 막대를 세우지 않는다 — 자리는 비워 둬야
+           오와 열이 맞는다.
+      */}
+      <span
+        /* ⚠️ `h-full`은 부모 높이가 auto라 0이 된다 — 늘어나야 하므로 `self-stretch`다 */
+        className="w-1 shrink-0 self-stretch rounded-full"
+        style={{ backgroundColor: tag ? pickPaletteColor(tag).solidColor : "transparent" }}
+        aria-hidden
+      />
       <KindBadge kind={item.kind} />
-      <div className="min-w-0 flex-1">
-        <p className="text-foreground truncate text-[13px] leading-5 font-semibold">
-          {title(item)}
-        </p>
-        <p className="text-muted-foreground mt-1 truncate text-[11px] leading-4">{meta(item)}</p>
-      </div>
+      {/*
+        ⚠️ **태그 자리를 고정한다.** 프로젝트 항목엔 태그가 없어서, 자리를 안 잡아 두면
+           그 줄만 제목이 앞으로 당겨져 오와 열이 어긋난다.
+      */}
+      <span className="flex w-[76px] shrink-0 items-center">{tag && <ProjectTag tag={tag} />}</span>
+      <span className="text-foreground shrink-0 truncate text-[13px] leading-5 font-semibold">
+        {title(item)}
+      </span>
+      {/*
+        ⚠️ **제목 뒤에 이어 붙인다.** 오른쪽 끝에 고정 열로 세워 봤더니 제목과 너무 멀어
+           한 줄인데 두 덩이로 읽혔다 — 눈이 가운데 빈 자리를 건너뛰어야 했다.
+           검색 결과는 "무엇 · 어디 · 언제"가 한 문장처럼 이어져야 읽힌다.
+        ⚠️ 그래서 제목도 `flex-1`이 아니다. 늘어나면 다시 벌어진다.
+      */}
+      <span className="text-muted-foreground truncate text-[12px] leading-4">
+        {parts.lead}
+        {parts.trail && <span className="px-1.5 opacity-50">·</span>}
+        {parts.trail}
+      </span>
     </>
   );
 
-  const shape = "border-border flex items-start gap-3 rounded-xl border p-4";
+  /*
+    ⚠️ **같은 화면의 다른 카드와 같은 라운드를 쓴다**(`rounded-2xl`). 여기만 `xl`(18px)이라
+       바로 아래 목록 카드(26px)와 모서리가 갈렸다 — 한 화면에 두 종류가 있으면 어느 쪽이
+       규격인지 알 수 없다. 레포 전체도 `2xl`이 관례다.
+  */
+  /*
+    ⚠️ **카드에 바탕을 준다**(`bg-card`). 테두리만 있던 때는 바탕이 셸과 같은 흰색이라
+       카드가 아니라 그어 둔 네모로 보였다 — 같은 화면의 목록 카드는 이미 `bg-card`다.
+    ⚠️ 그림자는 `.app-shell .bg-card`가 알아서 얕게 깐다(§디자인 토큰) — 여기서 따로 얹지 않는다.
+  */
+  /*
+    ⚠️ **카드 안에 카드를 얹지 않는다**(§DESIGN 2). 바깥이 이제 카드라 여기까지 테두리를
+       두르면 네모 안에 네모가 된다 — 옅은 면으로 갈라 두면 덩이는 보이면서 층은 하나다.
+  */
+  /* ⚠️ 바깥 카드가 사라졌으니 항목이 스스로 카드다 — 테두리를 되돌린다(카드 안의 카드 아님) */
+  /* ⚠️ 색 막대가 위아래로 꽉 차야 표식이 되므로 `items-stretch`다 — 가운데 정렬은 안쪽에서 한다 */
+  const shape =
+    "border-border bg-card flex items-stretch gap-2.5 rounded-xl border py-3 pr-4 pl-3 text-[13px] [&>*:not(:first-child)]:self-center";
 
   if (item.kind === "PROJECT") {
     return (
       <Link
         href={`/app/projects/${item.id}`}
-        className={`${shape} hover:bg-foreground/[0.03] transition-colors`}
+        /* ⚠️ 누를 수 있는 것만 면이 짙어진다 — 넷 중 프로젝트 하나만 링크다 */
+        className={`${shape} hover:border-foreground/25 transition-colors`}
       >
         {inner}
       </Link>

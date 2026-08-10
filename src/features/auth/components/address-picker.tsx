@@ -210,7 +210,7 @@ export function AddressPicker({
             event.preventDefault();
             handleSearch();
           }}
-          placeholder="건물명이나 주소로 찾아보세요"
+          placeholder="건물명이나 주소로 찾아 주세요"
           disabled={!isReady}
           aria-invalid={hasError}
           aria-describedby="company-address-error"
