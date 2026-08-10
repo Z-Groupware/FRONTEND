@@ -22,6 +22,10 @@ import { cn } from "@/lib/utils";
  *    가로로 스크롤할 때 라벨 열이 통째로 사라진다(2026-08-06에 실제로 겪은 버그 — sticky의
  *    포함 블록은 "가장 가까운 스크롤 컨테이너"라 컨테이너를 하나로 합쳐야 한다).
  * ⚠️ 상태는 색만으로 전하지 않는다 — 바의 `aria-label`에 상태·기간을 함께 넣는다(§a11y).
+ * ⚠️ 왼쪽 라벨 열에 **이음매 선**을 둔다(`shadow-[1px_0_0_0_var(--border)]`). 없으면 막대가
+ *    그 경계에서 **뚝 잘린 것처럼** 보인다 — 선이 있으면 "여기서부터 가려진다"가 모양으로
+ *    드러나 잘린 게 아니라 아래로 이어지는 것으로 읽힌다. 보더가 아니라 그림자인 건
+ *    열 폭(`LABEL_COL_PX`)을 1px도 안 건드리려는 것이다.
  */
 
 const TONE_LABEL: Record<StatusTone, string> = {
@@ -39,20 +43,28 @@ const DOT_CLASS: Record<StatusTone, string> = {
   DONE: "bg-status-done",
 };
 
-/** 기간 바 배경·테두리·글자. */
+/**
+ * 기간 바 배경·테두리·글자 — **상태점과 같은 색 셋**이다(DESIGN §5: 할일 회색 · 진행중 초록 ·
+ * 완료 보라 · 지연 빨강).
+ *
+ * ⚠️ **완료가 회색이었다.** 할일과 같은 색이라 막대만 봐서는 끝난 것과 아직 안 한 것이
+ *    구분되지 않았다 — 왼쪽 점은 보라인데 막대는 회색이라 같은 줄이 두 말을 했다.
+ * ⚠️ 바탕은 옅게(12%), 글자는 진하게 둔다. 막대 위에 `D-12` 같은 글자가 얹히므로 단색으로
+ *    채우면 글자가 안 읽힌다 — 채도가 아니라 **명도**로 상태를 가른다.
+ */
 const BAR_CLASS: Record<StatusTone, string> = {
   DELAYED: "border-destructive/30 bg-destructive/10 text-destructive",
   IN_PROGRESS: "border-success/40 bg-success/12 text-success",
-  TODO: "border-border bg-muted text-muted-foreground",
-  DONE: "border-border bg-muted text-muted-foreground",
+  TODO: "border-border bg-foreground/[0.06] text-muted-foreground",
+  DONE: "border-status-done/35 bg-status-done/12 text-status-done",
 };
 
-/** 마감 지점 캡 — 세 상태 모두 같은 무게로 진하게(할일도 옅은 회색 아님). */
+/** 마감 지점 캡 — 막대 오른쪽 끝을 같은 색으로 못박는다(어디서 끝나는지가 이 표의 요점이다). */
 const CAP_CLASS: Record<StatusTone, string> = {
   DELAYED: "bg-destructive",
   IN_PROGRESS: "bg-status-progress",
   TODO: "bg-muted-foreground",
-  DONE: "bg-muted-foreground",
+  DONE: "bg-status-done",
 };
 
 /** 기간 바(또는 href 없을 때의 비클릭 바) 공통 클래스. */
@@ -122,24 +134,27 @@ export function ActionTimeline({
       <div className="relative" style={{ minWidth: LABEL_COL_PX + totalWidthPx }}>
         {/* 날짜 축 — 세로 스크롤 중에도 위에 고정. z는 아래 그리드(0)·행(20)보다 항상 높게(30) */}
         {/*
-          ⚠️ 날짜 축에 **머리 띠**를 깐다(DESIGN §3, 표 머리와 같은 값). 카드 제목과 같은
-             흰 바탕이면 둘이 한 덩어리로 붙어, 위에 있는 카드 제목이 "머리"가 아니라
-             그냥 첫 줄처럼 읽혔다 — 띠가 있어야 제목 → 축 → 행의 층이 눈에 그려진다.
+          ⚠️ 날짜 축에 **머리 띠**를 깐다(DESIGN §3, 표 머리와 같은 결). 카드 제목과 같은 흰
+             바탕이면 둘이 한 덩어리로 붙어, 위에 있는 제목이 "머리"가 아니라 첫 줄로 읽혔다.
+          ⚠️ 띠 색은 **불투명이어야 한다.** `bg-secondary/50`처럼 알파가 섞인 값을 쓰면 왼쪽
+             라벨 칸(`sticky left-0`)이 반투명이 되어, 가로로 스크롤할 때 **뒤로 지나가는 날짜가
+             라벨 위로 비친다**(`7~9월` 위에 `토 8`이 겹쳐 보였다). 같은 색을 `color-mix`로
+             섞어 불투명하게 만든다 — 라이트·다크 모두 토큰에서 나온다.
           ⚠️ 글자는 11px(힌트 규격)다. 10.5px은 다섯 크기에 없는 값이었다.
         */}
-        <div className="border-border bg-secondary/50 sticky top-0 z-30 flex border-b text-[11px] leading-4">
+        <div className="border-border sticky top-0 z-30 flex border-b bg-[color-mix(in_oklab,var(--foreground)_4%,var(--card))] text-[11px] leading-4">
           {/*
             ⚠️ `self-stretch` + 내부 `items-end`로 라벨이 헤더 전체 높이를 채운다 — `self-end`(짧은
             박스)만 쓰면 라벨 위쪽 몇 px가 이 칸의 배경으로 안 덮여서, 가로 스크롤로 지나가는 날짜
             칸이 그 틈으로 살짝 비친다(2026-08-06에 실제로 겪은 버그).
           */}
           <div
-            className="bg-secondary/50 sticky left-0 z-10 flex shrink-0 items-end self-stretch px-3 pb-1.5"
+            className="sticky left-0 z-10 flex shrink-0 items-end self-stretch bg-[color-mix(in_oklab,var(--foreground)_4%,var(--card))] px-3 pb-1.5"
             style={LABEL_COL_STYLE}
           >
             <span className="text-muted-foreground">{monthLabel}</span>
           </div>
-          <div className="bg-secondary/50 flex">
+          <div className="flex bg-[color-mix(in_oklab,var(--foreground)_4%,var(--card))]">
             {days.map((day) => (
               <div
                 key={day.iso}
@@ -174,8 +189,13 @@ export function ActionTimeline({
                   style={{ width: TIMELINE_DAY_WIDTH_PX }}
                 />
               ))}
+              {/*
+                ⚠️ 오늘 선은 **먹색**이다. 파랑(`--primary`)이었는데 축의 토요일 날짜도 파랑이라
+                   같은 색이 두 가지를 뜻했다 — 축 색 규칙(오늘=먹색 볼드)과도 앞뒤가 안 맞았다.
+                ⚠️ 색으로 알리는 건 에러(빨강)뿐이다(DESIGN §5) — 오늘은 명도로 알린다.
+              */}
               <span
-                className="bg-primary absolute inset-y-0 w-0.5 -translate-x-1/2"
+                className="bg-foreground/70 absolute inset-y-0 w-0.5 -translate-x-1/2"
                 style={{ left: todayLeftPx }}
               />
             </div>
@@ -189,7 +209,7 @@ export function ActionTimeline({
               <>
                 {/* 좌: 상태점 · 액션명 · 칩(호출부마다 뜻 다름 — 태그 또는 팀명) */}
                 <div
-                  className="bg-card sticky left-0 z-10 flex min-w-0 shrink-0 items-center gap-2 px-3"
+                  className="bg-card sticky left-0 z-10 flex min-w-0 shrink-0 items-center gap-2 px-3 shadow-[1px_0_0_0_var(--border)]"
                   style={LABEL_COL_STYLE}
                 >
                   <span
@@ -255,14 +275,20 @@ export function ActionTimeline({
 
 /** 축과 짝이 되는 범례 — 카드 헤더 우측에 둔다(색=상태 의미를 한 줄로). */
 export function ActionTimelineLegend() {
+  /*
+    ⚠️ **완료도 적는다.** 막대에 네 가지 색이 나오는데 범례가 셋뿐이라, 보라 막대만 무슨
+       뜻인지 화면에 없었다 — 색을 쓰면 그 색이 무엇인지도 같이 적어야 한다.
+    ⚠️ 순서는 상태가 흐르는 순서다(할일 → 진행중 → 완료), 지연은 그 흐름 밖이라 끝에 둔다.
+  */
   const legend: { tone: StatusTone; label: string }[] = [
-    { tone: "DELAYED", label: TONE_LABEL.DELAYED },
-    { tone: "IN_PROGRESS", label: TONE_LABEL.IN_PROGRESS },
     { tone: "TODO", label: TONE_LABEL.TODO },
+    { tone: "IN_PROGRESS", label: TONE_LABEL.IN_PROGRESS },
+    { tone: "DONE", label: TONE_LABEL.DONE },
+    { tone: "DELAYED", label: TONE_LABEL.DELAYED },
   ];
 
   return (
-    <div className="text-muted-foreground flex items-center gap-3 text-xs">
+    <div className="text-muted-foreground flex items-center gap-3 text-[12px] leading-4">
       {legend.map(({ tone, label }) => (
         <span key={tone} className="flex items-center gap-1.5">
           <span className={cn("size-1.5 rounded-full", DOT_CLASS[tone])} aria-hidden />
