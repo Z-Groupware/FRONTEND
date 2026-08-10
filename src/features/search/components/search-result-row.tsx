@@ -95,7 +95,11 @@ export function SearchResultRow({ item, keyword }: SearchResultRowProps) {
         ⚠️ 제목 줄이 아니라 **항목 전체의 세로 중앙**에 선다(배지와 같은 높이) — 두 줄짜리
            항목에서 첫 줄에만 매달리면 다시 기울어 보인다.
       */}
-      <span className="text-muted-foreground shrink-0 truncate text-[12px] leading-4">
+      {/*
+        ⚠️ **여기도 줄어들 수 있어야 한다**(2026-08-10 리뷰). `shrink-0 truncate`는 서로 어긋난다 —
+           못 줄이는 상자에는 넘칠 일이 없어 말줄임이 안 걸리고, 긴 값이 줄을 밀고 나간다.
+      */}
+      <span className="text-muted-foreground min-w-0 truncate text-[12px] leading-4">
         <MatchText text={rowMeta(item)} keyword={keyword} />
       </span>
 
