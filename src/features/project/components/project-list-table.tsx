@@ -38,12 +38,16 @@ export function ProjectListTable({ projects }: { projects: readonly ProjectListI
           <tr className="text-muted-foreground bg-secondary/50 border-border border-b text-[12px] leading-4">
             <th className="px-6 py-3 text-left font-normal">프로젝트</th>
             {/*
-              ⚠️ 진척은 **오른쪽 정렬**이다. 칸 안에 막대와 숫자가 함께 있어서 묶음을 가운데
-                 두면 머리글이 막대 위에 얹히고 숫자는 60px 오른쪽에 남는다 — 머리글이
-                 가리키는 값은 숫자다. 오른쪽 끝을 맞추면 `진척`과 `0%`가 한 세로선에 선다
-                 (§4: 자릿수가 섞이는 숫자는 오른쪽 정렬).
+              ⚠️ 머리글은 **막대+숫자 묶음의 가운데**에 선다. 칸 가운데에 두면 막대 위에
+                 얹히고, 숫자에 맞추면 오른쪽 끝에 붙어 묶음과 따로 논다 — 이 열이 가리키는
+                 값은 둘을 합친 하나다.
+              ⚠️ 폭 138은 **묶음 폭 그대로**다(막대 96 + 간격 8 + 숫자 34). 묶음이 오른쪽 끝에
+                 서므로 같은 폭을 오른쪽에 붙이고 그 안에서 가운데로 둔다 — 묶음 규격이 바뀌면
+                 이 값도 같이 바뀐다.
             */}
-            <th className="py-3 pr-4 pl-4 text-right font-normal">진척</th>
+            <th className="px-4 py-3 font-normal">
+              <span className="ml-auto block w-[138px] text-center">진척</span>
+            </th>
             <th className="px-4 py-3 text-center font-normal">마감</th>
             {/*
               ⚠️ 참여 팀만 **왼쪽**이다. 배지 개수가 줄마다 달라(둘·셋 또는 `+N`) 가운데로 두면

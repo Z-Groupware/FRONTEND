@@ -121,19 +121,25 @@ export function ActionTimeline({
     <div className="scrollbar-hidden min-h-0 flex-1 overflow-auto">
       <div className="relative" style={{ minWidth: LABEL_COL_PX + totalWidthPx }}>
         {/* 날짜 축 — 세로 스크롤 중에도 위에 고정. z는 아래 그리드(0)·행(20)보다 항상 높게(30) */}
-        <div className="border-border bg-card sticky top-0 z-30 flex border-b text-[10.5px]">
+        {/*
+          ⚠️ 날짜 축에 **머리 띠**를 깐다(DESIGN §3, 표 머리와 같은 값). 카드 제목과 같은
+             흰 바탕이면 둘이 한 덩어리로 붙어, 위에 있는 카드 제목이 "머리"가 아니라
+             그냥 첫 줄처럼 읽혔다 — 띠가 있어야 제목 → 축 → 행의 층이 눈에 그려진다.
+          ⚠️ 글자는 11px(힌트 규격)다. 10.5px은 다섯 크기에 없는 값이었다.
+        */}
+        <div className="border-border bg-secondary/50 sticky top-0 z-30 flex border-b text-[11px] leading-4">
           {/*
             ⚠️ `self-stretch` + 내부 `items-end`로 라벨이 헤더 전체 높이를 채운다 — `self-end`(짧은
             박스)만 쓰면 라벨 위쪽 몇 px가 이 칸의 배경으로 안 덮여서, 가로 스크롤로 지나가는 날짜
             칸이 그 틈으로 살짝 비친다(2026-08-06에 실제로 겪은 버그).
           */}
           <div
-            className="bg-card sticky left-0 z-10 flex shrink-0 items-end self-stretch px-3 pb-1.5"
+            className="bg-secondary/50 sticky left-0 z-10 flex shrink-0 items-end self-stretch px-3 pb-1.5"
             style={LABEL_COL_STYLE}
           >
             <span className="text-muted-foreground">{monthLabel}</span>
           </div>
-          <div className="bg-card flex">
+          <div className="bg-secondary/50 flex">
             {days.map((day) => (
               <div
                 key={day.iso}
@@ -153,10 +159,18 @@ export function ActionTimeline({
           <div className="pointer-events-none absolute inset-0 z-0 flex" aria-hidden>
             <div className="shrink-0" style={LABEL_COL_STYLE} />
             <div className="relative flex" style={{ width: totalWidthPx }}>
+              {/*
+                ⚠️ 주말 열만 아주 옅게 깐다(2%). 날짜 글자색(토 파랑·일 빨강)만으로는 축을
+                   봐야 알 수 있어서, 막대만 훑을 때 한 주가 어디서 끊기는지 안 잡혔다.
+                   색이 아니라 **명도**라 뜻을 더하지 않는다(§5: 색으로 알리는 건 에러뿐).
+              */}
               {days.map((day) => (
                 <div
                   key={day.iso}
-                  className="border-border/55 shrink-0 border-l first:border-l-0"
+                  className={cn(
+                    "border-border/55 shrink-0 border-l first:border-l-0",
+                    (day.isSaturday || day.isSunday) && "bg-foreground/[0.02]",
+                  )}
                   style={{ width: TIMELINE_DAY_WIDTH_PX }}
                 />
               ))}
@@ -184,7 +198,7 @@ export function ActionTimeline({
                   />
                   <span className="min-w-0 truncate text-[13px]">{bar.title}</span>
                   <span
-                    className="shrink-0 rounded px-1.5 py-0.5 font-mono text-[10px] font-semibold"
+                    className="shrink-0 rounded px-1.5 py-px text-[11px] leading-4 font-medium"
                     style={{ backgroundColor: bar.tagBgColor, color: bar.tagTextColor }}
                   >
                     {bar.tag}

@@ -42,7 +42,14 @@ export default async function TeamDashboardPage() {
           className="border-border bg-card flex flex-col overflow-hidden rounded-2xl border"
           style={{ maxHeight: MEMBER_BOX_MAX_HEIGHT }}
         >
-          <div className="border-border flex shrink-0 items-baseline justify-between gap-3 border-b px-7 pt-6 pb-3">
+          {/*
+            ⚠️ 제목 줄에 **선을 긋지 않는다.** 바로 아래 표 머리 띠가 이미 "여기부터 내용"을
+               긋고 있어서, 선까지 있으면 층을 나누는 것이 두 줄이 된다 — DESIGN §2는
+               카드 안의 선을 **표가 시작하는 자리 하나**로 못 박는다. 두 줄이던 탓에 제목이
+               아래 띠에 달라붙어 보였다.
+            ⚠️ 대신 아래 여백을 12 → 20으로 벌린다. 선이 하던 일을 여백이 한다.
+          */}
+          <div className="border-border flex shrink-0 items-baseline justify-between gap-3 px-7 pt-6 pb-5">
             <h2 className="flex items-center gap-2 text-[17px] leading-7 font-semibold tracking-[-0.3px]">
               <span className="bg-foreground size-2 rounded-full" aria-hidden />
               팀원 현황
