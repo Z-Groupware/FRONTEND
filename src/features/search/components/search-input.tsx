@@ -114,9 +114,13 @@ export function SearchInput({ keyword, recentSearches = [] }: SearchInputProps) 
         }}
         onFocus={() => canOpen && setIsOpen(true)}
         onClick={() => canOpen && setIsOpen(true)}
-        role="combobox"
-        aria-expanded={isOpen}
-        aria-controls="recent-search-list"
+        /*
+          ⚠️ **`role="combobox"`를 선언하지 않는다**(2026-08-10 리뷰). 그 역할은 화살표로
+             후보를 오르내리고 Enter로 고르는 **동작 약속**인데, 이 목록은 그냥 링크 몇 개다 —
+             선언만 하면 스크린리더 사용자는 콤보박스인 줄 알고 화살표를 눌렀다가 아무 일도
+             안 일어나는 걸 겪는다. 없는 기능을 있다고 말하지 않는다(§정직성).
+             후보 탐색을 진짜 붙이는 날 `listbox`·`option`·`aria-activedescendant`까지 함께 단다.
+        */
         placeholder="회의·액션·프로젝트·사람을 검색해 주세요"
         /*
           ⚠️ **찾으러 온 사람이 제일 먼저 보는 것**이라 크게 세운다(h-13·완전 둥근 모서리).

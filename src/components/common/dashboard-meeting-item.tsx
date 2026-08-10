@@ -152,7 +152,14 @@ export function DashboardMeetingItem({ meeting, showDivider }: DashboardMeetingI
             ⚠️ 회의실도 **오른쪽 정렬**로 바꿨다. 왼쪽 정렬이면 상자를 넓힌 만큼 회의실만
                왼쪽으로 떨어져 나가 열 넷이 다시 어긋난다.
           */}
-          <div className="text-muted-foreground flex w-[520px] shrink-0 items-center justify-between text-[12px] leading-4">
+          {/*
+            ⚠️ **줄어들 수 있게 둔다**(`shrink`, 2026-08-10 리뷰). `shrink-0`이라 창이 좁아지면
+               이 덩어리가 520px을 고집해 **오른쪽 값들이 화면 밖으로 밀려 잘렸다** — 가로
+               스크롤을 주는 목록도 아니다(§디자인 토큰: 고정 폭 대신 최대 폭).
+            ⚠️ 줄어들어도 **열은 안 흔들린다.** 한 화면의 줄들은 담는 폭이 같아서 같은 만큼
+               줄어들고, 안쪽 상자 폭은 그대로다 — 좁아지면 회의실 이름만 말줄임된다.
+          */}
+          <div className="text-muted-foreground flex w-[520px] max-w-full items-center justify-between text-[12px] leading-4">
             <span className="w-[76px] truncate text-right">{meeting.room}</span>
             <span className="w-[124px] text-right tabular-nums">
               {formatMeetingDate(meeting.scheduledAt)}
