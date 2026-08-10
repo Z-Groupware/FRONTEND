@@ -27,6 +27,7 @@ function readDraft(formData: FormData): PersonalTodoDraft {
   return {
     title: String(formData.get("title") ?? ""),
     date: String(formData.get("date") ?? ""),
+    endDate: String(formData.get("endDate") ?? ""),
     color: color ? String(color) : undefined,
   };
 }

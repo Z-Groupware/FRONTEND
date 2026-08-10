@@ -39,9 +39,11 @@ const INITIAL_STATE: PersonalTodoFormState = { errors: {} };
 export function AddTodoDialog({ defaultDate, onCreated }: AddTodoDialogProps) {
   const [open, setOpen] = useState(false);
   const [datePopoverOpen, setDatePopoverOpen] = useState(false);
+  const [endDatePopoverOpen, setEndDatePopoverOpen] = useState(false);
   const [state, formAction, isPending] = useActionState(createPersonalTodoAction, INITIAL_STATE);
   const [title, setTitle] = useState("");
   const [date, setDate] = useState<Date>(defaultDate);
+  const [endDate, setEndDate] = useState<Date>(defaultDate);
   const handledCreatedId = useRef<string | null>(null);
 
   useEffect(() => {
@@ -57,6 +59,7 @@ export function AddTodoDialog({ defaultDate, onCreated }: AddTodoDialogProps) {
   function handleOpen() {
     // 모달을 열 때마다 지금 상세조회 중인 날짜로 다시 맞춘다 — 며칠 전에 열었던 값이 남아있지 않게.
     setDate(defaultDate);
+    setEndDate(defaultDate);
     setOpen(true);
   }
 
@@ -64,6 +67,7 @@ export function AddTodoDialog({ defaultDate, onCreated }: AddTodoDialogProps) {
     const formData = new FormData();
     formData.set("title", title);
     formData.set("date", format(date, DATE_FORMAT));
+    formData.set("endDate", format(endDate, DATE_FORMAT));
     /*
       ⚠️ `startTransition`으로 감싼다. `ConfirmDialog`엔 `<form>`이 없어 버튼 클릭에서
          직접 부르는데, `useActionState`의 액션을 트랜지션 밖에서 부르면 React가
@@ -131,7 +135,7 @@ export function AddTodoDialog({ defaultDate, onCreated }: AddTodoDialogProps) {
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="todo-date">날짜</Label>
+            <Label htmlFor="todo-date">시작 날짜</Label>
             <Popover open={datePopoverOpen} onOpenChange={setDatePopoverOpen}>
               <PopoverTrigger
                 render={
@@ -165,12 +169,49 @@ export function AddTodoDialog({ defaultDate, onCreated }: AddTodoDialogProps) {
                   onSelect={(selected) => {
                     if (!selected) return;
                     setDate(selected);
+                    // ⚠️ 끝 날짜가 시작보다 앞서게 되면 시작 날짜로 같이 밀어둔다 — 범위가 뒤집힌 채로 남지 않게.
+                    if (endDate < selected) setEndDate(selected);
                     setDatePopoverOpen(false);
                   }}
                 />
               </PopoverContent>
             </Popover>
             <FieldError reserveSpace message={state.errors.date} />
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="todo-end-date">끝 날짜</Label>
+            <Popover open={endDatePopoverOpen} onOpenChange={setEndDatePopoverOpen}>
+              <PopoverTrigger
+                render={
+                  <Button
+                    id="todo-end-date"
+                    type="button"
+                    variant="outline"
+                    className="h-10 w-full justify-start gap-2 font-normal"
+                  />
+                }
+              >
+                <CalendarIcon aria-hidden className="size-4 text-current" />
+                {format(endDate, "yyyy년 M월 d일(EEE)", { locale: ko })}
+              </PopoverTrigger>
+              <PopoverContent align="start" className="w-auto p-3 [--cell-size:--spacing(9)]">
+                <Calendar
+                  className="[&_[data-selected-single=true]]:bg-foreground [&_[data-selected-single=true]]:text-background [&_[data-selected-single=true]]:hover:bg-foreground"
+                  mode="single"
+                  locale={ko}
+                  selected={endDate}
+                  // 시작 날짜 이전은 고를 수 없다 — 범위가 뒤집히는 입력 자체를 막는다.
+                  disabled={{ before: date }}
+                  onSelect={(selected) => {
+                    if (!selected) return;
+                    setEndDate(selected);
+                    setEndDatePopoverOpen(false);
+                  }}
+                />
+              </PopoverContent>
+            </Popover>
+            <FieldError reserveSpace message={state.errors.endDate} />
           </div>
         </div>
       </ConfirmDialog>

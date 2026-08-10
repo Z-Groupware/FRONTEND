@@ -19,10 +19,10 @@ beforeEach(() => {
 });
 
 describe("개인 Todo 작성", () => {
-  it("제목·날짜가 있으면 성공하고 생성값을 돌려준다", async () => {
+  it("제목·시작·끝 날짜가 있으면 성공하고 생성값을 돌려준다", async () => {
     const result = await createPersonalTodoAction(
       { errors: {} },
-      form({ title: "새 할일", date: "2026-09-01" }),
+      form({ title: "새 할일", date: "2026-09-01", endDate: "2026-09-01" }),
     );
 
     expect(result.errors).toEqual({});
@@ -30,10 +30,21 @@ describe("개인 Todo 작성", () => {
     expect(revalidatePathMock).toHaveBeenCalledWith("/app/calendar");
   });
 
+  it("끝 날짜가 시작 날짜보다 나중이면 여러 날에 걸친 Todo를 만든다", async () => {
+    const result = await createPersonalTodoAction(
+      { errors: {} },
+      form({ title: "여러 날 할일", date: "2026-09-01", endDate: "2026-09-03" }),
+    );
+
+    expect(result.errors).toEqual({});
+    expect(result.created?.start).toEqual(new Date("2026-09-01T00:00:00"));
+    expect(result.created?.end).toEqual(new Date("2026-09-03T00:00:00"));
+  });
+
   it("제목이 비면 막고 revalidatePath를 안 부른다", async () => {
     const result = await createPersonalTodoAction(
       { errors: {} },
-      form({ title: "", date: "2026-09-01" }),
+      form({ title: "", date: "2026-09-01", endDate: "2026-09-01" }),
     );
 
     expect(result.errors.title).toBeDefined();
@@ -41,20 +52,30 @@ describe("개인 Todo 작성", () => {
     expect(revalidatePathMock).not.toHaveBeenCalled();
   });
 
-  it("날짜가 올바르지 않으면 막는다", async () => {
+  it("시작 날짜가 올바르지 않으면 막는다", async () => {
     const result = await createPersonalTodoAction(
       { errors: {} },
-      form({ title: "제목", date: "2026-02-30" }),
+      form({ title: "제목", date: "2026-02-30", endDate: "2026-02-30" }),
     );
 
     expect(result.errors.date).toBeDefined();
+    expect(revalidatePathMock).not.toHaveBeenCalled();
+  });
+
+  it("끝 날짜가 시작 날짜보다 이전이면 막는다", async () => {
+    const result = await createPersonalTodoAction(
+      { errors: {} },
+      form({ title: "제목", date: "2026-09-05", endDate: "2026-09-01" }),
+    );
+
+    expect(result.errors.endDate).toBeDefined();
     expect(revalidatePathMock).not.toHaveBeenCalled();
   });
 });
 
 describe("개인 Todo 완료 토글", () => {
   it("개인 Todo는 토글되고 경로를 재검증한다", async () => {
-    const created = addMockTodo({ title: "토글 대상", date: "2026-09-02" });
+    const created = addMockTodo({ title: "토글 대상", date: "2026-09-02", endDate: "2026-09-02" });
 
     await toggleTodoCompletionAction(created.id);
 

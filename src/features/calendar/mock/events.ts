@@ -53,14 +53,13 @@ export function findMockEvent(id: string): PersonalCalendarEvent | null {
   return store.events.find((event) => event.id === id) ?? null;
 }
 
-/** Todo 작성 — 하루 종일 항목으로 취급(시:분 지정 없이 날짜만 받는다). */
+/** Todo 작성 — 하루 종일 항목으로 취급(시:분 지정 없이 날짜만 받는다), 시작~끝 날짜로 기간을 가진다. */
 export function addMockTodo(draft: PersonalTodoDraft): PersonalCalendarEvent {
-  const day = new Date(`${draft.date}T00:00:00`);
   const event: PersonalCalendarEvent = {
     id: `todo-${++store.sequence}`,
     title: draft.title.trim(),
-    start: day,
-    end: day,
+    start: new Date(`${draft.date}T00:00:00`),
+    end: new Date(`${draft.endDate}T00:00:00`),
     tag: CALENDAR_ITEM_TAG.PERSONAL_TODO,
     isCompleted: false,
     color: draft.color,
