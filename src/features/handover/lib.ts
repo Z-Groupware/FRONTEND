@@ -2,6 +2,54 @@ import { HANDOVER_TYPE, type HandoverType } from "@/constants/domain";
 
 import type { HandoverActionItem } from "./types";
 
+/** 휴직 신청 — 팀장이면 액션마다 담당자를 지정해 함께 보낸다(자가 재할당). */
+export interface SubmitVacationHandoverPayload {
+  type: typeof HANDOVER_TYPE.VACATION;
+  startDate: string;
+  endDate: string;
+  actionIds: number[];
+  /**
+   * 액션 id → 배정받을 팀원 id. 팀장 신청이 아니면 빈 객체.
+   * ⚠️ 지금은 로스터 mock(`TEAM_MEMBER_ROSTER_MOCK`)의 문자열 슬러그 id(`"member-lee"`)다.
+   *    실 멤버 API가 붙으면 로스터 자체가 처음부터 숫자 id로 오므로 별도 변환 함수가 아니라
+   *    **로스터 mock을 숫자 id로 바꾸는 쪽**이 맞는 해결책이다 — 지금 값으로는 이름 매칭 없이
+   *    숫자로 캐스팅할 수 없다(BE 인수인계 문서 §5, 백엔드 담당자 별도 확인 예정).
+   */
+  assignments: Record<number, string>;
+}
+
+export interface SubmitOffboardingHandoverPayload {
+  type: typeof HANDOVER_TYPE.OFFBOARDING;
+  description: string;
+  actionIds: number[];
+}
+
+export type SubmitHandoverPayload =
+  SubmitVacationHandoverPayload | SubmitOffboardingHandoverPayload;
+
+/**
+ * FE 내부 payload → BE 생성 요청 바디. 경계에서만 이름을 바꾼다 — FE 내부 필드명(위 두 타입)은
+ * 그대로 두고 fetch 직전에만 변환해 BE 계약을 흡수한다(BE 인수인계 문서, 2026-08-10).
+ * `startDate`/`endDate`→`leaveStartAt`/`leaveEndAt`(자정 시각 붙임), `description`→`note`,
+ * `actionIds`→`selectedActionIds`.
+ */
+export function toHandoverCreateRequestBody(payload: SubmitHandoverPayload) {
+  if (payload.type === HANDOVER_TYPE.VACATION) {
+    return {
+      type: payload.type,
+      leaveStartAt: `${payload.startDate}T00:00:00`,
+      leaveEndAt: `${payload.endDate}T00:00:00`,
+      selectedActionIds: payload.actionIds,
+      assignments: payload.assignments,
+    };
+  }
+  return {
+    type: payload.type,
+    note: payload.description,
+    selectedActionIds: payload.actionIds,
+  };
+}
+
 /**
  * ⚠️ **임시 미리보기 토글**(사용자 요청, 2026-08-08) — 로그인이 아직 없어 "지금 보고
  *    있는 사람"을 화면에서 바로 바꿔볼 수 있게 둔 것. 실제 세션이 붙으면 이 토글과

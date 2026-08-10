@@ -11,7 +11,7 @@ import { todayIso } from "@/lib/date";
 import { isMock } from "@/mocks/config";
 
 import { FIXED_LEADER_NAME, getTeamHandoverDetail } from "./server";
-import type { TeamHandoverAssignment } from "./types";
+import type { TeamHandoverAssignment, TeamMemberOption } from "./types";
 
 const LIST_PATH = "/team/handover";
 const MANAGE_PATH = "/manage/members";
@@ -22,6 +22,23 @@ function findPersonalItem(actionId: number) {
     if (found) return found;
   }
   return null;
+}
+
+/**
+ * 액션 하나를 재배정한다 — BE는 건별 `PATCH /api/handovers/{id}/items/{actionId}/reassign`로
+ * 락·멱등을 강제한다(BE 인수인계 문서, 2026-08-10; 일괄 반영 엔드포인트가 아니다).
+ * 지금은 mock이라 로컬 mutate 한 건이지만, **실연동 시 이 함수 내부만 실 API 호출로 바꾸면**
+ * `completeTeamHandoverAction`의 순회 구조는 그대로 쓴다.
+ */
+function reassignHandoverItem(
+  assignment: TeamHandoverAssignment,
+  teammateById: Map<number, TeamMemberOption>,
+): void {
+  const teammate = teammateById.get(assignment.assigneeId);
+  const item = findPersonalItem(assignment.actionId);
+  if (!teammate || !item) return;
+  item.assigneeName = teammate.name;
+  item.assigneeRoleLabel = teammate.roleLabel ?? undefined;
 }
 
 /**
@@ -68,12 +85,8 @@ export async function completeTeamHandoverAction(
     seenActionIds.add(actionId);
   }
 
-  for (const { actionId, assigneeId } of assignments) {
-    const teammate = teammateById.get(assigneeId);
-    const item = findPersonalItem(actionId);
-    if (!teammate || !item) continue;
-    item.assigneeName = teammate.name;
-    item.assigneeRoleLabel = teammate.roleLabel ?? undefined;
+  for (const assignment of assignments) {
+    reassignHandoverItem(assignment, teammateById);
   }
 
   completeMockHandoverMidApproval(memberId, FIXED_LEADER_NAME, todayIso());
