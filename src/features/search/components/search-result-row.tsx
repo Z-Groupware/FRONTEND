@@ -14,7 +14,14 @@ import { MatchText } from "./match-text";
   ⚠️ **줄마다 낱장 카드다**(랜딩 목록과 같은 결). 구분선으로 이은 한 덩이는 값을 **비교하는**
      표의 생김새인데, 검색 결과는 훑다가 **하나를 고르는** 자리다.
 */
-const ROW_SHAPE = "border-border bg-card flex items-start gap-3 rounded-xl border px-4 py-3.5";
+/*
+  ⚠️ **가운데 정렬이다**(`items-center`). 배지를 위에 붙여 뒀더니 옆 글이 두 줄일 때
+     배지만 첫 줄에 매달려 줄이 기울어 보였다 — 배지는 그 항목 **전체**를 가리키는 표식이라
+     항목의 한가운데 서야 한다.
+  ⚠️ 색 막대는 예외로 위아래를 꽉 채운다(아래 `self-stretch`) — 그건 표식이 아니라 경계다.
+*/
+const ROW_SHAPE =
+  "border-border bg-card flex items-center gap-3 rounded-xl border py-3.5 pr-4 pl-3";
 
 interface SearchResultRowProps {
   item: SearchResultItem;
@@ -74,7 +81,12 @@ export function SearchResultRow({ item, keyword }: SearchResultRowProps) {
           </span>
         </p>
         {rowSnippet(item) && (
-          <p className="text-muted-foreground mt-1 truncate text-[12px] leading-4">
+          /*
+            ⚠️ **본문 크기(13px)로 올린다.** 12px 흐린 글씨로 두니 정작 찾던 말이 들어 있는
+               줄이 제일 안 읽혔다 — 검색어가 걸린 문장이 이 화면에서 제일 중요한 값이다.
+            ⚠️ 색은 본문보다 한 단계만 낮춘다. 제목과 같으면 둘 중 뭘 먼저 볼지 알 수 없다.
+          */
+          <p className="text-foreground/75 mt-1 truncate text-[13px] leading-5">
             <MatchText text={rowSnippet(item) ?? ""} keyword={keyword} />
           </p>
         )}
