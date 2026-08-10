@@ -68,7 +68,7 @@ export function LoginForm() {
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="email" className="flex items-center gap-1.5">
             <Mail className="text-muted-foreground size-3.5" aria-hidden />
-            <span className="translate-y-px">이메일</span>
+            <span>이메일</span>
           </Label>
           <Input
             id="email"
@@ -89,14 +89,14 @@ export function LoginForm() {
             className="text-destructive flex min-h-4 items-center gap-1.5 text-[12px] leading-4"
           >
             {loginErrors.email && <AlertCircle className="size-3.5 shrink-0" aria-hidden />}
-            <span className="translate-y-px">{loginErrors.email}</span>
+            <span>{loginErrors.email}</span>
           </p>
         </div>
 
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="password" className="flex items-center gap-1.5">
             <KeyRound className="text-muted-foreground size-3.5" aria-hidden />
-            <span className="translate-y-px">비밀번호</span>
+            <span>비밀번호</span>
           </Label>
           <div className="relative">
             <Input
@@ -128,7 +128,7 @@ export function LoginForm() {
             className="text-destructive flex min-h-4 items-center gap-1.5 text-[12px] leading-4"
           >
             {loginErrors.password && <AlertCircle className="size-3.5 shrink-0" aria-hidden />}
-            <span className="translate-y-px">{loginErrors.password}</span>
+            <span>{loginErrors.password}</span>
           </p>
         </div>
 
@@ -145,7 +145,7 @@ export function LoginForm() {
               className="border-border accent-foreground size-3.5 rounded border"
               defaultChecked
             />
-            <span className="translate-y-px">로그인 상태 유지</span>
+            <span>로그인 상태 유지</span>
           </label>
           <p className="text-muted-foreground/70 text-[11px] leading-4">
             비밀번호 재발급은 관리자에게 문의해 주세요

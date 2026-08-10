@@ -42,8 +42,7 @@ export function StatusDot({ tone, label, className, labelClassName }: StatusDotP
   return (
     <span className={cn("flex items-center gap-1.5", className)}>
       <span className={cn("size-1.5 shrink-0 rounded-full", TONE_CLASS[tone])} aria-hidden />
-      {/* 한글 글자가 점보다 떠 보인다 — 1px 내려 맞춘다 */}
-      <span className={cn("translate-y-px", labelClassName)}>{label}</span>
+      <span className={labelClassName}>{label}</span>
     </span>
   );
 }

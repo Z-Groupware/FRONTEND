@@ -69,10 +69,7 @@ export function DoneSummary({
             ⚠️ 상자 기준으로는 이미 정중앙이다(둘 다 20px 줄 안에서 가운데).
                그래도 처져 보여 1px 올린다 — 눈으로 맞춘 값이라 계산 근거는 없다.
           */}
-          <row.icon
-            className="text-muted-foreground/60 size-4 shrink-0 -translate-y-px"
-            aria-hidden
-          />
+          <row.icon className="text-muted-foreground/60 size-4 shrink-0" aria-hidden />
           <dt className="text-[13px] leading-5">{row.label}</dt>
 
           <span className="flex-1" aria-hidden />
@@ -81,7 +78,7 @@ export function DoneSummary({
             <span className="text-muted-foreground text-[13px] leading-5 tabular-nums">
               {row.value}
             </span>
-            <CheckMark size={16} className="-translate-y-px" />
+            <CheckMark size={16} />
           </dd>
         </div>
       ))}

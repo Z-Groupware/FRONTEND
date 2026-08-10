@@ -6,9 +6,12 @@ import { ZLogo } from "@/components/icons/z-logo";
 interface DialogMarkProps {
   /**
    * 오른쪽 위 배지.
-   * `check` = 됐다 · `alert` = 안 됐다.
+   * `check` = 됐다 · `alert` = 안 됐다 · `none` = 아직 아무 일도 없다.
+   *
+   * ⚠️ `none`은 **묻지도 알리지도 않는 창**(값만 보여주는 상세)용이다. 체크를 달면
+   *    "이미 끝났다"로 읽히고 느낌표를 달면 "잘못됐다"로 읽힌다 — 둘 다 거짓이다.
    */
-  badge?: "check" | "alert";
+  badge?: "check" | "alert" | "none";
 }
 
 /**
@@ -33,21 +36,23 @@ export function DialogMark({ badge = "check" }: DialogMarkProps) {
       </span>
 
       {/* 검은 원 위에 걸치므로 테두리가 있어야 원이 파먹힌 것처럼 안 보인다 */}
-      <span className="animate-mark-in absolute -top-0.5 -right-0.5">
-        <span
-          className={
-            isAlert
-              ? "bg-card border-destructive animate-float flex size-5 items-center justify-center rounded-full border"
-              : "bg-card border-foreground animate-float flex size-5 items-center justify-center rounded-full border"
-          }
-        >
-          {isAlert ? (
-            <X className="text-destructive size-[11px]" strokeWidth={3} />
-          ) : (
-            <CheckMark size={11} strokeWidth={3} />
-          )}
+      {badge !== "none" && (
+        <span className="animate-mark-in absolute -top-0.5 -right-0.5">
+          <span
+            className={
+              isAlert
+                ? "bg-card border-destructive animate-float flex size-5 items-center justify-center rounded-full border"
+                : "bg-card border-foreground animate-float flex size-5 items-center justify-center rounded-full border"
+            }
+          >
+            {isAlert ? (
+              <X className="text-destructive size-[11px]" strokeWidth={3} />
+            ) : (
+              <CheckMark size={11} strokeWidth={3} />
+            )}
+          </span>
         </span>
-      </span>
+      )}
     </span>
   );
 }

@@ -3,6 +3,7 @@
 import * as React from "react"
 import { Dialog as SheetPrimitive } from "@base-ui/react/dialog"
 
+import { useScopedTheme } from "@/components/common/scoped-theme"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { XIcon } from "lucide-react"
@@ -20,7 +21,14 @@ function SheetClose({ ...props }: SheetPrimitive.Close.Props) {
 }
 
 function SheetPortal({ ...props }: SheetPrimitive.Portal.Props) {
-  return <SheetPrimitive.Portal data-slot="sheet-portal" {...props} />
+  /*
+    ⚠️ **범위 테마 안에서는 그 상자로 들어간다.** 기본값(`<body>`)에 그리면 범위 밖이라
+       전역 밝기를 써서, 다크로 보는 운영자 화면 위에 흰 창이 떴다.
+       범위 밖(`null`)이면 지금까지처럼 `<body>`에 그린다.
+  */
+  const scoped = useScopedTheme()
+
+  return <SheetPrimitive.Portal data-slot="sheet-portal" container={scoped?.portalContainer ?? undefined} {...props} />
 }
 
 function SheetOverlay({ className, ...props }: SheetPrimitive.Backdrop.Props) {

@@ -1,4 +1,4 @@
-import { COMPANY_STATUS, PAYMENT_STATUS, PLAN } from "@/constants/domain";
+import { COMPANY_STATUS, PAYMENT_STATUS } from "@/constants/domain";
 
 import { MOCK_BILLING_OVERVIEW } from "./billing";
 import { listMockCompanies } from "./companies";
@@ -34,15 +34,12 @@ describe("구독 목록은 기업 관리 데이터에서 파생한다", () => {
     }
   });
 
-  it("Team 플랜은 인원×단가로 금액이 잡히고 Free는 0원·결제일 없음", () => {
+  // ⚠️ 요금제가 하나뿐이라 0원짜리 구독은 없다(CLAUDE.md §요금제) — 한 건이라도 0원이면
+  //    없앤 무료 요금제가 어딘가에서 되살아난 것이다.
+  it("모든 기업이 인원×단가로 결제된다 — 0원도 결제일 없는 건도 없다", () => {
     for (const record of subscriptions) {
-      if (record.plan === PLAN.FREE) {
-        expect(record.amount).toBe(0);
-        expect(record.billingDate).toBeNull();
-      } else {
-        expect(record.amount).toBe(record.memberCount * 9_900);
-        expect(record.billingDate).not.toBeNull();
-      }
+      expect(record.amount).toBe(record.memberCount * 9_900);
+      expect(record.billingDate).not.toBeNull();
     }
   });
 });

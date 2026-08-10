@@ -115,9 +115,7 @@ function SidebarItemInner({ item }: { item: NavItem }) {
     <>
       <Icon className="size-[14px] shrink-0" aria-hidden />
       {/* 한글 글자가 상자 안에서 위쪽에 앉아 아이콘보다 떠 보인다 — 1px 내려 맞춘다 */}
-      <span className="min-w-0 flex-1 translate-y-px truncate text-[13px] leading-5">
-        {item.label}
-      </span>
+      <span className="min-w-0 flex-1 truncate text-[13px] leading-5">{item.label}</span>
       {item.dot && (
         <>
           <span className="bg-destructive size-[6px] shrink-0 rounded-full" aria-hidden />

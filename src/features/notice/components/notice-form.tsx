@@ -19,7 +19,7 @@ interface NoticeFormProps {
   /**
    * 제출 진행 상태를 부모(모달)에 알린다 — 부모가 이 값을 보고 Esc·바깥 클릭으로 모달이
    * 닫히지 않게 막는다. 진행 중에 닫히면 요청은 계속 가는데 화면만 사라져 결과를 못 본다
-   * (`approval-detail-actions.tsx`의 `ConfirmDialog` 처리 중 닫힘 방지와 같은 이유).
+   * (`approval-detail-dialog.tsx`의 `ConfirmDialog` 처리 중 닫힘 방지와 같은 이유).
    */
   onPendingChange?: (isPending: boolean) => void;
   /**

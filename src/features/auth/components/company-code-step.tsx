@@ -50,7 +50,7 @@ export function CompanyCodeStep() {
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="company-code" className="flex items-center gap-1.5">
             <Building2 className="text-muted-foreground size-3.5" aria-hidden />
-            <span className="translate-y-px">기업 코드</span>
+            <span>기업 코드</span>
           </Label>
           <Input
             id="company-code"
@@ -72,7 +72,7 @@ export function CompanyCodeStep() {
             className="text-destructive flex min-h-4 items-center gap-1.5 text-[12px] leading-4 break-keep"
           >
             {state.error && <AlertCircle className="size-3.5 shrink-0" aria-hidden />}
-            <span className="translate-y-px">{state.error}</span>
+            <span>{state.error}</span>
           </p>
         </div>
 

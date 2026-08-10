@@ -49,7 +49,7 @@ export function FieldError({ message, id, reserveSpace = false, className }: Fie
           <CircleAlert className="size-3.5" aria-hidden />
         </span>
       )}
-      <span className="translate-y-px">{message}</span>
+      <span>{message}</span>
     </p>
   );
 }

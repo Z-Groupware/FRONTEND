@@ -149,7 +149,7 @@ export function AddressPicker({
         />
         <p className="text-muted-foreground flex items-center gap-1.5 text-[12px] leading-4">
           <MapPin className="size-3.5 shrink-0" aria-hidden />
-          <span className="translate-y-px break-keep">
+          <span className="break-keep">
             {picked
               ? "지도를 불러오지 못해 주소만 고칠 수 있습니다. 지도에 찍힌 위치는 그대로입니다."
               : "지도를 불러오지 못했습니다. 지도 위치 없이 주소만 저장됩니다."}
@@ -278,7 +278,7 @@ export function AddressPicker({
         <>
           <p className="text-muted-foreground flex items-center gap-1.5 text-[12px] leading-4">
             <Check className="text-success size-3.5 shrink-0" aria-hidden />
-            <span className="translate-y-px">{picked.address}</span>
+            <span>{picked.address}</span>
           </p>
           {/*
             ⚠️ `key`에 **SDK 상태를 함께 넣는다.** 이미 고른 곳을 들고 시작하는 화면
@@ -305,7 +305,7 @@ export function AddressPicker({
       {!picked && (
         <p className="text-muted-foreground/70 flex items-center gap-1.5 text-[12px] leading-4">
           <MapPin className="size-3.5 shrink-0" aria-hidden />
-          <span className="translate-y-px">찾은 곳을 고르면 지도에 표시됩니다</span>
+          <span>찾은 곳을 고르면 지도에 표시됩니다</span>
         </p>
       )}
     </div>

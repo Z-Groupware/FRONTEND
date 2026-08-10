@@ -38,7 +38,7 @@ export function InviteSendBar({ sendableCount, onAddRow }: InviteSendBarProps) {
       >
         <Plus className="size-3.5" />
         {/* 한글 글자가 상자 안에서 위쪽에 앉아 아이콘보다 떠 보인다 — 1px 내려 맞춘다 */}
-        <span className="translate-y-px leading-none">행 추가</span>
+        <span className="leading-none">행 추가</span>
       </button>
     </div>
   );

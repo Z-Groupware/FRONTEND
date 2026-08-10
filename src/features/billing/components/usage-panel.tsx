@@ -169,7 +169,7 @@ function Axis({
         */}
         <span className="flex items-center gap-1.5 text-[13px] leading-5">
           <Icon className="text-muted-foreground size-3.5 shrink-0" aria-hidden />
-          <span className="translate-y-[1px]">{axis.label}</span>
+          <span>{axis.label}</span>
         </span>
         <span className="text-[13px] leading-5 font-medium tabular-nums">
           {format(axis.used)}

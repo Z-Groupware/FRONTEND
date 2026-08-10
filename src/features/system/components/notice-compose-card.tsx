@@ -1,9 +1,10 @@
 "use client";
 
-import { Check, Send } from "lucide-react";
+import { Check, PenLine, Send } from "lucide-react";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 
+import { ConfirmDialog } from "@/components/common/confirm-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,6 +20,7 @@ import { NOTICE_TARGET, NOTICE_TARGET_LABEL, type NoticeTarget } from "@/constan
 import { publishNoticeAction } from "../actions";
 import type { NoticeTargetCompany } from "../types";
 import { NoticeCompanyPicker } from "./notice-company-picker";
+import { SystemCardHeading } from "./system-card-heading";
 
 const TARGET_OPTIONS = Object.values(NOTICE_TARGET);
 
@@ -35,6 +37,7 @@ export function NoticeComposeCard({ companies }: { companies: NoticeTargetCompan
   const [target, setTarget] = useState<NoticeTarget>(NOTICE_TARGET.ALL);
   const [selectedCompanyIds, setSelectedCompanyIds] = useState<string[]>([]);
   const [isSent, setIsSent] = useState(false);
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
 
   const isSpecific = target === NOTICE_TARGET.SPECIFIC;
@@ -43,29 +46,44 @@ export function NoticeComposeCard({ companies }: { companies: NoticeTargetCompan
     content.trim().length > 0 &&
     (!isSpecific || selectedCompanyIds.length > 0);
 
+  /*
+    ⚠️ **묻고 나서 보낸다.** 발행은 남의 회사로 나가는 조작이라 되돌릴 수 없다 —
+       파괴적 작업 확인은 토스트가 아니라 Dialog가 맡는다(CLAUDE.md §렌더링·데이터).
+    ⚠️ 결과는 토스트로 알린다. 실패를 조용히 넘기지 않는다(§정직성) — 전에는 성공만
+       알리고 실패하면 아무 일도 안 일어난 것처럼 보였다.
+  */
   const handlePublish = () => {
     startTransition(async () => {
-      const response = await publishNoticeAction({
-        title,
-        content,
-        target,
-        companyIds: isSpecific ? selectedCompanyIds : undefined,
-      });
-      if (response.success) {
+      let success = false;
+
+      try {
+        const response = await publishNoticeAction({
+          title,
+          content,
+          target,
+          companyIds: isSpecific ? selectedCompanyIds : undefined,
+        });
+        success = response.success;
+      } catch {
+        success = false;
+      }
+
+      setIsConfirmOpen(false);
+
+      if (success) {
         setIsSent(true);
         toast.success("공지를 발행했습니다");
+      } else {
+        toast.error("공지를 발행하지 못했습니다");
       }
     });
   };
 
   return (
     <section className="border-border bg-card rounded-2xl border">
-      <h2 className="flex items-center gap-2 px-7 pt-6 pb-3 text-[17px] leading-7 font-semibold tracking-[-0.3px]">
-        <span className="bg-foreground size-2 rounded-full" aria-hidden />
-        공지 작성
-      </h2>
+      <SystemCardHeading icon={PenLine}>공지 작성</SystemCardHeading>
 
-      <div className="flex flex-col gap-3 px-7 pb-6">
+      <div className="flex flex-col gap-3 px-7 pt-5 pb-6">
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="notice-title">제목</Label>
           <Input
@@ -136,13 +154,31 @@ export function NoticeComposeCard({ companies }: { companies: NoticeTargetCompan
             variant="ink"
             className="w-full"
             disabled={!canPublish || isPending}
-            onClick={handlePublish}
+            onClick={() => setIsConfirmOpen(true)}
           >
             <Send aria-hidden />
             발행
           </Button>
         )}
       </div>
+
+      <ConfirmDialog
+        isOpen={isConfirmOpen}
+        onOpenChange={(open) => {
+          // 보내는 중엔 안 닫는다 — 창만 사라지고 요청은 계속 가면 결과를 못 본다
+          if (!open && !isPending) setIsConfirmOpen(false);
+        }}
+        title="이 공지를 발행할까요?"
+        description={
+          isSpecific
+            ? `고른 ${selectedCompanyIds.length}개사에 지금 나가고, 보낸 공지는 되돌릴 수 없습니다.`
+            : `${NOTICE_TARGET_LABEL[target]}에 지금 나가고, 보낸 공지는 되돌릴 수 없습니다.`
+        }
+        confirmLabel="발행"
+        pendingLabel="발행 중"
+        isPending={isPending}
+        onConfirm={handlePublish}
+      />
     </section>
   );
 }

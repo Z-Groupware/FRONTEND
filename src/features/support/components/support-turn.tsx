@@ -70,7 +70,7 @@ export function SupportTurn({ turn, isOpening, onPickCategory, onPickEntry }: Su
                 <button type="button" onClick={() => onPickCategory(category)} className={CHIP}>
                   <Icon className="text-muted-foreground size-3.5 shrink-0" aria-hidden />
                   {/* 한글이 아이콘보다 떠 보인다 — 1px 내려 맞춘다 */}
-                  <span className="translate-y-px">{FAQ_CATEGORY_LABEL[category]}</span>
+                  <span>{FAQ_CATEGORY_LABEL[category]}</span>
                 </button>
               </li>
             );
@@ -87,7 +87,7 @@ export function SupportTurn({ turn, isOpening, onPickCategory, onPickEntry }: Su
                   className="text-muted-foreground size-3.5 shrink-0"
                   aria-hidden
                 />
-                <span className="translate-y-px">{entry.question}</span>
+                <span>{entry.question}</span>
               </button>
             </li>
           ))}
@@ -116,7 +116,7 @@ export function SupportTurn({ turn, isOpening, onPickCategory, onPickEntry }: Su
           className="text-muted-foreground border-border focus-visible:ring-ring/40 hover:text-popover-foreground hover:bg-accent mt-2.5 inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-[11px] leading-4 transition-colors focus-visible:ring-2 focus-visible:outline-hidden"
         >
           <Mail className="size-3" aria-hidden />
-          <span className="translate-y-px">{SUPPORT_EMAIL}</span>
+          <span>{SUPPORT_EMAIL}</span>
         </a>
       )}
     </div>
