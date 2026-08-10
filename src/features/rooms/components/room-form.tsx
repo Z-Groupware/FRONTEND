@@ -3,6 +3,7 @@
 import { useActionState, useEffect, useRef, useState } from "react";
 
 import { FieldError } from "@/components/common/field-error";
+import { TimePickerField } from "@/components/common/time-picker-field";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
@@ -27,8 +28,9 @@ interface RoomFormProps {
 }
 
 /**
- * 회의실 추가·수정 폼 — `notice-form.tsx`와 같은 골격(실제 `<form action={formAction}>`,
- * 필드가 전부 plain input이라 shadcn `Select` 우회 없이 그대로 쓴다).
+ * 회의실 추가·수정 폼 — `notice-form.tsx`와 같은 골격(실제 `<form action={formAction}>`).
+ * 이용 시작·종료는 `TimePickerField`(shadcn Popover 기반)로 고른다 — 네이티브
+ * `<input type="time">` 대신 서비스 톤에 맞춘 팝오버 목록을 쓴다(2026-08-10 변경).
  */
 export function RoomForm({ action, room, onSuccess, onPendingChange, formRef }: RoomFormProps) {
   const [state, formAction, isPending] = useActionState(action, { errors: {} });
@@ -82,26 +84,26 @@ export function RoomForm({ action, room, onSuccess, onPendingChange, formRef }: 
       <div className="grid grid-cols-2 gap-3">
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="room-open-time">이용 시작</Label>
-          <Input
+          <TimePickerField
             id="room-open-time"
             name="openTime"
-            type="time"
             value={openTime}
-            onChange={(event) => setOpenTime(event.target.value)}
+            onChange={setOpenTime}
             aria-invalid={Boolean(state.errors.openTime)}
+            className="w-full"
           />
           <FieldError reserveSpace message={state.errors.openTime} />
         </div>
 
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="room-close-time">이용 종료</Label>
-          <Input
+          <TimePickerField
             id="room-close-time"
             name="closeTime"
-            type="time"
             value={closeTime}
-            onChange={(event) => setCloseTime(event.target.value)}
+            onChange={setCloseTime}
             aria-invalid={Boolean(state.errors.closeTime)}
+            className="w-full"
           />
           <FieldError reserveSpace message={state.errors.closeTime} />
         </div>
