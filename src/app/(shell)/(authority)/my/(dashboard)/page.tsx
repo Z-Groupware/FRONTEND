@@ -63,7 +63,7 @@ export default async function MemberDashboardPage() {
             <span className="text-muted-foreground text-[12px] leading-4">최신 5건</span>
           </div>
           {attendedMeetings.length === 0 ? (
-            <p className="text-muted-foreground flex flex-1 items-center justify-center text-sm">
+            <p className="text-muted-foreground flex flex-1 items-center justify-center px-7 py-10 text-center text-[13px] leading-5 break-keep">
               참석할 회의가 없습니다.
             </p>
           ) : (

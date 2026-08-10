@@ -69,7 +69,13 @@ export default async function OwnerDashboardPage() {
             </p>
           </div>
           {leaderRows.length === 0 ? (
-            <p className="text-muted-foreground flex flex-1 items-center justify-center text-sm">
+            /*
+              ⚠️ 빈 상태가 **자기 높이를 갖는다**(`py-10`). 카드 높이가 고정이던 때는 `flex-1`이
+                 그 안에서 문구를 세로 가운데로 밀어 줬는데, 높이를 걷어내면서 남는 공간이
+                 0이 됐다 — `flex-1`은 나눌 것이 없으면 아무 일도 안 해서 문구가 머리 줄
+                 보더에 붙어 버린다(세 대시보드 다섯 자리가 같은 상태였다).
+            */
+            <p className="text-muted-foreground flex flex-1 items-center justify-center px-7 py-10 text-center text-[13px] leading-5 break-keep">
               아직 등록된 팀장이 없습니다.
             </p>
           ) : (
@@ -122,7 +128,7 @@ export default async function OwnerDashboardPage() {
             </Link>
           </div>
           {projectMeetings.length === 0 ? (
-            <p className="text-muted-foreground flex flex-1 items-center justify-center text-sm">
+            <p className="text-muted-foreground flex flex-1 items-center justify-center px-7 py-10 text-center text-[13px] leading-5 break-keep">
               예정된 프로젝트 회의가 없습니다.
             </p>
           ) : (

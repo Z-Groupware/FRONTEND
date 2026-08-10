@@ -60,7 +60,7 @@ export default async function TeamDashboardPage() {
             </span>
           </div>
           {members.length === 0 ? (
-            <p className="text-muted-foreground flex flex-1 items-center justify-center text-sm">
+            <p className="text-muted-foreground flex flex-1 items-center justify-center px-7 py-10 text-center text-[13px] leading-5 break-keep">
               아직 등록된 팀원이 없습니다.
             </p>
           ) : (
@@ -96,7 +96,7 @@ export default async function TeamDashboardPage() {
             <span className="text-muted-foreground text-[12px] leading-4">최신 5건</span>
           </div>
           {meetings.length === 0 ? (
-            <p className="text-muted-foreground flex flex-1 items-center justify-center text-sm">
+            <p className="text-muted-foreground flex flex-1 items-center justify-center px-7 py-10 text-center text-[13px] leading-5 break-keep">
               예정된 팀 회의가 없습니다.
             </p>
           ) : (
