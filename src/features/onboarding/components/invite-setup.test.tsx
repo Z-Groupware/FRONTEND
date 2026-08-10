@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 import { AUTHORITY } from "@/constants/domain";
@@ -72,5 +72,27 @@ describe("InviteSetup", () => {
       ⚠️ 문구가 `위에 같은 주소가 있습니다`라 첫 줄에 뜨면 그 자체로 틀린 말이기도 하다.
     */
     expect(screen.getAllByText("위에 같은 주소가 있습니다")).toHaveLength(1);
+  });
+
+  /*
+    ⚠️ **확인 창의 `초대`는 적은 사람 수다.** 전에는 이번에 나갈 수를 적었는데, 팀·역할·직급을
+       아직 안 고른 줄이 있으면 그 값이 `0`이 된다 — 사람을 둘 적어 놓고 `초대 0`을 보면
+       적은 게 다 날아간 줄 안다. 실제로 몇 명에게 나가는지는 그 아래 문장이 말한다.
+  */
+  it("확인 창은 적은 사람 수를 적는다 — 아직 다 못 고른 줄이어도 0이 아니다", async () => {
+    const { user } = setup();
+
+    await user.type(screen.getAllByLabelText("초대할 메일 주소")[0]!, "a@nova.com");
+    await user.click(screen.getByRole("button", { name: "행 추가" }));
+    const rows = screen.getAllByLabelText("초대할 메일 주소");
+    await user.type(rows[rows.length - 1]!, "b@nova.com");
+
+    await user.click(screen.getByRole("button", { name: "완료" }));
+
+    const dialog = screen.getByRole("dialog");
+    // 팀·직급·초대 세 숫자 중 초대 자리
+    expect(within(dialog).getByText("초대").parentElement).toHaveTextContent("2");
+    // 나가는 수는 0이다 — 팀·역할·직급을 아직 안 골랐다. 문장이 그걸 말한다
+    expect(within(dialog).getByText(/확인을 누르면 조직 구성이 확정됩니다/)).toBeInTheDocument();
   });
 });

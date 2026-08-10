@@ -5,10 +5,19 @@ import { ConfirmDialog } from "@/components/common/confirm-dialog";
 interface InviteCommitDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  /** 부서 수 · 직급 수 · 이번에 나갈 초대 수 — 무엇을 확정하는지 숫자로 보여준다 */
+  /** 부서 수 · 직급 수 · 초대 수 — 무엇을 확정하는지 숫자로 보여준다 */
   departmentCount: number;
   positionCount: number;
-  inviteCount: number;
+  /**
+   * **주소를 적은 줄 수** — 요약 알약에 적는다.
+   *
+   * ⚠️ `sendableCount`가 아니다. 세 칸을 다 못 고른 줄이 있으면 그 값이 `0`이 되는데,
+   *    사람 넷을 적어 놓고 `초대 0`을 보면 **적은 게 다 날아간 줄 안다.**
+   *    적은 수를 보여 주고, 그중 몇이 빠지는지는 아래 문장이 말한다.
+   */
+  writtenCount: number;
+  /** 이번에 실제로 나갈 줄 수 — 되돌릴 수 없는 일이라 문장은 이 값으로 말한다 */
+  sendableCount: number;
   /** 주소는 적었지만 부서·직급을 안 골라 **발송에서 빠지는** 줄 수 */
   /** 아직 안 고른 줄 — 목록에 표시가 없어서 여기서 직접 말한다 */
   unfilledCount: number;
@@ -35,7 +44,8 @@ export function InviteCommitDialog({
   onOpenChange,
   departmentCount,
   positionCount,
-  inviteCount,
+  writtenCount,
+  sendableCount,
   unfilledCount,
   flaggedCount,
   onConfirm,
@@ -48,8 +58,8 @@ export function InviteCommitDialog({
       onOpenChange={onOpenChange}
       title="이대로 기업 정보를 등록할까요?"
       description={
-        inviteCount > 0
-          ? `확인을 누르면 ${inviteCount}명에게 초대장이 나갑니다. 보낸 초대장은 취소할 수 없고, 이 단계로 돌아올 수 없습니다.`
+        sendableCount > 0
+          ? `확인을 누르면 ${sendableCount}명에게 초대장이 나갑니다. 보낸 초대장은 취소할 수 없고, 이 단계로 돌아올 수 없습니다.`
           : "확인을 누르면 조직 구성이 확정됩니다. 이 단계로 돌아올 수 없고, 사원 초대는 워크스페이스에 들어간 뒤 기업 설정에서 합니다."
       }
       confirmLabel="등록"
@@ -69,7 +79,7 @@ export function InviteCommitDialog({
           <Divider />
           <Item label="직급" value={positionCount} />
           <Divider />
-          <Item label="초대" value={inviteCount} />
+          <Item label="초대" value={writtenCount} />
         </dl>
       </div>
 

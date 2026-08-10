@@ -95,6 +95,14 @@ export function InviteSetup({ departments, positions }: InviteSetupProps) {
     markSent: list.markSent,
   });
 
+  /*
+    ⚠️ **주소를 적은 줄 수** — 확인 창의 요약 알약이 이 값을 쓴다. `sendable`을 쓰면
+       세 칸을 다 못 고른 줄이 있을 때 `초대 0`이 떠서, 사람을 넷 적어 놓고도
+       적은 게 다 날아간 줄 안다. 실제로 몇 명에게 나가는지는 그 아래 문장이 말한다.
+    ⚠️ 기준은 **주소**다. 이름만 적힌 줄은 아직 누구인지 정해지지 않았다(주소가 계정이 된다).
+  */
+  const writtenCount = list.invites.filter((invite) => invite.email.trim().length > 0).length;
+
   const handlers: InviteRowHandlers = {
     onChangeName: list.changeName,
     onChangeEmail: list.changeEmail,
@@ -171,7 +179,8 @@ export function InviteSetup({ departments, positions }: InviteSetupProps) {
         onOpenChange={setConfirmOpen}
         departmentCount={departmentOptions.length}
         positionCount={positionOptions.length}
-        inviteCount={list.sendable.length}
+        writtenCount={writtenCount}
+        sendableCount={list.sendable.length}
         unfilledCount={unfilledCount}
         flaggedCount={flaggedCount}
         onConfirm={commit}
