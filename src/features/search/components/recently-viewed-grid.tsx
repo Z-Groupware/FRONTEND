@@ -23,11 +23,20 @@ export function RecentlyViewedGrid({ items }: RecentlyViewedGridProps) {
 
   return (
     <SearchSection title="최근 본 항목" meta={`${items.length}건`}>
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+      {/*
+        ⚠️ **한 줄에 하나씩 쌓는다**(2026-08-10 바꿈). 두 칸 격자로 두니 제목 길이가 제각각인
+           카드 넷이 어긋나 보였고, 아래 `프로젝트로 찾기`·`사람으로 찾기`가 이미 낱장 목록이라
+           이 덩이만 격자여서 화면 안에서 혼자 놀았다 — 같은 화면은 같은 결로 읽혀야 한다.
+        ⚠️ 대신 **한 줄로 눕힌다.** 세로로 쌓기만 하면 넷이 화면을 길게 끌므로, 제목·태그·
+           보조값을 한 줄에 세워 줄 높이를 낮춘다(대시보드 회의 줄과 같은 결).
+      */}
+      <ul className="flex flex-col gap-2">
         {items.map((item) => (
-          <RecentlyViewedCard key={`${item.kind}-${item.id}`} item={item} />
+          <li key={`${item.kind}-${item.id}`}>
+            <RecentlyViewedCard item={item} />
+          </li>
         ))}
-      </div>
+      </ul>
     </SearchSection>
   );
 }
@@ -64,23 +73,15 @@ function RecentlyViewedCard({ item }: RecentlyViewedCardProps) {
   const inner = (
     <>
       <KindBadge kind={item.kind} />
-      <div className="min-w-0 flex-1">
-        <p className="text-foreground truncate text-[13px] leading-5 font-semibold">
-          {title(item)}
-        </p>
-        {/*
-          ⚠️ **어느 프로젝트 것인지 칩으로 보여 준다.** 밑줄 문구에 프로젝트 이름이 글자로
-             섞여 있어 훑을 때 안 보였다 — 칩은 색이 있어 눈에 먼저 걸린다.
-          ⚠️ 프로젝트 카드 자신은 제목이 곧 프로젝트라 칩을 또 달지 않는다.
-        */}
-        <p className="text-muted-foreground mt-1.5 flex items-center gap-2 truncate text-[11px] leading-4">
-          {/* ⚠️ 회의·액션은 `projectTag`, 프로젝트는 `tag`다 — 이름이 갈리므로 종류로 가른다 */}
-          {(item.kind === "MEETING" || item.kind === "ACTION") && (
-            <ProjectTag tag={item.projectTag} />
-          )}
-          <span className="truncate">{meta(item)}</span>
-        </p>
-      </div>
+      {/* ⚠️ 회의·액션은 `projectTag`, 프로젝트는 `tag`다 — 이름이 갈리므로 종류로 가른다 */}
+      {(item.kind === "MEETING" || item.kind === "ACTION") && <ProjectTag tag={item.projectTag} />}
+      <span className="text-foreground min-w-0 flex-1 truncate text-[13px] leading-5 font-medium">
+        {title(item)}
+      </span>
+      {/* ⚠️ 보조값은 **오른쪽 끝**이다 — 제목 길이가 달라도 눈이 한 세로선을 따라간다 */}
+      <span className="text-muted-foreground shrink-0 truncate text-[12px] leading-4">
+        {meta(item)}
+      </span>
     </>
   );
 
@@ -99,7 +100,8 @@ function RecentlyViewedCard({ item }: RecentlyViewedCardProps) {
        두르면 네모 안에 네모가 된다 — 옅은 면으로 갈라 두면 덩이는 보이면서 층은 하나다.
   */
   /* ⚠️ 바깥 카드가 사라졌으니 항목이 스스로 카드다 — 테두리를 되돌린다(카드 안의 카드 아님) */
-  const shape = "border-border bg-card flex items-start gap-3 rounded-xl border p-4";
+  const shape =
+    "border-border bg-card flex items-center gap-2.5 rounded-xl border px-4 py-3 text-[13px]";
 
   if (item.kind === "PROJECT") {
     return (
