@@ -60,6 +60,8 @@ const PENDING_MESSAGE: Record<MeetingContentPending, string> = {
   SCHEDULED: "아직 시작하지 않은 회의입니다. 회의가 끝나면 여기에 표시됩니다.",
   IN_PROGRESS: "회의가 진행 중입니다. 회의가 끝나면 여기에 표시됩니다.",
   SUMMARIZING: "회의 내용을 요약하고 있습니다. 요약이 끝나면 여기에 표시됩니다.",
+  /* ⚠️ 실패는 기다려도 안 온다 — 어디로 가야 하는지까지 적어야 한 줄이 제 몫을 한다 */
+  FAILED: "회의 내용을 요약하지 못했습니다. 마이페이지에서 다시 요약할 수 있습니다.",
 };
 
 function SectionNotice({ reason }: { reason: MeetingContentPending }) {

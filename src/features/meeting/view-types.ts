@@ -90,9 +90,10 @@ export interface MeetingAttendee {
  * ⚠️ **화면을 통째로 막지 않는다**(2026-08-10 팀 협의). 예정·진행중 회의도 시간·장소·참석자·
  *    안건은 이미 정해진 값이라 볼 이유가 있다 — 없는 건 **회의가 남기는 것**(기록·산출물)뿐이라
  *    그 두 칸에만 안내를 넣는다. 전면 차단은 있는 정보까지 감춘다.
- * ⚠️ 세 이유를 뭉치지 않는다. 기다리는 대상이 각각 다르다 — 회의 시작 / 회의 종료 / 요약 완료.
+ * ⚠️ 넷을 뭉치지 않는다. 기다리는 대상이 각각 다르다 — 회의 시작 / 회의 종료 / 요약 완료,
+ *    그리고 **실패는 기다려도 안 온다**(마이페이지에서 다시 요약해야 한다).
  */
-export type MeetingContentPending = "SCHEDULED" | "IN_PROGRESS" | "SUMMARIZING";
+export type MeetingContentPending = "SCHEDULED" | "IN_PROGRESS" | "SUMMARIZING" | "FAILED";
 
 /** 회의 상세 — 예정·진행중도 여기까지 온다(메타는 보여준다) */
 export interface MeetingDetail {

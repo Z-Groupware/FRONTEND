@@ -182,7 +182,9 @@ export async function getMeetingDetail(id: string, viewer: Actor): Promise<Meeti
         : meeting.aiSummaryStatus === AI_SUMMARY_STATUS.PENDING ||
             meeting.aiSummaryStatus === AI_SUMMARY_STATUS.SUMMARIZING
           ? "SUMMARIZING"
-          : null;
+          : meeting.aiSummaryStatus === AI_SUMMARY_STATUS.FAILED
+            ? "FAILED"
+            : null;
 
   /*
     참석자 이름은 사원 명부에서 id로 찾는다 — 같은 사람이 화면마다 같은 이름·같은 아바타 색이

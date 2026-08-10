@@ -54,40 +54,27 @@ describe("meetingCardAffordanceOf", () => {
     ).toBe("live");
   });
 
-  it("종료 직후(대기·요약 중)는 상세를 안 연다", () => {
-    expect(meetingCardAffordanceOf({ ...base, aiSummaryStatus: AI_SUMMARY_STATUS.PENDING })).toBe(
-      "summarizing",
-    );
-    expect(
-      meetingCardAffordanceOf({ ...base, aiSummaryStatus: AI_SUMMARY_STATUS.SUMMARIZING }),
-    ).toBe("summarizing");
-  });
-
-  it("검토는 Host만 — 참석자에겐 기다리라고만 한다", () => {
+  it("검토 대기는 Host에게만 검토 자리를 준다", () => {
     expect(meetingCardAffordanceOf({ ...base, aiSummaryStatus: AI_SUMMARY_STATUS.REVIEWED })).toBe(
       "review",
     );
-
     expect(
       meetingCardAffordanceOf({
         ...base,
         isHost: false,
         aiSummaryStatus: AI_SUMMARY_STATUS.REVIEWED,
       }),
-    ).toBe("summarizing");
+    ).toBe("open");
   });
 
-  it("요약 실패는 Host든 아니든 같은 말을 한다 — 다시 돌리는 자리는 마이페이지다", () => {
-    expect(meetingCardAffordanceOf({ ...base, aiSummaryStatus: AI_SUMMARY_STATUS.FAILED })).toBe(
-      "failed",
-    );
-    expect(
-      meetingCardAffordanceOf({
-        ...base,
-        isHost: false,
-        aiSummaryStatus: AI_SUMMARY_STATUS.FAILED,
-      }),
-    ).toBe("failed");
+  it("요약이 어디까지 왔든 목록 카드는 열린다 — 그 이야기는 상세가 한다", () => {
+    for (const status of [
+      AI_SUMMARY_STATUS.PENDING,
+      AI_SUMMARY_STATUS.SUMMARIZING,
+      AI_SUMMARY_STATUS.FAILED,
+    ]) {
+      expect(meetingCardAffordanceOf({ ...base, aiSummaryStatus: status })).toBe("open");
+    }
   });
 
   it("분배까지 끝나야 회의록이 열린다", () => {

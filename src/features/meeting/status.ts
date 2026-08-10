@@ -36,19 +36,9 @@ export function meetingStatusOf(
 export type MeetingCardAffordance =
   /** 예정·진행중 — Host면 [입장], 아니면 아무것도 */
   | "live"
-  /** 분석 중이라 아직 못 연다 */
-  | "summarizing"
   /** 분석은 끝났고 Host가 액션을 검토·확정할 차례 */
   | "review"
-  /**
-   * 분석이 실패했다 — **알리기만 한다.**
-   *
-   * ⚠️ 다시 돌리는 자리는 여기가 아니라 마이페이지의 "요약이 중단된 회의"다(2026-08-10 팀 협의).
-   *    그래서 **Host든 아니든 같은 말**을 한다 — 못 여는 이유는 누구에게나 같고, 여기서
-   *    Host에게만 "실패"라고 하고 나머지에게 "요약 중"이라 하면 화면이 사람마다 다른 말을 한다.
-   */
-  | "failed"
-  /** 회의록이 다 찼다 — 상세로 간다 */
+  /** 상세로 간다 */
   | "open";
 
 export function meetingCardAffordanceOf(
@@ -56,19 +46,14 @@ export function meetingCardAffordanceOf(
 ): MeetingCardAffordance {
   if (meeting.status !== MEETING_STATUS.DONE) return "live";
 
-  switch (meeting.aiSummaryStatus) {
-    case AI_SUMMARY_STATUS.PENDING:
-    case AI_SUMMARY_STATUS.SUMMARIZING:
-      return "summarizing";
-    case AI_SUMMARY_STATUS.FAILED:
-      return "failed";
-    case AI_SUMMARY_STATUS.REVIEWED:
-      return meeting.isHost ? "review" : "summarizing";
-    default:
-      /*
-        ⚠️ `null`도 여기로 온다. 종료됐는데 분석 값이 비어 있는 회의는 **연동 전 옛 데이터**뿐이라
-           막지 않는다 — 새로 끝난 회의는 종료가 대기를 적어 준다(`endMockMeeting`).
-      */
-      return "open";
-  }
+  /*
+    ⚠️ **목록 카드는 요약 이야기를 하지 않는다**(2026-08-10 팀 확정 B안). 대기·요약 중·실패는
+       종료 직후 잠깐 지나가는 상태인데, 그걸 배지로 올리니 목록에 회의 상태(예정·진행중·완료)와
+       분석 상태 두 축이 겹쳐 보였다 — 카드는 **회의가 어디까지 왔나**만 말하고, 요약이
+       어디까지 왔는지는 **상세의 그 칸에서** 말한다(`MeetingDetail.pendingReason`).
+    ⚠️ 그래서 다 열린다. 들어가면 산출물·발화 기록 자리가 왜 비었는지 적혀 있다.
+  */
+  if (meeting.aiSummaryStatus === AI_SUMMARY_STATUS.REVIEWED && meeting.isHost) return "review";
+
+  return "open";
 }

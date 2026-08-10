@@ -2,7 +2,11 @@ import { CalendarClock, ChevronRight, DoorOpen, MapPin, Sparkles, Users } from "
 import Link from "next/link";
 
 import { ProjectTag } from "@/components/common/project-tag";
-import { MEETING_STATUS_BADGE_CLASS, MEETING_STATUS_LABEL } from "@/constants/meeting";
+import {
+  MEETING_STATUS,
+  MEETING_STATUS_BADGE_CLASS,
+  MEETING_STATUS_LABEL,
+} from "@/constants/meeting";
 import { cn } from "@/lib/utils";
 
 import { type MeetingCardAffordance, meetingCardAffordanceOf } from "../status";
@@ -48,19 +52,10 @@ function StatusBadge({
     "inline-flex h-6 shrink-0 items-center rounded-md border px-2.5 text-[12px] leading-4";
 
   /*
-    ⚠️ **도는 표식을 쓰지 않는다**(2026-08-10 고침). 화면은 그릴 때 상태를 한 번 읽을 뿐
-       계속 물어보지 않는다(폴링·스트림을 안 쓰기로 한 팀 협의) — 그런데 배지가 돌고 있으면
-       **지금 이 자리에서 진행되는 중**으로 읽혀서, 끝날 때까지 이 화면을 쳐다보게 된다.
-       실제로는 새로고침해야 바뀐다. 돌지 않는 글자 배지가 그 사실에 맞는다(§정직성).
+    ⚠️ **요약 배지를 여기 두지 않는다**(2026-08-10 팀 확정 B안). 대기·요약 중·실패는
+       종료 직후 잠깐 지나가는 값이라, 목록에 올리면 회의 상태와 두 축이 겹쳐 보인다 —
+       요약이 어디까지 왔는지는 **상세의 그 칸**이 말한다.
   */
-  if (affordance === "summarizing") {
-    return (
-      <span className={cn(badgeClass, "bg-foreground/[0.08] border-transparent font-semibold")}>
-        요약 중
-      </span>
-    );
-  }
-
   if (affordance === "review") {
     /* 검토가 밀리면 액션이 아무에게도 안 간다 — 이 카드에서 제일 급한 값이라 가장 진하다 */
     return (
@@ -68,15 +63,6 @@ function StatusBadge({
         className={cn(badgeClass, "bg-foreground text-background border-transparent font-semibold")}
       >
         검토 대기
-      </span>
-    );
-  }
-
-  if (affordance === "failed") {
-    /* ⚠️ 색으로 알리는 건 에러뿐이다(DESIGN §5) — 실패는 그 하나에 해당한다 */
-    return (
-      <span className={cn(badgeClass, "border-destructive/30 text-destructive font-semibold")}>
-        요약 실패
       </span>
     );
   }
@@ -202,13 +188,6 @@ function CardFooter({
           </span>
         )}
 
-        {/*
-          ⚠️ **여기엔 아무것도 안 넣는다.** 한때 "다른 작업을 하셔도 됩니다"를 적었는데, 그 길이가
-             발치를 밀어 **일시·장소·인원이 두 줄로 접혔다** — 옆 카드와 발치 높이가 어긋나
-             한 줄의 카드들이 서로 다른 데서 끝났다(§오와 열). 기다리라는 말은 이미 배지의
-             도는 표식이 하고 있고, 종료 직후 토스트가 한 번 더 한다.
-        */}
-
         {affordance === "review" && (
           <Link
             href={`/app/meeting/${meeting.id}/review`}
@@ -224,13 +203,11 @@ function CardFooter({
              할 필요가 없다 — 문구가 "다시 제출"이면 되돌릴 수 없는 종료를 또 하라는 말이 된다.
         */}
         {/*
-          ⚠️ **[다시 요약]을 여기 두지 않는다**(2026-08-10 팀 협의). 재요약은 마이페이지의
-             "요약이 중단된 회의"가 맡는다 — 실패한 회의는 흔치 않은데 그 버튼 하나 때문에
-             목록 카드가 조작 화면이 되고, 같은 일을 두 곳에서 하게 된다(§관리 기능은 한 곳으로).
-             카드는 **왜 못 여는지만** 말한다.
+          ⚠️ **[입장]은 예정 회의에만 뜬다**(WORKFLOW §3-2 — "Host는 **예정** 회의에 [입장]
+             버튼이 시간 제약 없이 노출"). 진행중은 이미 Host가 들어가 캡처를 돌리고 있는
+             회의라, 목록에서 또 들어가는 자리를 주면 같은 회의에 두 번 입장하는 길이 생긴다.
         */}
-
-        {affordance === "live" && meeting.isHost && (
+        {meeting.status === MEETING_STATUS.SCHEDULED && meeting.isHost && (
           <Link href={`/app/meeting/${meeting.id}/capture`} className={ACTION_CLASS}>
             <DoorOpen className="size-3.5" aria-hidden />
             <span>입장</span>
