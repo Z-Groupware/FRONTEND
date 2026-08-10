@@ -19,9 +19,9 @@ interface RoomReservationEventProps {
 /**
  * 예약 막대 — 옅은 tint 배경(`bgColor`) + 왼쪽 액센트 보더(`solidColor`) + 색 글자(`textColor`).
  * 회의는 항상 30분 고정이라 칸 하나에 제목·시간·참석자가 다 들어가야 한다.
- * ⚠️ **2줄 구조다**(2026-08-10) — 1행 제목, 2행 시간+참석자(`justify-between`). 원래 3행
+ * 주의: **2줄 구조다**(2026-08-10) — 1행 제목, 2행 시간+참석자(`justify-between`). 원래 3행
  *    (제목/시간/참석자)이었으나 칸 높이를 줄이려고 시간·참석자를 한 줄로 합쳤다.
- * ⚠️ `accentColor`에 방어적 기본값을 둔다 — react-big-calendar의 `event` 렌더 컴포넌트는
+ * 주의: `accentColor`에 방어적 기본값을 둔다 — react-big-calendar의 `event` 렌더 컴포넌트는
  *    라이브러리 내부에서도 호출되는데, dev 환경(Turbopack HMR)에서 prop이 비어 오는 순간이
  *    관측돼 화면 전체가 죽는 것보다 중립색으로라도 그리는 쪽을 택한다.
  */

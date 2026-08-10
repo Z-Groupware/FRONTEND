@@ -7,7 +7,7 @@ interface RoomListPanelProps {
 /**
  * 회의실 목록 — 캘린더 우측 사이드바(2026-08-10, 캘린더 하단에서 이동). 예약은 왼쪽
  * 캘린더에서 하고, 여기는 운영 시간만 빠르게 확인하는 자리.
- * ⚠️ `lg` 미만에서는 캘린더 아래로 쌓인다(`rooms-board.tsx`) — `CalendarDayDetailPanel`과 같은 패턴.
+ * 주의: `lg` 미만에서는 캘린더 아래로 쌓인다(`rooms-board.tsx`) — `CalendarDayDetailPanel`과 같은 패턴.
  */
 export function RoomListPanel({ rooms }: RoomListPanelProps) {
   return (

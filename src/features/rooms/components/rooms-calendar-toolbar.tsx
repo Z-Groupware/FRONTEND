@@ -12,6 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
+import { ROOMS_CALENDAR_TOOLBAR_LABEL } from "../constants";
 import type { MeetingRoom, RoomReservation } from "../types";
 
 export const ALL_ROOMS_VALUE = "all";
@@ -27,11 +28,14 @@ interface RoomsCalendarToolbarProps extends ToolbarProps<RoomReservation> {
 
 /**
  * 커스텀 툴바 — 왼쪽에 `<` 이번 주 구간(월~금) `>` + 회의실 거르개, 오른쪽에 `오늘`·`회의 추가`.
- * ⚠️ RBC가 주는 `label`(로케일이 안 먹어 영문으로 나온다) 대신 `date`로 직접 만든다
+ * 주의: RBC가 주는 `label`(로케일이 안 먹어 영문으로 나온다) 대신 `date`로 직접 만든다
  *    (`calendar-toolbar.tsx`와 같은 이유, CLAUDE.md §카피: 날짜는 한글로).
- * ⚠️ 구간 라벨에 **고정 너비**를 준다 — 월이 걸치면 자릿수가 달라져 다음 주 버튼 위치가 흔들린다.
- * ⚠️ 회의실 거르개는 **화면 표시만 거른다** — `weekly-room-calendar.tsx`가 `reservations`를
+ * 주의: 구간 라벨은 좁은 화면에서 줄어들 수 있다 — 자릿수가 달라져도 `tabular-nums`로 숫자
+ *    폭만 맞춘다(고정 폭 대신 `max-w`로 최소 여백만 보장).
+ * 주의: 회의실 거르개는 **화면 표시만 거른다** — `weekly-room-calendar.tsx`가 `reservations`를
  *    `selectedRoomId`로 걸러 `Calendar`에 넘긴다(서버 재조회 없음, 이미 그 주 예약을 다 갖고 있다).
+ * 주의: 좁은 화면에서는 두 그룹(날짜 탐색+거르개 / 오늘+회의 추가)을 세로로 쌓는다 — 가로로
+ *    욱여넣으면 회의 추가 버튼이 화면 밖으로 밀려난다.
  */
 export function RoomsCalendarToolbar({
   date,
@@ -49,8 +53,8 @@ export function RoomsCalendarToolbar({
       : `${format(weekStart, "M월 d일", { locale: ko })} - ${format(weekEnd, "M월 d일", { locale: ko })}`;
 
   return (
-    <div className="mb-3 flex items-center justify-between gap-3">
-      <div className="flex items-center gap-2">
+    <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+      <div className="flex flex-wrap items-center gap-2">
         <Button
           type="button"
           variant="outline"
@@ -60,7 +64,7 @@ export function RoomsCalendarToolbar({
         >
           <ChevronLeft />
         </Button>
-        <p className="w-40 shrink-0 text-center text-base font-semibold tabular-nums">
+        <p className="max-w-28 shrink-0 truncate text-center text-base font-semibold tabular-nums sm:max-w-40">
           {rangeLabel}
         </p>
         <Button
@@ -77,11 +81,11 @@ export function RoomsCalendarToolbar({
           value={selectedRoomId}
           onValueChange={(value) => onSelectedRoomChange(value ?? ALL_ROOMS_VALUE)}
         >
-          <SelectTrigger size="sm" aria-label="회의실 필터">
-            <SelectValue placeholder="전체 회의실" />
+          <SelectTrigger size="sm" aria-label={ROOMS_CALENDAR_TOOLBAR_LABEL.roomFilter}>
+            <SelectValue placeholder={ROOMS_CALENDAR_TOOLBAR_LABEL.allRooms} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value={ALL_ROOMS_VALUE}>전체 회의실</SelectItem>
+            <SelectItem value={ALL_ROOMS_VALUE}>{ROOMS_CALENDAR_TOOLBAR_LABEL.allRooms}</SelectItem>
             {rooms.map((room) => (
               <SelectItem key={room.id} value={room.id}>
                 {room.name}
@@ -91,13 +95,13 @@ export function RoomsCalendarToolbar({
         </Select>
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex shrink-0 flex-wrap items-center gap-2">
         <Button type="button" variant="outline" size="sm" onClick={() => onNavigate("TODAY")}>
           오늘
         </Button>
         <Button type="button" size="sm" variant="ink" onClick={onAddClick}>
           <Plus aria-hidden />
-          회의 추가
+          {ROOMS_CALENDAR_TOOLBAR_LABEL.addMeeting}
         </Button>
       </div>
     </div>
