@@ -167,7 +167,12 @@ export function DashboardMeetingItem({ meeting, showDivider }: DashboardMeetingI
             <span className="w-[64px] text-right tabular-nums">참석 {meeting.attendeeCount}명</span>
             <span
               className={cn(
-                "inline-flex h-5 w-[48px] shrink-0 items-center justify-center rounded-full text-[11px] leading-4 font-medium",
+                /*
+                  ⚠️ **`border`를 켜 둔다**(2026-08-10 리뷰). 공용 맵의 완료 값이 `border-border`
+                     하나로 서는데 테두리 굵기가 없으면 그 줄이 안 그려져 **완료 배지만 표면이
+                     통째로 사라진다** — 목록 카드는 이미 `border`를 켠다.
+                */
+                "inline-flex h-5 w-[48px] shrink-0 items-center justify-center rounded-full border text-[11px] leading-4 font-medium",
                 MEETING_STATUS_BADGE_CLASS[meeting.status],
               )}
             >
