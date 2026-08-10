@@ -3,8 +3,8 @@
 import {
   DndContext,
   type DragEndEvent,
-  type DragMoveEvent,
   type DragOverEvent,
+  DragOverlay,
   type DragStartEvent,
   PointerSensor,
   useSensor,
@@ -36,51 +36,24 @@ interface BoardViewProps {
   todayIso: string;
 }
 
-interface ActiveOverlayRect {
-  top: number;
-  left: number;
-  width: number;
-  height: number;
-}
-
-/**
- * 지금 걸린 화면 배율(`--app-scale`, 마이페이지 §appearance) — 1이면 안 걸려 있는 것과 같다.
- * ⚠️ **왜 필요한가**: `body`가 그 배율만큼 `transform: scale()`돼 있고(globals.css), 그 안의
- *    `position: fixed`는 실좌표가 아니라 그 축소된 `body` 기준으로 다시 한 번 축소돼 그려진다
- *    (2026-08-09 디자인 리뷰에서 실측 — 75%일 때 커서와 사본 위치가 어긋나고 카드도 더
- *    작아지던 문제). `getBoundingClientRect()`로 잰 값은 이미 그 축소를 한 번 반영한
- *    "화면에 보이는" 값이라, 같은 `body` 안에 `fixed`로 다시 그리면 배율이 **두 번** 걸린다 —
- *    `1/배율`을 곱해 먼저 부풀려 두면 `body`의 축소를 거친 뒤 원래 크기·위치로 돌아온다.
- *    `body` 자신도 `width/height: calc(100% / var(--app-scale))`로 똑같은 방식을 쓴다.
- */
-function readAppScale(): number {
-  if (typeof window === "undefined") return 1;
-  const raw = getComputedStyle(document.documentElement).getPropertyValue("--app-scale").trim();
-  const parsed = Number(raw);
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
-}
-
 /**
  * 보드 칸반 — 드래그로 칸을 옮기고 [저장하기]를 눌러야 실제로 반영된다.
  * ⚠️ 드래그 자체는 로컬 상태만 바꾼다(낙관적 미리보기) — 서버 반영은 확인 창을 거친 뒤
  *    [확인]을 눌러야 `commitBoardChangesAction`이 불린다.
- * ⚠️ **`<DragOverlay>`를 안 쓴다.** dnd-kit 기본 오버레이는 `body`(화면 배율의 `transform`
- *    기준점) 안에 그대로 그려져 위 배율 문제를 그대로 겪는다 — 직접 `position: fixed` div로
- *    띄우고 좌표를 손으로 보정한다(`readAppScale` 참고).
  */
 export function BoardView({ boardType, cards, todayIso }: BoardViewProps) {
   const today = useMemo(() => new Date(`${todayIso}T00:00:00`), [todayIso]);
   // 카드 id → 드래그로 옮긴 칸. 없으면 날짜로 계산한 원래 칸을 그대로 쓴다.
   const [overrides, setOverrides] = useState<Record<number, BoardColumnId>>({});
   const [activeInvalidTarget, setActiveInvalidTarget] = useState<BoardColumnId | null>(null);
-  /** 지금 손에 들려 있는 카드 id — 오버레이에 띄울 사본을 찾는 용도. */
+  /** 지금 손에 들려 있는 카드 id — `DragOverlay`에 띄울 사본을 찾는 용도. */
   const [activeId, setActiveId] = useState<number | null>(null);
-  /** 집어든 순간 원본 카드의 실제 위치·크기 — 오버레이의 시작 자리·크기로 그대로 쓴다. */
-  const [activeRect, setActiveRect] = useState<ActiveOverlayRect | null>(null);
-  /** 집어든 뒤 커서가 움직인 만큼(px) — `onDragMove`가 매번 갱신한다. */
-  const [activeDelta, setActiveDelta] = useState({ x: 0, y: 0 });
-  /** 이 드래그 동안 쓸 배율 — 집어든 순간 한 번만 읽는다(드래그 중에 안 바뀐다). */
-  const [activeScale, setActiveScale] = useState(1);
+  /**
+   * 집어든 순간 원본 카드의 실제 폭(px) — `DragOverlay`는 내용 크기에 맞춰 저절로
+   * 좁아지므로, 원본과 같은 폭을 직접 지정해 줘야 "같은 카드를 들고 있다"로 보인다
+   * (2026-08-09 디자인 리뷰 — 사본이 원본보다 좁아 보이던 문제).
+   */
+  const [activeWidth, setActiveWidth] = useState<number | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
 
@@ -96,24 +69,9 @@ export function BoardView({ boardType, cards, todayIso }: BoardViewProps) {
   const changeCount = Object.keys(overrides).length;
   const activeCard = cards.find((card) => card.id === activeId) ?? null;
 
-  function resetActiveDrag() {
-    setActiveId(null);
-    setActiveRect(null);
-    setActiveDelta({ x: 0, y: 0 });
-  }
-
   function handleDragStart(event: DragStartEvent) {
     setActiveId(Number(event.active.id));
-    setActiveDelta({ x: 0, y: 0 });
-    setActiveScale(readAppScale());
-    const rect = event.active.rect.current.initial;
-    setActiveRect(
-      rect ? { top: rect.top, left: rect.left, width: rect.width, height: rect.height } : null,
-    );
-  }
-
-  function handleDragMove(event: DragMoveEvent) {
-    setActiveDelta({ x: event.delta.x, y: event.delta.y });
+    setActiveWidth(event.active.rect.current.initial?.width ?? null);
   }
 
   function handleDragOver(event: DragOverEvent) {
@@ -129,7 +87,8 @@ export function BoardView({ boardType, cards, todayIso }: BoardViewProps) {
 
   function handleDragEnd(event: DragEndEvent) {
     setActiveInvalidTarget(null);
-    resetActiveDrag();
+    setActiveId(null);
+    setActiveWidth(null);
     if (!event.over) return;
     const card = cards.find((c) => c.id === event.active.id);
     if (!card) return;
@@ -188,10 +147,12 @@ export function BoardView({ boardType, cards, todayIso }: BoardViewProps) {
       <DndContext
         sensors={sensors}
         onDragStart={handleDragStart}
-        onDragMove={handleDragMove}
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
-        onDragCancel={resetActiveDrag}
+        onDragCancel={() => {
+          setActiveId(null);
+          setActiveWidth(null);
+        }}
       >
         <div className="grid min-h-0 flex-1 grid-cols-3 gap-4">
           {BOARD_COLUMNS.map((columnId) => (
@@ -205,27 +166,16 @@ export function BoardView({ boardType, cards, todayIso }: BoardViewProps) {
             />
           ))}
         </div>
-      </DndContext>
 
-      {/*
-        ⚠️ `DndContext` 바깥이어도 상관없다 — `position: fixed`라 문서 흐름과 무관하게
-           떠 있고, 좌표는 전부 `activeRect`/`activeDelta`로 직접 계산한다.
-      */}
-      {activeCard && activeRect && (
-        <div
-          aria-hidden
-          className="pointer-events-none fixed z-[999]"
-          style={{
-            top: activeRect.top / activeScale,
-            left: activeRect.left / activeScale,
-            width: activeRect.width / activeScale,
-            height: activeRect.height / activeScale,
-            transform: `translate3d(${activeDelta.x / activeScale}px, ${activeDelta.y / activeScale}px, 0)`,
-          }}
-        >
-          <BoardCardOverlay card={activeCard} isDelayed={isCardDelayed(activeCard, today)} />
-        </div>
-      )}
+        {/* ⚠️ 포털로 최상단에 그린다 — 칼럼의 overflow-y-auto에 안 잘린다(2026-08-09 디자인 리뷰). */}
+        <DragOverlay>
+          {activeCard && (
+            <div style={{ width: activeWidth ?? undefined }}>
+              <BoardCardOverlay card={activeCard} isDelayed={isCardDelayed(activeCard, today)} />
+            </div>
+          )}
+        </DragOverlay>
+      </DndContext>
 
       <ConfirmDialog
         isOpen={confirmOpen}
