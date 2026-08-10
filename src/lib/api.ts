@@ -6,11 +6,13 @@ import "server-only";
  * 브라우저는 Next 서버(Server Action·Route Handler)에만 말을 걸고, BE와의 대화는 여기가 대신한다.
  * 토큰은 httpOnly 쿠키에서 읽어 헤더로 붙이므로 **브라우저 JS는 토큰을 못 본다.**
  *
- * ⚠️ **봉투를 벗기는 일은 여기 한 곳에서만 한다.** BE는 성공·실패 모두
- *    `{ httpStatus, message, data }`로 답한다(`global/response/ApiResponse.java`) —
+ * ⚠️ **봉투를 벗기는 일은 여기 한 곳에서만 한다.** 성공·실패 봉투 모양이 **서로 다르다**
+ *    (인수인계 API 연동 가이드, 2026-08-10로 실코드 대조 확인):
+ *    성공 = `{ httpStatus, message, data }`, 실패 = `{ errorCode, message, timestamp, path,
+ *    traceId, details }` — 실패 쪽엔 `data`가 없고 코드는 **top-level `errorCode`**다.
  *    컴포넌트가 봉투를 알면 모양이 바뀔 때 전 화면을 고쳐야 한다(§연동 검증).
  * ⚠️ `message`는 **화면에 그대로 띄울 한국어 문장**이다. 코드로 문구를 조립하지 않는다.
- * ⚠️ 실패의 `data.code`(`AU-035` 등)는 **분기용**이다 — 사람에게 보여 주는 건 `message`다.
+ * ⚠️ 실패의 `errorCode`(`HO-016` 등)는 **분기용**이다 — 사람에게 보여 주는 건 `message`다.
  */
 
 /** BE 주소. 서버에서만 읽으므로 `NEXT_PUBLIC_`을 붙이지 않는다 — 브라우저에 나갈 값이 아니다. */
@@ -88,19 +90,13 @@ function toApiError(status: number, raw: unknown): ApiError {
     return new ApiError(status, "요청을 처리하지 못했습니다. 잠시 후 다시 시도해 주세요.");
   }
 
-  const envelope = raw as { message?: unknown; data?: unknown };
+  const envelope = raw as { message?: unknown; errorCode?: unknown };
   const message =
     typeof envelope.message === "string" && envelope.message.trim().length > 0
       ? envelope.message
       : "요청을 처리하지 못했습니다. 잠시 후 다시 시도해 주세요.";
 
-  const data = envelope.data;
-  const code =
-    typeof data === "object" &&
-    data !== null &&
-    typeof (data as { code?: unknown }).code === "string"
-      ? (data as { code: string }).code
-      : undefined;
+  const code = typeof envelope.errorCode === "string" ? envelope.errorCode : undefined;
 
   return new ApiError(status, message, code);
 }
