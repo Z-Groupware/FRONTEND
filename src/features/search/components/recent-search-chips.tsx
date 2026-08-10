@@ -2,6 +2,7 @@ import { Clock } from "lucide-react";
 import Link from "next/link";
 
 import type { RecentSearchEntry } from "../types";
+import { SearchSection } from "./search-section";
 
 interface RecentSearchChipsProps {
   entries: RecentSearchEntry[];
@@ -12,8 +13,7 @@ export function RecentSearchChips({ entries }: RecentSearchChipsProps) {
   if (entries.length === 0) return null;
 
   return (
-    <div>
-      <h2 className="text-muted-foreground mb-3 text-[12px] leading-4">최근 검색어</h2>
+    <SearchSection title="최근 검색어" compact>
       <ul className="flex flex-wrap gap-2">
         {entries.map((entry) => (
           <li key={entry.keyword}>
@@ -27,6 +27,6 @@ export function RecentSearchChips({ entries }: RecentSearchChipsProps) {
           </li>
         ))}
       </ul>
-    </div>
+    </SearchSection>
   );
 }

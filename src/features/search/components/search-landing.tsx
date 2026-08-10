@@ -31,8 +31,15 @@ export function SearchLanding({ home }: SearchLandingProps) {
       <RecentSearchChips entries={home.recentSearches} />
       <RecentlyViewedGrid items={home.recentlyViewed} />
 
-      <BrowseProjects projects={home.projects} />
-      <BrowsePeople people={home.people} />
+      {/*
+        ⚠️ **둘을 좌우로 나란히 둔다.** 세로로 쌓으면 짧은 목록 두 개가 화면을 길게 끌어
+           스크롤이 생기는데, 정작 오른쪽은 통째로 비었다 — 둘 다 짧은 목록이라 나란히 서는 게 맞다.
+        ⚠️ 좁아지면 세로로 돌아간다(`lg:`) — 한 줄에 둘을 욱여넣으면 이름이 잘린다.
+      */}
+      <div className="grid grid-cols-1 gap-7 lg:grid-cols-2">
+        <BrowseProjects projects={home.projects} />
+        <BrowsePeople people={home.people} />
+      </div>
     </div>
   );
 }

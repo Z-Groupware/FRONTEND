@@ -4,6 +4,7 @@ import { ProjectTag } from "@/components/common/project-tag";
 import { AUTHORITY_BADGE_CLASS, AUTHORITY_LABEL } from "@/constants/authority";
 
 import type { PersonBrowseItem, ProjectBrowseItem } from "../types";
+import { SearchSection } from "./search-section";
 
 interface BrowseProjectsProps {
   projects: ProjectBrowseItem[];
@@ -14,9 +15,8 @@ export function BrowseProjects({ projects }: BrowseProjectsProps) {
   if (projects.length === 0) return null;
 
   return (
-    <div>
-      <h2 className="text-muted-foreground mb-3 text-[12px] leading-4">프로젝트로 찾기</h2>
-      <ul className="border-border bg-card divide-border divide-y overflow-hidden rounded-2xl border">
+    <SearchSection title="프로젝트로 찾기" meta={`${projects.length}개`} padded={false}>
+      <ul className="divide-border divide-y">
         {projects.map((project) => {
           return (
             <li key={project.id}>
@@ -39,7 +39,7 @@ export function BrowseProjects({ projects }: BrowseProjectsProps) {
           );
         })}
       </ul>
-    </div>
+    </SearchSection>
   );
 }
 
@@ -55,9 +55,8 @@ export function BrowsePeople({ people }: BrowsePeopleProps) {
   if (people.length === 0) return null;
 
   return (
-    <div>
-      <h2 className="text-muted-foreground mb-3 text-[12px] leading-4">사람으로 찾기</h2>
-      <ul className="border-border bg-card divide-border divide-y overflow-hidden rounded-2xl border">
+    <SearchSection title="사람으로 찾기" meta={`${people.length}명`} padded={false}>
+      <ul className="divide-border divide-y">
         {people.map((person) => (
           <li key={person.id} className="flex items-center gap-2.5 px-5 py-3.5 text-[13px]">
             <span className="min-w-0 flex-1 truncate">{person.name}</span>
@@ -69,6 +68,6 @@ export function BrowsePeople({ people }: BrowsePeopleProps) {
           </li>
         ))}
       </ul>
-    </div>
+    </SearchSection>
   );
 }
