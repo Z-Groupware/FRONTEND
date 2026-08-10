@@ -110,7 +110,7 @@ export default async function OwnerDashboardPage() {
                     <TableHead className={`${HEAD_CELL_CLASS} pl-6`}>
                       <span className="flex items-center gap-2">
                         <span className="w-7 shrink-0" aria-hidden />
-                        <span className="text-center" style={{ width: LEADER_NAME_WIDTH }}>
+                        <span className="text-center" style={{ minWidth: LEADER_NAME_WIDTH }}>
                           이름
                         </span>
                       </span>
