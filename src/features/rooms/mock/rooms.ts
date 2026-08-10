@@ -85,3 +85,10 @@ export function updateMockRoom(id: string, draft: MeetingRoomDraft): MeetingRoom
   store.rooms = [...store.rooms.slice(0, index), updated, ...store.rooms.slice(index + 1)];
   return updated;
 }
+
+/** 회의실 삭제 — 있던 회의실이면 지우고 true, 이미 없으면 false(중복 삭제 요청도 조용히 넘어간다). */
+export function deleteMockRoom(id: string): boolean {
+  const existed = store.rooms.some((room) => room.id === id);
+  store.rooms = store.rooms.filter((room) => room.id !== id);
+  return existed;
+}

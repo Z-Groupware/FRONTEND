@@ -7,3 +7,14 @@
 
 /** 예약 길이 — 팀 확정: 30분 한 타임, 연장하지 않는다(CLAUDE.md §브라우저 API). */
 export const RESERVATION_DURATION_MINUTES = 30;
+
+/**
+ * 회의실 이용 가능 시간(운영시간) select용 30분 단위 옵션 — "00:00"~"23:30", 48개.
+ * ⚠️ 검증(`GENERAL_TIME_PATTERN`)은 분 단위 제약이 없지만, 예약 슬롯과 같은 30분 단위로
+ *    보여 주는 게 고르기 쉽고 실제로 쓰는 시각도 대개 이 격자 위에 있다.
+ */
+export const TIME_OPTIONS = Array.from({ length: 48 }, (_, index) => {
+  const hour = String(Math.floor(index / 2)).padStart(2, "0");
+  const minute = index % 2 === 0 ? "00" : "30";
+  return `${hour}:${minute}`;
+});
