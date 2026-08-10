@@ -28,6 +28,7 @@ export function NoticeList({ notices, action }: { notices: NoticeSummary[]; acti
 
       {notices.length === 0 ? (
         <div className="flex items-center justify-center p-10 text-center">
+          {/* ⚠️ `text-sm`은 규격 밖이다 — 다섯 크기 중 13px를 쓴다(§DESIGN 4) */}
           <p className="text-muted-foreground text-[13px] leading-5">아직 등록된 공지가 없습니다</p>
         </div>
       ) : (

@@ -53,7 +53,7 @@ export function FailedPipelineTable({ items }: { items: FailedPipelineItem[] }) 
   if (items.length === 0) {
     return (
       <div className="border-border bg-card flex items-center justify-center rounded-2xl border p-10 text-center">
-        <p className="text-muted-foreground text-sm">재처리할 실패 건이 없어요</p>
+        <p className="text-muted-foreground text-sm">재처리할 실패 건이 없습니다</p>
       </div>
     );
   }
