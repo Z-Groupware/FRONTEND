@@ -2,7 +2,7 @@ import "server-only";
 
 import { isVisibleMemberStatus } from "@/constants/member";
 import { requireAccessToken } from "@/features/auth/session";
-import { serverApi } from "@/lib/api";
+import { ApiError, serverApi } from "@/lib/api";
 import { ep } from "@/lib/endpoints";
 import { paginate, type PaginatedResult } from "@/lib/paginate";
 import { isMock } from "@/mocks/config";
@@ -82,8 +82,13 @@ export async function getManagedMembersPage(
   });
   if (query.keyword.trim()) params.set("q", query.keyword.trim());
 
+  /*
+    ⚠️ **`totalCount`다**(`totalElements` 아님 — [확인] BE `MemberPageResponse`). 이름을 잘못
+       읽으면 `undefined`가 되어 `전체 N건`이 비고 `totalPages`가 `NaN`이 된다 — 다음 페이지가
+       있는지 아무도 모르게 된다.
+  */
   const response = await serverApi<{
-    totalElements: number;
+    totalCount: number;
     page: number;
     size: number;
     content: BeMemberListItem[];
@@ -102,8 +107,9 @@ export async function getManagedMembersPage(
   return {
     items,
     page: response.page + 1,
-    totalPages: Math.max(1, Math.ceil(response.totalElements / response.size)),
-    totalCount: response.totalElements,
+    /* ⚠️ `size`가 0으로 오면 0으로 나눠 `Infinity`가 된다 — 요청한 값으로 되돌린다 */
+    totalPages: Math.max(1, Math.ceil(response.totalCount / (response.size || pageSize))),
+    totalCount: response.totalCount,
   };
 }
 
@@ -131,9 +137,15 @@ export async function getManagedMember(id: number): Promise<ManagedMemberDetail 
   let detail: BeMemberDetail;
   try {
     detail = await serverApi<BeMemberDetail>(ep.member(id), { accessToken });
-  } catch {
-    /* 없는 사람·권한 없음 모두 화면에서는 `notFound()`다 — 있는지 없는지를 알려 주지 않는다 */
-    return null;
+  } catch (error) {
+    /*
+      ⚠️ **모든 실패를 "없는 사람"으로 만들지 않는다.** 통신 장애나 500까지 `null`로 바꾸면
+         화면이 `notFound()`를 띄워 **사원이 지워진 것처럼 보인다** — 실제로는 서버가 잠깐
+         맛이 간 것이다(§정직성).
+      ⚠️ 404·403만 `null`이다. 있는지 없는지를 알려 주지 않으려고 둘을 같이 묶는다.
+    */
+    if (error instanceof ApiError && (error.status === 404 || error.status === 403)) return null;
+    throw error;
   }
 
   const member = toManagedMember(detail);
@@ -152,4 +164,37 @@ export async function listMemberEmails(): Promise<string[]> {
        개인정보이기도 하다. 목으로 돌 때 폼 검증을 보여 주려고 남겨 둔다.
   */
   return [];
+}
+
+/**
+ * 팀별 현재 팀장 — **팀당 한 명 규칙**을 서버에서 재검사할 때 쓴다.
+ *
+ * ⚠️ **명부 전체를 받아 거르지 않는다.** 사원이 수백 명이면 그 수백을 다 받아 오는데,
+ *    필요한 건 팀마다 한 명뿐이다 — BE의 팀 조회가 `leaderMemberId`·`leaderName`을
+ *    이미 얹어 준다([확인] `TeamNodeResponse`).
+ * ⚠️ 목으로 돌 때는 명부에서 뽑는다 — 목에는 팀 조회가 따로 없다.
+ */
+export async function getTeamLeaders(): Promise<Map<string, { id: number; name: string }>> {
+  if (isMock) {
+    const leaders = new Map<string, { id: number; name: string }>();
+    for (const member of listMockManagedMembers()) {
+      if (!member.teamName) continue;
+      if (member.authority !== "LEADER") continue;
+      if (member.status === "RESIGNED") continue;
+      leaders.set(member.teamName, { id: member.id, name: member.name });
+    }
+    return leaders;
+  }
+
+  const accessToken = await requireAccessToken();
+  const teams = await serverApi<
+    { name: string; leaderMemberId: number | null; leaderName: string | null }[]
+  >(ep.teams(), { accessToken });
+
+  const leaders = new Map<string, { id: number; name: string }>();
+  for (const team of teams) {
+    if (team.leaderMemberId === null) continue;
+    leaders.set(team.name, { id: team.leaderMemberId, name: team.leaderName ?? "" });
+  }
+  return leaders;
 }

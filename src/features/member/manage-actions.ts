@@ -23,7 +23,7 @@ import { isMock } from "@/mocks/config";
 
 import { isEmailTaken, validateAccount } from "./account-validate";
 import { GRADE_LOCK_NOTE, gradeLockOf } from "./grade";
-import { getManagedMember, getManagedMembersPage, listManagedMembers } from "./manage-server";
+import { getManagedMember, getManagedMembersPage, getTeamLeaders } from "./manage-server";
 import type {
   AccountDraft,
   AccountErrors,
@@ -198,7 +198,15 @@ export async function changeMemberGradeAction(
         json: { role: next.authority, jobPositionId: Number(jobPosition.id) },
       });
 
-      /* 겸직이 실제로 달라질 때만 부른다 — OWNER만 열리는 경로라 괜히 부르면 403이다 */
+      /*
+        ⚠️ **겸직 변경은 OWNER만 된다**(BE `@PreAuthorize("hasRole('OWNER')")`). ADMIN이
+           겸직을 건드리면 역할·직급은 이미 저장된 뒤 이 호출만 403으로 막혀 **절반만 반영**된다 —
+           화면은 "실패"라고 말하는데 직급은 바뀌어 있다. 부르기 전에 걸러 낸다.
+        ⚠️ 실제로 달라질 때만 부른다 — 같은 값이면 괜히 403을 만들 이유가 없다.
+      */
+      if (next.isAdmin !== target.member.isAdmin && pass.viewer.role !== AUTHORITY.OWNER) {
+        return { isSuccess: false, message: "관리자 겸직은 대표만 바꿀 수 있습니다" };
+      }
       if (next.isAdmin !== target.member.isAdmin) {
         await serverApi<unknown>(ep.memberAdmin(id), {
           method: "PATCH",
@@ -245,20 +253,19 @@ async function findTeamLeaderClash(
   const willBeLeader = nextAuthority === AUTHORITY.LEADER;
   if (wasLeader === willBeLeader) return null;
 
-  const members = await listManagedMembers();
-  const leaders = members.filter(
-    (member) =>
-      member.teamName === team &&
-      member.authority === AUTHORITY.LEADER &&
-      member.status !== MEMBER_STATUS.RESIGNED &&
-      member.id !== target.id,
-  );
+  /*
+    ⚠️ **명부 전체를 받지 않는다.** 전에는 `listManagedMembers()`를 불렀는데, 연동 뒤 그 함수는
+       "페이지 단위로 조회하라"며 던진다 — 라이브에서 팀장 권한을 바꾸려 할 때마다 액션이
+       통째로 터졌다. 팀 조회가 팀장을 이미 얹어 준다.
+  */
+  const leaders = await getTeamLeaders();
+  const existing = leaders.get(team);
+  const isOtherPerson = existing !== undefined && existing.id !== target.id;
 
-  const existing = leaders[0];
-  if (willBeLeader && existing) {
+  if (willBeLeader && isOtherPerson) {
     return `${team}에는 이미 팀장(${existing.name})이 있습니다. 먼저 그 사람의 권한을 바꿔 주세요`;
   }
-  if (!willBeLeader && leaders.length === 0) {
+  if (!willBeLeader && !isOtherPerson) {
     return `${team}의 유일한 팀장입니다. 후임을 먼저 정해 주세요`;
   }
   return null;
@@ -389,6 +396,20 @@ export async function issueAccountAction(draft: AccountDraft): Promise<IssueAcco
     const team = company.departments.find((item) => item.name === draft.teamName);
     if (!team) return { errors: { teamName: "회사에 없는 팀입니다" } };
 
+    /*
+      ⚠️ **id가 숫자가 아닐 수 있다.** 화면에서 방금 만든 팀·직급은 아직 저장 전이라 임시
+         id를 들고 있다 — 그대로 `Number()`하면 `NaN`이 나가고 BE가 400으로 되돌려 주는데,
+         그 문구는 "왜 안 되는지"를 말해 주지 못한다.
+    */
+    const teamId = Number(team.id);
+    const positionId = Number(jobPosition.id);
+    if (!Number.isInteger(teamId)) {
+      return { errors: { teamName: "먼저 기업 설정에서 팀을 저장해 주세요" } };
+    }
+    if (!Number.isInteger(positionId)) {
+      return { errors: { position: "먼저 기업 설정에서 직급을 저장해 주세요" } };
+    }
+
     try {
       const accessToken = await requireAccessToken();
       await serverApi<unknown>(ep.manageMembers(), {
@@ -397,8 +418,10 @@ export async function issueAccountAction(draft: AccountDraft): Promise<IssueAcco
         json: {
           name: draft.name,
           email: draft.email,
-          teamId: Number(team.id),
-          jobPositionId: Number(jobPosition.id),
+          teamId: teamId,
+          jobPositionId: positionId,
+          /* ⚠️ **`role`은 필수다**(BE `@NotNull`). 빠뜨리면 **항상 400**이다 */
+          role: draft.authority,
           roleLabel: draft.roleLabel || null,
         },
       });
