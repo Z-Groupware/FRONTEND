@@ -3,6 +3,14 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import {
+  completeMeetingAction,
+  pauseCaptureSessionAction,
+  resumeCaptureSessionAction,
+  startCaptureSessionAction,
+  submitCaptionsAction,
+} from "./actions";
+import { createLevelMeter, type LevelMeter } from "./level";
+import {
   CAPTURE_PHASE,
   type CapturePhase,
   closedSegmentCountOf,
@@ -14,14 +22,17 @@ import {
 } from "./phase";
 import { type CaptureRecorder, createCaptureRecorder, isRecordingSupported } from "./recorder";
 import { createSttEngine, isSttSupported, type SttEngine, type TranscriptChunk } from "./stt";
+import type { CaptionChunkInput } from "./types";
 
 /**
  * 캡처 화면의 손발 — 단계·시간·자막을 한 곳에서 든다.
  *
  * ⚠️ 화면(컴포넌트)은 브라우저 API를 모른다. 여기가 `stt`·`recorder` 두 계층을 부르고,
  *    컴포넌트는 값과 핸들러만 받는다(CLAUDE.md §로직은 커스텀 훅).
- * ⚠️ 서버 호출(CAP-01/02/03·청크·종료)은 **아직 연결 전**이라 `onEvent`로 흘려보내기만 한다 —
- *    붙일 자리를 비워 두되 되는 척하지 않는다(§정직성).
+ * ⚠️ 서버 호출은 전부 `actions.ts`를 거친다 — 이 파일은 BE shape도 경로도 모른다(§격리막).
+ * ⚠️ **자막이 못 올라가도 회의는 계속된다.** 자막은 정본이 아니라 실시간 표시·폴백용이라
+ *    (BE `CaptionChunk` 주석), 전송 실패를 화면 전체 오류로 키우지 않는다 — 대신 조용히
+ *    삼키지도 않는다(§정직성): 실패한 배치는 다시 보낸다. 같은 `seq`는 BE가 건너뛴다.
  */
 
 /** 지원 여부 — 화면이 안내를 띄울 때 무엇이 없는지 말해야 한다 */
@@ -50,7 +61,23 @@ export interface UseCaptureResult {
 /** 1초마다 다시 그린다 — 경과 시간이 흘러야 녹음 중인 게 보인다 */
 const TICK_MS = 1_000;
 
-export function useCapture(): UseCaptureResult {
+/**
+ * 모인 자막을 내보내는 주기.
+ *
+ * ⚠️ 2초다. 더 짧으면 배치의 뜻이 없고, 더 길면 참석자 화면에 자막이 늦게 뜬다 —
+ *    이 값이 곧 **다른 사람이 내 말을 보기까지 걸리는 시간**이다.
+ */
+const CAPTION_FLUSH_MS = 2_000;
+
+/**
+ * 음량계를 못 만들었을 때 실어 보낼 값(dBFS).
+ *
+ * ⚠️ `null`을 보내면 BE가 422로 튕겨 **자막이 통째로 안 남는다.** 못 잰 것과 무음은
+ *    다르지만, 둘 중에는 자막을 남기는 쪽이 낫다 — 화자 판정만 못 하고 글은 남는다.
+ */
+const SILENT_RMS_DBFS = -100;
+
+export function useCapture(meetingId: string): UseCaptureResult {
   const [phase, setPhase] = useState<CapturePhase>(CAPTURE_PHASE.BEFORE_ENTER);
   const [spans, setSpans] = useState<RecordingSpan[]>([]);
   const [chunks, setChunks] = useState<TranscriptChunk[]>([]);
@@ -80,6 +107,41 @@ export function useCapture(): UseCaptureResult {
   const recorderRef = useRef<CaptureRecorder | null>(null);
   /** 이미 닫은 세그먼트 수 — 같은 경계에서 두 번 닫지 않으려고 든다 */
   const closedRef = useRef(0);
+
+  const levelRef = useRef<LevelMeter | null>(null);
+
+  /**
+   * 아직 서버로 못 보낸 자막 — **배치로 모아서** 보낸다(CAP-11).
+   *
+   * ⚠️ 문장마다 한 번씩 부르지 않는다. 말이 빠른 회의는 초당 여러 문장이 확정되는데,
+   *    낱개로 보내면 왕복이 그만큼 늘고 순서가 뒤집힌다. BE도 배치 API로 만들어 뒀다.
+   * ⚠️ **실패하면 큐에 되돌려 놓는다.** 같은 `seq`가 다시 와도 BE가 조용히 건너뛰므로
+   *    재전송이 안전하다 — 조용히 버리면 그 문장은 영영 없다(§정직성).
+   */
+  const pendingRef = useRef<CaptionChunkInput[]>([]);
+  const sendingRef = useRef(false);
+  /** (회의, 사람)마다 0부터 이어 붙는 순번 — BE 중복 판정의 키다 */
+  const seqRef = useRef(0);
+
+  const flushCaptions = useCallback(async () => {
+    if (sendingRef.current || pendingRef.current.length === 0) return;
+    sendingRef.current = true;
+    const batch = pendingRef.current;
+    pendingRef.current = [];
+    const result = await submitCaptionsAction(Number(meetingId), batch);
+    if (!result.ok) {
+      /* 보낸 순서를 지켜 되돌린다 — 뒤에 쌓인 것보다 앞이다 */
+      pendingRef.current = [...batch, ...pendingRef.current];
+    }
+    sendingRef.current = false;
+  }, [meetingId]);
+
+  /* 2초마다 모인 것을 내보낸다 — 녹음 중일 때만 돈다 */
+  useEffect(() => {
+    if (!isCapturing(phase)) return;
+    const timer = window.setInterval(() => void flushCaptions(), CAPTION_FLUSH_MS);
+    return () => window.clearInterval(timer);
+  }, [phase, flushCaptions]);
 
   const recordedMs = recordedMsOf(spans, now);
 
@@ -147,12 +209,31 @@ export function useCapture(): UseCaptureResult {
       const startedAt = utteranceStartRef.current ?? elapsedNow();
       utteranceStartRef.current = null;
 
+      const endedAt = elapsedNow();
       const at = formatRecordedTime(startedAt);
       setChunks((prev) => [
         ...prev,
         // 같은 문장이 반복돼도 키가 겹치지 않게 순번을 쓴다
         { id: `chunk-${prev.length}-${Date.now()}`, at, text },
       ]);
+
+      /*
+        ⚠️ **오프셋은 실제 녹음 누적 시간(`recordedMs`)이다** — 벽시계가 아니다.
+           일시정지하면 오디오 파일도 그만큼 이어 붙으므로(pause/resume은 파일을 안 쪼갠다,
+           §3-3), 자막도 같은 시계를 써야 나중에 정본과 시간창이 맞는다. 벽시계로 찍으면
+           쉰 시간만큼 자막이 뒤로 밀려 화자가 엉뚱한 문장에 붙는다.
+        ⚠️ `rms`는 **빼먹으면 422다.** 화자 판정의 유일한 근거라 BE가 NOT NULL로 잡았다.
+           음량계가 없는 브라우저에서는 무음값이라도 실어 보낸다 — 자막까지 잃을 수는 없다.
+      */
+      pendingRef.current.push({
+        seq: seqRef.current,
+        startMs: Math.round(startedAt),
+        endMs: Math.round(endedAt),
+        text,
+        rms: levelRef.current?.read() ?? SILENT_RMS_DBFS,
+      });
+      seqRef.current += 1;
+      levelRef.current?.mark();
     },
     [elapsedNow],
   );
@@ -160,6 +241,9 @@ export function useCapture(): UseCaptureResult {
   const teardown = useCallback(() => {
     sttRef.current?.stop();
     sttRef.current = null;
+    /* ⚠️ 음량계를 녹음기보다 **먼저** 놓는다 — 스트림이 닫힌 뒤 읽으면 예외가 난다 */
+    levelRef.current?.close();
+    levelRef.current = null;
     recorderRef.current?.stop();
     recorderRef.current = null;
   }, []);
@@ -193,9 +277,14 @@ export function useCapture(): UseCaptureResult {
     setError(null);
 
     const recorder = createCaptureRecorder({
-      // TODO(BE 협의): 조각 업로드 API — 지금은 만들어만 두고 보내지 않는다
+      /*
+        ⚠️ **오디오 업로드는 아직 안 붙었다**(다음 조각). 협의 대기가 아니라 **API는 이미
+           확정**돼 있다 — presign(CAP-04)으로 URL을 받아 브라우저가 **S3에 직접 PUT**하고
+           complete(CAP-07)로 알린다. 우리 서버를 거치는 multipart가 아니다.
+        ⚠️ 그때까지 **녹음 파일은 어디에도 안 남는다.** 자막만 올라간다 —
+           되는 척하지 않으려고 여기 적어 둔다(§정직성).
+      */
       onSlice: () => {},
-      // TODO(BE 협의): 세그먼트 확정 알림
       onSegmentClosed: () => {},
       onFatal: setError,
     });
@@ -233,12 +322,31 @@ export function useCapture(): UseCaptureResult {
     stt?.start();
     sttRef.current = stt;
 
-    // TODO(BE 협의): CAP-01 녹음 시작 이벤트 — 서버가 시간 기준점을 발급한다
+    /*
+      ⚠️ 음량계는 **녹음기와 같은 스트림**을 문다(`recorder.stream`). 자막의 `rms`가
+         여기서 나오고, 그 값이 화자 판정의 유일한 근거다.
+      ⚠️ 못 만들어도 녹음을 막지 않는다 — 자막은 무음값으로 나간다.
+    */
+    levelRef.current = recorder.stream ? createLevelMeter(recorder.stream) : null;
+    levelRef.current?.mark();
+
+    seqRef.current = 0;
+    pendingRef.current = [];
+
+    /*
+      CAP-01 — 오디오는 안 보내고 **상태만** 알린다(§3-3). 서버가 이걸 알아야 참석자 STT
+      트리거·새로고침 복구·녹음자 점유가 가능하다.
+      ⚠️ 실패해도 **녹음은 계속한다.** 여기서 멈추면 마이크는 열렸는데 아무것도 안 담기는
+         회의가 된다 — 이유만 남기고 진행한다(§정직성).
+    */
+    const session = await startCaptureSessionAction(Number(meetingId));
+    if (!session.ok) setError(session.error ?? "녹음 시작을 서버에 알리지 못했습니다.");
+
     const at = Date.now();
     setNow(at);
     setSpans((prev) => [...prev, { from: at, to: null }]);
     setPhase(CAPTURE_PHASE.RECORDING);
-  }, [pushChunk, markPartial]);
+  }, [pushChunk, markPartial, meetingId]);
 
   const pause = useCallback(() => {
     sttRef.current?.stop();
@@ -246,25 +354,38 @@ export function useCapture(): UseCaptureResult {
     //    그 경로가 안 돈다 — 여기서 한 번 더 확실히 끊는다.
     utteranceStartRef.current = null;
     recorderRef.current?.pause();
-    // TODO(BE 협의): CAP-02 일시정지 이벤트
+    /*
+      CAP-02 — ⚠️ BE 주석대로 **모인 자막을 먼저 내보낸 뒤** 일시정지를 알린다.
+      먼저 알리면 서버가 그 구간을 닫아 버려 뒤늦게 올라온 것이 갈 곳을 잃는다.
+    */
+    void flushCaptions().then(() => pauseCaptureSessionAction(Number(meetingId)));
     const at = Date.now();
     setSpans((prev) => prev.map((span) => (span.to === null ? { ...span, to: at } : span)));
     setNow(at);
     setPhase(CAPTURE_PHASE.PAUSED);
-  }, []);
+  }, [flushCaptions, meetingId]);
 
   const resume = useCallback(() => {
     sttRef.current?.start();
     recorderRef.current?.resume();
-    // TODO(BE 협의): CAP-03 재개 이벤트
+    /* ⚠️ 쉬는 동안 마이크가 조용했으니 음량 창을 새로 연다 — 안 그러면 첫 문장이 무음으로 잡힌다 */
+    levelRef.current?.mark();
+    void resumeCaptureSessionAction(Number(meetingId));
     const at = Date.now();
     setNow(at);
     setSpans((prev) => [...prev, { from: at, to: null }]);
     setPhase(CAPTURE_PHASE.RECORDING);
-  }, []);
+  }, [meetingId]);
 
   const end = useCallback(() => {
     teardown();
+    /*
+      MEET-08 — 남은 자막을 마저 보내고 종료를 알린다.
+      ⚠️ **AI 분석을 프론트가 부르지 않는다**(§3-3 4번). 서버가 종료 처리 안에서 큐에 걸고
+         실패해도 재시도한다 — 사용자가 창을 닫아도 안전하다.
+      ⚠️ 되돌릴 수 없다. 확인 창을 거친 뒤에만 여기로 온다(§3-3 종료 정책).
+    */
+    void flushCaptions().then(() => completeMeetingAction(Number(meetingId)));
     const at = Date.now();
     /*
       ⚠️ **열려 있는 구간만 닫는다.** 무조건 마지막 구간의 `to`를 덮어쓰면, 일시정지해 둔
@@ -274,7 +395,7 @@ export function useCapture(): UseCaptureResult {
     setSpans((prev) => prev.map((span) => (span.to === null ? { ...span, to: at } : span)));
     setNow(at);
     setPhase(CAPTURE_PHASE.ENDED);
-  }, [teardown]);
+  }, [teardown, flushCaptions, meetingId]);
 
   return { phase, support, recordedMs, chunks, partial, error, enter, start, pause, resume, end };
 }
