@@ -1,5 +1,5 @@
 import type { ActionStatus } from "@/constants/action";
-import type { MeetingStatus } from "@/constants/meeting";
+import type { AiSummaryStatus, MeetingStatus } from "@/constants/meeting";
 
 import type { MeetingTopic } from "./types";
 
@@ -35,6 +35,14 @@ export interface MeetingListItem {
    *    카드가 눌러도 반응이 없다(입장 개념 없음). 완료 카드만 상세로 간다.
    */
   isHost: boolean;
+  /**
+   * 종료 뒤 AI 분석이 어디까지 갔는지 — 안 끝난 회의는 `null`.
+   *
+   * ⚠️ **완료 배지 하나로는 거짓말이 된다**(WORKFLOW §3-3 5). 종료 직후 회의는 상태가
+   *    완료지만 회의록도 산출물도 아직 없다 — 그때 상세로 들여보내면 빈 화면을 준다.
+   *    카드가 이 값으로 **요약 중**을 대신 말하고, 끝나야 문을 연다.
+   */
+  aiSummaryStatus: AiSummaryStatus | null;
 }
 
 /** 목록 — 탭 두 개가 이 화면의 전부다(WORKFLOW §3-2) */

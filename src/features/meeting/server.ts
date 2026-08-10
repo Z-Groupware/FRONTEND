@@ -58,6 +58,7 @@ function toListItem(meeting: Meeting, viewerId: number, now: Date): MeetingListI
     roomName: meeting.roomName,
     attendeeCount: meeting.attendeeIds.length,
     isHost: meeting.hostId === viewerId,
+    aiSummaryStatus: meeting.aiSummaryStatus,
   };
 }
 

@@ -25,6 +25,12 @@ export const ep = {
   meeting: (id: number) => `/api/meetings/${id}`,
   meetingCapture: (id: number) => `/api/meetings/${id}/capture`,
   meetingSummary: (id: number) => `/api/meetings/${id}/summary`,
+  /*
+    ⚠️ **가정 shape·미검증**(§연동 검증). BE 레포에 재분석 요청 엔드포인트가 없다 —
+       WORKFLOW §3-5의 [다시 요약하기]가 부를 자리만 잡아 둔 것이다. 담당자 문서를 받아
+       경로·메서드를 맞춘 뒤 고친다.
+  */
+  meetingResummarize: (id: number) => `/api/meetings/${id}/summary/retry`,
 
   /*
    * 캡처 — [확인] BE 실코드 대조(2026-08-10)

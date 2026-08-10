@@ -1,8 +1,9 @@
 import { ACTION_STATUS, type ActionStatus } from "@/constants/action";
 import { AUTHORITY } from "@/constants/authority";
+import { AI_SUMMARY_STATUS } from "@/constants/meeting";
 
 import type { ScriptChunk } from "../view-types";
-import { addMockMeeting, endMockMeeting, listMockMeetings } from "./meetings";
+import { addMockMeeting, endMockMeeting, listMockMeetings, setMockSummaryStatus } from "./meetings";
 
 /**
  * 회의 목 시드 — **화면을 만들 수 있게 회의 몇 건을 미리 깔아 둔다.**
@@ -76,6 +77,11 @@ export function ensureMockMeetingsSeeded(): void {
     roomReservationId: "seed-reservation-1",
   });
   endMockMeeting(kickoff.id, "2026-07-14T10:31:00.000Z");
+  /*
+    ⚠️ 시드의 옛 완료 회의는 **분배까지 끝났다.** 종료가 대기로 넣기 때문에 그대로 두면
+       회의록·산출물이 다 있는 회의가 "요약 중"으로 떠서 못 열린다.
+  */
+  setMockSummaryStatus(kickoff.id, AI_SUMMARY_STATUS.DISTRIBUTED);
   extras.set(kickoff.id, {
     script: [
       { at: "10:00", text: "안녕하세요, 굿즈 쇼핑몰 앱 구축 킥오프를 시작하겠습니다." },
@@ -109,6 +115,7 @@ export function ensureMockMeetingsSeeded(): void {
     roomReservationId: "seed-reservation-2",
   });
   endMockMeeting(teamKickoff.id, "2026-07-21T10:32:00.000Z");
+  setMockSummaryStatus(teamKickoff.id, AI_SUMMARY_STATUS.DISTRIBUTED);
   extras.set(teamKickoff.id, {
     script: [
       { at: "10:00", text: "앱 개발 착수 건으로 모였습니다. 화면 흐름부터 나누겠습니다." },
@@ -161,6 +168,11 @@ export function ensureMockMeetingsSeeded(): void {
     roomReservationId: "seed-reservation-4",
   });
   endMockMeeting(brand.id, "2026-07-28T14:29:00.000Z");
+  /*
+    ⚠️ 이 한 건만 **요약 중**으로 둔다. 종료 직후 몇 분 동안만 보이는 상태라 목에 하나
+       세워 두지 않으면 그 카드를 만들었는지조차 화면에서 확인할 수 없다(§정직한 목업).
+  */
+  setMockSummaryStatus(brand.id, AI_SUMMARY_STATUS.SUMMARIZING);
   extras.set(brand.id, {
     script: [
       { at: "14:00", text: "3분기 브랜드 리뉴얼 방향을 정리하겠습니다." },
