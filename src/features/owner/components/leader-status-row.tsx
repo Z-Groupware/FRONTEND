@@ -15,6 +15,13 @@ interface LeaderStatusRowProps {
  * ⚠️ 아바타 색은 하드코딩하지 않고 팀 공용 `useProfileAvatar`로 만든다 — 키는 **id 하나**다 —
  *    BE에 프로필 이미지 필드가 없어 FE가 일관 색을 생성한다(같은 사람은 늘 같은 색).
  */
+/**
+ * 이름 상자 폭 — 한글 이름 넉 자가 들어가는 몫이다(3자 34px · 4자 45px).
+ *
+ * ⚠️ **머리글도 같은 값을 쓴다**(owner 대시보드 `page.tsx`). 한쪽만 고치면 두 중심이 어긋난다.
+ */
+export const LEADER_NAME_WIDTH = 48;
+
 export function LeaderStatusRow({ leader }: LeaderStatusRowProps) {
   const avatar = useProfileAvatar(leader.id, 28);
   const isOnVacation = leader.status === MEMBER_STATUS.VACATION;
@@ -22,9 +29,18 @@ export function LeaderStatusRow({ leader }: LeaderStatusRowProps) {
   return (
     <TableRow className="h-14">
       <TableCell className="pl-6">
+        {/*
+          ⚠️ **아바타에 붙여 두되 이름 상자 안에서 가운데를 잡는다.** 남는 폭을 다 주면
+             (`flex-1`) 이름이 아바타에서 멀찍이 떨어져 따로 노는 것처럼 보였다 —
+             상자를 **이름 폭만큼만** 잡으면 붙어 있으면서도 중심이 정해진다.
+          ⚠️ 그 중심 위에 머리글이 선다. 머리글과 같은 상수(`LEADER_NAME_WIDTH`)를 써야
+             이름이 몇 글자든 두 중심이 한 세로선에 겹친다.
+        */}
         <div className="flex items-center gap-2">
           {avatar}
-          <span className="truncate">{leader.name}</span>
+          <span className="truncate text-center" style={{ width: LEADER_NAME_WIDTH }}>
+            {leader.name}
+          </span>
         </div>
       </TableCell>
       <TableCell className="text-muted-foreground truncate text-center" title={leader.email}>
