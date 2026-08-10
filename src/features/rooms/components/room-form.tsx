@@ -5,16 +5,8 @@ import { useActionState, useEffect, useRef, useState } from "react";
 import { FieldError } from "@/components/common/field-error";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
 import type { MeetingRoomFormState } from "../actions";
-import { TIME_OPTIONS } from "../constants";
 import type { MeetingRoom } from "../types";
 
 interface RoomFormProps {
@@ -35,10 +27,8 @@ interface RoomFormProps {
 }
 
 /**
- * 회의실 추가·수정 폼 — `notice-form.tsx`와 같은 골격(실제 `<form action={formAction}>`).
- * ⚠️ 이용 시작·종료는 공용 `Select`로 고른다 — base-ui `Select`는 네이티브 폼 필드가 아니라서
- *    `room-reservation-dialog.tsx`의 `projectId`와 같은 방식으로 `input type="hidden"`을
- *    같이 둬서 `formData.get("openTime"/"closeTime")`이 그대로 읽히게 한다.
+ * 회의실 추가·수정 폼 — `notice-form.tsx`와 같은 골격(실제 `<form action={formAction}>`,
+ * 필드가 전부 plain input이라 shadcn `Select` 우회 없이 그대로 쓴다).
  */
 export function RoomForm({ action, room, onSuccess, onPendingChange, formRef }: RoomFormProps) {
   const [state, formAction, isPending] = useActionState(action, { errors: {} });
@@ -92,45 +82,27 @@ export function RoomForm({ action, room, onSuccess, onPendingChange, formRef }: 
       <div className="grid grid-cols-2 gap-3">
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="room-open-time">이용 시작</Label>
-          <input type="hidden" name="openTime" value={openTime} />
-          <Select value={openTime} onValueChange={(value) => setOpenTime(value ?? "")}>
-            <SelectTrigger
-              id="room-open-time"
-              aria-invalid={Boolean(state.errors.openTime)}
-              className="w-full"
-            >
-              <SelectValue placeholder="시작 시간 선택" />
-            </SelectTrigger>
-            <SelectContent>
-              {TIME_OPTIONS.map((time) => (
-                <SelectItem key={time} value={time}>
-                  {time}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Input
+            id="room-open-time"
+            name="openTime"
+            type="time"
+            value={openTime}
+            onChange={(event) => setOpenTime(event.target.value)}
+            aria-invalid={Boolean(state.errors.openTime)}
+          />
           <FieldError reserveSpace message={state.errors.openTime} />
         </div>
 
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="room-close-time">이용 종료</Label>
-          <input type="hidden" name="closeTime" value={closeTime} />
-          <Select value={closeTime} onValueChange={(value) => setCloseTime(value ?? "")}>
-            <SelectTrigger
-              id="room-close-time"
-              aria-invalid={Boolean(state.errors.closeTime)}
-              className="w-full"
-            >
-              <SelectValue placeholder="종료 시간 선택" />
-            </SelectTrigger>
-            <SelectContent>
-              {TIME_OPTIONS.map((time) => (
-                <SelectItem key={time} value={time}>
-                  {time}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Input
+            id="room-close-time"
+            name="closeTime"
+            type="time"
+            value={closeTime}
+            onChange={(event) => setCloseTime(event.target.value)}
+            aria-invalid={Boolean(state.errors.closeTime)}
+          />
           <FieldError reserveSpace message={state.errors.closeTime} />
         </div>
       </div>
