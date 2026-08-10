@@ -41,13 +41,18 @@ function CardBody({ meeting }: { meeting: MeetingListItem }) {
       {/* 위쪽 띠 — 어느 프로젝트인지(DESIGN §5). 세로 띠는 둥근 모서리에서 잘려 보였다 */}
       <ProjectAccent tag={meeting.projectTag} />
 
-      <div className="flex items-start justify-between gap-3">
+      {/*
+        ⚠️ **머리를 두 줄로 줄인다**(2026-08-10). 제목 / 칩 / 안건이 세 층으로 쌓여 있어
+           한 카드가 네 덩이로 읽혔다 — 층이 많을수록 눈이 어디를 먼저 볼지 못 정한다.
+           칩과 안건은 둘 다 "무슨 회의인지"를 말하므로 한 줄로 묶는다.
+      */}
+      <div className="flex items-center justify-between gap-3">
         <p className="min-w-0 flex-1 truncate text-[17px] leading-7 font-semibold tracking-[-0.3px]">
           {meeting.title}
         </p>
         <span
           className={cn(
-            "shrink-0 rounded border px-2 py-0.5 text-[11px] leading-4",
+            "shrink-0 rounded-md border px-2 py-0.5 text-[11px] leading-4",
             MEETING_STATUS_BADGE_CLASS[meeting.status],
           )}
         >
@@ -55,22 +60,21 @@ function CardBody({ meeting }: { meeting: MeetingListItem }) {
         </span>
       </div>
 
-      <div className="flex flex-wrap items-center gap-1.5 pt-2">
+      <div className="flex min-w-0 items-center gap-2 pt-2.5">
         {/*
-          ⚠️ **공용 칩을 쓴다**(`components/common/project-tag`). 손으로 그린 칩이 열일곱
-             파일에 흩어져 있어서 한 군데를 다듬으면 나머지가 남았다 — 같은 태그가 화면마다
-             다른 모양으로 뜬다.
+          ⚠️ **공용 칩을 쓴다**(`components/common/project-tag`). 손으로 그린 칩이 여러 파일에
+             흩어져 있어 한 군데를 다듬으면 나머지가 남았다 — 같은 태그가 화면마다 다른
+             모양으로 뜬다.
         */}
         <ProjectTag tag={meeting.projectTag} />
-        <Badge variant="outline" className="font-normal">
+        <Badge variant="outline" className="shrink-0 font-normal">
           {meeting.originLabel}
         </Badge>
+        {/* 안건 요약 — 무슨 회의인지 한 줄(§3-2 안건은 별도 항목이다) */}
+        <span className="text-muted-foreground min-w-0 truncate text-[13px] leading-5">
+          {meeting.topicSummary}
+        </span>
       </div>
-
-      {/* 안건 요약 — 무슨 회의인지 한 줄(§3-2 안건은 별도 항목이다) */}
-      <p className="text-muted-foreground truncate pt-2 text-[13px] leading-5">
-        {meeting.topicSummary}
-      </p>
     </>
   );
 }
@@ -82,7 +86,7 @@ function CardBody({ meeting }: { meeting: MeetingListItem }) {
  */
 function CardFooter({ meeting }: { meeting: MeetingListItem }) {
   return (
-    <div className="border-border mt-auto flex items-center justify-between gap-3 border-t pt-3">
+    <div className="border-border mt-auto flex items-center justify-between gap-3 border-t pt-3.5">
       <div className="text-muted-foreground flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 text-[12px] leading-4">
         <span className="flex items-center gap-1.5">
           <CalendarClock className="size-3.5 shrink-0" aria-hidden />
