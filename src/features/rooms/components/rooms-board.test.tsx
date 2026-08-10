@@ -5,9 +5,15 @@ jest.mock("@/lib/mock-actor", () => ({
   getMockActor: jest.fn(() => ({ id: 1, role: AUTHORITY.OWNER })),
 }));
 // ⚠️ 실제 주간 캘린더는 `react-big-calendar` + `next/dynamic`을 물고 있어 무겁다 — 이 테스트는
-//    "예약하기" 버튼이 모달을 여는지만 본다(그 캘린더 렌더링은 `weekly-room-calendar.test.tsx`가 맡는다).
+//    "회의 추가"(2026-08-10 이전엔 "예약하기") 콜백이 모달을 여는지만 본다(그 캘린더 렌더링은
+//    `weekly-room-calendar.test.tsx`가 맡는다). 버튼 자체는 이제 캘린더 툴바 안에 있어서, 그
+//    자리를 대신할 최소 스텁으로 `onAddClick`을 그대로 노출한다.
 jest.mock("./weekly-room-calendar-loader", () => ({
-  WeeklyRoomCalendarLoader: () => null,
+  WeeklyRoomCalendarLoader: ({ onAddClick }: { onAddClick: () => void }) => (
+    <button type="button" onClick={onAddClick}>
+      회의 추가
+    </button>
+  ),
 }));
 
 import { render, screen } from "@testing-library/react";
@@ -30,7 +36,7 @@ const PROJECTS: RoomProjectOption[] = [{ id: "1", name: "굿즈 프로젝트", t
 const TEAM_ACTIONS: RoomTeamActionOption[] = [];
 
 describe("RoomsBoard", () => {
-  it("우측 상단 [예약하기]를 누르면 예약 모달이 뜬다", async () => {
+  it("[회의 추가]를 누르면 예약 모달이 뜬다", async () => {
     const user = userEvent.setup();
     render(
       <RoomsBoard
@@ -47,7 +53,7 @@ describe("RoomsBoard", () => {
 
     expect(screen.queryByRole("dialog", { name: "회의실 예약" })).not.toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: "예약하기" }));
+    await user.click(screen.getByRole("button", { name: "회의 추가" }));
 
     expect(screen.getByRole("heading", { name: "회의실 예약" })).toBeInTheDocument();
   });
