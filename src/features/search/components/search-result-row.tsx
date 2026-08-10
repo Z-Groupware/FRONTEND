@@ -1,8 +1,10 @@
 import Link from "next/link";
 
+import { ProfileAvatar } from "@/components/common/profile-avatar";
 import { ProjectTag } from "@/components/common/project-tag";
 import { AUTHORITY_BADGE_CLASS, AUTHORITY_LABEL } from "@/constants/authority";
 import { formatDate } from "@/lib/date";
+import { pickPaletteColor } from "@/lib/palette";
 import { cn } from "@/lib/utils";
 
 import type { SearchResultItem } from "../types";
@@ -29,9 +31,29 @@ interface SearchResultRowProps {
  *    실제 프로젝트 id를 그대로 쓰므로 `/app/projects/:id`가 유효하다.
  */
 export function SearchResultRow({ item, keyword }: SearchResultRowProps) {
+  const tag = tagOf(item);
+
   const content = (
     <>
+      {/*
+        ⚠️ **랜딩 목록과 같은 색 막대를 세운다.** 결과 줄만 없으니 검색 전과 후의 생김새가
+           달랐다 — 같은 화면인데 훑는 눈이 다시 적응해야 한다.
+      */}
+      <span
+        className="w-1 shrink-0 self-stretch rounded-full"
+        /*
+          ⚠️ 사람은 프로젝트 태그가 없다 — 그렇다고 비워 두면 그 줄만 왼쪽이 뚫려 보인다.
+             **자기 아바타와 같은 색**을 쓴다(같은 팔레트라 사람마다 늘 같은 색이다).
+        */
+        style={{
+          /* ⚠️ 아바타와 **같은 키**(`String(id)`)여야 색이 맞는다 — `use-profile-avatar`와 한 쌍이다 */
+          backgroundColor: pickPaletteColor(tag ?? String(item.id)).solidColor,
+        }}
+        aria-hidden
+      />
       <KindBadge kind={item.kind} />
+      {/* ⚠️ 사람은 태그가 없다 — 대신 얼굴이 그 자리를 맡는다(랜딩 사람 목록과 같다) */}
+      {item.kind === "PERSON" && <ProfileAvatar userId={item.id} size={26} />}
 
       <div className="min-w-0 flex-1">
         <p className="text-foreground truncate text-[13px] leading-5 font-semibold">
@@ -83,6 +105,13 @@ export function SearchResultRow({ item, keyword }: SearchResultRowProps) {
       <div className={ROW_SHAPE}>{content}</div>
     </li>
   );
+}
+
+/** 이 결과가 딸린 프로젝트 태그 — 없으면 `null`(사람) */
+function tagOf(item: SearchResultItem): string | null {
+  if (item.kind === "MEETING" || item.kind === "ACTION") return item.projectTag;
+  if (item.kind === "PROJECT") return item.tag;
+  return null;
 }
 
 function ProjectTagOf({ item }: { item: SearchResultItem }) {
