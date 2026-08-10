@@ -214,7 +214,7 @@ export function useCapture(meetingId: string): UseCaptureResult {
       setChunks((prev) => [
         ...prev,
         // 같은 문장이 반복돼도 키가 겹치지 않게 순번을 쓴다
-        { id: `chunk-${prev.length}-${Date.now()}`, at, text },
+        { id: `chunk-${prev.length}-${Date.now()}`, at, atMs: startedAt, text },
       ]);
 
       /*

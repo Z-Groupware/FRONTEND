@@ -37,3 +37,27 @@ export interface CaptionChunkInput {
    */
   rms: number;
 }
+
+/**
+ * 화면에 뜨는 자막 한 줄 — **내 말도 남의 말도 이 모양이다.**
+ *
+ * ⚠️ `personId`가 있어야 **누가 한 말인지** 보여 줄 수 있다. 자막(caption)은 참석자
+ *    브라우저가 보낸 것이라 **화자가 확실하다** — 정본(transcript)은 화자를 모른다
+ *    (BE `CaptionChunk` 주석). 그 확실한 값을 화면에서 버리면 남의 말과 내 말이 섞인다.
+ * ⚠️ `personId`가 `null`인 줄이 있다. 명단 밖 발화(sentinel)라 이름을 못 붙인다 —
+ *    그때는 이름 자리를 비우지 말고 **모르는 사람으로 표시**한다(§정직성).
+ */
+export interface LiveCaption {
+  id: string;
+  /** 녹음 시작 기준 경과 `03:12` */
+  at: string;
+  /**
+   * 같은 값의 ms 원본 — **정렬은 이걸로 한다.**
+   *
+   * ⚠️ `at` 문자열로 정렬하면 한 시간을 넘는 순간 깨진다. `1:05:00`과 `59:00`을 글자로
+   *    비교하면 `1` < `5`라 **한 시간 지난 말이 59분 앞에 선다.**
+   */
+  atMs: number;
+  text: string;
+  personId: number | null;
+}

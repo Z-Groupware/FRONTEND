@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { CaptureClient } from "@/features/meeting/capture/capture-client";
+import { getMeetingCaptions } from "@/features/meeting/capture/server";
 import { getMeetingCapture } from "@/features/meeting/server";
 import { getViewer } from "@/features/shell/viewer";
 
@@ -27,6 +28,13 @@ export default async function MeetingCapturePage({
   const { meetingId } = await params;
   const viewer = await getViewer();
   const result = await getMeetingCapture(meetingId, viewer);
+  /*
+    ⚠️ **구독 전 자막을 서버가 먼저 읽는다**(CAP-12). SSE(CAP-13)는 구독 시점 이후만
+       내려주므로, 회의 중간에 들어온 사람은 이걸 안 채우면 앞부분을 영영 못 본다.
+    ⚠️ 권한 판정(`getMeetingCapture`) 뒤에 부른다 — 못 들어갈 사람의 자막을 먼저 읽을
+       이유가 없다.
+  */
+  const initialCaptions = await getMeetingCaptions(meetingId);
 
   if (result.kind === "notFound") notFound();
 
@@ -55,7 +63,11 @@ export default async function MeetingCapturePage({
   */
   return (
     <main className="flex min-h-0 flex-1 flex-col overflow-hidden px-8 py-7">
-      <CaptureClient meeting={result.meeting} />
+      <CaptureClient
+        meeting={result.meeting}
+        initialCaptions={initialCaptions}
+        viewerId={viewer.id}
+      />
     </main>
   );
 }

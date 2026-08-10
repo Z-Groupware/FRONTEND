@@ -2,7 +2,7 @@
 
 import { CircleAlert, Mic, Pause, Play, Square } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { ConfirmDialog } from "@/components/common/confirm-dialog";
@@ -14,7 +14,9 @@ import { cn } from "@/lib/utils";
 
 import type { CaptureAttendee, MeetingCaptureInfo } from "../view-types";
 import { canSubmit, CAPTURE_PHASE, type CapturePhase, formatRecordedTime } from "./phase";
+import type { LiveCaption } from "./types";
 import { useCapture } from "./use-capture";
+import { useLiveCaptions } from "./use-live-captions";
 
 /**
  * 캡처 화면 — **Host 전용**(WORKFLOW §3-3). 한 화면이 다섯 자리를 지난다:
@@ -31,8 +33,52 @@ import { useCapture } from "./use-capture";
  *    인라인 오류**(토스트는 사라지는데 그건 놓치면 회의가 통째로 빈다).
  * ⚠️ 타이핑 메모는 없다(§3-3 폐기). 참석자용 레이아웃도 없다.
  */
-export function CaptureView({ meeting }: { meeting: MeetingCaptureInfo }) {
+export function CaptureView({
+  meeting,
+  initialCaptions,
+  viewerId,
+}: {
+  meeting: MeetingCaptureInfo;
+  /** 구독 전 자막(CAP-12 백필) — 서버가 읽어 내려준다 */
+  initialCaptions: LiveCaption[];
+  /** 보고 있는 사람 — 되돌아온 내 자막을 걷어내는 데 쓴다 */
+  viewerId: number;
+}) {
   const capture = useCapture(meeting.id);
+  /*
+    ⚠️ **남의 자막은 따로 받는다.** 내 자막은 이 브라우저의 STT가 만들고(`capture.chunks`),
+       남의 자막은 서버를 거쳐 온다 — 두 경로를 한 훅에 묶으면 마이크가 없는 참석자
+       화면에서도 STT를 켜야 하는 모양이 된다.
+    ⚠️ 합쳐서 **시각순으로 세운다.** 도착 순서대로 쌓으면 네트워크가 늦은 사람의 말이
+       뒤에 붙어 대화가 뒤집힌다.
+  */
+  const remoteCaptions = useLiveCaptions(meeting.id, initialCaptions);
+
+  /*
+    ⚠️ **내 말은 남의 자막에서 걷어낸다.** BE는 보낸 사람을 빼지 않고 구독자 **전원**에게
+       뿌린다(`CaptionStreamRegistry.broadcastToLocal`) — 안 걸러내면 내가 한 말이 두 번
+       뜬다(내 STT가 만든 것 + 서버가 되돌려준 것).
+    ⚠️ 합친 뒤 **`atMs`로 세운다.** 도착 순서대로 쌓으면 네트워크가 늦은 사람의 말이 뒤에
+       붙어 대화가 뒤집히고, `at` 문자열로 세우면 한 시간을 넘길 때 순서가 깨진다.
+  */
+  const captionLines = useMemo(() => {
+    const speakerById = new Map(meeting.attendees.map((a) => [a.id, a.name]));
+    const mine = capture.chunks.map((chunk) => ({ ...chunk, speaker: null }));
+    const others = remoteCaptions
+      .filter((caption) => caption.personId !== viewerId)
+      .map((caption) => ({
+        id: caption.id,
+        at: caption.at,
+        atMs: caption.atMs,
+        text: caption.text,
+        /* 명단 밖 발화는 이름이 없다 — 자리를 비우지 말고 모르는 사람으로 말한다(§정직성) */
+        speaker:
+          caption.personId === null
+            ? "알 수 없음"
+            : (speakerById.get(caption.personId) ?? "알 수 없음"),
+      }));
+    return [...mine, ...others].sort((a, b) => a.atMs - b.atMs);
+  }, [capture.chunks, remoteCaptions, meeting.attendees, viewerId]);
   const router = useRouter();
   const [isConfirming, setIsConfirming] = useState(false);
 
@@ -151,7 +197,7 @@ export function CaptureView({ meeting }: { meeting: MeetingCaptureInfo }) {
           */}
           <div className="grid min-h-0 flex-1 grid-cols-1 gap-7 lg:grid-cols-[minmax(0,1fr)_360px]">
             <TranscriptCard
-              chunks={capture.chunks}
+              chunks={captionLines}
               partial={capture.partial}
               isRecording={isRecording}
               isPaused={isPaused}
@@ -296,7 +342,7 @@ function TranscriptCard({
   isRecording,
   isPaused,
 }: {
-  chunks: { id: string; at: string; text: string }[];
+  chunks: { id: string; at: string; atMs: number; text: string; speaker: string | null }[];
   partial: string;
   isRecording: boolean;
   isPaused: boolean;
@@ -393,7 +439,19 @@ function TranscriptCard({
               <span className="text-muted-foreground/60 w-9 shrink-0 text-[11px] leading-5 tabular-nums">
                 {chunk.at}
               </span>
-              <p className="min-w-0 flex-1 text-[13px] leading-5 break-keep">{chunk.text}</p>
+              <p className="min-w-0 flex-1 text-[13px] leading-5 break-keep">
+                {/*
+                  ⚠️ **남이 한 말에만 이름을 붙인다.** 내 말에까지 달면 줄마다 같은 이름이
+                     반복돼 아무것도 구분하지 못하면서 자리만 먹는다(`자동 인식` 꼬리표를
+                     걷어낸 것과 같은 판단).
+                  ⚠️ 이름은 **글 안에 이어 둔다.** 시각처럼 별도 홈통을 만들면 이름이 없는
+                     내 줄에 빈 자리가 생겨 글이 들쭉날쭉해진다.
+                */}
+                {chunk.speaker && (
+                  <span className="text-muted-foreground mr-1.5 font-medium">{chunk.speaker}</span>
+                )}
+                {chunk.text}
+              </p>
             </li>
           ))}
 

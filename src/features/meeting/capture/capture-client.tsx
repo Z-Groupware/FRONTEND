@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import { Skeleton } from "@/components/ui/skeleton";
 
 import type { MeetingCaptureInfo } from "../view-types";
+import type { LiveCaption } from "./types";
 
 /**
  * 캡처 화면을 **브라우저에서만** 그리게 감싸는 한 겹.
@@ -32,6 +33,14 @@ const CaptureView = dynamic(() => import("./capture-view").then((mod) => mod.Cap
   ),
 });
 
-export function CaptureClient({ meeting }: { meeting: MeetingCaptureInfo }) {
-  return <CaptureView meeting={meeting} />;
+export function CaptureClient({
+  meeting,
+  initialCaptions,
+  viewerId,
+}: {
+  meeting: MeetingCaptureInfo;
+  initialCaptions: LiveCaption[];
+  viewerId: number;
+}) {
+  return <CaptureView meeting={meeting} initialCaptions={initialCaptions} viewerId={viewerId} />;
 }

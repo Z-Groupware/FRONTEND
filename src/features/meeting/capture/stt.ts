@@ -12,6 +12,8 @@ export interface TranscriptChunk {
   id: string;
   /** 화면 표기용 `10:04` — 화자 구분은 없다(§3-2 "화자 구분 없이 청크 단위") */
   at: string;
+  /** 같은 값의 ms 원본 — 남의 자막과 섞어 세울 때 정렬 기준이 된다(§CAP-13) */
+  atMs: number;
   text: string;
 }
 
