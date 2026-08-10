@@ -16,9 +16,12 @@ interface LeaderStatusRowProps {
  *    BE에 프로필 이미지 필드가 없어 FE가 일관 색을 생성한다(같은 사람은 늘 같은 색).
  */
 /**
- * 이름 상자 폭 — 한글 이름 넉 자가 들어가는 몫이다(3자 34px · 4자 45px).
+ * 이름 상자의 **최소** 폭 — 한글 이름 넉 자가 들어가는 몫이다(3자 34px · 4자 45px).
  *
  * ⚠️ **머리글도 같은 값을 쓴다**(owner 대시보드 `page.tsx`). 한쪽만 고치면 두 중심이 어긋난다.
+ * ⚠️ **최소치이지 고정값이 아니다**(2026-08-10 리뷰). `width`로 못 박아 뒀더니 다섯 자 이름
+ *    (`남궁민수영`)이나 영문 이름(`Alexander`)이 열에 자리가 남는데도 잘렸다 — 목 데이터가
+ *    전부 석 자라 화면에서는 안 드러났다. 중심을 맞추는 데는 최소 폭이면 충분하다.
  */
 export const LEADER_NAME_WIDTH = 48;
 
@@ -38,7 +41,12 @@ export function LeaderStatusRow({ leader }: LeaderStatusRowProps) {
         */}
         <div className="flex items-center gap-2">
           {avatar}
-          <span className="truncate text-center" style={{ width: LEADER_NAME_WIDTH }}>
+          {/* ⚠️ 그래도 잘릴 수 있으니 전체 이름을 남긴다 — 옆 이메일 칸과 같은 처리다 */}
+          <span
+            className="truncate text-center"
+            style={{ minWidth: LEADER_NAME_WIDTH }}
+            title={leader.name}
+          >
             {leader.name}
           </span>
         </div>
