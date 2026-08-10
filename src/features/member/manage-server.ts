@@ -8,7 +8,12 @@ import { paginate, type PaginatedResult } from "@/lib/paginate";
 import { isMock } from "@/mocks/config";
 
 import { filterMembers, searchMembers } from "./manage-filter";
-import { type BeMemberListItem, toBeFilter, toManagedMember } from "./manage-mapper";
+import {
+  type BeMemberDetail,
+  type BeMemberListItem,
+  toBeFilter,
+  toManagedMember,
+} from "./manage-mapper";
 import type { ManagedMember, ManagedMemberDetail, MemberQuery } from "./manage-types";
 import {
   findMockManagedMember,
@@ -123,9 +128,9 @@ export async function getManagedMember(id: number): Promise<ManagedMemberDetail 
        여기서 함께 읽어 채운다.
   */
   const accessToken = await requireAccessToken();
-  let detail: BeMemberListItem;
+  let detail: BeMemberDetail;
   try {
-    detail = await serverApi<BeMemberListItem>(ep.member(id), { accessToken });
+    detail = await serverApi<BeMemberDetail>(ep.member(id), { accessToken });
   } catch {
     /* 없는 사람·권한 없음 모두 화면에서는 `notFound()`다 — 있는지 없는지를 알려 주지 않는다 */
     return null;
