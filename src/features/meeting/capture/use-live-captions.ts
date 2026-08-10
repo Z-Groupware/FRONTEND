@@ -16,8 +16,15 @@ import type { LiveCaption } from "./types";
  *    로그에 액세스 토큰이 남는다 — BFF가 헤더로 붙여 준다.
  * ⚠️ **`id`로 중복을 거른다.** 재연결하면 브라우저가 마지막 지점부터 다시 받는데, 그 사이
  *    백필과 겹치면 같은 말이 두 번 뜬다(§목록 — 이어 붙일 때 id로 거른다와 같은 이유).
+ * ⚠️ **백필과 구독 사이의 틈은 못 메운다.** 서버가 읽은 뒤 구독이 붙기 전에 생긴 자막은
+ *    어느 쪽에도 안 온다 — 그 사이(수백 ms)에 오간 말은 이 화면에 안 뜬다. 자막은 정본이
+ *    아니라 실시간 표시용이라 그대로 두지만, 없는 척하지 않으려고 적어 둔다(§정직성).
  */
-export function useLiveCaptions(meetingId: string, initial: LiveCaption[]): LiveCaption[] {
+export function useLiveCaptions(
+  meetingId: string,
+  initial: LiveCaption[],
+  viewerId: number,
+): LiveCaption[] {
   const [captions, setCaptions] = useState<LiveCaption[]>(initial);
 
   useEffect(() => {
@@ -30,13 +37,31 @@ export function useLiveCaptions(meetingId: string, initial: LiveCaption[]): Live
     const source = new EventSource(`/api/meetings/${meetingId}/captions/stream`);
 
     function handleCaption(event: MessageEvent<string>) {
-      let payload: { seq: number; personId: number | null; startMs: number; text: string };
+      /*
+        ⚠️ **실제 페이로드에는 `seq`가 없다**(BE `CaptionStreamRegistry.CaptionEvent`) —
+           `personId`·`name`·`startMs`·`text` 넷뿐이다. 타입이 거짓말을 하면 같은 실수가
+           다시 난다.
+      */
+      let payload: {
+        personId: number | null;
+        name?: string | null;
+        startMs: number;
+        text: string;
+      };
       try {
         payload = JSON.parse(event.data);
       } catch {
         /* 한 줄이 깨졌다고 스트림 전체를 버리지 않는다 — 다음 줄은 멀쩡할 수 있다 */
         return;
       }
+
+      /*
+        ⚠️ **내가 보낸 자막이 되돌아온 것은 여기서 버린다.** BE는 발신자를 빼지 않고 구독자
+           전원에게 뿌린다(`broadcastToLocal`) — 내 STT가 만든 줄과 겹쳐 같은 말이 두 번 뜬다.
+        ⚠️ **거르는 자리가 여기여야 한다.** 합치는 자리에서 걸렀더니 백필로 받은
+           **내 지난 자막까지 사라졌다** — 새로고침하면 내가 한 말이 통째로 없어졌다.
+      */
+      if (payload.personId === viewerId) return;
 
       const incoming = toLiveCaption(payload);
       setCaptions((prev) =>
@@ -56,7 +81,7 @@ export function useLiveCaptions(meetingId: string, initial: LiveCaption[]): Live
       source.removeEventListener("caption", handleCaption as EventListener);
       source.close();
     };
-  }, [meetingId]);
+  }, [meetingId, viewerId]);
 
   return captions;
 }

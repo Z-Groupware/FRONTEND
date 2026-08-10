@@ -60,4 +60,11 @@ export interface LiveCaption {
   atMs: number;
   text: string;
   personId: number | null;
+  /** 서버가 준 화자 이름 — 명단에 없는 사람도 서버는 안다. 없으면 `null` */
+  speakerName: string | null;
+  /**
+   * 서버가 매긴 번호 — **백필에만 있다.**
+   * ⚠️ 실시간(SSE)에는 없다. 다음에 보낼 번호를 정할 때만 쓴다(§use-capture).
+   */
+  seq?: number;
 }

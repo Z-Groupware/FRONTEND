@@ -28,14 +28,6 @@ export default async function MeetingCapturePage({
   const { meetingId } = await params;
   const viewer = await getViewer();
   const result = await getMeetingCapture(meetingId, viewer);
-  /*
-    ⚠️ **구독 전 자막을 서버가 먼저 읽는다**(CAP-12). SSE(CAP-13)는 구독 시점 이후만
-       내려주므로, 회의 중간에 들어온 사람은 이걸 안 채우면 앞부분을 영영 못 본다.
-    ⚠️ 권한 판정(`getMeetingCapture`) 뒤에 부른다 — 못 들어갈 사람의 자막을 먼저 읽을
-       이유가 없다.
-  */
-  const initialCaptions = await getMeetingCaptions(meetingId);
-
   if (result.kind === "notFound") notFound();
 
   if (result.kind !== "ok") {
@@ -61,6 +53,14 @@ export default async function MeetingCapturePage({
     ⚠️ **여기는 스크롤하지 않는다.** 자막이 쌓이면 페이지가 늘어나 조작 줄(녹음·일시정지·종료)이
        위로 밀려 안 보였다 — 화면 높이를 그대로 쓰고 **자막 카드 안에서만** 스크롤한다.
   */
+  /*
+    ⚠️ **구독 전 자막을 서버가 먼저 읽는다**(CAP-12). SSE(CAP-13)는 구독 시점 이후만
+       내려주므로, 회의 중간에 들어온 사람은 이걸 안 채우면 앞부분을 영영 못 본다.
+    ⚠️ **거부 분기 아래에 둔다.** 위에 두면 Host가 아닌 사람·끝난 회의에도 자막 조회가
+       나간다 — 화면은 거부인데 서버 요청은 이미 갔다. 주석과 코드가 어긋나 있었다.
+  */
+  const initialCaptions = await getMeetingCaptions(meetingId);
+
   return (
     <main className="flex min-h-0 flex-1 flex-col overflow-hidden px-8 py-7">
       <CaptureClient
