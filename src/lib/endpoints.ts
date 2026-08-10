@@ -45,6 +45,14 @@ export const ep = {
 
   /** 자막 청크 **배치** 전송(CAP-11)·전체 조회(CAP-12) */
   captions: (meetingId: number) => `/api/meetings/${meetingId}/captions`,
+  /**
+   * 자막 실시간 구독(CAP-13) — **SSE 스트림이다**(JSON 단발 응답이 아니다).
+   *
+   * ⚠️ **구독 시점 이전 자막은 안 내려온다.** `captions`(CAP-12)로 먼저 채운 뒤 이어받는다 —
+   *    순서를 뒤집으면 늦게 들어온 사람 화면의 앞부분이 통째로 빈다.
+   * ⚠️ 이벤트 세 종류: `caption` · `participant` · `heartbeat`.
+   */
+  captionsStream: (meetingId: number) => `/api/meetings/${meetingId}/captions/stream`,
   /** 녹음 조각 presigned URL 배치 발급(CAP-04) */
   partsPresign: (meetingId: number) => `/api/meetings/${meetingId}/parts/presign`,
   /** 조각 업로드 완료 통보(CAP-07) — 이 호출 자체가 하트비트다 */

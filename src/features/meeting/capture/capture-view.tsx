@@ -2,7 +2,7 @@
 
 import { CircleAlert, Mic, Pause, Play, Square } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { ConfirmDialog } from "@/components/common/confirm-dialog";
@@ -14,7 +14,9 @@ import { cn } from "@/lib/utils";
 
 import type { CaptureAttendee, MeetingCaptureInfo } from "../view-types";
 import { canSubmit, CAPTURE_PHASE, type CapturePhase, formatRecordedTime } from "./phase";
+import type { LiveCaption } from "./types";
 import { useCapture } from "./use-capture";
+import { useLiveCaptions } from "./use-live-captions";
 
 /**
  * 캡처 화면 — **Host 전용**(WORKFLOW §3-3). 한 화면이 다섯 자리를 지난다:
@@ -31,8 +33,71 @@ import { useCapture } from "./use-capture";
  *    인라인 오류**(토스트는 사라지는데 그건 놓치면 회의가 통째로 빈다).
  * ⚠️ 타이핑 메모는 없다(§3-3 폐기). 참석자용 레이아웃도 없다.
  */
-export function CaptureView({ meeting }: { meeting: MeetingCaptureInfo }) {
-  const capture = useCapture(meeting.id);
+export function CaptureView({
+  meeting,
+  initialCaptions,
+  viewerId,
+}: {
+  meeting: MeetingCaptureInfo;
+  /** 구독 전 자막(CAP-12 백필) — 서버가 읽어 내려준다 */
+  initialCaptions: LiveCaption[];
+  /** 보고 있는 사람 — 되돌아온 내 자막을 걷어내는 데 쓴다 */
+  viewerId: number;
+}) {
+  /*
+    ⚠️ **서버에 이미 있는 내 자막 다음 번호에서 이어 간다.** 0부터 다시 붙이면 BE가 같은
+       `(회의, 사람, seq)`를 조용히 건너뛰어(멱등) 새로고침 뒤 발화가 통째로 저장되지 않는다.
+    ⚠️ 백필이 실패하면 0이다 — 그때는 겹치는 만큼 버려지지만, 자막을 아예 못 보내는 것보다 낫다.
+  */
+  const initialSeq = useMemo(() => {
+    const mine = initialCaptions.filter(
+      (caption) => caption.personId === viewerId && caption.seq !== undefined,
+    );
+    return mine.reduce((max, caption) => Math.max(max, (caption.seq ?? -1) + 1), 0);
+  }, [initialCaptions, viewerId]);
+
+  const capture = useCapture(meeting.id, initialSeq);
+  /*
+    ⚠️ **남의 자막은 따로 받는다.** 내 자막은 이 브라우저의 STT가 만들고(`capture.chunks`),
+       남의 자막은 서버를 거쳐 온다 — 두 경로를 한 훅에 묶으면 마이크가 없는 참석자
+       화면에서도 STT를 켜야 하는 모양이 된다.
+    ⚠️ 합쳐서 **시각순으로 세운다.** 도착 순서대로 쌓으면 네트워크가 늦은 사람의 말이
+       뒤에 붙어 대화가 뒤집힌다.
+  */
+  const remoteCaptions = useLiveCaptions(meeting.id, initialCaptions, viewerId);
+
+  /*
+    ⚠️ **내 말은 남의 자막에서 걷어낸다.** BE는 보낸 사람을 빼지 않고 구독자 **전원**에게
+       뿌린다(`CaptionStreamRegistry.broadcastToLocal`) — 안 걸러내면 내가 한 말이 두 번
+       뜬다(내 STT가 만든 것 + 서버가 되돌려준 것).
+    ⚠️ 합친 뒤 **`atMs`로 세운다.** 도착 순서대로 쌓으면 네트워크가 늦은 사람의 말이 뒤에
+       붙어 대화가 뒤집히고, `at` 문자열로 세우면 한 시간을 넘길 때 순서가 깨진다.
+  */
+  const captionLines = useMemo(() => {
+    const speakerById = new Map(meeting.attendees.map((a) => [a.id, a.name]));
+    /*
+      ⚠️ **내 자막은 걸러 내지 않는다.** 백필에는 내가 지난번에 한 말도 들어 있고, 그건
+         새로고침 뒤 이 화면에 남아야 하는 유일한 기록이다 — 되돌아온 실시간 줄만
+         `useLiveCaptions`가 수신 지점에서 버린다.
+    */
+    const mine = capture.chunks.map((chunk) => ({ ...chunk, speaker: null }));
+    const others = remoteCaptions.map((caption) => ({
+      id: caption.id,
+      at: caption.at,
+      atMs: caption.atMs,
+      text: caption.text,
+      /*
+        ⚠️ **서버가 준 이름을 먼저 쓴다.** 명단(`attendees`)에 없는 사람도 서버는 안다 —
+           명단만 보면 그런 발화가 전부 `알 수 없음`이 된다.
+        ⚠️ 그래도 모르면 자리를 비우지 말고 모르는 사람으로 말한다(§정직성).
+      */
+      speaker:
+        caption.speakerName ??
+        (caption.personId === null ? null : speakerById.get(caption.personId)) ??
+        "알 수 없음",
+    }));
+    return [...mine, ...others].sort((a, b) => a.atMs - b.atMs);
+  }, [capture.chunks, remoteCaptions, meeting.attendees]);
   const router = useRouter();
   const [isConfirming, setIsConfirming] = useState(false);
 
@@ -151,7 +216,7 @@ export function CaptureView({ meeting }: { meeting: MeetingCaptureInfo }) {
           */}
           <div className="grid min-h-0 flex-1 grid-cols-1 gap-7 lg:grid-cols-[minmax(0,1fr)_360px]">
             <TranscriptCard
-              chunks={capture.chunks}
+              chunks={captionLines}
               partial={capture.partial}
               isRecording={isRecording}
               isPaused={isPaused}
@@ -296,7 +361,7 @@ function TranscriptCard({
   isRecording,
   isPaused,
 }: {
-  chunks: { id: string; at: string; text: string }[];
+  chunks: { id: string; at: string; atMs: number; text: string; speaker: string | null }[];
   partial: string;
   isRecording: boolean;
   isPaused: boolean;
@@ -393,7 +458,19 @@ function TranscriptCard({
               <span className="text-muted-foreground/60 w-9 shrink-0 text-[11px] leading-5 tabular-nums">
                 {chunk.at}
               </span>
-              <p className="min-w-0 flex-1 text-[13px] leading-5 break-keep">{chunk.text}</p>
+              <p className="min-w-0 flex-1 text-[13px] leading-5 break-keep">
+                {/*
+                  ⚠️ **남이 한 말에만 이름을 붙인다.** 내 말에까지 달면 줄마다 같은 이름이
+                     반복돼 아무것도 구분하지 못하면서 자리만 먹는다(`자동 인식` 꼬리표를
+                     걷어낸 것과 같은 판단).
+                  ⚠️ 이름은 **글 안에 이어 둔다.** 시각처럼 별도 홈통을 만들면 이름이 없는
+                     내 줄에 빈 자리가 생겨 글이 들쭉날쭉해진다.
+                */}
+                {chunk.speaker && (
+                  <span className="text-muted-foreground mr-1.5 font-medium">{chunk.speaker}</span>
+                )}
+                {chunk.text}
+              </p>
             </li>
           ))}
 

@@ -5,7 +5,7 @@ import { serverApi, toUserMessage } from "@/lib/api";
 import { ep } from "@/lib/endpoints";
 import { isMock } from "@/mocks/config";
 
-import type { CaptionChunkInput,CaptureSession } from "./types";
+import type { CaptionChunkInput, CaptureSession } from "./types";
 
 /**
  * 캡처 창구 — 격리막(§Mock 격리막).
