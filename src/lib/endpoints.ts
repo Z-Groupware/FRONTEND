@@ -76,10 +76,10 @@ export const ep = {
   /* 인수인계 */
   handovers: () => "/api/handovers",
   handover: (id: number) => `/api/handovers/${id}`,
-  /** 팀장급 인수인계(귀속) 목록 — BE 인수인계 문서(2026-08-10) §package. */
-  handoverPackage: () => "/api/handovers/package",
-  /** 팀장급 인수인계 통계·요약 — BE 인수인계 문서(2026-08-10) §insights. */
-  handoverInsights: () => "/api/handovers/insights",
+  /** 상세 리치뷰(타임라인·회의맥락·수신자별 그룹) — BE 인수인계 문서(2026-08-10) §2. */
+  handoverPackage: (id: number) => `/api/handovers/${id}/package`,
+  /** 레거시 컴파일러 파생 인사이트 — 오프보딩 최종승인 뒤에만 채워짐(BE 인수인계 문서 §2). */
+  handoverInsights: (id: number) => `/api/handovers/${id}/insights`,
   /** 건별 재배정 — 일괄 반영 엔드포인트가 아니다(락·멱등, §team-handover/actions.ts). */
   handoverReassignItem: (id: number, actionId: number) =>
     `/api/handovers/${id}/items/${actionId}/reassign`,
