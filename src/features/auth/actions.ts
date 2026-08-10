@@ -182,9 +182,12 @@ export async function submitRegistrationAction(
  * ⚠️ **승인 절차가 없다.** 제출 즉시 기업과 오너 계정이 만들어지고 기업코드·비밀번호가
  *    메일로 나간다(BE 주석). 화면 문구를 "검토 후"라고 두면 거짓말이 된다(§정직성).
  * ⚠️ 응답에 비밀번호가 없다 — 메일이 유일한 경로다. 화면에 띄울 것도 없다.
- * ⚠️ **회사 위치(주소)는 이 요청에 안 실린다.** BE `CompanyRegistrationRequest`에 주소 칸이
- *    없다 — 주소는 온보딩 뒤 `PATCH /api/companies/me`로만 들어간다. 여기서 지어내 보내면
- *    조용히 버려진다. 등록 시점에 받으려면 BE에 칸을 요청해야 한다(팀 확인 필요).
+ * ⚠️ **좌표는 안 보낸다**(BE PR #293). 지도에서 고른 위·경도를 담을 컬럼이 BE에 없어서,
+ *    보내도 조용히 무시된다. 지도 핀·길찾기처럼 좌표를 실제로 쓰는 화면이 정해지면
+ *    그때 BE에 컬럼과 함께 요청한다 — 지금 보내 두면 아무도 안 읽는 값만 쌓인다.
+ * ⚠️ 빈 주소는 `""`로 보내도 된다. **BE가 `null`로 접고 앞뒤 공백도 뗀다** — 그래서
+ *    주소가 있는지 볼 때는 `!== null` 하나만 보면 된다(BE PR #293).
+ *    다만 이 화면은 위치를 필수로 받으므로(`registerSchema`) 빈 값이 여기까지 오지 않는다.
  * ⚠️ 동의 **시각은 보내지 않는다.** 서버가 찍는다 — 클라이언트가 준 시각은 분쟁에서 증거가
  *    되지 못한다(BE 주석).
  */
@@ -203,6 +206,8 @@ async function sendRegistrationToApi(
         representativeName: draft.managerName.trim(),
         managerEmail: draft.email.trim(),
         managerPhone: draft.phone.trim(),
+        // 지도에서 고른 곳. 검증을 통과했으면 반드시 있다 — 없으면 빈 문자열이고 BE가 null로 접는다
+        address: draft.place?.address.trim() ?? "",
         ...consents,
       },
     },
