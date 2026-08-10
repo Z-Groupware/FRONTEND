@@ -53,7 +53,6 @@ export function InviteSetup({ departments, positions }: InviteSetupProps) {
     rolesOf,
     positionOptions,
     isLeaderPosition,
-    rules,
   });
 
   const duplicatedLeaders = duplicatedLeaderIds(list.invites, isLeaderPosition);
