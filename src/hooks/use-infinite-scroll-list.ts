@@ -50,7 +50,7 @@ export function useInfiniteScrollList<T>({
    * 조작이 `revalidatePath`로 이 경로를 다시 그리게 만든 경우) **첫 페이지 기준으로 통째로
    * 되돌린다** — 2페이지 이후만 골라 병합하지 않는다. 부분 병합은 이어붙인 옛 페이지의
    * `page`/`totalPages`/`totalCount` 커서가 새 서버 스냅숏과 안 맞을 수 있어(정렬·필터 결과가
-   * 그 사이 바뀌었을 수 있다), 다음 [더 보기]가 엉뚱한 페이지를 불러올 위험이 있다.
+   * 그 사이 바뀌었을 수 있다), 다음 스크롤이 엉뚱한 페이지를 불러올 위험이 있다.
    */
   useEffect(() => {
     if (initialItems === initialItemsRef.current) return;
@@ -63,7 +63,9 @@ export function useInfiniteScrollList<T>({
     setTotalCount(initialTotalCount);
   }, [initialItems, initialPage, initialTotalPages, initialTotalCount]);
 
-  const hasMore = page < totalPages;
+  // ⚠️ `page`는 0-base 인덱스다 — 마지막 페이지의 인덱스는 `totalPages - 1`이라 그보다
+  //    작아야 다음 페이지가 있다(1-base였다면 `page < totalPages`였을 자리).
+  const hasMore = page < totalPages - 1;
 
   const loadMore = useCallback(async () => {
     if (isFetchingRef.current || !hasMore) return;

@@ -515,11 +515,12 @@ export async function fetchMembersPageAction(
   /*
     ⚠️ 거부는 **빈 페이지로 돌려주지 않는다.** 빈 결과를 성공으로 돌려주면 무한 스크롤 훅이
        그걸 그대로 덮어써서, 화면엔 앞 페이지가 남아 있는데 머리글만 "전체 0명"이 되고
-       [더 보기]도 [다시 시도]도 사라진다 — 조용히 멈추는 셈이다(§정직성·§목록 3상태).
+       [다시 시도]도 사라진다 — 조용히 멈추는 셈이다(§정직성·§목록 3상태).
        던지면 훅이 받아 [다시 시도]를 띄운다. 스크롤 도중 세션이 끊기는 흔한 길이다.
   */
   const pass = await gate(canManageMembers, "사원 목록을 볼 권한이 없습니다");
   if ("denied" in pass) throw new Error(pass.denied);
 
-  return getManagedMembersPage(query, Math.max(1, Math.trunc(page)));
+  // ⚠️ `page`는 0-base다(BE 표준 확정, 2026-08-10) — 음수만 0으로 당긴다.
+  return getManagedMembersPage(query, Math.max(0, Math.trunc(page)));
 }
