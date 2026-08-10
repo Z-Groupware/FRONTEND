@@ -3,6 +3,7 @@ import "./globals.css";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 
+import { NavHistoryTracker } from "@/components/common/nav-history";
 import { ThemeProvider } from "@/components/common/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { SCALE_BOOT_SCRIPT } from "@/features/appearance/scale";
@@ -73,6 +74,11 @@ export default function RootLayout({
           <div id="app-scroll">{children}</div>
           {/* 변경 결과 토스트 — 앱 전체에 하나만 둔다(DECISIONS) */}
           <Toaster />
+          {/*
+            상단바 뒤로가기가 **왔던 길**로 갈 수 있는지 판정하려고 앱 안 이동을 기록한다.
+            화면에는 아무것도 안 그린다(`components/common/nav-history`).
+          */}
+          <NavHistoryTracker />
         </ThemeProvider>
       </body>
     </html>

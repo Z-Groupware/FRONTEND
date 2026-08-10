@@ -2,9 +2,9 @@ import { ArrowRight } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { SummaryCard } from "@/components/common/summary-card";
 import { MrrChartCard } from "@/features/system/components/mrr-chart-card";
 import { SubscriptionTable } from "@/features/system/components/subscription-table";
-import { SummaryCard } from "@/features/system/components/summary-card";
 import { formatCompactKrw } from "@/features/system/format";
 import { getBillingOverview } from "@/features/system/server";
 

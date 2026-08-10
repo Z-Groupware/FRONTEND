@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 
 import { DashboardMeetingItem } from "@/components/common/dashboard-meeting-item";
+import { SummaryCard } from "@/components/common/summary-card";
 import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { KpiCard } from "@/features/team/components/kpi-card";
 import { MemberStatusRow } from "@/features/team/components/member-status-row";
 import { MEMBER_BOX_MAX_HEIGHT } from "@/features/team/lib";
 import { getTeamDashboardOverview } from "@/features/team/server";
@@ -25,32 +25,31 @@ export default async function TeamDashboardPage() {
     meetings,
   } = await getTeamDashboardOverview();
 
-  const kpis = [
-    { label: "팀 액션", value: String(teamActionCount), sub: "진행 중" },
-    {
-      label: "팀원 액션",
-      value: String(memberActionCount),
-      sub: "팀 액션 기준",
-      tone: "accent" as const,
-    },
-    { label: "내 액션", value: String(myActionCount), sub: "처리 예정" },
-    { label: "완료 액션", value: String(doneActionCount), sub: "내 누적" },
+  /* 상단 요약 — 오너 대시보드와 같은 공용 카드다(DESIGN §2). 색 강조는 두지 않는다(§5). */
+  const summaryItems = [
+    { label: "팀 액션", value: String(teamActionCount), meta: "진행 중" },
+    { label: "팀원 액션", value: String(memberActionCount), meta: "팀 액션 기준" },
+    { label: "내 액션", value: String(myActionCount), meta: "처리 예정" },
+    { label: "완료 액션", value: String(doneActionCount), meta: "내 누적" },
   ];
 
   return (
     <main className="scrollbar-hidden min-h-0 flex-1 overflow-y-auto px-8 py-7">
       <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-7">
-        <div className="grid grid-cols-4 gap-3">
-          {kpis.map((kpi) => (
-            <KpiCard key={kpi.label} {...kpi} />
-          ))}
-        </div>
+        <SummaryCard items={summaryItems} />
 
         <section
           className="border-border bg-card flex flex-col overflow-hidden rounded-2xl border"
           style={{ maxHeight: MEMBER_BOX_MAX_HEIGHT }}
         >
-          <div className="border-border flex shrink-0 items-baseline justify-between gap-3 border-b px-7 pt-6 pb-3">
+          {/*
+            ⚠️ 제목 줄에 **선을 긋지 않는다.** 바로 아래 표 머리 띠가 이미 "여기부터 내용"을
+               긋고 있어서, 선까지 있으면 층을 나누는 것이 두 줄이 된다 — DESIGN §2는
+               카드 안의 선을 **표가 시작하는 자리 하나**로 못 박는다. 두 줄이던 탓에 제목이
+               아래 띠에 달라붙어 보였다.
+            ⚠️ 대신 아래 여백을 12 → 20으로 벌린다. 선이 하던 일을 여백이 한다.
+          */}
+          <div className="border-border flex shrink-0 items-baseline justify-between gap-3 px-7 pt-6 pb-5">
             <h2 className="flex items-center gap-2 text-[17px] leading-7 font-semibold tracking-[-0.3px]">
               <span className="bg-foreground size-2 rounded-full" aria-hidden />
               팀원 현황
@@ -88,7 +87,7 @@ export default async function TeamDashboardPage() {
 
         {/* 높이를 고정하지 않는다 — 다섯 건이 하드 캡이라 자라 봐야 다섯 줄이다(`lib.ts` 참고) */}
         <section className="border-border bg-card flex flex-col overflow-hidden rounded-2xl border">
-          <div className="border-border flex shrink-0 items-baseline justify-between gap-3 border-b px-7 pt-6 pb-3">
+          <div className="border-border flex shrink-0 items-baseline justify-between gap-3 border-b px-7 pt-6 pb-5">
             <h2 className="flex items-center gap-2 text-[17px] leading-7 font-semibold tracking-[-0.3px]">
               <span className="bg-foreground size-2 rounded-full" aria-hidden />
               최근 팀 회의

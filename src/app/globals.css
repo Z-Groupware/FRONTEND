@@ -1676,13 +1676,69 @@
    *       `totalCount`를 이미 돌려주는데, 그걸 화면에 그리는 곳이 아직 없다 — 목록 화면이
    *       붙을 때 같이 단다. 여기에 "적는다"고 현재형으로 써 두면 다음 사람이 이미 된 줄 안다.
    */
+  /*
+   * 스크롤 끝에서 **튕기지 않는다**(`overscroll-behavior: none`, 2026-08-10).
+   *
+   * ⚠️ 두 가지를 한 번에 막는다 — ① 끝에 닿았을 때 그 동작이 바깥 스크롤로 넘어가는 것
+   *    (chaining) ② 그 자리에서 고무줄처럼 늘어나는 것(bounce). 타임라인처럼 가로로 긴 것을
+   *    훑을 때마다 "팅" 하고 튕겼다.
+   * ⚠️ **전역이다.** 스크롤 상자가 아닌 요소에는 아무 일도 안 하는 속성이라 `*`에 걸어도
+   *    안전하고, 화면마다 붙이는 걸 잊는 일이 없다 — 전에는 여덟 곳에만 손으로 붙어 있었다
+   *    (스크롤바 감춤을 전역으로 올린 것과 같은 판단).
+   * ⚠️ 스크롤 자체는 그대로다. 막는 건 **끝에서 일어나는 일**뿐이다.
+   */
   * {
     scrollbar-width: none;
     -ms-overflow-style: none;
+    overscroll-behavior: none;
   }
 
   *::-webkit-scrollbar {
     display: none;
+  }
+
+  /*
+   * 누를 수 있는 것 위에서는 **손 모양 커서**가 뜬다(2026-08-10).
+   *
+   * ⚠️ Tailwind v4가 preflight에서 `button`·`[role="button"]`을 `cursor: default`로 바꿨다 —
+   *    v3까지는 손 모양이었다. 그래서 링크만 손이 되고 버튼·탭·드롭다운 항목은 화살표로
+   *    남아, 같은 화면 안에서 누를 수 있는 것끼리 커서가 달랐다.
+   * ⚠️ **전역이다.** 화면마다 `cursor-pointer`를 붙이는 건 빠뜨리기 마련이고, 붙인 곳만
+   *    다르게 동작하면 그게 더 나쁘다(스크롤바 감춤·overscroll과 같은 판단).
+   * ⚠️ **꺼진 것은 뺀다.** 못 누르는 버튼에 손이 뜨면 눌러도 되는 줄 안다 — 화면이
+   *    거짓말을 하는 셈이다(§정직성).
+   * ⚠️ `label[for]`·`summary`도 넣는다. 눌러서 동작이 일어나는 자리인데 `button`이 아니다.
+   * ⚠️ **`[role="checkbox"]`가 따로 필요하다.** base-ui `Checkbox.Root`는 `<button>`이
+   *    아니라 `role="checkbox"`를 단 `<span>`이고, 함께 렌더하는 진짜 `input`은 1x1로
+   *    숨겨져 있다 — 그래서 `button`에도 `input[type=checkbox]`에도 안 걸린다.
+   *    빼 두면 네모는 화살표, 바로 옆 라벨은 손 모양으로 **같은 컨트롤의 두 쪽이 갈린다**.
+   *    `[role="radio"]`는 아직 쓰는 곳이 없지만 만드는 날 빠뜨리지 않도록 같이 적어 둔다.
+   * ⚠️ base-ui는 꺼진 상태를 `aria-disabled`가 아니라 **`data-disabled`** 로 낼 때가 있다 —
+   *    둘 다 빼야 꺼진 체크박스에 손이 안 뜬다.
+   * ⚠️ `button`·`select`는 `aria-disabled`도 뺀다. 네이티브 `disabled` 없이 그것만으로
+   *    꺼 두는 컨트롤이 있다(달력의 못 고르는 날 — `ui/calendar.tsx`). 그 자리에 손이
+   *    뜨면 눌러도 되는 줄 안다.
+   * ⚠️ **링크는 여기서 뺄 수 없다.** 브라우저 기본 스타일이 `a:link`에 이미 손을 주므로
+   *    선택자에서 제외해도 그대로 손이 뜬다 — 꺼진 링크를 만드는 날 `cursor`를 직접
+   *    되돌리는 규칙이 따로 필요하다. 지금 레포에는 그런 링크가 없다.
+   */
+  a[href],
+  label[for],
+  summary,
+  button:not(:disabled):not([aria-disabled="true"]),
+  select:not(:disabled):not([aria-disabled="true"]),
+  [role="button"]:not([aria-disabled="true"]),
+  [role="tab"]:not([aria-disabled="true"]),
+  [role="option"]:not([aria-disabled="true"]),
+  [role="menuitem"]:not([aria-disabled="true"]),
+  [role="menuitemcheckbox"]:not([aria-disabled="true"]),
+  [role="menuitemradio"]:not([aria-disabled="true"]),
+  [role="switch"]:not([aria-disabled="true"]),
+  [role="checkbox"]:not([aria-disabled="true"]):not([data-disabled]),
+  [role="radio"]:not([aria-disabled="true"]):not([data-disabled]),
+  input[type="checkbox"]:not(:disabled),
+  input[type="radio"]:not(:disabled) {
+    cursor: pointer;
   }
 
   * {

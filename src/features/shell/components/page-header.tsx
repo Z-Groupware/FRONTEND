@@ -1,9 +1,8 @@
-import { ArrowLeft, type LucideIcon } from "lucide-react";
-import Link from "next/link";
+import type { LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
 
+import { BackLink } from "@/components/common/back-link";
 import { ThemeToggle } from "@/components/common/theme-toggle";
-import { directionParticle } from "@/lib/korean";
 
 interface PageHeaderProps {
   /** 화면 제목. 페이지마다 `h1`은 하나뿐이다(CLAUDE.md §SEO·a11y) */
@@ -51,6 +50,8 @@ export function PageHeader({ title, icon: Icon, meta, backTo, action }: PageHead
       <div className="relative mx-auto flex w-full max-w-[1440px] items-center gap-3">
         {/*
           화살표는 제목 왼쪽 — 제목 위에 경로를 한 줄 더 쓰지 않는다.
+          ⚠️ **누르면 왔던 길로 돌아간다**(`BackLink`). `backTo.href`는 앱 안 이력이 없을 때
+             갈 곳이다 — 자세한 이유는 그 파일에 적어 뒀다.
           ⚠️ **상자 밖(여백 쪽)에 띄운다**(`absolute right-full`). 상자 안에 두면 그만큼 제목이
              안으로 밀려 **본문 카드와 시작선이 어긋난다** — 목록에서는 화살표가 없는데도
              자리만 비워 두느라 어긋났다. 밖으로 내보내면 화살표가 있든 없든 제목은 늘
@@ -58,17 +59,12 @@ export function PageHeader({ title, icon: Icon, meta, backTo, action }: PageHead
           ⚠️ 화살표가 앉는 32px는 헤더의 좌우 여백(`px-8`)이다 — 없는 자리를 만들지 않는다.
         */}
         {backTo ? (
-          <Link
+          <BackLink
             href={backTo.href}
-            /*
-              조사는 **받침을 보고 고른다**(`lib/korean.ts`). `(으)로`로 박아 두면
-              스크린리더가 괄호까지 읽어 `회의 상세(으)로 돌아가기`가 된다.
-            */
-            aria-label={`${backTo.label}${directionParticle(backTo.label)} 돌아가기`}
+            /* 접근성 이름은 `BackLink`가 조사까지 골라 만든다(`lib/korean.ts`) */
+            label={backTo.label}
             className="text-muted-foreground hover:text-foreground hover:bg-foreground/5 focus-visible:ring-ring absolute top-1/2 right-full flex size-8 shrink-0 -translate-y-1/2 items-center justify-center rounded-md transition-colors focus-visible:ring-2 focus-visible:outline-hidden"
-          >
-            <ArrowLeft className="size-[18px]" />
-          </Link>
+          />
         ) : null}
 
         {/*

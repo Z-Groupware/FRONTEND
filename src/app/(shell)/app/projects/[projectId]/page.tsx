@@ -11,7 +11,7 @@ import { ActionTimeline, ActionTimelineLegend } from "@/features/member/componen
 import {
   parseProjectDetailTab,
   PROJECT_DETAIL_TABS,
-  PROJECT_TIMELINE_BOX_HEIGHT,
+  PROJECT_TIMELINE_BOX_MAX_HEIGHT,
   splitDepartments,
 } from "@/features/project/lib";
 import { getProjectDetail, getProjectTeamActions } from "@/features/project/server";
@@ -68,24 +68,21 @@ export default async function ProjectDetailPage({ params, searchParams }: Projec
   return (
     <main className="scrollbar-hidden min-h-0 flex-1 overflow-y-auto px-8 py-7">
       <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-4">
-        <div className="flex flex-col gap-1">
-          <p className="text-muted-foreground text-[11px] leading-4">
-            <Link href="/app/projects" className="hover:text-foreground">
-              프로젝트
-            </Link>{" "}
-            &gt; {project.name}
-          </p>
-          <div className="flex items-center gap-2">
-            <h2 className="text-foreground text-xl leading-7 font-semibold tracking-[-0.4px]">
-              {project.name}
-            </h2>
-            <span
-              className="rounded px-1.5 py-0.5 font-mono text-xs leading-none font-semibold"
-              style={{ backgroundColor: tagColor.bgColor, color: tagColor.textColor }}
-            >
-              {project.tag}
-            </span>
-          </div>
+        {/*
+          ⚠️ **제목 위에 경로를 한 줄 더 쓰지 않는다**(§page-header). 상단바에 이미 뒤로가기
+             화살표와 `프로젝트`가 있어서 `프로젝트 > 이름`은 같은 말을 두 번 하는 줄이었다.
+          ⚠️ 태그 칩 규격은 목록·회의 카드와 같다(11px, `font-mono` 아님).
+        */}
+        <div className="flex items-center gap-2">
+          <h2 className="text-foreground text-xl leading-7 font-semibold tracking-[-0.4px]">
+            {project.name}
+          </h2>
+          <span
+            className="shrink-0 rounded px-1.5 py-px text-[11px] leading-4 font-medium"
+            style={{ backgroundColor: tagColor.bgColor, color: tagColor.textColor }}
+          >
+            {project.tag}
+          </span>
         </div>
 
         <nav aria-label="프로젝트 상세 탭" className="border-border flex gap-4 border-b">
@@ -99,7 +96,7 @@ export default async function ProjectDetailPage({ params, searchParams }: Projec
               }
               aria-current={activeTab === t.tab ? "page" : undefined}
               className={cn(
-                "-mb-px border-b-2 px-1 pb-2 text-sm font-medium transition-colors",
+                "-mb-px border-b-2 px-1 pb-2 text-[13px] leading-5 font-medium transition-colors",
                 activeTab === t.tab
                   ? "border-foreground text-foreground"
                   : "text-muted-foreground hover:text-foreground border-transparent",
@@ -113,19 +110,34 @@ export default async function ProjectDetailPage({ params, searchParams }: Projec
         {activeTab === "plan" ? (
           // ⚠️ 헤더에 제목을 또 안 둔다 — 위 페이지 헤더가 이미 제목+태그를 보여준다(팀 액션
           //    상세와 같은 결). 그래서 머리 표식(dot)도 없다 — 단일 카드라 §4 "단일 카드 p-7".
-          <section className="border-border bg-card flex flex-col gap-3 rounded-2xl border p-7">
-            <div className="flex justify-end">
-              <div className="flex flex-col items-end gap-1.5">
-                <span className="text-muted-foreground text-xs tabular-nums">
+          <section className="border-border bg-card flex flex-col gap-5 rounded-2xl border p-7">
+            {/*
+              ⚠️ **값에 라벨을 붙인다**(DESIGN §2 라벨·값 한 쌍). 전에는 마감일과 팀 배지만
+                 오른쪽 끝에 떠 있어서, 무슨 값인지 화면에 안 적혀 있었고 카드 왼쪽 절반이
+                 통째로 비었다.
+              ⚠️ 왼쪽부터 채운다 — 읽는 순서가 왼쪽에서 오른쪽이라, 카드에서 처음 만나는 값이
+                 오른쪽 끝에 있으면 눈이 되돌아온다.
+            */}
+            <dl className="flex flex-wrap gap-x-10 gap-y-4">
+              <div>
+                <dt className="text-muted-foreground text-[12px] leading-4">마감</dt>
+                <dd className="pt-1.5 text-[13px] leading-5 tabular-nums">
                   {due ? `${due}까지` : "-"}
-                </span>
-                <div
-                  className="flex items-center gap-1"
+                </dd>
+              </div>
+
+              <div>
+                <dt className="text-muted-foreground text-[12px] leading-4">참여 팀</dt>
+                <dd
+                  className="flex flex-wrap items-center gap-1 pt-1.5"
                   aria-label={`참여 팀: ${project.teamNames.join(", ")}`}
                 >
                   {teamOverflow > 0 ? (
                     <Tooltip>
-                      <TooltipTrigger render={<span className="flex items-center gap-1" />}>
+                      <TooltipTrigger
+                        tabIndex={0}
+                        render={<span className="flex flex-wrap items-center gap-1" />}
+                      >
                         {visibleTeamBadges}
                         <Badge variant="secondary" className="shrink-0">
                           +{teamOverflow}
@@ -138,16 +150,17 @@ export default async function ProjectDetailPage({ params, searchParams }: Projec
                   ) : (
                     visibleTeamBadges
                   )}
-                </div>
+                </dd>
               </div>
-            </div>
-            <p className="text-muted-foreground text-sm whitespace-pre-wrap">
+            </dl>
+
+            <p className="text-muted-foreground border-border border-t pt-5 text-[13px] leading-[22px] whitespace-pre-wrap">
               {project.description}
             </p>
             {project.attachmentName && (
               // ⚠️ 목 단계라 다운로드 URL이 없다(§9 화면은 사실만 말한다) — 죽은 링크(href="#") 대신
               //    지금 있는 파일명만 정직하게 보여준다. API 스펙 확정 후 실제 다운로드 링크로 바꾼다.
-              <span className="text-muted-foreground inline-flex w-fit items-center gap-1.5 text-sm">
+              <span className="text-muted-foreground inline-flex w-fit items-center gap-1.5 text-[13px] leading-5">
                 <Paperclip className="size-3.5" />
                 {project.attachmentName}
               </span>
@@ -156,9 +169,16 @@ export default async function ProjectDetailPage({ params, searchParams }: Projec
         ) : (
           <section
             className="border-border bg-card flex flex-col overflow-hidden rounded-2xl border"
-            style={{ height: PROJECT_TIMELINE_BOX_HEIGHT }}
+            style={{ maxHeight: PROJECT_TIMELINE_BOX_MAX_HEIGHT }}
           >
-            <div className="border-border flex shrink-0 items-baseline justify-between gap-3 border-b px-7 pt-6 pb-3">
+            {/*
+            ⚠️ 제목 줄에 **선을 긋지 않는다.** 바로 아래 표 머리 띠가 이미 "여기부터 내용"을
+               긋고 있어서, 선까지 있으면 층을 나누는 것이 두 줄이 된다 — DESIGN §2는
+               카드 안의 선을 **표가 시작하는 자리 하나**로 못 박는다. 두 줄이던 탓에 제목이
+               아래 띠에 달라붙어 보였다.
+            ⚠️ 대신 아래 여백을 12 → 20으로 벌린다. 선이 하던 일을 여백이 한다.
+          */}
+            <div className="border-border flex shrink-0 items-baseline justify-between gap-3 px-7 pt-6 pb-5">
               <h3 className="flex items-center gap-2 text-[17px] leading-7 font-semibold tracking-[-0.3px]">
                 <span className="bg-foreground size-2 rounded-full" aria-hidden />팀 액션 타임라인
               </h3>
