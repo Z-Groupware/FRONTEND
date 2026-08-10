@@ -7,6 +7,7 @@ import {
   format,
   isSameDay,
   isSameMonth,
+  startOfDay,
   startOfMonth,
   startOfWeek,
 } from "date-fns";
@@ -42,6 +43,27 @@ const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"] as const;
 const MAX_VISIBLE_CHIPS = 3;
 
 const DAY_KEY = "yyyy-MM-dd";
+
+/** 그 날이 항목의 시작~끝 구간에 걸리는지 — 여러 날에 걸친 Todo도 지나는 날마다 걸린다. */
+function eventOccursOnDay(event: PersonalCalendarEvent, day: Date): boolean {
+  const dayStart = startOfDay(day).getTime();
+  return (
+    startOfDay(event.start).getTime() <= dayStart && dayStart <= startOfDay(event.end).getTime()
+  );
+}
+
+/**
+ * 여러 날 항목을 **연속 막대**로 이어 보이려면 구간 안에서 그 날이 어디쯤인지가 필요하다.
+ * `single`은 하루짜리(기존 디자인 그대로), `start`/`middle`/`end`는 이어진 막대의 한 조각이다.
+ */
+type EventSpanEdge = "single" | "start" | "middle" | "end";
+
+function getEventSpanEdge(event: PersonalCalendarEvent, day: Date): EventSpanEdge {
+  if (isSameDay(event.start, event.end)) return "single";
+  if (isSameDay(day, event.start)) return "start";
+  if (isSameDay(day, event.end)) return "end";
+  return "middle";
+}
 
 /**
  * "오늘"을 **브라우저 기준으로** 잡는다 — 서버 렌더에서는 `null`이다.
@@ -108,7 +130,7 @@ export function MonthGrid({ events, month, selectedDate, onSelectDate }: MonthGr
               <DayCell
                 key={day.toISOString()}
                 day={day}
-                events={events.filter((event) => isSameDay(event.start, day))}
+                events={events.filter((event) => eventOccursOnDay(event, day))}
                 isOutside={!isSameMonth(day, month)}
                 isToday={format(day, DAY_KEY) === todayKey}
                 isSelected={isSameDay(day, selectedDate)}
@@ -226,7 +248,7 @@ function DayCell({
           )}
         >
           {events.map((event) => (
-            <EventChip key={event.id} event={event} />
+            <EventChip key={event.id} event={event} spanEdge={getEventSpanEdge(event, day)} />
           ))}
         </div>
       )}
@@ -245,9 +267,16 @@ function DayCell({
  * ⚠️ 채움/테두리로 상태를 말하던 방식은 걷어냈다 — 콩이 같은 말을 더 분명히 한다.
  * ⚠️ 취소선은 남긴다. 끝난 일은 훑을 때 건너뛸 수 있어야 한다.
  * ⚠️ 제목이 길면 자른다. `min-w-0`이 없으면 flex 자식이 안 줄어들어 칸을 밀어낸다.
+ *
+ * ⚠️ **여러 날에 걸친 항목은 이 칩을 지나는 칸마다 그려 하나의 막대처럼 잇는다**(2026-08-10).
+ *    하루 칸을 격자로 직접 그리는 지금 구조를 바꾸지 않고, 시작~끝 칩 사이의 둥근 모서리와
+ *    칸 사이 여백(`px-1.5`)만 없애 이어 붙인다 — `spanEdge`가 그 위치를 말해 준다.
+ *    제목·상태 콩은 **시작 칸에서만** 보인다. 매 칸에 반복하면 이어진 막대가 아니라
+ *    같은 항목이 여러 개 있는 것처럼 읽힌다.
  */
-function EventChip({ event }: { event: PersonalCalendarEvent }) {
+function EventChip({ event, spanEdge }: { event: PersonalCalendarEvent; spanEdge: EventSpanEdge }) {
   const done = event.isCompleted;
+  const showContent = spanEdge === "single" || spanEdge === "start";
 
   return (
     <span
@@ -263,7 +292,14 @@ function EventChip({ event }: { event: PersonalCalendarEvent }) {
              `scrollHeight`가 안 늘어나 스크롤이 아예 안 생겼다. 안 줄어들어야 넘치고,
              넘쳐야 그 칸만 스크롤한다(이게 라이브러리를 걷어낸 이유다).
         */
-        "relative flex shrink-0 items-center gap-1 rounded px-1.5 text-[11px] leading-[16px] font-medium",
+        "relative flex shrink-0 items-center gap-1 px-1.5 text-[11px] leading-[16px] font-medium",
+        // 하루짜리는 네 모서리 다 둥글게, 이어진 막대는 시작·끝 칸만 그쪽 모서리를 둥글게 둔다.
+        spanEdge === "single" && "rounded",
+        spanEdge === "start" && "rounded-l",
+        spanEdge === "end" && "rounded-r",
+        // 이어지는 쪽은 칸의 좌우 여백(`px-1.5`)만큼 밀어내 옆 칸 칩과 맞붙는다.
+        (spanEdge === "middle" || spanEdge === "end") && "-ml-1.5",
+        (spanEdge === "middle" || spanEdge === "start") && "-mr-1.5",
         /*
           ⚠️ 취소선을 **칩 전체**에 긋는다. `line-through`는 글자 위에만 그어져서, 제목이
              짧거나 잘리면 선이 중간에 끊겨 지저분했다 — 가운데를 가로지르는 선 하나로 둔다.
@@ -272,12 +308,21 @@ function EventChip({ event }: { event: PersonalCalendarEvent }) {
           "after:absolute after:inset-x-1.5 after:top-1/2 after:h-px after:-translate-y-1/2 after:bg-current after:opacity-70",
       )}
     >
-      <span
-        aria-hidden
-        className="size-1.5 shrink-0 rounded-full"
-        style={{ backgroundColor: calendarStatusDotColor(done) }}
-      />
-      <span className="min-w-0 truncate">{event.title}</span>
+      {showContent ? (
+        <>
+          <span
+            aria-hidden
+            className="size-1.5 shrink-0 rounded-full"
+            style={{ backgroundColor: calendarStatusDotColor(done) }}
+          />
+          <span className="min-w-0 truncate">{event.title}</span>
+        </>
+      ) : (
+        // 이어지는 칸도 높이는 같아야 막대가 끊겨 보이지 않는다 — 보이는 글자 없이 자리만 채운다.
+        <span aria-hidden className="min-w-0 truncate">
+          &nbsp;
+        </span>
+      )}
     </span>
   );
 }
