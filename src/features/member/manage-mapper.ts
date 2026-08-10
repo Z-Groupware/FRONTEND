@@ -1,5 +1,5 @@
 import { AUTHORITY, type Authority } from "@/constants/authority";
-import { MEMBER_STATUS, type MemberStatus } from "@/constants/member";
+import type { MemberStatus } from "@/constants/member";
 
 import type { ManagedMember, MemberFilter } from "./manage-types";
 
@@ -75,11 +75,12 @@ function toAuthority(role: string): Authority {
  *
  * ⚠️ 소프트 딜리트(`DELETED`)는 **상태가 아니라 목록에서 빠지는 일**이다(§도메인 상수) —
  *    그 판정은 부르는 쪽이 `isVisibleMemberStatus`로 한다. 여기서는 값만 옮긴다.
+ * ⚠️ **모르는 값을 `ACTIVE`로 바꾸지 않는다.** 그러면 `DELETED`처럼 목록에서 빠져야 할 사람이
+ *    **재직 중으로 되살아나고**, BE가 상태를 하나 늘렸을 때 그 사람들이 전부 재직으로 뭉친다 —
+ *    화면이 거짓말을 한다(§정직성). 원문을 그대로 넘겨 `isVisibleMemberStatus`가 거르게 둔다.
  */
 function toMemberStatus(workStatus: string): MemberStatus {
-  return (Object.values(MEMBER_STATUS) as string[]).includes(workStatus)
-    ? (workStatus as MemberStatus)
-    : MEMBER_STATUS.ACTIVE;
+  return workStatus as MemberStatus;
 }
 
 export function toManagedMember(item: BeMemberListItem | BeMemberDetail): ManagedMember {
