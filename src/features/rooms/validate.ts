@@ -3,7 +3,11 @@ import { isValid, parse } from "date-fns";
 import type { Authority } from "@/constants/authority";
 import { requiresParentTeamAction } from "@/lib/permission";
 
-import { RESERVATION_DURATION_MINUTES } from "./constants";
+import {
+  RESERVATION_DURATION_MINUTES,
+  ROOM_OPERATING_END_MINUTES,
+  ROOM_OPERATING_START_MINUTES,
+} from "./constants";
 import type {
   MeetingRoomDraft,
   MeetingRoomFormErrors,
@@ -15,9 +19,6 @@ const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const TIME_PATTERN = /^([01]\d|2[0-3]):(00|30)$/;
 /** 회의실 운영 시작·종료 시각용 — 예약 슬롯(`TIME_PATTERN`)과 달리 30분 단위 제약이 없다. */
 const GENERAL_TIME_PATTERN = /^([01]\d|2[0-3]):[0-5]\d$/;
-
-const OPERATING_START_MINUTES = 9 * 60;
-const OPERATING_END_MINUTES = 18 * 60;
 
 function isValidCalendarDate(value: string): boolean {
   if (!DATE_PATTERN.test(value)) return false;
@@ -58,8 +59,8 @@ export function validateRoomReservationDraft(
   } else {
     const startMinutes = toMinutes(draft.startTime);
     if (
-      startMinutes < OPERATING_START_MINUTES ||
-      startMinutes + RESERVATION_DURATION_MINUTES > OPERATING_END_MINUTES
+      startMinutes < ROOM_OPERATING_START_MINUTES ||
+      startMinutes + RESERVATION_DURATION_MINUTES > ROOM_OPERATING_END_MINUTES
     ) {
       errors.startTime = "회의실 운영 시간(09:00~18:00) 안에서 선택해 주세요";
     }

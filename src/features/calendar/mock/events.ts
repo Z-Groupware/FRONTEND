@@ -25,7 +25,7 @@ const INITIAL: PersonalCalendarEvent[] = [
     id: "action-1",
     title: "회의실 예약 정책 공유",
     start: new Date("2026-08-05T14:00:00"),
-    end: new Date("2026-08-05T15:00:00"),
+    end: new Date("2026-08-08T15:00:00"),
     tag: CALENDAR_ITEM_TAG.PERSONAL_ACTION,
     isCompleted: false,
   },

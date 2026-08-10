@@ -3,6 +3,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { ThemeToggle } from "@/components/common/theme-toggle";
+import { directionParticle } from "@/lib/korean";
 
 interface PageHeaderProps {
   /** 화면 제목. 페이지마다 `h1`은 하나뿐이다(CLAUDE.md §SEO·a11y) */
@@ -59,7 +60,11 @@ export function PageHeader({ title, icon: Icon, meta, backTo, action }: PageHead
         {backTo ? (
           <Link
             href={backTo.href}
-            aria-label={`${backTo.label}(으)로 돌아가기`}
+            /*
+              조사는 **받침을 보고 고른다**(`lib/korean.ts`). `(으)로`로 박아 두면
+              스크린리더가 괄호까지 읽어 `회의 상세(으)로 돌아가기`가 된다.
+            */
+            aria-label={`${backTo.label}${directionParticle(backTo.label)} 돌아가기`}
             className="text-muted-foreground hover:text-foreground hover:bg-foreground/5 focus-visible:ring-ring absolute top-1/2 right-full flex size-8 shrink-0 -translate-y-1/2 items-center justify-center rounded-md transition-colors focus-visible:ring-2 focus-visible:outline-hidden"
           >
             <ArrowLeft className="size-[18px]" />

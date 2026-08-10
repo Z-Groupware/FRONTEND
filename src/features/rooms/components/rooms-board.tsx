@@ -1,7 +1,11 @@
 "use client";
 
+import { Plus } from "lucide-react";
 import { useState } from "react";
 
+import { Button } from "@/components/ui/button";
+
+import { getNextAvailableSlot } from "../next-available-slot";
 import type {
   MeetingRoom,
   RoomMember,
@@ -23,6 +27,8 @@ interface RoomsBoardProps {
    *  못 부른다(여기·`RoomReservationDialog`가 전부 client). */
   showParentTeamAction: boolean;
   teamActions: RoomTeamActionOption[];
+  /** 참석자 "내 부서만" 필터 기준 — `RoomReservationDialog`로 그대로 흘려보낸다. */
+  viewerTeamName: string | null;
   /** "YYYY-MM-DD" — 이 주의 월요일. 서버 컴포넌트가 이 주 기준으로 `initialReservations`를 내려준다. */
   week: string;
 }
@@ -42,6 +48,7 @@ export function RoomsBoard({
   projects,
   showParentTeamAction,
   teamActions,
+  viewerTeamName,
   week,
 }: RoomsBoardProps) {
   const [reservations, setReservations] = useState(initialReservations);
@@ -49,6 +56,21 @@ export function RoomsBoard({
 
   return (
     <div className="flex flex-col gap-6">
+      {/* ⚠️ `/app/notice`의 "새 공지"와 같은 자리·같은 패턴이다(우측 정렬, `ink` 버튼) — 캘린더
+          칸을 직접 클릭하는 대신 바로 예약을 시작하는 진입점이다. 여는 시각은
+          `getNextAvailableSlot`이 "지금"을 30분 단위로 올려 계산한다. */}
+      <div className="flex justify-end">
+        <Button
+          type="button"
+          size="sm"
+          variant="ink"
+          onClick={() => setSlotStart(getNextAvailableSlot(new Date()))}
+        >
+          <Plus aria-hidden />
+          예약하기
+        </Button>
+      </div>
+
       <WeeklyRoomCalendarLoader
         reservations={reservations}
         members={members}
@@ -65,6 +87,7 @@ export function RoomsBoard({
         projects={projects}
         showParentTeamAction={showParentTeamAction}
         teamActions={teamActions}
+        viewerTeamName={viewerTeamName}
         onCreated={(created) => setReservations((prev) => [...prev, created])}
       />
     </div>

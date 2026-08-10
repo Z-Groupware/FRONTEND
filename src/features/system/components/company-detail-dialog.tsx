@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/dialog";
 import { COMPANY_STATUS, COMPANY_STATUS_LABEL } from "@/constants/domain";
 import { formatDate } from "@/lib/date";
+import { objectParticle } from "@/lib/korean";
 
 import { suspendCompanyAction, unsuspendCompanyAction } from "../actions";
 import type { ManagedCompany } from "../types";
@@ -221,7 +222,7 @@ export function CompanyDetailDialog({ company, closeHref, currentPath }: Company
         title={
           confirmed?.isSuspended
             ? `'${confirmed.name}' 정지를 해제할까요?`
-            : `'${confirmed?.name}'을(를) 정지할까요?`
+            : `'${confirmed?.name}'${objectParticle(confirmed?.name ?? "")} 정지할까요?`
         }
         description={
           confirmed?.isSuspended

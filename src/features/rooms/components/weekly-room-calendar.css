@@ -15,7 +15,7 @@
 }
 
 /*
-  ⚠️ 헤더(`.rbc-time-header-content`)엔 세로 스크롤바가 없고 본문(`.rbc-time-content`)엔
+  주의: 헤더(`.rbc-time-header-content`)엔 세로 스크롤바가 없고 본문(`.rbc-time-content`)엔
   있을 수 있어서, 스크롤바 폭(브라우저·배율마다 다르다)만큼 두 영역의 실제 칸 너비가
   서로 달라져 세로 구분선이 어긋나 보였다("화면 배율을 바꾸면" 흔들리는 것도 그래서다).
   이 화면의 전체 높이(`calendar-height.ts`)는 이미 "시간 슬롯 수 × 칸 높이"로 딱 맞춰
@@ -41,7 +41,7 @@
 }
 
 /*
-  ⚠️ RBC는 `.rbc-time-header-content` 안에 요일 행(`.rbc-row.rbc-time-header-cell`) 말고도
+  주의: RBC는 `.rbc-time-header-content` 안에 요일 행(`.rbc-row.rbc-time-header-cell`) 말고도
   종일(all-day) 이벤트용 행(`.rbc-allday-cell`)을 항상 하나 더 만든다. 이 화면엔 종일 예약이
   없는데도 그 빈 행이 계속 자리를 차지해서 "8/3" 같은 날짜가 요일 행 + 빈 행 두 줄로
   갈라진 것처럼 보였다 — 아예 감춰서 요일 행 하나만 남긴다(라이브러리 코드는 안 건드리고
@@ -60,7 +60,7 @@
 }
 
 /*
-  ⚠️ 정시(그룹)와 반시(슬롯) 경계선을 **다르게** 그린다 — `step=30, timeslots=2`라
+  주의: 정시(그룹)와 반시(슬롯) 경계선을 **다르게** 그린다 — `step=30, timeslots=2`라
   `.rbc-timeslot-group` 하나가 정시 1시간, 그 안의 `.rbc-time-slot` 2개가 각각 30분이다.
   전에는 슬롯 보더를 통째로 지워서 시간 눈금(왼쪽 거터)과 칸 사이가 안 맞아 보였다 —
   30분 눈금도 옅은 점선으로 남겨야 왼쪽 숫자와 오른쪽 칸이 줄이 맞아떨어진다.
@@ -70,13 +70,14 @@
 }
 
 .rbc-time-slot {
+  z-index: 9;
   color: var(--muted-foreground);
   border-top: none;
 }
 
 /*
   빈 슬롯 클릭 = 예약 모달을 연다 — 클릭 가능한 영역이라는 걸 커서·hover 배경으로 알린다.
-  ⚠️ 예약이 이미 있는 칸도 이 클래스를 그대로 갖고 있지만, 그 위엔 `RoomReservationEvent`가
+  주의: 예약이 이미 있는 칸도 이 클래스를 그대로 갖고 있지만, 그 위엔 `RoomReservationEvent`가
   덮어 그려져서(§Mock 격리막) 실제로는 그 막대의 클릭 핸들러가 우선한다 — 빈 칸에서만
   보이는 hover라 헷갈리지 않는다.
 */
@@ -85,8 +86,13 @@
   transition: background-color 100ms;
 }
 
+/*
+  주의: 6% → 10%로 올렸다(2026-08-10) — 6%는 밝은 화면에서 커서만 바뀌고 배경 변화가 거의
+     안 보인다는 피드백이 있었다. 굵은 색 대신 그대로 `--foreground` 믹스 비율만 올려서
+     토큰은 그대로 유지한다(§디자인 토큰: 하드코딩 금지).
+*/
 .rbc-day-slot .rbc-time-slot:hover {
-  background-color: color-mix(in srgb, var(--foreground) 6%, transparent);
+  background-color: color-mix(in srgb, var(--foreground) 10%, transparent);
 }
 
 .rbc-day-slot .rbc-time-slot {
@@ -110,7 +116,7 @@
   예약 막대는 안쪽 컴포넌트(`RoomReservationEvent`)가 색·패딩·글자를 전부 그린다 —
   RBC 기본 배경·테두리는 지워서 우리 색만 보이게 한다(개인 캘린더는 반대로 글자를 지웠다,
   거긴 오른쪽 상세조회 패널이 있어서고 여긴 없어서 막대 안에서 바로 읽혀야 한다).
-  ⚠️ `!important` — RBC가 `.rbc-event`에 인라인 스타일(테두리·배경)을 직접 얹어서 일반
+  주의: `!important` — RBC가 `.rbc-event`에 인라인 스타일(테두리·배경)을 직접 얹어서 일반
      클래스 규칙보다 우선순위가 높다. 그대로 두면 RBC 기본 테두리 + `RoomReservationEvent`의
      `border-l-2` 액센트 테두리가 겹쳐 이중 테두리로 보인다 — 바깥(RBC) 쪽을 지우고
      안쪽(우리) 테두리 하나만 남긴다.
@@ -122,7 +128,7 @@
 }
 
 /*
-  ⚠️ RBC 기본 CSS는 `.rbc-day-slot .rbc-events-container`에 `margin-right: 10px`를 고정으로
+  주의: RBC 기본 CSS는 `.rbc-day-slot .rbc-events-container`에 `margin-right: 10px`를 고정으로
   건다(라이브러리 자체 스타일, 인라인 아님) — 그만큼 이벤트 막대가 칸 오른쪽 테두리에 못 닿고
   항상 10px 틈이 남는다. 배율(줌)에 따라 칸 너비가 달라지면서 그 틈이 더 도드라져 보인
   "줄이 안 맞는" 현상의 실제 원인이 이거다 — 컨테이너를 칸 전체 폭으로 채워서 막대 오른쪽

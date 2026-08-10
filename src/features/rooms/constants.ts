@@ -9,12 +9,25 @@
 export const RESERVATION_DURATION_MINUTES = 30;
 
 /**
- * 회의실 이용 가능 시간(운영시간) select용 30분 단위 옵션 — "00:00"~"23:30", 48개.
- * ⚠️ 검증(`GENERAL_TIME_PATTERN`)은 분 단위 제약이 없지만, 예약 슬롯과 같은 30분 단위로
- *    보여 주는 게 고르기 쉽고 실제로 쓰는 시각도 대개 이 격자 위에 있다.
+ * 회의실 운영 시간(분 단위, 09:00~18:00) — `validate.ts`(서버·폼 검증)와 "예약하기" 버튼의
+ * 기본 슬롯 계산(`next-available-slot.ts`)이 같은 값을 쓴다. 한쪽만 고치면 어긋난다.
  */
-export const TIME_OPTIONS = Array.from({ length: 48 }, (_, index) => {
-  const hour = String(Math.floor(index / 2)).padStart(2, "0");
-  const minute = index % 2 === 0 ? "00" : "30";
-  return `${hour}:${minute}`;
-});
+export const ROOM_OPERATING_START_MINUTES = 9 * 60;
+export const ROOM_OPERATING_END_MINUTES = 18 * 60;
+
+/**
+ * 참석자 피커 필터 3종 — `RoomAttendeePicker`가 쓴다.
+ * ⚠️ 세 값은 서로 배타적이라 라디오그룹으로 짠다(`role="radiogroup"`, `RoomPickerList`와 같은 패턴).
+ */
+export const ROOM_ATTENDEE_FILTER = {
+  ALL: "all",
+  LEADER: "leader",
+  MY_TEAM: "myTeam",
+} as const;
+export type RoomAttendeeFilter = (typeof ROOM_ATTENDEE_FILTER)[keyof typeof ROOM_ATTENDEE_FILTER];
+
+export const ROOM_ATTENDEE_FILTER_LABEL: Record<RoomAttendeeFilter, string> = {
+  all: "전체",
+  leader: "팀장급만",
+  myTeam: "내 부서만",
+};
