@@ -1,4 +1,4 @@
-import { CalendarClock, DoorOpen, MapPin, Users } from "lucide-react";
+import { CalendarClock, ChevronRight, DoorOpen, MapPin, Users } from "lucide-react";
 import Link from "next/link";
 
 import { ProjectTag } from "@/components/common/project-tag";
@@ -76,7 +76,7 @@ function CardBody({ meeting }: { meeting: MeetingListItem }) {
            **곁 정보**라 같은 무게의 글로 이어 붙인다.
         ⚠️ 가운뎃점으로 잇는다. 상자를 없앤 자리에 구분자가 필요하다.
       */}
-      <p className="text-muted-foreground truncate pt-2 text-[13px] leading-5">
+      <p className="text-muted-foreground truncate pt-1.5 pb-5 text-[13px] leading-5">
         {meeting.originLabel}
         <span className="px-1.5 opacity-50">·</span>
         {meeting.topicSummary}
@@ -91,32 +91,50 @@ function CardBody({ meeting }: { meeting: MeetingListItem }) {
  *    높이를 갖도록 줄 자체는 늘 그린다.
  */
 function CardFooter({ meeting }: { meeting: MeetingListItem }) {
+  const isDone = meeting.status === MEETING_STATUS.DONE;
+
   return (
-    <div className="border-border mt-auto flex items-center justify-between gap-3 border-t pt-3.5">
-      <div className="text-muted-foreground flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 text-[12px] leading-4">
-        <span className="flex items-center gap-1.5">
-          <CalendarClock className="size-3.5 shrink-0" aria-hidden />
-          {/* 아이콘 옆 한글은 1px 내린다(DESIGN §5) */}
+    <div className="border-border mt-auto flex items-center justify-between gap-3 border-t pt-4">
+      {/*
+        ⚠️ **발치 안에서도 층을 가른다.** 셋을 다 12px 회색으로 두니 한 덩이 회색 띠로 뭉개져
+           정작 제일 먼저 봐야 할 **언제**가 안 읽혔다 — 일시는 13px 본문색, 장소·인원은
+           12px 보조색이다.
+        ⚠️ 일시와 나머지 사이는 세로선으로 끊는다. 가운뎃점을 또 쓰면 둘째 줄과 같은 기호가
+           되어 어느 게 묶음인지 흐려진다.
+      */}
+      <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
+        <span className="flex shrink-0 items-center gap-1.5 text-[13px] leading-5 font-medium">
+          <CalendarClock className="text-muted-foreground size-4 shrink-0" aria-hidden />
           <span className="tabular-nums">{meeting.schedule}</span>
         </span>
-        <span className="flex items-center gap-1.5">
-          <MapPin className="size-3.5 shrink-0" aria-hidden />
-          <span>{meeting.roomName}</span>
-        </span>
-        <span className="flex items-center gap-1.5">
-          <Users className="size-3.5 shrink-0" aria-hidden />
-          <span className="tabular-nums">{meeting.attendeeCount}명</span>
+        <span className="bg-border h-3 w-px shrink-0" aria-hidden />
+        <span className="text-muted-foreground flex min-w-0 items-center gap-x-3 gap-y-1 text-[12px] leading-4">
+          <span className="flex min-w-0 items-center gap-1.5">
+            <MapPin className="size-3.5 shrink-0" aria-hidden />
+            <span className="truncate">{meeting.roomName}</span>
+          </span>
+          <span className="flex shrink-0 items-center gap-1.5">
+            <Users className="size-3.5 shrink-0" aria-hidden />
+            <span className="tabular-nums">{meeting.attendeeCount}명</span>
+          </span>
         </span>
       </div>
 
       {/*
-        ⚠️ 카드 전체를 링크로 감싸지 않는다. 완료 카드만 상세로 가고(§3-2), 예정 카드는
-           참석자가 눌러도 반응이 없어야 한다 — 입장은 **Host의 버튼 하나**다.
-        ⚠️ 자리는 항상 잡아 둔다. 버튼이 있고 없고에 따라 발치 높이가 달라지면
+        ⚠️ 카드 전체를 링크로 감싸지만 **오른쪽에 갈 곳을 적어 둔다**. 완료 카드에만 아무것도
+           없어서 발치 오른쪽이 통째로 비었고(§배치), 무엇보다 **눌린다는 걸 알 방법이 없었다** —
+           손가락 커서는 마우스를 얹어야 보인다.
+        ⚠️ 자리는 항상 잡아 둔다(`h-8`). 버튼이 있고 없고에 따라 발치 높이가 달라지면
            한 줄의 카드들이 서로 다른 데서 끝난다.
       */}
       <div className="flex h-8 shrink-0 items-center">
-        {meeting.isHost && meeting.status !== MEETING_STATUS.DONE && (
+        {isDone && (
+          <span className="text-muted-foreground flex items-center gap-0.5 text-[13px] leading-5">
+            회의록
+            <ChevronRight className="size-4" aria-hidden />
+          </span>
+        )}
+        {meeting.isHost && !isDone && (
           <Link
             href={`/app/meeting/${meeting.id}/capture`}
             className="border-border hover:border-foreground/40 hover:text-foreground text-muted-foreground focus-visible:ring-ring flex h-8 items-center gap-1.5 rounded-lg border px-3 text-[13px] leading-5 transition-colors focus-visible:ring-2 focus-visible:outline-hidden"
