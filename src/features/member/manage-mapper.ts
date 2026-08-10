@@ -1,5 +1,4 @@
 import { AUTHORITY, type Authority } from "@/constants/authority";
-import { HANDOVER_TYPE, type HandoverType } from "@/constants/handover";
 import { MEMBER_STATUS, type MemberStatus } from "@/constants/member";
 
 import type { ManagedMember, MemberFilter } from "./manage-types";
@@ -81,21 +80,6 @@ function toMemberStatus(workStatus: string): MemberStatus {
   return (Object.values(MEMBER_STATUS) as string[]).includes(workStatus)
     ? (workStatus as MemberStatus)
     : MEMBER_STATUS.ACTIVE;
-}
-
-/**
- * 대기 중인 신청 종류.
- *
- * ⚠️ BE의 `LEAVE`는 우리 `VACATION`이다(필터와 같은 간극).
- * ⚠️ **`null`을 지어내지 않는다.** 모르는 값이면 `null`로 두어 "대기 없음"이 되는데,
- *    그건 승인이 필요한 사람을 목록에서 감추는 일이다 — 대신 모르면 그대로 두고
- *    거르기에서만 빠지게 한다.
- */
-function toPendingHandoverType(value: string | null): HandoverType | null {
-  if (!value) return null;
-  if (value === "LEAVE" || value === HANDOVER_TYPE.VACATION) return HANDOVER_TYPE.VACATION;
-  if (value === HANDOVER_TYPE.OFFBOARDING) return HANDOVER_TYPE.OFFBOARDING;
-  return null;
 }
 
 export function toManagedMember(item: BeMemberListItem | BeMemberDetail): ManagedMember {
