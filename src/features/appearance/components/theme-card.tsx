@@ -1,6 +1,5 @@
 "use client";
 
-import { Monitor, Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
 import { type KeyboardEvent, useSyncExternalStore } from "react";
 
@@ -22,10 +21,10 @@ function useMounted(): boolean {
 
 type ThemeOption = "light" | "dark" | "system";
 
-const THEME_OPTIONS: { value: ThemeOption; label: string; icon: typeof Sun }[] = [
-  { value: "light", label: "라이트", icon: Sun },
-  { value: "dark", label: "다크", icon: Moon },
-  { value: "system", label: "시스템", icon: Monitor },
+const THEME_OPTIONS: { value: ThemeOption; label: string }[] = [
+  { value: "light", label: "라이트" },
+  { value: "dark", label: "다크" },
+  { value: "system", label: "시스템" },
 ];
 
 function nextThemeByKey(key: string): 1 | -1 | null {
@@ -85,7 +84,6 @@ export function ThemeCard() {
       >
         {THEME_OPTIONS.map((option) => {
           const isSelected = mounted && theme === option.value;
-          const Icon = option.icon;
 
           return (
             <button
@@ -97,14 +95,20 @@ export function ThemeCard() {
               data-theme-option={option.value}
               onClick={() => setTheme(option.value)}
               className={cn(
-                "focus-visible:ring-ring flex h-9 min-w-[92px] items-center justify-center gap-1.5 rounded-lg border px-3 text-[13px] leading-none transition-colors focus-visible:ring-2 focus-visible:outline-hidden",
-                isSelected
-                  ? "border-foreground bg-foreground text-background"
-                  : "border-border hover:bg-secondary",
+                "focus-visible:ring-ring flex min-w-[132px] flex-1 flex-col items-center gap-2 rounded-xl border p-2 transition-colors focus-visible:ring-2 focus-visible:outline-hidden",
+                isSelected ? "border-foreground" : "border-border hover:bg-secondary",
               )}
             >
-              <Icon className="size-3.5" aria-hidden />
-              {option.label}
+              <span
+                aria-hidden
+                className={cn(
+                  "h-11 w-full rounded-lg border",
+                  option.value === "light" && "border-border bg-white",
+                  option.value === "dark" && "border-border bg-black",
+                  option.value === "system" && "border-border bg-linear-to-br from-white to-black",
+                )}
+              />
+              <span className="text-[13px] leading-none">{option.label}</span>
             </button>
           );
         })}
