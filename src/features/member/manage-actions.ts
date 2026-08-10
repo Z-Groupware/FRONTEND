@@ -521,6 +521,7 @@ export async function fetchMembersPageAction(
   const pass = await gate(canManageMembers, "사원 목록을 볼 권한이 없습니다");
   if ("denied" in pass) throw new Error(pass.denied);
 
-  // ⚠️ `page`는 0-base다(BE 표준 확정, 2026-08-10) — 음수만 0으로 당긴다.
-  return getManagedMembersPage(query, Math.max(0, Math.trunc(page)));
+  // ⚠️ `page`는 0-base다(BE 표준 확정, 2026-08-10) — NaN·Infinity·음수는 모두 0으로 당긴다.
+  const safePage = Number.isFinite(page) ? Math.max(0, Math.trunc(page)) : 0;
+  return getManagedMembersPage(query, safePage);
 }
