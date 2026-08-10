@@ -392,7 +392,7 @@ describe("deleteMemberAccountAction — 계정 탈퇴", () => {
     await approveHandoverAction(8);
     await deleteMemberAccountAction(8);
 
-    const page = await fetchMembersPageAction({ keyword: "", filter: MEMBER_FILTER.ALL }, 1);
+    const page = await fetchMembersPageAction({ keyword: "", filter: MEMBER_FILTER.ALL }, 0);
     expect(page.items.some((member) => member.id === 8)).toBe(false);
     // 상세는 여전히 찾을 수 있다 — 기록이 그 id를 가리킨다
     expect(findMockManagedMember(8)).not.toBeNull();
@@ -418,14 +418,14 @@ describe("fetchMembersPageAction — 목록 페이지", () => {
        수백을 다 받아 온다(CLAUDE.md §목록·페이지네이션).
   */
   it("조건에 맞는 전체 수를 함께 준다 — 화면에 그린 줄 수가 아니다", async () => {
-    const all = await fetchMembersPageAction({ keyword: "", filter: MEMBER_FILTER.ALL }, 1);
+    const all = await fetchMembersPageAction({ keyword: "", filter: MEMBER_FILTER.ALL }, 0);
 
     expect(all.totalCount).toBeGreaterThan(0);
     expect(all.items.length).toBeLessThanOrEqual(all.totalCount);
   });
 
   it("검색어를 서버가 건다", async () => {
-    const found = await fetchMembersPageAction({ keyword: "김서준", filter: MEMBER_FILTER.ALL }, 1);
+    const found = await fetchMembersPageAction({ keyword: "김서준", filter: MEMBER_FILTER.ALL }, 0);
 
     expect(found.items).toHaveLength(1);
     expect(found.totalCount).toBe(1);
@@ -434,11 +434,11 @@ describe("fetchMembersPageAction — 목록 페이지", () => {
   it("승인 대기 필터가 휴직과 오프보딩을 가른다", async () => {
     const vacation = await fetchMembersPageAction(
       { keyword: "", filter: MEMBER_FILTER.VACATION_PENDING },
-      1,
+      0,
     );
     const offboarding = await fetchMembersPageAction(
       { keyword: "", filter: MEMBER_FILTER.OFFBOARDING_PENDING },
-      1,
+      0,
     );
 
     expect(vacation.items.every((member) => member.pendingHandoverType === "VACATION")).toBe(true);
@@ -458,13 +458,13 @@ describe("fetchMembersPageAction — 목록 페이지", () => {
     getViewerMock.mockResolvedValue(MEMBER);
 
     await expect(
-      fetchMembersPageAction({ keyword: "", filter: MEMBER_FILTER.ALL }, 1),
+      fetchMembersPageAction({ keyword: "", filter: MEMBER_FILTER.ALL }, 0),
     ).rejects.toThrow("사원 목록을 볼 권한이 없습니다");
   });
 
   it("범위를 벗어난 페이지는 안으로 당긴다", async () => {
     const page = await fetchMembersPageAction({ keyword: "", filter: MEMBER_FILTER.ALL }, 999);
 
-    expect(page.page).toBe(page.totalPages);
+    expect(page.page).toBe(page.totalPages - 1);
   });
 });
