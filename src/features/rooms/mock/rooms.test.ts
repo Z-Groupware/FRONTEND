@@ -1,4 +1,4 @@
-import { addMockRoom, findMockRoom, listMockRooms, updateMockRoom } from "./rooms";
+import { addMockRoom, deleteMockRoom, findMockRoom, listMockRooms, updateMockRoom } from "./rooms";
 
 const DRAFT = {
   name: "  신관 세미나실  ",
@@ -39,5 +39,25 @@ describe("회의실 mock 스토어", () => {
 
   it("없는 id는 조회 시 null을 돌려준다", () => {
     expect(findMockRoom("존재하지-않음")).toBeNull();
+  });
+
+  it("회의실을 삭제하면 목록에서 사라지고 true를 돌려준다", () => {
+    const created = addMockRoom(DRAFT);
+    const before = listMockRooms().length;
+
+    const existed = deleteMockRoom(created.id);
+
+    expect(existed).toBe(true);
+    expect(listMockRooms()).toHaveLength(before - 1);
+    expect(findMockRoom(created.id)).toBeNull();
+  });
+
+  it("없는 id를 삭제하려 하면 false를 돌려주고 목록은 그대로다", () => {
+    const before = listMockRooms().length;
+
+    const existed = deleteMockRoom("존재하지-않음");
+
+    expect(existed).toBe(false);
+    expect(listMockRooms()).toHaveLength(before);
   });
 });

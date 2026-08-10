@@ -16,8 +16,10 @@ import { getMockActor } from "@/lib/mock-actor";
 import {
   createMeetingRoomAction,
   createRoomReservationAction,
+  deleteMeetingRoomAction,
   updateMeetingRoomAction,
 } from "./actions";
+import { findMockRoom } from "./mock/rooms";
 
 const revalidatePathMock = revalidatePath as unknown as jest.Mock;
 const getMockActorMock = getMockActor as unknown as jest.Mock;
@@ -112,6 +114,37 @@ describe("회의실 추가·수정", () => {
     );
 
     expect(result.errors.name).toBe("수정할 회의실을 찾을 수 없습니다");
+  });
+});
+
+describe("회의실 삭제", () => {
+  it("Admin이 아니면 삭제를 막는다(OWNER도 예외 없음)", async () => {
+    getMockActorMock.mockReturnValue({ id: 1, role: "OWNER" });
+
+    await expect(deleteMeetingRoomAction(roomForm({ id: "room-large" }))).rejects.toThrow(
+      "회의실을 삭제할 권한이 없습니다",
+    );
+    expect(revalidatePathMock).not.toHaveBeenCalled();
+  });
+
+  it("Admin 겸직자면 삭제할 수 있고, 목록에서 사라진다", async () => {
+    getMockActorMock.mockReturnValue({ id: 2, role: "MEMBER", isAdmin: true });
+    const created = await createMeetingRoomAction({ errors: {} }, roomForm(VALID_ROOM_ENTRIES));
+    revalidatePathMock.mockClear();
+
+    await deleteMeetingRoomAction(roomForm({ id: created.room!.id }));
+
+    expect(findMockRoom(created.room!.id)).toBeNull();
+    expect(revalidatePathMock).toHaveBeenCalledWith("/manage/rooms");
+    expect(revalidatePathMock).toHaveBeenCalledWith("/app/rooms");
+  });
+
+  it("없는 id를 삭제해도 조용히 넘어간다(중복 삭제 요청 방어)", async () => {
+    getMockActorMock.mockReturnValue({ id: 2, role: "MEMBER", isAdmin: true });
+
+    await expect(
+      deleteMeetingRoomAction(roomForm({ id: "존재하지-않음" })),
+    ).resolves.toBeUndefined();
   });
 });
 
