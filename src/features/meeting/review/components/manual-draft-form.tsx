@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import { DatePickerField } from "@/components/common/date-picker-field";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -76,20 +77,18 @@ export function ManualDraftForm({
             ))}
           </SelectContent>
         </Select>
-        <Input
-          type="date"
+        <DatePickerField
           aria-label="시작일"
           value={startDate}
           max={dueDate || undefined}
-          onChange={(event) => setStartDate(event.target.value)}
+          onChange={setStartDate}
           className="w-[150px]"
         />
-        <Input
-          type="date"
+        <DatePickerField
           aria-label="마감일"
           value={dueDate}
           min={startDate || undefined}
-          onChange={(event) => setDueDate(event.target.value)}
+          onChange={setDueDate}
           className="w-[150px]"
         />
       </div>
