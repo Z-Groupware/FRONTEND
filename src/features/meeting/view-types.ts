@@ -84,7 +84,17 @@ export interface MeetingAttendee {
   name: string;
 }
 
-/** 회의 상세 — **완료 회의만** 여기까지 온다(§3-2) */
+/**
+ * 산출물·발화 기록을 **아직 못 보여주는 이유** — 다 준비됐으면 `null`이다.
+ *
+ * ⚠️ **화면을 통째로 막지 않는다**(2026-08-10 팀 협의). 예정·진행중 회의도 시간·장소·참석자·
+ *    안건은 이미 정해진 값이라 볼 이유가 있다 — 없는 건 **회의가 남기는 것**(기록·산출물)뿐이라
+ *    그 두 칸에만 안내를 넣는다. 전면 차단은 있는 정보까지 감춘다.
+ * ⚠️ 세 이유를 뭉치지 않는다. 기다리는 대상이 각각 다르다 — 회의 시작 / 회의 종료 / 요약 완료.
+ */
+export type MeetingContentPending = "SCHEDULED" | "IN_PROGRESS" | "SUMMARIZING";
+
+/** 회의 상세 — 예정·진행중도 여기까지 온다(메타는 보여준다) */
 export interface MeetingDetail {
   id: string;
   title: string;
@@ -101,20 +111,20 @@ export interface MeetingDetail {
   outputKindLabel: string;
   outputs: MeetingOutput[];
   script: ScriptChunk[];
+  /** 산출물·발화 기록이 아직 없는 이유 — 다 찼으면 `null` */
+  pendingReason: MeetingContentPending | null;
 }
 
 /**
  * 상세 조회 결과 — 못 여는 이유까지 값으로 돌려준다.
  *
  * ⚠️ 화면이 이유를 알아야 맞는 말을 한다: 없는 회의는 `notFound()`, 권한 없음은
- *    잠금(에러가 아니다 — §3-2-1), 완료 전은 "완료 후 열람" 안내다. 뭉뚱그려 null을 주면
- *    세 경우가 같은 화면이 된다.
+ *    잠금(에러가 아니다 — §3-2-1)이다. 뭉뚱그려 null을 주면 두 경우가 같은 화면이 된다.
+ * ⚠️ **"아직 안 끝났다"는 여기 없다.** 예정·진행중·요약 중은 못 여는 게 아니라 **덜 찬 것**이라
+ *    `detail.pendingReason`으로 들어간다(2026-08-10 팀 협의).
  */
 export type MeetingDetailResult =
-  | { kind: "ok"; detail: MeetingDetail }
-  | { kind: "locked"; title: string }
-  | { kind: "notDone"; title: string; status: MeetingStatus }
-  | { kind: "notFound" };
+  { kind: "ok"; detail: MeetingDetail } | { kind: "locked"; title: string } | { kind: "notFound" };
 
 /**
  * 캡처 화면이 받는 것 — **Host가 회의를 진행하는 데 필요한 만큼만**(WORKFLOW §3-3).

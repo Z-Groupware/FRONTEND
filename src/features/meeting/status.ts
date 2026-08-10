@@ -40,8 +40,14 @@ export type MeetingCardAffordance =
   | "summarizing"
   /** 분석은 끝났고 Host가 액션을 검토·확정할 차례 */
   | "review"
-  /** 분석 실패 — Host가 [다시 요약하기](재제출 불필요, §3-5) */
-  | "retry"
+  /**
+   * 분석이 실패했다 — **알리기만 한다.**
+   *
+   * ⚠️ 다시 돌리는 자리는 여기가 아니라 마이페이지의 "요약이 중단된 회의"다(2026-08-10 팀 협의).
+   *    그래서 **Host든 아니든 같은 말**을 한다 — 못 여는 이유는 누구에게나 같고, 여기서
+   *    Host에게만 "실패"라고 하고 나머지에게 "요약 중"이라 하면 화면이 사람마다 다른 말을 한다.
+   */
+  | "failed"
   /** 회의록이 다 찼다 — 상세로 간다 */
   | "open";
 
@@ -55,8 +61,7 @@ export function meetingCardAffordanceOf(
     case AI_SUMMARY_STATUS.SUMMARIZING:
       return "summarizing";
     case AI_SUMMARY_STATUS.FAILED:
-      /* Host가 아니면 다시 부를 수 없다 — 그래도 못 연다는 건 말해야 한다 */
-      return meeting.isHost ? "retry" : "summarizing";
+      return "failed";
     case AI_SUMMARY_STATUS.REVIEWED:
       return meeting.isHost ? "review" : "summarizing";
     default:

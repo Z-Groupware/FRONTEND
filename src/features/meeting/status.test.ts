@@ -63,13 +63,11 @@ describe("meetingCardAffordanceOf", () => {
     ).toBe("summarizing");
   });
 
-  it("검토·재요약은 Host만 — 참석자에겐 기다리라고만 한다", () => {
+  it("검토는 Host만 — 참석자에겐 기다리라고만 한다", () => {
     expect(meetingCardAffordanceOf({ ...base, aiSummaryStatus: AI_SUMMARY_STATUS.REVIEWED })).toBe(
       "review",
     );
-    expect(meetingCardAffordanceOf({ ...base, aiSummaryStatus: AI_SUMMARY_STATUS.FAILED })).toBe(
-      "retry",
-    );
+
     expect(
       meetingCardAffordanceOf({
         ...base,
@@ -77,13 +75,19 @@ describe("meetingCardAffordanceOf", () => {
         aiSummaryStatus: AI_SUMMARY_STATUS.REVIEWED,
       }),
     ).toBe("summarizing");
+  });
+
+  it("요약 실패는 Host든 아니든 같은 말을 한다 — 다시 돌리는 자리는 마이페이지다", () => {
+    expect(meetingCardAffordanceOf({ ...base, aiSummaryStatus: AI_SUMMARY_STATUS.FAILED })).toBe(
+      "failed",
+    );
     expect(
       meetingCardAffordanceOf({
         ...base,
         isHost: false,
         aiSummaryStatus: AI_SUMMARY_STATUS.FAILED,
       }),
-    ).toBe("summarizing");
+    ).toBe("failed");
   });
 
   it("분배까지 끝나야 회의록이 열린다", () => {

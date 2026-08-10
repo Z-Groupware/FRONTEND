@@ -11,12 +11,11 @@ import Link from "next/link";
 
 import { ProjectTag } from "@/components/common/project-tag";
 import { MEETING_STATUS_BADGE_CLASS, MEETING_STATUS_LABEL } from "@/constants/meeting";
-import { pickPaletteColor } from "@/lib/palette";
 import { cn } from "@/lib/utils";
 
 import { type MeetingCardAffordance, meetingCardAffordanceOf } from "../status";
 import type { MeetingListItem } from "../view-types";
-import { ResummaryButton } from "./resummary-button";
+import { ProjectAccent } from "./project-accent";
 
 /**
  * 회의 카드 한 장.
@@ -30,17 +29,6 @@ import { ResummaryButton } from "./resummary-button";
  *    붙인다 — 안 그러면 [입장]이 있는 카드만 길어져 한 줄의 아랫변이 들쭉날쭉해진다.
  * ⚠️ 색은 **프로젝트 띠 하나뿐**이다(DESIGN §5: 색을 써도 되는 자리). 상태는 명도로 가른다.
  */
-
-function ProjectAccent({ tag }: { tag: string }) {
-  const color = pickPaletteColor(tag);
-  return (
-    <span
-      className="absolute inset-x-0 top-0 h-1"
-      style={{ backgroundColor: color.solidColor }}
-      aria-hidden
-    />
-  );
-}
 
 /**
  * 상태 배지 — **분석이 도는 동안은 회의 상태 대신 분석을 말한다.**
@@ -84,7 +72,7 @@ function StatusBadge({
     );
   }
 
-  if (affordance === "retry") {
+  if (affordance === "failed") {
     /* ⚠️ 색으로 알리는 건 에러뿐이다(DESIGN §5) — 실패는 그 하나에 해당한다 */
     return (
       <span className={cn(badgeClass, "border-destructive/30 text-destructive font-semibold")}>
@@ -235,12 +223,12 @@ function CardFooter({
           ⚠️ **재제출이 아니라 재요약이다**(§3-5). 파일은 이미 서버에 올라가 있어 회의를 다시
              할 필요가 없다 — 문구가 "다시 제출"이면 되돌릴 수 없는 종료를 또 하라는 말이 된다.
         */}
-        {affordance === "retry" && (
-          <ResummaryButton
-            meetingId={meeting.id}
-            className={cn(ACTION_CLASS, "disabled:opacity-60")}
-          />
-        )}
+        {/*
+          ⚠️ **[다시 요약]을 여기 두지 않는다**(2026-08-10 팀 협의). 재요약은 마이페이지의
+             "요약이 중단된 회의"가 맡는다 — 실패한 회의는 흔치 않은데 그 버튼 하나 때문에
+             목록 카드가 조작 화면이 되고, 같은 일을 두 곳에서 하게 된다(§관리 기능은 한 곳으로).
+             카드는 **왜 못 여는지만** 말한다.
+        */}
 
         {affordance === "live" && meeting.isHost && (
           <Link href={`/app/meeting/${meeting.id}/capture`} className={ACTION_CLASS}>
