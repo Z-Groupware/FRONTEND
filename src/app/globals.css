@@ -1715,12 +1715,18 @@
    *    `[role="radio"]`는 아직 쓰는 곳이 없지만 만드는 날 빠뜨리지 않도록 같이 적어 둔다.
    * ⚠️ base-ui는 꺼진 상태를 `aria-disabled`가 아니라 **`data-disabled`** 로 낼 때가 있다 —
    *    둘 다 빼야 꺼진 체크박스에 손이 안 뜬다.
+   * ⚠️ `button`·`select`는 `aria-disabled`도 뺀다. 네이티브 `disabled` 없이 그것만으로
+   *    꺼 두는 컨트롤이 있다(달력의 못 고르는 날 — `ui/calendar.tsx`). 그 자리에 손이
+   *    뜨면 눌러도 되는 줄 안다.
+   * ⚠️ **링크는 여기서 뺄 수 없다.** 브라우저 기본 스타일이 `a:link`에 이미 손을 주므로
+   *    선택자에서 제외해도 그대로 손이 뜬다 — 꺼진 링크를 만드는 날 `cursor`를 직접
+   *    되돌리는 규칙이 따로 필요하다. 지금 레포에는 그런 링크가 없다.
    */
   a[href],
   label[for],
   summary,
-  button:not(:disabled),
-  select:not(:disabled),
+  button:not(:disabled):not([aria-disabled="true"]),
+  select:not(:disabled):not([aria-disabled="true"]),
   [role="button"]:not([aria-disabled="true"]),
   [role="tab"]:not([aria-disabled="true"]),
   [role="option"]:not([aria-disabled="true"]),

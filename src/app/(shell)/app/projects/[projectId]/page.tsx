@@ -129,12 +129,15 @@ export default async function ProjectDetailPage({ params, searchParams }: Projec
               <div>
                 <dt className="text-muted-foreground text-[12px] leading-4">참여 팀</dt>
                 <dd
-                  className="flex items-center gap-1 pt-1.5"
+                  className="flex flex-wrap items-center gap-1 pt-1.5"
                   aria-label={`참여 팀: ${project.teamNames.join(", ")}`}
                 >
                   {teamOverflow > 0 ? (
                     <Tooltip>
-                      <TooltipTrigger render={<span className="flex items-center gap-1" />}>
+                      <TooltipTrigger
+                        tabIndex={0}
+                        render={<span className="flex flex-wrap items-center gap-1" />}
+                      >
                         {visibleTeamBadges}
                         <Badge variant="secondary" className="shrink-0">
                           +{teamOverflow}

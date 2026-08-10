@@ -18,7 +18,11 @@ import { pickPaletteColor } from "@/lib/palette";
  *    이름 오른쪽만 비고 나머지가 구겨진다. `table-fixed`가 있어야 이 값이 실제로 먹는다.
  * ⚠️ 좁아지면 가로로 스크롤한다(§레이아웃: 표는 `overflow-x-auto`로 감싼다).
  */
-export function ProjectListTable({ projects }: { projects: readonly ProjectListItemModel[] }) {
+interface ProjectListTableProps {
+  projects: readonly ProjectListItemModel[];
+}
+
+export function ProjectListTable({ projects }: ProjectListTableProps) {
   return (
     <div className="border-border overflow-x-auto border-t">
       <table className="w-full min-w-[760px] table-fixed text-[13px]">
@@ -175,7 +179,16 @@ function Row({ project }: { project: ProjectListItemModel }) {
         >
           {overflow > 0 ? (
             <Tooltip>
-              <TooltipTrigger render={<span className="flex flex-1 items-center gap-1" />}>
+              {/*
+                  ⚠️ **`tabIndex`가 있어야 키보드로 열린다.** trigger 를 `span` 으로
+                     그리면 포커스를 못 받아, 마우스를 올릴 수 없는 사람은 가려진 팀
+                     이름을 볼 방법이 없다(DnD 보드에 키보드 경로를 둔 것과 같은 이유).
+                     스크린리더는 위 `aria-label`이 이미 전체 목록을 읽어 준다.
+                */}
+              <TooltipTrigger
+                tabIndex={0}
+                render={<span className="flex flex-1 items-center gap-1" />}
+              >
                 {visibleTeamBadges}
                 <Badge variant="secondary" className="ml-auto shrink-0">
                   +{overflow}
