@@ -1,6 +1,8 @@
 import { CalendarClock, DoorOpen, MapPin, Users } from "lucide-react";
 import Link from "next/link";
 
+import { ProjectTag } from "@/components/common/project-tag";
+import { Badge } from "@/components/ui/badge";
 import {
   MEETING_STATUS,
   MEETING_STATUS_BADGE_CLASS,
@@ -34,8 +36,6 @@ function ProjectAccent({ tag }: { tag: string }) {
 }
 
 function CardBody({ meeting }: { meeting: MeetingListItem }) {
-  const color = pickPaletteColor(meeting.projectTag);
-
   return (
     <>
       {/* 위쪽 띠 — 어느 프로젝트인지(DESIGN §5). 세로 띠는 둥근 모서리에서 잘려 보였다 */}
@@ -56,15 +56,15 @@ function CardBody({ meeting }: { meeting: MeetingListItem }) {
       </div>
 
       <div className="flex flex-wrap items-center gap-1.5 pt-2">
-        <span
-          className="rounded px-1.5 py-px text-[11px] leading-4 font-medium"
-          style={{ backgroundColor: color.bgColor, color: color.textColor }}
-        >
-          {meeting.projectTag}
-        </span>
-        <span className="border-border text-muted-foreground rounded border px-1.5 py-px text-[11px] leading-4">
+        {/*
+          ⚠️ **공용 칩을 쓴다**(`components/common/project-tag`). 손으로 그린 칩이 열일곱
+             파일에 흩어져 있어서 한 군데를 다듬으면 나머지가 남았다 — 같은 태그가 화면마다
+             다른 모양으로 뜬다.
+        */}
+        <ProjectTag tag={meeting.projectTag} />
+        <Badge variant="outline" className="font-normal">
           {meeting.originLabel}
-        </span>
+        </Badge>
       </div>
 
       {/* 안건 요약 — 무슨 회의인지 한 줄(§3-2 안건은 별도 항목이다) */}
