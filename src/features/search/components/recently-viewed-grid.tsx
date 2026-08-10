@@ -72,7 +72,12 @@ function RecentlyViewedCard({ item }: RecentlyViewedCardProps) {
     </>
   );
 
-  const shape = "border-border flex items-start gap-3 rounded-xl border p-4";
+  /*
+    ⚠️ **같은 화면의 다른 카드와 같은 라운드를 쓴다**(`rounded-2xl`). 여기만 `xl`(18px)이라
+       바로 아래 목록 카드(26px)와 모서리가 갈렸다 — 한 화면에 두 종류가 있으면 어느 쪽이
+       규격인지 알 수 없다. 레포 전체도 `2xl`이 관례다.
+  */
+  const shape = "border-border flex items-start gap-3 rounded-2xl border p-4";
 
   if (item.kind === "PROJECT") {
     return (

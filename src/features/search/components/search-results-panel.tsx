@@ -37,9 +37,9 @@ export function SearchResultsPanel({
       {results.items.length === 0 ? (
         <div className="border-border flex flex-col items-center gap-2 border-t px-6 py-16 text-center">
           <SearchX className="text-muted-foreground/50 size-6" aria-hidden />
-          <p className="text-foreground text-sm font-medium">검색 결과가 없어요</p>
+          <p className="text-foreground text-[13px] leading-5 font-medium">검색 결과가 없습니다</p>
           <p className="text-muted-foreground text-xs">
-            다른 검색어로 찾거나 필터를 전체로 바꿔보세요.
+            다른 검색어로 찾거나 필터를 전체로 바꿔 주세요.
           </p>
         </div>
       ) : (
