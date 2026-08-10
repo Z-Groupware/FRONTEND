@@ -3,9 +3,10 @@
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
 import { Bell } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
 
+import { ConfirmDialog } from "@/components/common/confirm-dialog";
 import { FieldError } from "@/components/common/field-error";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -35,6 +36,8 @@ interface RoomReservationDialogProps {
    *  직접 못 부른다. */
   showParentTeamAction: boolean;
   teamActions: RoomTeamActionOption[];
+  /** 참석자 "내 부서만" 필터 기준 — `RoomAttendeePicker`로 그대로 흘려보낸다. */
+  viewerTeamName: string | null;
   /** 생성 성공 시 호출 — 재조회 없이 부모 화면에 바로 얹는다(§최적화: action 리턴값 그대로 반영). */
   onCreated: (created: RoomReservation) => void;
 }
@@ -62,13 +65,18 @@ function SlotSummary({ slotStart }: { slotStart: Date }) {
 
 interface DialogActionsProps {
   onCancel: () => void;
+  /** "즉시 예약" 클릭 — 여기서 바로 제출하지 않고 확인 모달을 먼저 띄운다. */
+  onRequestSubmit: () => void;
 }
 
 /**
  * 취소·제출 버튼 — `useFormStatus`는 `<form>`의 **자손** 컴포넌트에서만 호출할 수 있어서
  * `RoomReservationDialog`(그 `<form>`을 직접 그리는 컴포넌트) 안이 아니라 여기로 뺐다.
+ * ⚠️ "즉시 예약"은 `type="submit"`이 아니다 — 눌러도 바로 제출하지 않고 확인 모달을 먼저
+ *    띄운다. 실제 제출은 확인 모달의 [예약]에서 `form.requestSubmit()`으로 한다
+ *    (`RoomReservationDialog` 참고).
  */
-function DialogActions({ onCancel }: DialogActionsProps) {
+function DialogActions({ onCancel, onRequestSubmit }: DialogActionsProps) {
   const { pending } = useFormStatus();
 
   return (
@@ -76,7 +84,7 @@ function DialogActions({ onCancel }: DialogActionsProps) {
       <Button type="button" variant="outline" disabled={pending} onClick={onCancel}>
         취소
       </Button>
-      <Button type="submit" variant="ink" disabled={pending}>
+      <Button type="button" variant="ink" disabled={pending} onClick={onRequestSubmit}>
         {pending ? "예약 중" : "즉시 예약"}
       </Button>
     </div>
@@ -125,6 +133,7 @@ export function RoomReservationDialog({
   projects,
   showParentTeamAction,
   teamActions,
+  viewerTeamName,
   onCreated,
 }: RoomReservationDialogProps) {
   const { state, formAction, form, setForm, handleOpenChange } = useRoomReservationForm({
@@ -136,6 +145,14 @@ export function RoomReservationDialog({
   const [isPending, setIsPending] = useState(false);
   // ⚠️ `PendingReporter`의 effect 의존성이라 참조를 고정한다 — 안 그러면 매 렌더 다시 돈다.
   const handlePendingChange = useCallback((next: boolean) => setIsPending(next), []);
+
+  /**
+   * "즉시 예약" 확인 모달 — 실제 등록은 이 창의 [예약]에서 `formRef.requestSubmit()`으로
+   * 진짜 제출을 건다(§DialogActions). 폼 자체의 값(제목·회의실 등)은 그대로 있으니 두 번
+   * 입력할 필요는 없다.
+   */
+  const formRef = useRef<HTMLFormElement>(null);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   return (
     <Dialog
@@ -152,7 +169,7 @@ export function RoomReservationDialog({
           <DialogTitle>회의실 예약</DialogTitle>
         </DialogHeader>
 
-        <form action={formAction}>
+        <form ref={formRef} action={formAction}>
           <PendingReporter onChange={handlePendingChange} />
           <input
             type="hidden"
@@ -187,6 +204,7 @@ export function RoomReservationDialog({
                   members={members}
                   selectedIds={form.attendeeIds}
                   onChange={(attendeeIds) => setForm((prev) => ({ ...prev, attendeeIds }))}
+                  viewerTeamName={viewerTeamName}
                 />
                 <FieldError reserveSpace message={state.errors.attendeeIds} />
               </div>
@@ -202,10 +220,25 @@ export function RoomReservationDialog({
           </div>
 
           <div className="border-border flex items-center justify-end gap-4 border-t px-6 py-4">
-            <DialogActions onCancel={() => handleOpenChange(false)} />
+            <DialogActions
+              onCancel={() => handleOpenChange(false)}
+              onRequestSubmit={() => setShowConfirm(true)}
+            />
           </div>
         </form>
       </DialogContent>
+
+      <ConfirmDialog
+        isOpen={showConfirm}
+        onOpenChange={setShowConfirm}
+        title="이대로 등록하시겠습니까?"
+        description="등록하면 참석자에게 알림이 전송되고, 곧바로 회의실이 예약됩니다."
+        confirmLabel="예약"
+        onConfirm={() => {
+          setShowConfirm(false);
+          formRef.current?.requestSubmit();
+        }}
+      />
     </Dialog>
   );
 }

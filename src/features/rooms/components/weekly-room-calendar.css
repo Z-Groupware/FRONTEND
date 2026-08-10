@@ -85,8 +85,13 @@
   transition: background-color 100ms;
 }
 
+/*
+  ⚠️ 6% → 10%로 올렸다(2026-08-10) — 6%는 밝은 화면에서 커서만 바뀌고 배경 변화가 거의
+     안 보인다는 피드백이 있었다. 굵은 색 대신 그대로 `--foreground` 믹스 비율만 올려서
+     토큰은 그대로 유지한다(§디자인 토큰: 하드코딩 금지).
+*/
 .rbc-day-slot .rbc-time-slot:hover {
-  background-color: color-mix(in srgb, var(--foreground) 6%, transparent);
+  background-color: color-mix(in srgb, var(--foreground) 10%, transparent);
 }
 
 .rbc-day-slot .rbc-time-slot {
