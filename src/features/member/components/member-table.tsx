@@ -169,13 +169,15 @@ export function MemberTable({ members }: { members: ManagedMember[] }) {
                 {member.teamName ?? "-"}
               </td>
               <td className="px-4 py-3.5 text-center text-[13px] leading-5">{member.position}</td>
-              <td className="px-4 py-3.5 text-center">
+              {/* ⚠️ 배지만 든 칸에도 본문 크기를 준다 — 안 주면 셀이 기본 16px을 물려받아 줄 높이가 달라진다 */}
+              <td className="px-4 py-3.5 text-center text-[13px] leading-5">
                 <AuthorityCell member={member} />
               </td>
               <td className="text-muted-foreground px-4 py-3.5 text-center text-[13px] leading-5">
                 {member.roleLabel ?? "없음"}
               </td>
-              <td className="px-4 py-3.5 text-center">
+              {/* ⚠️ 배지만 든 칸에도 본문 크기를 준다 — 안 주면 셀이 기본 16px을 물려받아 줄 높이가 달라진다 */}
+              <td className="px-4 py-3.5 text-center text-[13px] leading-5">
                 <StatusCell status={member.status} />
               </td>
               {/*

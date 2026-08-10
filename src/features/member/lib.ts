@@ -1,4 +1,7 @@
-import { MEETING_ITEM_HEIGHT } from "@/components/common/dashboard-meeting-item";
+import {
+  DASHBOARD_BOX_HEADER_HEIGHT,
+  MEETING_ITEM_HEIGHT,
+} from "@/components/common/dashboard-meeting-item";
 import { ACTION_STATUS, type ActionStatus } from "@/constants/domain";
 
 /**
@@ -10,11 +13,13 @@ export const DUE_SOON_BOX_MIN_HEIGHT = 280;
 /** 참석 회의 최대 노출 수 */
 export const MEETING_MAX_ITEMS = 5;
 
-/** 두 박스 공통 헤더 높이(px) — `px-4 py-3` + 아래 보더 1px. */
-const BOX_HEADER_HEIGHT = 45;
-
-/** 참석 회의 박스 — 최신 5건에 딱 맞춰 고정(스크롤 없음). 아이템 높이는 공용 컴포넌트가 정본. */
-export const MEETING_BOX_HEIGHT = BOX_HEADER_HEIGHT + MEETING_MAX_ITEMS * MEETING_ITEM_HEIGHT;
+/*
+ * ⚠️ **회의 카드 높이를 고정하지 않는다**(2026-08-10). 머리 줄을 45px로 잡아 뒀는데 실제는
+ *    65px이라 마지막 줄이 잘려 나갔다 — 카드는 내용만큼 자란다. 아래 값은 **로딩 뼈대 전용**이다
+ *    (`owner/lib.ts`와 같은 정리).
+ */
+export const MEETING_BOX_SKELETON_HEIGHT =
+  DASHBOARD_BOX_HEADER_HEIGHT + MEETING_MAX_ITEMS * MEETING_ITEM_HEIGHT;
 
 /**
  * 마감까지 남은 일수 — 파생값이라 저장하지 않고 계산한다(CLAUDE.md §도메인 상수).

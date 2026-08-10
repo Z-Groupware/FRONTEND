@@ -5,12 +5,15 @@ import { DashboardMeetingItem } from "@/components/common/dashboard-meeting-item
 import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { KpiCard } from "@/features/owner/components/kpi-card";
 import { LeaderStatusRow } from "@/features/owner/components/leader-status-row";
-import { getDaysUntilDue, LEADER_BOX_HEIGHT, MEETING_BOX_HEIGHT } from "@/features/owner/lib";
+import { getDaysUntilDue, LEADER_BOX_MAX_HEIGHT } from "@/features/owner/lib";
 import { getOwnerDashboardOverview } from "@/features/owner/server";
 
 export const metadata: Metadata = {
   title: "대시보드",
 };
+
+/** 표 머리 셀 — 규격은 DESIGN §3·§4(라벨 12px, 이름 열만 왼쪽). */
+const HEAD_CELL_CLASS = "text-muted-foreground h-9 text-[12px] leading-4 font-normal";
 
 export default async function OwnerDashboardPage() {
   const { projects, activeMemberCount, onLeaveMemberCount, leaderRows, projectMeetings } =
@@ -47,18 +50,32 @@ export default async function OwnerDashboardPage() {
           ))}
         </div>
 
+        {/*
+          ⚠️ 높이를 고정하지 않는다 — 내용만큼 자라고, 팀이 많아질 때만 위 한도에서 멈춘다
+             (`LEADER_BOX_MAX_HEIGHT`). 고정 높이였을 때는 팀장이 넷이라 바닥이 90px 비었다.
+        */}
         <section
           className="border-border bg-card flex flex-col overflow-hidden rounded-2xl border"
-          style={{ height: LEADER_BOX_HEIGHT }}
+          style={{ maxHeight: LEADER_BOX_MAX_HEIGHT }}
         >
-          <div className="border-border flex shrink-0 items-center border-b px-7 pt-6 pb-3">
+          <div className="border-border flex shrink-0 items-baseline justify-between gap-3 border-b px-7 pt-6 pb-3">
             <h2 className="flex items-center gap-2 text-[17px] leading-7 font-semibold tracking-[-0.3px]">
               <span className="bg-foreground size-2 rounded-full" aria-hidden />
               팀장 현황
             </h2>
+            {/* 카드 제목 줄 오른쪽 끝은 보조 정보 한 줄이다(DESIGN §2) */}
+            <p className="text-muted-foreground text-[12px] leading-4 tabular-nums">
+              전체 {leaderRows.length}팀
+            </p>
           </div>
           {leaderRows.length === 0 ? (
-            <p className="text-muted-foreground flex flex-1 items-center justify-center text-sm">
+            /*
+              ⚠️ 빈 상태가 **자기 높이를 갖는다**(`py-10`). 카드 높이가 고정이던 때는 `flex-1`이
+                 그 안에서 문구를 세로 가운데로 밀어 줬는데, 높이를 걷어내면서 남는 공간이
+                 0이 됐다 — `flex-1`은 나눌 것이 없으면 아무 일도 안 해서 문구가 머리 줄
+                 보더에 붙어 버린다(세 대시보드 다섯 자리가 같은 상태였다).
+            */
+            <p className="text-muted-foreground flex flex-1 items-center justify-center px-7 py-10 text-center text-[13px] leading-5 break-keep">
               아직 등록된 팀장이 없습니다.
             </p>
           ) : (
@@ -66,18 +83,21 @@ export default async function OwnerDashboardPage() {
             // 과도하게 줄지 않게 테이블에 최소 폭을 준다. shadcn Table이 자체적으로 두는
             // table-container(overflow-x-auto)를 visible로 눌러 스크롤 소유권을 여기로 넘긴다.
             <div className="scrollbar-hidden flex-1 overflow-auto [&_[data-slot=table-container]]:overflow-visible">
-              <Table className="min-w-[560px] table-fixed">
+              <Table className="min-w-[560px] table-fixed text-[13px]">
+                {/*
+                  ⚠️ 머리 줄에 **띠**를 깐다(DESIGN §3) — 보더만으로는 머리와 본문이 같은 면으로
+                     읽힌다. `--secondary`는 흰 카드와 2%밖에 차이가 없어 안 보이므로 먹색을
+                     옅게 깐다(행 hover가 4%라 그보다 진한 6%다).
+                  ⚠️ 높이는 **셀에** 건다. `<tr>`에 걸면 `TableHead`의 기본 `h-10`이 이겨서
+                     안 먹는다 — 행 높이를 정하는 건 셀이다.
+                */}
                 <TableHeader>
-                  <TableRow>
-                    <TableHead className="text-muted-foreground pl-4 text-xs">이름</TableHead>
-                    <TableHead className="text-muted-foreground text-center text-xs">
-                      이메일
-                    </TableHead>
-                    <TableHead className="text-muted-foreground text-center text-xs">팀</TableHead>
-                    <TableHead className="text-muted-foreground text-center text-xs">
-                      상태
-                    </TableHead>
-                    <TableHead className="text-muted-foreground pr-4 text-center text-xs">
+                  <TableRow className="bg-foreground/[0.06] border-border hover:bg-foreground/[0.06] border-b">
+                    <TableHead className={`${HEAD_CELL_CLASS} pl-6`}>이름</TableHead>
+                    <TableHead className={`${HEAD_CELL_CLASS} text-center`}>이메일</TableHead>
+                    <TableHead className={`${HEAD_CELL_CLASS} text-center`}>팀</TableHead>
+                    <TableHead className={`${HEAD_CELL_CLASS} text-center`}>상태</TableHead>
+                    <TableHead className={`${HEAD_CELL_CLASS} pr-6 text-center`}>
                       휴직기간
                     </TableHead>
                   </TableRow>
@@ -92,10 +112,9 @@ export default async function OwnerDashboardPage() {
           )}
         </section>
 
-        <section
-          className="border-border bg-card flex flex-col overflow-hidden rounded-2xl border"
-          style={{ height: MEETING_BOX_HEIGHT }}
-        >
+        {/* ⚠️ 여기도 높이를 고정하지 않는다 — 다섯 건이 하드 캡이라 자라 봐야 다섯 줄이다.
+            고정했을 때는 머리 줄 높이를 20px 적게 잡아 **마지막 줄이 잘려** 나갔다. */}
+        <section className="border-border bg-card flex flex-col overflow-hidden rounded-2xl border">
           <div className="border-border flex shrink-0 items-baseline justify-between gap-3 border-b px-7 pt-6 pb-3">
             <h2 className="flex items-center gap-2 text-[17px] leading-7 font-semibold tracking-[-0.3px]">
               <span className="bg-foreground size-2 rounded-full" aria-hidden />
@@ -103,17 +122,17 @@ export default async function OwnerDashboardPage() {
             </h2>
             <Link
               href="/app/meeting"
-              className="text-muted-foreground hover:text-foreground text-xs transition-colors"
+              className="text-muted-foreground hover:text-foreground text-[12px] leading-4 transition-colors"
             >
               전체 보기 →
             </Link>
           </div>
           {projectMeetings.length === 0 ? (
-            <p className="text-muted-foreground flex flex-1 items-center justify-center text-sm">
+            <p className="text-muted-foreground flex flex-1 items-center justify-center px-7 py-10 text-center text-[13px] leading-5 break-keep">
               예정된 프로젝트 회의가 없습니다.
             </p>
           ) : (
-            <ul className="flex-1 overflow-hidden">
+            <ul>
               {projectMeetings.map((meeting, index) => (
                 <DashboardMeetingItem key={meeting.id} meeting={meeting} showDivider={index > 0} />
               ))}

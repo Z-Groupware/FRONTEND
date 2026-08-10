@@ -21,7 +21,7 @@ export function LeaderStatusRow({ leader }: LeaderStatusRowProps) {
 
   return (
     <TableRow className="h-14">
-      <TableCell className="pl-4">
+      <TableCell className="pl-6">
         <div className="flex items-center gap-2">
           {avatar}
           <span className="truncate">{leader.name}</span>
@@ -39,7 +39,12 @@ export function LeaderStatusRow({ leader }: LeaderStatusRowProps) {
           {MEMBER_STATUS_LABEL[leader.status]}
         </Badge>
       </TableCell>
-      <TableCell className="text-muted-foreground pr-4 text-center font-mono">
+      {/*
+        ⚠️ `font-mono`를 걸지 않는다. 값이 `8월 1일~15일` 같은 **한글 섞인 문자열**이라
+           고정폭 글꼴이 한글을 대체 글꼴로 떨어뜨려 자간이 튀었다 — 숫자 자리만 잡으면
+           되므로 `tabular-nums`가 맞다(DESIGN §4).
+      */}
+      <TableCell className="text-muted-foreground pr-6 text-center tabular-nums">
         {leader.leavePeriod ?? "-"}
       </TableCell>
     </TableRow>

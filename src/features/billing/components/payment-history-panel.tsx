@@ -38,7 +38,12 @@ export function PaymentHistoryPanel({ payments }: PaymentHistoryPanelProps) {
         <div className="border-border overflow-x-auto border-t">
           <table className="w-full min-w-[640px] border-collapse">
             <thead>
-              <tr className="border-border text-muted-foreground border-b text-[12px] leading-4">
+              {/*
+                ⚠️ 머리에 **띠**를 깐다(DESIGN §3) — 보더만으로는 머리와 본문이 같은 면으로
+                   읽힌다. `--secondary`는 흰 카드와 2%밖에 차이가 없어 안 보이므로 먹색을
+                   옅게 깐다(행 hover보다 진해야 위아래가 안 뒤집힌다).
+              */}
+              <tr className="bg-foreground/[0.06] border-border text-muted-foreground border-b text-[12px] leading-4">
                 <th scope="col" className="px-6 py-3 text-center font-medium">
                   결제일
                 </th>
@@ -93,7 +98,8 @@ export function PaymentHistoryPanel({ payments }: PaymentHistoryPanelProps) {
                   <td className="px-3 py-3.5 text-center text-[13px] leading-5 tabular-nums">
                     {formatWon(payment.amount)}
                   </td>
-                  <td className="px-6 py-3.5 text-center">
+                  {/* ⚠️ 배지만 든 칸에도 본문 크기를 준다 — 안 주면 셀이 기본 16px을 물려받아 줄 높이가 달라진다 */}
+                  <td className="px-6 py-3.5 text-center text-[13px] leading-5">
                     <span
                       className={
                         payment.status === PAYMENT_STATUS.FAILED

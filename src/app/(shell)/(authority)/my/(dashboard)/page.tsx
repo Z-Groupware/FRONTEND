@@ -4,7 +4,7 @@ import { DashboardMeetingItem } from "@/components/common/dashboard-meeting-item
 import { isDelayed } from "@/constants/domain";
 import type { TimelineActionInput } from "@/features/member/action-timeline";
 import { ActionTimeline, ActionTimelineLegend } from "@/features/member/components/action-timeline";
-import { DUE_SOON_BOX_MIN_HEIGHT, MEETING_BOX_HEIGHT } from "@/features/member/lib";
+import { DUE_SOON_BOX_MIN_HEIGHT } from "@/features/member/lib";
 import { getMemberDashboardOverview } from "@/features/member/server";
 import { pickPaletteColor } from "@/lib/palette";
 
@@ -54,10 +54,7 @@ export default async function MemberDashboardPage() {
         </section>
 
         {/* 참석 회의 — 최신 5건 고정 */}
-        <section
-          className="border-border bg-card flex shrink-0 flex-col overflow-hidden rounded-2xl border"
-          style={{ height: MEETING_BOX_HEIGHT }}
-        >
+        <section className="border-border bg-card flex shrink-0 flex-col overflow-hidden rounded-2xl border">
           <div className="border-border flex shrink-0 items-baseline justify-between gap-3 border-b px-7 pt-6 pb-3">
             <h2 className="flex items-center gap-2 text-[17px] leading-7 font-semibold tracking-[-0.3px]">
               <span className="bg-foreground size-2 rounded-full" aria-hidden />
@@ -66,11 +63,11 @@ export default async function MemberDashboardPage() {
             <span className="text-muted-foreground text-[12px] leading-4">최신 5건</span>
           </div>
           {attendedMeetings.length === 0 ? (
-            <p className="text-muted-foreground flex flex-1 items-center justify-center text-sm">
+            <p className="text-muted-foreground flex flex-1 items-center justify-center px-7 py-10 text-center text-[13px] leading-5 break-keep">
               참석할 회의가 없습니다.
             </p>
           ) : (
-            <ul className="flex-1 overflow-hidden">
+            <ul>
               {attendedMeetings.map((meeting, index) => (
                 <DashboardMeetingItem key={meeting.id} meeting={meeting} showDivider={index > 0} />
               ))}

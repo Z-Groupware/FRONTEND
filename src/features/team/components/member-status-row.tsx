@@ -21,7 +21,7 @@ export function MemberStatusRow({ member }: MemberStatusRowProps) {
 
   return (
     <TableRow className="h-14">
-      <TableCell className="pl-4">
+      <TableCell className="pl-6">
         <div className="flex items-center gap-2">
           {avatar}
           <span className="truncate">{member.name}</span>
@@ -29,10 +29,11 @@ export function MemberStatusRow({ member }: MemberStatusRowProps) {
       </TableCell>
       <TableCell className="text-muted-foreground text-center">{member.position}</TableCell>
       <TableCell className="text-muted-foreground text-center">{member.role}</TableCell>
-      <TableCell className="text-muted-foreground text-center font-mono tabular-nums">
+      {/* ⚠️ `font-mono`를 걸지 않는다 — 값이 `3건`이라 한글이 섞이면 대체 글꼴로 떨어져 자간이 튄다(DESIGN §4) */}
+      <TableCell className="text-muted-foreground text-center tabular-nums">
         {member.assignedActionCount}건
       </TableCell>
-      <TableCell className="pr-4 text-center">
+      <TableCell className="pr-6 text-center">
         <Badge
           variant={isOnVacation ? "outline" : "secondary"}
           className={isOnVacation ? "border-warning text-warning" : undefined}

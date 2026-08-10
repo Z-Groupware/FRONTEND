@@ -52,9 +52,6 @@ export default async function AppMePage({ searchParams }: AppMePageProps) {
     <div className="flex-1 overflow-y-auto px-8 py-7">
       <div className="mx-auto w-full max-w-[1440px]">
         <div className="mx-auto flex w-full max-w-[600px] flex-col gap-5">
-          {/* ⚠️ 화면 전체에 보이는 제목은 없지만 `h1`은 페이지당 하나 있어야 한다(§SEO·a11y) */}
-          <h1 className="sr-only">마이페이지</h1>
-
           <nav aria-label="마이페이지 탭" className="border-border flex gap-4 border-b">
             {PROFILE_TABS.map((t) => (
               <Link
