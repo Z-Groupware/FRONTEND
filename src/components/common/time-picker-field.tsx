@@ -20,6 +20,10 @@ function parseValue(value: string): Date | undefined {
 }
 
 function buildOptions(step: number): string[] {
+  if (!Number.isInteger(step) || step <= 0) {
+    throw new Error(`TimePickerField: step은 양의 정수여야 합니다 (받은 값: ${step})`);
+  }
+
   const options: string[] = [];
   for (let minutes = 0; minutes < MINUTES_IN_DAY; minutes += step) {
     const hour = Math.floor(minutes / 60)
@@ -79,7 +83,7 @@ export function TimePickerField({
   return (
     <Popover open={open} onOpenChange={setOpen}>
       {/* ⚠️ 네이티브 제출용 — 화면엔 안 보이지만 `FormData`엔 `name`으로 잡힌다. */}
-      {name && <input type="hidden" name={name} value={value} />}
+      {name && <input type="hidden" name={name} value={value} disabled={disabled} />}
       <PopoverTrigger
         render={
           <Button
