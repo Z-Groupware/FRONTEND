@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { ProjectTag } from "@/components/common/project-tag";
 import { formatDate } from "@/lib/date";
 
 import type { SearchResultItem } from "../types";
@@ -67,7 +68,18 @@ function RecentlyViewedCard({ item }: RecentlyViewedCardProps) {
         <p className="text-foreground truncate text-[13px] leading-5 font-semibold">
           {title(item)}
         </p>
-        <p className="text-muted-foreground mt-1 truncate text-[11px] leading-4">{meta(item)}</p>
+        {/*
+          ⚠️ **어느 프로젝트 것인지 칩으로 보여 준다.** 밑줄 문구에 프로젝트 이름이 글자로
+             섞여 있어 훑을 때 안 보였다 — 칩은 색이 있어 눈에 먼저 걸린다.
+          ⚠️ 프로젝트 카드 자신은 제목이 곧 프로젝트라 칩을 또 달지 않는다.
+        */}
+        <p className="text-muted-foreground mt-1.5 flex items-center gap-2 truncate text-[11px] leading-4">
+          {/* ⚠️ 회의·액션은 `projectTag`, 프로젝트는 `tag`다 — 이름이 갈리므로 종류로 가른다 */}
+          {(item.kind === "MEETING" || item.kind === "ACTION") && (
+            <ProjectTag tag={item.projectTag} />
+          )}
+          <span className="truncate">{meta(item)}</span>
+        </p>
       </div>
     </>
   );
@@ -77,13 +89,22 @@ function RecentlyViewedCard({ item }: RecentlyViewedCardProps) {
        바로 아래 목록 카드(26px)와 모서리가 갈렸다 — 한 화면에 두 종류가 있으면 어느 쪽이
        규격인지 알 수 없다. 레포 전체도 `2xl`이 관례다.
   */
-  const shape = "border-border flex items-start gap-3 rounded-2xl border p-4";
+  /*
+    ⚠️ **카드에 바탕을 준다**(`bg-card`). 테두리만 있던 때는 바탕이 셸과 같은 흰색이라
+       카드가 아니라 그어 둔 네모로 보였다 — 같은 화면의 목록 카드는 이미 `bg-card`다.
+    ⚠️ 그림자는 `.app-shell .bg-card`가 알아서 얕게 깐다(§디자인 토큰) — 여기서 따로 얹지 않는다.
+  */
+  const shape = "border-border bg-card flex items-start gap-3 rounded-2xl border p-4";
 
   if (item.kind === "PROJECT") {
     return (
       <Link
         href={`/app/projects/${item.id}`}
-        className={`${shape} hover:bg-foreground/[0.03] transition-colors`}
+        /*
+          ⚠️ 누를 수 있는 카드만 **테두리가 진해진다.** 배경만 살짝 바뀌면 눌리는 카드인지
+             아닌지 구분이 안 됐다 — 넷 중 프로젝트 하나만 링크다.
+        */
+        className={`${shape} hover:border-foreground/25 hover:bg-foreground/[0.03] transition-colors`}
       >
         {inner}
       </Link>

@@ -52,14 +52,17 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   return (
     <main className="min-h-0 flex-1 overflow-y-auto px-8 py-7">
       {/*
-        ⚠️ 바깥은 다른 목록 화면과 같은 1440(§DESIGN 4 폭)이지만, 검색은 한 줄 입력에서
-           시작하는 화면이라 안쪽 내용은 공지 상세처럼 720으로 좁힌다(§DESIGN 1 "읽는 글은 좁게").
+        ⚠️ **목록 화면과 같은 폭(1440)을 왼쪽 끝에서부터 쓴다**(§DESIGN 4). 전에는 그 안에서
+           내용만 720으로 **가운데 띄웠는데**, 제목·아이콘은 왼쪽 끝에 있고 내용만 한가운데라
+           **축이 둘**이 됐다 — 화면이 안 맞는 것처럼 읽혔다(액션 상세에서 겪은 것과 같다).
+        ⚠️ **입력만 좁게 둔다.** 한 줄 입력이 1440까지 늘어나면 글자가 왼쪽 끝에만 붙고
+           오른쪽이 통째로 빈다 — 결과 목록은 넓을수록 좋지만 입력은 아니다.
       */}
-      <div className="mx-auto w-full max-w-[1440px]">
-        <div className="mx-auto flex w-full max-w-[720px] flex-col gap-7">
+      <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-7">
+        <div className="w-full max-w-[720px]">
           <SearchInput keyword={query.keyword} />
-          {content}
         </div>
+        {content}
       </div>
     </main>
   );

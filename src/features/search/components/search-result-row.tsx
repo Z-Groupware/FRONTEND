@@ -1,8 +1,8 @@
 import Link from "next/link";
 
+import { ProjectTag } from "@/components/common/project-tag";
 import { AUTHORITY_BADGE_CLASS, AUTHORITY_LABEL } from "@/constants/authority";
 import { formatDate } from "@/lib/date";
-import { pickPaletteColor } from "@/lib/palette";
 import { cn } from "@/lib/utils";
 
 import type { SearchResultItem } from "../types";
@@ -38,8 +38,12 @@ export function SearchResultRow({ item, keyword }: SearchResultRowProps) {
             <MatchText text={rowSnippet(item) ?? ""} keyword={keyword} />
           </p>
         )}
-        <p className="text-muted-foreground/70 mt-1.5 flex items-center gap-1.5 text-[11px] leading-4">
-          <ProjectDot item={item} />
+        <p className="text-muted-foreground/70 mt-1.5 flex items-center gap-2 text-[11px] leading-4">
+          {/*
+            ⚠️ **색 점 대신 태그 칩을 세운다.** 팔레트가 열한 색뿐이라 프로젝트가 겹치면
+               점만으로는 어느 쪽인지 알 수 없다(§palette) — 칩은 색과 이름을 같이 들고 있다.
+          */}
+          <ProjectTagOf item={item} />
           <MatchText text={rowMeta(item)} keyword={keyword} />
         </p>
       </div>
@@ -73,7 +77,7 @@ export function SearchResultRow({ item, keyword }: SearchResultRowProps) {
   return <li className={cn(ROW_SHAPE, "border-border not-first:border-t")}>{content}</li>;
 }
 
-function ProjectDot({ item }: { item: SearchResultItem }) {
+function ProjectTagOf({ item }: { item: SearchResultItem }) {
   const tag =
     item.kind === "MEETING" || item.kind === "ACTION"
       ? item.projectTag
@@ -82,14 +86,7 @@ function ProjectDot({ item }: { item: SearchResultItem }) {
         : null;
   if (!tag) return null;
 
-  const color = pickPaletteColor(tag);
-  return (
-    <span
-      className="size-1.5 shrink-0 rounded-full"
-      style={{ backgroundColor: color.solidColor }}
-      aria-hidden
-    />
-  );
+  return <ProjectTag tag={tag} />;
 }
 
 function rowTitle(item: SearchResultItem): string {

@@ -1,7 +1,7 @@
 import Link from "next/link";
 
+import { ProjectTag } from "@/components/common/project-tag";
 import { AUTHORITY_BADGE_CLASS, AUTHORITY_LABEL } from "@/constants/authority";
-import { pickPaletteColor } from "@/lib/palette";
 
 import type { PersonBrowseItem, ProjectBrowseItem } from "../types";
 
@@ -18,18 +18,18 @@ export function BrowseProjects({ projects }: BrowseProjectsProps) {
       <h2 className="text-muted-foreground mb-3 text-[12px] leading-4">프로젝트로 찾기</h2>
       <ul className="border-border bg-card divide-border divide-y overflow-hidden rounded-2xl border">
         {projects.map((project) => {
-          const color = pickPaletteColor(project.tag);
           return (
             <li key={project.id}>
               <Link
                 href={`/app/projects/${project.id}`}
                 className="hover:bg-foreground/[0.03] focus-visible:ring-ring flex items-center gap-2.5 px-5 py-3.5 text-[13px] transition-colors focus-visible:ring-2 focus-visible:outline-hidden"
               >
-                <span
-                  className="size-2 shrink-0 rounded-full"
-                  style={{ backgroundColor: color.solidColor }}
-                  aria-hidden
-                />
+                {/*
+                  ⚠️ **색 점 대신 태그 칩을 세운다.** 점은 색만 있고 글자가 없어, 색이 겹치는
+                     프로젝트끼리(팔레트가 열한 색뿐이라 겹친다 — §palette) 구분이 안 됐다.
+                     칩은 색과 이름을 함께 들고 있어 점이 못 하던 일을 한다.
+                */}
+                <ProjectTag tag={project.tag} />
                 <span className="min-w-0 flex-1 truncate">{project.name}</span>
                 <span className="text-muted-foreground shrink-0 text-xs tabular-nums">
                   회의 {project.meetingCount}건

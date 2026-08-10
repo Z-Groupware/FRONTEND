@@ -10,7 +10,7 @@ interface SearchLayoutProps {
 export default function SearchLayout({ children }: SearchLayoutProps) {
   return (
     <>
-      <PageHeader title="검색" icon={Search} meta="⌘K" />
+      <PageHeader title="검색" icon={Search} />
       {children}
     </>
   );
