@@ -41,7 +41,13 @@ export function LeaderStatusRow({ leader }: LeaderStatusRowProps) {
         */}
         <div className="flex items-center gap-2">
           {avatar}
-          {/* ⚠️ 그래도 잘릴 수 있으니 전체 이름을 남긴다 — 옆 이메일 칸과 같은 처리다 */}
+          {/*
+            ⚠️ **다시 `width`로 못 박지 않는다**(2026-08-10, 리뷰 제안 반려). 고정 폭이면 긴 이름의
+               중심이 머리글과 늘 맞지만, 그 대가로 **사람 이름이 잘린다**(다섯 자·영문). 맞바꿀
+               것이 아니다 — 정렬은 보기 좋자고 하는 일이고 이름은 지워지면 안 되는 값이다.
+               흔한 석~넉 자에서는 최소 폭이 곧 실제 폭이라 중심이 그대로 맞는다.
+            ⚠️ 그래도 잘릴 수 있으니 전체 이름을 남긴다 — 옆 이메일 칸과 같은 처리다.
+          */}
           <span
             className="truncate text-center"
             style={{ minWidth: LEADER_NAME_WIDTH }}
