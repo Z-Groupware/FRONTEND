@@ -4,8 +4,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import {
-  ActionDetailInfoCard,
   type ActionDetailInfoItem,
+  ActionDetailInfoRows,
 } from "@/components/common/action-detail-info-card";
 import { formatMeetingDate } from "@/components/common/dashboard-meeting-item";
 import { isDelayed } from "@/constants/domain";
@@ -89,7 +89,7 @@ export default async function TeamActionDetailPage({
           <div className="flex items-center gap-1.5">
             <p className="truncate">{teamAction.sourceMeeting.title}</p>
             <span
-              className="shrink-0 rounded px-1.5 py-0.5 font-mono text-[10px] leading-none font-semibold"
+              className="shrink-0 rounded px-1.5 py-px text-[11px] leading-4 font-medium"
               style={{ backgroundColor: tagColor.bgColor, color: tagColor.textColor }}
             >
               {teamAction.projectTag}
@@ -111,7 +111,7 @@ export default async function TeamActionDetailPage({
           <div className="flex items-center gap-1.5">
             <p className="truncate">{project.name}</p>
             <span
-              className="shrink-0 rounded px-1.5 py-0.5 font-mono text-[10px] leading-none font-semibold"
+              className="shrink-0 rounded px-1.5 py-px text-[11px] leading-4 font-medium"
               style={{ backgroundColor: tagColor.bgColor, color: tagColor.textColor }}
             >
               {project.tag}
@@ -129,31 +129,25 @@ export default async function TeamActionDetailPage({
   return (
     <main className="scrollbar-hidden min-h-0 flex-1 overflow-y-auto px-8 py-7">
       <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-4">
-        <div className="flex flex-col gap-1">
-          <p className="text-muted-foreground text-[11px] leading-4">
-            <Link href="/app/projects" className="hover:text-foreground">
-              프로젝트
-            </Link>{" "}
-            &gt;{" "}
-            <Link href={`/app/projects/${project.id}`} className="hover:text-foreground">
-              {project.name}
-            </Link>{" "}
-            &gt; {teamAction.name}
-          </p>
-          <div className="flex items-center gap-2">
-            <h2 className="text-foreground text-xl leading-7 font-semibold tracking-[-0.4px]">
-              {teamAction.name}
-            </h2>
-            <span
-              className="rounded px-1.5 py-0.5 font-mono text-xs leading-none font-semibold"
-              style={{ backgroundColor: tagColor.bgColor, color: tagColor.textColor }}
-            >
-              {teamAction.projectTag}
-            </span>
-            <span className="bg-muted text-muted-foreground rounded px-1.5 py-0.5 text-xs leading-none font-semibold">
-              {teamAction.team}
-            </span>
-          </div>
+        {/*
+          ⚠️ **제목 위에 경로를 한 줄 더 쓰지 않는다**(§page-header, 프로젝트 상세와 같은 정리).
+             어느 프로젝트인지는 오른쪽 `세부 정보`의 **관련 프로젝트**가 이미 말한다 —
+             같은 값을 두 곳에 두면 하나가 바뀔 때 다른 하나가 남는다.
+          ⚠️ 칩 규격은 목록·회의와 같다(11px, `font-mono` 아님).
+        */}
+        <div className="flex items-center gap-2">
+          <h2 className="text-foreground text-xl leading-7 font-semibold tracking-[-0.4px]">
+            {teamAction.name}
+          </h2>
+          <span
+            className="shrink-0 rounded px-1.5 py-px text-[11px] leading-4 font-medium"
+            style={{ backgroundColor: tagColor.bgColor, color: tagColor.textColor }}
+          >
+            {teamAction.projectTag}
+          </span>
+          <span className="bg-muted text-muted-foreground shrink-0 rounded px-1.5 py-px text-[11px] leading-4 font-medium">
+            {teamAction.team}
+          </span>
         </div>
 
         <nav aria-label="팀 액션 상세 탭" className="border-border flex gap-4 border-b">
@@ -167,7 +161,7 @@ export default async function TeamActionDetailPage({
               }
               aria-current={activeTab === t.tab ? "page" : undefined}
               className={cn(
-                "-mb-px border-b-2 px-1 pb-2 text-sm font-medium transition-colors",
+                "-mb-px border-b-2 px-1 pb-2 text-[13px] leading-5 font-medium transition-colors",
                 activeTab === t.tab
                   ? "border-foreground text-foreground"
                   : "text-muted-foreground hover:text-foreground border-transparent",
@@ -179,17 +173,27 @@ export default async function TeamActionDetailPage({
         </nav>
 
         {activeTab === "detail" ? (
-          // ⚠️ 세부 정보 카드는 이 탭에만 있다(타임라인 탭엔 없음) — sticky라 곁 컬럼을
-          //    items-start로 둔다. DESIGN.md §1의 "items-start 쓰지 않는다"는 컬럼을 늘여
-          //    채우는 화면 얘기고, 여긴 반대로 카드가 위에 붙어 있어야 한다.
-          <div className="grid grid-cols-1 items-start gap-7 lg:grid-cols-[minmax(0,1fr)_360px]">
-            <section className="border-border bg-card min-w-0 rounded-2xl border p-7">
-              <p className="text-muted-foreground text-sm whitespace-pre-wrap">
-                {teamAction.description}
-              </p>
-            </section>
-            <ActionDetailInfoCard items={infoItems} />
-          </div>
+          /*
+            ⚠️ **한 카드에 쌓는다**(2026-08-10). 전에는 왼쪽 설명 + 오른쪽 sticky 세부 정보로
+               2컬럼이었는데, 이 화면이 담는 것은 문단 하나와 값 서너 개뿐이라 왼쪽 글이
+               1000px까지 늘어나고(읽는 글은 좁게 둔다 — DESIGN §4) 화면 아래가 통째로 비었다.
+               카드 하나로 모으면 **내용만큼만** 차지한다.
+            ⚠️ 카드는 **본문 폭을 그대로 쓴다.** 720으로 좁혀 왼쪽에 붙여 뒀더니 오른쪽이
+               통째로 비어 화면이 한쪽으로 밀린 것처럼 보였다 — 제목·탭은 왼쪽 끝에 있는데
+               카드만 좁으니 축이 둘이 됐다.
+            ⚠️ 대신 **글줄만 720에서 끊는다**(§4 읽는 글은 좁게 둔다). 한 줄이 1000px을 넘으면
+               눈이 다음 줄을 못 찾는다 — 좁혀야 하는 건 카드가 아니라 글이다.
+          */
+          <section className="border-border bg-card w-full overflow-hidden rounded-2xl border">
+            <div className="flex items-center gap-2 px-7 pt-6 pb-5">
+              <span className="bg-foreground size-2 rounded-full" aria-hidden />
+              <h3 className="text-[17px] leading-7 font-semibold tracking-[-0.3px]">내용</h3>
+            </div>
+            <p className="text-muted-foreground border-border max-w-[720px] border-t px-7 py-6 text-[13px] leading-[22px] whitespace-pre-wrap">
+              {teamAction.description}
+            </p>
+            <ActionDetailInfoRows items={infoItems} />
+          </section>
         ) : (
           <section
             className="border-border bg-card flex flex-col overflow-hidden rounded-2xl border"
