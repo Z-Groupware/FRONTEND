@@ -180,15 +180,26 @@ function CardFooter({
         ⚠️ 자리는 항상 잡아 둔다(`h-8`). 버튼이 있고 없고에 따라 발치 높이가 달라지면
            한 줄의 카드들이 서로 다른 데서 끝난다.
       */}
+      {/*
+        ⚠️ **오른쪽 자리는 하나다.** 두 개를 나란히 세우니 왼쪽에 자리가 없어 회의실 이름이
+           `대.`로 잘렸다(§오와 열) — 카드마다 **지금 할 일 하나**만 적는다.
+        ⚠️ 자리는 항상 잡아 둔다(`h-8`). 버튼이 있고 없고에 따라 발치 높이가 달라지면
+           한 줄의 카드들이 서로 다른 데서 끝난다.
+      */}
       <div className="flex h-8 shrink-0 items-center">
-        {affordance === "open" && (
-          <span className="text-muted-foreground flex items-center gap-0.5 text-[13px] leading-5">
-            회의록
-            <ChevronRight className="size-4" aria-hidden />
-          </span>
-        )}
-
-        {affordance === "review" && (
+        {/*
+          ⚠️ **예정 회의에는 [입장]만**이다(2026-08-10 팀 확정). 아직 아무것도 안 남긴 회의라
+             상세에 갈 이유가 없고, Host가 할 일은 들어가는 것 하나뿐이다.
+        */}
+        {meeting.status === MEETING_STATUS.SCHEDULED ? (
+          meeting.isHost && (
+            <Link href={`/app/meeting/${meeting.id}/capture`} className={ACTION_CLASS}>
+              <DoorOpen className="size-3.5" aria-hidden />
+              <span>입장</span>
+            </Link>
+          )
+        ) : affordance === "review" ? (
+          /* ⚠️ 검토가 밀리면 액션이 아무에게도 안 간다 — 회의록보다 급해서 이 자리를 가져간다 */
           <Link
             href={`/app/meeting/${meeting.id}/review`}
             className={cn(ACTION_CLASS, "border-foreground/30 text-foreground font-medium")}
@@ -196,21 +207,18 @@ function CardFooter({
             <Sparkles className="size-3.5" aria-hidden />
             <span>액션 검토</span>
           </Link>
-        )}
-
-        {/*
-          ⚠️ **재제출이 아니라 재요약이다**(§3-5). 파일은 이미 서버에 올라가 있어 회의를 다시
-             할 필요가 없다 — 문구가 "다시 제출"이면 되돌릴 수 없는 종료를 또 하라는 말이 된다.
-        */}
-        {/*
-          ⚠️ **[입장]은 예정 회의에만 뜬다**(WORKFLOW §3-2 — "Host는 **예정** 회의에 [입장]
-             버튼이 시간 제약 없이 노출"). 진행중은 이미 Host가 들어가 캡처를 돌리고 있는
-             회의라, 목록에서 또 들어가는 자리를 주면 같은 회의에 두 번 입장하는 길이 생긴다.
-        */}
-        {meeting.status === MEETING_STATUS.SCHEDULED && meeting.isHost && (
-          <Link href={`/app/meeting/${meeting.id}/capture`} className={ACTION_CLASS}>
-            <DoorOpen className="size-3.5" aria-hidden />
-            <span>입장</span>
+        ) : (
+          /*
+            ⚠️ **진행중에도 있다.** 상세는 이제 모든 상태에서 열리고(메타는 보여주고 덜 찬
+               칸에만 안내한다), 진행중 카드에 아무것도 없으면 죽은 카드로 보인다.
+            ⚠️ 📄 WORKFLOW §3-2의 "예정·진행중 카드는 클릭해도 반응 없음"은 이 결정이 덮는다.
+          */
+          <Link
+            href={`/app/meeting/${meeting.id}`}
+            className="text-muted-foreground hover:text-foreground focus-visible:ring-ring flex items-center gap-0.5 rounded-md text-[13px] leading-5 transition-colors focus-visible:ring-2 focus-visible:outline-hidden"
+          >
+            회의록
+            <ChevronRight className="size-4" aria-hidden />
           </Link>
         )}
       </div>
@@ -221,33 +229,16 @@ function CardFooter({
 export function MeetingCard({ meeting }: { meeting: MeetingListItem }) {
   const affordance = meetingCardAffordanceOf(meeting);
 
-  /* ⚠️ `h-full`이라 한 줄의 카드가 가장 큰 것에 맞춰 같은 높이로 선다 */
-  const frameClass =
-    "border-border bg-card relative flex h-full flex-col overflow-hidden rounded-2xl border p-7";
-
-  /*
-    ⚠️ **카드를 통째로 링크로 감싸는 건 회의록이 다 찼을 때뿐이다.** 요약 중·검토 대기·실패
-       카드까지 감싸면 어디를 눌러도 빈 상세로 가고, 안에 든 [액션 검토] 버튼이 바깥 링크에
-       먹혀 제 갈 길로 못 간다(링크 안의 링크).
-  */
-  if (affordance === "open") {
-    return (
-      <Link
-        href={`/app/meeting/${meeting.id}`}
-        className={cn(
-          frameClass,
-          /* ⚠️ 뜨는 건 **열리는 카드뿐**이다 — 안 눌리는 카드가 눌리는 척하면 안 된다(§정직성) */
-          "hover:border-foreground/25 transition-[color,box-shadow,border-color] hover:shadow-md",
-        )}
-      >
-        <CardBody meeting={meeting} affordance={affordance} />
-        <CardFooter meeting={meeting} affordance={affordance} />
-      </Link>
-    );
-  }
-
   return (
-    <div className={frameClass}>
+    /*
+      ⚠️ **카드를 통째로 링크로 감싸지 않는다.** 발치에 [회의록]·[액션 검토]·[입장]이 함께
+         설 수 있는데, 바깥이 링크면 그 안의 링크가 먹혀 제 갈 길로 못 간다(링크 안의 링크).
+         갈 곳은 **글자로 적어 둔다** — 어디로 가는지 읽히는 편이 카드 전체가 눌리는 것보다
+         분명하다.
+      ⚠️ `h-full`이라 한 줄의 카드가 가장 큰 것에 맞춰 같은 높이로 선다.
+      ⚠️ `overflow-hidden`이 위 띠와 발치 레일을 모서리를 따라 잘라 준다.
+    */
+    <div className="border-border bg-card relative flex h-full flex-col overflow-hidden rounded-2xl border p-7">
       <CardBody meeting={meeting} affordance={affordance} />
       <CardFooter meeting={meeting} affordance={affordance} />
     </div>
