@@ -13,10 +13,25 @@ import { useEffect, useRef } from "react";
  */
 let hasNavigated = false;
 
-/** 앱 밖에서 들어왔는지 — 우리 주소에서 넘어왔으면 뒤로 갈 곳이 있다 */
+/**
+ * 우리 주소에서 넘어왔고, **그 탭에 실제로 뒤로 갈 자리가 있는지**.
+ *
+ * ⚠️ **`startsWith`로 비교하지 않는다.** 경계 검사가 없어서 `https://z.example`이
+ *    `https://z.example.evil.com`에도 걸린다 — 밖에서 들어온 사람을 "앱 안에서 왔다"고
+ *    판정하면 뒤로가기가 그 바깥 사이트로 되돌아간다. `URL`로 파싱해 origin을 통째로 맞춘다.
+ * ⚠️ **`history.length`를 함께 본다.** referrer가 우리 주소라고 뒤로 갈 자리가 있는 건
+ *    아니다 — ⌘·가운데 클릭으로 새 탭에 열면 referrer는 그대로 넘어오지만 그 탭의 이력은
+ *    한 칸뿐이다. 그때 `back()`을 부르면 링크 이동만 취소되고 아무 일도 안 일어나
+ *    **버튼이 죽은 것처럼 보인다**(새 탭에서는 `href`로 가야 한다).
+ */
 function cameFromSameOrigin(): boolean {
-  if (typeof document === "undefined") return false;
-  return Boolean(document.referrer) && document.referrer.startsWith(window.location.origin);
+  if (typeof document === "undefined" || !document.referrer) return false;
+  if (window.history.length <= 1) return false;
+  try {
+    return new URL(document.referrer).origin === window.location.origin;
+  } catch {
+    return false;
+  }
 }
 
 /** 뒤로가기가 **왔던 길**로 갈 수 있는 상태인지 */

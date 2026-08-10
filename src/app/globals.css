@@ -1662,16 +1662,6 @@
 
 @layer base {
   /*
-   * 스크롤 끝에서 **튕기지 않는다**(2026-08-10).
-   *
-   * ⚠️ 안쪽에서 가로로 스크롤하다 끝에 닿으면 그 동작이 바깥(페이지)으로 넘어가서
-   *    화면 전체가 고무줄처럼 튕겼다("팅" 하는 그 느낌) — 타임라인처럼 가로로 긴 것을
-   *    훑을 때마다 났다. `overscroll-behavior`가 그 **넘김(chaining)** 을 끊는다.
-   * ⚠️ 스크롤 자체는 그대로다. 끝에 닿았을 때 **바깥으로 넘기지 않을 뿐**이다.
-   * ⚠️ 화면마다 붙이던 것을 기본값으로 올린다 — `overscroll-contain`이 이미 여덟 곳에
-   *    흩어져 있었다. 규칙이 "어디서나"면 기본값이어야 한다(스크롤바 감춤과 같은 판단).
-   */
-  /*
    * 스크롤바는 **사이트 전체에서 감춘다**(팀 결정). 화면마다 붙이는 게 아니라 기본값이다 —
    * 전에는 52곳 중 9곳만 처리돼 있었고, 그중 6곳은 같은 선언을 인라인으로 세 줄씩 적고
    * 있었다. 규칙이 "무조건"이면 기본값이어야 한다.
@@ -1718,6 +1708,13 @@
    * ⚠️ **꺼진 것은 뺀다.** 못 누르는 버튼에 손이 뜨면 눌러도 되는 줄 안다 — 화면이
    *    거짓말을 하는 셈이다(§정직성).
    * ⚠️ `label[for]`·`summary`도 넣는다. 눌러서 동작이 일어나는 자리인데 `button`이 아니다.
+   * ⚠️ **`[role="checkbox"]`가 따로 필요하다.** base-ui `Checkbox.Root`는 `<button>`이
+   *    아니라 `role="checkbox"`를 단 `<span>`이고, 함께 렌더하는 진짜 `input`은 1x1로
+   *    숨겨져 있다 — 그래서 `button`에도 `input[type=checkbox]`에도 안 걸린다.
+   *    빼 두면 네모는 화살표, 바로 옆 라벨은 손 모양으로 **같은 컨트롤의 두 쪽이 갈린다**.
+   *    `[role="radio"]`는 아직 쓰는 곳이 없지만 만드는 날 빠뜨리지 않도록 같이 적어 둔다.
+   * ⚠️ base-ui는 꺼진 상태를 `aria-disabled`가 아니라 **`data-disabled`** 로 낼 때가 있다 —
+   *    둘 다 빼야 꺼진 체크박스에 손이 안 뜬다.
    */
   a[href],
   label[for],
@@ -1731,6 +1728,8 @@
   [role="menuitemcheckbox"]:not([aria-disabled="true"]),
   [role="menuitemradio"]:not([aria-disabled="true"]),
   [role="switch"]:not([aria-disabled="true"]),
+  [role="checkbox"]:not([aria-disabled="true"]):not([data-disabled]),
+  [role="radio"]:not([aria-disabled="true"]):not([data-disabled]),
   input[type="checkbox"]:not(:disabled),
   input[type="radio"]:not(:disabled) {
     cursor: pointer;

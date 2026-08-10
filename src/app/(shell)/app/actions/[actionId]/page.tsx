@@ -152,9 +152,17 @@ export default async function PersonalActionDetailPage({ params }: PersonalActio
             <span className="bg-foreground size-2 rounded-full" aria-hidden />
             <h3 className="text-[17px] leading-7 font-semibold tracking-[-0.3px]">내용</h3>
           </div>
-          <p className="text-muted-foreground border-border max-w-[720px] border-t px-7 py-6 text-[13px] leading-[22px] whitespace-pre-wrap">
-            {action.description}
-          </p>
+          {/*
+            ⚠️ **선과 글줄 폭을 갈라 둔다.** 전에는 `max-w-[720px] border-t`가 같은 요소에
+               걸려 있어서 구분선이 카드 왼쪽 720px에서 뚝 끊겼다 — 바로 아래 정보 행들의
+               선은 카드 끝까지 이어지는데 이 선만 짧아 카드가 깨져 보였다.
+               선·안쪽 여백은 전폭 래퍼가, 720은 **글에만** 건다(§4 읽는 글은 좁게 둔다).
+          */}
+          <div className="border-border border-t px-7 py-6">
+            <p className="text-muted-foreground max-w-[720px] text-[13px] leading-[22px] whitespace-pre-wrap">
+              {action.description}
+            </p>
+          </div>
           <ActionDetailInfoRows items={infoItems} />
         </section>
       </div>

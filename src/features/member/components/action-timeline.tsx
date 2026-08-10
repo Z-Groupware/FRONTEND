@@ -54,7 +54,9 @@ const DOT_CLASS: Record<StatusTone, string> = {
  */
 const BAR_CLASS: Record<StatusTone, string> = {
   DELAYED: "border-destructive/30 bg-destructive/10 text-destructive",
-  IN_PROGRESS: "border-success/40 bg-success/12 text-success",
+  // ⚠️ 점·캡과 **같은 토큰**을 쓴다. `--success`와 `--status-progress`는 지금 값이 같을 뿐
+  //    각각 따로 선언된 별개 토큰이라, 막대만 `success`로 두면 한쪽만 조정되는 날 갈린다.
+  IN_PROGRESS: "border-status-progress/40 bg-status-progress/12 text-status-progress",
   TODO: "border-border bg-foreground/[0.06] text-muted-foreground",
   DONE: "border-status-done/35 bg-status-done/12 text-status-done",
 };
