@@ -44,6 +44,12 @@ export function LoginForm() {
     <AuthCard icon={KeyRound} step="2 / 2" title="로그인">
       {/* ⚠️ 필드마다 오류 자리(min-h-4)를 비워 두므로 간격을 좁게 잡는다 — 안 그러면 두 배로 벌어진다 */}
       <form action={formAction} noValidate className="flex flex-col gap-1.5">
+        {/*
+          ⚠️ 로그인은 **기업 코드까지 세 값**으로 한다(BE `LoginRequest`). 1단계에서 확인한
+             코드는 브라우저에만 있으므로(`useSavedCompany`) 숨은 칸으로 실어 보낸다 —
+             없으면 액션이 회사를 다시 고르라고 답한다.
+        */}
+        <input type="hidden" name="companyCode" value={company.code} />
         {/* 어느 회사로 들어가는지 — 코드를 다시 보여주는 대신 회사를 보여준다 */}
         {/* ⚠️ 아래 필드들은 오류 자리(min-h-4)만큼 이미 벌어져 있다 — 이 카드에만 여백을 더해 맞춘다 */}
         <div className="border-border bg-secondary mb-5 flex items-center gap-3 rounded-lg border px-3.5 py-3">
@@ -68,7 +74,7 @@ export function LoginForm() {
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="email" className="flex items-center gap-1.5">
             <Mail className="text-muted-foreground size-3.5" aria-hidden />
-            <span>이메일</span>
+            <span className="translate-y-px">이메일</span>
           </Label>
           <Input
             id="email"
@@ -89,14 +95,14 @@ export function LoginForm() {
             className="text-destructive flex min-h-4 items-center gap-1.5 text-[12px] leading-4"
           >
             {loginErrors.email && <AlertCircle className="size-3.5 shrink-0" aria-hidden />}
-            <span>{loginErrors.email}</span>
+            <span className="translate-y-px">{loginErrors.email}</span>
           </p>
         </div>
 
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="password" className="flex items-center gap-1.5">
             <KeyRound className="text-muted-foreground size-3.5" aria-hidden />
-            <span>비밀번호</span>
+            <span className="translate-y-px">비밀번호</span>
           </Label>
           <div className="relative">
             <Input
@@ -128,7 +134,7 @@ export function LoginForm() {
             className="text-destructive flex min-h-4 items-center gap-1.5 text-[12px] leading-4"
           >
             {loginErrors.password && <AlertCircle className="size-3.5 shrink-0" aria-hidden />}
-            <span>{loginErrors.password}</span>
+            <span className="translate-y-px">{loginErrors.password}</span>
           </p>
         </div>
 
@@ -145,7 +151,7 @@ export function LoginForm() {
               className="border-border accent-foreground size-3.5 rounded border"
               defaultChecked
             />
-            <span>로그인 상태 유지</span>
+            <span className="translate-y-px">로그인 상태 유지</span>
           </label>
           <p className="text-muted-foreground/70 text-[11px] leading-4">
             비밀번호 재발급은 관리자에게 문의해 주세요
@@ -153,6 +159,23 @@ export function LoginForm() {
         </div>
 
         <SubmitButton>로그인</SubmitButton>
+
+        {/*
+          ⚠️ 로그인 실패는 **칸 옆이 아니라 버튼 아래**다. BE가 아이디·비밀번호 어느 쪽이
+             틀렸는지 가르지 않으므로(둘 다 `LOGIN_FAILED`) 어느 칸에도 붙일 수 없다 —
+             한쪽에 붙이면 "이 주소는 있는 계정"이라고 알려주는 셈이 된다.
+        */}
+        {state.error && (
+          <p
+            role="alert"
+            className="border-destructive/30 bg-destructive/5 text-destructive mt-3 flex items-start gap-2 rounded-lg border px-3.5 py-3 text-[12px] leading-[18px] break-keep"
+          >
+            <span className="flex h-[18px] shrink-0 items-center">
+              <AlertCircle className="size-3.5" aria-hidden />
+            </span>
+            {state.error}
+          </p>
+        )}
 
         {/*
           ⚠️ 여기까지가 지금 갈 수 있는 끝이다. **말해 주지 않으면 사용자는 실패로 오해한다** —

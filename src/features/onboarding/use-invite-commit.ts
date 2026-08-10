@@ -4,13 +4,17 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 
+import { commitOnboardingAction } from "./actions";
 import { markDraftCommitted } from "./draft";
-import type { Invite } from "./types";
+import type { DepartmentNode, Invite, Position } from "./types";
 
 interface UseInviteCommitArgs {
   invites: Invite[];
   /** 이번에 실제로 나갈 줄 */
   sendable: Invite[];
+  /** 1·2단계 입력 — [완료]에서 초대 명단과 **함께** 커밋된다 */
+  departments: DepartmentNode[];
+  positions: Position[];
   markSent: () => void;
 }
 
@@ -19,12 +23,26 @@ interface UseInviteCommitArgs {
  *
  * ⚠️ 확인 없이 넘기지 않는다. 이 한 번으로 앞 세 단계가 굳고 초대장이 나가는데,
  *    나간 메일은 취소되지 않고 이 단계로 돌아올 수도 없다.
- * ⚠️ 실제 메일 발송은 서버가 한다 — 지금은 목이라 목록만 확정된다.
- *    BE 연동 후 이 자리에서 `POST /companies/me/onboarding`으로 함께 커밋한다.
+ * ⚠️ 실제 계정 발급·메일 발송은 서버가 한다 — 1·2·3단계가 **한 요청**으로 나간다
+ *    (`commitOnboardingAction` → `POST /api/companies/me/onboarding`).
  */
-export function useInviteCommit({ invites, sendable, markSent }: UseInviteCommitArgs) {
+export function useInviteCommit({
+  invites,
+  sendable,
+  departments,
+  positions,
+  markSent,
+}: UseInviteCommitArgs) {
   const router = useRouter();
   const [isConfirmOpen, setConfirmOpen] = useState(false);
+  /** 보내는 중 — 확인 창의 버튼을 잠가 두 번 눌리지 않게 한다 */
+  const [isCommitting, setCommitting] = useState(false);
+  /**
+   * 실패 사유 — **창 안에** 적는다.
+   * ⚠️ 토스트로만 알리면 창은 그대로 떠 있어서, 몇 초 뒤에 온 사람은 아무 일도 안 일어난 줄
+   *    알고 같은 버튼을 다시 누른다(§토스트는 보조다).
+   */
+  const [error, setError] = useState<string | null>(null);
 
   /**
    * 주소는 적었는데 **이번에 안 나가는** 줄 — 확인 창에서 알린다.
@@ -54,19 +72,38 @@ export function useInviteCommit({ invites, sendable, markSent }: UseInviteCommit
   /** 다 골랐는데 규칙에 걸린 줄 — 그 줄에 문구가 떠 있다(주소 형식·주소 중복·리더 중복) */
   const flaggedCount = skipped.length - unfilledCount;
 
-  /*
-    ⚠️ **`isSent`는 서버가 보냈다고 답한 줄에만 붙여야 한다.** 완료 화면의 초대 수가 이 값을
-       세므로, 지금처럼 요청 없이 전부 찍으면 부분 실패 때 실제보다 많은 수를 말한다.
-       TODO(BE 연동): 커밋 응답의 성공 목록으로 `markSent(ids)`를 부른다.
-  */
-  const commit = () => {
-    const count = sendable.length;
-    if (count > 0) {
-      markSent();
-      toast.success(`${count}명에게 초대장을 보냈습니다`);
+  /**
+   * 커밋 — **서버가 받았다고 답한 뒤에만** 확정 도장을 찍는다.
+   *
+   * ⚠️ 실패하면 아무것도 찍지 않고 그 자리에 머문다. 확인 창을 닫고 넘어가 버리면
+   *    저장된 적 없는 조직으로 결제 화면에 서게 된다 — 되돌아올 길이 없는 자리다.
+   * ⚠️ **빠진 주소는 반드시 알린다.** 같은 주소가 두 번 적혀 있으면 서버가 첫 줄만 발급하고
+   *    나머지를 `skipped`로 돌려준다(400이 아니다) — 조용히 넘기면 오너는 다 보낸 줄 안다.
+   */
+  const commit = async () => {
+    if (isCommitting) return;
+    setCommitting(true);
+    setError(null);
+
+    const result = await commitOnboardingAction({ departments, positions, invites: sendable });
+
+    if (!result.ok) {
+      setCommitting(false);
+      setError(result.error ?? "등록하지 못했습니다. 잠시 후 다시 시도해 주세요.");
+      return;
     }
 
-    // ⚠️ 서버 커밋이 붙으면 **응답 성공 뒤에** 찍는다 — 지금은 목이라 바로 찍는다
+    // ⚠️ 실제로 계정이 나간 줄에만 도장을 찍는다 — 빠진 줄은 잠기지 않는다
+    if (result.issuedEmails.length > 0) {
+      markSent();
+      toast.success(`${result.issuedEmails.length}명에게 계정을 발급했습니다`);
+    }
+    if (result.skipped.length > 0) {
+      toast.warning(
+        `${result.skipped.map((item) => item.email).join(", ")}은(는) 발급되지 않았습니다. 계정 발급 화면에서 다시 만들어 주세요.`,
+      );
+    }
+
     markDraftCommitted();
     setConfirmOpen(false);
     /*
@@ -76,5 +113,13 @@ export function useInviteCommit({ invites, sendable, markSent }: UseInviteCommit
     router.replace("/onboarding/payment");
   };
 
-  return { isConfirmOpen, setConfirmOpen, unfilledCount, flaggedCount, commit };
+  return {
+    isConfirmOpen,
+    setConfirmOpen,
+    unfilledCount,
+    flaggedCount,
+    commit,
+    isCommitting,
+    error,
+  };
 }

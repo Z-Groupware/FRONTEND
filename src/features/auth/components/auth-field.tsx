@@ -27,6 +27,16 @@ interface AuthFieldProps {
    * ⚠️ 대부분은 **넘기지 않는다.** 값은 `FormData`가 실어 나르므로 굳이 리렌더를 만들 이유가 없다.
    */
   value?: string;
+  /**
+   * 처음에 채워 둘 값 — **제출이 실패했을 때 적었던 값을 되살리는 데 쓴다.**
+   *
+   * ⚠️ React 19의 `<form action={서버액션}>`은 액션이 끝나면 **폼을 리셋한다.** 값이
+   *    화면 상태에 없는 칸(이 컴포넌트의 기본 모드)은 그 순간 빈칸이 된다 — 동의를 안 눌러
+   *    막힌 사람이 여섯 칸을 처음부터 다시 적게 된다.
+   * ⚠️ 되살리려면 `key`도 같이 바꿔야 한다. 리셋된 칸은 이미 마운트돼 있어서
+   *    `defaultValue`만 바꿔서는 다시 반영되지 않는다(`RegisterForm` 참고).
+   */
+  defaultValue?: string;
   onValueChange?: (value: string) => void;
   placeholder?: string;
   /** 브라우저 자동완성 힌트 — 사내 도구라도 이름·메일은 채워 주는 편이 낫다 */
@@ -43,6 +53,7 @@ export function AuthField({
   label,
   icon: Icon,
   value,
+  defaultValue,
   onValueChange,
   placeholder,
   autoComplete,
@@ -56,7 +67,7 @@ export function AuthField({
     <div className="flex flex-col gap-1.5">
       <Label htmlFor={id} className="flex items-center gap-1.5">
         <Icon className="text-muted-foreground size-3.5" aria-hidden />
-        <span>{label}</span>
+        <span className="translate-y-px">{label}</span>
       </Label>
 
       {children ?? (
@@ -64,7 +75,7 @@ export function AuthField({
           id={id}
           name={name}
           type={type}
-          {...(value === undefined ? {} : { value })}
+          {...(value === undefined ? { defaultValue } : { value })}
           onChange={(event) => onValueChange?.(event.target.value)}
           placeholder={placeholder}
           autoComplete={autoComplete}
@@ -79,7 +90,7 @@ export function AuthField({
         className="text-destructive flex min-h-4 items-center gap-1.5 text-[12px] leading-4 break-keep"
       >
         {error && <AlertCircle className="size-3.5 shrink-0" aria-hidden />}
-        <span>{error}</span>
+        <span className="translate-y-px">{error}</span>
       </p>
     </div>
   );

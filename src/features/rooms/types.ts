@@ -3,6 +3,8 @@
  * 컴포넌트는 이 타입만 알고, 목/실서버 분기는 `server.ts`가 끝낸다.
  */
 
+import type { Authority } from "@/constants/authority";
+
 /**
  * 회의실 한 곳.
  * ⚠️ **"수용 인원" 필드는 없다**(WORKFLOW.md §10-A 확정 — 전면 폐기). 화면·모달·데이터 구조
@@ -34,10 +36,17 @@ export interface MeetingRoomDraft {
 
 export type MeetingRoomFormErrors = Partial<Record<keyof MeetingRoomDraft, string>>;
 
-/** 참석자 검색 대상 — 예약 폼의 "참석자" 피커가 쓴다. */
+/**
+ * 참석자 검색 대상 — 예약 폼의 "참석자" 피커가 쓴다.
+ * ⚠️ `teamName`·`authority`는 "팀장급만"·"내 부서만" 필터(`RoomAttendeePicker`)를 위해서만
+ *    쓴다 — 사원 도메인 전체 타입은 여전히 안 끌어온다(§경량 항목).
+ */
 export interface RoomMember {
   id: number;
   name: string;
+  /** Owner는 팀이 없다(`null`, CLAUDE.md §조직 계층). */
+  teamName: string | null;
+  authority: Authority;
 }
 
 /** 예약 폼의 "프로젝트" select가 쓰는 경량 항목 — 프로젝트 도메인 전체 타입을 끌어오지 않는다. */

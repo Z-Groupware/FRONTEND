@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 
+import { redirectIfSignedIn } from "@/features/auth/me";
 import { FlowSection } from "@/features/landing/components/flow-section";
 import { LandingHero } from "@/features/landing/components/landing-hero";
 import {
@@ -25,7 +26,13 @@ export const metadata: Metadata = {
  *
  * 읽는 순서를 그대로 따라간다: **문제 → 흐름 → 기능 → 비교 → 역할 → 시작하기**.
  */
-export default function LandingPage() {
+export default async function LandingPage() {
+  /*
+    ⚠️ 로그인한 사람에게 소개 페이지를 보여 주지 않는다 — 갈 곳은 서버가 준
+       `landingPath`가 정한다(온보딩 전 오너면 온보딩을 가리킨다).
+  */
+  await redirectIfSignedIn();
+
   return (
     /* 무대·상단바·푸터는 셸이 그린다 — 밝기 스위치도 거기 있다 */
     <LandingShell>

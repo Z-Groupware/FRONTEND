@@ -2,8 +2,8 @@
 
 import { X } from "lucide-react";
 
+import { DatePickerField } from "@/components/common/date-picker-field";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -80,20 +80,18 @@ export function ActionReviewRow({
           </SelectContent>
         </Select>
 
-        <Input
-          type="date"
+        <DatePickerField
           aria-label="시작일"
           value={draft.startDate}
           max={draft.dueDate}
-          onChange={(event) => onStartDateChange(event.target.value)}
+          onChange={onStartDateChange}
           className="w-[150px]"
         />
-        <Input
-          type="date"
+        <DatePickerField
           aria-label="마감일"
           value={draft.dueDate}
           min={draft.startDate}
-          onChange={(event) => onDueDateChange(event.target.value)}
+          onChange={onDueDateChange}
           className="w-[150px]"
         />
 

@@ -3,9 +3,9 @@
 import { useMemo, useState, useTransition } from "react";
 
 import { ConfirmDialog } from "@/components/common/confirm-dialog";
+import { DatePickerField } from "@/components/common/date-picker-field";
 import { ResultDialog } from "@/components/common/result-dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -98,24 +98,24 @@ export function VacationForm({ context }: VacationFormProps) {
                 <Label htmlFor="vacation-start">
                   휴직 시작 날짜 <span className="text-destructive">*</span>
                 </Label>
-                <Input
+                <DatePickerField
                   id="vacation-start"
-                  type="date"
                   value={startDate}
                   max={endDate || undefined}
-                  onChange={(event) => handleDateChange({ startDate: event.target.value })}
+                  onChange={(next) => handleDateChange({ startDate: next })}
+                  className="w-full"
                 />
               </div>
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="vacation-end">
                   휴직 종료 날짜 <span className="text-destructive">*</span>
                 </Label>
-                <Input
+                <DatePickerField
                   id="vacation-end"
-                  type="date"
                   value={endDate}
                   min={startDate || undefined}
-                  onChange={(event) => handleDateChange({ endDate: event.target.value })}
+                  onChange={(next) => handleDateChange({ endDate: next })}
+                  className="w-full"
                 />
               </div>
             </div>

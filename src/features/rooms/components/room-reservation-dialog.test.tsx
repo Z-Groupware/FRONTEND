@@ -5,7 +5,7 @@ jest.mock("@/lib/mock-actor", () => ({
   getMockActor: jest.fn(() => ({ id: 1, role: AUTHORITY.OWNER })),
 }));
 
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 import type { MeetingRoom, RoomMember, RoomProjectOption, RoomTeamActionOption } from "../types";
@@ -20,7 +20,9 @@ const ROOMS: MeetingRoom[] = [
     closeTime: "18:00",
   },
 ];
-const MEMBERS: RoomMember[] = [{ id: 1, name: "박대표" }];
+const MEMBERS: RoomMember[] = [
+  { id: 1, name: "박대표", teamName: null, authority: AUTHORITY.OWNER },
+];
 const PROJECTS: RoomProjectOption[] = [{ id: "1", name: "굿즈 프로젝트", tag: "GOODS" }];
 const TEAM_ACTIONS: RoomTeamActionOption[] = [];
 
@@ -38,6 +40,7 @@ function renderDialog(overrides: Partial<React.ComponentProps<typeof RoomReserva
       projects={PROJECTS}
       showParentTeamAction={false}
       teamActions={TEAM_ACTIONS}
+      viewerTeamName={null}
       onCreated={onCreated}
       {...overrides}
     />,
@@ -56,6 +59,7 @@ describe("RoomReservationDialog", () => {
         projects={PROJECTS}
         showParentTeamAction={false}
         teamActions={TEAM_ACTIONS}
+        viewerTeamName={null}
         onCreated={jest.fn()}
       />,
     );
@@ -92,12 +96,57 @@ describe("RoomReservationDialog", () => {
     expect(screen.getByRole("combobox", { name: "상위 팀 액션" })).toBeInTheDocument();
   });
 
-  it("필수값을 안 채우고 등록을 누르면 필드별 오류를 보여주고 onCreated는 안 부른다", async () => {
+  it("즉시 예약을 누르면 바로 등록하지 않고 확인 모달을 먼저 띄운다", async () => {
+    const user = userEvent.setup();
+    const { onCreated } = renderDialog();
+
+    await user.click(screen.getByRole("button", { name: "즉시 예약" }));
+
+    expect(screen.getByRole("dialog", { name: "이대로 등록하시겠습니까?" })).toBeInTheDocument();
+    expect(onCreated).not.toHaveBeenCalled();
+  });
+
+  it("확인 모달에서 취소하면 등록하지 않는다", async () => {
+    const user = userEvent.setup();
+    const { onCreated } = renderDialog();
+
+    await user.click(screen.getByRole("button", { name: "즉시 예약" }));
+    // ⚠️ 본 다이얼로그의 [취소]와 이름이 같다 — 나중에(위에) 뜬 확인 모달 쪽을 고른다.
+    const cancelButtons = screen.getAllByRole("button", { name: "취소" });
+    await user.click(cancelButtons.at(-1)!);
+
+    expect(
+      screen.queryByRole("dialog", { name: "이대로 등록하시겠습니까?" }),
+    ).not.toBeInTheDocument();
+    expect(onCreated).not.toHaveBeenCalled();
+  });
+
+  it("제목 입력 중 Enter로 암시적 제출이 걸려도 등록하지 않고 확인 모달을 연다", async () => {
+    const user = userEvent.setup();
+    const { onCreated } = renderDialog();
+
+    await user.type(screen.getByLabelText("회의 제목"), "새 회의{Enter}");
+
+    // ⚠️ 이 폼은 텍스트류 입력이 여러 개(제목·안건·참석자 검색)라 실제 브라우저에서도 Enter가
+    //    암시적 제출을 걸지 않는다(HTML 암시적 제출 규칙) — 그래서 위 Enter 자체로는 아직
+    //    아무 일도 안 일어난다. 그 "필드 개수 우연"에 기대지 않고 가드가 실제로 동작하는지
+    //    보려고, 폼의 `submit` 이벤트를 직접 걸어 브라우저가 암시적으로 제출을 시도한 경우를
+    //    그대로 흉내낸다.
+    const form = screen.getByLabelText("회의 제목").closest("form");
+    expect(form).not.toBeNull();
+    fireEvent.submit(form!);
+
+    expect(screen.getByRole("dialog", { name: "이대로 등록하시겠습니까?" })).toBeInTheDocument();
+    expect(onCreated).not.toHaveBeenCalled();
+  });
+
+  it("필수값을 안 채우고 확인 모달에서 예약을 누르면 필드별 오류를 보여주고 onCreated는 안 부른다", async () => {
     const user = userEvent.setup();
     const { onCreated } = renderDialog();
 
     await user.type(screen.getByLabelText("회의 제목"), "새 회의");
     await user.click(screen.getByRole("button", { name: "즉시 예약" }));
+    await user.click(screen.getByRole("button", { name: "예약" }));
 
     await waitFor(() => {
       const roomError = screen.getByText(
