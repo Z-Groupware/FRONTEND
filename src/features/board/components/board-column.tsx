@@ -27,8 +27,8 @@ export function BoardColumn({ id, label, cards, isDelayed, isInvalidTarget }: Bo
         isOver &&
           (isInvalidTarget
             ? "bg-destructive/5 border-destructive/40"
-            : // ⚠️ 점선+살짝 확대 — "여기로 옮기려는 중"이 배경색 하나보다 분명하게 보이도록(2026-08-09 디자인 리뷰).
-              "border-foreground/50 bg-secondary/60 scale-[1.02] border-dashed"),
+            : // ⚠️ 점선(두껍게)+살짝 확대 — "여기로 옮기려는 중"이 배경색 하나보다 분명하게 보이도록(2026-08-09 디자인 리뷰).
+              "border-foreground/60 bg-secondary/60 scale-[1.02] border-2 border-dashed"),
       )}
     >
       <div className="flex shrink-0 items-center justify-between px-1">

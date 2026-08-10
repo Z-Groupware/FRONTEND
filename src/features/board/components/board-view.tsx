@@ -48,6 +48,12 @@ export function BoardView({ boardType, cards, todayIso }: BoardViewProps) {
   const [activeInvalidTarget, setActiveInvalidTarget] = useState<BoardColumnId | null>(null);
   /** 지금 손에 들려 있는 카드 id — `DragOverlay`에 띄울 사본을 찾는 용도. */
   const [activeId, setActiveId] = useState<number | null>(null);
+  /**
+   * 집어든 순간 원본 카드의 실제 폭(px) — `DragOverlay`는 내용 크기에 맞춰 저절로
+   * 좁아지므로, 원본과 같은 폭을 직접 지정해 줘야 "같은 카드를 들고 있다"로 보인다
+   * (2026-08-09 디자인 리뷰 — 사본이 원본보다 좁아 보이던 문제).
+   */
+  const [activeWidth, setActiveWidth] = useState<number | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
 
@@ -65,6 +71,7 @@ export function BoardView({ boardType, cards, todayIso }: BoardViewProps) {
 
   function handleDragStart(event: DragStartEvent) {
     setActiveId(Number(event.active.id));
+    setActiveWidth(event.active.rect.current.initial?.width ?? null);
   }
 
   function handleDragOver(event: DragOverEvent) {
@@ -81,6 +88,7 @@ export function BoardView({ boardType, cards, todayIso }: BoardViewProps) {
   function handleDragEnd(event: DragEndEvent) {
     setActiveInvalidTarget(null);
     setActiveId(null);
+    setActiveWidth(null);
     if (!event.over) return;
     const card = cards.find((c) => c.id === event.active.id);
     if (!card) return;
@@ -141,7 +149,10 @@ export function BoardView({ boardType, cards, todayIso }: BoardViewProps) {
         onDragStart={handleDragStart}
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
-        onDragCancel={() => setActiveId(null)}
+        onDragCancel={() => {
+          setActiveId(null);
+          setActiveWidth(null);
+        }}
       >
         <div className="grid min-h-0 flex-1 grid-cols-3 gap-4">
           {BOARD_COLUMNS.map((columnId) => (
@@ -159,7 +170,9 @@ export function BoardView({ boardType, cards, todayIso }: BoardViewProps) {
         {/* ⚠️ 포털로 최상단에 그린다 — 칼럼의 overflow-y-auto에 안 잘린다(2026-08-09 디자인 리뷰). */}
         <DragOverlay>
           {activeCard && (
-            <BoardCardOverlay card={activeCard} isDelayed={isCardDelayed(activeCard, today)} />
+            <div style={{ width: activeWidth ?? undefined }}>
+              <BoardCardOverlay card={activeCard} isDelayed={isCardDelayed(activeCard, today)} />
+            </div>
           )}
         </DragOverlay>
       </DndContext>
