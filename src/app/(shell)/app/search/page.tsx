@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
+import { RecentSearchChips } from "@/features/search/components/recent-search-chips";
 import { SearchInput } from "@/features/search/components/search-input";
 import { SearchLanding } from "@/features/search/components/search-landing";
 import { SearchResultsPanel } from "@/features/search/components/search-results-panel";
 import { parseSearchQuery } from "@/features/search/lib";
 import { getSearchHome, getSearchProjects, getSearchResults } from "@/features/search/server";
+import type { RecentSearchEntry } from "@/features/search/types";
 
 export const metadata: Metadata = {
   title: "검색",
@@ -34,6 +36,8 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   if (query.period !== "all") baseParams.set("period", query.period);
 
   let content: ReactNode;
+  /* 최근 검색어는 입력 바로 아래에 서므로 페이지가 들고 있는다 — 검색 중일 때는 안 띄운다 */
+  let recentSearches: RecentSearchEntry[] = [];
   if (keyword) {
     const [results, projects] = await Promise.all([getSearchResults(query), getSearchProjects()]);
     content = (
@@ -46,6 +50,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     );
   } else {
     const home = await getSearchHome();
+    recentSearches = home.recentSearches;
     content = <SearchLanding home={home} />;
   }
 
@@ -59,8 +64,19 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
            오른쪽이 통째로 빈다 — 결과 목록은 넓을수록 좋지만 입력은 아니다.
       */}
       <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-7">
-        <div className="w-full max-w-[720px]">
+        {/*
+          ⚠️ **입력은 가운데 세운다.** 왼쪽에 붙여 두니 넓은 화면에서 한쪽으로 몰려 보였다 —
+             찾으러 온 사람이 제일 먼저 보는 것이라 화면 한복판에 서는 게 맞다.
+          ⚠️ 폭은 720 그대로다. 1440까지 늘리면 글자가 왼쪽 끝에만 붙고 오른쪽이 통째로 빈다.
+        */}
+        {/*
+          ⚠️ **입력과 최근 검색어를 한 덩이로 가운데 세운다.** 둘은 같은 일(찾기 시작하기)을
+             하는데 따로 떨어져 있으면 최근 검색어가 "목록 중 하나"로 보인다.
+          ⚠️ 위아래 여백을 넉넉히 준다 — 이 자리가 화면의 주인공이라 붐비면 안 된다.
+        */}
+        <div className="mx-auto flex w-full max-w-[720px] flex-col gap-4 pt-4 pb-2">
           <SearchInput keyword={query.keyword} />
+          <RecentSearchChips entries={recentSearches} />
         </div>
         {content}
       </div>

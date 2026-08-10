@@ -70,7 +70,7 @@ export function SearchInput({ keyword }: SearchInputProps) {
   return (
     <div className="relative w-full">
       <Search
-        className="text-muted-foreground/70 pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2"
+        className="text-muted-foreground/70 pointer-events-none absolute top-1/2 left-5 size-[18px] -translate-y-1/2"
         aria-hidden
       />
       <Input
@@ -78,7 +78,14 @@ export function SearchInput({ keyword }: SearchInputProps) {
         value={value}
         onChange={(event) => setValue(event.target.value)}
         placeholder="회의·액션·프로젝트·사람을 검색해 주세요"
-        className="h-11 rounded-xl pl-11"
+        /*
+          ⚠️ **찾으러 온 사람이 제일 먼저 보는 것**이라 크게 세운다(h-13·완전 둥근 모서리).
+             검색 서비스들이 입력을 크고 둥글게 두는 이유는 "여기에 쓰면 된다"를 모양으로
+             말하기 때문이다 — 다른 폼 입력과 같은 크기면 그 말을 못 한다.
+          ⚠️ 그림자는 **아주 얕게**. 사내 도구라 붕 떠 보이면 산만하다(§디자인 토큰).
+          ⚠️ 글자는 다섯 크기의 `13px`이다 — 상자가 커졌다고 글자까지 키우지 않는다.
+        */
+        className="focus-visible:border-foreground/30 h-13 rounded-full pl-12 text-[13px] shadow-[0_1px_2px_color-mix(in_oklch,var(--foreground)_5%,transparent),0_2px_8px_color-mix(in_oklch,var(--foreground)_4%,transparent)] md:text-[13px]"
       />
       <label htmlFor="workbench-search" className="sr-only">
         검색
@@ -89,7 +96,7 @@ export function SearchInput({ keyword }: SearchInputProps) {
           type="button"
           aria-label="검색어 지우기"
           onClick={() => setValue("")}
-          className="text-muted-foreground hover:text-foreground focus-visible:ring-ring absolute top-1/2 right-3 flex size-6 -translate-y-1/2 items-center justify-center rounded-md focus-visible:ring-2 focus-visible:outline-hidden"
+          className="text-muted-foreground hover:text-foreground focus-visible:ring-ring absolute top-1/2 right-4 flex size-7 -translate-y-1/2 items-center justify-center rounded-full focus-visible:ring-2 focus-visible:outline-hidden"
         >
           <X className="size-4" aria-hidden />
         </button>

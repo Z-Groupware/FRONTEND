@@ -2,7 +2,6 @@ import { Clock } from "lucide-react";
 import Link from "next/link";
 
 import type { RecentSearchEntry } from "../types";
-import { SearchSection } from "./search-section";
 
 interface RecentSearchChipsProps {
   entries: RecentSearchEntry[];
@@ -13,8 +12,14 @@ export function RecentSearchChips({ entries }: RecentSearchChipsProps) {
   if (entries.length === 0) return null;
 
   return (
-    <SearchSection title="최근 검색어">
-      <ul className="flex flex-wrap gap-2">
+    <div className="flex flex-col items-center gap-2.5">
+      {/*
+        ⚠️ **입력 바로 아래, 가운데다.** 왼쪽에 라벨을 붙여 섹션으로 두니 "훑어볼 목록"처럼
+           보였는데, 최근 검색어는 목록이 아니라 **입력을 돕는 것**이다 — 입력 밑에 붙어야
+           그 뜻이 읽힌다(검색 서비스들이 두는 자리와 같다).
+      */}
+      <span className="text-muted-foreground/70 text-[11px] leading-4">최근 검색어</span>
+      <ul className="flex flex-wrap justify-center gap-2">
         {entries.map((entry) => (
           <li key={entry.keyword}>
             <Link
@@ -27,6 +32,6 @@ export function RecentSearchChips({ entries }: RecentSearchChipsProps) {
           </li>
         ))}
       </ul>
-    </SearchSection>
+    </div>
   );
 }

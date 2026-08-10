@@ -16,10 +16,10 @@ export function KindBadge({ kind }: KindBadgeProps) {
     /*
       ⚠️ **폭을 고정하지 않는다.** `w-11`(44px)로 묶어 뒀더니 넉 자인 `프로젝트`가 칸을
          넘어갔다 — 두 자(`회의`)에 맞춘 폭이라 긴 라벨이 들어갈 자리가 없었다.
-      ⚠️ 대신 `min-w`로 **바닥만** 잡는다. 짧은 라벨끼리는 폭이 같아 줄이 안 흔들리고,
-         긴 라벨은 자기 몫만큼 늘어난다.
+      ⚠️ 대신 **가장 긴 라벨(`프로젝트`)에 맞춰 고정**한다. 폭이 들쭉날쭉하면 그 뒤의 제목이
+         줄마다 다른 자리에서 시작해 **오와 열이 안 맞는다** — 목록은 한 세로선을 따라 읽는다.
     */
-    <Badge variant="outline" className="min-w-11 shrink-0 justify-center font-normal">
+    <Badge variant="outline" className="w-16 shrink-0 justify-center font-normal">
       {SEARCH_KIND_LABEL[kind]}
     </Badge>
   );

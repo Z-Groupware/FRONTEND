@@ -1,6 +1,5 @@
 import type { SearchHome } from "../types";
 import { BrowsePeople, BrowseProjects } from "./browse-lists";
-import { RecentSearchChips } from "./recent-search-chips";
 import { RecentlyViewedGrid } from "./recently-viewed-grid";
 
 interface SearchLandingProps {
@@ -27,8 +26,7 @@ export function SearchLanding({ home }: SearchLandingProps) {
   }
 
   return (
-    <div className="flex flex-col gap-7">
-      <RecentSearchChips entries={home.recentSearches} />
+    <div className="flex flex-col gap-10">
       <RecentlyViewedGrid items={home.recentlyViewed} />
 
       {/*

@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { ProjectTag } from "@/components/common/project-tag";
 import { formatDate } from "@/lib/date";
+import { pickPaletteColor } from "@/lib/palette";
 
 import type { SearchResultItem } from "../types";
 import { KindBadge } from "./kind-badge";
@@ -70,12 +71,30 @@ interface RecentlyViewedCardProps {
 }
 
 function RecentlyViewedCard({ item }: RecentlyViewedCardProps) {
+  const tag = item.kind === "MEETING" || item.kind === "ACTION" ? item.projectTag : null;
+
   const inner = (
     <>
+      {/*
+        ⚠️ **왼쪽에 프로젝트 색 막대를 세운다.** 한 줄짜리 행이 넷 쌓이니 전부 같은 무게로
+           읽혀 눈에 안 걸렸다 — 색 한 줄이 행마다 다른 표식이 되어 훑을 때 걸린다
+           (대시보드 회의 줄이 쓰는 것과 같은 방식).
+        ⚠️ 프로젝트 자신은 태그가 곧 제목이라 막대를 세우지 않는다 — 자리는 비워 둬야
+           오와 열이 맞는다.
+      */}
+      <span
+        /* ⚠️ `h-full`은 부모 높이가 auto라 0이 된다 — 늘어나야 하므로 `self-stretch`다 */
+        className="w-1 shrink-0 self-stretch rounded-full"
+        style={{ backgroundColor: tag ? pickPaletteColor(tag).solidColor : "transparent" }}
+        aria-hidden
+      />
       <KindBadge kind={item.kind} />
-      {/* ⚠️ 회의·액션은 `projectTag`, 프로젝트는 `tag`다 — 이름이 갈리므로 종류로 가른다 */}
-      {(item.kind === "MEETING" || item.kind === "ACTION") && <ProjectTag tag={item.projectTag} />}
-      <span className="text-foreground min-w-0 flex-1 truncate text-[13px] leading-5 font-medium">
+      {/*
+        ⚠️ **태그 자리를 고정한다.** 프로젝트 항목엔 태그가 없어서, 자리를 안 잡아 두면
+           그 줄만 제목이 앞으로 당겨져 오와 열이 어긋난다.
+      */}
+      <span className="flex w-[76px] shrink-0 items-center">{tag && <ProjectTag tag={tag} />}</span>
+      <span className="text-foreground min-w-0 flex-1 truncate text-[13px] leading-5 font-semibold">
         {title(item)}
       </span>
       {/* ⚠️ 보조값은 **오른쪽 끝**이다 — 제목 길이가 달라도 눈이 한 세로선을 따라간다 */}
@@ -100,8 +119,9 @@ function RecentlyViewedCard({ item }: RecentlyViewedCardProps) {
        두르면 네모 안에 네모가 된다 — 옅은 면으로 갈라 두면 덩이는 보이면서 층은 하나다.
   */
   /* ⚠️ 바깥 카드가 사라졌으니 항목이 스스로 카드다 — 테두리를 되돌린다(카드 안의 카드 아님) */
+  /* ⚠️ 색 막대가 위아래로 꽉 차야 표식이 되므로 `items-stretch`다 — 가운데 정렬은 안쪽에서 한다 */
   const shape =
-    "border-border bg-card flex items-center gap-2.5 rounded-xl border px-4 py-3 text-[13px]";
+    "border-border bg-card flex items-stretch gap-2.5 rounded-xl border py-3 pr-4 pl-3 text-[13px] [&>*:not(:first-child)]:self-center";
 
   if (item.kind === "PROJECT") {
     return (
