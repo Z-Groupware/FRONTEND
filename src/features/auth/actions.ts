@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 
-import { ApiError, serverApi, toUserMessage } from "@/lib/api";
+import { serverApi, toUserMessage } from "@/lib/api";
 import { ep } from "@/lib/endpoints";
 import { isMock } from "@/mocks/config";
 
@@ -299,16 +299,22 @@ async function loginToApi(input: {
  * 로그아웃 — 갱신표를 폐기하고 쿠키를 지운다.
  *
  * ⚠️ BE 호출이 실패해도 **쿠키는 지운다.** 서버 쪽 폐기가 안 됐다고 브라우저에 토큰을 남겨
- *    두면 로그아웃을 눌렀는데 로그인 상태로 남는다 — 남은 액세스 토큰은 30분 뒤 만료된다.
+ *    두면 로그아웃을 눌렀는데 로그인 상태로 남는다 — 공용 PC에서 가장 나쁜 경우다.
+ * ⚠️ **어떤 실패든 삼킨다.** 전에는 `ApiError`가 아니면 다시 던졌는데, BE가 내려가 있으면
+ *    `fetch`가 `ApiError`가 아니라 `TypeError`를 던져서 **쿠키를 못 지운 채 액션이 통째로
+ *    실패했다** — 위에 적어 둔 약속과 정반대로 돌았다. 여기서 할 일은 "가능하면 서버에도
+ *    알린다"이고, **꼭 해야 하는 일은 쿠키를 지우는 것**이다.
  */
 export async function logoutAction(): Promise<void> {
   if (!isMock) {
     try {
       const token = await getAccessToken();
       if (token) await serverApi<void>(ep.logout(), { method: "POST", accessToken: token });
-    } catch (error) {
-      // 이미 만료된 토큰이면 401이 온다 — 지우려던 참이라 문제가 아니다
-      if (!(error instanceof ApiError)) throw error;
+    } catch {
+      /*
+        만료된 토큰(401)이든 BE 다운(네트워크 오류)이든 여기서 할 수 있는 일은 없다.
+        갱신표는 어차피 수명이 다하면 죽고, 브라우저 쪽 쿠키는 아래에서 지운다.
+      */
     }
   }
 
