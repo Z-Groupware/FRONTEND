@@ -22,6 +22,32 @@ export const HANDOVER_STATUS_LABEL: Record<HandoverStatus, string> = {
   REJECTED: "반려",
 };
 
+/**
+ * BE가 실제로 내려주는 상태 원본값(BE 인수인계 문서, 2026-08-10) — `REASSIGNED`·`FINALIZED`는
+ * FE 이름과 달라 매퍼에서만 변환한다. `SUBMITTED`·`REJECTED`는 이름이 같아 그대로 통과.
+ * ⚠️ BE enum은 DB·테스트까지 굳어 있어 이름을 안 바꾼다 — 경계(`mapHandoverStatusFromBe`)에서만
+ *    흡수하고 UI·기존 화면(`MID_APPROVED` 등 사용)은 손대지 않는다.
+ */
+export const HANDOVER_STATUS_BE = {
+  SUBMITTED: "SUBMITTED",
+  REASSIGNED: "REASSIGNED",
+  FINALIZED: "FINALIZED",
+  REJECTED: "REJECTED",
+} as const;
+export type HandoverStatusBe = (typeof HANDOVER_STATUS_BE)[keyof typeof HANDOVER_STATUS_BE];
+
+/** 응답 매퍼 경계 — BE 상태 원본값을 FE `HandoverStatus`로 바꾼다. */
+export function mapHandoverStatusFromBe(status: HandoverStatusBe): HandoverStatus {
+  switch (status) {
+    case HANDOVER_STATUS_BE.REASSIGNED:
+      return HANDOVER_STATUS.MID_APPROVED;
+    case HANDOVER_STATUS_BE.FINALIZED:
+      return HANDOVER_STATUS.FINAL_APPROVED;
+    default:
+      return status;
+  }
+}
+
 export const HANDOVER_TYPE = {
   VACATION: "VACATION",
   OFFBOARDING: "OFFBOARDING",

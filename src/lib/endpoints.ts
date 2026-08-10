@@ -30,6 +30,16 @@ export const ep = {
   /* 인수인계 */
   handovers: () => "/api/handovers",
   handover: (id: number) => `/api/handovers/${id}`,
+  /** 팀장급 인수인계(귀속) 목록 — BE 인수인계 문서(2026-08-10) §package. */
+  handoverPackage: () => "/api/handovers/package",
+  /** 팀장급 인수인계 통계·요약 — BE 인수인계 문서(2026-08-10) §insights. */
+  handoverInsights: () => "/api/handovers/insights",
+  /** 건별 재배정 — 일괄 반영 엔드포인트가 아니다(락·멱등, §team-handover/actions.ts). */
+  handoverReassignItem: (id: number, actionId: number) =>
+    `/api/handovers/${id}/items/${actionId}/reassign`,
+  handoverComplete: (id: number) => `/api/handovers/${id}/complete`,
+  handoverFinalize: (id: number) => `/api/handovers/${id}/finalize`,
+  handoverReject: (id: number) => `/api/handovers/${id}/reject`,
 
   /* 조직 */
   members: () => "/api/members",

@@ -1,26 +1,15 @@
 "use server";
 
-import { HANDOVER_STATUS, HANDOVER_TYPE, type HandoverStatus } from "@/constants/domain";
+import { HANDOVER_STATUS, type HandoverStatus } from "@/constants/domain";
 import { isMock } from "@/mocks/config";
 
-/** 휴직 신청 — 팀장이면 액션마다 담당자를 지정해 함께 보낸다(자가 재할당). */
-export interface SubmitVacationHandoverPayload {
-  type: typeof HANDOVER_TYPE.VACATION;
-  startDate: string;
-  endDate: string;
-  actionIds: number[];
-  /** 액션 id → 배정받을 팀원 id. 팀장 신청이 아니면 빈 객체. */
-  assignments: Record<number, string>;
-}
+import type { SubmitHandoverPayload } from "./lib";
 
-export interface SubmitOffboardingHandoverPayload {
-  type: typeof HANDOVER_TYPE.OFFBOARDING;
-  description: string;
-  actionIds: number[];
-}
-
-export type SubmitHandoverPayload =
-  SubmitVacationHandoverPayload | SubmitOffboardingHandoverPayload;
+export type {
+  SubmitHandoverPayload,
+  SubmitOffboardingHandoverPayload,
+  SubmitVacationHandoverPayload,
+} from "./lib";
 
 /**
  * [인수인계서 신청] — 접수만 한다.
