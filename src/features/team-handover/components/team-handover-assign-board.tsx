@@ -1,6 +1,5 @@
 "use client";
 
-import { DndContext, type DragEndEvent, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
 import { Download } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
@@ -17,7 +16,6 @@ import { completeTeamHandoverAction, rejectTeamHandoverAction } from "../actions
 import { buildTimelineInput, isReadyToComplete, toAssignmentList } from "../lib";
 import type { TeamHandoverDetail } from "../types";
 import { TeamHandoverActionChip } from "./team-handover-action-chip";
-import { TeamMemberColumn } from "./team-member-column";
 
 interface TeamHandoverAssignBoardProps {
   handover: TeamHandoverDetail;
@@ -30,9 +28,13 @@ const LIST_PATH = "/team/handover";
 const REASON_MAX = 200;
 
 /**
- * 팀원 보드 — 위(타임라인, 읽기 전용)에서 액션을 확인하고 아래 배정 대기 목록에서
- * 드래그(또는 `<Select>`)로 팀원 칼럼에 배정한다. [인수인계 확정]을 눌러야 실제로
- * 반영된다(`board-view.tsx`와 같은 원칙 — 드래그 자체는 로컬 상태만 바꾼다).
+ * 위(타임라인, 읽기 전용)에서 액션을 한눈에 확인하고, 아래 "배정할 액션" 목록의
+ * `<Select>`로 각 액션의 담당자를 고른다. [인수인계 확정]을 눌러야 실제로 반영된다
+ * (`board-view.tsx`의 "로컬에서 바꾸고 확정 시에만 서버 반영" 원칙과 같음).
+ * ⚠️ **드래그 앤 드롭·별도 팀원 보드 영역은 없다**(2026-08-09 디자인 리뷰로 제거) —
+ *    배정한 항목이 "배정할 액션"에도 그대로 남아 보여 어디에 배정됐는지 헷갈렸고,
+ *    화면 하나에 같은 정보(담당자)가 두 군데(칩의 `<Select>` 값 + 팀원 칸 안 카드)로
+ *    중복 표시되는 문제가 있었다 — `<Select>` 하나로 배정 상태를 표현하는 게 더 명확하다.
  * ⚠️ **[반려]도 여기서 한다**(WORKFLOW.md §7, 2026-08-09 팀 확정) — 오너의 최종 승인/반려와
  *    별개로, 팀장이 인계 액션 누락·오배정을 이 단계에서 먼저 걸러낸다.
  */
@@ -53,18 +55,9 @@ export function TeamHandoverAssignBoard({ handover, todayIso }: TeamHandoverAssi
     if (confirming === "reject") reasonRef.current?.focus();
   }, [confirming]);
 
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
-
   const assignedCount = Object.keys(assignments).length;
   const totalCount = handover.actions.length;
   const ready = isReadyToComplete(handover.actions, assignments);
-
-  function handleDragEnd(event: DragEndEvent) {
-    if (!event.over) return;
-    const actionId = Number(event.active.id);
-    const assigneeId = Number(event.over.id);
-    setAssignments((prev) => ({ ...prev, [actionId]: assigneeId }));
-  }
 
   function handleComplete() {
     setError(null);
@@ -130,48 +123,25 @@ export function TeamHandoverAssignBoard({ handover, todayIso }: TeamHandoverAssi
         <ActionTimeline items={timelineItems} today={today} emptyLabel="넘길 액션이 없습니다." />
       </section>
 
-      <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
-        <section className="border-border bg-card flex flex-col gap-3 rounded-2xl border p-5">
-          <h2 className="flex items-center gap-2 text-[15px] leading-6 font-semibold tracking-[-0.2px]">
-            <span className="bg-foreground size-2 rounded-full" aria-hidden />
-            배정할 액션
-          </h2>
-          <div className="flex flex-col gap-2">
-            {handover.actions.map((action) => (
-              <TeamHandoverActionChip
-                key={action.id}
-                action={action}
-                teammates={handover.teammates}
-                assignedTo={assignments[action.id] ?? null}
-                onAssign={(assigneeId) =>
-                  setAssignments((prev) => ({ ...prev, [action.id]: assigneeId }))
-                }
-              />
-            ))}
-          </div>
-        </section>
-
-        <section className="flex flex-col gap-3">
-          <h2 className="flex items-center gap-2 text-[15px] leading-6 font-semibold tracking-[-0.2px]">
-            <span className="bg-foreground size-2 rounded-full" aria-hidden />
-            팀원 보드
-          </h2>
-          <div
-            className="grid gap-4"
-            style={{ gridTemplateColumns: `repeat(${handover.teammates.length}, minmax(0, 1fr))` }}
-          >
-            {handover.teammates.map((teammate) => (
-              <TeamMemberColumn
-                key={teammate.id}
-                teammate={teammate}
-                assignedActions={handover.actions.filter(
-                  (action) => assignments[action.id] === teammate.id,
-                )}
-              />
-            ))}
-          </div>
-        </section>
-      </DndContext>
+      <section className="border-border bg-card flex flex-col gap-3 rounded-2xl border p-5">
+        <h2 className="flex items-center gap-2 text-[15px] leading-6 font-semibold tracking-[-0.2px]">
+          <span className="bg-foreground size-2 rounded-full" aria-hidden />
+          배정할 액션
+        </h2>
+        <div className="flex flex-col gap-2">
+          {handover.actions.map((action) => (
+            <TeamHandoverActionChip
+              key={action.id}
+              action={action}
+              teammates={handover.teammates}
+              assignedTo={assignments[action.id] ?? null}
+              onAssign={(assigneeId) =>
+                setAssignments((prev) => ({ ...prev, [action.id]: assigneeId }))
+              }
+            />
+          ))}
+        </div>
+      </section>
 
       <div className="flex justify-end gap-2">
         <Button

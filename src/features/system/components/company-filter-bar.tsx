@@ -52,8 +52,13 @@ export function CompanyFilterBar() {
   };
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      <div className="relative w-full max-w-56 sm:ml-auto">
+    /*
+      ⚠️ **스스로 폭을 밀지 않는다.** 전에는 이 줄이 화면을 통째로 차지해서
+         검색칸에 `w-full sm:ml-auto`로 오른쪽 끝까지 밀어 두고 있었는데, 이제는
+         `전체 N건`과 한 줄에 서므로 그 밀기가 남아 있으면 줄이 넘쳐 두 줄로 깨진다.
+    */
+    <div className="flex flex-wrap items-center justify-end gap-2">
+      <div className="relative w-56 max-w-full">
         <Search
           className="text-muted-foreground pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2"
           aria-hidden

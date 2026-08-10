@@ -3,6 +3,7 @@
 import * as React from "react"
 import { Select as SelectPrimitive } from "@base-ui/react/select"
 
+import { useScopedTheme } from "@/components/common/scoped-theme"
 import { cn } from "@/lib/utils"
 import { ChevronDownIcon, CheckIcon, ChevronUpIcon } from "lucide-react"
 
@@ -82,8 +83,11 @@ function SelectContent({
     SelectPrimitive.Positioner.Props,
     "align" | "alignOffset" | "side" | "sideOffset" | "alignItemWithTrigger"
   >) {
+  /* 범위 테마 안에서는 그 상자로 들어간다 — 밖(`<body>`)이면 전역 밝기를 써서 흰 팝업이 뜬다 */
+  const scoped = useScopedTheme()
+
   return (
-    <SelectPrimitive.Portal>
+    <SelectPrimitive.Portal container={scoped?.portalContainer ?? undefined}>
       <SelectPrimitive.Positioner
         side={side}
         sideOffset={sideOffset}

@@ -70,7 +70,7 @@ export function PaymentMethodsPanel({ method, canManage, onChange }: PaymentMeth
             className="h-8 shrink-0 px-3 text-[12px] leading-none"
           >
             {/* 한글 글자가 상자 안에서 위쪽에 앉아 보인다 — 1px 내려 맞춘다 */}
-            <span className="translate-y-px">{method ? "변경" : "등록"}</span>
+            <span>{method ? "변경" : "등록"}</span>
           </Button>
         )}
       </div>

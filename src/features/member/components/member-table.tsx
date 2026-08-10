@@ -56,7 +56,7 @@ function AuthorityCell({ member }: { member: ManagedMember }) {
            방패가 붙은 줄만 배지가 왼쪽으로 밀리고 **열 머리(`권한`)와도 어긋난다.**
            빼내면 가운데에 오는 건 배지뿐이라 머리글 바로 아래에 선다.
         ⚠️ 고정폭 상자(56px)의 **오른쪽 끝에서 같은 거리**에 두므로 방패끼리도 한 줄로 선다.
-        ⚠️ 아이콘이 배지보다 떠 보여 `translate-y-px`로 내린다 — 배지는 글자가 상자 안에서
+ ⚠️ 아이콘이 배지보다 떠 보여 ``로 내린다 — 배지는 글자가 상자 안에서
            아래쪽에 앉는데 아이콘은 정확히 가운데라, 같은 축이어도 눈에는 아이콘이 위로 뜬다.
       */}
       {member.isAdmin && (
@@ -64,7 +64,7 @@ function AuthorityCell({ member }: { member: ManagedMember }) {
           title="관리자 겸직"
           className="text-foreground/70 absolute top-1/2 left-full ml-1.5 -translate-y-1/2"
         >
-          <ShieldCheck className="size-3.5 translate-y-px" aria-hidden />
+          <ShieldCheck className="size-3.5" aria-hidden />
           <span className="sr-only">관리자 겸직</span>
         </span>
       )}

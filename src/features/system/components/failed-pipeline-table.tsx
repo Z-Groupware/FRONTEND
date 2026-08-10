@@ -1,5 +1,7 @@
 "use client";
 
+import { TriangleAlert } from "lucide-react";
+
 import {
   Table,
   TableBody,
@@ -11,23 +13,33 @@ import {
 import { PIPELINE_STAGE_LABEL } from "@/constants/domain";
 import { cn } from "@/lib/utils";
 
+import { TABLE_HEAD_CELL_CLASS, TABLE_HEAD_ROW_CLASS } from "../table-style";
 import type { FailedPipelineItem } from "../types";
 import { PipelineRetryButton } from "./pipeline-retry-button";
+import { SystemCardHeading } from "./system-card-heading";
 
-/** 행/헤더 높이 — 다른 SYSTEM 표(구독·매출·기업 관리)와 같은 값으로 못박는다. */
+/** 행 높이 — 다른 SYSTEM 표(구독·매출·기업 관리)와 같은 값으로 못박는다. 머리 높이는 `table-style.ts`가 정한다. */
 const ROW_HEIGHT_CLASS = "h-[42px]";
-const HEADER_HEIGHT_CLASS = "h-[34px]";
 
 /**
  * 컬럼 폭 — %로 고정(합 100). `table-fixed` + `colgroup`과 짝을 이뤄 회의 ID·오류 문구
  * 길이가 달라져도 다른 컬럼이 밀리지 않게 한다(`subscription-table.tsx`와 같은 이유).
  */
+/**
+ * 컬럼 폭 — 내용 길이에 맞춰 나눈다.
+ *
+ * ⚠️ 폭을 안 정하면 브라우저가 내용대로 잡는데, 거기에 오른쪽 정렬이 섞이면 그 열만
+ *    제 칸 끝으로 밀려 **옆 열과 붙는다** — 실측으로 열 사이 간격이 123·101·142·**16**·83px로
+ *    한 곳만 무너져 있었다.
+ * ⚠️ 그래서 `시각`도 왼쪽으로 둔다. `2025-07-21 14:32`은 늘 같은 폭이라 왼쪽에 붙여도
+ *    흔들리지 않는다 — 오른쪽 정렬은 **자릿수가 실제로 다른 값**에만 쓴다.
+ */
 const COLUMN_WIDTH = {
-  meetingId: "26%",
-  company: "16%",
+  meetingId: "21%",
+  company: "15%",
   stage: "14%",
-  failedAt: "18%",
-  error: "14%",
+  failedAt: "20%",
+  error: "18%",
   action: "12%",
 } as const;
 
@@ -48,10 +60,7 @@ export function FailedPipelineTable({ items }: { items: FailedPipelineItem[] }) 
 
   return (
     <section className="border-border bg-card overflow-hidden rounded-2xl border">
-      <h2 className="flex items-center gap-2 px-7 pt-6 pb-3 text-[17px] leading-7 font-semibold tracking-[-0.3px]">
-        <span className="bg-foreground size-2 rounded-full" aria-hidden />
-        실패 목록
-      </h2>
+      <SystemCardHeading icon={TriangleAlert}>실패 목록</SystemCardHeading>
 
       <div className="overflow-x-auto">
         <Table className="table-fixed text-xs">
@@ -64,13 +73,13 @@ export function FailedPipelineTable({ items }: { items: FailedPipelineItem[] }) 
             <col style={{ width: COLUMN_WIDTH.action }} />
           </colgroup>
           <TableHeader>
-            <TableRow className={cn(HEADER_HEIGHT_CLASS, "bg-secondary/50 hover:bg-transparent")}>
-              <TableHead className="pl-4 text-xs">회의 ID</TableHead>
-              <TableHead className="text-center text-xs">기업</TableHead>
-              <TableHead className="text-center text-xs">실패 단계</TableHead>
-              <TableHead className="text-center text-xs">시각</TableHead>
-              <TableHead className="text-center text-xs">오류</TableHead>
-              <TableHead className="pr-4 text-center text-xs">액션</TableHead>
+            <TableRow className={TABLE_HEAD_ROW_CLASS}>
+              <TableHead className={cn(TABLE_HEAD_CELL_CLASS, "pl-7")}>회의 ID</TableHead>
+              <TableHead className={cn(TABLE_HEAD_CELL_CLASS, "text-center")}>기업</TableHead>
+              <TableHead className={cn(TABLE_HEAD_CELL_CLASS, "text-center")}>실패 단계</TableHead>
+              <TableHead className={cn(TABLE_HEAD_CELL_CLASS, "text-center")}>시각</TableHead>
+              <TableHead className={cn(TABLE_HEAD_CELL_CLASS, "text-center")}>오류</TableHead>
+              <TableHead className={cn(TABLE_HEAD_CELL_CLASS, "pr-7 text-center")}>액션</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -79,7 +88,7 @@ export function FailedPipelineTable({ items }: { items: FailedPipelineItem[] }) 
                 key={item.meetingId}
                 className={cn(ROW_HEIGHT_CLASS, "hover:bg-foreground/[0.04]")}
               >
-                <TableCell className="text-muted-foreground pl-4 font-mono">
+                <TableCell className="text-foreground pl-7 font-mono font-medium">
                   {item.meetingId}
                 </TableCell>
                 <TableCell
@@ -100,7 +109,7 @@ export function FailedPipelineTable({ items }: { items: FailedPipelineItem[] }) 
                 >
                   {item.errorMessage}
                 </TableCell>
-                <TableCell className="pr-4 text-center">
+                <TableCell className="pr-7 text-center">
                   <PipelineRetryButton meetingId={item.meetingId} />
                 </TableCell>
               </TableRow>

@@ -85,7 +85,7 @@ export function PlanSummaryCard({ config }: { config: BillingConfig }) {
             className="border-border bg-secondary/60 text-muted-foreground flex items-center gap-1.5 rounded-full border py-1.5 pr-3.5 pl-3 text-[12px] leading-4"
           >
             <InfinityIcon className="size-3.5 shrink-0" aria-hidden />
-            <span className="translate-y-px">{item}</span>
+            <span>{item}</span>
           </li>
         ))}
       </ul>
@@ -119,7 +119,7 @@ export function PlanSummaryCard({ config }: { config: BillingConfig }) {
             {CURRENT_PLAN.features.map((feature) => (
               <li key={feature} className="flex items-center gap-2.5 text-[14px] leading-[22px]">
                 <Check className="text-muted-foreground size-4 shrink-0" aria-hidden />
-                <span className="translate-y-px">{feature}</span>
+                <span>{feature}</span>
               </li>
             ))}
           </ul>
@@ -154,7 +154,7 @@ function Included({
       <dt className="text-muted-foreground flex items-center justify-center gap-1.5 text-[13px] leading-5">
         <Icon className="size-4 shrink-0" aria-hidden />
         {/* 한글 글자가 아이콘보다 떠 보인다 — 1px 내려 맞춘다 */}
-        <span className="translate-y-px">{label}</span>
+        <span>{label}</span>
       </dt>
       <dd className="flex items-baseline justify-center gap-1.5 pt-2.5">
         {unit && <span className="text-muted-foreground text-[14px] leading-8">{unit}</span>}

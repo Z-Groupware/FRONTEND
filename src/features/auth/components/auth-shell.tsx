@@ -95,7 +95,7 @@ export function AuthShell({ children, hasLegalNotice = true }: AuthShellProps) {
                       <point.icon className="size-3.5 text-white/85" aria-hidden />
                     </span>
                     {/* 한글이 아이콘보다 떠 보인다 — 1px 내려 맞춘다 */}
-                    <span className="translate-y-px">{point.text}</span>
+                    <span>{point.text}</span>
                   </li>
                 ))}
               </ul>

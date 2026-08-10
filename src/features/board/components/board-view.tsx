@@ -4,6 +4,8 @@ import {
   DndContext,
   type DragEndEvent,
   type DragOverEvent,
+  DragOverlay,
+  type DragStartEvent,
   PointerSensor,
   useSensor,
   useSensors,
@@ -24,6 +26,7 @@ import {
   type BoardColumnId,
   type BoardType,
 } from "../types";
+import { BoardCardOverlay } from "./board-card";
 import { BoardColumn } from "./board-column";
 
 interface BoardViewProps {
@@ -43,6 +46,14 @@ export function BoardView({ boardType, cards, todayIso }: BoardViewProps) {
   // 카드 id → 드래그로 옮긴 칸. 없으면 날짜로 계산한 원래 칸을 그대로 쓴다.
   const [overrides, setOverrides] = useState<Record<number, BoardColumnId>>({});
   const [activeInvalidTarget, setActiveInvalidTarget] = useState<BoardColumnId | null>(null);
+  /** 지금 손에 들려 있는 카드 id — `DragOverlay`에 띄울 사본을 찾는 용도. */
+  const [activeId, setActiveId] = useState<number | null>(null);
+  /**
+   * 집어든 순간 원본 카드의 실제 폭(px) — `DragOverlay`는 내용 크기에 맞춰 저절로
+   * 좁아지므로, 원본과 같은 폭을 직접 지정해 줘야 "같은 카드를 들고 있다"로 보인다
+   * (2026-08-09 디자인 리뷰 — 사본이 원본보다 좁아 보이던 문제).
+   */
+  const [activeWidth, setActiveWidth] = useState<number | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
 
@@ -56,6 +67,12 @@ export function BoardView({ boardType, cards, todayIso }: BoardViewProps) {
   for (const card of cards) groups[columnOf(card)].push(card);
 
   const changeCount = Object.keys(overrides).length;
+  const activeCard = cards.find((card) => card.id === activeId) ?? null;
+
+  function handleDragStart(event: DragStartEvent) {
+    setActiveId(Number(event.active.id));
+    setActiveWidth(event.active.rect.current.initial?.width ?? null);
+  }
 
   function handleDragOver(event: DragOverEvent) {
     if (!event.over) {
@@ -70,6 +87,8 @@ export function BoardView({ boardType, cards, todayIso }: BoardViewProps) {
 
   function handleDragEnd(event: DragEndEvent) {
     setActiveInvalidTarget(null);
+    setActiveId(null);
+    setActiveWidth(null);
     if (!event.over) return;
     const card = cards.find((c) => c.id === event.active.id);
     if (!card) return;
@@ -125,7 +144,16 @@ export function BoardView({ boardType, cards, todayIso }: BoardViewProps) {
         </Button>
       </div>
 
-      <DndContext sensors={sensors} onDragOver={handleDragOver} onDragEnd={handleDragEnd}>
+      <DndContext
+        sensors={sensors}
+        onDragStart={handleDragStart}
+        onDragOver={handleDragOver}
+        onDragEnd={handleDragEnd}
+        onDragCancel={() => {
+          setActiveId(null);
+          setActiveWidth(null);
+        }}
+      >
         <div className="grid min-h-0 flex-1 grid-cols-3 gap-4">
           {BOARD_COLUMNS.map((columnId) => (
             <BoardColumn
@@ -138,6 +166,15 @@ export function BoardView({ boardType, cards, todayIso }: BoardViewProps) {
             />
           ))}
         </div>
+
+        {/* ⚠️ 포털로 최상단에 그린다 — 칼럼의 overflow-y-auto에 안 잘린다(2026-08-09 디자인 리뷰). */}
+        <DragOverlay>
+          {activeCard && (
+            <div style={{ width: activeWidth ?? undefined }}>
+              <BoardCardOverlay card={activeCard} isDelayed={isCardDelayed(activeCard, today)} />
+            </div>
+          )}
+        </DragOverlay>
       </DndContext>
 
       <ConfirmDialog

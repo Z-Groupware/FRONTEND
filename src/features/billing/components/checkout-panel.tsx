@@ -99,7 +99,7 @@ export function CheckoutPanel({
           <p className="text-muted-foreground/70 flex items-center justify-center gap-1.5 pt-7 text-[11px] leading-4">
             <RefreshCw className="size-3.5 shrink-0" aria-hidden />
             {/* 한글 글자가 상자 안에서 위쪽에 앉아 아이콘보다 떠 보인다 — 1px 내려 맞춘다 */}
-            <span className="translate-y-px">매월 자동 갱신됩니다. 해지는 언제든 가능합니다</span>
+            <span>매월 자동 갱신됩니다. 해지는 언제든 가능합니다</span>
           </p>
           {/*
               ⚠️ 총액 **바로 아래**에 두지 않는다. 거기 있으면 오늘 낼 금액이 달라질 수 있다는

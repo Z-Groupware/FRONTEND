@@ -55,17 +55,22 @@ export async function getHandoverContext(preview: HandoverPreview): Promise<Hand
 
   const actions = buildActions(applicant.name);
 
-  // ⚠️ 팀장 본인 휴직의 자가 재할당 대상 — 본인 제외 같은 팀원(WORKFLOW.md §7 "팀장 본인 휴직").
+  /*
+    ⚠️ 팀장 본인 휴직의 자가 재할당 대상 — **같은 팀** 소속(본인 제외)만(WORKFLOW.md §7
+       "팀장 본인 휴직", 2026-08-09 재확인). 지금은 로스터 mock이 개발팀 한 팀뿐이라
+       `teamName` 필터가 없어도 우연히 같은 팀만 나왔었다 — 다른 팀이 로스터에 추가되는
+       순간 타 팀원이 조용히 새어 들어갈 수 있어 명시적으로 건다.
+  */
   const teammates =
     applicant.role === AUTHORITY.LEADER
-      ? TEAM_MEMBER_ROSTER_MOCK.filter((member) => member.name !== applicant.name).map(
-          (member) => ({
-            id: member.id,
-            name: member.name,
-            position: member.position,
-            role: member.role,
-          }),
-        )
+      ? TEAM_MEMBER_ROSTER_MOCK.filter(
+          (member) => member.teamName === applicant.teamName && member.name !== applicant.name,
+        ).map((member) => ({
+          id: member.id,
+          name: member.name,
+          position: member.position,
+          role: member.role,
+        }))
       : [];
 
   return { applicant, actions, teammates };

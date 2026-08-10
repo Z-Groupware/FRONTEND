@@ -52,7 +52,7 @@ export function ProblemSection() {
                       {index === 2 && <UserMinus className="size-3.5" aria-hidden />}
                     </span>
                     {/* 한글 글자가 상자 안에서 위쪽에 앉아 아이콘보다 떠 보인다 — 1px 내려 맞춘다 */}
-                    <span className="translate-y-px">{problem.title}</span>
+                    <span>{problem.title}</span>
                   </p>
                   <p className="text-muted-foreground pt-2 text-[13px] leading-[21px] break-keep">
                     {problem.body}

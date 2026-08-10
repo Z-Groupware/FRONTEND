@@ -12,6 +12,7 @@ import { COMPANY_STATUS_LABEL } from "@/constants/domain";
 import { formatDate } from "@/lib/date";
 import { cn } from "@/lib/utils";
 
+import { TABLE_HEAD_CELL_CLASS, TABLE_HEAD_HEIGHT_PX, TABLE_HEAD_ROW_CLASS } from "../table-style";
 import type { ManagedCompany } from "../types";
 import { StatusBadge, type StatusTone } from "./status-badge";
 
@@ -25,8 +26,6 @@ interface CompanyTableProps {
 /** 행 하나의 높이 — `py-4`가 아니라 고정 클래스로 못박아 내용에 따라 늘어나지 않게 한다. */
 const ROW_HEIGHT_CLASS = "h-[42px]";
 const ROW_HEIGHT_PX = 42;
-const HEADER_HEIGHT_CLASS = "h-[34px]";
-const HEADER_HEIGHT_PX = 34;
 
 const STATUS_TONE: Record<ManagedCompany["status"], StatusTone> = {
   ACTIVE: "positive",
@@ -39,13 +38,23 @@ const STATUS_TONE: Record<ManagedCompany["status"], StatusTone> = {
  * 비율이 깨진다. `table-fixed` + `colgroup`과 짝을 이뤄야 실제로 적용된다 — `table-fixed` 없이는
  * 브라우저가 내용 길이를 보고 폭을 다시 계산해 버려 이 값이 무시된다.
  */
+/**
+ * 컬럼 폭.
+ *
+ * ⚠️ **열 사이 간격을 고르게** 만드는 것이 목표다. 폭을 눈대중으로 정하면 어느 열은 내용이
+ *    칸을 꽉 채워 옆 열과 붙는다 — 한때 16·193·84·90·43px로 제각각이었고, 그 뒤에도
+ *    44·75·76·72·71로 **기업명 뒤가 제일 좁았다**.
+ * ⚠️ **기업명 뒤만 넓게 둔다.** 그 줄의 주인공이라 뒤를 떼어 놓아야 이름이 먼저 읽힌다 —
+ *    나머지 네 간격은 서로 비슷해야 표가 고르게 보인다(주인공 뒤 1.6배, 나머지 균등).
+ * ⚠️ 값은 **가장 긴 내용을 브라우저에서 재서** 뽑는다. 내용이 바뀌면 다시 재야 한다.
+ */
 const COLUMN_WIDTH = {
-  name: "26%",
-  code: "22%",
-  members: "12%",
-  meetings: "14%",
-  joinedAt: "16%",
-  status: "10%",
+  name: "39%",
+  code: "17%",
+  members: "9%",
+  meetings: "11%",
+  joinedAt: "13%",
+  status: "11%",
 } as const;
 
 /**
@@ -61,7 +70,7 @@ export function CompanyTable({ companies, buildDetailHref, pageSize }: CompanyTa
     return (
       <div
         className="border-border bg-card flex flex-col items-center justify-center rounded-2xl border p-10 text-center"
-        style={{ height: HEADER_HEIGHT_PX + pageSize * ROW_HEIGHT_PX }}
+        style={{ height: TABLE_HEAD_HEIGHT_PX + pageSize * ROW_HEIGHT_PX }}
       >
         <p className="text-muted-foreground text-sm">조건에 맞는 기업이 없습니다</p>
       </div>
@@ -82,13 +91,15 @@ export function CompanyTable({ companies, buildDetailHref, pageSize }: CompanyTa
             <col style={{ width: COLUMN_WIDTH.status }} />
           </colgroup>
           <TableHeader>
-            <TableRow className={cn(HEADER_HEIGHT_CLASS, "bg-secondary/50 hover:bg-transparent")}>
-              <TableHead className="pl-4 text-xs">기업명</TableHead>
-              <TableHead className="text-center text-xs">기업 코드</TableHead>
-              <TableHead className="text-center text-xs">구성원</TableHead>
-              <TableHead className="text-center text-xs">이번달 회의</TableHead>
-              <TableHead className="text-center text-xs">가입일</TableHead>
-              <TableHead className="pr-4 text-center text-xs">상태</TableHead>
+            <TableRow className={TABLE_HEAD_ROW_CLASS}>
+              <TableHead className={cn(TABLE_HEAD_CELL_CLASS, "pl-7")}>기업명</TableHead>
+              <TableHead className={cn(TABLE_HEAD_CELL_CLASS, "text-center")}>기업 코드</TableHead>
+              <TableHead className={cn(TABLE_HEAD_CELL_CLASS, "text-center")}>구성원</TableHead>
+              <TableHead className={cn(TABLE_HEAD_CELL_CLASS, "text-center")}>
+                이번달 회의
+              </TableHead>
+              <TableHead className={cn(TABLE_HEAD_CELL_CLASS, "text-center")}>가입일</TableHead>
+              <TableHead className={cn(TABLE_HEAD_CELL_CLASS, "pr-7 text-center")}>상태</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -98,10 +109,10 @@ export function CompanyTable({ companies, buildDetailHref, pageSize }: CompanyTa
                 key={company.id}
                 className={cn(ROW_HEIGHT_CLASS, "hover:bg-foreground/[0.04] relative")}
               >
-                <TableCell className="max-w-0 pl-4">
+                <TableCell className="max-w-0 pl-7">
                   <Link
                     href={buildDetailHref(company.id)}
-                    className="text-foreground focus-visible:ring-ring block truncate rounded after:absolute after:inset-0 hover:underline focus-visible:ring-2 focus-visible:outline-none"
+                    className="text-foreground focus-visible:ring-ring block truncate rounded font-medium after:absolute after:inset-0 hover:underline focus-visible:ring-2 focus-visible:outline-none"
                     title={company.name}
                   >
                     {company.name}
@@ -122,7 +133,7 @@ export function CompanyTable({ companies, buildDetailHref, pageSize }: CompanyTa
                 <TableCell className="text-muted-foreground text-center tabular-nums">
                   {formatDate(company.joinedAt)}
                 </TableCell>
-                <TableCell className="pr-4 text-center">
+                <TableCell className="pr-7 text-center">
                   <StatusBadge tone={STATUS_TONE[company.status]}>
                     {COMPANY_STATUS_LABEL[company.status]}
                   </StatusBadge>

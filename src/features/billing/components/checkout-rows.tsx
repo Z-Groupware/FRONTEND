@@ -62,6 +62,10 @@ export function Agreement({
       {/*
         ⚠️ 브라우저 기본 체크박스는 OS마다 다르게 생겨 이 카드만 마감이 덜 된 것처럼 보인다.
            상자는 우리가 그리고, 진짜 `input`은 숨겨서 키보드·스크린리더는 그대로 쓴다.
+        ⚠️ 상자를 **내리지 않는다**(한때 `mt-[1px]`). 상자(18px)와 라벨 줄 높이(18px)가 같아
+           `items-start`면 이미 위가 맞는데, 1px을 더하면 글자보다 아래로 처진다 — 재서 확인했다
+           (라벨 잉크 중심 기준 -1.4px → -0.4px). `items-center`가 아니라 `items-start`인 건
+           라벨이 두 줄로 넘칠 때 상자가 가운데로 내려가지 않게 하려는 것이다.
       */}
       <input
         type="checkbox"
@@ -70,7 +74,7 @@ export function Agreement({
         className="peer sr-only"
       />
       <span
-        className="border-input bg-background peer-checked:bg-foreground peer-checked:border-foreground peer-focus-visible:ring-ring text-background mt-[1px] flex size-[18px] shrink-0 items-center justify-center rounded-md border transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-offset-2"
+        className="border-input bg-background peer-checked:bg-foreground peer-checked:border-foreground peer-focus-visible:ring-ring text-background flex size-[18px] shrink-0 items-center justify-center rounded-md border transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-offset-2"
         aria-hidden
       >
         <Check className={cn("size-3 transition-opacity", checked ? "opacity-100" : "opacity-0")} />

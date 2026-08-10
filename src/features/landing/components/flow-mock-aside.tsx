@@ -49,7 +49,7 @@ function Aside({ title, icon: Icon, children }: AsideProps) {
       <p className="text-landing-dark-muted flex items-center gap-1.5 text-[11px] leading-4">
         <Icon className="size-3 shrink-0" aria-hidden />
         {/* 한글 글자가 상자 안에서 위쪽에 앉아 아이콘보다 떠 보인다 — 1px 내려 맞춘다 */}
-        <span className="translate-y-px">{title}</span>
+        <span>{title}</span>
       </p>
       {children}
     </div>

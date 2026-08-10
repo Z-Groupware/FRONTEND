@@ -1,8 +1,5 @@
 "use client";
 
-import { useDraggable } from "@dnd-kit/core";
-import { CSS } from "@dnd-kit/utilities";
-
 import {
   Select,
   SelectContent,
@@ -25,9 +22,10 @@ interface TeamHandoverActionChipProps {
 }
 
 /**
- * 배정 대기 액션 칩 — 드래그로도, **`<Select>`로도** 배정할 수 있다.
- * ⚠️ 드래그만 되면 키보드 사용자는 배정할 방법이 없다(CLAUDE.md §a11y "DnD 보드는 키보드
- *    대체 경로 필수") — 이 셀렉트가 그 대체 경로다.
+ * 배정할 액션 한 줄 — `<Select>`로 담당자를 고른다.
+ * ⚠️ **드래그 앤 드롭이 아니다**(2026-08-09 디자인 리뷰로 제거) — 배정한 항목이 이
+ *    목록에도, 별도 팀원 보드에도 동시에 남아 보여 어디에 배정됐는지 헷갈렸다. `<Select>`
+ *    값 하나가 배정 상태를 그대로 보여주는 편이 더 명확하다.
  */
 export function TeamHandoverActionChip({
   action,
@@ -35,34 +33,13 @@ export function TeamHandoverActionChip({
   assignedTo,
   onAssign,
 }: TeamHandoverActionChipProps) {
-  const { listeners, setNodeRef, transform, isDragging } = useDraggable({
-    id: action.id,
-  });
   const color = pickPaletteColor(action.projectTag);
   const delayed = isDelayed(action);
   const assignedName = teammates.find((teammate) => teammate.id === assignedTo)?.name;
 
   return (
-    <div
-      ref={setNodeRef}
-      style={{ transform: CSS.Translate.toString(transform) }}
-      className={cn(
-        "border-border bg-card flex items-center gap-3 rounded-xl border p-3",
-        isDragging && "opacity-40",
-      )}
-    >
-      {/*
-        ⚠️ **포커스를 안 받는다.** 마우스 드래그 전용 손잡이다 — 키보드 배정은 옆의
-           `<Select>`가 맡는다(dnd-kit `PointerSensor`만 붙어 있어 이 손잡이 자체는 키보드로
-           작동하지 않는다). ⚠️ **`attributes`는 안 뿌린다** — dnd-kit 기본값에 `tabIndex={0}`·
-           `role="button"`이 들어 있어, `aria-hidden`과 같이 두면 "숨겨졌는데 포커스는 받는"
-           위반이 된다(CodeRabbit 지적, 2026-08-09). `listeners`(포인터 핸들러)만 필요하다.
-      */}
-      <div
-        {...listeners}
-        aria-hidden
-        className="flex min-w-0 flex-1 cursor-grab items-center gap-3 active:cursor-grabbing"
-      >
+    <div className="border-border bg-card flex items-center gap-3 rounded-xl border p-3">
+      <div className="flex min-w-0 flex-1 items-center gap-3">
         <span
           className="w-fit shrink-0 rounded px-1.5 py-0.5 font-mono text-[10px] font-semibold"
           style={{ backgroundColor: color.bgColor, color: color.textColor }}

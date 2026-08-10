@@ -87,7 +87,7 @@ export function AddTodoDialog({ defaultDate, onCreated }: AddTodoDialogProps) {
         className="h-7 shrink-0 gap-1 px-2.5 text-[11px] leading-4"
       >
         <Plus className="size-3.5" aria-hidden />
-        <span className="translate-y-[1px]">Todo</span>
+        <span>Todo</span>
       </Button>
 
       <ConfirmDialog

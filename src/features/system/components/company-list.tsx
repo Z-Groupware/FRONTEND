@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback } from "react";
+import { type ReactNode, useCallback } from "react";
 
 import { InfiniteListFooter } from "@/components/common/infinite-list-footer";
 import { useInfiniteScrollList } from "@/hooks/use-infinite-scroll-list";
@@ -23,6 +23,15 @@ interface CompanyListProps {
    * 링크 자체는 `buildCompanyHref`(순수 함수, 양쪽에서 같이 import)로 여기서 계산한다.
    */
   query: CompanyHrefQuery;
+  /**
+   * 검색·정렬 줄 — 부르는 화면이 넘긴다.
+   *
+   * ⚠️ **건수와 같은 줄에 세우려고** 여기서 받는다. 전에는 필터가 위에 따로 한 줄,
+   *    `전체 N건`이 아래 또 한 줄이라 **줄이 두 개**였다. 필터는 오른쪽 끝에만 붙어 있어
+   *    그 줄 왼쪽 절반이 통째로 비었고, 건수 줄은 혼자 떠 있었다.
+   * ⚠️ 건수는 이 컴포넌트만 안다(이어붙이면서 바뀐다) — 그래서 필터가 여기로 온다.
+   */
+  filterBar?: ReactNode;
 }
 
 /** 컴포넌트 밖에 둬서 매 렌더 새 함수가 안 되게 한다(`approval-list.tsx`와 같은 이유). */
@@ -43,6 +52,7 @@ export function CompanyList({
   pageSize,
   filter,
   query,
+  filterBar,
 }: CompanyListProps) {
   const fetchPage = useCallback(
     (page: number) => fetchCompaniesPageAction(filter, page, pageSize),
@@ -63,7 +73,10 @@ export function CompanyList({
 
   return (
     <div className="flex flex-col gap-3">
-      <p className="text-muted-foreground text-xs">전체 {totalCount}건</p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-muted-foreground text-xs">전체 {totalCount}건</p>
+        {filterBar}
+      </div>
 
       <CompanyTable companies={items} buildDetailHref={buildDetailHref} pageSize={pageSize} />
 

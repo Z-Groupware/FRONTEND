@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 import { FailedPipelineTableLoader } from "@/features/system/components/failed-pipeline-table-loader";
 import { StageTimingCard } from "@/features/system/components/stage-timing-card";
-import { SummaryCard } from "@/features/system/components/summary-card";
+import { SummaryCard } from "@/components/common/summary-card";
 import { getMonitoringOverview } from "@/features/system/server";
 
 export const metadata: Metadata = {
@@ -17,13 +17,14 @@ export default async function SystemMonitorPage() {
       <div className="mx-auto flex max-w-[1440px] flex-col gap-7">
         <SummaryCard
           items={[
-            { label: "대기", value: `${queue.waitingCount}건`, meta: "처리 예정" },
+            { label: "대기", value: `${queue.waitingCount}`, unit: "건", meta: "처리 예정" },
             {
               label: "처리 중",
-              value: `${queue.processingCount}건`,
+              value: `${queue.processingCount}`,
+              unit: "건",
               meta: `평균 ${queue.processingAvgSeconds}초`,
             },
-            { label: "실패", value: `${queue.failedCount}건`, meta: "재처리 필요" },
+            { label: "실패", value: `${queue.failedCount}`, unit: "건", meta: "재처리 필요" },
           ]}
         />
 
