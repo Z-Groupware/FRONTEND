@@ -14,7 +14,7 @@ import { ActionTimeline, ActionTimelineLegend } from "@/features/member/componen
 import {
   parseTeamActionDetailTab,
   TEAM_ACTION_DETAIL_TABS,
-  TEAM_ACTION_TIMELINE_BOX_HEIGHT,
+  TEAM_ACTION_TIMELINE_BOX_MAX_HEIGHT,
 } from "@/features/project/lib";
 import {
   getProjectDetail,
@@ -193,7 +193,7 @@ export default async function TeamActionDetailPage({
         ) : (
           <section
             className="border-border bg-card flex flex-col overflow-hidden rounded-2xl border"
-            style={{ height: TEAM_ACTION_TIMELINE_BOX_HEIGHT }}
+            style={{ maxHeight: TEAM_ACTION_TIMELINE_BOX_MAX_HEIGHT }}
           >
             <div className="border-border flex shrink-0 items-baseline justify-between gap-3 border-b px-7 pt-6 pb-3">
               <h3 className="flex items-center gap-2 text-[17px] leading-7 font-semibold tracking-[-0.3px]">

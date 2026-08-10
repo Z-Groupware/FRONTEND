@@ -124,23 +124,28 @@ export function DashboardMeetingItem({ meeting, showDivider }: DashboardMeetingI
             )}
           </div>
 
-          {/* 우: 회의실 · 시간 · 참석 인원 + 상태 라벨(맨 오른쪽 끝) */}
-          <div className="flex shrink-0 items-center gap-3">
-            {/*
-              ⚠️ 날짜에 `font-mono`를 걸지 않는다. `8월 12일(수) 10:00`은 한글이 섞여 있어
-                 고정폭 글꼴이 한글을 대체 글꼴로 떨어뜨린다 — 자간이 튀고 줄마다 폭이 달라졌다.
-                 숫자 자리만 잡으면 되므로 `tabular-nums`가 맞다(DESIGN §4).
-            */}
-            <div className="text-muted-foreground flex items-center gap-2 text-[12px] leading-4">
-              <span>{meeting.room}</span>
-              <span aria-hidden>·</span>
-              <span className="tabular-nums">{formatMeetingDate(meeting.scheduledAt)}</span>
-              <span aria-hidden>·</span>
-              <span className="tabular-nums">참석 {meeting.attendeeCount}명</span>
-            </div>
+          {/*
+            우: 회의실 · 시간 · 참석 · 상태.
+
+            ⚠️ **값마다 자기 열에 선다**(DESIGN §3: 열마다 축이 따로 선다). 전에는 넷을 한 덩이로
+               묶어 오른쪽에 붙였는데, 값 길이가 제각각이라(`회의실 A` 42px·`대회의실` 42px,
+               `8월 5일` 90px·`8월 12일` 98px, `진행중` 45px·`완료` 35px) **덩어리 왼쪽 끝이
+               줄마다 11px씩 흔들렸다** — 세로선이 하나도 안 생겨 오른쪽이 뭉쳐 보였다.
+               상자 폭을 고정하면 회의실은 회의실끼리, 시간은 시간끼리 한 줄에 선다.
+            ⚠️ 날짜·참석은 **오른쪽 정렬**이다. 사람이 훑는 건 끝에 오는 값(`10:00`·`4명`)이라
+               그쪽을 맞춰야 눈이 한 세로선을 따라간다.
+            ⚠️ 가운뎃점(`·`)을 걷어냈다. 열이 갈리면 구분자가 할 일이 없고, 점까지 있으면
+               값 사이가 8px로 좁아져 넷이 한 덩이로 뭉친다.
+          */}
+          <div className="text-muted-foreground flex shrink-0 items-center gap-4 text-[12px] leading-4">
+            <span className="w-[52px] truncate">{meeting.room}</span>
+            <span className="w-[104px] text-right tabular-nums">
+              {formatMeetingDate(meeting.scheduledAt)}
+            </span>
+            <span className="w-[52px] text-right tabular-nums">참석 {meeting.attendeeCount}명</span>
             <span
               className={cn(
-                "inline-flex h-5 shrink-0 items-center rounded-full px-2 text-[11px] leading-4 font-medium",
+                "inline-flex h-5 w-[48px] shrink-0 items-center justify-center rounded-full text-[11px] leading-4 font-medium",
                 STATUS_TONE[meeting.status],
               )}
             >

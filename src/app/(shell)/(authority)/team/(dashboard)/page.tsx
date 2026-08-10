@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 
 import { DashboardMeetingItem } from "@/components/common/dashboard-meeting-item";
+import { SummaryCard } from "@/components/common/summary-card";
 import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { KpiCard } from "@/features/team/components/kpi-card";
 import { MemberStatusRow } from "@/features/team/components/member-status-row";
 import { MEMBER_BOX_MAX_HEIGHT } from "@/features/team/lib";
 import { getTeamDashboardOverview } from "@/features/team/server";
@@ -25,26 +25,18 @@ export default async function TeamDashboardPage() {
     meetings,
   } = await getTeamDashboardOverview();
 
-  const kpis = [
-    { label: "팀 액션", value: String(teamActionCount), sub: "진행 중" },
-    {
-      label: "팀원 액션",
-      value: String(memberActionCount),
-      sub: "팀 액션 기준",
-      tone: "accent" as const,
-    },
-    { label: "내 액션", value: String(myActionCount), sub: "처리 예정" },
-    { label: "완료 액션", value: String(doneActionCount), sub: "내 누적" },
+  /* 상단 요약 — 오너 대시보드와 같은 공용 카드다(DESIGN §2). 색 강조는 두지 않는다(§5). */
+  const summaryItems = [
+    { label: "팀 액션", value: String(teamActionCount), meta: "진행 중" },
+    { label: "팀원 액션", value: String(memberActionCount), meta: "팀 액션 기준" },
+    { label: "내 액션", value: String(myActionCount), meta: "처리 예정" },
+    { label: "완료 액션", value: String(doneActionCount), meta: "내 누적" },
   ];
 
   return (
     <main className="scrollbar-hidden min-h-0 flex-1 overflow-y-auto px-8 py-7">
       <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-7">
-        <div className="grid grid-cols-4 gap-3">
-          {kpis.map((kpi) => (
-            <KpiCard key={kpi.label} {...kpi} />
-          ))}
-        </div>
+        <SummaryCard items={summaryItems} />
 
         <section
           className="border-border bg-card flex flex-col overflow-hidden rounded-2xl border"

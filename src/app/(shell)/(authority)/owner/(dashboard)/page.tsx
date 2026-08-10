@@ -1,9 +1,10 @@
+import { ArrowRight } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 
 import { DashboardMeetingItem } from "@/components/common/dashboard-meeting-item";
+import { SummaryCard } from "@/components/common/summary-card";
 import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { KpiCard } from "@/features/owner/components/kpi-card";
 import { LeaderStatusRow } from "@/features/owner/components/leader-status-row";
 import { getDaysUntilDue, LEADER_BOX_MAX_HEIGHT } from "@/features/owner/lib";
 import { getOwnerDashboardOverview } from "@/features/owner/server";
@@ -24,31 +25,25 @@ export default async function OwnerDashboardPage() {
     return daysUntilDue >= 0 && daysUntilDue <= 7;
   }).length;
 
-  const kpis = [
-    { label: "전체 프로젝트", value: String(projects.length), sub: "진행 중" },
-    {
-      label: "마감 D-7",
-      value: String(imminentProjectCount),
-      sub: "즉시 확인 필요",
-      tone: "danger" as const,
-    },
-    { label: "전체 사원", value: String(activeMemberCount), sub: "재직 중" },
-    {
-      label: "휴직자",
-      value: String(onLeaveMemberCount),
-      sub: "현재 휴직",
-      tone: "warning" as const,
-    },
+  /*
+    상단 요약 — **한 카드 안에서 세로선으로 가른다**(DESIGN §2). 전에는 미니 카드 넉 장이었는데
+    §2가 "카드 안에 카드를 얹지 않는다"고 못 박은 형태였고, 값도 20px이라 운영자 화면의 같은
+    자리(30px)와 달라 보였다.
+    ⚠️ **색 강조를 걷어냈다.** `마감 D-7`이 빨강, `휴직자`가 주황이었는데 **0일 때도** 그 색이었다 —
+       문제가 없는데 늘 빨간 화면은 곧 안 읽힌다(DESIGN §5: 색은 문제일 때만). 급한 것은
+       `즉시 확인 필요` 문구가 말한다.
+  */
+  const summaryItems = [
+    { label: "전체 프로젝트", value: String(projects.length), meta: "진행 중" },
+    { label: "마감 D-7", value: String(imminentProjectCount), meta: "즉시 확인 필요" },
+    { label: "전체 사원", value: String(activeMemberCount), meta: "재직 중" },
+    { label: "휴직자", value: String(onLeaveMemberCount), meta: "현재 휴직" },
   ];
 
   return (
     <main className="scrollbar-hidden min-h-0 flex-1 overflow-y-auto px-8 py-7">
       <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-7">
-        <div className="grid grid-cols-4 gap-3">
-          {kpis.map((kpi) => (
-            <KpiCard key={kpi.label} {...kpi} />
-          ))}
-        </div>
+        <SummaryCard items={summaryItems} />
 
         {/*
           ⚠️ 높이를 고정하지 않는다 — 내용만큼 자라고, 팀이 많아질 때만 위 한도에서 멈춘다
@@ -120,11 +115,20 @@ export default async function OwnerDashboardPage() {
               <span className="bg-foreground size-2 rounded-full" aria-hidden />
               최근 프로젝트 회의
             </h2>
+            {/*
+              ⚠️ 화살표는 **아이콘**이다(`lucide-react`). `→` 글자로 두면 글꼴이 그 문자를 못 가진
+                 환경에서 대체 글꼴로 떨어져 크기·기준선이 글자와 따로 논다(CLAUDE.md §아이콘).
+              ⚠️ 아이콘 옆 한글을 따로 내리지 않는다 — `items-center`가 이미 맞춰 준다.
+            */}
             <Link
               href="/app/meeting"
-              className="text-muted-foreground hover:text-foreground text-[12px] leading-4 transition-colors"
+              className="text-muted-foreground hover:text-foreground group flex shrink-0 items-center gap-1 text-[12px] leading-4 transition-colors"
             >
-              전체 보기 →
+              전체 보기
+              <ArrowRight
+                className="size-3.5 transition-transform duration-150 group-hover:translate-x-0.5"
+                aria-hidden
+              />
             </Link>
           </div>
           {projectMeetings.length === 0 ? (

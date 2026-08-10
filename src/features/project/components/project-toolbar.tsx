@@ -37,9 +37,10 @@ export function ProjectToolbar() {
 
   return (
     <div className="flex items-center gap-2">
-      <div className="relative w-full max-w-56">
+      {/* 폭·아이콘 자리는 사원 관리 검색과 같은 값이다(280 / left-3 / size-4 / pl-9) */}
+      <div className="relative w-full max-w-[280px]">
         <Search
-          className="text-muted-foreground pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2"
+          className="text-muted-foreground/70 pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2"
           aria-hidden
         />
         <Input
@@ -51,7 +52,7 @@ export function ProjectToolbar() {
           onBlur={() => pushWith({ q: keyword })}
           placeholder="프로젝트명 검색"
           aria-label="프로젝트명 검색"
-          className="pl-8"
+          className="pl-9"
         />
       </div>
 

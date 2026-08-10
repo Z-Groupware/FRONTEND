@@ -46,10 +46,18 @@ describe("getProgressPercent", () => {
 });
 
 describe("splitDepartments", () => {
-  it("기본 2개까지 노출하고 나머지는 초과 수로 센다", () => {
-    expect(splitDepartments(["개발팀", "마케팅팀", "디자인팀"])).toEqual({
-      visible: ["개발팀", "마케팅팀"],
+  it("기본 3개까지 노출하고 나머지는 초과 수로 센다", () => {
+    expect(splitDepartments(["개발팀", "마케팅팀", "디자인팀", "전략기획팀"])).toEqual({
+      visible: ["개발팀", "마케팅팀", "디자인팀"],
       overflow: 1,
+    });
+  });
+
+  /* 팀이 셋인 프로젝트는 마지막 팀이 `+1` 뒤에 숨지 않는다 — 표로 바뀌며 자리가 생겼다 */
+  it("셋이면 그대로 다 보인다", () => {
+    expect(splitDepartments(["개발팀", "마케팅팀", "디자인팀"])).toEqual({
+      visible: ["개발팀", "마케팅팀", "디자인팀"],
+      overflow: 0,
     });
   });
 
