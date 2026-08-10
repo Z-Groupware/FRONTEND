@@ -98,14 +98,15 @@ function RecentlyViewedCard({ item }: RecentlyViewedCardProps) {
     ⚠️ **카드 안에 카드를 얹지 않는다**(§DESIGN 2). 바깥이 이제 카드라 여기까지 테두리를
        두르면 네모 안에 네모가 된다 — 옅은 면으로 갈라 두면 덩이는 보이면서 층은 하나다.
   */
-  const shape = "bg-foreground/[0.03] flex items-start gap-3 rounded-xl p-4";
+  /* ⚠️ 바깥 카드가 사라졌으니 항목이 스스로 카드다 — 테두리를 되돌린다(카드 안의 카드 아님) */
+  const shape = "border-border bg-card flex items-start gap-3 rounded-xl border p-4";
 
   if (item.kind === "PROJECT") {
     return (
       <Link
         href={`/app/projects/${item.id}`}
         /* ⚠️ 누를 수 있는 것만 면이 짙어진다 — 넷 중 프로젝트 하나만 링크다 */
-        className={`${shape} hover:bg-foreground/[0.07] transition-colors`}
+        className={`${shape} hover:border-foreground/25 transition-colors`}
       >
         {inner}
       </Link>

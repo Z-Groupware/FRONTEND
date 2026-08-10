@@ -13,7 +13,7 @@ export function RecentSearchChips({ entries }: RecentSearchChipsProps) {
   if (entries.length === 0) return null;
 
   return (
-    <SearchSection title="최근 검색어" compact>
+    <SearchSection title="최근 검색어">
       <ul className="flex flex-wrap gap-2">
         {entries.map((entry) => (
           <li key={entry.keyword}>

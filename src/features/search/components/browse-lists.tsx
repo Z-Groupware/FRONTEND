@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { ProfileAvatar } from "@/components/common/profile-avatar";
 import { ProjectTag } from "@/components/common/project-tag";
 import { AUTHORITY_BADGE_CLASS, AUTHORITY_LABEL } from "@/constants/authority";
 
@@ -15,29 +16,28 @@ export function BrowseProjects({ projects }: BrowseProjectsProps) {
   if (projects.length === 0) return null;
 
   return (
-    <SearchSection title="프로젝트로 찾기" meta={`${projects.length}개`} padded={false}>
-      <ul className="divide-border divide-y">
-        {projects.map((project) => {
-          return (
-            <li key={project.id}>
-              <Link
-                href={`/app/projects/${project.id}`}
-                className="hover:bg-foreground/[0.03] focus-visible:ring-ring flex items-center gap-2.5 px-5 py-3.5 text-[13px] transition-colors focus-visible:ring-2 focus-visible:outline-hidden"
-              >
-                {/*
-                  ⚠️ **색 점 대신 태그 칩을 세운다.** 점은 색만 있고 글자가 없어, 색이 겹치는
-                     프로젝트끼리(팔레트가 열한 색뿐이라 겹친다 — §palette) 구분이 안 됐다.
-                     칩은 색과 이름을 함께 들고 있어 점이 못 하던 일을 한다.
-                */}
-                <ProjectTag tag={project.tag} />
-                <span className="min-w-0 flex-1 truncate">{project.name}</span>
-                <span className="text-muted-foreground shrink-0 text-xs tabular-nums">
-                  회의 {project.meetingCount}건
-                </span>
-              </Link>
-            </li>
-          );
-        })}
+    <SearchSection title="프로젝트로 찾기" meta={`${projects.length}개`}>
+      {/*
+        ⚠️ **줄마다 자기 카드다**(시안). 구분선으로 이어 붙인 한 덩이가 아니라, 낱장이 쌓인
+           모양이다 — 훑다가 하나를 고르는 화면이라 줄이 각각 눌리는 것처럼 보여야 한다.
+        ⚠️ 그래서 `divide-y`가 아니라 `gap`이다. 선으로 이으면 표가 되고, 표는 값을 비교하는
+           자리지 고르는 자리가 아니다.
+      */}
+      <ul className="flex flex-col gap-2">
+        {projects.map((project) => (
+          <li key={project.id}>
+            <Link
+              href={`/app/projects/${project.id}`}
+              className="border-border bg-card hover:border-foreground/25 focus-visible:ring-ring flex items-center gap-2.5 rounded-xl border px-4 py-3 text-[13px] transition-colors focus-visible:ring-2 focus-visible:outline-hidden"
+            >
+              <ProjectTag tag={project.tag} />
+              <span className="min-w-0 flex-1 truncate">{project.name}</span>
+              <span className="text-muted-foreground shrink-0 text-[12px] leading-4 tabular-nums">
+                회의 {project.meetingCount}건
+              </span>
+            </Link>
+          </li>
+        ))}
       </ul>
     </SearchSection>
   );
@@ -55,10 +55,20 @@ export function BrowsePeople({ people }: BrowsePeopleProps) {
   if (people.length === 0) return null;
 
   return (
-    <SearchSection title="사람으로 찾기" meta={`${people.length}명`} padded={false}>
-      <ul className="divide-border divide-y">
+    <SearchSection title="사람으로 찾기" meta={`${people.length}명`}>
+      <ul className="flex flex-col gap-2">
         {people.map((person) => (
-          <li key={person.id} className="flex items-center gap-2.5 px-5 py-3.5 text-[13px]">
+          <li
+            key={person.id}
+            className="border-border bg-card flex items-center gap-2.5 rounded-xl border px-4 py-3 text-[13px]"
+          >
+            {/*
+              ⚠️ **얼굴 자리를 둔다**(시안). 이름 넉 자만 있는 줄이 넷 쌓이면 어느 줄이
+                 어느 사람인지 눈이 못 붙잡는다 — 색이 다른 동그라미가 그 일을 한다.
+              ⚠️ 아바타는 **공용 훅**이 만든다(`useProfileAvatar`). 이름 첫 글자를 직접 그리면
+                 같은 사람이 화면마다 다른 색으로 나온다.
+            */}
+            <ProfileAvatar userId={person.id} size={26} />
             <span className="min-w-0 flex-1 truncate">{person.name}</span>
             <span
               className={`${AUTHORITY_BADGE_CLASS[person.authority]} shrink-0 rounded px-1.5 py-0.5 text-[11px] leading-4`}
