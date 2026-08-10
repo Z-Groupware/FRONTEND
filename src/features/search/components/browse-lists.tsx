@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ProfileAvatar } from "@/components/common/profile-avatar";
 import { ProjectTag } from "@/components/common/project-tag";
 import { AUTHORITY_BADGE_CLASS, AUTHORITY_LABEL } from "@/constants/authority";
+import { pickPaletteColor } from "@/lib/palette";
 
 import type { PersonBrowseItem, ProjectBrowseItem } from "../types";
 import { SearchSection } from "./search-section";
@@ -28,8 +29,19 @@ export function BrowseProjects({ projects }: BrowseProjectsProps) {
           <li key={project.id}>
             <Link
               href={`/app/projects/${project.id}`}
-              className="border-border bg-card hover:border-foreground/25 focus-visible:ring-ring flex items-center gap-2.5 rounded-xl border px-4 py-3 text-[13px] transition-colors focus-visible:ring-2 focus-visible:outline-hidden"
+              className="border-border bg-card hover:border-foreground/25 focus-visible:ring-ring flex items-stretch gap-2.5 rounded-xl border py-3 pr-4 pl-3 text-[13px] transition-colors focus-visible:ring-2 focus-visible:outline-hidden [&>*:not(:first-child)]:self-center"
             >
+              {/*
+                ⚠️ **최근 본 항목과 같은 색 막대를 세운다.** 거기만 막대가 있고 여기는 없으니
+                   같은 화면의 목록 셋이 따로 놀았다 — 같은 종류의 줄은 같은 언어로 읽혀야 한다.
+                ⚠️ 칩과 겹치는 게 아니다. 칩은 **어느 프로젝트인지**(글자), 막대는 **훑을 때
+                   걸리는 표식**(색)이다 — 눈은 글자를 읽기 전에 색을 먼저 본다.
+              */}
+              <span
+                className="w-1 shrink-0 self-stretch rounded-full"
+                style={{ backgroundColor: pickPaletteColor(project.tag).solidColor }}
+                aria-hidden
+              />
               <ProjectTag tag={project.tag} />
               <span className="min-w-0 flex-1 truncate">{project.name}</span>
               <span className="text-muted-foreground shrink-0 text-[12px] leading-4 tabular-nums">
