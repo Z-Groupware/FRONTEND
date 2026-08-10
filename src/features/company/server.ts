@@ -1,7 +1,19 @@
 import "server-only";
 
+import { requireAccessToken } from "@/features/auth/session";
+import { serverApi } from "@/lib/api";
+import { ep } from "@/lib/endpoints";
 import { isMock } from "@/mocks/config";
 
+import {
+  type BeCompanyProfile,
+  type BePosition,
+  type BeTeam,
+  toCompanyProfile,
+  toDepartmentNode,
+  toPosition,
+  toTeamMemberCounts,
+} from "./mapper";
 import { getMockCompanySetting } from "./mock/company";
 import type { CompanySetting } from "./types";
 
@@ -15,6 +27,24 @@ import type { CompanySetting } from "./types";
 export async function getCompanySetting(): Promise<CompanySetting> {
   if (isMock) return getMockCompanySetting();
 
-  // TODO(BE 협의): `GET /companies/me/setting` — 응답 봉투 모양은 아직 모른다(매퍼가 벗긴다)
-  throw new Error("기업 설정 조회 API가 아직 연결되지 않았습니다.");
+  /*
+    ⚠️ **한 번에 주는 API가 없다.** 화면은 기본 정보·팀·직급을 한 화면에 그리는데 BE는 셋으로
+       나뉘어 있다([확인] `CompanyController.getProfile` · `TeamController.list` ·
+       `PositionController.list`) — 여기서 모아 하나로 돌려준다. 화면은 그 사실을 모른다.
+    ⚠️ **나란히 부른다.** 줄줄이 기다리면 카드 셋이 다 그려질 때까지 세 번 왕복한다.
+    ⚠️ 회사는 **토큰의 `companyId`** 로 정해진다 — 파라미터로 안 보낸다(§라우트 그룹).
+  */
+  const accessToken = await requireAccessToken();
+  const [profile, teams, positions] = await Promise.all([
+    serverApi<BeCompanyProfile>(ep.companyMe(), { accessToken }),
+    serverApi<BeTeam[]>(ep.teams(), { accessToken }),
+    serverApi<BePosition[]>(ep.jobPositions(), { accessToken }),
+  ]);
+
+  return {
+    profile: toCompanyProfile(profile),
+    departments: teams.map(toDepartmentNode),
+    positions: positions.map(toPosition),
+    teamMemberCounts: toTeamMemberCounts(teams),
+  };
 }

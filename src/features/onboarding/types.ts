@@ -90,6 +90,15 @@ export interface Position {
   id: string;
   name: string;
   role: AssignableRole;
+  /**
+   * 직급 권한 요약.
+   *
+   * ⚠️ **화면에 안 보이지만 버리면 안 된다.** BE가 `@NotBlank`로 필수라(`CreatePositionRequest`·
+   *    `UpdatePositionRequest`) 저장할 때 다시 보내야 한다 — 안 들고 다니면 왕복 한 번에
+   *    남이 적어 둔 설명이 지워지거나 400이 난다.
+   * ⚠️ 온보딩에서 새로 만들 때는 비어 있다 — 그때는 저장하는 쪽이 채운다.
+   */
+  description?: string;
 }
 
 /** 기업이 고를 수 있는 권한. `SYSTEM`은 서비스 운영자라 제외된다. */

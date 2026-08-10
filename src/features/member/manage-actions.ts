@@ -5,9 +5,12 @@ import { revalidatePath } from "next/cache";
 import type { Authority } from "@/constants/authority";
 import { AUTHORITY, POSITION_AUTHORITIES } from "@/constants/authority";
 import { MEMBER_STATUS } from "@/constants/member";
+import { requireAccessToken } from "@/features/auth/session";
 import { getCompanySetting } from "@/features/company/server";
 import { getViewer } from "@/features/shell/viewer";
+import { serverApi, toUserMessage } from "@/lib/api";
 import { todayIso } from "@/lib/date";
+import { ep } from "@/lib/endpoints";
 import type { PaginatedResult } from "@/lib/paginate";
 import {
   canApproveFinal,
@@ -20,7 +23,7 @@ import { isMock } from "@/mocks/config";
 
 import { isEmailTaken, validateAccount } from "./account-validate";
 import { GRADE_LOCK_NOTE, gradeLockOf } from "./grade";
-import { getManagedMember, getManagedMembersPage, listManagedMembers } from "./manage-server";
+import { getManagedMember, getManagedMembersPage, getTeamLeaders } from "./manage-server";
 import type {
   AccountDraft,
   AccountErrors,
@@ -50,6 +53,17 @@ import { buildTeamRoles, isRoleOfTeam } from "./team-roles";
  */
 
 const NO_SESSION = "세션이 만료되었습니다. 다시 로그인해 주세요";
+/*
+  아직 못 붙인 것들이 쓰는 문구.
+
+  ⚠️ **"BE 협의 대기"가 아니다.** 각각 이유가 다르다(2026-08-10 BE 실코드 대조):
+    · 휴직·오프보딩 승인/반려 — `handover` 도메인 API(`PATCH /api/handovers/{id}/finalize`
+      ·`/complete`·`/reject`)가 있지만 **어느 것이 이 화면의 "승인"인지 확실하지 않고**,
+      그 도메인은 이 화면 담당이 아니다. 담당자와 맞춘 뒤 붙인다.
+    · 계정 삭제 — **BE에 경로가 없다.** `MemberController`·`ManageMemberController` 어디에도
+      `@DeleteMapping`이 없다. 만들어 달라고 요청해야 한다.
+  화면에는 이 문구가 그대로 뜬다 — 되는 척하지 않는다(§정직성).
+*/
 const NOT_CONNECTED = "아직 연결되지 않은 기능입니다";
 
 function pathOf(id: number) {
@@ -162,8 +176,52 @@ export async function changeMemberGradeAction(
   if (clash) return { isSuccess: false, message: clash };
 
   if (!isMock) {
-    // TODO(BE 협의): `PATCH /companies/me/members/{id}`
-    return { isSuccess: false, message: NOT_CONNECTED };
+    /*
+      ⚠️ **호출이 둘로 갈린다.** 역할·직급은 `PATCH /api/members/{id}`, 관리자 겸직은
+         `PATCH /api/members/{id}/admin`이다 — 앞쪽에 `isAdmin`을 실어 보내면 BE가
+         **400(`FIELD_NOT_ALLOWED`)** 으로 막는다. 어드민이 자기를 복제하는 것을 끊으려고
+         관리자 토글만 **OWNER 전용** 경로로 떼어 둔 것이다.
+      ⚠️ **직급은 이름이 아니라 id로 보낸다.** 화면은 이름을 다루므로 회사 목록에서 되찾는다 —
+         못 찾으면 보내지 않는다(없는 직급으로 바뀌느니 실패가 낫다).
+      ⚠️ **`roleLabel`(팀 안 세부 역할)을 보낼 곳이 없다.** BE `UpdateMemberRoleRequest`는
+         `role`·`jobPositionId`만 받는다 — 그 값은 지금 서버에 안 남는다. 되는 척하지 않으려고
+         적어 둔다(§정직성). API가 생기면 여기서 함께 보낸다.
+    */
+    const jobPosition = company.positions.find((item) => item.name === position);
+    if (!jobPosition) return { isSuccess: false, message: "회사에 없는 직급입니다" };
+
+    try {
+      const accessToken = await requireAccessToken();
+      await serverApi<unknown>(ep.member(id), {
+        method: "PATCH",
+        accessToken,
+        json: { role: next.authority, jobPositionId: Number(jobPosition.id) },
+      });
+
+      /*
+        ⚠️ **겸직 변경은 OWNER만 된다**(BE `@PreAuthorize("hasRole('OWNER')")`). ADMIN이
+           겸직을 건드리면 역할·직급은 이미 저장된 뒤 이 호출만 403으로 막혀 **절반만 반영**된다 —
+           화면은 "실패"라고 말하는데 직급은 바뀌어 있다. 부르기 전에 걸러 낸다.
+        ⚠️ 실제로 달라질 때만 부른다 — 같은 값이면 괜히 403을 만들 이유가 없다.
+      */
+      if (next.isAdmin !== target.member.isAdmin && pass.viewer.role !== AUTHORITY.OWNER) {
+        return { isSuccess: false, message: "관리자 겸직은 대표만 바꿀 수 있습니다" };
+      }
+      if (next.isAdmin !== target.member.isAdmin) {
+        await serverApi<unknown>(ep.memberAdmin(id), {
+          method: "PATCH",
+          accessToken,
+          json: { isAdmin: next.isAdmin },
+        });
+      }
+    } catch (error) {
+      return { isSuccess: false, message: toUserMessage(error) };
+    }
+
+    revalidatePath(pathOf(id));
+    revalidatePath("/manage/members");
+    revalidatePath(PEOPLE_PATH);
+    return { isSuccess: true };
   }
 
   updateMockMemberGrade(id, next);
@@ -195,20 +253,19 @@ async function findTeamLeaderClash(
   const willBeLeader = nextAuthority === AUTHORITY.LEADER;
   if (wasLeader === willBeLeader) return null;
 
-  const members = await listManagedMembers();
-  const leaders = members.filter(
-    (member) =>
-      member.teamName === team &&
-      member.authority === AUTHORITY.LEADER &&
-      member.status !== MEMBER_STATUS.RESIGNED &&
-      member.id !== target.id,
-  );
+  /*
+    ⚠️ **명부 전체를 받지 않는다.** 전에는 `listManagedMembers()`를 불렀는데, 연동 뒤 그 함수는
+       "페이지 단위로 조회하라"며 던진다 — 라이브에서 팀장 권한을 바꾸려 할 때마다 액션이
+       통째로 터졌다. 팀 조회가 팀장을 이미 얹어 준다.
+  */
+  const leaders = await getTeamLeaders();
+  const existing = leaders.get(team);
+  const isOtherPerson = existing !== undefined && existing.id !== target.id;
 
-  const existing = leaders[0];
-  if (willBeLeader && existing) {
+  if (willBeLeader && isOtherPerson) {
     return `${team}에는 이미 팀장(${existing.name})이 있습니다. 먼저 그 사람의 권한을 바꿔 주세요`;
   }
-  if (!willBeLeader && leaders.length === 0) {
+  if (!willBeLeader && !isOtherPerson) {
     return `${team}의 유일한 팀장입니다. 후임을 먼저 정해 주세요`;
   }
   return null;
@@ -326,8 +383,56 @@ export async function issueAccountAction(draft: AccountDraft): Promise<IssueAcco
   if (Object.keys(errors).length > 0) return { errors };
 
   if (!isMock) {
-    // TODO(BE 협의): `POST /companies/me/members`
-    return { errors: {}, message: NOT_CONNECTED };
+    /*
+      [확인] BE `ManageMemberController` — `POST /api/manage/members`.
+      비밀번호를 만들지 않는다: 기업코드·이메일·첫 비밀번호를 **서버가 메일로 보낸다.**
+      ⚠️ 중복 메일은 **서버가 본다.** 화면이 목록을 들고 있어도 그 사이 다른 관리자가 같은
+         주소로 발급했을 수 있다 — 그때는 BE의 `message`를 그대로 이메일 칸에 띄운다.
+      ⚠️ 팀·직급은 **id**로 보낸다. 화면은 이름을 다루므로 회사 목록에서 되찾는다.
+    */
+    const jobPosition = company.positions.find((item) => item.name === draft.position);
+    if (!jobPosition) return { errors: { position: "회사에 없는 직급입니다" } };
+
+    const team = company.departments.find((item) => item.name === draft.teamName);
+    if (!team) return { errors: { teamName: "회사에 없는 팀입니다" } };
+
+    /*
+      ⚠️ **id가 숫자가 아닐 수 있다.** 화면에서 방금 만든 팀·직급은 아직 저장 전이라 임시
+         id를 들고 있다 — 그대로 `Number()`하면 `NaN`이 나가고 BE가 400으로 되돌려 주는데,
+         그 문구는 "왜 안 되는지"를 말해 주지 못한다.
+    */
+    const teamId = Number(team.id);
+    const positionId = Number(jobPosition.id);
+    if (!Number.isInteger(teamId)) {
+      return { errors: { teamName: "먼저 기업 설정에서 팀을 저장해 주세요" } };
+    }
+    if (!Number.isInteger(positionId)) {
+      return { errors: { position: "먼저 기업 설정에서 직급을 저장해 주세요" } };
+    }
+
+    try {
+      const accessToken = await requireAccessToken();
+      await serverApi<unknown>(ep.manageMembers(), {
+        method: "POST",
+        accessToken,
+        json: {
+          name: draft.name,
+          email: draft.email,
+          teamId: teamId,
+          jobPositionId: positionId,
+          /* ⚠️ **`role`은 필수다**(BE `@NotNull`). 빠뜨리면 **항상 400**이다 */
+          role: draft.authority,
+          roleLabel: draft.roleLabel || null,
+        },
+      });
+    } catch (error) {
+      /* 중복 메일이 가장 흔한 실패라 이메일 칸에 붙인다 — 폼 오류는 인라인이다(DECISIONS §7) */
+      return { errors: { email: toUserMessage(error) } };
+    }
+
+    revalidatePath("/manage/members");
+    revalidatePath(PEOPLE_PATH);
+    return { errors: {} };
   }
 
   /*

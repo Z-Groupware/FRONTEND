@@ -2,7 +2,10 @@
 
 import { revalidatePath } from "next/cache";
 
+import { requireAccessToken } from "@/features/auth/session";
 import { getViewer } from "@/features/shell/viewer";
+import { serverApi, toUserMessage } from "@/lib/api";
+import { ep } from "@/lib/endpoints";
 import { canManageCompany } from "@/lib/permission";
 import { isMock } from "@/mocks/config";
 
@@ -37,8 +40,6 @@ import {
 const SETTING_PATH = "/owner/setting";
 
 const FORBIDDEN = "기업 설정을 바꿀 권한이 없습니다";
-
-const NOT_CONNECTED = "저장 기능이 아직 연결되지 않았습니다";
 
 /**
  * 세션을 못 읽었을 때.
@@ -116,8 +117,35 @@ export async function saveCompanyProfileAction(
        카드를 통째로 갈아치워 방금 적은 값이 다 날아간다(§토스트: error.tsx는 페이지 전체 실패용).
   */
   if (!isMock) {
-    // TODO(BE 협의): `PATCH /companies/me`
-    return { errors: {}, message: NOT_CONNECTED };
+    /*
+      [확인] BE `CompanyController.updateProfile` — `PATCH /api/companies/me`.
+      ⚠️ **보낸 필드만 바뀐다**(부분 수정). `code`는 대상이 아니다 — 사원 로그인 키라 바뀌면
+         기존 사원이 전부 못 들어온다.
+      ⚠️ **좌표는 못 보낸다.** BE가 `address` 문자열만 받는다 — 지도에서 고른 자리는
+         주소 글자만 남고 핀은 저장되지 않는다(§mapper).
+    */
+    try {
+      const accessToken = await requireAccessToken();
+      await serverApi<unknown>(ep.companyMe(), {
+        method: "PATCH",
+        accessToken,
+        json: {
+          name: draft.name,
+          businessNumber: draft.businessNumber,
+          /*
+            ⚠️ **`null`을 보내면 안 지워진다.** BE는 부분 수정이라 `null`을 "이 필드는 건드리지
+               말라"로 읽는다 — 주소를 비우려고 지운 사람에게는 옛 주소가 그대로 남는다.
+               빈 문자열을 보내야 실제로 비워진다(`@Size`만 걸려 있어 통과한다).
+          */
+          address: draft.place?.address ?? "",
+        },
+      });
+    } catch (error) {
+      return { errors: {}, message: toUserMessage(error) };
+    }
+
+    revalidatePath(SETTING_PATH);
+    return { errors: {}, isSaved: true };
   }
 
   updateMockCompanyProfile(draft);
@@ -149,17 +177,28 @@ export async function saveDepartmentsAction(
        그게 던진다 — 순서가 뒤집히면 액션 자체가 거절되어 화면이 결과 대신 아무것도 못 받는다
        (이 파일이 세 번 적어 둔 "던지지 않는다"를 스스로 깨는 자리였다).
   */
-  if (!isMock) {
-    // TODO(BE 협의): `PUT /companies/me/teams`
-    return { isSuccess: false, message: NOT_CONNECTED };
-  }
-
+  /*
+    ⚠️ **사람이 딸린 팀은 못 지운다.** 화면에서 미리 막지만 액션은 주소만 알면 직접 부를 수
+       있다(§권한: 화면 숨김은 보안이 아니다). 지금 저장된 것과 견줘야 무엇이 사라졌는지 안다.
+  */
   /*
     ⚠️ **사람이 딸린 팀은 못 지우고, 남의 팀 아래로도 못 넣는다.** 화면에서 미리 막지만
        액션은 직접 부를 수 있다(§권한). 지금 저장된 트리와 견줘야 무엇이 바뀌었는지 알 수 있다 —
        클라이언트가 보낸 값만 보면 "무엇이 사라졌는지"를 모른다.
   */
-  const current = await getCompanySetting();
+  /*
+    ⚠️ **여기서 던지면 카드가 아니라 페이지가 죽는다.** `getCompanySetting()`은 서버를
+       세 번 부르므로 얼마든지 실패할 수 있는데, `try` 밖에 두면 그 예외가 그대로 올라가
+       error boundary가 화면을 통째로 갈아치운다 — 방금 짠 팀 구조가 다 날아간다.
+       이 파일이 세 번 적어 둔 "던지지 않는다"를 스스로 깨는 자리였다.
+  */
+  let current: Awaited<ReturnType<typeof getCompanySetting>>;
+  try {
+    current = await getCompanySetting();
+  } catch (error) {
+    return { isSuccess: false, message: toUserMessage(error) };
+  }
+
   const blocked = findBlockedTeamChange(current.departments, departments, current.teamMemberCounts);
   if (blocked) {
     return {
@@ -169,6 +208,77 @@ export async function saveDepartmentsAction(
           ? `'${blocked.team}'에 사원이 남아 있습니다. 사원 관리에서 옮긴 뒤 지워 주세요`
           : `'${blocked.team}'에는 사원이 있어 다른 팀의 역할로 옮길 수 없습니다`,
     };
+  }
+
+  if (!isMock) {
+    /*
+      ⚠️ **통째로 넣는 API가 없다.** BE는 팀을 한 건씩 다룬다(`POST` · `PATCH /{id}` ·
+         `DELETE /{id}`) — 화면은 트리를 통째로 저장하므로 여기서 **차이를 계산해** 나눠 부른다.
+      ⚠️ **지우기를 먼저 한다.** 처음엔 마지막에 뒀는데, 지운 팀의 이름을 다른 팀에 다시
+         쓰거나 두 팀 이름을 맞바꾸면 **같은 이름이 잠깐 둘**이 되어 서버가 막는다 —
+         지우고 나서 만들면 그 자리가 비어 있다.
+      ⚠️ 대신 **사람이 딸린 팀은 위에서 이미 걸렀다**(`findBlockedTeamChange`). 지우기가
+         먼저여도 사람이 붕 뜨지 않는다.
+      ⚠️ 새로 만든 팀은 화면에서 붙인 임시 id를 들고 온다. 서버 id가 아니므로
+         **숫자로 읽히지 않는 것**을 새 팀으로 본다.
+    */
+    /*
+      ⚠️ **팀 안 '역할' 라벨은 저장할 곳이 없다.** BE에 그걸 다루는 API가 없다(전 레포에
+         `roleLabel` 관리 경로 0건) — 팀만 저장하고 성공이라고 말하면 **역할을 고친 사람이
+         저장됐다고 믿는다**(§정직성). 바뀐 게 있으면 그 사실을 말하고 멈춘다.
+    */
+    /*
+      ⚠️ **이름 변경 여부와 무관하게 막는다.** 처음엔 "이름도 같이 바뀌었으면 통과"로 뒀는데,
+         보내는 본문은 `{ name }`뿐이라 그때도 역할은 안 저장된다 — 이름만 바뀌고 역할은
+         사라진 채 **성공**이라고 말하게 된다. 역할은 팀과 따로 세어야 한다.
+    */
+    const rolesOf = (nodes: DepartmentNode[]) =>
+      nodes
+        .map((node) => `${node.id}:${node.children.map((child) => child.name).join(",")}`)
+        .sort()
+        .join("|");
+    if (rolesOf(current.departments) !== rolesOf(departments)) {
+      return {
+        isSuccess: false,
+        message: "팀 안 역할은 아직 저장할 수 없습니다. 팀 이름만 바꿔 주세요",
+      };
+    }
+
+    const before = new Map(current.departments.map((node) => [node.id, node.name]));
+    const after = new Map(departments.map((node) => [node.id, node.name]));
+
+    try {
+      const accessToken = await requireAccessToken();
+
+      for (const id of before.keys()) {
+        if (after.has(id)) continue;
+        await serverApi<unknown>(ep.team(Number(id)), { method: "DELETE", accessToken });
+      }
+
+      for (const [id, name] of after) {
+        const serverId = Number(id);
+        if (!Number.isInteger(serverId) || !before.has(id)) {
+          await serverApi<unknown>(ep.teams(), { method: "POST", accessToken, json: { name } });
+        } else if (before.get(id) !== name) {
+          await serverApi<unknown>(ep.team(serverId), {
+            method: "PATCH",
+            accessToken,
+            json: { name },
+          });
+        }
+      }
+    } catch (error) {
+      /*
+        ⚠️ **실패해도 화면을 다시 읽는다.** 한 건씩 부르므로 **중간까지는 이미 반영돼 있다** —
+           그대로 두면 화면은 옛 트리를 들고 있고 서버는 반쯤 바뀐 상태라, 사람이 다시 저장을
+           누르면 이미 만든 팀을 또 만든다.
+      */
+      revalidatePath(SETTING_PATH);
+      return { isSuccess: false, message: toUserMessage(error) };
+    }
+
+    revalidatePath(SETTING_PATH);
+    return { isSuccess: true };
   }
 
   updateMockDepartments(departments);
@@ -186,8 +296,57 @@ export async function savePositionsAction(positions: Position[]): Promise<Compan
 
   // ⚠️ 던지지 않는다 — 저장 실패는 화면 전체 실패가 아니다
   if (!isMock) {
-    // TODO(BE 협의): `PUT /companies/me/positions`
-    return { isSuccess: false, message: NOT_CONNECTED };
+    /* 팀과 같은 이유로 차이를 계산해 한 건씩 부른다. 지우기가 먼저다 */
+    let current: Awaited<ReturnType<typeof getCompanySetting>>;
+    try {
+      current = await getCompanySetting();
+    } catch (error) {
+      /* 팀 저장과 같은 이유 — 던지면 카드가 아니라 페이지가 죽는다 */
+      return { isSuccess: false, message: toUserMessage(error) };
+    }
+    const before = new Map(current.positions.map((item) => [item.id, item]));
+    const after = new Map(positions.map((item) => [item.id, item]));
+
+    try {
+      const accessToken = await requireAccessToken();
+
+      for (const id of before.keys()) {
+        if (after.has(id)) continue;
+        await serverApi<unknown>(ep.jobPosition(Number(id)), { method: "DELETE", accessToken });
+      }
+
+      for (const [id, position] of after) {
+        const serverId = Number(id);
+        const previous = before.get(id);
+        /*
+          ⚠️ **`description`은 필수다**(BE `@NotBlank`). `null`을 보내면 **항상 400**이다.
+             화면에 그 칸이 없어 사람이 적을 길이 없으므로, 서버에서 읽어 온 값을 그대로
+             되돌려 보내고 새 직급이면 이름으로 채운다 — 빈 문자열도 `@NotBlank`에 걸린다.
+        */
+        const description = position.description?.trim() || position.name;
+        const body = { name: position.name, authority: position.role, description };
+        if (!Number.isInteger(serverId) || !previous) {
+          await serverApi<unknown>(ep.jobPositions(), { method: "POST", accessToken, json: body });
+        } else if (
+          previous.name !== position.name ||
+          previous.role !== position.role ||
+          (previous.description ?? "") !== description
+        ) {
+          await serverApi<unknown>(ep.jobPosition(serverId), {
+            method: "PATCH",
+            accessToken,
+            json: body,
+          });
+        }
+      }
+    } catch (error) {
+      /* 팀과 같은 이유 — 중간까지 반영됐으므로 실패해도 화면을 다시 읽는다 */
+      revalidatePath(SETTING_PATH);
+      return { isSuccess: false, message: toUserMessage(error) };
+    }
+
+    revalidatePath(SETTING_PATH);
+    return { isSuccess: true };
   }
 
   updateMockPositions(positions);
