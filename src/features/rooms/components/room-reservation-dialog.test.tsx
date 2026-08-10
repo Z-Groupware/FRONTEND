@@ -20,7 +20,9 @@ const ROOMS: MeetingRoom[] = [
     closeTime: "18:00",
   },
 ];
-const MEMBERS: RoomMember[] = [{ id: 1, name: "박대표" }];
+const MEMBERS: RoomMember[] = [
+  { id: 1, name: "박대표", teamName: null, authority: AUTHORITY.OWNER },
+];
 const PROJECTS: RoomProjectOption[] = [{ id: "1", name: "굿즈 프로젝트", tag: "GOODS" }];
 const TEAM_ACTIONS: RoomTeamActionOption[] = [];
 
@@ -38,6 +40,7 @@ function renderDialog(overrides: Partial<React.ComponentProps<typeof RoomReserva
       projects={PROJECTS}
       showParentTeamAction={false}
       teamActions={TEAM_ACTIONS}
+      viewerTeamName={null}
       onCreated={onCreated}
       {...overrides}
     />,
@@ -56,6 +59,7 @@ describe("RoomReservationDialog", () => {
         projects={PROJECTS}
         showParentTeamAction={false}
         teamActions={TEAM_ACTIONS}
+        viewerTeamName={null}
         onCreated={jest.fn()}
       />,
     );
@@ -92,12 +96,36 @@ describe("RoomReservationDialog", () => {
     expect(screen.getByRole("combobox", { name: "상위 팀 액션" })).toBeInTheDocument();
   });
 
-  it("필수값을 안 채우고 등록을 누르면 필드별 오류를 보여주고 onCreated는 안 부른다", async () => {
+  it("즉시 예약을 누르면 바로 등록하지 않고 확인 모달을 먼저 띄운다", async () => {
+    const user = userEvent.setup();
+    const { onCreated } = renderDialog();
+
+    await user.click(screen.getByRole("button", { name: "즉시 예약" }));
+
+    expect(screen.getByText("이대로 등록하시겠습니까?")).toBeInTheDocument();
+    expect(onCreated).not.toHaveBeenCalled();
+  });
+
+  it("확인 모달에서 취소하면 등록하지 않는다", async () => {
+    const user = userEvent.setup();
+    const { onCreated } = renderDialog();
+
+    await user.click(screen.getByRole("button", { name: "즉시 예약" }));
+    // ⚠️ 본 다이얼로그의 [취소]와 이름이 같다 — 나중에(위에) 뜬 확인 모달 쪽을 고른다.
+    const cancelButtons = screen.getAllByRole("button", { name: "취소" });
+    await user.click(cancelButtons.at(-1)!);
+
+    expect(screen.queryByText("이대로 등록하시겠습니까?")).not.toBeInTheDocument();
+    expect(onCreated).not.toHaveBeenCalled();
+  });
+
+  it("필수값을 안 채우고 확인 모달에서 예약을 누르면 필드별 오류를 보여주고 onCreated는 안 부른다", async () => {
     const user = userEvent.setup();
     const { onCreated } = renderDialog();
 
     await user.type(screen.getByLabelText("회의 제목"), "새 회의");
     await user.click(screen.getByRole("button", { name: "즉시 예약" }));
+    await user.click(screen.getByRole("button", { name: "예약" }));
 
     await waitFor(() => {
       const roomError = screen.getByText(

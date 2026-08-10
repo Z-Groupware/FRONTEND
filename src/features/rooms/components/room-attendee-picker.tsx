@@ -5,14 +5,58 @@ import { useMemo, useState } from "react";
 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { AUTHORITY } from "@/constants/authority";
 import { useProfileAvatar } from "@/hooks/use-profile-avatar";
+import { cn } from "@/lib/utils";
 
+import {
+  ROOM_ATTENDEE_FILTER,
+  ROOM_ATTENDEE_FILTER_LABEL,
+  type RoomAttendeeFilter,
+} from "../constants";
 import type { RoomMember } from "../types";
 
 interface RoomAttendeePickerProps {
   members: RoomMember[];
   selectedIds: number[];
   onChange: (ids: number[]) => void;
+  /** 지금 보고 있는 사람의 부서 — "내 부서만" 필터 기준(`null`이면 Owner처럼 부서가 없는 사람). */
+  viewerTeamName: string | null;
+}
+
+const FILTER_OPTIONS = Object.values(ROOM_ATTENDEE_FILTER);
+
+interface AttendeeFilterGroupProps {
+  value: RoomAttendeeFilter;
+  onChange: (value: RoomAttendeeFilter) => void;
+}
+
+/** 참석자 필터 3종 — 서로 배타적이라 체크박스 모양이어도 동작은 라디오다(`RoomPickerList`와 같은 패턴). */
+function AttendeeFilterGroup({ value, onChange }: AttendeeFilterGroupProps) {
+  return (
+    <div className="flex items-center gap-1" role="radiogroup" aria-label="참석자 필터">
+      {FILTER_OPTIONS.map((option) => {
+        const selected = option === value;
+        return (
+          <button
+            key={option}
+            type="button"
+            role="radio"
+            aria-checked={selected}
+            onClick={() => onChange(option)}
+            className={cn(
+              "rounded-full border px-2.5 py-1 text-[11px] transition-colors",
+              selected
+                ? "border-foreground bg-foreground/5 font-medium"
+                : "border-input text-muted-foreground hover:bg-muted",
+            )}
+          >
+            {ROOM_ATTENDEE_FILTER_LABEL[option]}
+          </button>
+        );
+      })}
+    </div>
+  );
 }
 
 const AVATAR_SIZE = 20;
@@ -49,14 +93,27 @@ function AttendeeRow({
  * 회의실 예약 "참석자" 선택 — 검색으로 좁히되, 결과는 **전체 목록을 체크박스로** 보여준다
  * (디자인 반영). 검색 전에는 전체가 다 보이고, 검색하면 이름이 걸리는 사람만 남는다.
  */
-export function RoomAttendeePicker({ members, selectedIds, onChange }: RoomAttendeePickerProps) {
+export function RoomAttendeePicker({
+  members,
+  selectedIds,
+  onChange,
+  viewerTeamName,
+}: RoomAttendeePickerProps) {
   const [keyword, setKeyword] = useState("");
+  const [filter, setFilter] = useState<RoomAttendeeFilter>(ROOM_ATTENDEE_FILTER.ALL);
 
   const visible = useMemo(() => {
     const query = keyword.trim().toLowerCase();
-    if (!query) return members;
-    return members.filter((member) => member.name.toLowerCase().includes(query));
-  }, [members, keyword]);
+    return members
+      .filter((member) => {
+        if (filter === ROOM_ATTENDEE_FILTER.LEADER) return member.authority === AUTHORITY.LEADER;
+        if (filter === ROOM_ATTENDEE_FILTER.MY_TEAM) {
+          return viewerTeamName !== null && member.teamName === viewerTeamName;
+        }
+        return true;
+      })
+      .filter((member) => !query || member.name.toLowerCase().includes(query));
+  }, [members, keyword, filter, viewerTeamName]);
 
   function toggle(id: number) {
     onChange(
@@ -66,7 +123,10 @@ export function RoomAttendeePicker({ members, selectedIds, onChange }: RoomAtten
 
   return (
     <div className="flex h-full flex-col gap-2">
-      <Label>참석자</Label>
+      <div className="flex items-center justify-between">
+        <Label>참석자</Label>
+        <AttendeeFilterGroup value={filter} onChange={setFilter} />
+      </div>
 
       <div className="relative">
         <Search
