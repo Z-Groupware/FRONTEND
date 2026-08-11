@@ -1,27 +1,33 @@
-import { type BeMeetingDetail, isEnded, toMeetingCaptureInfo } from "./mapper";
+import { type BeMeetingDetail, isClosed, isHostOf, toMeetingCaptureInfo } from "./mapper";
 
+/** MEET-04 응답 그대로 — 중첩·필드 이름을 BE 실코드에 맞춰 둔다 */
 const BASE: BeMeetingDetail = {
   meetingId: 12,
   title: "굿즈 앱 주간 운영 점검",
-  projectTag: "GOODS",
-  startAt: "2026-08-14T10:00:00+09:00",
-  endAt: "2026-08-14T10:30:00+09:00",
-  roomName: "대회의실",
-  hostId: 1,
-  endedAt: null,
+  status: "SCHEDULED",
+  startAt: "2026-08-14T10:00:00",
+  endAt: "2026-08-14T10:30:00",
+  project: { projectId: 3, tag: "GOODS" },
+  meetingRoom: { meetingRoomId: 2, name: "대회의실" },
+  host: { memberId: 1, name: "대표 계정" },
   attendees: [
-    { memberId: 1, name: "대표 계정", teamName: null, position: "대표" },
-    { memberId: 2, name: "김서준", teamName: "개발팀", position: "팀장" },
+    { memberId: 1, name: "대표 계정", teamName: null, jobPosition: "대표" },
+    { memberId: 2, name: "김서준", teamName: "개발팀", jobPosition: "팀장" },
   ],
 };
 
 describe("toMeetingCaptureInfo", () => {
-  it("id를 문자열로 바꾸고 시각을 우리 표기로 굳힌다", () => {
+  it("중첩된 태그·회의실을 꺼내고 id를 문자열로 바꾼다", () => {
     const info = toMeetingCaptureInfo(BASE);
 
     expect(info.id).toBe("12");
-    // ⚠️ 화면이 ISO를 직접 포맷하면 목·실서버가 다른 문자열을 그린다 — 여기서 한 번에 굳힌다
-    expect(info.schedule).toBe("8월 14일(금) 10:00 – 10:30");
+    expect(info.projectTag).toBe("GOODS");
+    expect(info.roomName).toBe("대회의실");
+  });
+
+  it("시각을 우리 표기로 굳힌다 — 화면이 원문을 포맷하지 않는다", () => {
+    // ⚠️ 오프셋 없는 문자열이라 프로세스 시간대로 읽힌다(서버는 `TZ=Asia/Seoul`)
+    expect(toMeetingCaptureInfo(BASE).schedule).toBe("8월 14일(금) 10:00 – 10:30");
   });
 
   it("팀이 없는 사람은 앞이 빈 가운뎃점을 남기지 않는다", () => {
@@ -37,9 +43,21 @@ describe("toMeetingCaptureInfo", () => {
   });
 });
 
-describe("isEnded", () => {
-  it("종료를 누른 시각이 있으면 끝난 회의다 — 시간이 지난 것과 다르다", () => {
-    expect(isEnded({ endedAt: null })).toBe(false);
-    expect(isEnded({ endedAt: "2026-08-14T10:28:00+09:00" })).toBe(true);
+describe("isHostOf", () => {
+  it("이 회의를 연 사람 한 명만 참이다 — 역할과 무관하다", () => {
+    expect(isHostOf(BASE, 1)).toBe(true);
+    expect(isHostOf(BASE, 2)).toBe(false);
+  });
+});
+
+describe("isClosed", () => {
+  it("예정·진행중은 녹음할 수 있다", () => {
+    expect(isClosed({ status: "SCHEDULED" })).toBe(false);
+    expect(isClosed({ status: "IN_PROGRESS" })).toBe(false);
+  });
+
+  it("끝났거나 취소된 회의는 막는다 — 취소는 아직 화면 계약에 없어 같은 자리로 보낸다", () => {
+    expect(isClosed({ status: "DONE" })).toBe(true);
+    expect(isClosed({ status: "CANCELED" })).toBe(true);
   });
 });
