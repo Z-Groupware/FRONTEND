@@ -3,17 +3,22 @@ import type { MemberAction } from "@/features/member/types";
 import { type BeAttachment, toProjectAttachment } from "@/features/project/mapper";
 import type { TeamActionDetail } from "@/features/project/types";
 
-import type { PersonalActionDetail } from "./types";
+import type { MyActionListItem, PersonalActionDetail } from "./types";
 
 /**
  * BE shape → UI 계약 (§Mock 격리막).
  * [확인] 잇다(Z) REST API 연동 가이드 최종본(2026-08-10) + BACKEND 실코드 대조
  *   `action/presentation/api/response/{ActionSummaryResponse,ActionDetailResponse}.java`
+ *
+ * ⚠️ `description`·`projectId`·`projectName`은 2026-08-11 이홍근 요청으로 추가됨(내 액션
+ *    리스트·프로젝트별 그룹핑용). `projectName`은 목록 2경로(개인·팀 액션 목록)에서만 채워지고
+ *    타임라인·회의별 조회에서는 "이미 그 화면 안이라 중복"이라 `null`로 온다.
  */
 export interface BeActionSummary {
   id: number;
   actionType: "PERSONAL" | "TEAM";
   title: string;
+  description: string;
   status: ActionStatus;
   /** "아직 시작 안 함" 액션은 `null`이 정상이다(마이그레이션 문제 아님, BE 주석 확인). */
   startDate: string | null;
@@ -21,7 +26,9 @@ export interface BeActionSummary {
   needsReview: boolean;
   isDelayed: boolean;
   assigneeName: string | null;
+  projectId: number;
   projectTag: string | null;
+  projectName: string | null;
   teamName: string | null;
   sourceMeetingTitle: string | null;
   parentActionId: number | null;
@@ -77,6 +84,26 @@ export function toMemberAction(be: BeActionSummary): MemberAction {
     status: be.status,
     startDate: fallbackActionStartDate(be.startDate),
     dueDate: be.dueDate,
+  };
+}
+
+/**
+ * 내 액션 리스트(`/app/my/actions`) 한 줄(`GET /api/actions`) → UI 계약.
+ * ⚠️ `team`은 `teamName`이 없으면(수동 추가 등) "-"로 채운다 — 배지에 빈 문자열을 그대로
+ *    보여주면 빈 배지처럼 보인다.
+ */
+export function toMyActionListItem(be: BeActionSummary): MyActionListItem {
+  return {
+    id: be.id,
+    title: be.title,
+    description: be.description,
+    team: be.teamName ?? "-",
+    projectId: be.projectId,
+    projectName: be.projectName ?? "",
+    projectTag: be.projectTag ?? "",
+    startDate: fallbackActionStartDate(be.startDate),
+    dueDate: be.dueDate,
+    status: be.status,
   };
 }
 
