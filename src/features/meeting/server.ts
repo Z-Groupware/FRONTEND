@@ -4,12 +4,18 @@ import { AI_SUMMARY_STATUS, MEETING_STATUS } from "@/constants/meeting";
 import { PERSONAL_ACTION_DETAIL_MOCK } from "@/features/action/mock/action-detail";
 import { listMockManagedMembers } from "@/features/member/mock/managed";
 import { PROJECT_TEAM_ACTIONS_MOCK } from "@/features/project/mock/team-actions";
-import { type Actor, canCaptureMeeting, canViewMeetingDetail } from "@/lib/permission";
+import {
+  type Actor,
+  canCaptureMeeting,
+  canOperateMeeting,
+  canViewMeetingDetail,
+} from "@/lib/permission";
 import { isMock } from "@/mocks/config";
 
 import { formatMeetingSchedule } from "./lib";
 import { findMockMeeting, listMockMeetings } from "./mock/meetings";
 import { ensureMockMeetingsSeeded, findMockMeetingExtras } from "./mock/seed";
+import { findMockMeetingReview } from "./review/mock/review";
 import { meetingStatusOf } from "./status";
 import type { Meeting } from "./types";
 import type {
@@ -194,6 +200,19 @@ export async function getMeetingDetail(id: string, viewer: Actor): Promise<Meeti
   const roster = new Map(listMockManagedMembers().map((member) => [member.id, member.name]));
   const { kindLabel, outputs } = outputsOf(meeting);
 
+  /*
+    ⚠️ 검토 대기·중단은 **산출물 칸만의 사정**이다(회의 안 끝남·요약 중과는 다른 축) — 요약이
+       끝났는데도(REVIEWED) Host가 [액션 분배 확정]을 안 눌렀거나, 요약 자체가 서버 문제로
+       중단됐을 때(FAILED + isStalled) 산출물 칸이 왜 비었는지 갈라 보여준다(§view-types).
+  */
+  const review =
+    meeting.aiSummaryStatus === AI_SUMMARY_STATUS.REVIEWED
+      ? findMockMeetingReview(meeting.id)
+      : null;
+  const pendingActionCount = review && !review.actionsConfirmed ? review.drafts.length : 0;
+  const isStalled =
+    pendingReason === "FAILED" ? (findMockMeetingExtras(meeting.id)?.isStalled ?? false) : false;
+
   return {
     kind: "ok",
     detail: {
@@ -217,6 +236,9 @@ export async function getMeetingDetail(id: string, viewer: Actor): Promise<Meeti
       outputs,
       script: findMockMeetingExtras(meeting.id)?.script ?? [],
       pendingReason,
+      pendingActionCount,
+      isStalled,
+      isHost: canOperateMeeting(viewer, { ownerId: meeting.hostId }),
     },
   };
 }
