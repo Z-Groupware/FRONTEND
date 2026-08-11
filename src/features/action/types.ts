@@ -17,9 +17,11 @@ export interface PersonalActionDetail {
   assigneeRoleLabel?: string;
   /**
    * 이 개인 액션이 나온 회의 — **수동으로 추가한 액션(`POST /api/actions` 예외 경로)엔 없다**
-   * (2026-08-11, 실 API 대조 확인). ⚠️ 회의 상세(`/app/meeting/:id`) 라우트가 아직 없어 링크는 없다.
+   * (2026-08-11, 실 API 대조 확인). 클릭 시 `/app/meeting/:id`로 이동(2026-08-11, 회의 상세
+   * 라우트가 생겨 링크 추가).
    */
   sourceMeeting?: {
+    id: number;
     title: string;
     /** ISO datetime */
     scheduledAt: string;

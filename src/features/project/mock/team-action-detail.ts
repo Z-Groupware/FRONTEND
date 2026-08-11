@@ -19,7 +19,7 @@ export const TEAM_ACTION_DETAIL_MOCK: Record<number, TeamActionDetail> = {
     projectTag: "GOODS",
     assigneeName: "김서준",
     assigneeRoleLabel: "팀장",
-    sourceMeeting: { title: "프로젝트 기획 회의", scheduledAt: "2026-07-20T14:00" },
+    sourceMeeting: { id: 101, title: "프로젝트 기획 회의", scheduledAt: "2026-07-20T14:00" },
     attachments: [],
   },
   2: {
@@ -31,7 +31,7 @@ export const TEAM_ACTION_DETAIL_MOCK: Record<number, TeamActionDetail> = {
     projectTag: "GOODS",
     assigneeName: "김서준",
     assigneeRoleLabel: "팀장",
-    sourceMeeting: { title: "프로젝트 기획 회의", scheduledAt: "2026-07-20T14:00" },
+    sourceMeeting: { id: 102, title: "프로젝트 기획 회의", scheduledAt: "2026-07-20T14:00" },
     attachments: [],
   },
   3: {
@@ -43,7 +43,7 @@ export const TEAM_ACTION_DETAIL_MOCK: Record<number, TeamActionDetail> = {
     projectTag: "GOODS",
     assigneeName: "최유진",
     assigneeRoleLabel: "팀장",
-    sourceMeeting: { title: "프로젝트 기획 회의", scheduledAt: "2026-07-20T14:00" },
+    sourceMeeting: { id: 103, title: "프로젝트 기획 회의", scheduledAt: "2026-07-20T14:00" },
     attachments: [],
   },
   4: {
@@ -55,7 +55,7 @@ export const TEAM_ACTION_DETAIL_MOCK: Record<number, TeamActionDetail> = {
     projectTag: "GOODS",
     assigneeName: "강서연",
     assigneeRoleLabel: "팀장",
-    sourceMeeting: { title: "프로젝트 기획 회의", scheduledAt: "2026-07-20T14:00" },
+    sourceMeeting: { id: 104, title: "프로젝트 기획 회의", scheduledAt: "2026-07-20T14:00" },
     attachments: [],
   },
   5: {
@@ -67,7 +67,7 @@ export const TEAM_ACTION_DETAIL_MOCK: Record<number, TeamActionDetail> = {
     projectTag: "BRAND",
     assigneeName: "강서연",
     assigneeRoleLabel: "팀장",
-    sourceMeeting: { title: "프로젝트 기획 회의", scheduledAt: "2026-07-31T11:00" },
+    sourceMeeting: { id: 105, title: "프로젝트 기획 회의", scheduledAt: "2026-07-31T11:00" },
     attachments: [],
   },
   6: {
@@ -79,7 +79,7 @@ export const TEAM_ACTION_DETAIL_MOCK: Record<number, TeamActionDetail> = {
     projectTag: "BRAND",
     assigneeName: "최유진",
     assigneeRoleLabel: "팀장",
-    sourceMeeting: { title: "프로젝트 기획 회의", scheduledAt: "2026-07-31T11:00" },
+    sourceMeeting: { id: 106, title: "프로젝트 기획 회의", scheduledAt: "2026-07-31T11:00" },
     attachments: [],
   },
   7: {
@@ -91,7 +91,7 @@ export const TEAM_ACTION_DETAIL_MOCK: Record<number, TeamActionDetail> = {
     projectTag: "COLLAB",
     assigneeName: "김서준",
     assigneeRoleLabel: "팀장",
-    sourceMeeting: { title: "프로젝트 기획 회의", scheduledAt: "2026-07-24T15:00" },
+    sourceMeeting: { id: 107, title: "프로젝트 기획 회의", scheduledAt: "2026-07-24T15:00" },
     attachments: [],
   },
   8: {
@@ -103,7 +103,7 @@ export const TEAM_ACTION_DETAIL_MOCK: Record<number, TeamActionDetail> = {
     projectTag: "COLLAB",
     assigneeName: "오현우",
     assigneeRoleLabel: "팀장",
-    sourceMeeting: { title: "프로젝트 기획 회의", scheduledAt: "2026-07-24T15:00" },
+    sourceMeeting: { id: 108, title: "프로젝트 기획 회의", scheduledAt: "2026-07-24T15:00" },
     attachments: [],
   },
 };

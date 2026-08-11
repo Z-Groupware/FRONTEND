@@ -120,8 +120,9 @@ export interface TeamActionDetail {
   assigneeName?: string;
   /** `"{팀명}장"` 고정 포맷(BE가 조립) — 팀장 공석이면 없음. */
   assigneeRoleLabel?: string;
-  /** 이 팀 액션이 나온 프로젝트 회의 — 수동 추가 등으로 출처가 없으면 없음. */
+  /** 이 팀 액션이 나온 프로젝트 회의 — 수동 추가 등으로 출처가 없으면 없음. 클릭 시 `/app/meeting/:id`로 이동. */
   sourceMeeting?: {
+    id: number;
     title: string;
     /** ISO datetime */
     scheduledAt: string;

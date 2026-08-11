@@ -50,7 +50,6 @@ export default async function PersonalActionDetailPage({ params }: PersonalActio
             key: "source-meeting",
             icon: Video,
             label: "출처 회의",
-            // ⚠️ 회의 상세(`/app/meeting/:id`) 라우트가 아직 없어 href 없이 텍스트만(§9 화면은 사실만).
             content: (
               <>
                 <div className="flex items-center gap-1.5">
@@ -67,6 +66,7 @@ export default async function PersonalActionDetailPage({ params }: PersonalActio
                 </p>
               </>
             ),
+            href: `/app/meeting/${action.sourceMeeting.id}`,
           } satisfies ActionDetailInfoItem,
         ]
       : []),

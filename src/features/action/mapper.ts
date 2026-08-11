@@ -124,8 +124,12 @@ export function toPersonalActionDetail(be: BeActionDetail): PersonalActionDetail
     assigneeName: be.assigneeName,
     assigneeRoleLabel: be.assigneeRoleLabel ?? undefined,
     sourceMeeting:
-      be.sourceMeetingTitle && be.sourceMeetingScheduledAt
-        ? { title: be.sourceMeetingTitle, scheduledAt: be.sourceMeetingScheduledAt }
+      be.sourceMeetingId !== null && be.sourceMeetingTitle && be.sourceMeetingScheduledAt
+        ? {
+            id: be.sourceMeetingId,
+            title: be.sourceMeetingTitle,
+            scheduledAt: be.sourceMeetingScheduledAt,
+          }
         : undefined,
     parentTeamAction:
       be.parentActionId !== null &&
@@ -178,8 +182,12 @@ export function toTeamActionDetail(be: BeTeamActionDetail): TeamActionDetail {
     assigneeName: be.assigneeName ?? undefined,
     assigneeRoleLabel: be.assigneeRoleLabel ?? undefined,
     sourceMeeting:
-      be.sourceMeetingTitle && be.sourceMeetingScheduledAt
-        ? { title: be.sourceMeetingTitle, scheduledAt: be.sourceMeetingScheduledAt }
+      be.sourceMeetingId !== null && be.sourceMeetingTitle && be.sourceMeetingScheduledAt
+        ? {
+            id: be.sourceMeetingId,
+            title: be.sourceMeetingTitle,
+            scheduledAt: be.sourceMeetingScheduledAt,
+          }
         : undefined,
     attachments: be.attachments.map(toProjectAttachment),
   };
