@@ -142,7 +142,7 @@ export function AddressPicker({
               lng: picked?.lng ?? 0,
             })
           }
-          placeholder="회사 주소를 입력하세요"
+          placeholder="회사 주소를 입력해 주세요"
           autoComplete="street-address"
           aria-invalid={hasError}
           aria-describedby="company-address-error"

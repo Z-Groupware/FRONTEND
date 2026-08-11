@@ -338,7 +338,7 @@ export function ProjectForm({ action, teamOptions, cancelHref }: ProjectFormProp
           </Button>
           {attachmentName && <input type="hidden" name="attachmentName" value={attachmentName} />}
           <p className="text-muted-foreground text-[12px] leading-4">
-            프로젝트 기획서 등 참고 문서가 있다면 첨부해주세요.
+            프로젝트 기획서 등 참고 문서가 있다면 첨부해 주세요.
           </p>
         </div>
       </div>

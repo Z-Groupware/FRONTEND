@@ -109,7 +109,7 @@ export function LoginForm() {
               id="password"
               name="password"
               type={isPasswordShown ? "text" : "password"}
-              placeholder="비밀번호를 입력하세요"
+              placeholder="비밀번호를 입력해 주세요"
               autoComplete="current-password"
               className="pr-10"
               aria-invalid={loginErrors.password !== undefined}

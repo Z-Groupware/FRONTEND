@@ -1,6 +1,6 @@
 "use client";
 
-import { RotateCw } from "lucide-react";
+import { RotateCw, TriangleAlert } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -55,12 +55,26 @@ export function ScreenError({ title, reset, isInsideShell }: ScreenErrorProps) {
         isInsideShell ? "min-h-0 flex-1" : "min-h-screen-z",
       )}
     >
+      {/*
+        ⚠️ **표식을 하나 둔다**(2026-08-11). 글자 두 줄과 버튼만 가운데 떠 있어 화면이 아직
+           안 그려진 것처럼 보였다 — 빈 상태(`EmptyState`)와 같은 모양의 표식이라
+           "여기가 끝이다"가 한눈에 읽힌다.
+        ⚠️ **빨갛게 칠하지 않는다.** 못 불러온 것은 되돌릴 수 있는 일이고, 색으로 알리는 건
+           값이 틀렸을 때뿐이다(§DESIGN 5) — 화면 전체를 빨갛게 물들이면 데이터가 상한 줄 안다.
+      */}
+      <span
+        className="bg-secondary text-muted-foreground flex size-11 shrink-0 items-center justify-center rounded-2xl"
+        aria-hidden
+      >
+        <TriangleAlert className="size-5" strokeWidth={1.75} />
+      </span>
+
       <div className="flex flex-col gap-2">
         <Heading className="text-[17px] leading-7 font-semibold tracking-[-0.3px] break-keep">
           {title}
         </Heading>
         <p className="text-muted-foreground text-[13px] leading-[21px] break-keep">
-          잠시 후 다시 시도해 주세요. 계속 안 되면 담당자에게 알려주세요.
+          잠시 후 다시 시도해 주세요. 계속 안 되면 담당자에게 알려 주세요.
         </p>
       </div>
       <Button type="button" onClick={reset}>
