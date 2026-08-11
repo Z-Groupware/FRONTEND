@@ -77,7 +77,8 @@ export function ThemeCard() {
         role="radiogroup"
         aria-label="테마"
         onKeyDown={handleKeys}
-        className="flex flex-wrap gap-2 pt-5"
+        /* ⚠️ 세 칸 격자다 — 곁 칸(360)에서 `flex-wrap`이 `시스템`만 다음 줄로 떨어뜨렸다 */
+        className="grid grid-cols-3 gap-2 pt-5"
       >
         {THEME_OPTIONS.map((option) => {
           const isSelected = mounted && theme === option.value;
@@ -92,7 +93,7 @@ export function ThemeCard() {
               data-theme-option={option.value}
               onClick={() => setTheme(option.value)}
               className={cn(
-                "focus-visible:ring-ring flex min-w-[132px] flex-1 flex-col items-center gap-2 rounded-xl border p-2 transition-colors focus-visible:ring-2 focus-visible:outline-hidden",
+                "focus-visible:ring-ring flex flex-col items-center gap-2 rounded-xl border p-2 transition-colors focus-visible:ring-2 focus-visible:outline-hidden",
                 isSelected ? "border-foreground" : "border-border hover:bg-secondary",
               )}
             >

@@ -121,7 +121,8 @@ export function ScreenScaleCard() {
         role="radiogroup"
         aria-label="화면 배율"
         onKeyDown={handleScaleKeys}
-        className="flex flex-wrap gap-2 pt-5"
+        /* ⚠️ 네 칸 격자다 — 곁 칸(360)에 들어가면 `flex-wrap`이 `100%`만 다음 줄로 떨어뜨려 셋+하나로 갈렸다 */
+        className="grid grid-cols-4 gap-2 pt-5"
       >
         {SCREEN_SCALES.map((value) => (
           <button
@@ -133,7 +134,7 @@ export function ScreenScaleCard() {
             data-scale={value}
             onClick={() => writeScale(value)}
             className={cn(
-              "focus-visible:ring-ring h-9 min-w-[76px] rounded-lg border px-3 text-[13px] leading-none tabular-nums transition-colors focus-visible:ring-2 focus-visible:outline-hidden",
+              "focus-visible:ring-ring h-9 rounded-lg border px-2 text-[13px] leading-none tabular-nums transition-colors focus-visible:ring-2 focus-visible:outline-hidden",
               value === scale
                 ? "border-foreground bg-foreground text-background"
                 : "border-border hover:bg-secondary",

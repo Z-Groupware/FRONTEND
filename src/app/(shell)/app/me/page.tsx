@@ -76,7 +76,12 @@ export default async function AppMePage({ searchParams }: AppMePageProps) {
           </nav>
 
           {isTaskTab ? (
-            <div className="flex flex-col gap-5">
+            /*
+              ⚠️ **둘을 나란히 둔다**(2026-08-11). 세로로 쌓으니 짧은 카드 둘이 화면을 길게
+                 끌어 스크롤이 생기는데 정작 오른쪽은 통째로 비었다 — 둘 다 짧은 목록이라
+                 나란히 서는 게 맞다(검색 화면과 같은 판단). 좁아지면 다시 세로로 쌓인다.
+            */
+            <div className="grid gap-5 lg:grid-cols-2 lg:items-start">
               <TaskGroupSection
                 icon={ClipboardList}
                 title={TASK_GROUP.UNCONFIRMED_ACTION.title}
@@ -97,13 +102,24 @@ export default async function AppMePage({ searchParams }: AppMePageProps) {
             </div>
           ) : (
             <div className="flex flex-col gap-7">
-              <div className="flex flex-col gap-5">
-                <ProfileHeader profile={profile} />
-                <ProfileInfoCard profile={profile} />
-              </div>
+              <ProfileHeader profile={profile} />
 
-              <ScreenScaleCard />
-              <ThemeCard />
+              {/*
+                ⚠️ **두 칸으로 가른다**(2026-08-11). 폭을 넓히면서 카드를 세로로 쌓아 두니
+                   1440짜리 띠 세 장이 되어 안이 헐거워졌다 — 왼쪽은 **나에 대한 것**(기본 정보),
+                   오른쪽은 **이 기기에 대한 것**(화면 배율·테마)이다. 저장되는 자리가 서로
+                   다르다(회사 계정 / 이 브라우저)라, 섞어 쌓으면 같은 종류로 읽힌다.
+                ⚠️ 곁 칸은 360px 고정이다 — 인수인계 상세와 같은 값이다(§DESIGN 4).
+              */}
+              <div className="flex flex-col gap-7 lg:flex-row lg:items-start">
+                <div className="min-w-0 flex-1">
+                  <ProfileInfoCard profile={profile} />
+                </div>
+                <div className="flex flex-col gap-5 lg:w-[360px] lg:shrink-0">
+                  <ScreenScaleCard />
+                  <ThemeCard />
+                </div>
+              </div>
             </div>
           )}
         </div>
