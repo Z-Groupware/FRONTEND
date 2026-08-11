@@ -6,10 +6,13 @@ jest.mock("@/lib/mock-actor", () => ({
 }));
 // ⚠️ 실제 주간 캘린더는 `react-big-calendar` + `next/dynamic`을 물고 있어 무겁다 — 이 테스트는
 //    "회의 추가"(2026-08-10 이전엔 "예약하기") 콜백이 모달을 여는지만 본다(그 캘린더 렌더링은
-//    `weekly-room-calendar.test.tsx`가 맡는다). 버튼 자체는 이제 캘린더 툴바 안에 있어서, 그
+//    `weekly-room-calendar.test.tsx`가 맡는다). 버튼 자체는 `RoomListPanel` 안에 있어서, 그
 //    자리를 대신할 최소 스텁으로 `onAddClick`을 그대로 노출한다.
 jest.mock("./weekly-room-calendar-loader", () => ({
-  WeeklyRoomCalendarLoader: ({ onAddClick }: { onAddClick: () => void }) => (
+  WeeklyRoomCalendarLoader: () => null,
+}));
+jest.mock("./room-list-panel", () => ({
+  RoomListPanel: ({ onAddClick }: { onAddClick: () => void }) => (
     <button type="button" onClick={onAddClick}>
       회의 추가
     </button>
