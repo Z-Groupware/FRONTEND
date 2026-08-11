@@ -1,4 +1,4 @@
-import { CalendarClock, ChevronRight, DoorOpen, MapPin, Sparkles, Users } from "lucide-react";
+import { CalendarClock, ChevronRight, MapPin, Mic, Sparkles, Users } from "lucide-react";
 import Link from "next/link";
 
 import { ProjectTag } from "@/components/common/project-tag";
@@ -19,10 +19,10 @@ import { ProjectAccent } from "./project-accent";
  * ⚠️ **완료 카드라고 다 눌리지 않는다.** 종료 직후 회의는 상태가 완료지만 요약·액션 추출이
  *    아직 돌고 있어 회의록도 산출물도 없다(WORKFLOW §3-3 5) — 그때 상세로 보내면 빈 화면을
  *    준다. 무엇을 내줄 수 있는지는 `meetingCardAffordanceOf` 한 곳이 정한다.
- * ⚠️ [입장]은 **Host에게만**, 예정·진행중에만 뜬다(§3-2, 시간 제약 없음). 참석자에게는
+ * ⚠️ [녹음하기]는 **Host에게만**, 예정·진행중에만 뜬다(§3-2, 시간 제약 없음). 참석자에게는
  *    예정·진행중 카드가 눌러도 반응이 없다 — 눌리는 척(`hover`)도 하지 않는다(§정직성).
  * ⚠️ **카드 높이가 서로 같다.** 머리·본문·발치를 셋으로 나누고 발치를 `mt-auto`로 바닥에
- *    붙인다 — 안 그러면 [입장]이 있는 카드만 길어져 한 줄의 아랫변이 들쭉날쭉해진다.
+ *    붙인다 — 안 그러면 [녹음하기]가 있는 카드만 길어져 한 줄의 아랫변이 들쭉날쭉해진다.
  * ⚠️ 색은 **프로젝트 띠 하나뿐**이다(DESIGN §5: 색을 써도 되는 자리). 상태는 명도로 가른다.
  */
 
@@ -188,14 +188,17 @@ function CardFooter({
       */}
       <div className="flex h-8 shrink-0 items-center">
         {/*
-          ⚠️ **예정 회의에는 [입장]만**이다(2026-08-10 팀 확정). 아직 아무것도 안 남긴 회의라
-             상세에 갈 이유가 없고, Host가 할 일은 들어가는 것 하나뿐이다.
+          ⚠️ **예정 회의에는 [녹음하기]만**이다(2026-08-10 팀 확정). 아직 아무것도 안 남긴
+             회의라 상세에 갈 이유가 없고, Host가 할 일은 녹음을 뜨는 것 하나뿐이다.
+          ⚠️ 전에는 [입장]이었다(2026-08-11 개명) — 회의에 들어가는 별도 단계가 있는 것처럼
+             읽혔지만, 이 버튼은 캡처 화면으로 옮겨 주는 링크일 뿐이다. 회의가 실제로
+             시작되는 자리는 그 화면의 [녹음 시작] 하나다.
         */}
         {meeting.status === MEETING_STATUS.SCHEDULED ? (
           meeting.isHost && (
             <Link href={`/app/meeting/${meeting.id}/capture`} className={ACTION_CLASS}>
-              <DoorOpen className="size-3.5" aria-hidden />
-              <span>입장</span>
+              <Mic className="size-3.5" aria-hidden />
+              <span>녹음하기</span>
             </Link>
           )
         ) : affordance === "review" ? (
@@ -231,7 +234,7 @@ export function MeetingCard({ meeting }: { meeting: MeetingListItem }) {
 
   return (
     /*
-      ⚠️ **카드를 통째로 링크로 감싸지 않는다.** 발치에 [회의록]·[액션 검토]·[입장]이 함께
+      ⚠️ **카드를 통째로 링크로 감싸지 않는다.** 발치에 [회의록]·[액션 검토]·[녹음하기]가 함께
          설 수 있는데, 바깥이 링크면 그 안의 링크가 먹혀 제 갈 길로 못 간다(링크 안의 링크).
          갈 곳은 **글자로 적어 둔다** — 어디로 가는지 읽히는 편이 카드 전체가 눌리는 것보다
          분명하다.

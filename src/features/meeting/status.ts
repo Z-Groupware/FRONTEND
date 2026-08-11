@@ -34,7 +34,7 @@ export function meetingStatusOf(
  *    (배지 맵이 두 벌로 갈라졌던 것과 같은 일이다).
  */
 export type MeetingCardAffordance =
-  /** 예정·진행중 — Host면 [입장], 아니면 아무것도 */
+  /** 예정·진행중 — Host면 [녹음하기], 아니면 아무것도 */
   | "live"
   /** 분석은 끝났고 Host가 액션을 검토·확정할 차례 */
   | "review"
