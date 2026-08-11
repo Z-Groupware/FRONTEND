@@ -46,6 +46,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       SHA: ${{ github.sha }}
+      BACKEND_API_URL: ${{ secrets.BACKEND_API_URL }}
 
     steps:
       - name: Deploy via SSH (pull → restart container)
@@ -55,11 +56,13 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           port: 22
-          envs: IMAGE,SHA
+          envs: IMAGE,SHA,BACKEND_API_URL
           script: |
             set -e
 
             docker pull $IMAGE:$SHA
+
+            echo "BACKEND_API_URL=$BACKEND_API_URL" > /home/ubuntu/zebra/.env
 
             docker stop zebra-fe || true
             docker rm zebra-fe || true
