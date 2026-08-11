@@ -62,8 +62,35 @@ export interface SearchPersonResult {
   description: string;
 }
 
-export type SearchResultItem =
+/**
+ * 목에서만 쓰는 종류별 상세 레코드 — 필터링(`server.ts`의 mock 분기)에 쓴다.
+ * ⚠️ **공개 계약이 아니다.** `GET /search`가 실제로 주는 건 훨씬 적은 필드뿐이라
+ *    (`SearchResultItem` 참고), 목이든 실서버든 화면에는 그 평평한 모양만 나간다.
+ */
+export type MockSearchRecord =
   SearchMeetingResult | SearchActionResult | SearchProjectResult | SearchPersonResult;
+
+/**
+ * 검색 결과 한 건 — `GET /search`의 `results[]`(`{type, id, title, snippet, project, date,
+ * role, score}`)를 그대로 따른다.
+ *
+ * ⚠️ **종류별 상세 필드가 없다**(담당자 이름·마감일 라벨·회의/액션 건수 등). BE가 종류를 가리지
+ *    않는 평평한 모양으로 내려주므로, 화면이 못 받는 값을 지어내지 않는다(§정직성).
+ * ⚠️ `project`는 표시용 문구로 **가정**한다 — 필드 shape 미확정(BE 실코드 미대조, §연동 검증).
+ */
+export interface SearchResultItem {
+  kind: SearchKind;
+  id: number;
+  title: string;
+  /** 검색어가 걸린 발췌 — 없으면 `null`(회의 요약이 아직 없는 경우 등) */
+  snippet: string | null;
+  /** 소속 프로젝트 표시 문구 — 없으면 `null`(사람) */
+  project: string | null;
+  /** 회의 일시·마감일 등 — 없으면 `null` */
+  date: string | null;
+  /** 사람의 권한 — `null`이면 배지를 안 그린다(빈 값으로 다룬다) */
+  role: Authority | null;
+}
 
 export interface SearchCategoryCounts {
   total: number;
