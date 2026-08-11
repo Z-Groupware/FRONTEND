@@ -1,10 +1,11 @@
 import "server-only";
 
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 
 import {
   ACCESS_TOKEN_COOKIE,
   ACCESS_TOKEN_MAX_AGE,
+  isSecureRequest,
   KEEP_SIGNED_IN_COOKIE,
   REFRESH_TOKEN_COOKIE,
   REFRESH_TOKEN_MAX_AGE,
@@ -31,8 +32,17 @@ export interface SessionTokens {
 
 export async function setSession(tokens: SessionTokens, keepSignedIn: boolean): Promise<void> {
   const jar = await cookies();
+  /*
+    ⚠️ **이 요청이 https로 들어왔는지를 보고** `secure`를 정한다. `NODE_ENV`로 정하면
+       http로 띄운 서버에서 쿠키가 통째로 버려져 로그인이 안 된다(`cookie.ts` 참고).
+  */
+  const isSecure = isSecureRequest((await headers()).get("x-forwarded-proto"));
 
-  jar.set(ACCESS_TOKEN_COOKIE, tokens.accessToken, tokenCookieOptions(ACCESS_TOKEN_MAX_AGE));
+  jar.set(
+    ACCESS_TOKEN_COOKIE,
+    tokens.accessToken,
+    tokenCookieOptions(ACCESS_TOKEN_MAX_AGE, isSecure),
+  );
   /*
     ⚠️ "로그인 상태 유지"를 끄면 갱신표는 **세션 쿠키**다(수명 없음) — 브라우저를 닫으면 사라진다.
        공용 PC에서 체크를 끄는 사람이 기대하는 동작이다.
@@ -40,7 +50,7 @@ export async function setSession(tokens: SessionTokens, keepSignedIn: boolean): 
   jar.set(
     REFRESH_TOKEN_COOKIE,
     tokens.refreshToken,
-    tokenCookieOptions(keepSignedIn ? REFRESH_TOKEN_MAX_AGE : undefined),
+    tokenCookieOptions(keepSignedIn ? REFRESH_TOKEN_MAX_AGE : undefined, isSecure),
   );
   /*
     ⚠️ 재발급할 때 이 값을 BE에 같이 보내야 갱신표 수명이 로그인 때와 같게 유지된다.
@@ -49,7 +59,7 @@ export async function setSession(tokens: SessionTokens, keepSignedIn: boolean): 
   jar.set(
     KEEP_SIGNED_IN_COOKIE,
     keepSignedIn ? "1" : "0",
-    tokenCookieOptions(keepSignedIn ? REFRESH_TOKEN_MAX_AGE : undefined),
+    tokenCookieOptions(keepSignedIn ? REFRESH_TOKEN_MAX_AGE : undefined, isSecure),
   );
 }
 

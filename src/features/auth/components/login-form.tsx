@@ -22,7 +22,7 @@ import { SubmitButton } from "./submit-button";
  *    사용자는 비밀번호가 틀린 줄 안다 — 액션이 안내를 돌려주고 여기서 보여 준다(§정직성).
  * ⚠️ 비밀번호 재발급 화면은 만들지 않는다(팀 결정) — 링크가 아니라 안내 문구로 둔다.
  */
-const INITIAL: LoginState = { errors: {} };
+const INITIAL: LoginState = { errors: {}, attempt: 0 };
 export function LoginForm() {
   // 기억해 둔 회사가 있으면 1단계를 건너뛴다
   const company = useSavedCompany();
@@ -78,8 +78,10 @@ export function LoginForm() {
           </Label>
           <Input
             id="email"
+            key={`email-${state.attempt}`}
             name="email"
             type="email"
+            defaultValue={state.email}
             placeholder="name@company.com"
             autoComplete="email"
             aria-invalid={loginErrors.email !== undefined}

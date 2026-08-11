@@ -39,13 +39,35 @@ export const ACCESS_TOKEN_MAX_AGE = 60 * 30;
  */
 export const REFRESH_TOKEN_MAX_AGE = 60 * 60 * 24 * 14;
 
-/** 쿠키 공통 속성 — 토큰이 브라우저 JS에 안 보이게 하는 게 핵심이다. */
-export function tokenCookieOptions(maxAge?: number) {
+/**
+ * 이 요청이 **HTTPS로 들어왔는가** — `secure` 플래그를 여기서 정한다.
+ *
+ * ⚠️ **`NODE_ENV`로 판단하면 안 된다.** 전에는 `secure: NODE_ENV === "production"`이었는데,
+ *    도커 이미지가 `NODE_ENV=production`으로 굳어 있어서 **http로 띄운 서버에서도 `secure`가
+ *    켜졌다.** 브라우저는 http에서 `Secure` 쿠키를 **조용히 버린다** — 로그인은 성공하고
+ *    리다이렉트까지 가는데 쿠키가 없어서 `proxy.ts`가 로그인 화면으로 되돌렸다.
+ *    303(로그인 성공) → 307(가드가 되돌림) → 200(로그인 화면)이 그 흔적이다.
+ * ⚠️ 배포 방식이 아니라 **지금 이 요청의 프로토콜**을 본다. 그래야 http로 띄운 데모에서도
+ *    로그인이 되고, 나중에 앞단에 HTTPS를 붙이는 순간 **설정을 안 고쳐도** 다시 켜진다.
+ * ⚠️ `x-forwarded-proto`는 앞단(ALB·nginx)이 붙여 준다. 없으면 앞단이 없다는 뜻이라 http로 본다.
+ *    값이 여럿이면(`https,http`) 맨 앞이 사용자와 맺은 프로토콜이다.
+ */
+export function isSecureRequest(forwardedProto: string | null | undefined): boolean {
+  if (!forwardedProto) return false;
+  return forwardedProto.split(",")[0]?.trim().toLowerCase() === "https";
+}
+
+/**
+ * 쿠키 공통 속성 — 토큰이 브라우저 JS에 안 보이게 하는 게 핵심이다.
+ *
+ * ⚠️ `isSecure`는 부르는 쪽이 정한다. Server Action은 `headers()`로, `proxy.ts`는
+ *    `request.headers`로 읽는다 — 이 파일은 요청을 모른다(Edge에서도 읽히므로 `server-only`를 못 쓴다).
+ */
+export function tokenCookieOptions(maxAge: number | undefined, isSecure: boolean) {
   return {
     httpOnly: true,
     sameSite: "lax" as const,
-    // 개발은 http라 `secure`를 켜면 쿠키가 아예 안 굽힌다
-    secure: process.env.NODE_ENV === "production",
+    secure: isSecure,
     path: "/",
     ...(maxAge === undefined ? {} : { maxAge }),
   };
