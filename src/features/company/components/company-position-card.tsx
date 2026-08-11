@@ -141,7 +141,11 @@ export function CompanyPositionCard({ initial }: { initial: Position[] }) {
           <span className={cn(POSITION_COLUMN.NAME, "shrink-0 text-center")}>직급명</span>
           <span className="flex-1" aria-hidden />
           <span className={cn(POSITION_COLUMN.ROLE, "shrink-0 text-center")}>권한</span>
-          <span className={cn(POSITION_COLUMN.REMOVE, "shrink-0")} aria-hidden />
+          {/*
+            ⚠️ 머리의 빈 칸은 **폭만** 잡는다(2026-08-11). `size-6`이라 높이 24px까지 밀어
+               올려서, 이 띠만 옆 카드(팀 체계)보다 8px 두꺼웠다 — 띠의 키는 글자가 정한다.
+          */}
+          <span className="w-6 shrink-0" aria-hidden />
         </div>
 
         {/* 남는 키는 목록이 가져간다 — 팀 체계 카드와 같은 이유 */}

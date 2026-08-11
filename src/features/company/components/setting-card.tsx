@@ -39,7 +39,14 @@ export function SettingCard({
         )}
       </div>
 
-      <p className="text-muted-foreground px-7 pb-5 text-[12px] leading-[18px] break-keep">
+      {/*
+        ⚠️ **설명 자리를 세 줄로 잡아 둔다**(2026-08-11). 카드 둘을 나란히 놨는데 설명이
+           한 줄(팀 체계)과 세 줄(직급·권한)이라, 바로 아래 **표 머리가 서로 다른 높이**에서
+           시작했다 — 밑단(입력 줄·저장 줄)은 이미 맞아 있어서 위만 어긋난 게 더 눈에 띄었다.
+        ⚠️ 74 = 줄 높이 18 × 3 + 아래 여백 20. **여백까지 더해야 한다** — `box-sizing: border-box`라
+           54로 두면 두 줄짜리 설명(36+20=56)이 그 값을 넘어 2px 더 커진다.
+      */}
+      <p className="text-muted-foreground min-h-[74px] px-7 pb-5 text-[12px] leading-[18px] break-keep">
         {description}
       </p>
 

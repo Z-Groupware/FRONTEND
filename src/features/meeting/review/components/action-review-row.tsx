@@ -45,67 +45,81 @@ export function ActionReviewRow({
 }: ActionReviewRowProps) {
   return (
     <div className="border-border flex flex-col gap-2 px-7 py-4 not-first:border-t">
-      <div className="flex items-start gap-3">
-        <div className="flex min-w-0 flex-1 flex-col gap-1">
+      {/*
+        ⚠️ **첫 줄은 이름과 조작이 나란히**다(2026-08-11). 전에는 이름·설명 두 줄을 왼쪽 칸에
+           묶고 조작 넷을 그 옆에 세워, 조작이 이름보다 **한 층 아래**에서 시작해 어느 줄에
+           딸린 것인지 흐렸다 — 고치는 대상(이름)과 고치는 수단(담당자·기간)을 한 줄에 둔다.
+        ⚠️ 설명·근거는 **줄 아래 전폭**으로 내린다. 좁은 칸에 갇혀 세 줄로 접히던 글이 한 줄에 편다.
+      */}
+      <div className="flex items-center gap-3">
+        <div className="min-w-0 flex-1">
           <InlineEditableField value={draft.title} onChange={onTitleChange} ariaLabel="액션명" />
-          <InlineEditableField
-            value={draft.description}
-            onChange={onDescriptionChange}
-            ariaLabel="세부 내용"
-            placeholder="세부 내용을 입력해 주세요"
-            multiline
-            allowEmpty
-          />
         </div>
 
-        <Select
-          value={String(draft.assigneeId)}
-          onValueChange={(value) => value && onAssigneeChange(Number(value))}
-        >
-          {/* ⚠️ 조작 셋은 **같은 폭**이다 — 144/180/180이라 열 끝이 어긋났다(§DESIGN 3 오와 열) */}
-          <SelectTrigger aria-label="담당자 선택" className="w-[180px]">
-            {/* 원본 값(id 문자열)이 아니라 이름·직급 라벨을 보여준다(role-select.tsx와 같은 패턴) */}
-            <SelectValue>
-              {(value) => {
-                const option = assigneeOptions.find((candidate) => String(candidate.id) === value);
-                return option ? formatAssigneeLabel(option) : value;
-              }}
-            </SelectValue>
-          </SelectTrigger>
-          <SelectContent side="bottom" alignItemWithTrigger={false}>
-            {assigneeOptions.map((option) => (
-              <SelectItem key={option.id} value={String(option.id)}>
-                {formatAssigneeLabel(option)}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        {/*
+          ⚠️ 조작은 **키가 같다**(32). 셀렉트 32 · 날짜 40 · ✕ 28로 셋이 제각각이라 같은 줄인데
+             중앙이 어긋나 보였다 — 날짜 칸의 높이는 공용 컴포넌트에서 바로잡았다(§DESIGN 3).
+        */}
+        <div className="flex shrink-0 items-center gap-2">
+          <Select
+            value={String(draft.assigneeId)}
+            onValueChange={(value) => value && onAssigneeChange(Number(value))}
+          >
+            <SelectTrigger aria-label="담당자 선택" className="w-[180px]">
+              {/* 원본 값(id 문자열)이 아니라 이름·직급 라벨을 보여준다(role-select.tsx와 같은 패턴) */}
+              <SelectValue>
+                {(value) => {
+                  const option = assigneeOptions.find(
+                    (candidate) => String(candidate.id) === value,
+                  );
+                  return option ? formatAssigneeLabel(option) : value;
+                }}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent side="bottom" alignItemWithTrigger={false}>
+              {assigneeOptions.map((option) => (
+                <SelectItem key={option.id} value={String(option.id)}>
+                  {formatAssigneeLabel(option)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
-        <DatePickerField
-          aria-label="시작일"
-          value={draft.startDate}
-          max={draft.dueDate}
-          onChange={onStartDateChange}
-          className="w-[180px]"
-        />
-        <DatePickerField
-          aria-label="마감일"
-          value={draft.dueDate}
-          min={draft.startDate}
-          onChange={onDueDateChange}
-          className="w-[180px]"
-        />
+          <DatePickerField
+            aria-label="시작일"
+            value={draft.startDate}
+            max={draft.dueDate}
+            onChange={onStartDateChange}
+            className="w-[180px]"
+          />
+          <DatePickerField
+            aria-label="마감일"
+            value={draft.dueDate}
+            min={draft.startDate}
+            onChange={onDueDateChange}
+            className="w-[180px]"
+          />
 
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon-sm"
-          aria-label="이 액션 반려"
-          onClick={onReject}
-        >
-          <X />
-        </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            aria-label="이 액션 반려"
+            onClick={onReject}
+          >
+            <X />
+          </Button>
+        </div>
       </div>
+
+      <InlineEditableField
+        value={draft.description}
+        onChange={onDescriptionChange}
+        ariaLabel="세부 내용"
+        placeholder="세부 내용을 입력해 주세요"
+        multiline
+        allowEmpty
+      />
 
       {/*
         ⚠️ **이모지를 안 쓴다**(§디자인 토큰). `💬`·`▶`는 기기마다 다른 그림으로 그려지고

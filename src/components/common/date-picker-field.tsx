@@ -77,7 +77,12 @@ export function DatePickerField({
             disabled={disabled}
             aria-label={ariaLabel}
             aria-invalid={ariaInvalid}
-            className={cn("h-10 justify-start gap-2 font-normal", className)}
+            /*
+              ⚠️ **높이는 32다**(2026-08-11). `h-10`(40)이라 옆에 선 입력칸(`Input` 32)·
+                 셀렉트(32)보다 혼자 8px 높아, 같은 줄에 두면 키가 안 맞았다 —
+                 폼 조작의 키는 앱 전체가 하나다.
+            */
+            className={cn("h-8 justify-start gap-2 font-normal", className)}
           />
         }
       >
