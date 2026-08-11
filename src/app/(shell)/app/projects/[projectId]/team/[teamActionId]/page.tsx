@@ -149,7 +149,8 @@ export default async function TeamActionDetailPage({
           ⚠️ 칩 규격은 목록·회의와 같다(11px, `font-mono` 아님).
         */}
         <div className="flex items-center gap-2">
-          <h2 className="text-foreground text-xl leading-7 font-semibold tracking-[-0.4px]">
+          {/* ⚠️ 화면 제목은 22px이다 — 인수인계 상세·검토 화면과 같은 자리다(§DESIGN 4: 새 숫자를 만들지 않는다) */}
+          <h2 className="text-foreground text-[22px] leading-[30px] font-semibold tracking-[-0.4px]">
             {teamAction.name}
           </h2>
           <span
