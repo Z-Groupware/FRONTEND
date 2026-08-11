@@ -74,27 +74,28 @@ function BoardCardBody({ card, isDelayed }: BoardCardProps) {
 /**
  * 카드 겉모양 — 실제 카드와 사본이 같은 값을 쓴다.
  *
- * ⚠️ 라운드(`rounded-xl` 14px)와 **막대 폭(7px)은 한 벌로 정한다.** 곡선만 키우면 막대 끝이
- *    크게 깎여 잘린 것처럼 보이고, 폭만 키우면 곡선이 안 보여 일자가 된다 — 폭이 반지름의
- *    절반쯤일 때 막대가 모서리를 **넉넉히 타고 도는** 모양이 나온다.
+ * ⚠️ 라운드는 `rounded-xl`(14px)이다. 왼쪽 막대는 이 곡선에 **안 깎인다** — 막대가 스스로
+ *    둥글기 때문에 카드 라운드를 자유롭게 정할 수 있다(§ColorEdge).
  * ⚠️ 세로 여백을 넉넉히 준다(`py-6`). **띠 길이는 결국 카드 높이다** — 띠만 손봐서는 길어지지
  *    않는다. 두 줄 사이 간격도 함께 벌려 늘어난 높이가 한쪽 여백에만 쏠리지 않게 한다.
  */
-const CARD_SHAPE =
-  "border-border bg-card relative flex overflow-hidden rounded-xl border py-6 pr-4 pl-4";
+const CARD_SHAPE = "border-border bg-card relative flex rounded-xl border py-6 pr-4 pl-4";
 
 /**
- * 왼쪽 색 막대 — **한 가지 색으로 카드 높이를 꽉 채운다.**
+ * 왼쪽 색 막대 — **양 끝이 완전히 둥근 얇은 알약**이다.
  *
- * ⚠️ 투명도를 섞지 않는다. 끝을 흐려 봤더니 색이 옅어진 자리가 **번져 보여** 오히려 지저분했다.
- * ⚠️ **막대 폭이 모서리 반지름의 절반쯤 돼야 곡선이 드러난다**(7px : 14px). 4px일 때는 깎이는
- *    양이 2px 남짓이라 그냥 일자 막대로 보였다 — `overflow-hidden`이 잘라 주는 곡선이 막대
- *    위아래에 드러나야 카드 모서리를 타고 도는 모양이 된다.
+ * ⚠️ 카드가 깎지 않는다. `overflow-hidden`으로 자르면 끝이 카드 모서리 곡선에 잘려 평평해지고,
+ *    그러면 **얇게 하는 순간 일자 막대**가 된다 — 두께와 끝 모양이 서로 묶여 버린다.
+ *    막대가 스스로 둥글면(`rounded-full`) 두께와 상관없이 끝이 늘 둥글다.
+ * ⚠️ 위아래를 6px만 들인다. 많이 들이면 짧아져 떠 있는 눈금처럼 보이고, 0이면 카드 모서리와
+ *    겹쳐 어색하다.
+ * ⚠️ 왼쪽은 `-left-px`로 테두리 위에 살짝 얹는다. 안쪽으로 들이면 테두리와 막대 사이에 흰 틈이
+ *    보인다.
  */
 function ColorEdge({ tag }: { tag: string }) {
   return (
     <span
-      className="pointer-events-none absolute inset-y-0 left-0 w-[7px]"
+      className="pointer-events-none absolute inset-y-1.5 -left-px w-[5px] rounded-full"
       style={{ backgroundColor: pickPaletteColor(tag).solidColor }}
       aria-hidden
     />
