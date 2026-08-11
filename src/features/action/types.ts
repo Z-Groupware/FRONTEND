@@ -13,16 +13,22 @@ export interface PersonalActionDetail {
   projectId: number;
   projectTag: string;
   assigneeName: string;
-  /** 본인 역할 — "프론트엔드"·"백엔드" 등. Leader면 "팀장". */
-  assigneeRoleLabel: string;
-  /** 이 개인 액션이 나온 팀 액션 회의. ⚠️ 회의 상세(`/app/meeting/:id`) 라우트가 아직 없어 링크는 없다. */
-  sourceMeeting: {
+  /** 본인 역할 — "프론트엔드"·"백엔드" 등. Leader면 "팀장". 역할 미지정이면 없음. */
+  assigneeRoleLabel?: string;
+  /**
+   * 이 개인 액션이 나온 회의 — **수동으로 추가한 액션(`POST /api/actions` 예외 경로)엔 없다**
+   * (2026-08-11, 실 API 대조 확인). ⚠️ 회의 상세(`/app/meeting/:id`) 라우트가 아직 없어 링크는 없다.
+   */
+  sourceMeeting?: {
     title: string;
     /** ISO datetime */
     scheduledAt: string;
   };
-  /** 상위 팀 액션 — 클릭 시 `/app/projects/:projectId/team/:teamActionId`로 이동. */
-  parentTeamAction: {
+  /**
+   * 상위 팀 액션 — **수동으로 추가한 액션엔 없다**(같은 이유, 2026-08-11 확인).
+   * 클릭 시 `/app/projects/:projectId/team/:teamActionId`로 이동.
+   */
+  parentTeamAction?: {
     id: number;
     name: string;
     team: string;

@@ -39,55 +39,66 @@ export default async function PersonalActionDetailPage({ params }: PersonalActio
       key: "assignee",
       icon: User,
       label: "담당자",
-      content: `${action.assigneeName}(${action.assigneeRoleLabel})`,
+      // ⚠️ 역할 미지정이면 이름만 보여준다 — 없는 역할을 지어내지 않는다(§정직성).
+      content: action.assigneeRoleLabel
+        ? `${action.assigneeName}(${action.assigneeRoleLabel})`
+        : action.assigneeName,
     },
-    {
-      key: "source-meeting",
-      icon: Video,
-      label: "출처 회의",
-      // ⚠️ 회의 상세(`/app/meeting/:id`) 라우트가 아직 없어 href 없이 텍스트만(§9 화면은 사실만).
-      content: (
-        <>
-          <div className="flex items-center gap-1.5">
-            <p className="truncate">{action.sourceMeeting.title}</p>
-            <span
-              className="shrink-0 rounded px-1.5 py-px text-[11px] leading-4 font-medium"
-              style={{ backgroundColor: tagColor.bgColor, color: tagColor.textColor }}
-            >
-              {action.projectTag}
-            </span>
-          </div>
-          <p className="text-muted-foreground text-[11px] leading-4">
-            {formatMeetingDate(action.sourceMeeting.scheduledAt)}
-          </p>
-        </>
-      ),
-    },
-    {
-      key: "parent-team-action",
-      icon: GitBranch,
-      label: "상위 팀 액션",
-      content: (
-        <>
-          <div className="flex items-center gap-1.5">
-            <p className="truncate">{action.parentTeamAction.name}</p>
-            <span
-              className="shrink-0 rounded px-1.5 py-px text-[11px] leading-4 font-medium"
-              style={{ backgroundColor: tagColor.bgColor, color: tagColor.textColor }}
-            >
-              {action.projectTag}
-            </span>
-            <span className="bg-muted text-muted-foreground shrink-0 rounded px-1.5 py-0.5 text-[10px] leading-none font-semibold">
-              {action.parentTeamAction.team}
-            </span>
-          </div>
-          <p className="text-muted-foreground text-[11px] leading-4">
-            {formatMonthDayWeekday(action.parentTeamAction.dueDate) ?? "-"}까지
-          </p>
-        </>
-      ),
-      href: `/app/projects/${action.projectId}/team/${action.parentTeamAction.id}`,
-    },
+    ...(action.sourceMeeting
+      ? [
+          {
+            key: "source-meeting",
+            icon: Video,
+            label: "출처 회의",
+            // ⚠️ 회의 상세(`/app/meeting/:id`) 라우트가 아직 없어 href 없이 텍스트만(§9 화면은 사실만).
+            content: (
+              <>
+                <div className="flex items-center gap-1.5">
+                  <p className="truncate">{action.sourceMeeting.title}</p>
+                  <span
+                    className="shrink-0 rounded px-1.5 py-px text-[11px] leading-4 font-medium"
+                    style={{ backgroundColor: tagColor.bgColor, color: tagColor.textColor }}
+                  >
+                    {action.projectTag}
+                  </span>
+                </div>
+                <p className="text-muted-foreground text-[11px] leading-4">
+                  {formatMeetingDate(action.sourceMeeting.scheduledAt)}
+                </p>
+              </>
+            ),
+          } satisfies ActionDetailInfoItem,
+        ]
+      : []),
+    ...(action.parentTeamAction
+      ? [
+          {
+            key: "parent-team-action",
+            icon: GitBranch,
+            label: "상위 팀 액션",
+            content: (
+              <>
+                <div className="flex items-center gap-1.5">
+                  <p className="truncate">{action.parentTeamAction.name}</p>
+                  <span
+                    className="shrink-0 rounded px-1.5 py-px text-[11px] leading-4 font-medium"
+                    style={{ backgroundColor: tagColor.bgColor, color: tagColor.textColor }}
+                  >
+                    {action.projectTag}
+                  </span>
+                  <span className="bg-muted text-muted-foreground shrink-0 rounded px-1.5 py-0.5 text-[10px] leading-none font-semibold">
+                    {action.parentTeamAction.team}
+                  </span>
+                </div>
+                <p className="text-muted-foreground text-[11px] leading-4">
+                  {formatMonthDayWeekday(action.parentTeamAction.dueDate) ?? "-"}까지
+                </p>
+              </>
+            ),
+            href: `/app/projects/${action.projectId}/team/${action.parentTeamAction.id}`,
+          } satisfies ActionDetailInfoItem,
+        ]
+      : []),
     {
       key: "project",
       icon: Folder,
