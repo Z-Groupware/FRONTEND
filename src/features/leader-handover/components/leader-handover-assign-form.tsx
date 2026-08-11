@@ -63,9 +63,8 @@ export function LeaderHandoverAssignForm({ handover }: LeaderHandoverAssignFormP
   return (
     <section className="border-border bg-card flex flex-col gap-4 rounded-2xl border p-7">
       <div className="flex items-center justify-between gap-3">
-        <h2 className="flex items-center gap-2 text-[15px] leading-6 font-semibold tracking-[-0.2px]">
-          새 팀장에게 귀속
-        </h2>
+        {/* ⚠️ 카드 제목은 17px이다(§DESIGN 4 다섯 크기) — 15px는 규격 밖이라 이 카드만 작았다 */}
+        <h2 className="text-[17px] leading-7 font-semibold tracking-[-0.3px]">새 팀장에게 귀속</h2>
         <Button
           type="button"
           size="sm"
