@@ -1,4 +1,5 @@
 import type { ActionStatus } from "@/constants/domain";
+import type { MemberAction } from "@/features/member/types";
 import { type BeAttachment, toProjectAttachment } from "@/features/project/mapper";
 import type { TeamActionDetail } from "@/features/project/types";
 
@@ -60,6 +61,22 @@ export function toTeamActionPersonalItem(be: BeActionSummary): {
     startDate: fallbackActionStartDate(be.startDate),
     dueDate: be.dueDate,
     status: be.status,
+  };
+}
+
+/**
+ * 사원 대시보드 "처리할 액션" 타임라인 한 줄(`GET /api/actions`) → UI 계약.
+ * ⚠️ **TEAM 타입은 걸러야 한다** — 이 대시보드는 "내" 개인 액션만 보여준다(호출자는
+ *    `GET /api/actions`로 이미 본인 소유분만 받지만, 그중에서도 PERSONAL만 남긴다).
+ */
+export function toMemberAction(be: BeActionSummary): MemberAction {
+  return {
+    id: String(be.id),
+    title: be.title,
+    projectTag: be.projectTag ?? "",
+    status: be.status,
+    startDate: fallbackActionStartDate(be.startDate),
+    dueDate: be.dueDate,
   };
 }
 
