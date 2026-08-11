@@ -183,6 +183,14 @@ export function VacationForm({ context }: VacationFormProps) {
                       {action.title}
                     </span>
                     <Select
+                      // ⚠️ `items`를 넘긴다 — 안 넘기면 트리거가 닫혀 있는 동안은 라벨을 못 찾아
+                      //    원문 값(`teammate.id`)이 그대로 보인다(`search-filter-bar.tsx`와 같은 이유).
+                      items={Object.fromEntries(
+                        teammates.map((teammate) => [
+                          teammate.id,
+                          `${teammate.name} ${teammate.position}`,
+                        ]),
+                      )}
                       value={
                         assignments[action.id] !== undefined ? String(assignments[action.id]) : ""
                       }

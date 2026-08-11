@@ -96,6 +96,7 @@ export function CompanyFilterBar() {
       </Select>
 
       <Select
+        items={{ [ALL]: "전체 상태", ...COMPANY_STATUS_LABEL }}
         value={searchParams.get("status") ?? ALL}
         onValueChange={(value) => pushWith({ q: keyword, status: value ?? ALL })}
       >

@@ -85,6 +85,10 @@ export function RoomReservationFields({
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="reservation-project">프로젝트</Label>
         <Select
+          // ⚠️ `items`(값→라벨 맵)를 넘긴다 — 안 넘기면 트리거가 닫혀 있는 동안 `SelectContent`가
+          //    아직 안 그려져 라벨을 못 찾고 원문 값(`project.id`)이 그대로 보인다
+          //    (`search-filter-bar.tsx`와 같은 이유).
+          items={Object.fromEntries(projects.map((project) => [project.id, project.name]))}
           value={form.projectId}
           onValueChange={(value) =>
             // 프로젝트를 바꾸면 그 프로젝트 소속이 아닌 상위 팀 액션 선택은 의미가 없어진다.
@@ -113,6 +117,9 @@ export function RoomReservationFields({
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="reservation-parent-team-action">상위 팀 액션</Label>
           <Select
+            items={Object.fromEntries(
+              availableTeamActions.map((teamAction) => [String(teamAction.id), teamAction.name]),
+            )}
             value={form.parentTeamActionId}
             onValueChange={(value) =>
               setForm((prev) => ({ ...prev, parentTeamActionId: value ?? "" }))

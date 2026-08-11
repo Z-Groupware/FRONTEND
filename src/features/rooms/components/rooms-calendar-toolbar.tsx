@@ -78,6 +78,12 @@ export function RoomsCalendarToolbar({
         </Button>
 
         <Select
+          // ⚠️ `items`를 넘긴다 — 안 넘기면 트리거가 닫혀 있는 동안은 라벨을 못 찾아
+          //    원문 값(`room.id`)이 그대로 보인다(`search-filter-bar.tsx`와 같은 이유).
+          items={{
+            [ALL_ROOMS_VALUE]: ROOMS_CALENDAR_TOOLBAR_LABEL.allRooms,
+            ...Object.fromEntries(rooms.map((room) => [room.id, room.name])),
+          }}
           value={selectedRoomId}
           onValueChange={(value) => onSelectedRoomChange(value ?? ALL_ROOMS_VALUE)}
         >
