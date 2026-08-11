@@ -2,8 +2,8 @@ import { ClipboardList } from "lucide-react";
 import { ChevronRight } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
 
+import { AccessDenied } from "@/components/common/access-denied";
 import { EmptyState } from "@/components/common/empty-state";
 import {
   LEADER_HANDOVER_CUSTODY_STATUS,
@@ -15,6 +15,7 @@ import {
   toCustodyStatus,
 } from "@/features/leader-handover/lib";
 import { listLeaderHandovers } from "@/features/leader-handover/server";
+import { roleHome } from "@/features/shell/home";
 import { getViewer } from "@/features/shell/viewer";
 import { formatMonthDayWeekday } from "@/lib/date";
 import { canManageLeaderHandovers } from "@/lib/permission";
@@ -36,7 +37,7 @@ interface LeaderHandoversPageProps {
  */
 export default async function LeaderHandoversPage({ searchParams }: LeaderHandoversPageProps) {
   const viewer = await getViewer();
-  if (!canManageLeaderHandovers(viewer)) notFound();
+  if (!canManageLeaderHandovers(viewer)) return <AccessDenied homeHref={roleHome(viewer.role)} />;
 
   const params = await searchParams;
   const activeFilter = parseCustodyFilter(params.status);

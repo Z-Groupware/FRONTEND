@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
+import { AccessDenied } from "@/components/common/access-denied";
 import { LeaderHandoverActionList } from "@/features/leader-handover/components/leader-handover-action-list";
 import { LeaderHandoverAssignForm } from "@/features/leader-handover/components/leader-handover-assign-form";
 import { getLeaderHandoverDetail } from "@/features/leader-handover/server";
+import { roleHome } from "@/features/shell/home";
 import { getViewer } from "@/features/shell/viewer";
 import { canManageLeaderHandovers } from "@/lib/permission";
 
@@ -17,7 +19,7 @@ interface LeaderHandoverDetailPageProps {
 
 export default async function LeaderHandoverDetailPage({ params }: LeaderHandoverDetailPageProps) {
   const viewer = await getViewer();
-  if (!canManageLeaderHandovers(viewer)) notFound();
+  if (!canManageLeaderHandovers(viewer)) return <AccessDenied homeHref={roleHome(viewer.role)} />;
 
   const { handoverId } = await params;
   const handover = await getLeaderHandoverDetail(handoverId);

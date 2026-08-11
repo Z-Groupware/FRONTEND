@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
 
+import { AccessDenied } from "@/components/common/access-denied";
 import { createProjectAction } from "@/features/project/actions";
 import { ProjectForm } from "@/features/project/components/project-form";
 import { getCompanyTeamOptions } from "@/features/project/server";
+import { roleHome } from "@/features/shell/home";
 import { getViewer } from "@/features/shell/viewer";
 import { canCreateProject } from "@/lib/permission";
 
@@ -14,8 +15,11 @@ export const metadata: Metadata = {
 
 export default async function AppProjectNewPage() {
   const viewer = await getViewer();
-  // 권한 없는 사람은 화면 자체를 숨긴다(404) — 서버 재검사는 액션에서도 한 번 더(§권한).
-  if (!canCreateProject(viewer)) notFound();
+  /*
+    ⚠️ 403이다 — 프로젝트를 누가 만드는지는 정책이라 숨길 값이 아니다(§정직성).
+       서버 재검사는 **액션에서 한 번 더** 한다(§권한: 화면 가드는 UX일 뿐이다).
+  */
+  if (!canCreateProject(viewer)) return <AccessDenied homeHref={roleHome(viewer.role)} />;
 
   const teamOptions = await getCompanyTeamOptions();
 
