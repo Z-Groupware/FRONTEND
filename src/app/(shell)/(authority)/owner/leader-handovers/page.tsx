@@ -84,9 +84,10 @@ export default async function LeaderHandoversPage({ searchParams }: LeaderHandov
             {/* 남는 자리는 비워 둔다 — 건수가 오른쪽 끝에 선다 */}
             <span className="flex-1" aria-hidden />
 
-            {/* ⚠️ **전체 건수를 머리에 적는다**(CLAUDE.md §목록) — 얼마나 남았는지 알 수 없으면 안 된다 */}
+            {/* ⚠️ **건수를 머리에 적는다**(CLAUDE.md §목록). 거르개가 있는 목록이라 `전체`가 아니라
+                 `결과`다 — 거른 수를 `전체`라 부르면 탭 합계와 어긋나 거짓말이 된다. */}
             <p className="text-muted-foreground text-[12px] leading-4 tabular-nums">
-              전체 {items.length}건
+              결과 {items.length}건
             </p>
           </div>
 

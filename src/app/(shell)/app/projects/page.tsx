@@ -60,8 +60,13 @@ export default async function ProjectsPage({ searchParams }: ProjectsPageProps) 
             {/* 남는 자리는 비워 둔다 — 건수와 버튼이 오른쪽 끝에 선다 */}
             <span className="flex-1" aria-hidden />
 
-            <span className="text-foreground/75 shrink-0 text-[12px] leading-4 tabular-nums">
-              전체 {projects.length}개
+            {/*
+              ⚠️ **`전체`라고 쓰지 않는다**(2026-08-11 고침). 이 숫자는 지금 거른 결과의 수인데
+                 `전체 4개`라고 적으니, 탭이 `할 일 2 · 진행중 4 · 완료 2`(합 8)를 보여 주는
+                 옆에서 **거짓말이 됐다.** 거른 결과임을 말하는 `결과 N개`로 적는다.
+            */}
+            <span className="text-muted-foreground shrink-0 text-[12px] leading-4 tabular-nums">
+              결과 {projects.length}개
             </span>
             {canCreateProject(viewer) && (
               /*

@@ -36,9 +36,10 @@ export default async function TeamMembersPage({ searchParams }: TeamMembersPageP
               누가 과부하인지, 누구에게 일을 더 줄 수 있는지 확인합니다.
             </p>
           </div>
-          {/* ⚠️ **전체 건수를 적는다**(CLAUDE.md §목록) — 얼마나 있는지 알 수 없으면 안 된다 */}
+          {/* ⚠️ **건수를 적는다**(CLAUDE.md §목록). 거르개가 있어 `전체`가 아니라 `결과`다 —
+              거른 수를 `전체`라 부르면 탭 합계와 어긋난다. */}
           <p className="text-muted-foreground text-[12px] leading-4 tabular-nums">
-            전체 {members.length}명
+            결과 {members.length}명
           </p>
         </div>
 

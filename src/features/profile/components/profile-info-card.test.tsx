@@ -1,6 +1,7 @@
 import { render, screen } from "@testing-library/react";
 
 import { PROFILE_INFO_CARD_TITLE, PROFILE_INFO_ROW_LABEL } from "@/constants/profile";
+import { formatYearMonthDay } from "@/lib/date";
 
 import { MY_PROFILE_MOCK } from "../mock/profile";
 import { ProfileInfoCard } from "./profile-info-card";
@@ -16,7 +17,8 @@ describe("ProfileInfoCard", () => {
       [PROFILE_INFO_ROW_LABEL.EMAIL, MY_PROFILE_MOCK.email],
       [PROFILE_INFO_ROW_LABEL.TEAM, MY_PROFILE_MOCK.teamName],
       [PROFILE_INFO_ROW_LABEL.POSITION, MY_PROFILE_MOCK.position],
-      [PROFILE_INFO_ROW_LABEL.JOINED_AT, MY_PROFILE_MOCK.joinedAt],
+      /* ⚠️ 입사일은 **우리 표기로 그려진다**(`2021년 3월 2일`) — 서버가 준 ISO 그대로가 아니다 */
+      [PROFILE_INFO_ROW_LABEL.JOINED_AT, formatYearMonthDay(MY_PROFILE_MOCK.joinedAt)],
     ];
 
     expectedRows.forEach(([label, value]) => {

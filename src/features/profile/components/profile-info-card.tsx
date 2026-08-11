@@ -1,4 +1,5 @@
 import { PROFILE_INFO_CARD_TITLE, PROFILE_INFO_ROW_LABEL } from "@/constants/profile";
+import { formatYearMonthDay } from "@/lib/date";
 
 import type { MyProfile } from "../types";
 
@@ -18,7 +19,13 @@ function toRows(profile: MyProfile): InfoRow[] {
     { label: PROFILE_INFO_ROW_LABEL.EMAIL, value: profile.email },
     { label: PROFILE_INFO_ROW_LABEL.TEAM, value: profile.teamName },
     { label: PROFILE_INFO_ROW_LABEL.POSITION, value: profile.position },
-    { label: PROFILE_INFO_ROW_LABEL.JOINED_AT, value: profile.joinedAt },
+    /*
+      ⚠️ **날짜는 우리 표기로 그린다**(§카피). 서버가 준 `2021-03-02`를 그대로 뿌리고 있어
+         사원 관리(`2021년 3월 2일`)와 같은 값이 화면마다 다르게 보였다.
+      ⚠️ 요일은 안 붙인다 — 지나간 입사일이 무슨 요일이었는지는 쓸 데가 없다
+         (`member-profile-card`와 같은 판단).
+    */
+    { label: PROFILE_INFO_ROW_LABEL.JOINED_AT, value: formatYearMonthDay(profile.joinedAt) },
   ];
 }
 
@@ -27,7 +34,7 @@ export function ProfileInfoCard({ profile }: ProfileInfoCardProps) {
   const rows = toRows(profile);
 
   return (
-    <div className="border-border rounded-[10px] border">
+    <div className="border-border bg-card rounded-2xl border">
       <div className="border-border border-b px-4 py-3">
         <p className="text-[13px] leading-5 font-medium">{PROFILE_INFO_CARD_TITLE}</p>
       </div>
