@@ -156,7 +156,11 @@ export function BoardCard({ card, isDelayed }: BoardCardProps) {
       {...attributes}
       className={cn(
         CARD_SHAPE,
-        "cursor-grab transition-shadow hover:shadow-sm active:cursor-grabbing",
+        /*
+          ⚠️ 얹으면 **살짝 뜬다**(그림자 + 1px). 집어서 옮기는 카드라 "들린다"는 느낌이 있어야
+             드래그할 수 있다는 걸 알아챈다 — 커서 모양은 얹어야 보이고 터치에는 아예 없다.
+        */
+        "cursor-grab transition-[transform,box-shadow] hover:-translate-y-px hover:shadow-md active:cursor-grabbing",
         /*
           ⚠️ **내용만 감춘다**(`[&>*]:invisible`). 감싸는 `div`로 숨기면 그 `div`가 카드의
              가로 배치(띠 + 내용)에 끼어들어 **색 띠가 늘어나질 못한다** — 자식에 바로 건다.

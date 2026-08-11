@@ -25,10 +25,28 @@ interface BoardColumnProps {
  * ⚠️ **아주 옅게 쓴다**(배경 10%·점 100%). 머리를 진하게 칠하면 정작 읽어야 할 카드보다
  *    머리가 먼저 읽힌다 — 색은 "여기가 무슨 칸인가"를 스치듯 알리는 몫이다.
  */
-const COLUMN_TONE: Record<BoardColumnId, { head: string; dot: string }> = {
-  [BOARD_COLUMN.TODO]: { head: "bg-status-todo/10", dot: "bg-status-todo" },
-  [BOARD_COLUMN.IN_PROGRESS]: { head: "bg-status-progress/10", dot: "bg-status-progress" },
-  [BOARD_COLUMN.DONE]: { head: "bg-status-done/10", dot: "bg-status-done" },
+const COLUMN_TONE: Record<
+  BoardColumnId,
+  { head: string; dot: string; count: string; empty: string }
+> = {
+  [BOARD_COLUMN.TODO]: {
+    head: "bg-status-todo/10",
+    dot: "bg-status-todo",
+    count: "text-status-todo",
+    empty: "border-status-todo/25 text-status-todo/70",
+  },
+  [BOARD_COLUMN.IN_PROGRESS]: {
+    head: "bg-status-progress/10",
+    dot: "bg-status-progress",
+    count: "text-status-progress",
+    empty: "border-status-progress/25 text-status-progress/70",
+  },
+  [BOARD_COLUMN.DONE]: {
+    head: "bg-status-done/10",
+    dot: "bg-status-done",
+    count: "text-status-done",
+    empty: "border-status-done/25 text-status-done/70",
+  },
 };
 
 export function BoardColumn({ id, label, cards, isDelayed, isInvalidTarget }: BoardColumnProps) {
@@ -86,7 +104,16 @@ export function BoardColumn({ id, label, cards, isDelayed, isInvalidTarget }: Bo
             ⚠️ 바탕은 머리 색 위에 얹는 **흰 반투명**이다. 새 회색을 만들지 않으면서 칸마다
                제 머리 색과 어울린다.
           */}
-          <span className="bg-card/70 text-muted-foreground inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] leading-4 font-medium tabular-nums">
+          {/*
+            ⚠️ 개수 **글자만** 그 칸의 상태색이다. 알약 바탕은 흰 반투명이라 칸마다 제 머리 색
+               위에 얹히고, 색은 점·글자 둘만 든다 — 면까지 물들이면 머리가 카드보다 진해진다.
+          */}
+          <span
+            className={cn(
+              "bg-card/70 inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] leading-4 font-semibold tabular-nums",
+              isBlocked ? "text-destructive" : tone.count,
+            )}
+          >
             {cards.length}
           </span>
         </div>
@@ -99,8 +126,20 @@ export function BoardColumn({ id, label, cards, isDelayed, isInvalidTarget }: Bo
 
       <div className="scrollbar-hidden flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto p-3">
         {cards.length === 0 ? (
-          <p className="text-muted-foreground flex h-20 items-center justify-center text-[12px] leading-4">
-            해당 항목이 없습니다
+          /*
+            ⚠️ **빈 칸에도 자리를 그린다**(2026-08-11). 글자 한 줄만 띄워 두니 그 아래가 통째로
+               빈 흰 면이라 칸이 죽어 보였다 — 점선 상자는 "여기에 카드가 들어온다"를 모양으로
+               말한다(드래그로 옮기는 화면이라 더 그렇다).
+            ⚠️ 점선과 글자는 그 칸의 상태색을 옅게 쓴다. 새 색이 아니라 머리와 같은 색이라
+               칸 하나가 한 덩이로 읽힌다.
+          */
+          <p
+            className={cn(
+              "flex h-24 items-center justify-center rounded-xl border border-dashed text-[12px] leading-4",
+              tone.empty,
+            )}
+          >
+            여기로 옮겨 주세요
           </p>
         ) : (
           cards.map((card) => <BoardCard key={card.id} card={card} isDelayed={isDelayed(card)} />)
