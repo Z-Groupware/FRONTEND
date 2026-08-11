@@ -103,8 +103,10 @@ export interface ProjectTeamAction {
 
 /**
  * 팀 액션 상세(`/app/projects/:projectId/team/:teamActionId`)의 상세 탭.
- * ⚠️ 담당자는 이 팀 액션을 받은 팀의 **팀장**이다(`assigneeRoleLabel`은 항상 "팀장") —
- *    개인 액션 상세를 만들 때는 같은 필드에 그 사람 본인 역할이 들어간다.
+ * ⚠️ **담당자는 저장된 값이 아니다** — BE가 그 팀의 현재 팀장을 그때그때 유도해서 채운다
+ *    (2026-08-11, BACKEND PR #339). 팀장 공석이면 `assigneeName`·`assigneeRoleLabel` 둘 다 없다
+ *    — 실제로 "팀장 없음"이 정상 상태라 optional이다(개인 액션 상세를 만들 때는 같은 자리에
+ *    그 사람 본인 역할이 들어간다는 점만 개념이 다르다).
  */
 export interface TeamActionDetail {
   /** BE 자동증가 정수 PK — `ProjectTeamAction.id`와 같은 값. */
@@ -114,14 +116,17 @@ export interface TeamActionDetail {
   team: string;
   projectId: number;
   projectTag: string;
-  assigneeName: string;
-  assigneeRoleLabel: string;
-  /** 이 팀 액션이 나온 프로젝트 회의. ⚠️ 회의 상세(`/app/meeting/:id`) 라우트가 아직 없어 링크는 없다. */
-  sourceMeeting: {
+  /** 팀장 공석이면 없음. */
+  assigneeName?: string;
+  /** `"{팀명}장"` 고정 포맷(BE가 조립) — 팀장 공석이면 없음. */
+  assigneeRoleLabel?: string;
+  /** 이 팀 액션이 나온 프로젝트 회의 — 수동 추가 등으로 출처가 없으면 없음. */
+  sourceMeeting?: {
     title: string;
     /** ISO datetime */
     scheduledAt: string;
   };
+  attachments: ProjectAttachment[];
 }
 
 /** 팀 액션 상세의 타임라인 탭 한 줄 — 이 팀 액션에 속한 개인 액션 한 건(담당자별 행). */

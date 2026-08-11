@@ -95,3 +95,18 @@ export async function getProjectAttachmentDownloadUrlAction(
   );
   return downloadUrl;
 }
+
+/** 팀 액션 상세의 첨부파일 다운로드 URL 발급 — 프로젝트 쪽과 같은 패턴, 경로만 다르다. */
+export async function getTeamActionAttachmentDownloadUrlAction(
+  teamActionId: number,
+  attachmentId: number,
+): Promise<string | null> {
+  if (isMock) return null;
+
+  const accessToken = await requireAccessToken();
+  const { downloadUrl } = await serverApi<{ downloadUrl: string; expiresInSeconds: number }>(
+    ep.teamActionAttachmentDownloadUrl(teamActionId, attachmentId),
+    { accessToken },
+  );
+  return downloadUrl;
+}

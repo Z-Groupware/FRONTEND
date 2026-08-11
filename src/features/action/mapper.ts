@@ -1,4 +1,6 @@
 import type { ActionStatus } from "@/constants/domain";
+import { type BeAttachment, toProjectAttachment } from "@/features/project/mapper";
+import type { TeamActionDetail } from "@/features/project/types";
 
 import type { PersonalActionDetail } from "./types";
 
@@ -120,5 +122,48 @@ export function toPersonalActionDetail(be: BeActionDetail): PersonalActionDetail
             dueDate: be.parentActionDueDate,
           }
         : undefined,
+  };
+}
+
+/**
+ * 팀 액션 상세(`GET /api/team/actions/{id}`) 응답.
+ * [확인] `TeamActionDetailResponse.java`(2026-08-11, BACKEND PR #339 머지 완료)
+ *
+ * ⚠️ `assigneeName`·`assigneeRoleLabel`은 **저장된 값이 아니라 BE가 그 팀의 현재 팀장을
+ *    그때그때 유도**해서 채운다(`"{팀명}장"` 고정 포맷도 BE가 조립) — 팀장 공석이면 둘 다
+ *    `null`(정상 상태). `sourceMeetingId`도 없을 수 있다(수동 추가된 팀 액션 등).
+ */
+export interface BeTeamActionDetail {
+  id: number;
+  projectId: number;
+  title: string;
+  description: string;
+  status: ActionStatus;
+  dueDate: string;
+  projectTag: string;
+  teamName: string;
+  assigneeName: string | null;
+  assigneeRoleLabel: string | null;
+  sourceMeetingId: number | null;
+  sourceMeetingTitle: string | null;
+  sourceMeetingScheduledAt: string | null;
+  attachments: BeAttachment[];
+}
+
+export function toTeamActionDetail(be: BeTeamActionDetail): TeamActionDetail {
+  return {
+    id: be.id,
+    name: be.title,
+    description: be.description,
+    team: be.teamName,
+    projectId: be.projectId,
+    projectTag: be.projectTag,
+    assigneeName: be.assigneeName ?? undefined,
+    assigneeRoleLabel: be.assigneeRoleLabel ?? undefined,
+    sourceMeeting:
+      be.sourceMeetingTitle && be.sourceMeetingScheduledAt
+        ? { title: be.sourceMeetingTitle, scheduledAt: be.sourceMeetingScheduledAt }
+        : undefined,
+    attachments: be.attachments.map(toProjectAttachment),
   };
 }

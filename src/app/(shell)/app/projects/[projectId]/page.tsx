@@ -2,12 +2,13 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { AttachmentList } from "@/components/common/attachment-list";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { isDelayed } from "@/constants/domain";
 import type { TimelineActionInput } from "@/features/member/action-timeline";
 import { ActionTimeline, ActionTimelineLegend } from "@/features/member/components/action-timeline";
-import { ProjectAttachmentList } from "@/features/project/components/project-attachment-list";
+import { getProjectAttachmentDownloadUrlAction } from "@/features/project/actions";
 import {
   parseProjectDetailTab,
   PROJECT_DETAIL_TABS,
@@ -157,7 +158,10 @@ export default async function ProjectDetailPage({ params, searchParams }: Projec
             <p className="text-muted-foreground border-border border-t pt-5 text-[13px] leading-[22px] whitespace-pre-wrap">
               {project.description}
             </p>
-            <ProjectAttachmentList projectId={project.id} attachments={project.attachments} />
+            <AttachmentList
+              attachments={project.attachments}
+              fetchDownloadUrl={getProjectAttachmentDownloadUrlAction.bind(null, project.id)}
+            />
           </section>
         ) : (
           <section

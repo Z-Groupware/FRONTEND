@@ -106,7 +106,8 @@ export function toProjectListItem(be: BeProjectSummary): ProjectListItem {
   };
 }
 
-function toProjectAttachment(be: BeAttachment): ProjectAttachment {
+/** 팀 액션 상세(action 도메인)도 같은 `Attachment` shape을 복제해서 쓴다 — 그쪽 매퍼가 재사용한다. */
+export function toProjectAttachment(be: BeAttachment): ProjectAttachment {
   return { id: be.attachmentId, fileName: be.fileName, fileSize: be.fileSize };
 }
 

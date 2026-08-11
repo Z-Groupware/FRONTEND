@@ -1,6 +1,11 @@
 import { DEFAULT_PROJECT_SORT, type ProjectSort, type ProjectStatus } from "@/constants/domain";
 import { COMPANY_TEAM_NAMES } from "@/constants/project";
-import { type BeActionSummary, toTeamActionPersonalItem } from "@/features/action/mapper";
+import {
+  type BeActionSummary,
+  type BeTeamActionDetail,
+  toTeamActionDetail,
+  toTeamActionPersonalItem,
+} from "@/features/action/mapper";
 import { requireAccessToken } from "@/features/auth/session";
 import { ApiError, serverApi } from "@/lib/api";
 import { ep } from "@/lib/endpoints";
@@ -164,7 +169,17 @@ export async function getTeamActionDetail(teamActionId: string): Promise<TeamAct
     return TEAM_ACTION_DETAIL_MOCK[numericId] ?? null;
   }
 
-  throw new Error("서버 연동 미구현 — ERD·API 스펙 확정 후 매퍼 작성");
+  const numericId = Number(teamActionId);
+  if (!Number.isInteger(numericId)) return null;
+
+  const accessToken = await requireAccessToken();
+  try {
+    const detail = await serverApi<BeTeamActionDetail>(ep.teamAction(numericId), { accessToken });
+    return toTeamActionDetail(detail);
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) return null;
+    throw error;
+  }
 }
 
 /** 팀 액션 상세의 타임라인 탭 — 이 팀 액션에 속한 개인 액션 전체(담당자별 한 행). */
