@@ -1,6 +1,7 @@
 import { addDays, format, startOfWeek } from "date-fns";
 import { ko } from "date-fns/locale";
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
+import { useMemo } from "react";
 import type { ToolbarProps } from "react-big-calendar";
 
 import { Button } from "@/components/ui/button";
@@ -45,6 +46,19 @@ export function RoomsCalendarToolbar({
   onSelectedRoomChange,
   onAddClick,
 }: RoomsCalendarToolbarProps) {
+  /*
+    ⚠️ `useMemo`로 참조를 고정한다. 매 렌더 새 객체를 넘기면 base-ui `Select`의 내부 이펙트가
+       참조 변화 → store 갱신 → 리렌더 → 새 객체를... 반복해 "Maximum update depth exceeded"로
+       이어진다(CI에서 실제로 터졌다 — `search-filter-bar.tsx`와 같은 이유).
+  */
+  const roomItems = useMemo(
+    () => ({
+      [ALL_ROOMS_VALUE]: ROOMS_CALENDAR_TOOLBAR_LABEL.allRooms,
+      ...Object.fromEntries(rooms.map((room) => [room.id, room.name])),
+    }),
+    [rooms],
+  );
+
   const weekStart = startOfWeek(date, { weekStartsOn: 1 });
   const weekEnd = addDays(weekStart, 4);
   const rangeLabel =
@@ -80,10 +94,7 @@ export function RoomsCalendarToolbar({
         <Select
           // ⚠️ `items`를 넘긴다 — 안 넘기면 트리거가 닫혀 있는 동안은 라벨을 못 찾아
           //    원문 값(`room.id`)이 그대로 보인다(`search-filter-bar.tsx`와 같은 이유).
-          items={{
-            [ALL_ROOMS_VALUE]: ROOMS_CALENDAR_TOOLBAR_LABEL.allRooms,
-            ...Object.fromEntries(rooms.map((room) => [room.id, room.name])),
-          }}
+          items={roomItems}
           value={selectedRoomId}
           onValueChange={(value) => onSelectedRoomChange(value ?? ALL_ROOMS_VALUE)}
         >

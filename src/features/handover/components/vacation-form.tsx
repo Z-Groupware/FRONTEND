@@ -51,6 +51,19 @@ export function VacationForm({ context }: VacationFormProps) {
     [actions, startDate, endDate],
   );
 
+  /*
+    ⚠️ `useMemo`로 참조를 고정한다. 매 렌더 새 객체를 넘기면 base-ui `Select`의 내부 이펙트가
+       참조 변화 → store 갱신 → 리렌더 → 새 객체를... 반복해 "Maximum update depth exceeded"로
+       이어진다(CI에서 실제로 터졌다 — `search-filter-bar.tsx`와 같은 이유).
+  */
+  const teammateItems = useMemo(
+    () =>
+      Object.fromEntries(
+        teammates.map((teammate) => [teammate.id, `${teammate.name} ${teammate.position}`]),
+      ),
+    [teammates],
+  );
+
   function handleDateChange(next: { startDate?: string; endDate?: string }) {
     setStartDate(next.startDate ?? startDate);
     setEndDate(next.endDate ?? endDate);
@@ -185,12 +198,7 @@ export function VacationForm({ context }: VacationFormProps) {
                     <Select
                       // ⚠️ `items`를 넘긴다 — 안 넘기면 트리거가 닫혀 있는 동안은 라벨을 못 찾아
                       //    원문 값(`teammate.id`)이 그대로 보인다(`search-filter-bar.tsx`와 같은 이유).
-                      items={Object.fromEntries(
-                        teammates.map((teammate) => [
-                          teammate.id,
-                          `${teammate.name} ${teammate.position}`,
-                        ]),
-                      )}
+                      items={teammateItems}
                       value={
                         assignments[action.id] !== undefined ? String(assignments[action.id]) : ""
                       }
