@@ -98,10 +98,10 @@ export default async function LeaderHandoversPage({ searchParams }: LeaderHandov
           */}
           <div className="border-border text-muted-foreground bg-secondary/50 flex items-center gap-4 border-y px-7 py-3 text-[12px] leading-4">
             <span className="min-w-0 flex-1">인수인계서명</span>
-            <span className="w-28 shrink-0">퇴사 팀장</span>
-            <span className="w-28 shrink-0">팀</span>
-            <span className="w-32 shrink-0 text-right">오프보딩 승인일</span>
-            <span className="w-20 shrink-0 text-center">상태</span>
+            <span className="w-24 shrink-0 text-center">퇴사 팀장</span>
+            <span className="w-24 shrink-0 text-center">팀</span>
+            <span className="w-32 shrink-0 text-center">오프보딩 승인일</span>
+            <span className="w-24 shrink-0 text-center">상태</span>
             {/* chevron 자리 — 머리에는 라벨을 안 붙인다 */}
             <span className="w-4 shrink-0" aria-hidden />
           </div>
@@ -121,28 +121,32 @@ export default async function LeaderHandoversPage({ searchParams }: LeaderHandov
                       className="hover:bg-foreground/[0.04] focus-visible:ring-ring group flex items-center gap-4 px-7 py-4 text-[13px] leading-5 transition-colors focus-visible:ring-2 focus-visible:outline-hidden"
                     >
                       <span className="min-w-0 flex-1 truncate font-medium">{item.title}</span>
-                      <span className="text-muted-foreground w-28 shrink-0 truncate">
+                      <span className="text-muted-foreground w-24 shrink-0 truncate text-center">
                         {item.formerLeaderName}
                       </span>
-                      <span className="text-muted-foreground w-28 shrink-0 truncate">
+                      <span className="text-muted-foreground w-24 shrink-0 truncate text-center">
                         {item.teamName}
                       </span>
-                      <span className="text-muted-foreground w-32 shrink-0 text-right tabular-nums">
+                      <span className="text-muted-foreground w-32 shrink-0 text-center tabular-nums">
                         {formatMonthDayWeekday(item.offboardingApprovedAt)}
                       </span>
                       {/*
                         ⚠️ 상태는 **명도로 가른다**(§DESIGN 5 — 색은 에러뿐). 아직 안 넘긴 것이
                            진하고, 넘긴 것은 흐리다 — 지금 다뤄야 할 것이 먼저 읽혀야 한다.
+                        ⚠️ 배지를 열 폭(`w-24`) 안에서 가운데 놓는다. 배지 자체를 열로 쓰면
+                           글자 길이에 따라 축이 흔들려 머리와 어긋난다.
                       */}
-                      <span
-                        className={cn(
-                          "inline-flex h-6 w-20 shrink-0 items-center justify-center rounded-md border text-[11px] leading-4",
-                          isAssigned
-                            ? "border-border text-muted-foreground/70"
-                            : "border-foreground/30 bg-foreground/[0.06] text-foreground font-medium",
-                        )}
-                      >
-                        {LEADER_HANDOVER_CUSTODY_STATUS_LABEL[item.custodyStatus]}
+                      <span className="w-24 shrink-0">
+                        <span
+                          className={cn(
+                            "mx-auto flex h-6 w-20 items-center justify-center rounded-md border text-[11px] leading-4",
+                            isAssigned
+                              ? "border-border text-muted-foreground/70"
+                              : "border-foreground/30 bg-foreground/[0.06] text-foreground font-medium",
+                          )}
+                        >
+                          {LEADER_HANDOVER_CUSTODY_STATUS_LABEL[item.custodyStatus]}
+                        </span>
                       </span>
                       {/* ⚠️ 줄이 눌린다는 걸 적어 둔다 — 손가락 커서는 얹어야 보인다 */}
                       <ChevronRight

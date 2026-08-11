@@ -62,20 +62,20 @@ export function LeaderHandoverAssignForm({ handover }: LeaderHandoverAssignFormP
 
   return (
     <section className="border-border bg-card flex flex-col gap-4 rounded-2xl border p-7">
-      <div className="flex items-center justify-between gap-3">
+      {/*
+        ⚠️ **제목과 버튼을 위아래로 푼다**(2026-08-11). 곁 컬럼(360px)에 들어가면서 한 줄에 나란히
+           두니 제목 바로 옆에 버튼이 붙어 둘이 한 덩이로 읽혔다 — 좁은 칸에서는 가로로 나누는
+           대신 층으로 나눈다.
+      */}
+      <div className="flex flex-col gap-3">
         {/* ⚠️ 카드 제목은 17px이다(§DESIGN 4 다섯 크기) — 15px는 규격 밖이라 이 카드만 작았다 */}
         <h2 className="text-[17px] leading-7 font-semibold tracking-[-0.3px]">새 팀장에게 귀속</h2>
-        <Button
-          type="button"
-          size="sm"
-          variant="outline"
-          onClick={() => toast("PDF 생성은 아직 연동되지 않았습니다")}
-        >
-          <Download />
-          인수인계서 PDF 다운로드
-        </Button>
       </div>
 
+      {/*
+        ⚠️ PDF는 **카드 맨 아래**다. 제목 옆·바로 밑에 두면 정작 먼저 읽어야 할 안내문보다
+           버튼이 앞선다 — 이 카드에서 할 일은 귀속이고, PDF는 곁다리다.
+      */}
       {isAssigned ? (
         <p className="text-muted-foreground text-[13px] leading-5">
           이미 귀속이 완료된 인수인계서입니다.
@@ -122,6 +122,17 @@ export function LeaderHandoverAssignForm({ handover }: LeaderHandoverAssignFormP
           </Button>
         </div>
       )}
+
+      <Button
+        type="button"
+        size="sm"
+        variant="outline"
+        className="w-full"
+        onClick={() => toast("PDF 생성은 아직 연동되지 않았습니다")}
+      >
+        <Download />
+        인수인계서 PDF 다운로드
+      </Button>
 
       <ConfirmDialog
         isOpen={confirmOpen}

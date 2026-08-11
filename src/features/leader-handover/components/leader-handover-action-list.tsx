@@ -30,12 +30,10 @@ export function LeaderHandoverActionList({ actions }: { actions: LeaderHandoverA
       ) : (
         <>
           {/* 표 머리 — 띠 하나로 값이 시작하는 자리를 알린다(§DESIGN 2: 카드 안의 선은 여기뿐) */}
-          <div className="border-border text-muted-foreground bg-secondary/50 flex items-center gap-3 border-y px-7 py-3 text-[12px] leading-4">
-            <span className="w-[76px] shrink-0">프로젝트</span>
-            <span className="hidden w-[140px] shrink-0 sm:inline">상위 팀 액션</span>
+          <div className="border-border text-muted-foreground bg-secondary/50 flex items-center gap-4 border-y px-7 py-3 text-[12px] leading-4">
             <span className="min-w-0 flex-1">액션</span>
-            <span className="w-[52px] shrink-0 text-center">상태</span>
-            <span className="w-20 shrink-0 text-right">마감</span>
+            <span className="w-[72px] shrink-0 text-center">상태</span>
+            <span className="w-24 shrink-0 text-center">마감</span>
           </div>
 
           <ul>
@@ -44,36 +42,41 @@ export function LeaderHandoverActionList({ actions }: { actions: LeaderHandoverA
               return (
                 <li
                   key={action.id}
-                  className="border-border flex items-center gap-3 px-7 py-3.5 not-first:border-t"
+                  className="border-border flex items-center gap-4 px-7 py-3.5 not-first:border-t"
                 >
                   {/*
-                    ⚠️ **공용 칩을 쓴다**(`components/common/project-tag`). 여기만 손으로 그린
-                       `font-mono` 칩이라 같은 프로젝트가 화면마다 다른 모양으로 떴다.
-                    ⚠️ 칩 자리를 고정한다 — 태그 길이가 달라도 옆 열이 밀리지 않는다.
+                    ⚠️ **이름과 출처를 두 층으로 쌓는다**(2026-08-11). 칩·상위 액션·이름·상태·마감을
+                       다섯 열로 벌려 놨더니 이름이 짧을 때 **가운데가 통째로 비었다** — 앞의 셋은
+                       전부 "무슨 액션인가"를 말하므로 한 덩이로 묶는다(회의 상세 산출물 표와 같은 해부).
+                    ⚠️ 칩은 이름 앞이다. 다른 화면(회의·검색·보드)도 태그는 제목 옆이다.
                   */}
-                  <span className="flex w-[76px] shrink-0 items-center">
-                    <ProjectTag tag={action.projectTag} />
+                  <span className="flex min-w-0 flex-1 flex-col gap-1">
+                    <span className="flex min-w-0 items-center gap-2">
+                      <ProjectTag tag={action.projectTag} />
+                      <span className="truncate text-[13px] leading-5">{action.title}</span>
+                    </span>
+                    <span className="text-muted-foreground truncate text-[12px] leading-4">
+                      {action.parentTeamActionName}
+                    </span>
                   </span>
-                  <span className="text-muted-foreground hidden w-[140px] shrink-0 truncate text-[12px] leading-4 sm:inline">
-                    {action.parentTeamActionName}
-                  </span>
-                  <span className="min-w-0 flex-1 truncate text-[13px] leading-5">
-                    {action.title}
-                  </span>
+
                   {/* ⚠️ 지연만 빨강이다 — 색으로 알리는 건 문제뿐(§DESIGN 5) */}
-                  <span
-                    className={cn(
-                      "inline-flex h-6 w-[52px] shrink-0 items-center justify-center rounded-md border text-[11px] leading-4",
-                      delayed
-                        ? "border-destructive/40 text-destructive font-medium"
-                        : "border-border text-muted-foreground",
-                    )}
-                  >
-                    {delayed ? ACTION_DELAYED_LABEL : ACTION_STATUS_LABEL[action.status]}
+                  <span className="w-[72px] shrink-0">
+                    <span
+                      className={cn(
+                        "mx-auto flex h-6 w-[52px] items-center justify-center rounded-md border text-[11px] leading-4",
+                        delayed
+                          ? "border-destructive/40 text-destructive font-medium"
+                          : "border-border text-muted-foreground",
+                      )}
+                    >
+                      {delayed ? ACTION_DELAYED_LABEL : ACTION_STATUS_LABEL[action.status]}
+                    </span>
                   </span>
+
                   <time
                     dateTime={action.dueDate}
-                    className="text-muted-foreground w-20 shrink-0 text-right text-[12px] leading-4 whitespace-nowrap tabular-nums"
+                    className="text-muted-foreground w-24 shrink-0 text-center text-[12px] leading-4 whitespace-nowrap tabular-nums"
                   >
                     {formatMonthDayWeekday(action.dueDate)}
                   </time>
