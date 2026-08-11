@@ -96,7 +96,19 @@ function isoToUtcMs(iso: string): number | null {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
   if (!match) return null;
   const [, y, m, d] = match;
-  return Date.UTC(Number(y), Number(m) - 1, Number(d));
+  const yNum = Number(y);
+  const mNum = Number(m);
+  const dNum = Number(d);
+  const ms = Date.UTC(yNum, mNum - 1, dNum);
+  const date = new Date(ms);
+  if (
+    date.getUTCFullYear() !== yNum ||
+    date.getUTCMonth() !== mNum - 1 ||
+    date.getUTCDate() !== dNum
+  ) {
+    return null;
+  }
+  return ms;
 }
 
 function withinPeriod(iso: string, days: number | null, todayIsoValue: string): boolean {
