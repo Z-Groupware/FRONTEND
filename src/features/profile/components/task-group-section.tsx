@@ -28,7 +28,13 @@ export function TaskGroupSection({
            (preflight가 `svg { display: block }`이라) 아이콘이 제목 **위에 한 층**으로 서서
            머리가 두 줄이 됐다 — 회의 검토 화면이 같은 함정을 맞았다.
       */}
-      <div className="flex items-center justify-between gap-3 px-7 pt-6 pb-3">
+      {/*
+        ⚠️ **선이 바로 오는 머리는 `pb-5`다**(2026-08-11). `pb-3`이면 제목 위(24)와 아래(12)가
+           두 배 차이라, 제목이 아래 선에 붙어 본문에 눌린 것처럼 보인다 — 표 머리 띠가
+           오는 카드는 띠의 여백(12)이 더해져 24가 되지만, 여기는 맨 선이라 그게 없다.
+           §DESIGN 4가 이미 열어 둔 예외(툴바가 든 머리)와 같은 값을 쓴다.
+      */}
+      <div className="flex items-center justify-between gap-3 px-7 pt-6 pb-5">
         <h2 className="flex items-center gap-2 text-[17px] leading-7 font-semibold tracking-[-0.3px]">
           <Icon className="text-muted-foreground size-4 shrink-0" aria-hidden />
           {title}

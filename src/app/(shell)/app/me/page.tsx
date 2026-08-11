@@ -77,11 +77,12 @@ export default async function AppMePage({ searchParams }: AppMePageProps) {
 
           {isTaskTab ? (
             /*
-              ⚠️ **둘을 나란히 둔다**(2026-08-11). 세로로 쌓으니 짧은 카드 둘이 화면을 길게
-                 끌어 스크롤이 생기는데 정작 오른쪽은 통째로 비었다 — 둘 다 짧은 목록이라
-                 나란히 서는 게 맞다(검색 화면과 같은 판단). 좁아지면 다시 세로로 쌓인다.
+              ⚠️ **세로로 쌓는다**(2026-08-11 정정). 나란히 뒀더니 줄 수가 다른 두 목록이
+                 서로 높이를 맞추느라 **짧은 쪽 아래가 통째로 비었다** — 목록 카드는
+                 앱 어디서나 전폭 한 장씩이고(회의·공지·사원), 여기만 반쪽일 이유가 없다.
+              ⚠️ 전폭이면 줄도 다른 목록과 같은 해부가 된다 — 왼쪽은 무엇인지, 오른쪽은 할 일.
             */
-            <div className="grid gap-5 lg:grid-cols-2 lg:items-start">
+            <div className="flex flex-col gap-5">
               <TaskGroupSection
                 icon={ClipboardList}
                 title={TASK_GROUP.UNCONFIRMED_ACTION.title}
