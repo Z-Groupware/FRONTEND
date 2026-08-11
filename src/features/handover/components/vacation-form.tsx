@@ -185,55 +185,61 @@ export function VacationForm({ context }: VacationFormProps) {
                 선택을 해제해 주세요.
               </p>
             </div>
-            {/* 표 머리 — 다른 목록과 같은 띠다(§DESIGN 2: 카드 안의 선은 표가 시작하는 자리 하나뿐) */}
-            <div className="border-border text-muted-foreground bg-secondary/50 flex items-center gap-4 border-y px-7 py-3 text-[12px] leading-4">
-              <span className="w-[76px] shrink-0 text-center">프로젝트</span>
-              <span className="min-w-0 flex-1">액션</span>
-              <span className="w-40 shrink-0">담당자</span>
-            </div>
-            <ul>
-              {selectedActions.map((action) => {
-                return (
-                  <li
-                    key={action.id}
-                    className="border-border flex items-center gap-4 px-7 py-3 not-first:border-t"
-                  >
-                    {/* ⚠️ 칩은 제 열에 가운데로 선다 — 태그 길이가 제각각이라 왼쪽에 맞추면 줄마다 중앙이 어긋난다 */}
-                    <span className="flex w-[76px] shrink-0 items-center justify-center">
-                      <ProjectTag tag={action.projectTag} />
-                    </span>
-                    <span className="min-w-0 flex-1 truncate text-[13px] leading-5">
-                      {action.title}
-                    </span>
-                    <Select
-                      // ⚠️ `items`를 넘긴다 — 안 넘기면 트리거가 닫혀 있는 동안은 라벨을 못 찾아
-                      //    원문 값(`teammate.id`)이 그대로 보인다(`search-filter-bar.tsx`와 같은 이유).
-                      items={teammateItems}
-                      value={
-                        assignments[action.id] !== undefined ? String(assignments[action.id]) : ""
-                      }
-                      onValueChange={(value) =>
-                        setAssignments((prev) => ({ ...prev, [action.id]: Number(value) }))
-                      }
+            {/*
+              표 머리 — 다른 목록과 같은 띠다(§DESIGN 2: 카드 안의 선은 표가 시작하는 자리 하나뿐)
+              ⚠️ 머리와 행은 **같은 스크롤 상자** 안에 있고 최소 폭도 같다 — 따로 두면 좁은
+                 화면에서 머리만 줄어 열이 값과 어긋난다(§디자인 토큰: 표는 가로 스크롤).
+            */}
+            <div className="overflow-x-auto">
+              <div className="border-border text-muted-foreground bg-secondary/50 flex min-w-[640px] items-center gap-4 border-y px-7 py-3 text-[12px] leading-4">
+                <span className="w-[76px] shrink-0 text-center">프로젝트</span>
+                <span className="min-w-0 flex-1">액션</span>
+                <span className="w-40 shrink-0">담당자</span>
+              </div>
+              <ul className="min-w-[640px]">
+                {selectedActions.map((action) => {
+                  return (
+                    <li
+                      key={action.id}
+                      className="border-border flex items-center gap-4 px-7 py-3 not-first:border-t"
                     >
-                      <SelectTrigger
-                        aria-label={`${action.title} 담당자 선택`}
-                        className="w-40 shrink-0"
+                      {/* ⚠️ 칩은 제 열에 가운데로 선다 — 태그 길이가 제각각이라 왼쪽에 맞추면 줄마다 중앙이 어긋난다 */}
+                      <span className="flex w-[76px] shrink-0 items-center justify-center">
+                        <ProjectTag tag={action.projectTag} />
+                      </span>
+                      <span className="min-w-0 flex-1 truncate text-[13px] leading-5">
+                        {action.title}
+                      </span>
+                      <Select
+                        // ⚠️ `items`를 넘긴다 — 안 넘기면 트리거가 닫혀 있는 동안은 라벨을 못 찾아
+                        //    원문 값(`teammate.id`)이 그대로 보인다(`search-filter-bar.tsx`와 같은 이유).
+                        items={teammateItems}
+                        value={
+                          assignments[action.id] !== undefined ? String(assignments[action.id]) : ""
+                        }
+                        onValueChange={(value) =>
+                          setAssignments((prev) => ({ ...prev, [action.id]: Number(value) }))
+                        }
                       >
-                        <SelectValue placeholder="담당자 선택" />
-                      </SelectTrigger>
-                      <SelectContent side="bottom" alignItemWithTrigger={false}>
-                        {teammates.map((teammate) => (
-                          <SelectItem key={teammate.id} value={String(teammate.id)}>
-                            {teammate.name} {teammate.position}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </li>
-                );
-              })}
-            </ul>
+                        <SelectTrigger
+                          aria-label={`${action.title} 담당자 선택`}
+                          className="w-40 shrink-0"
+                        >
+                          <SelectValue placeholder="담당자 선택" />
+                        </SelectTrigger>
+                        <SelectContent side="bottom" alignItemWithTrigger={false}>
+                          {teammates.map((teammate) => (
+                            <SelectItem key={teammate.id} value={String(teammate.id)}>
+                              {teammate.name} {teammate.position}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
           </section>
 
           <div className="flex justify-between">
