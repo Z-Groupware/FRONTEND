@@ -28,15 +28,17 @@ function BoardCardBody({ card, isDelayed }: BoardCardProps) {
            표식(색)이다 — 눈은 글자를 읽기 전에 색을 먼저 본다.
         ⚠️ 색은 **태그 이름에서 나온다**(`pickPaletteColor`) — 어느 화면에서든 같은 프로젝트는
            같은 색이다. 상태색(회색·초록·보라)과 다른 팔레트라 뜻이 섞이지 않는다.
-        ⚠️ **끝을 둥글린 막대다**(`rounded-full` + 위아래 6px 들여쓰기, 2026-08-11). 카드 모서리에
-           딱 붙여 놓았을 때는 **둥근 모서리가 띠의 위아래를 깎아** 위도 아래도 잘린 것처럼
-           보였다 — 곡선 안쪽으로 살짝 들이고 **양 끝을 스스로 둥글리면** 어디서 시작해 어디서
-           끝나는지가 분명해져, 같은 길이인데도 온전한 막대로 읽힌다.
-        ⚠️ 왼쪽도 6px 들인다. 0에 붙이면 카드 테두리와 겹쳐 선이 두 줄로 보인다.
-        ⚠️ **얇게(3px)** 유지한다. 두꺼우면 막대가 아니라 색칠한 면이 된다.
+        ⚠️ **왼쪽 모서리를 각지게 두고 띠를 그 변에 세운다**(2026-08-11). 세 번 고쳐 온 자리다 —
+           카드 안에 띄운 막대는 위아래가 뜬 **눈금**, 둥근 모서리에 붙인 막대는 **잘린 것**,
+           왼쪽 테두리로 만든 것은 색이 곡선을 돌다 회색으로 바뀌어 **따로 노는** 느낌이었다.
+           셋 다 원인이 같다: **곡선과 곧은 띠가 같은 자리를 다툰다.**
+        ⚠️ 그래서 왼쪽만 각지게 한다(`rounded-l-none`). 띠가 위에서 아래까지 **한 번도 꺾이지
+           않고** 카드 변 그 자체가 되므로, 잘릴 데도 뜰 데도 없다. 오른쪽 세 모서리는 그대로
+           둥글어 카드다움을 잃지 않는다.
+        ⚠️ 색은 **태그 이름에서 나온다**(`pickPaletteColor`) — 클래스로 못 적어 인라인이다.
       */}
       <span
-        className="absolute inset-y-1.5 left-1.5 w-[3px] rounded-full"
+        className="absolute inset-y-0 left-0 w-[3px]"
         style={{ backgroundColor: pickPaletteColor(card.tagLabel).solidColor }}
         aria-hidden
       />
@@ -81,7 +83,7 @@ function BoardCardBody({ card, isDelayed }: BoardCardProps) {
  *    한계가 있다.
  */
 const CARD_SHAPE =
-  "border-border bg-card relative flex overflow-hidden rounded-lg border py-[18px] pr-4 pl-[18px]";
+  "border-border bg-card relative flex overflow-hidden rounded-lg rounded-l-none border py-[18px] pr-4 pl-4";
 
 /**
  * 보드 카드 한 장 — 드래그 핸들은 카드 전체(클릭해서 상세로 이동하는 화면이 아니라 옮기는 화면).

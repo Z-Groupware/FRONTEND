@@ -22,18 +22,18 @@ describe("개인 Todo 작성", () => {
   it("제목·시작·끝 날짜가 있으면 성공하고 생성값을 돌려준다", async () => {
     const result = await createPersonalTodoAction(
       { errors: {} },
-      form({ title: "새 할일", date: "2026-09-01", endDate: "2026-09-01" }),
+      form({ title: "새 할 일", date: "2026-09-01", endDate: "2026-09-01" }),
     );
 
     expect(result.errors).toEqual({});
-    expect(result.created?.title).toBe("새 할일");
+    expect(result.created?.title).toBe("새 할 일");
     expect(revalidatePathMock).toHaveBeenCalledWith("/app/calendar");
   });
 
   it("끝 날짜가 시작 날짜보다 나중이면 여러 날에 걸친 Todo를 만든다", async () => {
     const result = await createPersonalTodoAction(
       { errors: {} },
-      form({ title: "여러 날 할일", date: "2026-09-01", endDate: "2026-09-03" }),
+      form({ title: "여러 날 할 일", date: "2026-09-01", endDate: "2026-09-03" }),
     );
 
     expect(result.errors).toEqual({});

@@ -5,7 +5,7 @@ import type { ProjectTeamAction } from "../types";
 /**
  * ⚠️ 목 데이터 — BE 연동 전(ERD·API 스펙 미확정). 프로젝트 상세(`/app/projects/:projectId`)의
  * 타임라인 탭에 쓴다. 프로젝트 태그별로 참여 팀들이 받은 팀 액션 목록이다.
- * ⚠️ 오늘(2026-08-06) 기준 — **할일(TODO) 상태는 시작일이 오늘보다 뒤여야 한다**(오늘선을
+ * ⚠️ 오늘(2026-08-06) 기준 — **할 일(TODO) 상태는 시작일이 오늘보다 뒤여야 한다**(오늘선을
  *    가로지르면 안 됨, `member/mock/dashboard.ts`와 같은 규칙). 진행중은 오늘을 가로질러도 된다.
  */
 export const PROJECT_TEAM_ACTIONS_MOCK: Record<string, ProjectTeamAction[]> = {

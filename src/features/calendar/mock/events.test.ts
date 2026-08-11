@@ -12,12 +12,12 @@ describe("개인 캘린더 mock 스토어", () => {
     const before = listMockEvents().length;
 
     const created = addMockTodo({
-      title: "  새 할일  ",
+      title: "  새 할 일  ",
       date: "2026-09-10",
       endDate: "2026-09-10",
     });
 
-    expect(created.title).toBe("새 할일");
+    expect(created.title).toBe("새 할 일");
     expect(created.tag).toBe(CALENDAR_ITEM_TAG.PERSONAL_TODO);
     expect(created.isCompleted).toBe(false);
     // 하루 종일 항목 취급 — 시작·끝이 같은 날 자정이다.

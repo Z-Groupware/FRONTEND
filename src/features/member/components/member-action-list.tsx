@@ -38,7 +38,7 @@ export function MemberActionList({ actions }: { actions: ManagedMemberAction[] }
               className="border-border flex items-center gap-3 border-b px-7 py-3 last:border-b-0"
             >
               {/*
-                ⚠️ **지연은 계산해서 붙인다.** 저장 상태는 셋뿐이고(할일·진행중·완료) 지연은
+                ⚠️ **지연은 계산해서 붙인다.** 저장 상태는 셋뿐이고(할 일·진행중·완료) 지연은
                    마감일에서 나오는 파생값이다(§도메인 상수). 승인 직전에 "이 사람이 뭘
                    들고 있나"를 보는 자리라, 마감이 지난 걸 진행 중처럼 보이면 안 된다.
                 ⚠️ 색으로 알리는 건 **지연(빨강)뿐**이다 — 나머지 상태는 테두리만 쓴다.

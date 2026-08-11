@@ -49,9 +49,9 @@ export const TOP_LEVEL_PROJECTS: ProjectListItem[] = [
   },
   /*
     ⚠️ 아래 넷은 **보드 세 칸을 다 채우려고** 넣었다(2026-08-11). 셋 다 진행중이라 보드의
-       `할일`·`완료` 칸이 늘 비어 있었는데, 빈 칸만 보면 드래그 규칙(§canMoveCard)도
+       `할 일`·`완료` 칸이 늘 비어 있었는데, 빈 칸만 보면 드래그 규칙(§canMoveCard)도
        지연 배지도 화면에서 확인할 수가 없다(§정직한 목업).
-    ⚠️ 칸은 **저장값이 아니라 날짜로 계산된다**(`getBoardColumn`) — `할일`은 시작일이 아직
+    ⚠️ 칸은 **저장값이 아니라 날짜로 계산된다**(`getBoardColumn`) — `할 일`은 시작일이 아직
        안 온 것, `완료`는 `status`가 DONE인 것이다. 그래서 시작일을 미래로 둔다.
   */
   {
@@ -129,7 +129,7 @@ export const TOP_LEVEL_PROJECTS: ProjectListItem[] = [
 let nextProjectId = TOP_LEVEL_PROJECTS.length + 1;
 
 /**
- * 프로젝트 생성 — 격리막(CLAUDE.md §Mock 격리막). 새 프로젝트는 착수 직후라 진척 0%·할일 상태로 만든다.
+ * 프로젝트 생성 — 격리막(CLAUDE.md §Mock 격리막). 새 프로젝트는 착수 직후라 진척 0%·할 일 상태로 만든다.
  * ⚠️ 태그 색상(`tagColor`)은 지금 이 목 배열에 저장할 자리가 없다 — `ProjectListItem`엔
  *    색 필드가 없고 목록은 태그명을 해시해 색을 뽑는다(`pickPaletteColor`). 사용자가 고른 색은
  *    BE에 색 필드가 생기면 그때 같이 흘려보낸다(지금은 생성 폼에서만 쓰고 버려진다).

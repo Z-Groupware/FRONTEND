@@ -70,7 +70,7 @@ function applyColumnChange(
     return;
   }
   if (toColumn === BOARD_COLUMN.IN_PROGRESS) {
-    // ⚠️ 할일에서 왔으면 당겨서 시작한 것이므로 시작일을 오늘로 조정한다.
+    // ⚠️ 할 일에서 왔으면 당겨서 시작한 것이므로 시작일을 오늘로 조정한다.
     //    완료에서 돌아온 것이면 날짜는 손대지 않는다(§상태 정책).
     if (item.status === ACTION_STATUS.TODO) item.startDate = todayIso();
     item.status = ACTION_STATUS.IN_PROGRESS;

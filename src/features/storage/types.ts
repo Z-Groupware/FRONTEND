@@ -47,8 +47,8 @@ export interface ProjectStorage {
   /**
    * 프로젝트 상태 — **끝난 프로젝트의 녹음만 지운다.**
    *
-   * ⚠️ `isDone: boolean`이 아니다. 상태는 셋이라(`할일`·`진행중`·`완료`) 참·거짓으로 줄이면
-   *    화면이 `할일`을 `진행중`으로 잘못 부른다 — 값도 라벨도 `constants/project`가 정본이다.
+   * ⚠️ `isDone: boolean`이 아니다. 상태는 셋이라(`할 일`·`진행중`·`완료`) 참·거짓으로 줄이면
+   *    화면이 `할 일`을 `진행중`으로 잘못 부른다 — 값도 라벨도 `constants/project`가 정본이다.
    */
   status: ProjectStatus;
 }

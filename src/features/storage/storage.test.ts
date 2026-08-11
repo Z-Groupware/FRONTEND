@@ -89,7 +89,7 @@ describe("canDeleteRecordings", () => {
     expect(canDeleteRecordings(project({ status: PROJECT_STATUS.DONE }))).toBe(true);
   });
 
-  it("`할일`도 지울 수 없다 — 참·거짓으로 줄였으면 진행중과 같이 묶였을 값이다", () => {
+  it("`할 일`도 지울 수 없다 — 참·거짓으로 줄였으면 진행중과 같이 묶였을 값이다", () => {
     expect(canDeleteRecordings(project({ status: PROJECT_STATUS.TODO }))).toBe(false);
   });
 

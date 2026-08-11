@@ -205,7 +205,7 @@ export function MeetingDetailView({ detail }: { detail: MeetingDetail }) {
                     className="hover:bg-foreground/[0.04] flex items-center gap-3 px-4 py-3.5 transition-colors sm:gap-4 sm:px-7"
                   >
                     {/*
-                      ⚠️ **이름이 먼저다.** 상태를 맨 왼쪽에 두니 훑을 때 `진행중·할일·진행중`이
+                      ⚠️ **이름이 먼저다.** 상태를 맨 왼쪽에 두니 훑을 때 `진행중·할 일·진행중`이
                          먼저 읽히고 정작 무슨 액션인지가 뒤로 밀렸다 — 왼쪽은 무엇인지,
                          오른쪽은 어떤 상태인지로 축을 가른다(DESIGN §3).
                     */}
