@@ -28,14 +28,15 @@ function BoardCardBody({ card, isDelayed }: BoardCardProps) {
            표식(색)이다 — 눈은 글자를 읽기 전에 색을 먼저 본다.
         ⚠️ 색은 **태그 이름에서 나온다**(`pickPaletteColor`) — 어느 화면에서든 같은 프로젝트는
            같은 색이다. 상태색(회색·초록·보라)과 다른 팔레트라 뜻이 섞이지 않는다.
-        ⚠️ **카드 모서리에 붙인다**(`absolute inset-y-0 left-0`). 안쪽에 여백을 두고 세웠더니
-           위아래가 뜬 채 **눈금처럼** 보였다 — 모서리까지 닿아야 카드를 세로로 묶는 띠가 된다
-           (회의 카드의 위쪽 띠와 같은 결이다). 둥근 모서리는 `overflow-hidden`이 잘라 준다.
-        ⚠️ **얇게 세로로 길게**(3px). 두껍게 하면 모서리 곡선에서 뭉툭한 덩이로 보여 띠가 아니라
-           색칠한 면이 된다 — 가늘고 위아래로 곧게 뻗어야 줄로 읽힌다.
+        ⚠️ **끝을 둥글린 막대다**(`rounded-full` + 위아래 6px 들여쓰기, 2026-08-11). 카드 모서리에
+           딱 붙여 놓았을 때는 **둥근 모서리가 띠의 위아래를 깎아** 위도 아래도 잘린 것처럼
+           보였다 — 곡선 안쪽으로 살짝 들이고 **양 끝을 스스로 둥글리면** 어디서 시작해 어디서
+           끝나는지가 분명해져, 같은 길이인데도 온전한 막대로 읽힌다.
+        ⚠️ 왼쪽도 6px 들인다. 0에 붙이면 카드 테두리와 겹쳐 선이 두 줄로 보인다.
+        ⚠️ **얇게(3px)** 유지한다. 두꺼우면 막대가 아니라 색칠한 면이 된다.
       */}
       <span
-        className="absolute inset-y-0 left-0 w-[3px]"
+        className="absolute inset-y-1.5 left-1.5 w-[3px] rounded-full"
         style={{ backgroundColor: pickPaletteColor(card.tagLabel).solidColor }}
         aria-hidden
       />

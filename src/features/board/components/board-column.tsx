@@ -67,7 +67,7 @@ export function BoardColumn({ id, label, cards, isDelayed, isInvalidTarget }: Bo
            어느 칸인지 알 수 있었다 — 색은 훑을 때 걸리는 표식이고, 글자는 그다음이다.
       */}
       <div className={cn("shrink-0", isBlocked ? "bg-destructive/[0.06]" : tone.head)}>
-        <div className="flex items-center justify-between px-4 py-3">
+        <div className="flex items-center justify-between px-4 py-2.5">
           <span className="flex items-center gap-2">
             {/* 점은 상태점과 같은 색·같은 크기다(`components/common/status-dot`) */}
             <span
@@ -80,7 +80,13 @@ export function BoardColumn({ id, label, cards, isDelayed, isInvalidTarget }: Bo
             {/* 글자는 다섯 크기다(DESIGN §4) — `text-sm`·`text-xs`는 규격 밖이라 13px·12px로 맞춘다 */}
             <h3 className="text-[13px] leading-5 font-semibold">{label}</h3>
           </span>
-          <span className="text-muted-foreground text-[12px] leading-4 tabular-nums">
+          {/*
+            ⚠️ **개수를 알약에 담는다**(2026-08-11). 맨 숫자 하나가 오른쪽 끝에 떠 있어 제목과
+               한 줄인지 아닌지 애매했다 — 상자에 담으면 "이 칸에 든 수"라는 게 모양으로 읽힌다.
+            ⚠️ 바탕은 머리 색 위에 얹는 **흰 반투명**이다. 새 회색을 만들지 않으면서 칸마다
+               제 머리 색과 어울린다.
+          */}
+          <span className="bg-card/70 text-muted-foreground inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] leading-4 font-medium tabular-nums">
             {cards.length}
           </span>
         </div>
