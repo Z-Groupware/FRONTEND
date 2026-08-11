@@ -2,12 +2,15 @@
 
 import { revalidatePath } from "next/cache";
 
+import { requireAccessToken } from "@/features/auth/session";
 import {
   completeMockHandoverMidApproval,
   rejectMockHandover,
 } from "@/features/member/mock/managed";
 import { TEAM_ACTION_PERSONAL_ITEMS_MOCK } from "@/features/project/mock/team-action-detail";
+import { serverApi } from "@/lib/api";
 import { todayIso } from "@/lib/date";
+import { ep } from "@/lib/endpoints";
 import { isMock } from "@/mocks/config";
 
 import { FIXED_LEADER_NAME, getTeamHandoverDetail } from "./server";
@@ -39,6 +42,48 @@ function reassignHandoverItem(
   if (!teammate || !item) return;
   item.assigneeName = teammate.name;
   item.assigneeRoleLabel = teammate.roleLabel ?? undefined;
+}
+
+/**
+ * §4 재배정 오케스트레이션(BE 인수인계 문서, 2026-08-10) — 일괄 반영 엔드포인트가 없어
+ * FE가 순서를 책임진다: 건별 `PATCH .../items/{actionId}/reassign` **전부** 성공한 뒤에만
+ * `PATCH .../complete`(팀장 중간승인)를 부른다.
+ *
+ * ⚠️ **`handoverId`는 사원(member) id가 아니다.** 진짜 인수인계서 id — `mapper.ts`의
+ *    `HandoverDetailFromBe.handoverId`(BE `HandoverResponse.id`)를 받아야 한다.
+ * ⚠️ **아직 `completeTeamHandoverAction`에서 안 부른다.** 지금 그 함수는 라우트 파라미터로
+ *    사원 id를 받는데(mock 전용 구조, `TeamHandoverListItem.id` 주석 참고), 실제 인수인계서
+ *    id로 바꾸는 건 별도 이슈(mock→live 서버 재작성)의 몫이다 — 여기서는 실연동 때 그대로
+ *    가져다 쓸 수 있게 준비만 해 둔다.
+ * ⚠️ 중간에 하나라도 실패하면 그 assignment에서 예외가 그대로 던져진다 — 이미 성공한
+ *    앞쪽 reassign은 BE에 반영된 채로 남는다(부분 성공). 호출부가 이 상태를 다시 열었을 때
+ *    `reassigneeId`로 복원하는 건 화면(§4 "재배정 오케스트레이션") 몫이다.
+ * ⚠️ `memberId`는 API 호출엔 안 쓴다 — `completeTeamHandoverAction`과 같은 캐시 경로
+ *    (`revalidatePath`)를 무효화하는 데만 쓴다(라우트가 아직 사원 id 기준이라서, 위 주석 참고).
+ */
+export async function commitHandoverReassignments(
+  handoverId: number,
+  memberId: number,
+  assignments: TeamHandoverAssignment[],
+): Promise<void> {
+  const accessToken = await requireAccessToken();
+
+  for (const { actionId, assigneeId } of assignments) {
+    await serverApi<unknown>(ep.handoverReassignItem(handoverId, actionId), {
+      method: "PATCH",
+      json: { toMemberId: assigneeId },
+      accessToken,
+    });
+  }
+
+  await serverApi<unknown>(ep.handoverComplete(handoverId), {
+    method: "PATCH",
+    accessToken,
+  });
+
+  revalidatePath(LIST_PATH);
+  revalidatePath(`${LIST_PATH}/${memberId}`);
+  revalidatePath(`${MANAGE_PATH}/${memberId}`);
 }
 
 /**

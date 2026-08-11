@@ -13,7 +13,7 @@ import type { TeamMemberRosterEntry } from "../types";
  */
 export const TEAM_MEMBER_ROSTER_MOCK: TeamMemberRosterEntry[] = [
   {
-    id: "member-lee",
+    id: 101,
     name: "이하윤",
     position: "선임",
     role: "프론트엔드",
@@ -21,7 +21,7 @@ export const TEAM_MEMBER_ROSTER_MOCK: TeamMemberRosterEntry[] = [
     status: MEMBER_STATUS.ACTIVE,
   },
   {
-    id: "member-park",
+    id: 102,
     name: "박도현",
     position: "주임",
     role: "백엔드",
@@ -29,7 +29,7 @@ export const TEAM_MEMBER_ROSTER_MOCK: TeamMemberRosterEntry[] = [
     status: MEMBER_STATUS.ACTIVE,
   },
   {
-    id: "member-kim",
+    id: 2,
     name: "김서준",
     position: "팀장",
     role: "팀장",

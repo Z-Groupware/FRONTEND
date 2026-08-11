@@ -17,7 +17,8 @@ export interface HandoverActionItem {
 
 /** 신청자 — 화면이 role로 팀장 자가 재할당 분기를 튼다. */
 export interface HandoverApplicant {
-  id: string;
+  /** BE 자동증가 정수 PK(모든 고유 id는 오토 인크리먼트, 2026-08-10 백엔드 확인). */
+  id: number;
   name: string;
   role: Authority;
   teamName: string;
@@ -25,7 +26,7 @@ export interface HandoverApplicant {
 
 /** 팀장 본인 휴직 재할당 대상 — 본인 제외 팀원. */
 export interface HandoverTeammateOption {
-  id: string;
+  id: number;
   name: string;
   position: string;
   role: string;

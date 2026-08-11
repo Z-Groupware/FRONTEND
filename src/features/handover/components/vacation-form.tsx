@@ -39,7 +39,7 @@ export function VacationForm({ context }: VacationFormProps) {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
-  const [assignments, setAssignments] = useState<Record<number, string>>({});
+  const [assignments, setAssignments] = useState<Record<number, number>>({});
   const [step, setStep] = useState<1 | 2>(1);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmError, setConfirmError] = useState<string | null>(null);
@@ -183,9 +183,11 @@ export function VacationForm({ context }: VacationFormProps) {
                       {action.title}
                     </span>
                     <Select
-                      value={assignments[action.id] ?? ""}
+                      value={
+                        assignments[action.id] !== undefined ? String(assignments[action.id]) : ""
+                      }
                       onValueChange={(value) =>
-                        setAssignments((prev) => ({ ...prev, [action.id]: value ?? "" }))
+                        setAssignments((prev) => ({ ...prev, [action.id]: Number(value) }))
                       }
                     >
                       <SelectTrigger aria-label={`${action.title} 담당자 선택`} className="w-40">
@@ -193,7 +195,7 @@ export function VacationForm({ context }: VacationFormProps) {
                       </SelectTrigger>
                       <SelectContent side="bottom" alignItemWithTrigger={false}>
                         {teammates.map((teammate) => (
-                          <SelectItem key={teammate.id} value={teammate.id}>
+                          <SelectItem key={teammate.id} value={String(teammate.id)}>
                             {teammate.name} {teammate.position}
                           </SelectItem>
                         ))}

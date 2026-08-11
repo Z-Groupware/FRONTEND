@@ -10,12 +10,10 @@ export interface SubmitVacationHandoverPayload {
   actionIds: number[];
   /**
    * 액션 id → 배정받을 팀원 id. 팀장 신청이 아니면 빈 객체.
-   * ⚠️ 지금은 로스터 mock(`TEAM_MEMBER_ROSTER_MOCK`)의 문자열 슬러그 id(`"member-lee"`)다.
-   *    실 멤버 API가 붙으면 로스터 자체가 처음부터 숫자 id로 오므로 별도 변환 함수가 아니라
-   *    **로스터 mock을 숫자 id로 바꾸는 쪽**이 맞는 해결책이다 — 지금 값으로는 이름 매칭 없이
-   *    숫자로 캐스팅할 수 없다(BE 인수인계 문서 §5, 백엔드 담당자 별도 확인 예정).
+   * ⚠️ 생성 요청 바디에는 안 실린다 — BE POST 바디에 그런 필드가 없다. 생성 뒤 건별
+   *    `PATCH .../items/{actionId}/reassign`으로 따로 보내야 한다(§4, `commitHandoverReassignments`).
    */
-  assignments: Record<number, string>;
+  assignments: Record<number, number>;
 }
 
 export interface SubmitOffboardingHandoverPayload {
