@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-import { StatusScreen } from "@/components/common/status-screen";
+import { StatusActionLink, StatusScreen } from "@/components/common/status-screen";
 
 export const metadata: Metadata = {
   title: "로그인이 필요한 화면 — Z",
@@ -23,7 +23,7 @@ export default function UnauthorizedPage() {
       code="401"
       title="로그인이 필요합니다"
       description="세션이 만료되었거나 로그인하지 않은 상태입니다. 다시 로그인한 뒤 이용해 주세요."
-      action={{ href: "/login", label: "로그인하러 가기" }}
+      action={<StatusActionLink href="/login" label="로그인하러 가기" />}
     />
   );
 }

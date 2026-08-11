@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-import { StatusScreen } from "@/components/common/status-screen";
+import { StatusActionLink, StatusScreen } from "@/components/common/status-screen";
 
 export const metadata: Metadata = {
   title: "찾을 수 없는 화면 — Z",
@@ -19,7 +19,7 @@ export default function NotFound() {
       code="404"
       title="요청하신 화면을 찾을 수 없습니다"
       description="주소가 변경되었거나 삭제된 화면입니다. 주소를 다시 확인해 주세요."
-      action={{ href: "/", label: "홈으로 가기" }}
+      action={<StatusActionLink href="/" label="홈으로 가기" />}
     />
   );
 }

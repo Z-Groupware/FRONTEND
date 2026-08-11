@@ -24,7 +24,12 @@ export default async function TeamHandoverDetailPage({ params }: TeamHandoverDet
 
   return (
     <main className="scrollbar-hidden min-h-0 flex-1 overflow-y-auto px-8 py-7">
-      <div className="mx-auto flex w-full max-w-[960px] flex-1 flex-col gap-5">
+      {/*
+        ⚠️ **상세 폭은 1440이다**(§DESIGN 4 — detail). 960은 **폼 한 장**의 폭이지 표가 있는
+           상세의 폭이 아니다 — 넓은 화면에서 가운데 좁은 기둥 하나만 서고 좌우가 통째로 비었고,
+           오너 쪽 같은 화면(`/owner/leader-handovers/:id`)이 1440이라 오갈 때 본문이 흔들렸다.
+      */}
+      <div className="mx-auto flex w-full max-w-[1440px] flex-1 flex-col gap-5">
         <div>
           <h2 className="text-[22px] leading-[30px] font-semibold tracking-[-0.4px]">
             {handover.memberName} · {HANDOVER_TYPE_LABEL[handover.type]}

@@ -1,4 +1,4 @@
-import { StatusScreen } from "@/components/common/status-screen";
+import { StatusActionLink, StatusScreen } from "@/components/common/status-screen";
 
 interface AccessDeniedProps {
   /** 돌아갈 곳 — 권한마다 집이 다르다(`roleHome`). */
@@ -29,7 +29,7 @@ export function AccessDenied({ homeHref, title, description }: AccessDeniedProps
         description ??
         "이 화면은 허용된 권한에서만 열 수 있습니다. 권한이 필요하시면 대표 또는 관리자에게 요청해 주세요."
       }
-      action={{ href: homeHref, label: "내 대시보드로 가기" }}
+      action={<StatusActionLink href={homeHref} label="내 대시보드로 가기" />}
     />
   );
 }

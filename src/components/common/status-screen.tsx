@@ -1,20 +1,32 @@
+import type { LucideIcon } from "lucide-react";
 import Link from "next/link";
+import type { ReactNode } from "react";
 
 import { ZLogo } from "@/components/icons/z-logo";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
+/** 이 화면들의 버튼은 **먹색 하나**다 — 파란 버튼은 액센트라 다른 뜻이 된다(§DESIGN 5). */
+export const STATUS_ACTION_CLASS =
+  "bg-foreground text-background hover:bg-foreground/90 h-11 gap-1.5 px-5 text-[13px]";
+
 /** 화면을 못 여는 세 경우 — 숫자는 화면에 그대로 적는다 */
 export type StatusCode = "401" | "403" | "404";
 
 interface StatusScreenProps {
-  code: StatusCode;
+  /** 401·403·404에만 있다. 화면이 터진 것(오류)에는 붙일 숫자가 없다. */
+  code?: StatusCode;
+  /**
+   * 표식 — 안 주면 **Z 로고**다(주소가 잘못된 경우: 서비스는 멀쩡하다).
+   * 아이콘을 주면 둥근 사각형 안에 담는다(무언가 잘못된 경우: 빈 상태와 같은 표식).
+   */
+  mark?: LucideIcon;
   /** 무엇이 막혔는지 한 문장 — 마침표를 찍지 않는다(제목이다) */
   title: string;
   /** 왜 막혔고 다음에 무엇을 하면 되는지 */
   description: string;
-  /** 나갈 문 하나. 막다른 길에 뒤로가기만 남기지 않는다. */
-  action: { href: string; label: string };
+  /** 나갈 문 하나. 막다른 길에 뒤로가기만 남기지 않는다(`StatusActionLink` 또는 버튼). */
+  action: ReactNode;
   /**
    * 셸(사이드바·상단바) **안**에서 뜨는지.
    *
@@ -40,13 +52,14 @@ interface StatusScreenProps {
  */
 export function StatusScreen({
   code,
+  mark: Mark,
   title,
   description,
   action,
   isInsideShell,
 }: StatusScreenProps) {
   const Heading = isInsideShell ? "h2" : "h1";
-  const mark = <ZLogo className="text-foreground size-8" title={isInsideShell ? undefined : "Z"} />;
+  const logo = <ZLogo className="text-foreground size-8" title={isInsideShell ? undefined : "Z"} />;
 
   return (
     <main
@@ -55,19 +68,29 @@ export function StatusScreen({
         isInsideShell ? "min-h-0 flex-1" : "min-h-screen-z",
       )}
     >
-      {isInsideShell ? (
-        <span aria-hidden>{mark}</span>
+      {Mark ? (
+        /* 빈 상태(`EmptyState`)와 같은 표식이다 — 한 앱에서 "여기가 끝이다"는 한 모양으로 말한다 */
+        <span
+          className="bg-secondary text-muted-foreground flex size-14 shrink-0 items-center justify-center rounded-2xl"
+          aria-hidden
+        >
+          <Mark className="size-6" strokeWidth={1.75} />
+        </span>
+      ) : isInsideShell ? (
+        <span aria-hidden>{logo}</span>
       ) : (
         <Link href="/" aria-label="Z 홈으로" className="focus-visible:ring-ring rounded">
-          {mark}
+          {logo}
         </Link>
       )}
 
       <div className="flex flex-col gap-2.5">
         {/* 숫자는 제목보다 먼저 오되 작게 — 무엇이 막혔는지가 먼저 읽혀야 한다 */}
-        <p className="text-muted-foreground/70 text-[13px] leading-5 tracking-[1.2px] tabular-nums">
-          {code}
-        </p>
+        {code && (
+          <p className="text-muted-foreground/70 text-[13px] leading-5 tracking-[1.2px] tabular-nums">
+            {code}
+          </p>
+        )}
         <Heading className="text-[30px] leading-9 font-semibold tracking-[-0.8px] break-keep">
           {title}
         </Heading>
@@ -77,15 +100,16 @@ export function StatusScreen({
         </p>
       </div>
 
-      <Link
-        href={action.href}
-        className={cn(
-          buttonVariants(),
-          "bg-foreground text-background hover:bg-foreground/90 h-11 gap-1.5 px-5 text-[13px]",
-        )}
-      >
-        {action.label}
-      </Link>
+      {action}
     </main>
+  );
+}
+
+/** 세 화면이 같은 문을 쓴다 — 버튼 생김새를 화면마다 적지 않는다. */
+export function StatusActionLink({ href, label }: { href: string; label: string }) {
+  return (
+    <Link href={href} className={cn(buttonVariants(), STATUS_ACTION_CLASS)}>
+      {label}
+    </Link>
   );
 }
