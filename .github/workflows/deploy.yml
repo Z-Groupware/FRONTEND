@@ -3,18 +3,52 @@ name: Deploy to EC2
 on:
   push:
     branches:
-      - develop
+      - main
+
+permissions:
+  contents: read
 
 concurrency:
   group: production-ec2-deploy
   cancel-in-progress: false
 
+env:
+  IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/zebra-fe
+
 jobs:
-  deploy:
+  build-and-push:
     runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          build-args: |
+            NEXT_PUBLIC_KAKAO_MAP_KEY=${{ secrets.NEXT_PUBLIC_KAKAO_MAP_KEY }}
+            NEXT_PUBLIC_USE_MOCK=false
+          tags: |
+            ${{ env.IMAGE }}:latest
+            ${{ env.IMAGE }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    env:
+      SHA: ${{ github.sha }}
 
     steps:
-      - name: Deploy via SSH (pull → build → restart)
+      - name: Deploy via SSH (pull → restart container)
         uses: appleboy/ssh-action@029f5b4aeeeb58fdfe1410a5d17f967dacf36262 # v1.0.3
         with:
           host: ${{ secrets.EC2_HOST }}
@@ -22,17 +56,20 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           fingerprint: ${{ secrets.EC2_SSH_FINGERPRINT }}
           port: 22
+          envs: IMAGE,SHA
           script: |
             set -e
 
-            cd /home/ubuntu/zebra
+            docker pull $IMAGE:$SHA
 
-            git fetch origin main
-            git reset --hard origin/main
+            docker stop zebra-fe || true
+            docker rm zebra-fe || true
 
-            npm ci
+            docker run -d \
+              --name zebra-fe \
+              --restart unless-stopped \
+              -p 3000:3000 \
+              --env-file /home/ubuntu/zebra/.env \
+              $IMAGE:$SHA
 
-            npm run build
-
-            pm2 reload zebra-fe --update-env || pm2 start npm --name "zebra-fe" -- run start
-            pm2 save
+            docker image prune -f

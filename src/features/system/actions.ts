@@ -4,7 +4,6 @@ import { revalidatePath } from "next/cache";
 
 import { COMPANY_STATUS, NOTICE_TARGET, type NoticeTarget } from "@/constants/domain";
 import type { PaginatedResult } from "@/lib/paginate";
-import { isMock } from "@/mocks/config";
 
 import { findMockPendingApproval, removeMockPendingApproval } from "./mock/approvals";
 import { findMockCompany, setMockCompanyStatus } from "./mock/companies";
@@ -37,11 +36,6 @@ function clampPageSize(pageSize: number): number {
  *    백그라운드 정합성용).
  */
 export async function approveCompanyAction(companyId: string): Promise<{ success: boolean }> {
-  if (!isMock) {
-    // ⚠️ 미구현 — API 스펙 확정 후 BFF 경로로 승인 요청을 보낸다.
-    throw new Error("기업 승인 API가 아직 연결되지 않았습니다.");
-  }
-
   if (!findMockPendingApproval(companyId)) return { success: false };
   removeMockPendingApproval(companyId);
   revalidatePath(APPROVAL_LIST_PATH);
@@ -49,10 +43,6 @@ export async function approveCompanyAction(companyId: string): Promise<{ success
 }
 
 export async function rejectCompanyAction(companyId: string): Promise<{ success: boolean }> {
-  if (!isMock) {
-    throw new Error("기업 반려 API가 아직 연결되지 않았습니다.");
-  }
-
   if (!findMockPendingApproval(companyId)) return { success: false };
   removeMockPendingApproval(companyId);
   revalidatePath(APPROVAL_LIST_PATH);
@@ -89,13 +79,9 @@ export async function suspendCompanyAction(formData: FormData): Promise<void> {
   const id = String(formData.get("companyId") ?? "");
   const path = String(formData.get("path") ?? "/system/companies");
 
-  if (isMock) {
-    setMockCompanyStatus(id, COMPANY_STATUS.SUSPENDED);
-  } else {
-    // ⚠️ 미구현 — API 스펙 확정 후 BFF 경로로 정지 요청을 보낸다.
-    throw new Error("기업 정지 API가 아직 연결되지 않았습니다.");
+  if (!setMockCompanyStatus(id, COMPANY_STATUS.SUSPENDED)) {
+    throw new Error("존재하지 않는 기업입니다.");
   }
-
   revalidatePath(path);
 }
 
@@ -103,12 +89,9 @@ export async function unsuspendCompanyAction(formData: FormData): Promise<void> 
   const id = String(formData.get("companyId") ?? "");
   const path = String(formData.get("path") ?? "/system/companies");
 
-  if (isMock) {
-    setMockCompanyStatus(id, COMPANY_STATUS.ACTIVE);
-  } else {
-    throw new Error("기업 정지 해제 API가 아직 연결되지 않았습니다.");
+  if (!setMockCompanyStatus(id, COMPANY_STATUS.ACTIVE)) {
+    throw new Error("존재하지 않는 기업입니다.");
   }
-
   revalidatePath(path);
 }
 
@@ -124,11 +107,6 @@ export async function unsuspendCompanyAction(formData: FormData): Promise<void> 
 export async function sendUnpaidNoticeAction(
   companyId: string,
 ): Promise<{ success: boolean; ownerEmail?: string }> {
-  if (!isMock) {
-    // ⚠️ 미구현 — API 스펙 확정 후 BFF 경로로 메일 발송 요청을 보낸다.
-    throw new Error("안내 발송 API가 아직 연결되지 않았습니다.");
-  }
-
   const company = findMockCompany(companyId);
   if (!company) return { success: false };
 
@@ -144,11 +122,6 @@ export async function sendUnpaidNoticeAction(
  * ⚠️ 지금은 목이라 **실제로 재처리가 돌지 않는다** — 성공만 흉내 낸다(§정직성).
  */
 export async function retryPipelineAction(meetingId: string): Promise<{ success: boolean }> {
-  if (!isMock) {
-    // ⚠️ 미구현 — API 스펙 확정 후 BFF 경로로 파이프라인 재처리 요청을 보낸다.
-    throw new Error("파이프라인 재처리 API가 아직 연결되지 않았습니다.");
-  }
-
   return { success: findMockFailedItem(meetingId) !== null };
 }
 
@@ -166,11 +139,6 @@ export async function publishNoticeAction(input: {
   /** target이 "특정 기업"일 때 고른 기업 id들 */
   companyIds?: string[];
 }): Promise<{ success: boolean }> {
-  if (!isMock) {
-    // ⚠️ 미구현 — API 스펙 확정 후 BFF 경로로 공지 발행 요청을 보낸다.
-    throw new Error("공지 발행 API가 아직 연결되지 않았습니다.");
-  }
-
   if (!input.title.trim() || !input.content.trim()) return { success: false };
   // 특정 기업 대상인데 고른 곳이 없으면 발송 대상이 없다 — 화면 가드와 별개로 서버에서도 막는다.
   if (input.target === NOTICE_TARGET.SPECIFIC && (input.companyIds?.length ?? 0) === 0) {

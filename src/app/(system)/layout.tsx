@@ -6,6 +6,13 @@ import { SystemSidebar } from "@/features/system/components/system-sidebar";
 import { SYSTEM_NAV } from "@/features/system/nav";
 import { SYSTEM_THEME_COOKIE } from "@/features/system/theme";
 
+/*
+  ⚠️ 아래 `cookies()` 호출 때문에 사실상 이미 동적이지만, 그 사실에 암묵적으로 의존하지 않고
+     이 그룹 전체를 명시적으로 동적으로 고정한다 — 나중에 쿠키 사용이 빠져도 조용히
+     정적으로 되돌아가지 않는다.
+*/
+export const dynamic = "force-dynamic";
+
 /**
  * SYSTEM(서비스 운영자) 화면이 공유하는 셸 — 사이드바는 여기 한 번만 그린다.
  * `(shell)` 레이아웃과 같은 구조지만, SYSTEM은 로그인 뒤 화면과 완전히 다른

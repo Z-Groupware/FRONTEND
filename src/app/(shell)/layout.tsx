@@ -7,6 +7,13 @@ import type { NavSection } from "@/features/shell/nav";
 import { dashboardFor, navFor } from "@/features/shell/nav-config";
 import { getViewer } from "@/features/shell/viewer";
 
+/*
+  ⚠️ 로그인 뒤 화면은 전부 사람마다 데이터가 다르다 — 정적으로 굳히면 build 시점에 그린
+     누군가의 화면이 HTML로 박제돼 다음 사람에게 그대로 나간다(`api.ts`가 `no-store`를 기본으로
+     두는 것과 같은 이유). 이 그룹 하위 전체가 이 한 줄로 덮인다 — 페이지마다 따로 안 붙인다.
+*/
+export const dynamic = "force-dynamic";
+
 /**
  * 공지 미읽음이 있으면 사이드바 "공지" 항목에 빨간 점을 끼워 넣는다.
  * ⚠️ 정적 `OWNER_NAV`를 그대로 두고 **여기서 서버 상태(미읽음 수)만 얹는다** — 구성과 상태를

@@ -11,6 +11,8 @@ import type { NextConfig } from "next";
 process.env.TZ = "Asia/Seoul";
 
 const nextConfig: NextConfig = {
+  // Docker 이미지에 node_modules 전체 대신 추적된 최소 런타임만 담기 위함(.next/standalone).
+  output: "standalone",
   /*
     개발 서버 표시등(왼쪽 아래 동그란 `N` 배지)을 끈다.
 
