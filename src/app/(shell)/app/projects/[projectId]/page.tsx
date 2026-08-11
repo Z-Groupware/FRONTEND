@@ -154,12 +154,7 @@ export default async function ProjectDetailPage({ params, searchParams }: Projec
               </div>
             </dl>
 
-            {/*
-              ⚠️ **읽는 글은 좁게 둔다**(§DESIGN 4 폭 720). 상세 카드가 1440까지 늘어나는데
-                 기획 본문까지 그 폭을 가로지르면 한 줄이 너무 길어 눈이 다음 줄을 못 찾는다 —
-                 공지 상세도 바깥은 1440이고 글 카드만 720이다.
-            */}
-            <p className="text-muted-foreground border-border max-w-[720px] border-t pt-5 text-[13px] leading-[22px] whitespace-pre-wrap">
+            <p className="text-muted-foreground border-border border-t pt-5 text-[13px] leading-[22px] whitespace-pre-wrap">
               {project.description}
             </p>
             {project.attachmentName && (
