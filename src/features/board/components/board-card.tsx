@@ -2,6 +2,7 @@
 
 import { useDraggable } from "@dnd-kit/core";
 
+import { ProjectTag } from "@/components/common/project-tag";
 import { StatusDot } from "@/components/common/status-dot";
 import { formatMonthDayWeekday } from "@/lib/date";
 import { cn } from "@/lib/utils";
@@ -18,21 +19,35 @@ function BoardCardBody({ card, isDelayed }: BoardCardProps) {
   const due = formatMonthDayWeekday(card.dueDate);
   return (
     <>
-      <span
-        className="w-fit rounded px-1.5 py-0.5 font-mono text-[10px] leading-none font-semibold"
-        style={{ backgroundColor: card.tagBgColor, color: card.tagTextColor }}
-      >
-        {card.tagLabel}
-      </span>
-      <p className="text-foreground text-sm font-medium">{card.title}</p>
+      {/*
+        ⚠️ **공용 칩을 쓴다**(`components/common/project-tag`). 여기만 손으로 그린
+           `font-mono text-[10px]` 칩이라 같은 프로젝트가 회의·검색·보드에서 저마다 다른
+           모양으로 떴다 — 칩은 프로젝트를 알아보는 표식이라 모양이 흔들리면 표식 노릇을 못 한다.
+      */}
+      <ProjectTag tag={card.tagLabel} />
+      {/*
+        ⚠️ 글자는 다섯 크기다(DESIGN §4). `text-sm`(14px)·`text-xs`(12px)는 규격 밖이라
+           13px·12px로 맞춘다 — 한 화면에 여섯째 크기가 끼면 어느 것이 기준인지 흐려진다.
+      */}
+      <p className="text-foreground text-[13px] leading-5 font-medium">{card.title}</p>
       {isDelayed ? (
-        <StatusDot tone="DELAYED" label="지연" className="text-xs" />
+        <StatusDot tone="DELAYED" label="지연" className="text-[12px] leading-4" />
       ) : (
-        <p className="text-muted-foreground text-xs tabular-nums">{due ? `${due}까지` : "-"}</p>
+        <p className="text-muted-foreground text-[12px] leading-4 tabular-nums">
+          {due ? `${due}까지` : "-"}
+        </p>
       )}
     </>
   );
 }
+
+/**
+ * 카드 겉모양 — 실제 카드와 사본이 같은 값을 쓴다.
+ *
+ * ⚠️ 라운드는 `rounded-xl`(14px)이다. `2xl`(18px)은 화면을 나누는 **큰 카드**의 값이고,
+ *    이건 칸 안에 줄지어 서는 작은 카드라 한 단계 작다(검색 화면과 같은 규칙).
+ */
+const CARD_SHAPE = "border-border bg-card flex flex-col gap-2 rounded-xl border p-4";
 
 /**
  * 보드 카드 한 장 — 드래그 핸들은 카드 전체(클릭해서 상세로 이동하는 화면이 아니라 옮기는 화면).
@@ -53,7 +68,8 @@ export function BoardCard({ card, isDelayed }: BoardCardProps) {
       {...listeners}
       {...attributes}
       className={cn(
-        "border-border bg-card flex cursor-grab flex-col gap-2 rounded-2xl border p-4 active:cursor-grabbing",
+        CARD_SHAPE,
+        "hover:border-foreground/25 cursor-grab transition-colors active:cursor-grabbing",
         isDragging && "border-dashed bg-transparent",
       )}
     >
@@ -71,7 +87,7 @@ export function BoardCard({ card, isDelayed }: BoardCardProps) {
  */
 export function BoardCardOverlay({ card, isDelayed }: BoardCardProps) {
   return (
-    <div className="border-border bg-card flex cursor-grabbing flex-col gap-2 rounded-2xl border p-4 shadow-lg">
+    <div className={cn(CARD_SHAPE, "cursor-grabbing shadow-lg")}>
       <BoardCardBody card={card} isDelayed={isDelayed} />
     </div>
   );
