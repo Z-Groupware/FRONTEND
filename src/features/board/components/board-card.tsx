@@ -81,32 +81,56 @@ function BoardCardBody({ card, isDelayed }: BoardCardProps) {
  */
 const CARD_SHAPE = "border-border bg-card relative flex rounded-[20px] border py-6 pr-4 pl-4";
 
-/** 카드 모서리 반지름(px) — 색 테두리가 곡선을 어디까지 타는지도 이 값으로 정한다 */
+/** 카드 모서리 반지름(px) — 색 띠가 얇아지기 시작하는 지점이기도 하다 */
 const CARD_RADIUS = 20;
 
+/** 직선 구간에서의 색 띠 두께(px) */
+const EDGE_WIDTH = 4;
+
+/*
+  ⚠️ 모서리 구간의 **두께가 줄어드는** 도형이다. 테두리(`border`)나 곧은 막대로는 안 된다 —
+     테두리는 두께가 일정하고, 곧은 막대를 카드가 깎으면 모서리 절반에서 멈춘다.
+  ⚠️ 원호를 24등분해 바깥선과 안쪽선을 각각 찍고 닫은 다각형이다. 안쪽선의 반지름이
+     `EDGE_WIDTH`에서 0까지 줄어들어, 모서리가 시작될 때 제 두께였다가 모서리가 끝나는
+     지점에서 두께가 0이 된다(2026-08-11 확정).
+  ⚠️ 값은 `CARD_RADIUS`·`EDGE_WIDTH`로 계산해 박아 둔 것이다 — 둘을 바꾸면 이 경로도 다시
+     만들어야 한다.
+*/
+const CORNER_TOP_PATH =
+  "M0.00 20.00 L0.04 18.69 L0.17 17.39 L0.38 16.10 L0.68 14.82 L1.06 13.57 L1.52 12.35 L2.06 11.15 L2.68 10.00 L3.37 8.89 L4.13 7.82 L4.96 6.81 L5.86 5.86 L6.81 4.96 L7.82 4.13 L8.89 3.37 L10.00 2.68 L11.15 2.06 L12.35 1.52 L13.57 1.06 L14.82 0.68 L16.10 0.38 L17.39 0.17 L18.69 0.04 L20.00 0.00 L20.00 0.00 L18.70 0.21 L17.43 0.50 L16.20 0.87 L15.00 1.33 L13.84 1.85 L12.73 2.45 L11.67 3.11 L10.67 3.83 L9.72 4.62 L8.84 5.46 L8.02 6.34 L7.27 7.27 L6.59 8.24 L5.98 9.25 L5.45 10.28 L4.99 11.33 L4.60 12.41 L4.29 13.49 L4.06 14.59 L3.90 15.69 L3.82 16.78 L3.81 17.87 L3.87 18.94 L4.00 20.00 Z";
+const CORNER_BOTTOM_PATH =
+  "M0.00 0.00 L0.04 1.31 L0.17 2.61 L0.38 3.90 L0.68 5.18 L1.06 6.43 L1.52 7.65 L2.06 8.85 L2.68 10.00 L3.37 11.11 L4.13 12.18 L4.96 13.19 L5.86 14.14 L6.81 15.04 L7.82 15.87 L8.89 16.63 L10.00 17.32 L11.15 17.94 L12.35 18.48 L13.57 18.94 L14.82 19.32 L16.10 19.62 L17.39 19.83 L18.69 19.96 L20.00 20.00 L20.00 20.00 L18.70 19.79 L17.43 19.50 L16.20 19.13 L15.00 18.67 L13.84 18.15 L12.73 17.55 L11.67 16.89 L10.67 16.17 L9.72 15.38 L8.84 14.54 L8.02 13.66 L7.27 12.73 L6.59 11.76 L5.98 10.75 L5.45 9.72 L4.99 8.67 L4.60 7.59 L4.29 6.51 L4.06 5.41 L3.90 4.31 L3.82 3.22 L3.81 2.13 L3.87 1.06 L4.00 0.00 Z";
+
 /**
- * 왼쪽 색 테두리 — 왼쪽 변을 따라 내려오다 **위·아래 곡선을 끝까지 타고, 직선이 시작되는
- * 자리에서 정확히 끝난다.**
- *
- * ⚠️ 세로 막대로는 이게 안 된다. 곧은 막대를 카드가 깎으면 곡선의 **절반쯤에서 멈춘다** —
- *    폭 4px짜리 막대는 곡선이 x=4에 닿는 높이까지만 살아남기 때문이다(반지름 20이면 위에서
- *    8px 지점). 곡선을 끝까지 타려면 막대가 아니라 **곡선을 따라 도는 선**이어야 한다.
- * ⚠️ 그래서 카드와 똑같은 둥근 테두리를 한 겹 더 얹고, 왼쪽 `CARD_RADIUS`만큼만 남기게
- *    잘라낸다(`clip-path`). 자르는 폭이 반지름과 같으므로 색은 곡선이 끝나는 바로 그 자리,
- *    직선이 시작되기 직전에 끝난다(2026-08-11 확정).
- * ⚠️ `-inset-px`로 한 픽셀 밖에 그린다. 같은 자리에 겹치면 회색 테두리가 비쳐 색이 탁해진다.
+ * 왼쪽 색 띠 — 직선 구간은 제 두께로 서고, **모서리가 시작되는 지점부터 얇아져 모서리가
+ * 끝나는 지점에서 사라진다.**
  */
 function ColorEdge({ tag }: { tag: string }) {
+  const color = pickPaletteColor(tag).solidColor;
+  const box = { width: CARD_RADIUS, height: CARD_RADIUS };
+
   return (
-    <span
-      className="pointer-events-none absolute -inset-px border-4"
-      style={{
-        borderColor: pickPaletteColor(tag).solidColor,
-        borderRadius: CARD_RADIUS + 1,
-        clipPath: `inset(0 calc(100% - ${CARD_RADIUS}px) 0 0)`,
-      }}
-      aria-hidden
-    />
+    <span className="pointer-events-none absolute inset-y-0 left-0" aria-hidden>
+      <svg className="absolute top-0 left-0" {...box} viewBox={`0 0 ${CARD_RADIUS} ${CARD_RADIUS}`}>
+        <path d={CORNER_TOP_PATH} fill={color} />
+      </svg>
+      <span
+        className="absolute left-0"
+        style={{
+          top: CARD_RADIUS,
+          bottom: CARD_RADIUS,
+          width: EDGE_WIDTH,
+          backgroundColor: color,
+        }}
+      />
+      <svg
+        className="absolute bottom-0 left-0"
+        {...box}
+        viewBox={`0 0 ${CARD_RADIUS} ${CARD_RADIUS}`}
+      >
+        <path d={CORNER_BOTTOM_PATH} fill={color} />
+      </svg>
+    </span>
   );
 }
 
