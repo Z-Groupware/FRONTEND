@@ -16,6 +16,13 @@ const config: Config = {
     */
     "^next/cache$": "<rootDir>/test/next-cache-stub.ts",
   },
+  /*
+    테스트는 전부 `src/` 안에 있다. 수집 범위를 여기로 못박아야 레포 안에 생기는 체크아웃
+    사본(`.claude/worktrees/*` 등)의 테스트를 끌어오지 않는다.
+    ⚠️ 한 번 들어왔다가 develop 병합 때 사라졌던 줄이다(#248) — 지우면 전체 `jest`가 남의
+       작업본까지 돌며 남의 실패를 우리 실패로 보고한다.
+  */
+  roots: ["<rootDir>/src"],
   // Playwright 스펙은 e2e/ 에만 둔다 (CONVENTIONS §18)
   testPathIgnorePatterns: ["<rootDir>/.next/", "<rootDir>/node_modules/", "<rootDir>/e2e/"],
 };
