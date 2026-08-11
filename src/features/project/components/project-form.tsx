@@ -134,7 +134,8 @@ export function ProjectForm({ action, teamOptions, cancelHref }: ProjectFormProp
         </div>
       </div>
 
-      <div className="flex flex-col gap-1.5">
+      {/* ⚠️ 쓰는 글은 좁게 둔다(§DESIGN 4) — 카드가 1440이라도 한 줄이 그만큼 길면 못 읽는다 */}
+      <div className="flex max-w-[720px] flex-col gap-1.5">
         <Label htmlFor="project-description">
           세부 설명 <span className="text-destructive">*</span>
         </Label>

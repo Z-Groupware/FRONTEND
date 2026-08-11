@@ -25,7 +25,12 @@ export default async function AppProjectNewPage() {
 
   return (
     <main className="scrollbar-hidden min-h-0 flex-1 overflow-y-auto px-8 py-7">
-      <div className="mx-auto flex w-full max-w-[720px] flex-col gap-4">
+      {/*
+        ⚠️ **1440이다**(2026-08-11). 폼 한 장이라 720으로 뒀었는데, 사이드바로 오갈 때
+           이 화면만 본문이 좁아져 튀었다 — 폭은 워크벤치 전체를 하나로 맞춘다.
+        ⚠️ 대신 **긴 글 칸에는 상한을 건다**(폼 안에서). 한 줄이 1400px이면 눈이 다음 줄을 못 찾는다.
+      */}
+      <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-4">
         <div className="flex flex-col gap-1">
           <p className="text-muted-foreground text-[12px] leading-4">
             <Link href="/app/projects" className="hover:text-foreground">

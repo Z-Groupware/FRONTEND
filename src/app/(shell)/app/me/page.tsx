@@ -50,8 +50,13 @@ export default async function AppMePage({ searchParams }: AppMePageProps) {
 
   return (
     <div className="flex-1 overflow-y-auto px-8 py-7">
+      {/*
+        ⚠️ **1440이다**(2026-08-11). 폼 한 장이라 안쪽을 720으로 묶어 뒀었는데, 사이드바로
+           오갈 때 이 화면만 본문이 좁아져 튀었다 — 폭은 워크벤치 전체를 하나로 맞춘다.
+        ⚠️ 입력칸·읽는 글은 카드 안에서 따로 상한을 건다.
+      */}
       <div className="mx-auto w-full max-w-[1440px]">
-        <div className="mx-auto flex w-full max-w-[720px] flex-col gap-5">
+        <div className="flex w-full flex-col gap-5">
           <nav aria-label="마이페이지 탭" className="border-border flex gap-4 border-b">
             {PROFILE_TABS.map((t) => (
               <Link
