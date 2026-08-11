@@ -103,9 +103,14 @@ export function InlineEditableField({
       <span
         className={cn(
           "min-w-0 truncate",
+          /*
+            ⚠️ **이름에 무게를 준다**(2026-08-11). 이름 13px medium과 설명 12px가 한 단 차이라
+               훑을 때 둘이 뭉쳐 어느 것이 액션 이름인지 안 잡혔다 — 굵기를 한 단 올리고
+               설명은 흐린 채로 둬서 층을 벌린다(§DESIGN 4: 크기는 다섯뿐이라 무게로 가른다).
+          */
           multiline
-            ? "text-muted-foreground text-[12px] leading-4"
-            : "text-[13px] leading-5 font-medium",
+            ? "text-muted-foreground text-[12px] leading-[18px]"
+            : "text-[13px] leading-5 font-semibold",
           !value && "text-muted-foreground/60",
         )}
       >
