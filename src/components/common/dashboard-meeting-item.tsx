@@ -1,7 +1,11 @@
 import Link from "next/link";
 
 import { Badge } from "@/components/ui/badge";
-import { MEETING_STATUS, MEETING_STATUS_LABEL, type MeetingStatus } from "@/constants/domain";
+import {
+  MEETING_STATUS_BADGE_CLASS,
+  MEETING_STATUS_LABEL,
+  type MeetingStatus,
+} from "@/constants/meeting";
 import { pickPaletteColor } from "@/lib/palette";
 import { cn } from "@/lib/utils";
 
@@ -62,11 +66,13 @@ export function formatMeetingDate(dateIso: string): string {
  * 회의 상태 색 — 상태 흐름(예정→진행중→완료)이 한눈에 보이게 색으로 구분한다(토큰이라 다크 자동).
  * 예정=파랑(primary) · 진행중=초록(success) · 완료=회색(muted).
  */
-const STATUS_TONE: Record<MeetingStatus, string> = {
-  [MEETING_STATUS.SCHEDULED]: "bg-primary/10 text-primary",
-  [MEETING_STATUS.IN_PROGRESS]: "bg-success/12 text-success",
-  [MEETING_STATUS.DONE]: "bg-muted text-muted-foreground",
-};
+/*
+  ⚠️ **회의 상태 배지를 여기서 따로 정하지 않는다**(2026-08-10). 여기는 파랑·초록 색으로,
+     목록 카드는 명도로 갈라 놓아서 **같은 `예정`이 화면마다 다르게 보였다** —
+     `constants/meeting.ts`의 주석은 "두 화면이 같은 맵을 쓴다"고 적혀 있었는데 사실이 아니었다.
+  ⚠️ 그리고 색은 이 화면에서 쓸 수 없다. 바로 옆에 프로젝트 태그(팔레트 색)가 서 있어
+     무엇을 구분하는 색인지 알 수 없어진다 — 그 이유로 목록에서 한 번 걷어낸 색이다.
+*/
 
 interface DashboardMeetingItemProps {
   meeting: DashboardMeeting;
@@ -161,8 +167,13 @@ export function DashboardMeetingItem({ meeting, showDivider }: DashboardMeetingI
             <span className="w-[64px] text-right tabular-nums">참석 {meeting.attendeeCount}명</span>
             <span
               className={cn(
-                "inline-flex h-5 w-[48px] shrink-0 items-center justify-center rounded-full text-[11px] leading-4 font-medium",
-                STATUS_TONE[meeting.status],
+                /*
+                  ⚠️ **`border`를 켜 둔다**(2026-08-10 리뷰). 공용 맵의 완료 값이 `border-border`
+                     하나로 서는데 테두리 굵기가 없으면 그 줄이 안 그려져 **완료 배지만 표면이
+                     통째로 사라진다** — 목록 카드는 이미 `border`를 켠다.
+                */
+                "inline-flex h-5 w-[48px] shrink-0 items-center justify-center rounded-full border text-[11px] leading-4 font-medium",
+                MEETING_STATUS_BADGE_CLASS[meeting.status],
               )}
             >
               {MEETING_STATUS_LABEL[meeting.status]}

@@ -1,3 +1,5 @@
+import { AI_SUMMARY_STATUS, type AiSummaryStatus } from "@/constants/meeting";
+
 import type { Meeting, MeetingDraft } from "../types";
 
 /**
@@ -38,6 +40,8 @@ export function addMockMeeting(draft: MeetingDraft): Meeting {
     createdAt: new Date().toISOString(),
     // 방금 잡은 회의가 끝나 있을 리 없다 — 완료는 캡처의 [회의 종료 및 제출]만 만든다(§types)
     endedAt: null,
+    // 안 끝난 회의엔 분석이 없다(§types)
+    aiSummaryStatus: null,
   };
   store.meetings = [...store.meetings, meeting];
   return meeting;
@@ -54,7 +58,25 @@ export function endMockMeeting(id: string, endedAt: string): Meeting | null {
   const found = findMockMeeting(id);
   if (!found || found.endedAt !== null) return null;
 
-  const ended: Meeting = { ...found, endedAt };
+  /*
+    ⚠️ 종료와 동시에 **대기**로 들어간다. 서버가 종료 처리 안에서 분석 잡을 거는 것과 같은
+       순간이다(WORKFLOW §3-3 4) — 목이 이걸 안 하면 종료 직후 카드가 "완료"로 떠서,
+       실제로는 못 여는 회의록을 열 수 있는 것처럼 보인다.
+  */
+  const ended: Meeting = { ...found, endedAt, aiSummaryStatus: AI_SUMMARY_STATUS.PENDING };
   store.meetings = store.meetings.map((meeting) => (meeting.id === id ? ended : meeting));
   return ended;
+}
+
+/**
+ * 분석 진행도를 옮긴다 — **목 전용**이다.
+ *
+ * ⚠️ 실서비스에서는 이 값을 프론트가 못 옮긴다. 분석은 서버가 종료 처리 안에서 돌리고
+ *    화면은 `/processing-status`를 읽기만 한다(WORKFLOW §3-3 4) — 시드가 여러 단계를
+ *    한 화면에 세워 보이려고 쓰는 손잡이다.
+ */
+export function setMockSummaryStatus(id: string, status: AiSummaryStatus): void {
+  store.meetings = store.meetings.map((meeting) =>
+    meeting.id === id ? { ...meeting, aiSummaryStatus: status } : meeting,
+  );
 }

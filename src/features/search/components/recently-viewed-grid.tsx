@@ -126,7 +126,7 @@ function RecentlyViewedCard({ item }: RecentlyViewedCardProps) {
            검색 결과는 "무엇 · 어디 · 언제"가 한 문장처럼 이어져야 읽힌다.
         ⚠️ 그래서 제목도 `flex-1`이 아니다. 늘어나면 다시 벌어진다.
       */}
-      <span className="text-muted-foreground min-w-0 shrink-0 truncate text-[12px] leading-4">
+      <span className="text-muted-foreground min-w-0 truncate text-[12px] leading-4">
         {parts.lead}
         {parts.trail && <span className="px-1.5 opacity-50">·</span>}
         {parts.trail}

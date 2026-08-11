@@ -6,6 +6,7 @@
  */
 
 import type { Authority } from "@/constants/authority";
+import type { AiSummaryStatus } from "@/constants/meeting";
 
 /** 회의 안건 대주제/소주제 한 쌍 — 자유 입력 텍스트다(고정 enum 아님, WORKFLOW.md §3-1). */
 export interface MeetingTopic {
@@ -68,4 +69,15 @@ export type Meeting = MeetingDraft & {
   createdAt: string;
   /** 종료를 누른 시각(ISO). 안 눌렀으면 `null` */
   endedAt: string | null;
+  /**
+   * 종료 뒤 서버가 돌리는 AI 분석이 어디까지 갔는지.
+   *
+   * ⚠️ **회의 상태와 다른 축이다.** 종료를 누르면 회의는 곧바로 완료지만 요약·액션 추출은
+   *    그때부터 몇 분 걸린다(WORKFLOW §3-3 4·5) — 이 값을 안 두면 아직 아무 산출물도 없는
+   *    회의가 "완료 카드"로 열려 빈 회의록을 보게 된다(§정직성).
+   * ⚠️ **프론트가 분석을 부르지 않는다.** 서버가 종료 처리 안에서 큐에 걸고 실패해도 재시도한다 —
+   *    화면은 `/processing-status`를 폴링해 **읽기만** 한다.
+   * ⚠️ 안 끝난 회의는 `null`이다 — 시작도 안 한 일에 대기라고 적으면 상태가 하나 늘어난다.
+   */
+  aiSummaryStatus: AiSummaryStatus | null;
 };

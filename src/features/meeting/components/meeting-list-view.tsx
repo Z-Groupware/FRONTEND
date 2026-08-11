@@ -25,27 +25,29 @@ const TAB_LABEL: Record<MeetingTab, string> = {
   invited: "참여해야 할",
 };
 
+/**
+ * 회의 탭.
+ *
+ * ⚠️ **밑줄 탭이다**(2026-08-10 통일). 전에는 검은 알약이었는데, 이 앱의 다른 탭
+ *    (검색 결과·팀 액션 상세)은 전부 밑줄이다 — 같은 것이 화면마다 다르면 오갈 때 눈이
+ *    "이게 탭인가 버튼인가"를 다시 판단한다.
+ * ⚠️ 개수는 **상자에 담지 않는다.** 알약 안에 또 알약을 넣으면 표식이 둘이 된다 —
+ *    검색 탭과 같이 숫자만 옆에 둔다.
+ */
 function TabLink({ tab, isActive, count }: { tab: MeetingTab; isActive: boolean; count: number }) {
   return (
     <Link
       href={tab === MEETING_TAB.HOSTED ? "/app/meeting" : `/app/meeting?tab=${tab}`}
       aria-current={isActive ? "page" : undefined}
       className={cn(
-        "flex h-8 items-center gap-1.5 rounded-lg px-3 text-[13px] leading-5 transition-colors",
+        "focus-visible:ring-ring -mb-px flex items-center gap-1.5 rounded-t-md border-b-2 px-3 py-2.5 text-[13px] leading-5 transition-colors focus-visible:ring-2 focus-visible:outline-hidden",
         isActive
-          ? "bg-foreground text-background font-medium"
-          : "text-muted-foreground hover:text-foreground",
+          ? "border-foreground text-foreground font-semibold"
+          : "text-muted-foreground hover:text-foreground border-transparent",
       )}
     >
       {TAB_LABEL[tab]}
-      <span
-        className={cn(
-          "rounded px-1 text-[11px] leading-4 tabular-nums",
-          isActive ? "bg-background/20" : "bg-secondary",
-        )}
-      >
-        {count}
-      </span>
+      <span className="tabular-nums">{count}</span>
     </Link>
   );
 }
@@ -87,12 +89,8 @@ export function MeetingListView({
     tab === MEETING_TAB.HOSTED ? directory.hosted : directory.invited;
 
   return (
-    <div className="flex flex-col gap-7">
-      <div
-        className="border-border bg-secondary/60 flex w-fit items-center gap-0.5 rounded-lg border p-0.5"
-        role="group"
-        aria-label="회의 거르기"
-      >
+    <div className="flex flex-col gap-6">
+      <div className="border-border flex gap-1 border-b" role="group" aria-label="회의 거르기">
         <TabLink
           tab={MEETING_TAB.HOSTED}
           isActive={tab === MEETING_TAB.HOSTED}

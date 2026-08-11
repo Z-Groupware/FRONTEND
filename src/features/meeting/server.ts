@@ -1,6 +1,6 @@
 import "server-only";
 
-import { MEETING_STATUS } from "@/constants/meeting";
+import { AI_SUMMARY_STATUS, MEETING_STATUS } from "@/constants/meeting";
 import { PERSONAL_ACTION_DETAIL_MOCK } from "@/features/action/mock/action-detail";
 import { listMockManagedMembers } from "@/features/member/mock/managed";
 import { PROJECT_TEAM_ACTIONS_MOCK } from "@/features/project/mock/team-actions";
@@ -14,6 +14,7 @@ import { meetingStatusOf } from "./status";
 import type { Meeting } from "./types";
 import type {
   MeetingCaptureResult,
+  MeetingContentPending,
   MeetingDetailResult,
   MeetingDirectory,
   MeetingListItem,
@@ -58,6 +59,7 @@ function toListItem(meeting: Meeting, viewerId: number, now: Date): MeetingListI
     roomName: meeting.roomName,
     attendeeCount: meeting.attendeeIds.length,
     isHost: meeting.hostId === viewerId,
+    aiSummaryStatus: meeting.aiSummaryStatus,
   };
 }
 
@@ -165,10 +167,24 @@ export async function getMeetingDetail(id: string, viewer: Actor): Promise<Meeti
   });
   if (!canView) return { kind: "locked", title: meeting.title };
 
+  /*
+    ⚠️ **아직 안 끝났다고 화면을 막지 않는다**(2026-08-10 팀 협의). 예정·진행중 회의도
+       시간·장소·참석자·안건은 이미 정해진 값이다 — 없는 건 회의가 남기는 것(기록·산출물)뿐이라
+       그 두 칸만 안내로 채운다(§view-types `MeetingContentPending`).
+    ⚠️ 순서가 있다. 회의가 안 끝났으면 요약은 시작조차 안 했으므로 회의 상태를 먼저 본다.
+  */
   const status = meetingStatusOf(meeting, new Date());
-  if (status !== MEETING_STATUS.DONE) {
-    return { kind: "notDone", title: meeting.title, status };
-  }
+  const pendingReason: MeetingContentPending | null =
+    status === MEETING_STATUS.SCHEDULED
+      ? "SCHEDULED"
+      : status === MEETING_STATUS.IN_PROGRESS
+        ? "IN_PROGRESS"
+        : meeting.aiSummaryStatus === AI_SUMMARY_STATUS.PENDING ||
+            meeting.aiSummaryStatus === AI_SUMMARY_STATUS.SUMMARIZING
+          ? "SUMMARIZING"
+          : meeting.aiSummaryStatus === AI_SUMMARY_STATUS.FAILED
+            ? "FAILED"
+            : null;
 
   /*
     참석자 이름은 사원 명부에서 id로 찾는다 — 같은 사람이 화면마다 같은 이름·같은 아바타 색이
@@ -200,6 +216,7 @@ export async function getMeetingDetail(id: string, viewer: Actor): Promise<Meeti
       outputKindLabel: kindLabel,
       outputs,
       script: findMockMeetingExtras(meeting.id)?.script ?? [],
+      pendingReason,
     },
   };
 }

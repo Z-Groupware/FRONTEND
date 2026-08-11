@@ -1,5 +1,5 @@
 import type { ActionStatus } from "@/constants/action";
-import type { MeetingStatus } from "@/constants/meeting";
+import type { AiSummaryStatus, MeetingStatus } from "@/constants/meeting";
 
 import type { MeetingTopic } from "./types";
 
@@ -35,6 +35,16 @@ export interface MeetingListItem {
    *    카드가 눌러도 반응이 없다(입장 개념 없음). 완료 카드만 상세로 간다.
    */
   isHost: boolean;
+  /**
+   * 종료 뒤 AI 분석이 어디까지 갔는지 — 안 끝난 회의는 `null`.
+   *
+   * ⚠️ **카드는 이 값을 말하지 않는다**(2026-08-10 팀 확정 B안). 대기·요약 중·실패는 종료
+   *    직후 잠깐 지나가는 값이라 배지로 올리면 회의 상태와 두 축이 겹쳐 보였다 — 목록은
+   *    회의가 어디까지 왔나(예정·진행중·완료)만 말한다.
+   * ⚠️ 그래도 싣는 이유는 **Host의 검토 대기**를 가리기 위해서다(`meetingCardAffordanceOf`).
+   *    요약이 어디까지 갔는지는 상세의 `pendingReason`이 말한다.
+   */
+  aiSummaryStatus: AiSummaryStatus | null;
 }
 
 /** 목록 — 탭 두 개가 이 화면의 전부다(WORKFLOW §3-2) */
@@ -76,7 +86,18 @@ export interface MeetingAttendee {
   name: string;
 }
 
-/** 회의 상세 — **완료 회의만** 여기까지 온다(§3-2) */
+/**
+ * 산출물·발화 기록을 **아직 못 보여주는 이유** — 다 준비됐으면 `null`이다.
+ *
+ * ⚠️ **화면을 통째로 막지 않는다**(2026-08-10 팀 협의). 예정·진행중 회의도 시간·장소·참석자·
+ *    안건은 이미 정해진 값이라 볼 이유가 있다 — 없는 건 **회의가 남기는 것**(기록·산출물)뿐이라
+ *    그 두 칸에만 안내를 넣는다. 전면 차단은 있는 정보까지 감춘다.
+ * ⚠️ 넷을 뭉치지 않는다. 기다리는 대상이 각각 다르다 — 회의 시작 / 회의 종료 / 요약 완료,
+ *    그리고 **실패는 기다려도 안 온다**(마이페이지에서 다시 요약해야 한다).
+ */
+export type MeetingContentPending = "SCHEDULED" | "IN_PROGRESS" | "SUMMARIZING" | "FAILED";
+
+/** 회의 상세 — 예정·진행중도 여기까지 온다(메타는 보여준다) */
 export interface MeetingDetail {
   id: string;
   title: string;
@@ -93,20 +114,20 @@ export interface MeetingDetail {
   outputKindLabel: string;
   outputs: MeetingOutput[];
   script: ScriptChunk[];
+  /** 산출물·발화 기록이 아직 없는 이유 — 다 찼으면 `null` */
+  pendingReason: MeetingContentPending | null;
 }
 
 /**
  * 상세 조회 결과 — 못 여는 이유까지 값으로 돌려준다.
  *
  * ⚠️ 화면이 이유를 알아야 맞는 말을 한다: 없는 회의는 `notFound()`, 권한 없음은
- *    잠금(에러가 아니다 — §3-2-1), 완료 전은 "완료 후 열람" 안내다. 뭉뚱그려 null을 주면
- *    세 경우가 같은 화면이 된다.
+ *    잠금(에러가 아니다 — §3-2-1)이다. 뭉뚱그려 null을 주면 두 경우가 같은 화면이 된다.
+ * ⚠️ **"아직 안 끝났다"는 여기 없다.** 예정·진행중·요약 중은 못 여는 게 아니라 **덜 찬 것**이라
+ *    `detail.pendingReason`으로 들어간다(2026-08-10 팀 협의).
  */
 export type MeetingDetailResult =
-  | { kind: "ok"; detail: MeetingDetail }
-  | { kind: "locked"; title: string }
-  | { kind: "notDone"; title: string; status: MeetingStatus }
-  | { kind: "notFound" };
+  { kind: "ok"; detail: MeetingDetail } | { kind: "locked"; title: string } | { kind: "notFound" };
 
 /**
  * 캡처 화면이 받는 것 — **Host가 회의를 진행하는 데 필요한 만큼만**(WORKFLOW §3-3).

@@ -1,8 +1,9 @@
 import { ACTION_STATUS, type ActionStatus } from "@/constants/action";
 import { AUTHORITY } from "@/constants/authority";
+import { AI_SUMMARY_STATUS } from "@/constants/meeting";
 
 import type { ScriptChunk } from "../view-types";
-import { addMockMeeting, endMockMeeting, listMockMeetings } from "./meetings";
+import { addMockMeeting, endMockMeeting, listMockMeetings, setMockSummaryStatus } from "./meetings";
 
 /**
  * 회의 목 시드 — **화면을 만들 수 있게 회의 몇 건을 미리 깔아 둔다.**
@@ -76,6 +77,11 @@ export function ensureMockMeetingsSeeded(): void {
     roomReservationId: "seed-reservation-1",
   });
   endMockMeeting(kickoff.id, "2026-07-14T10:31:00.000Z");
+  /*
+    ⚠️ 시드의 옛 완료 회의는 **분배까지 끝났다.** 종료가 대기로 넣기 때문에 그대로 두면
+       회의록·산출물이 다 있는 회의가 "요약 중"으로 떠서 못 열린다.
+  */
+  setMockSummaryStatus(kickoff.id, AI_SUMMARY_STATUS.DISTRIBUTED);
   extras.set(kickoff.id, {
     script: [
       { at: "10:00", text: "안녕하세요, 굿즈 쇼핑몰 앱 구축 킥오프를 시작하겠습니다." },
@@ -109,6 +115,7 @@ export function ensureMockMeetingsSeeded(): void {
     roomReservationId: "seed-reservation-2",
   });
   endMockMeeting(teamKickoff.id, "2026-07-21T10:32:00.000Z");
+  setMockSummaryStatus(teamKickoff.id, AI_SUMMARY_STATUS.DISTRIBUTED);
   extras.set(teamKickoff.id, {
     script: [
       { at: "10:00", text: "앱 개발 착수 건으로 모였습니다. 화면 흐름부터 나누겠습니다." },
@@ -143,6 +150,29 @@ export function ensureMockMeetingsSeeded(): void {
   });
 
   /*
+    m5 — Owner의 **진행중** 회의. 시드에 하나도 없어서 세 상태 중 하나를 화면에서 확인할
+         길이 없었다(§정직한 목업).
+    ⚠️ **끝난 시각을 안 적는다.** 진행중은 저장되는 값이 아니라 "시작 시각은 지났는데
+       [회의 종료 및 제출]을 안 눌렀다"로 계산되는 상태다(§status) — `endMockMeeting`을
+       부르지 않는 것이 곧 진행중이다.
+    ⚠️ 지난 날짜로 잡는다. 미래로 잡으면 그날이 오기 전까지는 예정으로 뜬다.
+  */
+  addMockMeeting({
+    title: "굿즈 앱 8월 스프린트 점검",
+    start: new Date("2026-08-10T09:00:00+09:00"),
+    end: new Date("2026-08-10T09:30:00+09:00"),
+    roomId: "room-small",
+    roomName: "소회의실",
+    projectId: 1,
+    projectTag: "GOODS",
+    topics: [{ main: "운영", sub: "스프린트 점검" }],
+    attendeeIds: [1, 2, 5],
+    hostId: 1,
+    hostAuthority: AUTHORITY.OWNER,
+    roomReservationId: "seed-reservation-5",
+  });
+
+  /*
     m4 — Owner의 BRAND 회의, 완료. 프로젝트가 하나뿐이면 태그 색·필터가 늘 같은 값이라
     화면이 맞는지 알 수 없다.
   */
@@ -161,6 +191,11 @@ export function ensureMockMeetingsSeeded(): void {
     roomReservationId: "seed-reservation-4",
   });
   endMockMeeting(brand.id, "2026-07-28T14:29:00.000Z");
+  /*
+    ⚠️ 이 한 건만 **요약 중**으로 둔다. 종료 직후 몇 분 동안만 보이는 상태라 목에 하나
+       세워 두지 않으면 그 카드를 만들었는지조차 화면에서 확인할 수 없다(§정직한 목업).
+  */
+  setMockSummaryStatus(brand.id, AI_SUMMARY_STATUS.SUMMARIZING);
   extras.set(brand.id, {
     script: [
       { at: "14:00", text: "3분기 브랜드 리뉴얼 방향을 정리하겠습니다." },
