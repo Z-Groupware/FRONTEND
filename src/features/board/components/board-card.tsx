@@ -74,21 +74,22 @@ function BoardCardBody({ card, isDelayed }: BoardCardProps) {
 /**
  * 카드 겉모양 — 실제 카드와 사본이 같은 값을 쓴다.
  *
- * ⚠️ 라운드는 `rounded-lg`(10px)다. 한 단계 위(`xl` 14px)로 뒀더니 **모서리 곡선이 왼쪽 띠의
- *    위아래를 14px씩 먹어** 띠가 잘린 것처럼 보였다 — 곡선을 줄이면 띠의 곧은 구간이 그만큼
- *    길어진다. 칸 안에 줄지어 서는 작은 카드라 원래도 큰 카드(`2xl` 18px)보다 작아야 한다.
+ * ⚠️ 라운드는 `rounded-md`(8px)다. 모서리를 **살짝 날카롭게** 두면 왼쪽 색 막대가 그 곡선을
+ *    타고 자연스럽게 마무리된다 — 곡선이 크면(`xl` 14px) 막대 끝을 크게 먹어 잘린 것처럼
+ *    보이고, 아예 각지면 막대가 카드와 따로 논다. 칸 안에 줄지어 서는 작은 카드라
+ *    큰 카드(`2xl` 18px)보다 작아야 하는 것과도 맞는다.
  * ⚠️ 세로 여백을 넉넉히 준다(`py-6`). **띠 길이는 결국 카드 높이다** — 띠만 손봐서는 길어지지
  *    않는다. 두 줄 사이 간격도 함께 벌려 늘어난 높이가 한쪽 여백에만 쏠리지 않게 한다.
  */
 const CARD_SHAPE =
-  "border-border bg-card relative flex overflow-hidden rounded-lg border py-6 pr-4 pl-4";
+  "border-border bg-card relative flex overflow-hidden rounded-md border py-6 pr-4 pl-4";
 
 /**
  * 왼쪽 색 막대 — **한 가지 색으로 카드 높이를 꽉 채운다.**
  *
  * ⚠️ 투명도를 섞지 않는다. 끝을 흐려 봤더니 색이 옅어진 자리가 **번져 보여** 오히려 지저분했다.
- * ⚠️ 카드에 `overflow-hidden`이 있어 둥근 모서리가 막대 끝을 정리해 준다 — 반지름(10px)이
- *    작고 막대가 4px이라 깎이는 양이 3px 남짓이라 눈에 안 걸린다.
+ * ⚠️ 카드에 `overflow-hidden`이 있어 둥근 모서리가 막대 끝을 정리해 준다 — 반지름(8px)이
+ *    작고 막대가 4px이라 **곡선을 살짝 타는 정도**로만 깎여 카드와 한 몸으로 읽힌다.
  */
 function ColorEdge({ tag }: { tag: string }) {
   return (
