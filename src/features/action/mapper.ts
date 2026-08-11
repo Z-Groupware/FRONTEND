@@ -3,7 +3,7 @@ import type { MemberAction } from "@/features/member/types";
 import { type BeAttachment, toProjectAttachment } from "@/features/project/mapper";
 import type { TeamActionDetail } from "@/features/project/types";
 
-import type { MyActionListItem, PersonalActionDetail } from "./types";
+import type { MyActionListItem, PersonalActionDetail, TeamActionProjectGroup } from "./types";
 
 /**
  * BE shape → UI 계약 (§Mock 격리막).
@@ -105,6 +105,34 @@ export function toMyActionListItem(be: BeActionSummary): MyActionListItem {
     dueDate: be.dueDate,
     status: be.status,
   };
+}
+
+/**
+ * 팀 액션 목록(`GET /api/team/actions`) → 프로젝트별 그룹.
+ * ⚠️ 목록 순서를 유지한 채 `projectId`로 묶는다(첫 등장 순서가 그룹 순서다).
+ */
+export function groupTeamActionsByProject(items: BeActionSummary[]): TeamActionProjectGroup[] {
+  const groups = new Map<number, TeamActionProjectGroup>();
+  for (const be of items) {
+    let group = groups.get(be.projectId);
+    if (!group) {
+      group = {
+        projectId: be.projectId,
+        projectName: be.projectName ?? "",
+        projectTag: be.projectTag ?? "",
+        teamActions: [],
+      };
+      groups.set(be.projectId, group);
+    }
+    group.teamActions.push({
+      id: be.id,
+      name: be.title,
+      startDate: fallbackActionStartDate(be.startDate),
+      dueDate: be.dueDate,
+      status: be.status,
+    });
+  }
+  return [...groups.values()];
 }
 
 /**
