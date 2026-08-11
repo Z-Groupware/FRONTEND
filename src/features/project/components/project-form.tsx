@@ -154,15 +154,21 @@ export function ProjectForm({ action, teamOptions, cancelHref }: ProjectFormProp
             <Label>
               참여 팀 <span className="text-destructive">*</span>
             </Label>
-            <div className="flex flex-col gap-2">
+            {/*
+              ⚠️ **두 칸으로 깐다**(2026-08-11). 팀 줄을 세로로만 쌓으니 선택칸이 360px인데
+                 본문 칸은 그 세 배라, 줄이 늘어날수록 **오른쪽 절반이 통째로 빈 채로 아래로만**
+                 길어졌다 — 화면 가운데 아래에 구멍이 생기는 자리가 여기다.
+              ⚠️ 칸은 남는 폭을 채운다(`w-full`). 팀 이름은 짧지만, 옆줄과 오른쪽 끝이 맞아야
+                 두 칸이 표처럼 읽힌다.
+            */}
+            <div className="grid gap-2 sm:grid-cols-2">
               {teamRows.map((row) => (
                 <div key={row.rowId} className="flex items-center gap-2">
                   <Select
                     value={row.team}
                     onValueChange={(value) => updateTeamRow(row.rowId, value ?? "")}
                   >
-                    {/* ⚠️ 본문 칸 폭에 맞춘다 — 192px로 두니 위 입력칸들과 오른쪽 끝이 어긋나 혼자 짧았다 */}
-                    <SelectTrigger aria-label="참여 팀 선택" className="w-full max-w-[360px]">
+                    <SelectTrigger aria-label="참여 팀 선택" className="w-full">
                       <SelectValue placeholder="팀 선택" />
                     </SelectTrigger>
                     <SelectContent side="bottom" alignItemWithTrigger={false}>
@@ -192,11 +198,12 @@ export function ProjectForm({ action, teamOptions, cancelHref }: ProjectFormProp
                 </div>
               ))}
 
+              {/* ⚠️ [팀 추가]는 격자 아래 한 줄이다 — 칸 하나를 차지하면 빈 선택칸처럼 보인다 */}
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
-                className="w-fit"
+                className="w-fit sm:col-span-2"
                 disabled={!canAddTeamRow}
                 onClick={() => setTeamRows((rows) => [...rows, { rowId: nextRowId++, team: "" }])}
               >
