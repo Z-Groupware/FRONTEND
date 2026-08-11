@@ -1,4 +1,10 @@
-import { type BeMeetingDetail, isClosed, isHostOf, toMeetingCaptureInfo } from "./mapper";
+import {
+  type BeMeetingDetail,
+  isClosed,
+  isHostOf,
+  parseMeetingDetail,
+  toMeetingCaptureInfo,
+} from "./mapper";
 
 /** MEET-04 응답 그대로 — 중첩·필드 이름을 BE 실코드에 맞춰 둔다 */
 const BASE: BeMeetingDetail = {
@@ -59,5 +65,24 @@ describe("isClosed", () => {
   it("끝났거나 취소된 회의는 막는다 — 취소는 아직 화면 계약에 없어 같은 자리로 보낸다", () => {
     expect(isClosed({ status: "DONE" })).toBe(true);
     expect(isClosed({ status: "CANCELED" })).toBe(true);
+  });
+});
+
+describe("parseMeetingDetail", () => {
+  it("우리가 읽는 모양이면 그대로 돌려준다", () => {
+    expect(parseMeetingDetail(BASE)).toBe(BASE);
+  });
+
+  /*
+    ⚠️ 단언만 하던 때는 여기서 안 터지고 **한참 뒤 `host.memberId`에서** 터졌다 —
+       원인을 알 수 없는 `TypeError`가 아니라 무엇이 어긋났는지 말하게 한다(§정직성).
+  */
+  it.each([
+    ["중첩이 통째로 없으면", { ...BASE, host: undefined }],
+    ["참석자가 배열이 아니면", { ...BASE, attendees: null }],
+    ["id가 문자열로 오면", { ...BASE, meetingId: "12" }],
+    ["응답이 비면", null],
+  ])("%s 판정 전에 멈춘다", (_label, broken) => {
+    expect(() => parseMeetingDetail(broken)).toThrow("약속한 모양");
   });
 });

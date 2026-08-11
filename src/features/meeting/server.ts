@@ -16,7 +16,7 @@ import {
 import { isMock } from "@/mocks/config";
 
 import { formatMeetingSchedule } from "./lib";
-import { type BeMeetingDetail, isClosed, isHostOf, toMeetingCaptureInfo } from "./mapper";
+import { isClosed, isHostOf, parseMeetingDetail, toMeetingCaptureInfo } from "./mapper";
 import { findMockMeeting, listMockMeetings } from "./mock/meetings";
 import { ensureMockMeetingsSeeded, findMockMeetingExtras } from "./mock/seed";
 import { findMockMeetingReview } from "./review/mock/review";
@@ -317,13 +317,16 @@ export async function getMeetingCapture(id: string, viewer: Actor): Promise<Meet
 async function getLiveMeetingCapture(id: string, viewer: Actor): Promise<MeetingCaptureResult> {
   const accessToken = await requireAccessToken();
 
-  let detail: BeMeetingDetail;
+  let raw: unknown;
   try {
-    detail = await serverApi<BeMeetingDetail>(ep.meeting(Number(id)), { accessToken });
+    raw = await serverApi<unknown>(ep.meeting(Number(id)), { accessToken });
   } catch (error) {
     if (error instanceof ApiError && error.status === 404) return { kind: "notFound" };
     throw error;
   }
+
+  /* ⚠️ 단언이 아니라 **검사**다 — 모양이 어긋나면 판정 전에 여기서 멈춘다(매퍼 주석 참고) */
+  const detail = parseMeetingDetail(raw);
 
   if (!isHostOf(detail, viewer.id)) return { kind: "notHost", title: detail.title };
   if (isClosed(detail)) return { kind: "alreadyDone", title: detail.title };

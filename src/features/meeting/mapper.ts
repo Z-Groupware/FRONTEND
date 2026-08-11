@@ -50,6 +50,46 @@ export interface BeMeetingAttendee {
 }
 
 /**
+ * 응답이 우리가 읽는 모양인가 — **읽기 전에 한 번 본다**(코드래빗 지적, 2026-08-11).
+ *
+ * ⚠️ `serverApi<BeMeetingDetail>`는 **단언일 뿐 검사가 아니다.** 봉투 모양이 어긋나거나 BE가
+ *    부분 응답을 주면 `detail.host.memberId`에서 `undefined`를 파고들어 터지는데, 그때 뜨는
+ *    건 원인을 알 수 없는 `TypeError`다 — 무엇이 어긋났는지 말해 주는 편이 낫다(§정직성).
+ * ⚠️ **중첩이라 더 필요하다.** 평평한 응답은 값이 빠져도 `undefined`가 화면까지 흘러갈 뿐이지만,
+ *    여기서는 한 겹 안을 바로 파고들기 때문에 없으면 그 자리에서 터진다.
+ * ⚠️ **화면이 실제로 읽는 것만 본다.** 안 쓰는 필드까지 검사하면 BE가 무관한 필드를 바꿀 때마다
+ *    멀쩡한 화면이 막힌다.
+ */
+function isBeMeetingDetail(value: unknown): value is BeMeetingDetail {
+  if (typeof value !== "object" || value === null) return false;
+  const detail = value as Partial<BeMeetingDetail>;
+
+  return (
+    typeof detail.meetingId === "number" &&
+    typeof detail.title === "string" &&
+    typeof detail.status === "string" &&
+    typeof detail.startAt === "string" &&
+    typeof detail.endAt === "string" &&
+    typeof detail.project?.tag === "string" &&
+    typeof detail.meetingRoom?.name === "string" &&
+    typeof detail.host?.memberId === "number" &&
+    Array.isArray(detail.attendees)
+  );
+}
+
+/**
+ * 검사까지 마친 회의 상세 — 호출부는 이걸 통과한 값만 만진다.
+ *
+ * ⚠️ 던지는 건 **여기 한 곳**이다. 화면·`server.ts`가 각자 확인하면 조건이 갈린다(§격리막).
+ */
+export function parseMeetingDetail(raw: unknown): BeMeetingDetail {
+  if (!isBeMeetingDetail(raw)) {
+    throw new Error("회의 상세 응답이 약속한 모양이 아닙니다.");
+  }
+  return raw;
+}
+
+/**
  * 녹음할 수 없는 회의인가 — 이유까지는 안 가른다.
  *
  * ⚠️ **`endedAt`이 아니라 `status`로 본다.** 응답에 `endedAt`도 오지만 상태의 정본은
