@@ -1,6 +1,6 @@
 "use client";
 
-import { Paperclip, Plus, X } from "lucide-react";
+import { Check, Paperclip, Plus, X } from "lucide-react";
 import Link from "next/link";
 import type { CSSProperties } from "react";
 import { useActionState, useRef, useState } from "react";
@@ -124,9 +124,15 @@ export function ProjectForm({ action, teamOptions, cancelHref }: ProjectFormProp
 
           {/* ⚠️ 폭 상한은 안 건다 — 본문 칸 자체가 곁 칸(300)을 뺀 나머지라 이미 좁다 */}
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="project-description">
-              세부 설명 <span className="text-destructive">*</span>
-            </Label>
+            {/* ⚠️ 글자 수는 **라벨 줄 오른쪽**이다 — 칸 아래에 두면 다음 항목과 붙어 어디 것인지 흐리다 */}
+            <div className="flex items-baseline justify-between gap-3">
+              <Label htmlFor="project-description">
+                세부 설명 <span className="text-destructive">*</span>
+              </Label>
+              <span className="text-muted-foreground text-[12px] leading-4 tabular-nums">
+                {description.length}/{PROJECT_DESCRIPTION_MAX_LENGTH}
+              </span>
+            </div>
             <textarea
               id="project-description"
               name="description"
@@ -141,9 +147,6 @@ export function ProjectForm({ action, teamOptions, cancelHref }: ProjectFormProp
               aria-invalid={Boolean(state.errors.description)}
               className="border-input placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:border-destructive dark:bg-input/30 w-full resize-none rounded-lg border bg-transparent px-2.5 py-2 text-[13px] leading-5 transition-colors outline-none focus-visible:ring-3"
             />
-            <p className="text-muted-foreground text-right text-[12px] leading-4 tabular-nums">
-              {description.length}/{PROJECT_DESCRIPTION_MAX_LENGTH}
-            </p>
             <FieldError message={state.errors.description} />
           </div>
 
@@ -158,7 +161,8 @@ export function ProjectForm({ action, teamOptions, cancelHref }: ProjectFormProp
                     value={row.team}
                     onValueChange={(value) => updateTeamRow(row.rowId, value ?? "")}
                   >
-                    <SelectTrigger aria-label="참여 팀 선택" className="w-48">
+                    {/* ⚠️ 본문 칸 폭에 맞춘다 — 192px로 두니 위 입력칸들과 오른쪽 끝이 어긋나 혼자 짧았다 */}
+                    <SelectTrigger aria-label="참여 팀 선택" className="w-full max-w-[360px]">
                       <SelectValue placeholder="팀 선택" />
                     </SelectTrigger>
                     <SelectContent side="bottom" alignItemWithTrigger={false}>
@@ -240,7 +244,7 @@ export function ProjectForm({ action, teamOptions, cancelHref }: ProjectFormProp
                     "--tw-ring-color": mainColor.solidColor,
                   } as CSSProperties
                 }
-                aria-label={`태그 색상: ${TAG_NAME_LABEL[tagColor]} (클릭하면 다른 색으로 바뀌어요)`}
+                aria-label={`태그 색상: ${TAG_NAME_LABEL[tagColor]} (누르면 다른 색으로 바뀝니다)`}
               />
 
               <Popover open={colorPickerOpen} onOpenChange={setColorPickerOpen}>
@@ -251,43 +255,50 @@ export function ProjectForm({ action, teamOptions, cancelHref }: ProjectFormProp
                     </Button>
                   }
                 />
-                {/* 버튼 우측에, 바닥면을 버튼 바닥과 맞춰서 띄운다. */}
-                <PopoverContent side="right" align="end" sideOffset={8} className="w-56">
-                  <div className="grid grid-cols-4 gap-2">
+                {/*
+                ⚠️ **이름을 칸마다 적지 않는다**(2026-08-11). 색 이름이 한 글자(`틸`)부터 네 글자
+                   (`에메랄드`)까지라 격자 아래 글자 길이가 제각각이었고, 넘치는 걸 막느라
+                   네 글자만 9px로 줄여 놔서 같은 목록 안에 글자 크기가 둘이었다(§DESIGN 4는
+                   다섯 크기뿐이다). 고르는 건 **색**이지 이름이 아니다.
+                ⚠️ 대신 **이름을 한 곳에** 둔다 — 지금 고른 색 이름을 격자 아래 한 줄로 적는다.
+                   색을 못 가리는 사람에게도 무엇을 골랐는지 남는다(§a11y: 색 하나로만 알리지 않는다).
+                ⚠️ 칸마다 `title`·`aria-label`에는 이름이 그대로 들어간다.
+              */}
+                {/* ⚠️ 아래로 편다 — 오른쪽에 자리가 없어 왼쪽으로 뒤집히면서 폼 본문을 덮었다 */}
+                <PopoverContent side="bottom" align="start" sideOffset={8} className="w-64">
+                  <div className="grid grid-cols-6 gap-2">
                     {TAG_NAMES.map((colorName) => {
                       const color = paletteColorByName(colorName);
                       const label = TAG_NAME_LABEL[colorName];
+                      const isPicked = colorName === tagColor;
                       return (
                         <button
                           key={colorName}
                           type="button"
+                          title={label}
+                          aria-label={`태그 색상 ${label}`}
+                          aria-pressed={isPicked}
                           onClick={() => {
                             setTagColor(colorName);
                             setColorPickerOpen(false);
                           }}
                           className={cn(
-                            "hover:bg-muted focus-visible:ring-ring/50 flex flex-col items-center gap-1 rounded-md p-1.5 outline-none focus-visible:ring-3",
-                            colorName === tagColor && "bg-muted",
+                            "focus-visible:ring-ring/50 ring-offset-background flex size-8 items-center justify-center rounded-full transition-transform outline-none focus-visible:ring-3 active:scale-95",
+                            isPicked && "ring-foreground ring-2 ring-offset-2",
                           )}
+                          style={{ backgroundColor: color.solidColor }}
                         >
-                          <span
-                            className="size-6 rounded-full"
-                            style={{ backgroundColor: color.solidColor }}
-                            aria-hidden
-                          />
-                          {/* 4글자부터 칸 폭에서 줄바꿈되므로 그만큼 작게 — 전부 한 줄로 보이게 */}
-                          <span
-                            className={cn(
-                              "text-muted-foreground whitespace-nowrap",
-                              label.length >= 4 ? "text-[9px]" : "text-[11px]",
-                            )}
-                          >
-                            {label}
-                          </span>
+                          {/* 고른 칸만 체크 — 링만으로는 밝은 색에서 잘 안 보인다 */}
+                          {isPicked && <Check className="size-4 text-white" aria-hidden />}
                         </button>
                       );
                     })}
                   </div>
+
+                  <p className="text-muted-foreground pt-3 text-[12px] leading-4">
+                    지금 고른 색 ·{" "}
+                    <span className="text-foreground font-medium">{TAG_NAME_LABEL[tagColor]}</span>
+                  </p>
                 </PopoverContent>
               </Popover>
             </div>
