@@ -1,3 +1,5 @@
+import { type PaletteColor, pickPaletteColor, TAG_NAMES } from "@/lib/palette";
+
 import { CALENDAR_ITEM_TAG, type CalendarItemTag } from "./types";
 
 /**
@@ -6,9 +8,10 @@ import { CALENDAR_ITEM_TAG, type CalendarItemTag } from "./types";
  * ⚠️ 예전에는 `--calendar-todo`(#166534)·`--calendar-action`(#6d28d9)이라는 이 화면 전용
  *    값이었다. 팔레트 밖 색이라 프로젝트 태그·상태점 옆에 놓이면 같은 무리인지 알 수 없었고,
  *    진한 원색이라 셀을 칠하면 화면이 무거웠다.
- * ⚠️ **sky ↔ fuchsia**다(연하늘 ↔ 연보라핑크). 앞서 emerald+indigo는 둘 다 채도가 높아
- *    무거웠고, teal+purple은 둘 다 차가운 쪽이라 작은 칩에서 서로 비슷해 보였다 —
- *    지금 쌍은 **차가운 색 하나와 따뜻한 색 하나**라 나란히 놔도 헷갈리지 않는다.
+ * ⚠️ **개인 액션은 fuchsia 고정.** 개인 Todo는 **제목마다 색이 달라진다**(2026-08-14,
+ *    `getTodoTitleColor` 참고) — 항목이 많아질 때 색만으로도 서로 다른 일임을 구분하기
+ *    쉽게 하려는 것이다. `CALENDAR_TAG_BG`/`FG`의 `PERSONAL_TODO` 값은 그 함수를 못 쓰는
+ *    자리(예: 아직 제목이 없는 자리)를 위한 **기본값**으로만 남는다.
  * ⚠️ 빨강 계열은 피한다 — 우리 빨강은 **에러 전용**이라 일정 색으로 쓰면 뜻이 섞인다.
  *    fuchsia는 분홍이되 빨강 쪽으로 넘어가지 않는 자리다.
  * ⚠️ **벌을 섞지 않는다**(§5). 글자가 얹히는 칩은 `bg`+`fg` 한 벌, 글자가 없는 점은 `solid`다.
@@ -35,6 +38,30 @@ export const CALENDAR_TAG_DOT_COLOR: Record<CalendarItemTag, string> = {
   [CALENDAR_ITEM_TAG.PERSONAL_TODO]: "var(--tag-sky-solid)",
   [CALENDAR_ITEM_TAG.PERSONAL_ACTION]: "var(--tag-fuchsia-solid)",
 };
+
+/**
+ * 개인 Todo 제목에서 색을 뽑는다 — **아바타·프로젝트 태그와 같은 팔레트**(`lib/palette`)다.
+ *
+ * ⚠️ 왜 제목으로 거는가. Todo는 회의처럼 담당자·프로젝트가 따로 없어 색을 걸 다른 축이
+ *    없다 — 그나마 화면에 늘 보이는 값이 제목이라, 같은 제목은 같은 색이 나오게 해서
+ *    "그 파란 항목"처럼 색으로도 기억할 수 있게 한다.
+ * ⚠️ 무작위가 아니다(`pickPaletteColor`가 해시로 고른다) — 새로고침해도 색이 안 바뀐다.
+ */
+export function getTodoTitleColor(title: string): PaletteColor {
+  return pickPaletteColor(title);
+}
+
+/**
+ * 범례의 Todo 콩 — 제목마다 색이 달라지니 콩 하나로는 "이 색"을 못 보여준다. 실제로 나올 수
+ * 있는 색 풀(`TAG_NAMES`, 팔레트 순서 그대로)을 색동 원(conic-gradient)으로 둘러 보여준다.
+ * ⚠️ 팔레트가 늘거나 순서가 바뀌면 이 원도 자동으로 따라간다 — 색을 여기 따로 옮겨 적지 않는다.
+ */
+export const CALENDAR_TODO_LEGEND_SWATCH = `conic-gradient(${TAG_NAMES.map(
+  (name, index) =>
+    `var(--tag-${name}-solid) ${(index / TAG_NAMES.length) * 360}deg ${
+      ((index + 1) / TAG_NAMES.length) * 360
+    }deg`,
+).join(", ")})`;
 
 /**
  * **진행 상태**의 색 — 태그 색과 **완전히 다른 벌**이다.

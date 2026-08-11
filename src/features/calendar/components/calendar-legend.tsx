@@ -1,30 +1,42 @@
-import { CALENDAR_STATUS_DOT_COLOR, CALENDAR_TAG_DOT_COLOR } from "../tag-colors";
+import {
+  CALENDAR_STATUS_DOT_COLOR,
+  CALENDAR_TAG_DOT_COLOR,
+  CALENDAR_TODO_LEGEND_SWATCH,
+} from "../tag-colors";
 import { CALENDAR_ITEM_TAG } from "../types";
+
+interface LegendItem {
+  label: string;
+  /** 콩(dot)에 그대로 얹는 배경 — 단색은 `backgroundColor`, Todo처럼 여러 색이면 `background`(그레이디언트). */
+  swatchStyle: { backgroundColor: string } | { background: string };
+}
 
 /**
  * ⚠️ 라벨은 일부러 `CALENDAR_ITEM_TAG_LABEL`("개인 Todo")과 다르다 — 범례는 "Todo"로 짧게 쓰기로
  *    확정했다(2026-08-05). 색만 `tag-colors.ts`로 공유하고 라벨 문구는 여기서 따로 관리한다.
+ * ⚠️ **Todo는 콩이 아니라 색동 원이다**(2026-08-14) — 제목마다 색이 달라져서 콩 하나로는
+ *    "이 색"을 보여줄 수 없다. 실제로 나올 수 있는 색 풀 전체를 원으로 둘러 "색이 다양하게
+ *    나온다"는 사실만 알린다. 개인 액션은 여전히 fuchsia 고정이라 콩 그대로 둔다.
  */
-const TAG_ITEMS = [
-  { label: "Todo", color: CALENDAR_TAG_DOT_COLOR[CALENDAR_ITEM_TAG.PERSONAL_TODO] },
-  { label: "개인 액션", color: CALENDAR_TAG_DOT_COLOR[CALENDAR_ITEM_TAG.PERSONAL_ACTION] },
-] as const;
+const TAG_ITEMS: LegendItem[] = [
+  { label: "Todo", swatchStyle: { background: CALENDAR_TODO_LEGEND_SWATCH } },
+  {
+    label: "개인 액션",
+    swatchStyle: { backgroundColor: CALENDAR_TAG_DOT_COLOR[CALENDAR_ITEM_TAG.PERSONAL_ACTION] },
+  },
+];
 
-const STATUS_ITEMS = [
-  { label: "진행중", color: CALENDAR_STATUS_DOT_COLOR.IN_PROGRESS },
-  { label: "완료", color: CALENDAR_STATUS_DOT_COLOR.DONE },
-] as const;
+const STATUS_ITEMS: LegendItem[] = [
+  { label: "진행중", swatchStyle: { backgroundColor: CALENDAR_STATUS_DOT_COLOR.IN_PROGRESS } },
+  { label: "완료", swatchStyle: { backgroundColor: CALENDAR_STATUS_DOT_COLOR.DONE } },
+];
 
-function LegendGroup({ items }: { items: readonly { label: string; color: string }[] }) {
+function LegendGroup({ items }: { items: readonly LegendItem[] }) {
   return (
     <ul className="flex items-center gap-3">
       {items.map((item) => (
         <li key={item.label} className="flex items-center gap-1.5">
-          <span
-            aria-hidden
-            className="size-2 shrink-0 rounded-full"
-            style={{ backgroundColor: item.color }}
-          />
+          <span aria-hidden className="size-2 shrink-0 rounded-full" style={item.swatchStyle} />
           {item.label}
         </li>
       ))}
