@@ -54,14 +54,24 @@ export function getTodoTitleColor(title: string): PaletteColor {
 /**
  * 범례의 Todo 콩 — 제목마다 색이 달라지니 콩 하나로는 "이 색"을 못 보여준다. 실제로 나올 수
  * 있는 색 풀(`TAG_NAMES`, 팔레트 순서 그대로)을 색동 원(conic-gradient)으로 둘러 보여준다.
+ *
+ * ⚠️ **경계를 부드럽게 잇는다**(2026-08-11). 색마다 딱 끊어 붙였더니 11조각짜리 **파이 차트**처럼
+ *    보였다 — 각 조각이 뜻을 가진 것으로 읽혀서, "색이 여러 개 나온다"는 한마디를 하려던 콩이
+ *    도표가 됐다. 조각을 겹쳐 잇는 순간 그냥 **무지개 원**이 되어 뜻을 안 만든다.
+ * ⚠️ 각 색을 자기 구간의 **가운데에만** 못 박고 사이를 브라우저가 섞게 둔다. 시작·끝을 같은
+ *    색으로 닫아야 12시 자리에서 이음매가 안 보인다.
  * ⚠️ 팔레트가 늘거나 순서가 바뀌면 이 원도 자동으로 따라간다 — 색을 여기 따로 옮겨 적지 않는다.
  */
-export const CALENDAR_TODO_LEGEND_SWATCH = `conic-gradient(${TAG_NAMES.map(
-  (name, index) =>
-    `var(--tag-${name}-solid) ${(index / TAG_NAMES.length) * 360}deg ${
-      ((index + 1) / TAG_NAMES.length) * 360
-    }deg`,
-).join(", ")})`;
+const TODO_LEGEND_STOPS = [
+  ...TAG_NAMES.map((name, index) => {
+    const midpoint = ((index + 0.5) / TAG_NAMES.length) * 360;
+    return `var(--tag-${name}-solid) ${midpoint.toFixed(2)}deg`;
+  }),
+  /* 한 바퀴를 첫 색으로 닫는다 — 안 닫으면 12시에 마지막 색과 첫 색이 맞부딪혀 선이 생긴다 */
+  `var(--tag-${TAG_NAMES[0]}-solid) 360deg`,
+];
+
+export const CALENDAR_TODO_LEGEND_SWATCH = `conic-gradient(from 0deg, var(--tag-${TAG_NAMES[0]}-solid) 0deg, ${TODO_LEGEND_STOPS.join(", ")})`;
 
 /**
  * **진행 상태**의 색 — 태그 색과 **완전히 다른 벌**이다.
