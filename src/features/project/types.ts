@@ -60,6 +60,13 @@ export type ProjectFormErrors = Partial<
   }
 >;
 
+/** 프로젝트 첨부파일 한 건 — 다운로드는 클릭 시점에 별도로 URL을 발급받아 연다(5분 만료). */
+export interface ProjectAttachment {
+  id: number;
+  fileName: string;
+  fileSize: number;
+}
+
 /**
  * 프로젝트 상세(`/app/projects/:projectId`)의 기획 탭. `ProjectListItem`과 필드가 겹치지만
  * 목록에 없는 첨부파일이 있어 별도 타입으로 둔다 — 목록 카드에 첨부파일까지 끌고 오지 않는다.
@@ -74,8 +81,8 @@ export interface ProjectDetail {
   dueDate: string;
   /** 참여 팀 전체 — 목록과 달리 자르지 않는다(상세라 다 보여준다) */
   teamNames: string[];
-  /** ⚠️ 목 단계라 파일명만 — 실제 다운로드는 API 스펙 확정 후 */
-  attachmentName?: string;
+  /** 여러 개 가능(2026-08-10 다운로드 URL 발급 API 반영) — 예전엔 파일명 하나만 목 단계로 들고 있었다. */
+  attachments: ProjectAttachment[];
 }
 
 /**

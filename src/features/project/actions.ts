@@ -3,11 +3,16 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
+import { requireAccessToken } from "@/features/auth/session";
 import { getViewer } from "@/features/shell/viewer";
+import { ApiError, serverApi } from "@/lib/api";
+import { ep } from "@/lib/endpoints";
 import { canCreateProject } from "@/lib/permission";
 import { isMock } from "@/mocks/config";
 
+import { toCreateProjectRequestBody } from "./mapper";
 import { addMockProject } from "./mock/projects";
+import { resolveTeamIds } from "./server";
 import type { ProjectDraft, ProjectFormErrors } from "./types";
 import { validateProjectDraft } from "./validate";
 
@@ -49,8 +54,21 @@ export async function createProjectAction(
   if (Object.keys(errors).length > 0) return { errors };
 
   if (!isMock) {
-    // ⚠️ 미구현 — API 스펙 확정 후 BFF 경로로 생성 요청을 보낸다(첨부파일 업로드 포함).
-    throw new Error("프로젝트 생성 API가 아직 연결되지 않았습니다.");
+    // ⚠️ 첨부파일은 아직 안 보낸다 — 생성 폼에 실제 파일 선택 UI가 없다(`attachmentName`은
+    //    지금도 목 단계 자리표시자다). 업로드 3단계(발급→업로드→확정)는 화면이 생기면 잇는다.
+    const accessToken = await requireAccessToken();
+    const teamIds = await resolveTeamIds(accessToken, draft.teamNames);
+    const body = toCreateProjectRequestBody(draft, teamIds);
+
+    try {
+      await serverApi(ep.projects(), { method: "POST", json: body, accessToken });
+    } catch (error) {
+      if (error instanceof ApiError) return { errors: { name: error.message } };
+      throw error;
+    }
+
+    revalidatePath(LIST_PATH);
+    redirect(LIST_PATH);
   }
 
   addMockProject(draft);
@@ -58,4 +76,22 @@ export async function createProjectAction(
   revalidatePath(LIST_PATH);
   // ⚠️ `redirect`는 내부적으로 예외를 던진다 — try/catch 밖에 둔다(§렌더링·데이터)
   redirect(LIST_PATH);
+}
+
+/**
+ * 첨부파일 다운로드 URL 발급 — 클릭 시점에 부른다(5분 만료라 미리 받아두면 안 된다).
+ * ⚠️ mock 단계는 파일이 실제로 없어 발급할 게 없다 — 호출부가 `null`을 보고 "연동 전" 토스트를 띄운다.
+ */
+export async function getProjectAttachmentDownloadUrlAction(
+  projectId: number,
+  attachmentId: number,
+): Promise<string | null> {
+  if (isMock) return null;
+
+  const accessToken = await requireAccessToken();
+  const { downloadUrl } = await serverApi<{ downloadUrl: string; expiresInSeconds: number }>(
+    ep.projectAttachmentDownloadUrl(projectId, attachmentId),
+    { accessToken },
+  );
+  return downloadUrl;
 }

@@ -1,9 +1,14 @@
 import { ACTION_STATUS, AUTHORITY, type Authority, PROJECT_STATUS } from "@/constants/domain";
+import { type BeActionSummary, fallbackActionStartDate } from "@/features/action/mapper";
+import { requireAccessToken } from "@/features/auth/session";
+import type { BePageResponse, BeProjectSummary } from "@/features/project/mapper";
 import { TOP_LEVEL_PROJECTS } from "@/features/project/mock/projects";
 import {
   TEAM_ACTION_DETAIL_MOCK,
   TEAM_ACTION_PERSONAL_ITEMS_MOCK,
 } from "@/features/project/mock/team-action-detail";
+import { serverApi } from "@/lib/api";
+import { ep } from "@/lib/endpoints";
 import { pickPaletteColor } from "@/lib/palette";
 import { isMock } from "@/mocks/config";
 
@@ -27,7 +32,25 @@ export async function getProjectBoard(): Promise<BoardCard[]> {
     });
   }
 
-  throw new Error("서버 연동 미구현 — ERD·API 스펙 확정 후 매퍼 작성");
+  // ⚠️ 무한스크롤은 이 화면(보드)에 안 맞는다 — 칸반은 처음부터 전체가 보여야 하니
+  //    size를 크게 잡아 사실상 전체를 받는다(project/server.ts의 fetchAllProjects와 같은 방식).
+  const accessToken = await requireAccessToken();
+  const page = await serverApi<BePageResponse<BeProjectSummary>>(ep.projects({ size: 9999 }), {
+    accessToken,
+  });
+  return page.content.map((project) => {
+    const tagColor = pickPaletteColor(project.tag);
+    return {
+      id: project.id,
+      title: project.name,
+      tagLabel: project.tag,
+      tagBgColor: tagColor.bgColor,
+      tagTextColor: tagColor.textColor,
+      startDate: project.startDate ?? new Date().toISOString().slice(0, 10),
+      dueDate: project.dueDate,
+      isDone: project.status === PROJECT_STATUS.DONE,
+    };
+  });
 }
 
 /**
@@ -59,7 +82,27 @@ export async function getMyActionBoard(assigneeName: string): Promise<BoardCard[
     return cards;
   }
 
-  throw new Error("서버 연동 미구현 — ERD·API 스펙 확정 후 매퍼 작성");
+  // ⚠️ `assigneeName`은 실연동에선 안 쓴다 — `GET /api/actions`가 이미 토큰의 본인 소유분만
+  //    돌려준다(BE 실코드 확인). 파라미터는 mock 분기 전용으로 시그니처만 유지한다.
+  const accessToken = await requireAccessToken();
+  const page = await serverApi<BePageResponse<BeActionSummary>>(ep.actions({ size: 9999 }), {
+    accessToken,
+  });
+  return page.content
+    .filter((action) => action.actionType === "PERSONAL")
+    .map((action) => {
+      const tagColor = pickPaletteColor(action.projectTag ?? "");
+      return {
+        id: action.id,
+        title: action.title,
+        tagLabel: action.projectTag ?? "",
+        tagBgColor: tagColor.bgColor,
+        tagTextColor: tagColor.textColor,
+        startDate: fallbackActionStartDate(action.startDate),
+        dueDate: action.dueDate,
+        isDone: action.status === ACTION_STATUS.DONE,
+      };
+    });
 }
 
 /**
