@@ -18,9 +18,10 @@ interface RoomReservationEventProps {
 
 /**
  * 예약 막대 — 옅은 tint 배경(`bgColor`) + 왼쪽 액센트 보더(`solidColor`) + 색 글자(`textColor`).
- * 회의는 항상 30분 고정이라 칸 하나에 제목·시간·참석자가 다 들어가야 한다(칸 높이는
- * `weekly-room-calendar.tsx`의 `WEEKLY_CALENDAR_HEIGHT_PX`가 넉넉히 잡아준다).
- * ⚠️ `accentColor`에 방어적 기본값을 둔다 — react-big-calendar의 `event` 렌더 컴포넌트는
+ * 회의는 항상 30분 고정이라 칸 하나에 제목·시간·참석자가 다 들어가야 한다.
+ * 주의: **2줄 구조다**(2026-08-10) — 1행 제목, 2행 시간+참석자(`justify-between`). 원래 3행
+ *    (제목/시간/참석자)이었으나 칸 높이를 줄이려고 시간·참석자를 한 줄로 합쳤다.
+ * 주의: `accentColor`에 방어적 기본값을 둔다 — react-big-calendar의 `event` 렌더 컴포넌트는
  *    라이브러리 내부에서도 호출되는데, dev 환경(Turbopack HMR)에서 prop이 비어 오는 순간이
  *    관측돼 화면 전체가 죽는 것보다 중립색으로라도 그리는 쪽을 택한다.
  */
@@ -36,15 +37,15 @@ export function RoomReservationEvent({
         borderLeftColor: accentColor.solidColor,
         color: accentColor.textColor,
       }}
-      className="flex h-full flex-col justify-between gap-0.5 overflow-hidden rounded-[5px] border-l-2 px-1.5 py-0.5 text-left leading-tight"
+      className="flex h-full flex-col justify-center gap-0.5 overflow-hidden rounded-[5px] border-l-2 px-1.5 py-0.5 text-left leading-tight"
     >
-      <span className="flex flex-col overflow-hidden">
-        <span className="truncate text-[11px] font-medium">{event.title}</span>
+      <span className="truncate text-[11px] font-medium">{event.title}</span>
+      <span className="flex items-center justify-between gap-1">
         <span className="text-muted-foreground truncate text-[10px] tabular-nums">
           {format(event.start, "HH:mm")}–{format(event.end, "HH:mm")}
         </span>
+        <AttendeeAvatarStack memberIds={event.attendeeIds} members={members} />
       </span>
-      <AttendeeAvatarStack memberIds={event.attendeeIds} members={members} />
     </div>
   );
 }

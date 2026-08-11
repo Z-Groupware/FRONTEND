@@ -46,8 +46,8 @@ export default async function RoomsPage({ searchParams }: RoomsPageProps) {
   ]);
 
   return (
-    <main className="min-h-0 flex-1 overflow-y-auto p-6">
-      <div className="mx-auto flex max-w-[1440px] flex-col gap-6">
+    <main className="flex min-h-0 flex-1 flex-col overflow-y-auto px-8 py-7 lg:overflow-hidden">
+      <div className="mx-auto flex min-h-0 w-full max-w-[1440px] flex-1 flex-col gap-7">
         <RoomsBoard
           key={format(week, "yyyy-MM-dd")}
           initialReservations={reservations}

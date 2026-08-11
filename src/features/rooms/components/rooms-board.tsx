@@ -1,9 +1,6 @@
 "use client";
 
-import { Plus } from "lucide-react";
 import { useState } from "react";
-
-import { Button } from "@/components/ui/button";
 
 import { getNextAvailableSlot } from "../next-available-slot";
 import type {
@@ -36,10 +33,13 @@ interface RoomsBoardProps {
 /**
  * 회의실 화면 본체(client). 서버가 내려준 예약을 로컬 state로 들고 있다가, 예약 생성 성공 시
  * 재조회 없이 바로 얹는다(`calendar-board.tsx`와 같은 패턴, §최적화: action 리턴값으로 화면 반영).
- * ⚠️ 30분 칸을 클릭하면 그 시작 시각을 `slotStart`에 담아 예약 모달을 연다 — 모달이 열려 있는지는
+ * 주의: 30분 칸을 클릭하면 그 시작 시각을 `slotStart`에 담아 예약 모달을 연다 — 모달이 열려 있는지는
  *    `slotStart !== null`로만 판단한다(별도 `isOpen` state를 안 둔다).
- * ⚠️ 주를 옮기면(`?week=`) 서버가 새 `initialReservations`를 내려주는데, 이 컴포넌트는 그때마다
+ * 주의: 주를 옮기면(`?week=`) 서버가 새 `initialReservations`를 내려주는데, 이 컴포넌트는 그때마다
  *    호출부에서 `key={week}`로 다시 마운트된다(개인 캘린더와 같은 이유).
+ * 주의: "회의 추가" 진입점은 캘린더 툴바 안(`오늘` 버튼 옆, 2026-08-10 이전엔 이 컴포넌트 위
+ *    별도 버튼)으로 옮겼다 — 여는 시각은 `getNextAvailableSlot`이 "지금"을 30분 단위로 올려
+ *    계산하는 로직은 그대로다.
  */
 export function RoomsBoard({
   initialReservations,
@@ -55,28 +55,18 @@ export function RoomsBoard({
   const [slotStart, setSlotStart] = useState<Date | null>(null);
 
   return (
-    <div className="flex flex-col gap-6">
-      {/* ⚠️ `/app/notice`의 "새 공지"와 같은 자리·같은 패턴이다(우측 정렬, `ink` 버튼) — 캘린더
-          칸을 직접 클릭하는 대신 바로 예약을 시작하는 진입점이다. 여는 시각은
-          `getNextAvailableSlot`이 "지금"을 30분 단위로 올려 계산한다. */}
-      <div className="flex justify-end">
-        <Button
-          type="button"
-          size="sm"
-          variant="ink"
-          onClick={() => setSlotStart(getNextAvailableSlot(new Date()))}
-        >
-          <Plus aria-hidden />
-          예약하기
-        </Button>
+    <div className="flex min-h-0 flex-1 flex-col gap-6 lg:flex-row lg:items-stretch">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+        <WeeklyRoomCalendarLoader
+          reservations={reservations}
+          members={members}
+          rooms={rooms}
+          week={week}
+          onSelectSlot={setSlotStart}
+          onAddClick={() => setSlotStart(getNextAvailableSlot(new Date()))}
+        />
       </div>
 
-      <WeeklyRoomCalendarLoader
-        reservations={reservations}
-        members={members}
-        week={week}
-        onSelectSlot={setSlotStart}
-      />
       <RoomListPanel rooms={rooms} />
 
       <RoomReservationDialog
