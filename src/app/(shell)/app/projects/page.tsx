@@ -2,8 +2,10 @@ import { FolderOpen, SearchX } from "lucide-react";
 import { Plus } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Suspense } from "react";
 
 import { EmptyState } from "@/components/common/empty-state";
+import { FlashToast } from "@/components/common/flash-toast";
 import { buttonVariants } from "@/components/ui/button";
 import { ProjectFilterTabs } from "@/features/project/components/project-filter-tabs";
 import { ProjectListTable } from "@/features/project/components/project-list-table";
@@ -41,6 +43,11 @@ export default async function ProjectsPage({ searchParams }: ProjectsPageProps) 
 
   return (
     <main className="scrollbar-hidden min-h-0 flex-1 overflow-y-auto px-8 py-7">
+      {/* 생성 뒤 넘어온 화면에서 "만들었습니다"를 대신 말한다(§토스트 · `FlashToast`) */}
+      <Suspense fallback={null}>
+        <FlashToast />
+      </Suspense>
+
       <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-7">
         {/*
           ⚠️ **툴바를 카드 안으로 들였다**(2026-08-10). 검색·정렬·상태 탭·건수·생성 버튼이
