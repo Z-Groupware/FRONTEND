@@ -25,6 +25,7 @@ export function RecordViewLink({ kind, itemId, onClick, ...linkProps }: RecordVi
       {...linkProps}
       onClick={(event) => {
         onClick?.(event);
+        if (event.defaultPrevented) return;
         void recordRecentViewAction(kind, itemId);
       }}
     />
