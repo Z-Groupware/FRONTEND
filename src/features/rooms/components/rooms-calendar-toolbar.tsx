@@ -67,7 +67,12 @@ export function RoomsCalendarToolbar({
       : `${format(weekStart, "M월 d일", { locale: ko })} - ${format(weekEnd, "M월 d일", { locale: ko })}`;
 
   return (
-    <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+    /*
+      ⚠️ **카드 머리다**(2026-08-11). 격자 위에 떠 있던 줄을 카드 안으로 들여 개인 캘린더와
+         같은 해부로 맞춘다 — 거기도 제목·범례·이동이 카드 머리에 함께 있다.
+      ⚠️ 여백은 카드 규격(`px-7 pt-6 pb-5`)이고, 나누는 일은 아래 선 하나가 한다(§DESIGN 2).
+    */
+    <div className="border-border flex flex-col gap-2 border-b px-7 pt-6 pb-5 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
       <div className="flex flex-wrap items-center gap-2">
         {/*
           ⚠️ 제목 앞 검은 점을 뺀다 — 상태점과 같은 생김새라 뜻이 있는 표식처럼 읽힌다(§DESIGN 5).

@@ -3,15 +3,38 @@
  * `personal-calendar.css`(월간 뷰)와 짝이지만, 이 화면은 `work_week`(시간대) 뷰라 다른 클래스를 쓴다.
  */
 
+/*
+  ⚠️ **카드 한 장이다**(2026-08-11). 툴바는 격자 위에 떠 있고 격자만 테두리를 두르고 있어서,
+     개인 캘린더(카드 안에 머리+격자)와 생김새가 갈렸다 — 테두리·모서리·그림자를 뿌리로
+     옮겨 머리와 격자를 한 장에 담는다. 라이브러리 마크업은 그대로다.
+*/
 .rbc-calendar {
   color: var(--foreground);
   font-family: var(--font-sans);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-2xl);
+  background-color: var(--card);
+  overflow: hidden;
+  box-shadow:
+    0 1px 2px color-mix(in oklch, var(--foreground) 4%, transparent),
+    0 1px 3px color-mix(in oklch, var(--foreground) 3%, transparent);
 }
 
+.dark .rbc-calendar {
+  box-shadow: none;
+}
+
+/*
+  ⚠️ **카드처럼 보이게 한다**(2026-08-11). 개인 캘린더(`/app/calendar`)는 카드 한 장 안에
+     격자가 들어 있는데 이 화면만 표처럼 각져 있어서, 같은 앱의 같은 종류 화면인데도
+     느낌이 갈렸다 — 라이브러리는 그대로 두고 **면·모서리·그림자만** 카드 규격으로 맞춘다.
+  ⚠️ 그림자 값은 셸의 카드 규칙(`.app-shell .bg-card`)과 같은 식이다. 다크에서는 안 건다.
+*/
+/* 격자 자체는 이제 테두리를 안 두른다 — 카드가 뿌리에 있다 */
 .rbc-time-view {
-  border-color: var(--border);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
+  border: 0;
+  border-radius: 0;
+  background-color: var(--card);
 }
 
 /*
@@ -33,10 +56,14 @@
   border-color: var(--border) !important;
 }
 
+/*
+  ⚠️ 요일 줄에 **회색 띠를 깔지 않는다**(2026-08-11). 표 머리처럼 보여서 개인 캘린더의
+     요일 줄(민 바탕 + 흐린 글자)과 달랐다 — 나누는 일은 아래 선 하나가 한다(§DESIGN 2).
+*/
 .rbc-header {
-  background-color: var(--secondary);
+  background-color: transparent;
   color: var(--muted-foreground);
-  padding: 8px 0;
+  padding: 10px 0;
   font-size: 12px;
   line-height: 16px;
   font-weight: 500;
@@ -44,11 +71,10 @@
 }
 
 /*
-  오늘 요일 머리 — 한 주에서 **오늘이 어느 칸인지**가 먼저 잡혀야 한다.
-  색을 새로 만들지 않고 먹색을 아주 옅게 섞는다(§디자인 토큰: 하드코딩 금지).
+  오늘 요일 — 개인 캘린더가 **오늘 날짜에 먹색 알약**을 씌우는 것과 같은 결이다.
+  띠를 깔면 표 머리로 돌아가므로, 글자만 진하게 세운다.
 */
 .rbc-header.rbc-today {
-  background-color: color-mix(in srgb, var(--foreground) 8%, var(--secondary));
   color: var(--foreground);
   font-weight: 600;
 }
