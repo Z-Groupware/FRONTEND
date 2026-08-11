@@ -4,6 +4,7 @@ import { useDraggable } from "@dnd-kit/core";
 
 import { ProjectTag } from "@/components/common/project-tag";
 import { StatusDot } from "@/components/common/status-dot";
+import { ACTION_DELAYED_LABEL } from "@/constants/action";
 import { formatMonthDayWeekday } from "@/lib/date";
 import { pickPaletteColor } from "@/lib/palette";
 import { cn } from "@/lib/utils";
@@ -59,7 +60,11 @@ function BoardCardBody({ card, isDelayed }: BoardCardProps) {
         <div className="flex items-center justify-between gap-2">
           <ProjectTag tag={card.tagLabel} />
           {isDelayed ? (
-            <StatusDot tone="DELAYED" label="지연" className="text-[12px] leading-4 font-medium" />
+            <StatusDot
+              tone="DELAYED"
+              label={ACTION_DELAYED_LABEL}
+              className="text-[12px] leading-4 font-medium"
+            />
           ) : (
             <span className="text-muted-foreground text-[12px] leading-4 tabular-nums">
               {due ? `${due}까지` : "-"}
