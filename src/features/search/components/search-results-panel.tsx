@@ -22,28 +22,33 @@ export function SearchResultsPanel({
   baseParams: URLSearchParams;
 }) {
   return (
-    <section className="border-border bg-card overflow-hidden rounded-2xl border">
-      <div className="px-6 pt-5">
+    /*
+      ⚠️ **랜딩과 같은 결로 둔다**(2026-08-10). 결과만 카드 하나로 통째로 감싸 두니, 같은
+         화면인데 검색 전과 후의 생김새가 달랐다 — 탭·필터는 조작하는 자리라 위에 두고,
+         결과는 랜딩처럼 **줄마다 낱장**으로 쌓는다.
+    */
+    <section className="flex flex-col gap-4">
+      <div>
         <SearchTabs counts={results.counts} active={query.category} searchParams={baseParams} />
       </div>
 
-      <div className="flex items-center justify-between gap-3 px-6 py-3">
+      <div className="flex items-center justify-between gap-3">
         <SearchFilterBar projects={projects} projectTag={query.projectTag} period={query.period} />
-        <p className="text-muted-foreground shrink-0 text-xs tabular-nums">
+        <p className="text-muted-foreground shrink-0 text-[12px] leading-4 tabular-nums">
           결과 {results.items.length}건
         </p>
       </div>
 
       {results.items.length === 0 ? (
-        <div className="border-border flex flex-col items-center gap-2 border-t px-6 py-16 text-center">
+        <div className="border-border bg-card flex flex-col items-center gap-2 rounded-2xl border px-6 py-16 text-center">
           <SearchX className="text-muted-foreground/50 size-6" aria-hidden />
           <p className="text-foreground text-[13px] leading-5 font-medium">검색 결과가 없습니다</p>
-          <p className="text-muted-foreground text-xs">
+          <p className="text-muted-foreground text-[12px] leading-4">
             다른 검색어로 찾거나 필터를 전체로 바꿔 주세요.
           </p>
         </div>
       ) : (
-        <ul className="border-border border-t">
+        <ul className="flex flex-col gap-2">
           {results.items.map((item) => (
             <SearchResultRow
               key={`${item.kind}-${item.id}`}

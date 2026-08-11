@@ -1,3 +1,4 @@
+import { Search } from "lucide-react";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
@@ -6,6 +7,8 @@ import { SearchLanding } from "@/features/search/components/search-landing";
 import { SearchResultsPanel } from "@/features/search/components/search-results-panel";
 import { parseSearchQuery } from "@/features/search/lib";
 import { getSearchHome, getSearchProjects, getSearchResults } from "@/features/search/server";
+import type { RecentSearchEntry } from "@/features/search/types";
+import { PageHeader } from "@/features/shell/components/page-header";
 
 export const metadata: Metadata = {
   title: "검색",
@@ -34,6 +37,8 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   if (query.period !== "all") baseParams.set("period", query.period);
 
   let content: ReactNode;
+  /* 최근 검색어는 입력 바로 아래에 서므로 페이지가 들고 있는다 — 검색 중일 때는 안 띄운다 */
+  let recentSearches: RecentSearchEntry[] = [];
   if (keyword) {
     const [results, projects] = await Promise.all([getSearchResults(query), getSearchProjects()]);
     content = (
@@ -46,21 +51,54 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     );
   } else {
     const home = await getSearchHome();
+    recentSearches = home.recentSearches;
     content = <SearchLanding home={home} />;
   }
 
   return (
-    <main className="min-h-0 flex-1 overflow-y-auto px-8 py-7">
+    <>
       {/*
-        ⚠️ 바깥은 다른 목록 화면과 같은 1440(§DESIGN 4 폭)이지만, 검색은 한 줄 입력에서
-           시작하는 화면이라 안쪽 내용은 공지 상세처럼 720으로 좁힌다(§DESIGN 1 "읽는 글은 좁게").
+        ⚠️ **검색 중일 때만 뒤로가기를 단다.** 결과를 보다가 처음 화면으로 돌아갈 길이 없었다 —
+           입력의 ✕는 지우는 것이지 "뒤로"가 아니고, 주소가 `replace`로 바뀌어 브라우저
+           뒤로가기도 검색 전으로 안 간다.
       */}
-      <div className="mx-auto w-full max-w-[1440px]">
-        <div className="mx-auto flex w-full max-w-[720px] flex-col gap-7">
-          <SearchInput keyword={query.keyword} />
+      <PageHeader
+        title="검색"
+        icon={Search}
+        backTo={keyword ? { href: "/app/search", label: "검색" } : undefined}
+      />
+      <main className="min-h-0 flex-1 overflow-y-auto px-8 py-7">
+        {/*
+        ⚠️ **목록 화면과 같은 폭(1440)을 왼쪽 끝에서부터 쓴다**(§DESIGN 4). 전에는 그 안에서
+           내용만 720으로 **가운데 띄웠는데**, 제목·아이콘은 왼쪽 끝에 있고 내용만 한가운데라
+           **축이 둘**이 됐다 — 화면이 안 맞는 것처럼 읽혔다(액션 상세에서 겪은 것과 같다).
+        ⚠️ **입력만 좁게 둔다.** 한 줄 입력이 1440까지 늘어나면 글자가 왼쪽 끝에만 붙고
+           오른쪽이 통째로 빈다 — 결과 목록은 넓을수록 좋지만 입력은 아니다.
+      */}
+        {/*
+        ⚠️ **다른 목록 화면과 같은 1440이다**(§DESIGN 4). 좁혀 봤더니 이 화면만 폭이 달라
+           사이드바로 오갈 때 본문이 눈에 띄게 흔들렸다 — 화면마다 폭이 다르면 그게 더 거슬린다.
+           가운데가 비어 보이던 건 폭 탓이 아니라 **줄 안이 세 층으로 쌓여 있어서**였고,
+           그건 한 줄로 붙여 고쳤다.
+        ⚠️ 가운데 세운다 — 위 검색창이 가운데라 본문만 왼쪽에 붙으면 축이 둘이 된다.
+      */}
+        <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-7">
+          {/*
+          ⚠️ **입력은 가운데 세운다.** 왼쪽에 붙여 두니 넓은 화면에서 한쪽으로 몰려 보였다 —
+             찾으러 온 사람이 제일 먼저 보는 것이라 화면 한복판에 서는 게 맞다.
+          ⚠️ 폭은 720 그대로다. 1440까지 늘리면 글자가 왼쪽 끝에만 붙고 오른쪽이 통째로 빈다.
+        */}
+          {/*
+          ⚠️ **입력과 최근 검색어를 한 덩이로 가운데 세운다.** 둘은 같은 일(찾기 시작하기)을
+             하는데 따로 떨어져 있으면 최근 검색어가 "목록 중 하나"로 보인다.
+          ⚠️ 위아래 여백을 넉넉히 준다 — 이 자리가 화면의 주인공이라 붐비면 안 된다.
+        */}
+          <div className="mx-auto w-full max-w-[720px] pt-4 pb-2">
+            <SearchInput keyword={query.keyword} recentSearches={recentSearches} />
+          </div>
           {content}
         </div>
-      </div>
-    </main>
+      </main>
+    </>
   );
 }
