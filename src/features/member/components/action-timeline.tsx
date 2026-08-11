@@ -134,7 +134,9 @@ export function ActionTimeline({
       <EmptyState
         icon={emptyIcon}
         title={emptyLabel}
-        description="회의에서 액션이 하달되면 이 자리에 기간 막대로 쌓입니다."
+        /* ⚠️ 여러 화면이 함께 쓰는 자리라 **어느 도메인에도 치우치지 않는 말**을 쓴다 —
+           `회의에서 하달되면`은 인수인계·마이페이지에서는 맞지 않는 설명이었다(코드래빗 지적) */
+        description="액션이 생기면 이 자리에 기간 막대로 쌓입니다."
         className="flex-1"
       />
     );

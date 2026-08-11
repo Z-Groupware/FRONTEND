@@ -48,12 +48,13 @@ export function HandoverActionListCard({
           description="넘길 액션이 없어도 인수인계서는 신청할 수 있습니다."
         />
       ) : (
-        <>
+        /* ⚠️ 머리와 줄을 한 통에 넣고 가로로 굴린다 — 좁은 화면에서 액션 이름 열이 쭈그러들지 않게 */
+        <div className="overflow-x-auto">
           {/*
             표 머리 — 다른 목록과 같은 띠다(§DESIGN 2: 카드 안의 선은 표가 시작하는 자리 하나뿐).
             ⚠️ 체크박스 자리는 라벨을 안 붙인다. 열 이름이 아니라 조작 자리다.
           */}
-          <div className="border-border text-muted-foreground bg-secondary/50 flex items-center gap-4 border-y px-7 py-3 text-[12px] leading-4">
+          <div className="border-border text-muted-foreground bg-secondary/50 flex min-w-[760px] items-center gap-4 border-y px-7 py-3 text-[12px] leading-4">
             <span className="w-4 shrink-0" aria-hidden />
             <span className="w-[76px] shrink-0 text-center">프로젝트</span>
             <span className="min-w-0 flex-1">액션</span>
@@ -69,7 +70,7 @@ export function HandoverActionListCard({
               return (
                 <li
                   key={action.id}
-                  className="border-border flex items-center gap-4 px-7 py-3.5 not-first:border-t"
+                  className="border-border flex min-w-[760px] items-center gap-4 px-7 py-3.5 not-first:border-t"
                 >
                   <Checkbox
                     checked={checked}
@@ -123,7 +124,7 @@ export function HandoverActionListCard({
               );
             })}
           </ul>
-        </>
+        </div>
       )}
     </section>
   );

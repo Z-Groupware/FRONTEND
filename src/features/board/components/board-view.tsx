@@ -22,6 +22,7 @@ import {
   BOARD_COLUMN,
   BOARD_COLUMN_LABEL,
   BOARD_COLUMNS,
+  BOARD_SAVE_HINT,
   type BoardCard,
   type BoardChange,
   type BoardColumnId,
@@ -177,7 +178,7 @@ export function BoardView({ boardType, cards, todayIso }: BoardViewProps) {
       */}
       <div className="flex shrink-0 items-center justify-between gap-3">
         <p className="text-muted-foreground text-[12px] leading-4">
-          {changeCount > 0 ? "옮긴 뒤 [저장하기]를 눌러야 반영됩니다." : ""}
+          {changeCount > 0 ? BOARD_SAVE_HINT : ""}
         </p>
         <Button
           size="sm"

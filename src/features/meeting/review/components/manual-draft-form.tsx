@@ -82,14 +82,14 @@ export function ManualDraftForm({
           value={startDate}
           max={dueDate || undefined}
           onChange={setStartDate}
-          className="w-[180px]"
+          className="w-full sm:w-[180px]"
         />
         <DatePickerField
           aria-label="마감일"
           value={dueDate}
           min={startDate || undefined}
           onChange={setDueDate}
-          className="w-[180px]"
+          className="w-full sm:w-[180px]"
         />
       </div>
       <div className="flex justify-end gap-2">

@@ -93,7 +93,8 @@ export function ActionReviewRow({
           ⚠️ 날짜 칸은 **값에 맞춘 폭**(140)이다. 연도를 뗀 뒤에도 180으로 두니 `8월 7일(금)`
              한 덩이가 칸 왼쪽에만 붙어 오른쪽이 비었다.
         */}
-        <div className="flex shrink-0 items-center gap-2">
+        {/* ⚠️ 좁아지면 줄을 바꾼다 — 셋(180+140+140)+✕는 1180px 아래에서 글 칸을 0으로 밀어냈다 */}
+        <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
           <Select
             value={String(draft.assigneeId)}
             onValueChange={(value) => value && onAssigneeChange(Number(value))}

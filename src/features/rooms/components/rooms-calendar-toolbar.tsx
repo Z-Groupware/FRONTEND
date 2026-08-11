@@ -110,19 +110,21 @@ export function RoomsCalendarToolbar({
           ⚠️ [오늘]이 가운데다 — 달력에서 가장 자주 하는 일이 "오늘로 돌아가기"라
              화살표 사이에 두면 손이 움직이는 거리가 가장 짧다.
         */}
+        {/* ⚠️ 포커스 링은 **안쪽**으로 그린다(`ring-inset`) — 테두리를 `overflow-hidden`으로
+            깎아 두어서 바깥 링이 잘려 키보드로 어디에 서 있는지 안 보였다(코드래빗 지적) */}
         <div className="border-border inline-flex items-center overflow-hidden rounded-lg border">
           <button
             type="button"
             aria-label="지난 주"
             onClick={() => onNavigate("PREV")}
-            className="text-muted-foreground hover:text-foreground hover:bg-foreground/[0.04] focus-visible:ring-ring flex size-7 items-center justify-center transition-colors focus-visible:ring-2 focus-visible:outline-hidden"
+            className="text-muted-foreground hover:text-foreground hover:bg-foreground/[0.04] focus-visible:ring-ring flex size-7 items-center justify-center transition-colors focus-visible:ring-2 focus-visible:outline-hidden focus-visible:ring-inset"
           >
             <ChevronLeft className="size-3.5" aria-hidden />
           </button>
           <button
             type="button"
             onClick={() => onNavigate("TODAY")}
-            className="border-border text-muted-foreground hover:text-foreground hover:bg-foreground/[0.04] focus-visible:ring-ring flex h-7 items-center border-x px-2.5 text-[11px] leading-4 transition-colors focus-visible:ring-2 focus-visible:outline-hidden"
+            className="border-border text-muted-foreground hover:text-foreground hover:bg-foreground/[0.04] focus-visible:ring-ring flex h-7 items-center border-x px-2.5 text-[11px] leading-4 transition-colors focus-visible:ring-2 focus-visible:outline-hidden focus-visible:ring-inset"
           >
             오늘
           </button>
@@ -130,7 +132,7 @@ export function RoomsCalendarToolbar({
             type="button"
             aria-label="다음 주"
             onClick={() => onNavigate("NEXT")}
-            className="text-muted-foreground hover:text-foreground hover:bg-foreground/[0.04] focus-visible:ring-ring flex size-7 items-center justify-center transition-colors focus-visible:ring-2 focus-visible:outline-hidden"
+            className="text-muted-foreground hover:text-foreground hover:bg-foreground/[0.04] focus-visible:ring-ring flex size-7 items-center justify-center transition-colors focus-visible:ring-2 focus-visible:outline-hidden focus-visible:ring-inset"
           >
             <ChevronRight className="size-3.5" aria-hidden />
           </button>

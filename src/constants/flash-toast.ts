@@ -19,5 +19,9 @@ export type FlashToastKey = keyof typeof FLASH_TOAST;
 export const FLASH_TOAST_PARAM = "toast";
 
 export function isFlashToastKey(value: string | null): value is FlashToastKey {
-  return value !== null && value in FLASH_TOAST;
+  /*
+    ⚠️ `in`이 아니라 `hasOwn`이다 — `?toast=toString`처럼 프로토타입에 있는 이름을 실어 보내면
+       `in`은 참을 돌려주고, 화면이 함수를 문구인 척 띄우려 한다(코드래빗 지적).
+  */
+  return value !== null && Object.hasOwn(FLASH_TOAST, value);
 }

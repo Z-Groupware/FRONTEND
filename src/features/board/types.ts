@@ -47,3 +47,10 @@ export interface BoardChange {
   id: number;
   toColumn: BoardColumnId;
 }
+
+/** 옮긴 뒤 저장 안내 — 화면에 직접 적지 않는다(§도메인 상수: 라벨 하드코딩 금지). */
+export const BOARD_SAVE_HINT = "옮긴 뒤 [저장하기]를 눌러야 반영됩니다.";
+
+/** 빈 칸 안내 — 받아 줄 수 있는 칸과 못 받는 칸이 다른 말을 한다. */
+export const BOARD_EMPTY_HINT = "여기로 옮겨 주세요.";
+export const BOARD_BLOCKED_HINT = "여기로는 옮길 수 없습니다.";

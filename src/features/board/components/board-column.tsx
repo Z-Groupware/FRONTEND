@@ -4,7 +4,13 @@ import { useDroppable } from "@dnd-kit/core";
 
 import { cn } from "@/lib/utils";
 
-import { BOARD_COLUMN, type BoardCard as BoardCardModel, type BoardColumnId } from "../types";
+import {
+  BOARD_BLOCKED_HINT,
+  BOARD_COLUMN,
+  BOARD_EMPTY_HINT,
+  type BoardCard as BoardCardModel,
+  type BoardColumnId,
+} from "../types";
 import { BoardCard } from "./board-card";
 
 interface BoardColumnProps {
@@ -133,13 +139,15 @@ export function BoardColumn({ id, label, cards, isDelayed, isInvalidTarget }: Bo
             ⚠️ 점선과 글자는 그 칸의 상태색을 옅게 쓴다. 새 색이 아니라 머리와 같은 색이라
                칸 하나가 한 덩이로 읽힌다.
           */
+          /* ⚠️ **못 놓는 칸에는 권하지 않는다**(코드래빗 지적) — 끌고 온 카드가 못 오는
+             자리인데 "여기로 옮겨 주세요"가 떠 있으면 화면이 서로 다른 말을 한다(§정직성) */
           <p
             className={cn(
               "flex h-24 items-center justify-center rounded-xl border border-dashed text-[12px] leading-4",
-              tone.empty,
+              isBlocked ? "border-destructive/25 text-destructive/70" : tone.empty,
             )}
           >
-            여기로 옮겨 주세요.
+            {isBlocked ? BOARD_BLOCKED_HINT : BOARD_EMPTY_HINT}
           </p>
         ) : (
           cards.map((card) => <BoardCard key={card.id} card={card} isDelayed={isDelayed(card)} />)

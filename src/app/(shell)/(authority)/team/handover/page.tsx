@@ -51,50 +51,52 @@ export default async function TeamHandoverPage() {
             표 머리 — 머리와 값이 열마다 같은 축을 쓴다(§DESIGN 3). 이름만 왼쪽이고
             나머지는 가운데다 — 폭이 고정이라 둘의 가운데가 한 세로선에 놓인다.
           */}
-          <div className="border-border text-muted-foreground bg-secondary/50 flex items-center gap-4 border-y px-7 py-3 text-[12px] leading-4">
-            <span className="min-w-0 flex-1">인수인계서명</span>
-            <span className="w-24 shrink-0 text-center">담당자</span>
-            <span className="w-20 shrink-0 text-center">유형</span>
-            <span className="w-44 shrink-0 text-center">기간</span>
-            {/* chevron 자리 — 머리에는 라벨을 안 붙인다 */}
-            <span className="w-4 shrink-0" aria-hidden />
-          </div>
+          <div className="overflow-x-auto">
+            <div className="border-border text-muted-foreground bg-secondary/50 flex min-w-[760px] items-center gap-4 border-y px-7 py-3 text-[12px] leading-4">
+              <span className="min-w-0 flex-1">인수인계서명</span>
+              <span className="w-24 shrink-0 text-center">담당자</span>
+              <span className="w-20 shrink-0 text-center">유형</span>
+              <span className="w-44 shrink-0 text-center">기간</span>
+              {/* chevron 자리 — 머리에는 라벨을 안 붙인다 */}
+              <span className="w-4 shrink-0" aria-hidden />
+            </div>
 
-          {items.length === 0 ? (
-            <EmptyState
-              icon={ClipboardList}
-              title="처리할 인수인계서가 없습니다."
-              description="팀원이 휴직·오프보딩을 신청하면 이 자리에 올라옵니다."
-            />
-          ) : (
-            <ul>
-              {items.map((item) => (
-                <li key={item.id} className="border-border not-first:border-t">
-                  <Link
-                    href={`/team/handover/${item.id}`}
-                    className="hover:bg-foreground/[0.04] flex items-center gap-4 px-7 py-3.5 text-[13px] leading-5 transition-colors"
-                  >
-                    <span className="min-w-0 flex-1 truncate font-medium">
-                      {item.memberName} · {HANDOVER_TYPE_LABEL[item.type]} 인수인계서
-                    </span>
-                    <span className="text-muted-foreground w-24 shrink-0 truncate text-center">
-                      {item.memberName}
-                    </span>
-                    <span className="text-muted-foreground w-20 shrink-0 text-center">
-                      {HANDOVER_TYPE_LABEL[item.type]}
-                    </span>
-                    <span className="text-muted-foreground w-44 shrink-0 text-center tabular-nums">
-                      {item.period
-                        ? `${formatMonthDayWeekday(item.period.from)} ~ ${formatMonthDayWeekday(item.period.to)}`
-                        : "-"}
-                    </span>
-                    {/* ⚠️ 들어가는 줄임을 모양으로 알린다 — 오너 쪽 목록과 같은 꼬리다 */}
-                    <ChevronRight className="text-muted-foreground size-4 shrink-0" aria-hidden />
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
+            {items.length === 0 ? (
+              <EmptyState
+                icon={ClipboardList}
+                title="처리할 인수인계서가 없습니다."
+                description="팀원이 휴직·오프보딩을 신청하면 이 자리에 올라옵니다."
+              />
+            ) : (
+              <ul>
+                {items.map((item) => (
+                  <li key={item.id} className="border-border not-first:border-t">
+                    <Link
+                      href={`/team/handover/${item.id}`}
+                      className="hover:bg-foreground/[0.04] flex min-w-[760px] items-center gap-4 px-7 py-3.5 text-[13px] leading-5 transition-colors"
+                    >
+                      <span className="min-w-0 flex-1 truncate font-medium">
+                        {item.memberName} · {HANDOVER_TYPE_LABEL[item.type]} 인수인계서
+                      </span>
+                      <span className="text-muted-foreground w-24 shrink-0 truncate text-center">
+                        {item.memberName}
+                      </span>
+                      <span className="text-muted-foreground w-20 shrink-0 text-center">
+                        {HANDOVER_TYPE_LABEL[item.type]}
+                      </span>
+                      <span className="text-muted-foreground w-44 shrink-0 text-center tabular-nums">
+                        {item.period
+                          ? `${formatMonthDayWeekday(item.period.from)} ~ ${formatMonthDayWeekday(item.period.to)}`
+                          : "-"}
+                      </span>
+                      {/* ⚠️ 들어가는 줄임을 모양으로 알린다 — 오너 쪽 목록과 같은 꼬리다 */}
+                      <ChevronRight className="text-muted-foreground size-4 shrink-0" aria-hidden />
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         </div>
       </div>
     </main>

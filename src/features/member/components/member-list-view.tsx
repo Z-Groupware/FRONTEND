@@ -194,7 +194,11 @@ export function MemberListView({
             </div>
           </div>
 
-          <MemberTable members={items} />
+          <MemberTable
+            members={items}
+            /* 검색어나 거르개가 걸린 목록이면 빈 자리에 할 말이 다르다 */
+            isFiltered={query.keyword.trim() !== "" || query.filter !== MEMBER_FILTER.ALL}
+          />
 
           {/*
             ⚠️ 목록 끝의 빈 요소가 **감시 대상**이다 — 화면에 걸리면 자동으로 다음 페이지를

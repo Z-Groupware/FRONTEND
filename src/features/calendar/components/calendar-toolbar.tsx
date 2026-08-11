@@ -21,8 +21,11 @@ interface CalendarToolbarProps {
 export function CalendarToolbar({ month, onNavigate }: CalendarToolbarProps) {
   return (
     <div className="mb-6 flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
-      <h2 className="text-[17px] leading-7 font-semibold tracking-[-0.3px]">
-        <span className="bg-foreground size-2 shrink-0 rounded-full" aria-hidden />
+      {/*
+        ⚠️ 제목 앞 점을 뺀다 — 상태점과 같은 생김새라 뜻이 있는 표식처럼 읽힌다(§DESIGN 5).
+        ⚠️ `flex`를 다시 세운다 — 점을 빼면서 인라인이 되어 아래 고정폭(`w-[104px]`)이 안 먹었다.
+      */}
+      <h2 className="flex items-center text-[17px] leading-7 font-semibold tracking-[-0.3px]">
         {/*
           ⚠️ **고정 너비**를 준다 — `9월`·`12월`처럼 글자수가 달라지면 제목 폭이 흔들려
              오른쪽 조작 묶음이 매번 다른 자리에 선다.
@@ -47,14 +50,14 @@ export function CalendarToolbar({ month, onNavigate }: CalendarToolbarProps) {
             type="button"
             aria-label="이전 달"
             onClick={() => onNavigate("PREV")}
-            className="text-muted-foreground hover:text-foreground hover:bg-foreground/[0.04] focus-visible:ring-ring flex size-7 items-center justify-center transition-colors focus-visible:ring-2 focus-visible:outline-hidden"
+            className="text-muted-foreground hover:text-foreground hover:bg-foreground/[0.04] focus-visible:ring-ring flex size-7 items-center justify-center transition-colors focus-visible:ring-2 focus-visible:outline-hidden focus-visible:ring-inset"
           >
             <ChevronLeft className="size-3.5" aria-hidden />
           </button>
           <button
             type="button"
             onClick={() => onNavigate("TODAY")}
-            className="border-border text-muted-foreground hover:text-foreground hover:bg-foreground/[0.04] focus-visible:ring-ring flex h-7 items-center border-x px-2.5 text-[11px] leading-4 transition-colors focus-visible:ring-2 focus-visible:outline-hidden"
+            className="border-border text-muted-foreground hover:text-foreground hover:bg-foreground/[0.04] focus-visible:ring-ring flex h-7 items-center border-x px-2.5 text-[11px] leading-4 transition-colors focus-visible:ring-2 focus-visible:outline-hidden focus-visible:ring-inset"
           >
             오늘
           </button>
@@ -62,7 +65,7 @@ export function CalendarToolbar({ month, onNavigate }: CalendarToolbarProps) {
             type="button"
             aria-label="다음 달"
             onClick={() => onNavigate("NEXT")}
-            className="text-muted-foreground hover:text-foreground hover:bg-foreground/[0.04] focus-visible:ring-ring flex size-7 items-center justify-center transition-colors focus-visible:ring-2 focus-visible:outline-hidden"
+            className="text-muted-foreground hover:text-foreground hover:bg-foreground/[0.04] focus-visible:ring-ring flex size-7 items-center justify-center transition-colors focus-visible:ring-2 focus-visible:outline-hidden focus-visible:ring-inset"
           >
             <ChevronRight className="size-3.5" aria-hidden />
           </button>

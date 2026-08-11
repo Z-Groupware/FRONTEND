@@ -1,4 +1,4 @@
-import { UserSearch } from "lucide-react";
+import { Users, UserSearch } from "lucide-react";
 import { ShieldCheck } from "lucide-react";
 import Link from "next/link";
 
@@ -93,14 +93,33 @@ function StatusCell({ status }: { status: ManagedMember["status"] }) {
   );
 }
 
-export function MemberTable({ members }: { members: ManagedMember[] }) {
+export function MemberTable({
+  members,
+  isFiltered,
+}: {
+  members: ManagedMember[];
+  /** 검색어·거르개가 걸린 목록인지 — 빈 자리에 할 말이 달라진다. */
+  isFiltered?: boolean;
+}) {
   if (members.length === 0) {
-    return (
+    /*
+      ⚠️ **못 찾은 것과 아직 아무도 없는 것은 다음 할 일이 다르다**(§상태 세 장).
+         조건이 걸린 목록에는 "검색어를 지워 보라"가 맞고, 조건이 없는데 비었으면
+         지울 검색어가 없어 그 말이 거짓이 된다.
+    */
+    return isFiltered ? (
       <EmptyState
         bordered
         icon={UserSearch}
         title="찾는 사원이 없습니다."
         description="이름·팀·직급으로 찾습니다. 검색어를 지우면 전체가 보입니다."
+      />
+    ) : (
+      <EmptyState
+        bordered
+        icon={Users}
+        title="아직 등록된 사원이 없습니다."
+        description="[계정 발급]으로 첫 사원을 등록해 주세요."
       />
     );
   }
