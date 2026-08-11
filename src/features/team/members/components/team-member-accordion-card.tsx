@@ -4,6 +4,7 @@ import { ChevronDown } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 
+import { ProjectTag } from "@/components/common/project-tag";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import {
@@ -16,7 +17,6 @@ import {
 } from "@/constants/domain";
 import { useProfileAvatar } from "@/hooks/use-profile-avatar";
 import { formatMonthDayWeekday } from "@/lib/date";
-import { pickPaletteColor } from "@/lib/palette";
 import { cn } from "@/lib/utils";
 
 import { getMemberProgressPercent } from "../lib";
@@ -76,15 +76,23 @@ export function TeamMemberAccordionCard({ member }: TeamMemberAccordionCardProps
           {MEMBER_STATUS_LABEL[member.status]}
         </Badge>
 
-        <span className="text-muted-foreground shrink-0 text-[13px] leading-5 tabular-nums">
-          담당 액션 {member.actions.length}개
-        </span>
-
-        <div className="flex w-[168px] shrink-0 items-center gap-2">
-          <Progress value={percent} className="w-32" />
-          <span className="text-foreground w-8 shrink-0 text-right text-[12px] leading-4 font-medium tabular-nums">
-            {percent}%
+        {/*
+          ⚠️ **건수와 진척을 한 덩이로 묶는다**(2026-08-11). 둘 사이가 벌어져 있어 막대가 혼자
+             떠 보였고, 0%일 때는 **회색 줄만 길게** 남아 무엇을 재는 값인지 알 수 없었다 —
+             `담당 액션 2개` 바로 뒤에 붙여야 그 둘의 진척이라는 게 읽힌다.
+          ⚠️ 막대를 짧게 줄인다(`w-20`). 목록 줄에서 재는 건 정확한 길이가 아니라 **대략의 차이**라,
+             길면 그 줄에서 제일 큰 것이 되어 이름보다 먼저 읽힌다.
+        */}
+        <div className="flex shrink-0 items-center gap-3">
+          <span className="text-muted-foreground text-[13px] leading-5 tabular-nums">
+            담당 액션 {member.actions.length}개
           </span>
+          <div className="flex items-center gap-2">
+            <Progress value={percent} className="w-20" />
+            <span className="text-foreground w-8 text-right text-[12px] leading-4 font-medium tabular-nums">
+              {percent}%
+            </span>
+          </div>
         </div>
 
         <ChevronDown
@@ -98,7 +106,8 @@ export function TeamMemberAccordionCard({ member }: TeamMemberAccordionCardProps
 
       {isExpanded && (
         <div className="border-border border-t">
-          <p className="text-muted-foreground px-6 pt-4 pb-2 text-[12px] leading-4">
+          {/* 펼친 안쪽의 머리 — 무엇이 몇 건인지 한 줄로 알린다 */}
+          <p className="text-muted-foreground bg-secondary/50 border-border border-b px-6 py-3 text-[12px] leading-4">
             개인 액션 · {doneCount}/{member.actions.length} 완료
           </p>
 
@@ -107,41 +116,47 @@ export function TeamMemberAccordionCard({ member }: TeamMemberAccordionCardProps
               맡고 있는 액션이 없습니다.
             </p>
           ) : (
-            <ul>
+            <ul className="pb-2">
               {member.actions.map((action) => {
-                const tagColor = pickPaletteColor(action.projectTag);
                 const delayed = isDelayed(action);
                 return (
                   <li key={action.id}>
                     <Link
                       href={`/app/actions/${action.id}`}
-                      className="hover:bg-muted/50 flex items-center gap-3 px-6 py-2.5 transition-colors"
+                      className="hover:bg-foreground/[0.04] flex items-center gap-4 px-6 py-2.5 transition-colors"
                     >
-                      <span
-                        className="w-fit shrink-0 rounded px-1.5 py-0.5 font-mono text-[11px] font-semibold"
-                        style={{ backgroundColor: tagColor.bgColor, color: tagColor.textColor }}
-                      >
-                        {action.projectTag}
+                      {/*
+                        ⚠️ **인수인계 상세와 같은 해부다**(2026-08-11). 칩·상위 액션·이름·상태·마감을
+                           다섯 열로 벌려 놨더니 이름이 짧을 때 가운데가 통째로 비었다 —
+                           칩은 제 열, 이름과 상위 액션은 두 층으로 묶는다.
+                        ⚠️ 칩 열은 가운데 정렬이다. 태그 길이가 제각각이라 왼쪽에 맞추면
+                           줄마다 칩의 중앙이 어긋난다.
+                      */}
+                      <span className="flex w-[76px] shrink-0 items-center justify-center">
+                        <ProjectTag tag={action.projectTag} />
                       </span>
-                      <span className="text-muted-foreground w-[132px] shrink-0 truncate text-[12px] leading-4">
-                        {action.parentTeamActionName}
+                      <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                        <span className="truncate text-[13px] leading-5">{action.title}</span>
+                        <span className="text-muted-foreground truncate text-[12px] leading-4">
+                          {action.parentTeamActionName}
+                        </span>
                       </span>
-                      <span className="min-w-0 flex-1 truncate text-[13px] leading-5">
-                        {action.title}
-                      </span>
-                      <span
-                        className={cn(
-                          "w-[52px] shrink-0 rounded border px-1.5 py-0.5 text-center text-[11px] leading-4",
-                          delayed
-                            ? "border-destructive/40 text-destructive"
-                            : "border-border text-muted-foreground",
-                        )}
-                      >
-                        {delayed ? ACTION_DELAYED_LABEL : ACTION_STATUS_LABEL[action.status]}
+                      {/* ⚠️ 지연만 빨강이다 — 색으로 알리는 건 문제뿐(§DESIGN 5) */}
+                      <span className="w-[72px] shrink-0">
+                        <span
+                          className={cn(
+                            "mx-auto flex h-6 w-[52px] items-center justify-center rounded-md border text-[11px] leading-4",
+                            delayed
+                              ? "border-destructive/40 text-destructive font-medium"
+                              : "border-border text-muted-foreground",
+                          )}
+                        >
+                          {delayed ? ACTION_DELAYED_LABEL : ACTION_STATUS_LABEL[action.status]}
+                        </span>
                       </span>
                       <time
                         dateTime={action.dueDate}
-                        className="text-muted-foreground w-20 shrink-0 text-right text-[12px] leading-4 whitespace-nowrap tabular-nums"
+                        className="text-muted-foreground w-24 shrink-0 text-center text-[12px] leading-4 whitespace-nowrap tabular-nums"
                       >
                         {formatMonthDayWeekday(action.dueDate)}
                       </time>

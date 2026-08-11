@@ -26,10 +26,19 @@ export default async function TeamMembersPage({ searchParams }: TeamMembersPageP
   return (
     <main className="scrollbar-hidden min-h-0 flex-1 overflow-y-auto px-8 py-7">
       <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-5">
-        <div>
-          <h2 className="text-[22px] leading-[30px] font-semibold tracking-[-0.4px]">팀원 현황</h2>
-          <p className="text-muted-foreground mt-1 text-[13px] leading-5">
-            누가 과부하인지, 누구에게 일을 더 줄 수 있는지 확인해요.
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h2 className="text-[22px] leading-[30px] font-semibold tracking-[-0.4px]">
+              팀원 현황
+            </h2>
+            {/* ⚠️ `~합니다체`다(CLAUDE.md 2026-08-04) — `확인해요`는 그 변경 전 문구다 */}
+            <p className="text-muted-foreground pt-1 text-[13px] leading-5">
+              누가 과부하인지, 누구에게 일을 더 줄 수 있는지 확인합니다.
+            </p>
+          </div>
+          {/* ⚠️ **전체 건수를 적는다**(CLAUDE.md §목록) — 얼마나 있는지 알 수 없으면 안 된다 */}
+          <p className="text-muted-foreground text-[12px] leading-4 tabular-nums">
+            전체 {members.length}명
           </p>
         </div>
 
