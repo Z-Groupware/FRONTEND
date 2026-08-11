@@ -85,12 +85,6 @@ export interface SearchResults {
   items: SearchResultItem[];
 }
 
-export interface RecentSearchEntry {
-  keyword: string;
-  /** ISO datetime */
-  searchedAt: string;
-}
-
 export interface ProjectBrowseItem {
   id: number;
   name: string;
@@ -104,10 +98,23 @@ export interface PersonBrowseItem {
   authority: Authority;
 }
 
+/**
+ * 최근 본 항목 — `SearchResultItem`과 다른, **훨씬 적은** 필드만 온다(`GET /search/overview`).
+ * 종류별 상세 필드(발췌·담당자·마감일 등)는 이 API가 안 준다 — `meta`는 BE가 이미 조합한
+ * 보조 문구 한 줄이다(예: "프로젝트명 · 날짜").
+ */
+export interface SearchRecentViewItem {
+  kind: SearchKind;
+  id: number;
+  title: string;
+  meta: string | null;
+}
+
 /** 검색어가 없을 때(랜딩) 보여줄 것 */
 export interface SearchHome {
-  recentSearches: RecentSearchEntry[];
-  recentlyViewed: SearchResultItem[];
+  /** 최신순 — 최대 10개 */
+  recentSearches: string[];
+  recentlyViewed: SearchRecentViewItem[];
   projects: ProjectBrowseItem[];
   people: PersonBrowseItem[];
 }
