@@ -79,7 +79,8 @@ function BoardCardBody({ card, isDelayed }: BoardCardProps) {
  * ⚠️ 세로 여백을 넉넉히 준다(`py-6`). **띠 길이는 결국 카드 높이다** — 띠만 손봐서는 길어지지
  *    않는다. 두 줄 사이 간격도 함께 벌려 늘어난 높이가 한쪽 여백에만 쏠리지 않게 한다.
  */
-const CARD_SHAPE = "border-border bg-card relative flex rounded-[20px] border py-6 pr-4 pl-4";
+const CARD_SHAPE =
+  "border-border bg-card relative flex overflow-hidden rounded-[20px] border py-6 pr-4 pl-4";
 
 /**
  * 왼쪽 색 막대 — 카드 높이를 꽉 채우고, **큰 모서리 곡선에 깎여 끝이 둥글게 마무리된다.**
@@ -95,7 +96,7 @@ const CARD_SHAPE = "border-border bg-card relative flex rounded-[20px] border py
 function ColorEdge({ tag }: { tag: string }) {
   return (
     <span
-      className="pointer-events-none absolute inset-y-0 left-0 w-1 rounded-full"
+      className="pointer-events-none absolute inset-y-0 left-0 w-1"
       style={{ backgroundColor: pickPaletteColor(tag).solidColor }}
       aria-hidden
     />
