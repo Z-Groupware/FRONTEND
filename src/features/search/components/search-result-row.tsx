@@ -1,5 +1,3 @@
-import Link from "next/link";
-
 import { AUTHORITY_BADGE_CLASS, AUTHORITY_LABEL } from "@/constants/authority";
 import { formatDate } from "@/lib/date";
 import { pickPaletteColor } from "@/lib/palette";
@@ -8,6 +6,7 @@ import { cn } from "@/lib/utils";
 import type { SearchResultItem } from "../types";
 import { KindBadge } from "./kind-badge";
 import { MatchText } from "./match-text";
+import { RecordViewLink } from "./record-view-link";
 
 /*
   ⚠️ **줄마다 낱장 카드다**(랜딩 목록과 같은 결). 구분선으로 이은 한 덩이는 값을 **비교하는**
@@ -114,12 +113,14 @@ export function SearchResultRow({ item, keyword }: SearchResultRowProps) {
   if (item.kind === "PROJECT") {
     return (
       <li>
-        <Link
+        <RecordViewLink
+          kind="PROJECT"
+          itemId={item.id}
           href={`/app/projects/${item.id}`}
           className={cn(ROW_SHAPE, "hover:border-foreground/25 transition-colors")}
         >
           {content}
-        </Link>
+        </RecordViewLink>
       </li>
     );
   }
