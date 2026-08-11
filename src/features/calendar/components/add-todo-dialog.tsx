@@ -136,7 +136,7 @@ export function AddTodoDialog({ defaultDate, onCreated }: AddTodoDialogProps) {
 
           {/* ⚠️ 시작일·마감일을 좌우로 나란히 둔다 — 위아래로 쌓으면 두 날짜가 한 범위라는 게 잘 안 읽힌다. */}
           <div className="flex gap-3">
-            <div className="flex flex-1 flex-col gap-1.5">
+            <div className="flex min-w-0 flex-1 flex-col gap-1.5">
               <Label htmlFor="todo-date">시작일</Label>
               <Popover open={datePopoverOpen} onOpenChange={setDatePopoverOpen}>
                 <PopoverTrigger
@@ -145,13 +145,14 @@ export function AddTodoDialog({ defaultDate, onCreated }: AddTodoDialogProps) {
                       id="todo-date"
                       type="button"
                       variant="outline"
-                      className="h-10 w-full justify-start gap-2 font-normal"
+                      className="h-10 w-full min-w-0 justify-start gap-1.5 px-2.5 font-normal"
                     />
                   }
                 >
                   {/* ⚠️ 아이콘과 글자를 **같은 색**으로 — 아이콘만 흐리면 한 버튼이 두 톤으로 갈린다 */}
-                  <CalendarIcon aria-hidden className="size-4 text-current" />
-                  {format(date, "yyyy년 M월 d일(EEE)", { locale: ko })}
+                  <CalendarIcon aria-hidden className="size-4 shrink-0 text-current" />
+                  {/* ⚠️ 420px 모달의 좌우 절반 폭에 맞춰 연도는 뺀다 — 넣으면 줄바꿈 없이 넘친다 */}
+                  <span className="truncate">{format(date, "M월 d일(EEE)", { locale: ko })}</span>
                 </PopoverTrigger>
                 {/*
                   ⚠️ 달력은 **넉넉하게** 편다. 기본 셀(28px)로는 날짜를 손으로 짚기 어렵고
@@ -181,7 +182,7 @@ export function AddTodoDialog({ defaultDate, onCreated }: AddTodoDialogProps) {
               <FieldError reserveSpace message={state.errors.date} />
             </div>
 
-            <div className="flex flex-1 flex-col gap-1.5">
+            <div className="flex min-w-0 flex-1 flex-col gap-1.5">
               <Label htmlFor="todo-end-date">마감일</Label>
               <Popover open={endDatePopoverOpen} onOpenChange={setEndDatePopoverOpen}>
                 <PopoverTrigger
@@ -190,12 +191,14 @@ export function AddTodoDialog({ defaultDate, onCreated }: AddTodoDialogProps) {
                       id="todo-end-date"
                       type="button"
                       variant="outline"
-                      className="h-10 w-full justify-start gap-2 font-normal"
+                      className="h-10 w-full min-w-0 justify-start gap-1.5 px-2.5 font-normal"
                     />
                   }
                 >
-                  <CalendarIcon aria-hidden className="size-4 text-current" />
-                  {format(endDate, "yyyy년 M월 d일(EEE)", { locale: ko })}
+                  <CalendarIcon aria-hidden className="size-4 shrink-0 text-current" />
+                  <span className="truncate">
+                    {format(endDate, "M월 d일(EEE)", { locale: ko })}
+                  </span>
                 </PopoverTrigger>
                 <PopoverContent align="start" className="w-auto p-3 [--cell-size:--spacing(9)]">
                   <Calendar
