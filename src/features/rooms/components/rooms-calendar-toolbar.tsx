@@ -1,10 +1,9 @@
 import { addDays, format, startOfWeek } from "date-fns";
 import { ko } from "date-fns/locale";
-import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useMemo } from "react";
 import type { ToolbarProps } from "react-big-calendar";
 
-import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
