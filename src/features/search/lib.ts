@@ -1,10 +1,4 @@
-import type {
-  SearchCategory,
-  SearchKind,
-  SearchPeriod,
-  SearchQuery,
-  SearchResultItem,
-} from "./types";
+import type { SearchCategory, SearchKind, SearchPeriod, SearchQuery } from "./types";
 import { SEARCH_CATEGORY, SEARCH_PERIOD } from "./types";
 
 /** 글자 한 토막 — 검색어에 걸린 자리인지 함께 들고 있다 */
@@ -54,8 +48,12 @@ const KIND_TO_CATEGORY: Record<SearchKind, Exclude<SearchCategory, "all">> = {
   PERSON: "person",
 };
 
-/** 결과 한 건의 종류를 탭 카테고리 값으로 바꾼다 */
-export function categoryOf(item: SearchResultItem): Exclude<SearchCategory, "all"> {
+/**
+ * 결과 한 건의 종류를 탭 카테고리 값으로 바꾼다.
+ * ⚠️ `kind`만 보므로 실서버의 평평한 `SearchResultItem`·목의 종류별 `MockSearchRecord`
+ *    양쪽 다 그대로 넘길 수 있다.
+ */
+export function categoryOf(item: { kind: SearchKind }): Exclude<SearchCategory, "all"> {
   return KIND_TO_CATEGORY[item.kind];
 }
 

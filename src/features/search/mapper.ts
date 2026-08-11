@@ -1,6 +1,12 @@
 import { AUTHORITY, type Authority } from "@/constants/domain";
 
-import type { PersonBrowseItem, ProjectBrowseItem, SearchRecentViewItem } from "./types";
+import type {
+  PersonBrowseItem,
+  ProjectBrowseItem,
+  SearchRecentViewItem,
+  SearchResultItem,
+  SearchResults,
+} from "./types";
 import { SEARCH_KIND, type SearchKind } from "./types";
 
 /**
@@ -55,4 +61,65 @@ function toAuthority(role: string | null): Authority {
 
 export function toPersonBrowseItem(person: BeSearchOverview["people"][number]): PersonBrowseItem {
   return { id: person.id, name: person.name, authority: toAuthority(person.role) };
+}
+
+/**
+ * `GET /api/v1/search` 응답 — `results[]`는 종류를 가리지 않는 평평한 모양이다.
+ * ⚠️ `project`는 표시용 문구로 **가정**한다 — shape 미확정(BE 실코드 미대조, §연동 검증).
+ */
+export interface BeSearchResponse {
+  query: string;
+  counts: { all: number; meeting: number; action: number; project: number; person: number };
+  results: {
+    type: string;
+    id: number;
+    title: string;
+    snippet: string | null;
+    project: string | null;
+    date: string | null;
+    role: string | null;
+    score: number;
+  }[];
+}
+
+/**
+ * 모르는 권한 문자열은 **빈 값으로** 둔다 — `toAuthority`(overview의 사람 목록)와 다른 규칙이다.
+ * 거긴 "이 사람의 권한은 늘 있다"는 전제라 최저 권한으로 떨어뜨리지만, 검색 결과의 `role`은
+ * 요구사항대로 "안 오면 빈 값" — 모르는 문자열도 잘못된 권한 배지를 다는 것보다 안 다는 게 낫다.
+ */
+function toAuthorityOrNull(role: string | null): Authority | null {
+  if (role === null) return null;
+  const values = Object.values(AUTHORITY) as string[];
+  return values.includes(role) ? (role as Authority) : null;
+}
+
+/** BE 정렬 순서를 그대로 지킨다 — 여기서 다시 정렬하지 않는다 */
+export function toSearchResults(be: BeSearchResponse): SearchResults {
+  const items = be.results.flatMap((hit): SearchResultItem[] => {
+    const kind = toSearchKind(hit.type);
+    if (!kind) return [];
+    return [
+      {
+        kind,
+        id: hit.id,
+        title: hit.title,
+        snippet: hit.snippet,
+        project: hit.project,
+        date: hit.date,
+        role: toAuthorityOrNull(hit.role),
+      },
+    ];
+  });
+
+  return {
+    keyword: be.query,
+    counts: {
+      total: be.counts.all,
+      meeting: be.counts.meeting,
+      action: be.counts.action,
+      project: be.counts.project,
+      person: be.counts.person,
+    },
+    items,
+  };
 }
