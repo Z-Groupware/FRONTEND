@@ -28,6 +28,11 @@ interface SeedExtras {
    *    산출물 표가 비게 된다. 없는 값을 정의하는 것이지 있는 값을 베끼는 게 아니다.
    */
   outputPersonalActions?: { id: number; status: ActionStatus; dueDate: string }[];
+  /**
+   * 요약 실패(`AI_SUMMARY_STATUS.FAILED`)가 서버 문제로 중단된 것인지 — 실제 분석 실패와
+   * 문구·재분석 안내를 가른다(마이페이지 "요약이 중단된 회의"와 같은 판정, §server).
+   */
+  isStalled?: boolean;
 }
 
 const globalStore = globalThis as typeof globalThis & {
@@ -204,6 +209,55 @@ export function ensureMockMeetingsSeeded(): void {
     ],
     outputTeamActionIds: [5, 6],
   });
+
+  /*
+    m6 — Owner의 완료 회의. 요약은 끝났지만(REVIEWED) Host가 검토 화면에서 [액션 분배 확정]을
+    아직 안 눌렀다 — 산출물 칸이 "확정 대기"를 말하는 경우를 확인하는 자리다.
+  */
+  const pendingReview = addMockMeeting({
+    title: "굿즈 앱 배송 정책 협의",
+    start: new Date("2026-08-04T11:00:00+09:00"),
+    end: new Date("2026-08-04T11:30:00+09:00"),
+    roomId: "room-small",
+    roomName: "소회의실",
+    projectId: 1,
+    projectTag: "GOODS",
+    topics: [{ main: "운영", sub: "배송 정책" }],
+    attendeeIds: [1, 2, 3, 4],
+    hostId: 1,
+    hostAuthority: AUTHORITY.OWNER,
+    roomReservationId: "seed-reservation-6",
+  });
+  endMockMeeting(pendingReview.id, "2026-08-04T11:31:00.000Z");
+  setMockSummaryStatus(pendingReview.id, AI_SUMMARY_STATUS.REVIEWED);
+  extras.set(pendingReview.id, {
+    script: [
+      { at: "11:00", text: "배송 정책 협의를 시작하겠습니다." },
+      { at: "11:12", text: "무료 배송 기준과 반품 정책을 다음 주까지 정리해 주세요." },
+    ],
+  });
+
+  /*
+    m7 — Owner의 완료 회의. AI 요약이 서버 문제로 중단됐다(FAILED + isStalled) — 산출물 칸이
+    "요약 실패"와는 다른 문구·재분석 안내를 말하는 경우를 확인하는 자리다.
+  */
+  const stalled = addMockMeeting({
+    title: "굿즈 앱 결제 오류 대응 회의",
+    start: new Date("2026-08-06T15:00:00+09:00"),
+    end: new Date("2026-08-06T15:30:00+09:00"),
+    roomId: "room-small",
+    roomName: "소회의실",
+    projectId: 1,
+    projectTag: "GOODS",
+    topics: [{ main: "운영", sub: "결제 오류" }],
+    attendeeIds: [1, 2, 5],
+    hostId: 1,
+    hostAuthority: AUTHORITY.OWNER,
+    roomReservationId: "seed-reservation-7",
+  });
+  endMockMeeting(stalled.id, "2026-08-06T15:31:00.000Z");
+  setMockSummaryStatus(stalled.id, AI_SUMMARY_STATUS.FAILED);
+  extras.set(stalled.id, { script: [], isStalled: true });
 }
 
 /** 테스트 전용 — 시드를 되돌린다(스토어는 `meetings.ts`가 들고 있어 함께 비운다) */

@@ -116,6 +116,18 @@ export interface MeetingDetail {
   script: ScriptChunk[];
   /** 산출물·발화 기록이 아직 없는 이유 — 다 찼으면 `null` */
   pendingReason: MeetingContentPending | null;
+  /**
+   * 확정 전 AI 액션 초안 건수 — 요약은 끝났지만 Host가 아직 검토 화면에서 [액션 분배 확정]을
+   * 안 누른 만큼이다. 확정됐거나 처음부터 없으면 0(§3-4 `MeetingReviewInfo.actionsConfirmed`).
+   */
+  pendingActionCount: number;
+  /**
+   * 요약 실패가 서버 문제로 중단된 것인지 — `pendingReason === "FAILED"`일 때만 뜻이 있다
+   * (마이페이지 "요약이 중단된 회의"와 같은 판정).
+   */
+  isStalled: boolean;
+  /** 보는 사람이 이 회의 개설자인가 — 재분석·검토 이동은 Host에게만 보여준다(§권한 ②축) */
+  isHost: boolean;
 }
 
 /**
