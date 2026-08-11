@@ -2,7 +2,7 @@ import { Plus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 
-import { ROOMS_CALENDAR_TOOLBAR_LABEL } from "../constants";
+import { ROOM_LIST_PANEL_LABEL, ROOMS_CALENDAR_TOOLBAR_LABEL } from "../constants";
 import type { MeetingRoom } from "../types";
 
 interface RoomListPanelProps {
@@ -21,15 +21,18 @@ export function RoomListPanel({ rooms, onAddClick }: RoomListPanelProps) {
     <aside className="border-border bg-card flex w-full shrink-0 flex-col overflow-hidden rounded-2xl border lg:h-full lg:w-[280px] lg:max-w-[280px]">
       <div className="flex flex-col gap-0.5 px-5 py-4">
         <div className="flex items-center justify-between gap-3">
-          <h2 className="text-foreground text-base font-semibold">회의실 목록</h2>
+          <h2 className="text-foreground text-base font-semibold">{ROOM_LIST_PANEL_LABEL.title}</h2>
           <Button type="button" size="sm" variant="ink" onClick={onAddClick}>
             <Plus aria-hidden />
             {ROOMS_CALENDAR_TOOLBAR_LABEL.addMeeting}
           </Button>
         </div>
         <div className="flex items-center justify-between gap-3">
-          <p className="text-muted-foreground text-xs">예약 가능 시간을 확인하세요.</p>
-          <span className="text-muted-foreground shrink-0 text-xs">{rooms.length}개</span>
+          <p className="text-muted-foreground text-xs">{ROOM_LIST_PANEL_LABEL.guidance}</p>
+          <span className="text-muted-foreground shrink-0 text-xs">
+            {rooms.length}
+            {ROOM_LIST_PANEL_LABEL.countSuffix}
+          </span>
         </div>
       </div>
 
