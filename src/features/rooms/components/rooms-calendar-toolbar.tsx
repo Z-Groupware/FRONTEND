@@ -69,8 +69,11 @@ export function RoomsCalendarToolbar({
   return (
     <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
       <div className="flex flex-wrap items-center gap-2">
-        <span className="bg-foreground size-2 shrink-0 rounded-full" aria-hidden />
-        <p className="max-w-28 shrink-0 truncate text-base font-semibold tabular-nums sm:max-w-40">
+        {/*
+          ⚠️ 제목 앞 검은 점을 뺀다 — 상태점과 같은 생김새라 뜻이 있는 표식처럼 읽힌다(§DESIGN 5).
+          ⚠️ 글자는 다섯 크기다(§DESIGN 4) — `text-base`(16)는 규격 밖이라 17px 카드 제목으로 맞춘다.
+        */}
+        <p className="max-w-28 shrink-0 truncate text-[17px] leading-7 font-semibold tracking-[-0.3px] tabular-nums sm:max-w-40">
           {rangeLabel}
         </p>
       </div>

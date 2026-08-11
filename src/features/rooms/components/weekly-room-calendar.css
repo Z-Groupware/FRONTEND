@@ -36,8 +36,27 @@
 .rbc-header {
   background-color: var(--secondary);
   color: var(--muted-foreground);
-  padding: 6px 0;
+  padding: 8px 0;
+  font-size: 12px;
+  line-height: 16px;
   font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+/*
+  오늘 요일 머리 — 한 주에서 **오늘이 어느 칸인지**가 먼저 잡혀야 한다.
+  색을 새로 만들지 않고 먹색을 아주 옅게 섞는다(§디자인 토큰: 하드코딩 금지).
+*/
+.rbc-header.rbc-today {
+  background-color: color-mix(in srgb, var(--foreground) 8%, var(--secondary));
+  color: var(--foreground);
+  font-weight: 600;
+}
+
+/* 시간 눈금 — 숫자는 자릿수가 흔들리지 않게 */
+.rbc-time-gutter .rbc-label {
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
 }
 
 /*
@@ -108,8 +127,12 @@
   background-color: var(--card);
 }
 
+/*
+  오늘 칸 — 카드 면 위에 먹색 3%. 이보다 진하면 예약 막대보다 바탕이 먼저 읽히고,
+  이보다 옅으면 어제·내일과 구분이 안 된다.
+*/
 .rbc-today {
-  background-color: var(--card);
+  background-color: color-mix(in srgb, var(--foreground) 3%, var(--card));
 }
 
 /*
@@ -144,6 +167,24 @@
   outline-offset: 1px;
 }
 
+/*
+  지금 시각 — **먹색이다**(2026-08-11). 빨강은 이 앱에서 잘못됐다는 뜻이라(§DESIGN 5),
+  그냥 지금이 몇 시인지 알려 주는 선에 쓰면 예약이 잘못된 것처럼 읽힌다.
+  왼쪽 끝에 점을 찍어 눈금과 이어지는 시각임을 알린다.
+*/
 .rbc-current-time-indicator {
-  background-color: var(--destructive);
+  height: 2px;
+  background-color: var(--foreground);
+}
+
+.rbc-current-time-indicator::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 7px;
+  height: 7px;
+  border-radius: 9999px;
+  background-color: var(--foreground);
+  transform: translate(-3px, -50%);
 }
