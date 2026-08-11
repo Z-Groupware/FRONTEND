@@ -2,6 +2,10 @@ import { AUTHORITY } from "@/constants/domain";
 
 import {
   type Actor,
+  canAccessManageScope,
+  canAccessOwnerScope,
+  canAccessPersonalScope,
+  canAccessTeamScope,
   canApproveFinal,
   canApproveMid,
   canGrantAdmin,
@@ -136,5 +140,40 @@ describe("canApproveMid", () => {
     expect(canApproveMid(withTeam)).toBe(true); // 대상 안 넘기면 화면 노출 판단용으로 통과
     expect(canApproveMid(withTeam, { teamId: 1 })).toBe(true);
     expect(canApproveMid(withTeam, { teamId: 2 })).toBe(false);
+  });
+});
+
+/**
+ * 화면 문 — **주소를 직접 쳐도 열리면 안 되는 곳.**
+ *
+ * ⚠️ 사이드바에서 안 보이는 건 UX일 뿐 보안이 아니다(§권한). 대시보드에는 판정이 아예
+ *    없어서 로그인이 붙는 순간 사원이 대표 대시보드를 열 수 있는 상태였다 — 그 회귀를 막는다.
+ */
+describe("화면 접근 범위", () => {
+  it("대표 화면은 대표만", () => {
+    expect(canAccessOwnerScope(owner)).toBe(true);
+    expect(canAccessOwnerScope(leader)).toBe(false);
+    expect(canAccessOwnerScope(member)).toBe(false);
+    // Admin 겸직은 회사 운영을 열 뿐 대표 화면을 열지는 않는다
+    expect(canAccessOwnerScope({ ...leader, isAdmin: true })).toBe(false);
+  });
+
+  it("팀 화면은 팀장만 — 대표도 못 들어간다", () => {
+    expect(canAccessTeamScope(leader)).toBe(true);
+    expect(canAccessTeamScope(owner)).toBe(false);
+    expect(canAccessTeamScope(member)).toBe(false);
+  });
+
+  it("개인 화면은 대표만 못 들어간다 — 대표에겐 개인 액션이 없다", () => {
+    expect(canAccessPersonalScope(member)).toBe(true);
+    expect(canAccessPersonalScope(leader)).toBe(true);
+    expect(canAccessPersonalScope(owner)).toBe(false);
+  });
+
+  it("회사 운영 구역은 사이드바가 여는 문과 같다 — 대표이거나 Admin 겸직", () => {
+    expect(canAccessManageScope(owner)).toBe(true);
+    expect(canAccessManageScope({ ...member, isAdmin: true })).toBe(true);
+    expect(canAccessManageScope(member)).toBe(false);
+    expect(canAccessManageScope(leader)).toBe(false);
   });
 });

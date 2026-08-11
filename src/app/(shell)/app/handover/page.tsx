@@ -28,7 +28,14 @@ export default async function HandoverPage({ searchParams }: HandoverPageProps) 
 
   return (
     <main className="scrollbar-hidden min-h-0 flex-1 overflow-y-auto px-8 py-7">
-      <div className="mx-auto flex w-full max-w-[720px] flex-col gap-5">
+      {/*
+        ⚠️ **1440이다**(2026-08-11). 720은 **단일 폼 한 장**의 폭인데, 이 화면의 몸통은
+           `내 담당 액션` 표(체크박스·프로젝트·액션·상태·마감)라 폼이 아니라 목록에 가깝다 —
+           승인 쪽 같은 화면(`/team/handover/:id`)도 1440이라 폭이 갈려 있었다.
+        ⚠️ 대신 **입력칸에는 따로 상한을 건다**(각 폼 안에서). 카드가 넓어졌다고 날짜 칸까지
+           1400px로 늘리면 라벨과 커서가 멀어져 읽고 쓰기가 나빠진다(기업 설정과 같은 판단).
+      */}
+      <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-5">
         <HandoverControls activePreview={preview} activeType={type} />
 
         {type === HANDOVER_TYPE.VACATION ? (

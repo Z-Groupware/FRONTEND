@@ -13,7 +13,7 @@ export function NoticeHistoryCard({ items }: { items: NoticeHistoryItem[] }) {
       <SystemCardHeading icon={History}>발행 이력</SystemCardHeading>
 
       {items.length === 0 ? (
-        <p className="text-muted-foreground px-7 pb-6 text-center text-xs">
+        <p className="text-muted-foreground px-7 pb-6 text-center text-[12px] leading-4">
           아직 발행한 공지가 없어요
         </p>
       ) : (
@@ -24,7 +24,7 @@ export function NoticeHistoryCard({ items }: { items: NoticeHistoryItem[] }) {
               className="border-border hover:bg-foreground/[0.04] border-b px-7 py-3 transition-colors last:border-b-0"
             >
               <div className="mb-1 flex items-start justify-between gap-2">
-                <p className="text-foreground text-xs font-medium">{item.title}</p>
+                <p className="text-foreground text-[12px] leading-4 font-medium">{item.title}</p>
                 <span className="text-muted-foreground/70 shrink-0 text-[11px] tabular-nums">
                   {formatDate(item.sentAt)}
                 </span>

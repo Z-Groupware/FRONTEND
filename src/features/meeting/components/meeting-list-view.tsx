@@ -1,5 +1,7 @@
+import { Video } from "lucide-react";
 import Link from "next/link";
 
+import { EmptyState } from "@/components/common/empty-state";
 import { cn } from "@/lib/utils";
 
 import type { MeetingDirectory, MeetingListItem } from "../view-types";
@@ -52,28 +54,24 @@ function TabLink({ tab, isActive, count }: { tab: MeetingTab; isActive: boolean;
   );
 }
 
-function EmptyState({ tab }: { tab: MeetingTab }) {
+function MeetingEmptyState({ tab }: { tab: MeetingTab }) {
+  const isHosted = tab === MEETING_TAB.HOSTED;
+
   return (
     /*
       ⚠️ 없다는 말만 두지 않는다 — 다음에 무엇을 하면 생기는지를 같이 적는다(§상태 세 장).
          두 탭은 비는 이유가 달라 문구도 다르다.
     */
-    <div className="border-border bg-card rounded-2xl border px-7 py-12 text-center">
-      {tab === MEETING_TAB.HOSTED ? (
-        <>
-          <p className="text-[13px] leading-5">아직 개설한 회의가 없습니다.</p>
-          <p className="text-muted-foreground pt-1 text-[12px] leading-4">
-            회의는 회의실 예약과 함께 만들어집니다 — 회의실 화면에서 시간대를 예약해 주세요.
-          </p>
-        </>
-      ) : (
-        <>
-          <p className="text-[13px] leading-5">참여할 회의가 없습니다.</p>
-          <p className="text-muted-foreground pt-1 text-[12px] leading-4">
-            참석자로 지정되면 이 자리에 나타납니다.
-          </p>
-        </>
-      )}
+    <div className="border-border bg-card rounded-2xl border">
+      <EmptyState
+        icon={Video}
+        title={isHosted ? "아직 개설한 회의가 없습니다." : "참여할 회의가 없습니다."}
+        description={
+          isHosted
+            ? "회의는 회의실 예약과 함께 만들어집니다 — 회의실 화면에서 시간대를 예약해 주세요."
+            : "참석자로 지정되면 이 자리에 나타납니다."
+        }
+      />
     </div>
   );
 }
@@ -104,7 +102,7 @@ export function MeetingListView({
       </div>
 
       {items.length === 0 ? (
-        <EmptyState tab={tab} />
+        <MeetingEmptyState tab={tab} />
       ) : (
         /*
           ⚠️ **두 열까지만 넓힌다.** `auto-fill`로 두니 1440에서 넉 줄까지 벌어져 카드 하나가

@@ -42,7 +42,7 @@ export function PaymentDoneDialog({ isOpen, onOpenChange, config, next }: Paymen
       action={
         <Link
           href={next.href}
-          className={cn(buttonVariants({ variant: "ink" }), "h-11 w-full text-[14px]")}
+          className={cn(buttonVariants({ variant: "ink" }), "h-11 w-full text-[13px]")}
         >
           {next.label}
         </Link>
@@ -59,7 +59,9 @@ export function PaymentDoneDialog({ isOpen, onOpenChange, config, next }: Paymen
         </div>
         <div className="border-border mt-0.5 flex items-baseline justify-between border-t pt-3">
           <dt className="font-semibold">이번 결제</dt>
-          <dd className="text-[15px] font-semibold tabular-nums">{formatWon(price.total)}</dd>
+          <dd className="text-[13px] leading-5 font-semibold tabular-nums">
+            {formatWon(price.total)}
+          </dd>
         </div>
       </dl>
     </ResultDialog>

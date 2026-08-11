@@ -50,15 +50,16 @@ export function DepartmentAddRow({
             onSubmit();
           }
         }}
-        className="h-8 flex-1 rounded-md border bg-transparent px-2.5 text-xs"
+        className="h-8 flex-1 rounded-md border bg-transparent px-2.5 text-[12px] leading-4"
       />
       <button
         type="button"
         onClick={onSubmit}
-        className="text-muted-foreground bg-foreground/5 hover:bg-foreground/10 focus-visible:ring-ring flex h-8 shrink-0 items-center gap-1 rounded-md px-2.5 text-xs transition-colors focus-visible:ring-2 focus-visible:outline-hidden"
+        className="text-muted-foreground bg-foreground/5 hover:bg-foreground/10 focus-visible:ring-ring flex h-8 shrink-0 items-center gap-1 rounded-md px-2.5 text-[12px] leading-4 transition-colors focus-visible:ring-2 focus-visible:outline-hidden"
       >
         <Plus className="size-3.5" />
-        <span className="leading-none">추가</span>
+        {/* ⚠️ 행간은 버튼이 정한 12/16을 그대로 쓴다 — `leading-none`을 덧대면 그 규격이 덮인다 */}
+        <span>추가</span>
       </button>
     </div>
   );

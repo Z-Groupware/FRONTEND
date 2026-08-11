@@ -1,5 +1,7 @@
+import { ListChecks, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 
+import { EmptyState } from "@/components/common/empty-state";
 import type { StatusTone } from "@/components/common/status-dot";
 import { ACTION_DELAYED_LABEL, ACTION_STATUS, ACTION_STATUS_LABEL } from "@/constants/domain";
 import {
@@ -44,10 +46,10 @@ const DOT_CLASS: Record<StatusTone, string> = {
 };
 
 /**
- * 기간 바 배경·테두리·글자 — **상태점과 같은 색 셋**이다(DESIGN §5: 할일 회색 · 진행중 초록 ·
+ * 기간 바 배경·테두리·글자 — **상태점과 같은 색 셋**이다(DESIGN §5: 할 일 회색 · 진행중 초록 ·
  * 완료 보라 · 지연 빨강).
  *
- * ⚠️ **완료가 회색이었다.** 할일과 같은 색이라 막대만 봐서는 끝난 것과 아직 안 한 것이
+ * ⚠️ **완료가 회색이었다.** 할 일과 같은 색이라 막대만 봐서는 끝난 것과 아직 안 한 것이
  *    구분되지 않았다 — 왼쪽 점은 보라인데 막대는 회색이라 같은 줄이 두 말을 했다.
  * ⚠️ 바탕은 옅게(12%), 글자는 진하게 둔다. 막대 위에 `D-12` 같은 글자가 얹히므로 단색으로
  *    채우면 글자가 안 읽힌다 — 채도가 아니라 **명도**로 상태를 가른다.
@@ -111,20 +113,32 @@ interface ActionTimelineProps {
   today: Date;
   /** 비었을 때 문구 */
   emptyLabel?: string;
+  /** 비었을 때 아이콘 — 무엇이 안 하달됐는지 가리킨다(기본: 액션) */
+  emptyIcon?: LucideIcon;
 }
 
 export function ActionTimeline({
   items,
   today,
   emptyLabel = "표시할 액션이 없습니다.",
+  emptyIcon = ListChecks,
 }: ActionTimelineProps) {
   const model = buildActionTimeline(items, today);
 
   if (!model) {
+    /*
+      ⚠️ **카드를 채운다**(2026-08-11). 회색 글씨 한 줄만 남겨 두니 제목 바로 밑에서 카드가
+         뚝 끊겨, 아직 안 그려진 화면처럼 보였다 — 빈 상태도 화면이다(§3상태).
+    */
     return (
-      <p className="text-muted-foreground flex flex-1 items-center justify-center text-sm">
-        {emptyLabel}
-      </p>
+      <EmptyState
+        icon={emptyIcon}
+        title={emptyLabel}
+        /* ⚠️ 여러 화면이 함께 쓰는 자리라 **어느 도메인에도 치우치지 않는 말**을 쓴다 —
+           `회의에서 하달되면`은 인수인계·마이페이지에서는 맞지 않는 설명이었다(코드래빗 지적) */
+        description="액션이 생기면 이 자리에 기간 막대로 쌓입니다."
+        className="flex-1"
+      />
     );
   }
 
@@ -280,7 +294,7 @@ export function ActionTimelineLegend() {
   /*
     ⚠️ **완료도 적는다.** 막대에 네 가지 색이 나오는데 범례가 셋뿐이라, 보라 막대만 무슨
        뜻인지 화면에 없었다 — 색을 쓰면 그 색이 무엇인지도 같이 적어야 한다.
-    ⚠️ 순서는 상태가 흐르는 순서다(할일 → 진행중 → 완료), 지연은 그 흐름 밖이라 끝에 둔다.
+    ⚠️ 순서는 상태가 흐르는 순서다(할 일 → 진행중 → 완료), 지연은 그 흐름 밖이라 끝에 둔다.
   */
   const legend: { tone: StatusTone; label: string }[] = [
     { tone: "TODO", label: TONE_LABEL.TODO },

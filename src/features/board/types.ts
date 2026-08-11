@@ -1,5 +1,5 @@
 /**
- * 보드(칸반) 3열 — 저장되는 값은 사실상 "완료 여부"뿐이다. 할일/진행중/지연은
+ * 보드(칸반) 3열 — 저장되는 값은 사실상 "완료 여부"뿐이다. 할 일/진행중/지연은
  * 시작일·마감일·오늘로 항상 다시 계산한다(§상태 정책, DECISIONS.md).
  */
 export const BOARD_COLUMN = {
@@ -10,7 +10,7 @@ export const BOARD_COLUMN = {
 export type BoardColumnId = (typeof BOARD_COLUMN)[keyof typeof BOARD_COLUMN];
 
 export const BOARD_COLUMN_LABEL: Record<BoardColumnId, string> = {
-  TODO: "할일",
+  TODO: "할 일",
   IN_PROGRESS: "진행중",
   DONE: "완료",
 };
@@ -47,3 +47,10 @@ export interface BoardChange {
   id: number;
   toColumn: BoardColumnId;
 }
+
+/** 옮긴 뒤 저장 안내 — 화면에 직접 적지 않는다(§도메인 상수: 라벨 하드코딩 금지). */
+export const BOARD_SAVE_HINT = "옮긴 뒤 [저장하기]를 눌러야 반영됩니다.";
+
+/** 빈 칸 안내 — 받아 줄 수 있는 칸과 못 받는 칸이 다른 말을 한다. */
+export const BOARD_EMPTY_HINT = "여기로 옮겨 주세요.";
+export const BOARD_BLOCKED_HINT = "여기로는 옮길 수 없습니다.";

@@ -19,8 +19,10 @@ import { Button } from "@/components/ui/button";
 import { commitBoardChangesAction } from "../actions";
 import { canMoveCard, getBoardColumn, isCardDelayed } from "../lib";
 import {
+  BOARD_COLUMN,
   BOARD_COLUMN_LABEL,
   BOARD_COLUMNS,
+  BOARD_SAVE_HINT,
   type BoardCard,
   type BoardChange,
   type BoardColumnId,
@@ -83,6 +85,16 @@ export function BoardView({ boardType, cards, todayIso }: BoardViewProps) {
 
   const changeCount = Object.keys(overrides).length;
   const activeCard = cards.find((card) => card.id === activeId) ?? null;
+
+  /**
+   * 지연 배지 — **지금 서 있는 칸**으로 판정한다(저장된 `isDone`이 아니라).
+   *
+   * ⚠️ 칸과 드래그 사본이 **같은 함수**를 쓴다. 따로 적어 두면 한쪽만 고쳐져 같은 카드가
+   *    자리에 따라 다른 배지를 단다(2026-08-11 코드래빗 지적).
+   */
+  function isDelayedInView(card: BoardCard): boolean {
+    return columnOf(card) !== BOARD_COLUMN.DONE && isCardDelayed(card, today);
+  }
 
   function handleDragStart(event: DragStartEvent) {
     setActiveId(Number(event.active.id));
@@ -158,7 +170,16 @@ export function BoardView({ boardType, cards, todayIso }: BoardViewProps) {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-4">
-      <div className="flex shrink-0 justify-end">
+      {/*
+        ⚠️ **빈 줄에 안내를 둔다.** 버튼 하나만 오른쪽 끝에 떠 있어 그 줄이 통째로 비었고,
+           무엇보다 **드래그가 곧 저장이 아니라는 것**을 화면이 말하지 않았다 — 옮겨 놓고
+           나가면 되돌아간다(§보드는 저장 전 미리보기).
+        ⚠️ 옮긴 게 없으면 문구도 없다. 늘 떠 있으면 안내가 아니라 배경이 된다.
+      */}
+      <div className="flex shrink-0 items-center justify-between gap-3">
+        <p className="text-muted-foreground text-[12px] leading-4">
+          {changeCount > 0 ? BOARD_SAVE_HINT : ""}
+        </p>
         <Button
           size="sm"
           disabled={changeCount === 0}
@@ -186,7 +207,12 @@ export function BoardView({ boardType, cards, todayIso }: BoardViewProps) {
               id={columnId}
               label={BOARD_COLUMN_LABEL[columnId]}
               cards={groups[columnId]}
-              isDelayed={(card) => isCardDelayed(card, today)}
+              /*
+                ⚠️ **지금 서 있는 칸으로 판정한다**(2026-08-11 고침). `card.isDone`은 저장된 값이라,
+                   지연된 카드를 `완료`로 끌어다 놓아도 배지가 그대로 `지연`이었다 — 보드는
+                   저장 전 미리보기 화면이라 눈에 보이는 자리와 배지가 어긋나면 안 된다.
+              */
+              isDelayed={isDelayedInView}
               isInvalidTarget={activeInvalidTarget === columnId}
             />
           ))}
@@ -196,7 +222,9 @@ export function BoardView({ boardType, cards, todayIso }: BoardViewProps) {
         <DragOverlay>
           {activeCard && (
             <div style={{ width: activeWidth ?? undefined }}>
-              <BoardCardOverlay card={activeCard} isDelayed={isCardDelayed(activeCard, today)} />
+              {/* ⚠️ 손에 든 사본도 **칸 기준**으로 판정한다 — 아니면 `완료`로 끌고 가는
+                  동안에도 사본에만 `지연`이 남아 원본과 다른 말을 한다(코드래빗 지적) */}
+              <BoardCardOverlay card={activeCard} isDelayed={isDelayedInView(activeCard)} />
             </div>
           )}
         </DragOverlay>

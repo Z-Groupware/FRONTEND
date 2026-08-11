@@ -9,7 +9,6 @@ import {
   nextScaleByKey,
   parseScale,
   recommendScale,
-  REFERENCE_WIDTH,
   SCREEN_SCALES,
   suggestScale,
 } from "../scale";
@@ -100,12 +99,9 @@ export function ScreenScaleCard() {
   };
 
   return (
-    <section className="border-border bg-card rounded-2xl border p-7">
-      <h2 className="flex items-center gap-2 text-[17px] leading-7 font-semibold tracking-[-0.3px]">
-        {/* 다른 카드 머리와 같은 표식 — 화면이 달라도 같은 서비스로 읽힌다 */}
-        <span className="bg-foreground size-2 rounded-full" aria-hidden />
-        화면 배율
-      </h2>
+    /* ⚠️ 옆 카드(테마)와 **바닥을 맞춘다** — 마지막 줄을 아래로 밀어(`mt-auto`) 높이를 채운다 */
+    <section className="border-border bg-card flex h-full flex-col rounded-2xl border p-7">
+      <h2 className="text-[17px] leading-7 font-semibold tracking-[-0.3px]">화면 배율</h2>
 
       <p className="text-muted-foreground pt-2 text-[13px] leading-[21px] break-keep">
         글자와 여백이 한 번에 커지고 작아집니다.{" "}
@@ -121,43 +117,49 @@ export function ScreenScaleCard() {
            탭은 **선택된 칸 하나**에만 멈추고(나머지 `tabIndex={-1}`), 좌우/상하 키로
            고르며 이동한다.
       */}
-      <div
-        role="radiogroup"
-        aria-label="화면 배율"
-        onKeyDown={handleScaleKeys}
-        className="flex flex-wrap gap-2 pt-5"
-      >
-        {SCREEN_SCALES.map((value) => (
-          <button
-            key={value}
-            type="button"
-            role="radio"
-            aria-checked={value === scale}
-            tabIndex={value === scale ? 0 : -1}
-            data-scale={value}
-            onClick={() => writeScale(value)}
-            className={cn(
-              "focus-visible:ring-ring h-9 min-w-[76px] rounded-lg border px-3 text-[13px] leading-none tabular-nums transition-colors focus-visible:ring-2 focus-visible:outline-hidden",
-              value === scale
-                ? "border-foreground bg-foreground text-background"
-                : "border-border hover:bg-secondary",
-            )}
-          >
-            {value}%
-          </button>
-        ))}
-      </div>
-
       {/*
-        ⚠️ **지금 폭을 적어 준다.** 두 기기가 다르게 보일 때, 이 숫자를 맞추면 같아진다 —
-           "작아 보인다"는 느낌만으로는 어느 쪽으로 얼마나 옮길지 알 수 없다.
+        ⚠️ **옆 카드(테마)의 타일과 가운데를 맞춘다**(2026-08-11). 둘 다 카드 바닥에 붙어 있는데
+           타일은 83px, 배율 버튼은 36px이라 바닥만 같고 **가운데가 23px 어긋나** 보였다 —
+           버튼을 타일과 같은 높이의 띠 안에 넣어 세로 가운데에 세운다.
+        ⚠️ 83은 타일의 조립값이다: 미리보기 44 + 라벨 13 + 안쪽 여백 8×3 + 테두리 2.
+           타일이 바뀌면 이 값도 같이 본다.
       */}
-      {width > 0 && (
-        // ⚠️ `/70`을 걷어낸다 — 12px 본문이 라이트에서 2.73:1로 4.5:1에 못 미친다(§a11y)
-        <p className="text-muted-foreground pt-4 text-[12px] leading-4 tabular-nums">
-          지금 화면 폭 {width}px · 설계 기준 {REFERENCE_WIDTH}px
-        </p>
-      )}
+      <div className="mt-auto pt-5">
+        <div className="flex min-h-[83px] items-center">
+          <div
+            role="radiogroup"
+            aria-label="화면 배율"
+            onKeyDown={handleScaleKeys}
+            /*
+          ⚠️ 네 칸 격자다 — `flex-wrap`은 남는 폭이 모자라면 `100%`만 다음 줄로 떨어뜨려 셋+하나로 갈린다.
+          ⚠️ **카드 폭을 다 쓴다.** 상한을 걸어 왼쪽에 몰아 뒀더니 옆 카드(테마)는 세 칸이
+             고르게 퍼져 있는데 여기만 한쪽으로 쏠려 보였다 — 같은 층에 선 카드끼리는
+             안쪽 리듬도 같아야 한다.
+        */
+            className="grid w-full grid-cols-4 gap-2"
+          >
+            {SCREEN_SCALES.map((value) => (
+              <button
+                key={value}
+                type="button"
+                role="radio"
+                aria-checked={value === scale}
+                tabIndex={value === scale ? 0 : -1}
+                data-scale={value}
+                onClick={() => writeScale(value)}
+                className={cn(
+                  "focus-visible:ring-ring h-9 rounded-lg border px-2 text-[13px] leading-none tabular-nums transition-colors focus-visible:ring-2 focus-visible:outline-hidden",
+                  value === scale
+                    ? "border-foreground bg-foreground text-background"
+                    : "border-border hover:bg-secondary",
+                )}
+              >
+                {value}%
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
 
       {hint !== "none" && (
         /*

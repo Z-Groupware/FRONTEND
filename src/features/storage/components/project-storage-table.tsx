@@ -1,8 +1,10 @@
 "use client";
 
+import { HardDrive } from "lucide-react";
 import { Trash2 } from "lucide-react";
 import Link from "next/link";
 
+import { EmptyState } from "@/components/common/empty-state";
 import { StatusDot } from "@/components/common/status-dot";
 import { PROJECT_STATUS_LABEL } from "@/constants/project";
 import { formatGb } from "@/features/billing/pricing";
@@ -52,10 +54,7 @@ export function ProjectStorageTable({
   return (
     <section className="border-border bg-card overflow-hidden rounded-2xl border">
       <div className="flex items-baseline justify-between gap-3 px-7 pt-6 pb-3">
-        <h2 className="flex items-center gap-2 text-[17px] leading-7 font-semibold tracking-[-0.3px]">
-          <span className="bg-foreground size-2 rounded-full" aria-hidden />
-          프로젝트별 사용량
-        </h2>
+        <h2 className="text-[17px] leading-7 font-semibold tracking-[-0.3px]">프로젝트별 사용량</h2>
         {/*
           ⚠️ 전체 건수를 적는다 — 끝이 안 보이는 목록은 얼마나 남았는지 알 수 없다.
           ⚠️ 색은 `--muted-foreground`보다 **한 단 진하다**(`foreground/75`). 표 머리글과 같은
@@ -90,9 +89,12 @@ export function ProjectStorageTable({
 
       {projects.length === 0 ? (
         /* ⚠️ 빈 상태 — 무엇이 없는지 적는다(§3상태) */
-        <p className="text-muted-foreground border-border border-t px-6 py-12 text-center text-[13px] leading-5 break-keep">
-          저장소를 쓰는 프로젝트가 없습니다
-        </p>
+        <EmptyState
+          bordered
+          icon={HardDrive}
+          title="저장소를 쓰는 프로젝트가 없습니다."
+          description="회의를 녹음하면 그 프로젝트가 이 목록에 쌓입니다."
+        />
       ) : (
         <div className="border-border overflow-x-auto border-t">
           <table className="w-full min-w-[760px] table-fixed text-[13px]">
@@ -126,7 +128,7 @@ export function ProjectStorageTable({
                    색을 늘리는 게 아니라 §디자인 토큰이 정해 둔 표면을 쓰는 것이다.
               */}
               <tr className="text-muted-foreground bg-secondary/50 border-border border-b text-[12px] leading-4">
-                <th className="px-6 py-3 text-left font-normal">프로젝트</th>
+                <th className="px-7 py-3 text-left font-normal">프로젝트</th>
                 {/*
                   ⚠️ 상태는 **자기 열**이다. 이름 옆에 붙여 두면 이름 길이에 따라 좌우로 밀려서
                      세로로 훑을 수가 없다 — 지울 수 있는 줄을 고르는 게 이 표의 일이라
@@ -200,8 +202,8 @@ function Row({
   const isDeletable = canDeleteRecordings(project);
   /*
     ⚠️ **사유를 `진행 중`으로 박지 않는다.** 못 지우는 경로가 둘이다 —
-       ① 끝나지 않은 프로젝트(`할일`·`진행중`) ② 이미 비어 남은 게 없는 줄.
-       하나로 적으면 상태 칸에 `할일`·`완료`를 찍어 놓고 툴팁은 `진행 중`이라 말한다.
+       ① 끝나지 않은 프로젝트(`할 일`·`진행중`) ② 이미 비어 남은 게 없는 줄.
+       하나로 적으면 상태 칸에 `할 일`·`완료`를 찍어 놓고 툴팁은 `진행 중`이라 말한다.
     ⚠️ 라벨은 `PROJECT_STATUS_LABEL`에서 꺼낸다(§도메인 상수 — 라벨 하드코딩 금지).
   */
   const blockedReason =
@@ -237,7 +239,7 @@ function Row({
            띠까지 덮고, 줄 사이 가로 구분선(`border-t`)과 모서리에서 겹친다.
         ⚠️ 띠는 `aria-hidden`이다 — 색이 말하는 건 태그 글자가 이미 말한다(§a11y).
       */}
-      <td className="relative px-6 py-3.5">
+      <td className="relative px-7 py-3.5">
         <span
           aria-hidden
           className="absolute inset-y-0 left-0 w-[3px]"
@@ -264,7 +266,7 @@ function Row({
           </Link>
         </span>
       </td>
-      <td className="px-6 py-3.5">
+      <td className="px-7 py-3.5">
         {/*
           ⚠️ 라벨을 손으로 적지 않는다 — `PROJECT_STATUS_LABEL`이 정본이다(§도메인 상수).
              `진행중`이라고 박아 두면 라벨이 바뀔 때 이 화면만 옛말을 한다.
@@ -289,7 +291,7 @@ function Row({
       <td className="text-muted-foreground px-4 py-3.5 text-center tabular-nums">
         {project.meetingCount}개
       </td>
-      <td className="px-6 py-3.5">
+      <td className="px-7 py-3.5">
         {/*
           ⚠️ 막대는 **전체 음성 대비 비중**이다. 포함량(50GB) 기준으로 그리면 한 프로젝트가
              차지하는 조각이 너무 작아 다섯 줄이 전부 비슷해 보인다.

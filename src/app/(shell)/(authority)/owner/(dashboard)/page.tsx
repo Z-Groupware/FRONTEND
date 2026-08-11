@@ -1,13 +1,20 @@
+import { CalendarClock } from "lucide-react";
+import { Users } from "lucide-react";
 import { ArrowRight } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { AccessDenied } from "@/components/common/access-denied";
 import { DashboardMeetingItem } from "@/components/common/dashboard-meeting-item";
+import { EmptyState } from "@/components/common/empty-state";
 import { SummaryCard } from "@/components/common/summary-card";
 import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { LEADER_NAME_WIDTH, LeaderStatusRow } from "@/features/owner/components/leader-status-row";
 import { getDaysUntilDue, LEADER_BOX_MAX_HEIGHT } from "@/features/owner/lib";
 import { getOwnerDashboardOverview } from "@/features/owner/server";
+import { roleHome } from "@/features/shell/home";
+import { getViewer } from "@/features/shell/viewer";
+import { canAccessOwnerScope } from "@/lib/permission";
 
 export const metadata: Metadata = {
   title: "대시보드",
@@ -17,6 +24,9 @@ export const metadata: Metadata = {
 const HEAD_CELL_CLASS = "text-muted-foreground h-9 text-[12px] leading-4 font-normal";
 
 export default async function OwnerDashboardPage() {
+  const viewer = await getViewer();
+  if (!canAccessOwnerScope(viewer)) return <AccessDenied homeHref={roleHome(viewer.role)} />;
+
   const { projects, activeMemberCount, onLeaveMemberCount, leaderRows, projectMeetings } =
     await getOwnerDashboardOverview();
 
@@ -43,6 +53,13 @@ export default async function OwnerDashboardPage() {
   return (
     <main className="scrollbar-hidden min-h-0 flex-1 overflow-y-auto px-8 py-7">
       <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-7">
+        {/*
+          ⚠️ 대시보드는 **제목을 안 그린다** — 사이드바에서 방금 고른 자리라 화면에 한 번 더
+             적으면 같은 말이 두 번이다. 그래도 문서에는 제목이 있어야 한다: `h1`이 없으면
+             스크린 리더가 이 화면의 이름을 못 말하고 층이 `h2`부터 시작한다(§a11y).
+        */}
+        <h1 className="sr-only">대표 대시보드</h1>
+
         <SummaryCard items={summaryItems} />
 
         {/*
@@ -60,11 +77,8 @@ export default async function OwnerDashboardPage() {
                아래 띠에 달라붙어 보였다.
             ⚠️ 대신 아래 여백을 12 → 20으로 벌린다. 선이 하던 일을 여백이 한다.
           */}
-          <div className="border-border flex shrink-0 items-baseline justify-between gap-3 px-7 pt-6 pb-5">
-            <h2 className="flex items-center gap-2 text-[17px] leading-7 font-semibold tracking-[-0.3px]">
-              <span className="bg-foreground size-2 rounded-full" aria-hidden />
-              팀장 현황
-            </h2>
+          <div className="border-border flex shrink-0 items-baseline justify-between gap-3 px-7 pt-6 pb-3">
+            <h2 className="text-[17px] leading-7 font-semibold tracking-[-0.3px]">팀장 현황</h2>
             {/* 카드 제목 줄 오른쪽 끝은 보조 정보 한 줄이다(DESIGN §2) */}
             <p className="text-muted-foreground text-[12px] leading-4 tabular-nums">
               전체 {leaderRows.length}팀
@@ -77,9 +91,12 @@ export default async function OwnerDashboardPage() {
                  0이 됐다 — `flex-1`은 나눌 것이 없으면 아무 일도 안 해서 문구가 머리 줄
                  보더에 붙어 버린다(세 대시보드 다섯 자리가 같은 상태였다).
             */
-            <p className="text-muted-foreground flex flex-1 items-center justify-center px-7 py-10 text-center text-[13px] leading-5 break-keep">
-              아직 등록된 팀장이 없습니다.
-            </p>
+            <EmptyState
+              className="flex-1"
+              icon={Users}
+              title="아직 등록된 팀장이 없습니다."
+              description="사원 관리에서 팀장을 지정하면 팀별 진척이 여기에 쌓입니다."
+            />
           ) : (
             // 가로·세로 스크롤을 모두 이 컨테이너가 갖고(스크롤바 숨김), 좁은 화면에서 컬럼이
             // 과도하게 줄지 않게 테이블에 최소 폭을 준다. shadcn Table이 자체적으로 두는
@@ -94,7 +111,7 @@ export default async function OwnerDashboardPage() {
                      안 먹는다 — 행 높이를 정하는 건 셀이다.
                 */}
                 <TableHeader>
-                  <TableRow className="bg-foreground/[0.06] border-border hover:bg-foreground/[0.06] border-b">
+                  <TableRow className="bg-secondary/50 border-border hover:bg-secondary/50 border-b">
                     {/*
                       ⚠️ **머리글과 이름이 같은 세로선에서 가운데를 맞춘다.** 그냥 `pl-6`으로 두면
                          머리글이 아바타 위에 서고, 왼쪽만 맞추면 이름 길이가 달라질 때 다시
@@ -136,9 +153,8 @@ export default async function OwnerDashboardPage() {
         {/* ⚠️ 여기도 높이를 고정하지 않는다 — 다섯 건이 하드 캡이라 자라 봐야 다섯 줄이다.
             고정했을 때는 머리 줄 높이를 20px 적게 잡아 **마지막 줄이 잘려** 나갔다. */}
         <section className="border-border bg-card flex flex-col overflow-hidden rounded-2xl border">
-          <div className="border-border flex shrink-0 items-baseline justify-between gap-3 border-b px-7 pt-6 pb-5">
-            <h2 className="flex items-center gap-2 text-[17px] leading-7 font-semibold tracking-[-0.3px]">
-              <span className="bg-foreground size-2 rounded-full" aria-hidden />
+          <div className="border-border flex shrink-0 items-baseline justify-between gap-3 border-b px-7 pt-6 pb-3">
+            <h2 className="text-[17px] leading-7 font-semibold tracking-[-0.3px]">
               최근 프로젝트 회의
             </h2>
             {/*
@@ -158,9 +174,12 @@ export default async function OwnerDashboardPage() {
             </Link>
           </div>
           {projectMeetings.length === 0 ? (
-            <p className="text-muted-foreground flex flex-1 items-center justify-center px-7 py-10 text-center text-[13px] leading-5 break-keep">
-              예정된 프로젝트 회의가 없습니다.
-            </p>
+            <EmptyState
+              className="flex-1"
+              icon={CalendarClock}
+              title="예정된 프로젝트 회의가 없습니다."
+              description="회의실을 예약하면 그 자리에서 회의가 열립니다."
+            />
           ) : (
             <ul>
               {projectMeetings.map((meeting, index) => (

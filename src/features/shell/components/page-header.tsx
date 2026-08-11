@@ -85,7 +85,7 @@ export function PageHeader({ title, icon: Icon, meta, backTo, action }: PageHead
         <span className="flex-1" aria-hidden />
 
         {meta && (
-          <span className="text-muted-foreground/70 shrink-0 pr-1 text-xs leading-[18px]">
+          <span className="text-muted-foreground/70 shrink-0 pr-1 text-[12px] leading-[18px]">
             {meta}
           </span>
         )}

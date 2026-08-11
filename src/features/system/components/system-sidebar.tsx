@@ -93,14 +93,14 @@ export function SystemSidebar({ sections, account }: SystemSidebarProps) {
         <span
           className={cn(
             AUTHORITY_MARK_CLASS[AUTHORITY.SYSTEM],
-            "text-background flex size-[21px] shrink-0 items-center justify-center rounded-full text-[10px] leading-none",
+            "text-background flex size-[21px] shrink-0 items-center justify-center rounded-full text-[11px] leading-none",
           )}
         >
           운
         </span>
         <div className="min-w-0 flex-1">
-          <p className="text-foreground truncate text-xs leading-[18px]">운영자 계정</p>
-          <p className="text-muted-foreground truncate text-[10px] leading-[13px]">
+          <p className="text-foreground truncate text-[12px] leading-[18px]">운영자 계정</p>
+          <p className="text-muted-foreground truncate text-[11px] leading-[13px]">
             {account.email}
           </p>
         </div>

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
+import { AccessDenied } from "@/components/common/access-denied";
 import { AUTHORITY } from "@/constants/authority";
 import { MEMBER_STATUS } from "@/constants/member";
 import { getCompanySetting } from "@/features/company/server";
@@ -11,6 +12,7 @@ import { MemberGradeCard } from "@/features/member/components/member-grade-card"
 import { MemberProfileCard } from "@/features/member/components/member-profile-card";
 import { getManagedMember } from "@/features/member/manage-server";
 import { buildTeamRoles } from "@/features/member/team-roles";
+import { roleHome } from "@/features/shell/home";
 import { getViewer } from "@/features/shell/viewer";
 import {
   canApproveFinal,
@@ -46,7 +48,7 @@ export default async function ManageMemberDetailPage({
 
   /* ⚠️ **판정이 먼저다** — 권한 없는 사람의 조회가 BE까지 나가면 안 된다(§권한) */
   const viewer = await getViewer();
-  if (!canManageMembers(viewer)) notFound();
+  if (!canManageMembers(viewer)) return <AccessDenied homeHref={roleHome(viewer.role)} />;
 
   const detail = await getManagedMember(id);
   if (!detail) notFound();

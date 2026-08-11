@@ -1,7 +1,11 @@
+import { FolderOpen, SearchX } from "lucide-react";
 import { Plus } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Suspense } from "react";
 
+import { EmptyState } from "@/components/common/empty-state";
+import { FlashToast } from "@/components/common/flash-toast";
 import { buttonVariants } from "@/components/ui/button";
 import { ProjectFilterTabs } from "@/features/project/components/project-filter-tabs";
 import { ProjectListTable } from "@/features/project/components/project-list-table";
@@ -39,6 +43,11 @@ export default async function ProjectsPage({ searchParams }: ProjectsPageProps) 
 
   return (
     <main className="scrollbar-hidden min-h-0 flex-1 overflow-y-auto px-8 py-7">
+      {/* 생성 뒤 넘어온 화면에서 "만들었습니다"를 대신 말한다(§토스트 · `FlashToast`) */}
+      <Suspense fallback={null}>
+        <FlashToast />
+      </Suspense>
+
       <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-7">
         {/*
           ⚠️ **툴바를 카드 안으로 들였다**(2026-08-10). 검색·정렬·상태 탭·건수·생성 버튼이
@@ -60,8 +69,13 @@ export default async function ProjectsPage({ searchParams }: ProjectsPageProps) 
             {/* 남는 자리는 비워 둔다 — 건수와 버튼이 오른쪽 끝에 선다 */}
             <span className="flex-1" aria-hidden />
 
-            <span className="text-foreground/75 shrink-0 text-[12px] leading-4 tabular-nums">
-              전체 {projects.length}개
+            {/*
+              ⚠️ **`전체`라고 쓰지 않는다**(2026-08-11 고침). 이 숫자는 지금 거른 결과의 수인데
+                 `전체 4개`라고 적으니, 탭이 `할 일 2 · 진행중 4 · 완료 2`(합 8)를 보여 주는
+                 옆에서 **거짓말이 됐다.** 거른 결과임을 말하는 `결과 N개`로 적는다.
+            */}
+            <span className="text-muted-foreground shrink-0 text-[12px] leading-4 tabular-nums">
+              결과 {projects.length}개
             </span>
             {canCreateProject(viewer) && (
               /*
@@ -80,9 +94,16 @@ export default async function ProjectsPage({ searchParams }: ProjectsPageProps) 
 
           {projects.length === 0 ? (
             /* 빈 상태 — 무엇이 없는지 적는다(§3상태) */
-            <p className="text-muted-foreground border-border border-t px-6 py-12 text-center text-[13px] leading-5 break-keep">
-              {keyword?.trim() ? "검색 결과가 없습니다." : "해당 상태의 프로젝트가 없습니다."}
-            </p>
+            <EmptyState
+              bordered
+              icon={keyword?.trim() ? SearchX : FolderOpen}
+              title={keyword?.trim() ? "검색 결과가 없습니다." : "해당 상태의 프로젝트가 없습니다."}
+              description={
+                keyword?.trim()
+                  ? "다른 이름이나 태그로 찾아 주세요."
+                  : "위 필터를 바꾸면 다른 상태의 프로젝트를 볼 수 있습니다."
+              }
+            />
           ) : (
             <ProjectListTable projects={projects} />
           )}

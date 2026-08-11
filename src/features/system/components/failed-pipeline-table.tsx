@@ -53,7 +53,7 @@ export function FailedPipelineTable({ items }: { items: FailedPipelineItem[] }) 
   if (items.length === 0) {
     return (
       <div className="border-border bg-card flex items-center justify-center rounded-2xl border p-10 text-center">
-        <p className="text-muted-foreground text-sm">재처리할 실패 건이 없습니다</p>
+        <p className="text-muted-foreground text-[13px] leading-5">재처리할 실패 건이 없습니다.</p>
       </div>
     );
   }
@@ -63,7 +63,7 @@ export function FailedPipelineTable({ items }: { items: FailedPipelineItem[] }) 
       <SystemCardHeading icon={TriangleAlert}>실패 목록</SystemCardHeading>
 
       <div className="overflow-x-auto">
-        <Table className="table-fixed text-xs">
+        <Table className="table-fixed text-[12px] leading-4">
           <colgroup>
             <col style={{ width: COLUMN_WIDTH.meetingId }} />
             <col style={{ width: COLUMN_WIDTH.company }} />

@@ -35,13 +35,13 @@ export function NoticeListItem({ notice, isActive = false }: NoticeListItemProps
       {!notice.isRead && <span className="sr-only">안 읽음</span>}
 
       {/*
-        ⚠️ **제목을 제목답게 세운다.** 13px 반굵게로 두니 아래 날짜와 무게가 비슷해 한 덩이로
-           뭉쳤다 — 목록에서 먼저 읽혀야 하는 건 제목이다. 카드 제목(17px) 바로 아래 단계인
-           15px로 올린다.
+        ⚠️ **제목을 제목답게 세운다.** 굵기로 세운다 — 다른 목록의 첫 열과 같은 13px을 쓰되
+           반굵게(semibold)라 옆의 날짜(12px 흐림)와 무게가 갈린다. 크기까지 올리면 화면마다
+           목록 줄 높이가 달라져 사이드바로 옮겨 다닐 때 리듬이 흔들린다(§DESIGN: 새 숫자 금지).
         ⚠️ **날짜를 아래로 내리지 않고 오른쪽 끝에 세운다.** 아래에 두면 한 줄이 두 줄을 먹고,
            줄마다 제목 길이가 달라 날짜가 들쭉날쭉했다 — 오른쪽 고정이면 한 세로선에 선다.
       */}
-      <span className="text-foreground min-w-0 flex-1 truncate text-[15px] leading-6 font-semibold">
+      <span className="text-foreground min-w-0 flex-1 truncate text-[13px] leading-5 font-semibold">
         {notice.title}
       </span>
 

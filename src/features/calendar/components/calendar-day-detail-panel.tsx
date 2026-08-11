@@ -2,7 +2,10 @@
 
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
+import { CalendarDays } from "lucide-react";
 import { type ReactNode, useEffect, useRef, useState } from "react";
+
+import { EmptyState } from "@/components/common/empty-state";
 
 import type { PersonalCalendarEvent } from "../types";
 import { CalendarEventListItem } from "./calendar-event-list-item";
@@ -79,9 +82,12 @@ export function CalendarDayDetailPanel({
       </div>
 
       {events.length === 0 ? (
-        <p className="text-muted-foreground flex flex-1 items-center justify-center px-7 pb-10 text-center text-[13px] leading-5">
-          이 날짜에 일정이 없습니다
-        </p>
+        <EmptyState
+          className="flex-1"
+          icon={CalendarDays}
+          title="이 날짜에 일정이 없습니다."
+          description="위 [+ 할 일]로 이 날짜에 할 일을 적어 둘 수 있습니다."
+        />
       ) : (
         <div className="relative min-h-0 flex-1">
           {/* ⚠️ `overflow-x-hidden`은 못 박아 둔다 — 긴 제목 하나가 카드 밖으로 밀고 나가 좌우 스크롤을 만든 적이 있다 */}

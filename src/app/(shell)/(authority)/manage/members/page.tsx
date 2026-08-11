@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
 
+import { AccessDenied } from "@/components/common/access-denied";
 import { getCompanySetting } from "@/features/company/server";
 import { MemberListView } from "@/features/member/components/member-list-view";
 import { getManagedMembersPage } from "@/features/member/manage-server";
 import { MEMBER_FILTER, type MemberFilter, type MemberQuery } from "@/features/member/manage-types";
 import { buildTeamRoles } from "@/features/member/team-roles";
+import { roleHome } from "@/features/shell/home";
 import { getViewer } from "@/features/shell/viewer";
 import { canIssueAccount, canManageMembers } from "@/lib/permission";
 
@@ -47,7 +48,12 @@ export default async function ManageMembersPage({
        왕복 한 번을 잃지만 그게 맞다.
   */
   const viewer = await getViewer();
-  if (!canManageMembers(viewer)) notFound();
+  /*
+    ⚠️ **`notFound()`가 아니라 403이다**(2026-08-11). 관리 화면이 있다는 사실은 이미
+       사이드바·역할 안내(`/roles`)가 알리고 있어 숨겨서 지킬 것이 없다 — 자격이 없는 것을
+       "없는 화면"이라 하면 화면이 거짓말을 한다(§정직성).
+  */
+  if (!canManageMembers(viewer)) return <AccessDenied homeHref={roleHome(viewer.role)} />;
 
   const { q, filter } = await searchParams;
   const query: MemberQuery = { keyword: q ?? "", filter: parseFilter(filter) };

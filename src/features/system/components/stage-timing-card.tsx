@@ -22,7 +22,7 @@ export function StageTimingCard({ timings }: { timings: StageTiming[] }) {
     return (
       <section className="border-border bg-card rounded-2xl border">
         <SystemCardHeading icon={Timer}>단계별 평균 소요 시간</SystemCardHeading>
-        <p className="text-muted-foreground px-7 pb-6 text-center text-xs">
+        <p className="text-muted-foreground px-7 pb-6 text-center text-[12px] leading-4">
           아직 집계된 처리 기록이 없어요
         </p>
       </section>
@@ -39,7 +39,7 @@ export function StageTimingCard({ timings }: { timings: StageTiming[] }) {
       <div className="flex flex-col gap-3 px-7 pt-5 pb-6">
         {timings.map((timing) => (
           <div key={timing.stage} className="flex items-center gap-3">
-            <span className="text-muted-foreground w-20 shrink-0 text-xs">
+            <span className="text-muted-foreground w-20 shrink-0 text-[12px] leading-4">
               {PIPELINE_STAGE_LABEL[timing.stage]}
             </span>
             <div className="bg-muted h-4 flex-1 overflow-hidden rounded-full">
@@ -48,7 +48,7 @@ export function StageTimingCard({ timings }: { timings: StageTiming[] }) {
                 style={{ width: `${(timing.avgSeconds / maxSeconds) * 100}%` }}
               />
             </div>
-            <span className="text-muted-foreground w-12 shrink-0 text-right text-xs tabular-nums">
+            <span className="text-muted-foreground w-12 shrink-0 text-right text-[12px] leading-4 tabular-nums">
               {timing.avgSeconds}s
             </span>
           </div>

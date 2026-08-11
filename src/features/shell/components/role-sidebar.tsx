@@ -159,7 +159,7 @@ function AccountRow({ user }: { user: Viewer }) {
   return (
     <div className="border-border flex h-[49px] shrink-0 items-center gap-[7px] border-t px-[17.5px]">
       {avatar}
-      <span className="min-w-0 flex-1 truncate text-xs leading-[18px]">{user.name}</span>
+      <span className="min-w-0 flex-1 truncate text-[12px] leading-[18px]">{user.name}</span>
       <span
         className={cn(
           AUTHORITY_BADGE_CLASS[user.role],

@@ -9,6 +9,7 @@ import {
   tokenCookieOptions,
 } from "@/features/auth/cookie";
 import { ep } from "@/lib/endpoints";
+import { PATHNAME_HEADER } from "@/lib/pathname-header";
 
 /**
  * 문지기 — **로그인 안 한 사람을 로그인 뒤 화면에 들이지 않고, 만료된 토큰은 조용히 갈아끼운다.**
@@ -38,8 +39,24 @@ const PROTECTED_PREFIXES = [
 const isMock = process.env.NEXT_PUBLIC_USE_MOCK !== "false";
 const BASE_URL = process.env.BACKEND_API_URL ?? "http://localhost:8080";
 
+function withPathname(request: NextRequest) {
+  /*
+    ⚠️ **요청 헤더에 얹는다.** 응답 헤더에 적으면 브라우저만 보고 서버 컴포넌트는 못 읽는다 —
+       `NextResponse.next({ request })`가 이번 렌더에 넘길 헤더를 갈아 끼우는 자리다.
+  */
+  const headers = new Headers(request.headers);
+  /* ⚠️ 조건(`?as=`)까지 싣는다 — 목에서 다른 역할로 화면을 확인할 때 쓴다(`getViewer`). */
+  headers.set(PATHNAME_HEADER, request.nextUrl.pathname + request.nextUrl.search);
+  return NextResponse.next({ request: { headers } });
+}
+
 export default async function proxy(request: NextRequest) {
-  if (isMock) return NextResponse.next();
+  /*
+    ⚠️ 목으로 돌 때는 문지기가 아무도 막지 않는다 — 로그인시킬 서버가 없는데 막으면
+       화면 확인이 불가능하다. 대신 **지금 주소만** 실어 보낸다. `getViewer()`가 그 값으로
+       `/team`은 팀장, `/my`는 사원 사이드바를 그린다(로그인이 붙으면 세션이 그 자리를 맡는다).
+  */
+  if (isMock) return withPathname(request);
 
   const { pathname } = request.nextUrl;
   const isProtected = PROTECTED_PREFIXES.some(
@@ -84,7 +101,7 @@ export default async function proxy(request: NextRequest) {
        그러면 로그인하러 온 사람을 홈으로 밀고, 홈은 다시 로그인 화면을 권하는 고리가 생긴다.
        **토큰이 살아 있는지는 `/api/auth/me`를 부르는 쪽만 안다**(`redirectIfSignedIn`).
   */
-  return NextResponse.next();
+  return withPathname(request);
 }
 
 /**

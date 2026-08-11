@@ -110,7 +110,7 @@ function Item({ label, value }: { label: string; value: number }) {
   return (
     <div className="flex items-baseline gap-1.5">
       <dt className="text-muted-foreground text-[11px] leading-4">{label}</dt>
-      <dd className="text-[15px] leading-5 font-semibold tabular-nums">{value}</dd>
+      <dd className="text-[13px] leading-5 font-semibold tabular-nums">{value}</dd>
     </div>
   );
 }

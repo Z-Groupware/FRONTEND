@@ -75,7 +75,8 @@ export default async function ProjectDetailPage({ params, searchParams }: Projec
           ⚠️ 태그 칩 규격은 목록·회의 카드와 같다(11px, `font-mono` 아님).
         */}
         <div className="flex items-center gap-2">
-          <h2 className="text-foreground text-xl leading-7 font-semibold tracking-[-0.4px]">
+          {/* ⚠️ 화면 제목은 22px이다 — 인수인계 상세·검토 화면과 같은 자리다(§DESIGN 4: 새 숫자를 만들지 않는다) */}
+          <h2 className="text-foreground text-[22px] leading-[30px] font-semibold tracking-[-0.4px]">
             {project.name}
           </h2>
           <span
@@ -175,9 +176,9 @@ export default async function ProjectDetailPage({ params, searchParams }: Projec
                아래 띠에 달라붙어 보였다.
             ⚠️ 대신 아래 여백을 12 → 20으로 벌린다. 선이 하던 일을 여백이 한다.
           */}
-            <div className="border-border flex shrink-0 items-baseline justify-between gap-3 px-7 pt-6 pb-5">
-              <h3 className="flex items-center gap-2 text-[17px] leading-7 font-semibold tracking-[-0.3px]">
-                <span className="bg-foreground size-2 rounded-full" aria-hidden />팀 액션 타임라인
+            <div className="border-border flex shrink-0 items-baseline justify-between gap-3 px-7 pt-6 pb-3">
+              <h3 className="text-[17px] leading-7 font-semibold tracking-[-0.3px]">
+                팀 액션 타임라인
               </h3>
               <ActionTimelineLegend />
             </div>

@@ -50,7 +50,7 @@ export function RegisterDone() {
                  줄이 바뀌는 순간 정렬 기준도 같이 바뀌어야 한다.
             */}
             <span className="flex min-w-0 flex-1 flex-col gap-0.5 sm:flex-row sm:items-center sm:justify-between sm:gap-3.5">
-              <span className="flex items-center gap-1.5 text-[14px] leading-5 font-medium">
+              <span className="flex items-center gap-1.5 text-[13px] leading-5 font-medium">
                 <step.icon className="text-muted-foreground size-3.5 shrink-0" aria-hidden />
                 {/* 한글이 아이콘보다 떠 보인다 — 1px 내려 맞춘다 */}
                 <span>{step.title}</span>

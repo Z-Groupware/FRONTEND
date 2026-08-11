@@ -84,7 +84,7 @@ function Greeting() {
       <span className="bg-landing-stage text-landing-dark-foreground border-border flex size-11 items-center justify-center rounded-2xl border shadow-sm">
         <ZLogo className="size-4" aria-hidden />
       </span>
-      <p className="text-popover-foreground text-[14px] leading-5 font-medium">
+      <p className="text-popover-foreground text-[13px] leading-5 font-medium">
         무엇이든 물어보세요
       </p>
       {/* ⚠️ 한 줄로 끝낸다 — 두 줄이 되면 아래 목록이 잘린다 */}

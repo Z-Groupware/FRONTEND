@@ -45,7 +45,7 @@ export function ManualDraftForm({
           <Input
             value={title}
             onChange={(event) => setTitle(event.target.value)}
-            placeholder="액션명을 입력하세요"
+            placeholder="액션명을 입력해 주세요"
             aria-label="액션명"
           />
           <textarea
@@ -82,14 +82,14 @@ export function ManualDraftForm({
           value={startDate}
           max={dueDate || undefined}
           onChange={setStartDate}
-          className="w-[150px]"
+          className="w-full sm:w-[180px]"
         />
         <DatePickerField
           aria-label="마감일"
           value={dueDate}
           min={startDate || undefined}
           onChange={setDueDate}
-          className="w-[150px]"
+          className="w-full sm:w-[180px]"
         />
       </div>
       <div className="flex justify-end gap-2">

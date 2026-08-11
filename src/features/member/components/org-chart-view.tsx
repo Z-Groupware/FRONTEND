@@ -1,3 +1,6 @@
+import { Users, UserSearch } from "lucide-react";
+
+import { EmptyState } from "@/components/common/empty-state";
 import { cn } from "@/lib/utils";
 
 import type { OrgChart, OrgSummary, OrgTeam } from "../org-types";
@@ -149,10 +152,7 @@ export function OrgChartView({
   return (
     <section className="border-border bg-card rounded-2xl border">
       <div className="flex items-baseline justify-between gap-3 px-7 pt-6 pb-3">
-        <h2 className="flex items-center gap-2 text-[17px] leading-7 font-semibold tracking-[-0.3px]">
-          <span className="bg-foreground size-2 rounded-full" aria-hidden />
-          조직도
-        </h2>
+        <h2 className="text-[17px] leading-7 font-semibold tracking-[-0.3px]">조직도</h2>
         <p className="text-muted-foreground text-[12px] leading-4 tabular-nums">
           <ChartMeta summary={summary} chart={chart} isSearching={isSearching} />
         </p>
@@ -167,23 +167,15 @@ export function OrgChartView({
           ⚠️ 없다는 말만 두지 않는다 — **다음에 무엇을 하면 되는지**를 같이 적는다
              (§상태 세 장). 못 찾은 것과 아직 아무도 없는 것은 다음 할 일이 다르다.
         */
-        <div className="px-7 pt-2 pb-10 text-center">
-          {isSearching ? (
-            <>
-              <p className="text-[13px] leading-5">찾는 구성원이 없습니다.</p>
-              <p className="text-muted-foreground pt-1 text-[12px] leading-4">
-                이름·팀·역할·직급으로 찾습니다. 검색어를 지우면 조직도 전체가 보입니다.
-              </p>
-            </>
-          ) : (
-            <>
-              <p className="text-[13px] leading-5">아직 등록된 구성원이 없습니다.</p>
-              <p className="text-muted-foreground pt-1 text-[12px] leading-4">
-                계정이 발급되면 이 자리에 조직도가 그려집니다.
-              </p>
-            </>
-          )}
-        </div>
+        <EmptyState
+          icon={isSearching ? UserSearch : Users}
+          title={isSearching ? "찾는 구성원이 없습니다." : "아직 등록된 구성원이 없습니다."}
+          description={
+            isSearching
+              ? "이름·팀·역할·직급으로 찾습니다. 검색어를 지우면 조직도 전체가 보입니다."
+              : "계정이 발급되면 이 자리에 조직도가 그려집니다."
+          }
+        />
       ) : (
         <div className="px-7 pt-2 pb-7">
           {owner && (

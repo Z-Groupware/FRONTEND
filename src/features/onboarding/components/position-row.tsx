@@ -68,7 +68,12 @@ export function PositionRow({
     <div
       {...rowProps}
       className={cn(
-        "group border-border relative flex h-[38px] items-center gap-2 border-t transition-[background-color,opacity]",
+        /*
+          ⚠️ **첫 줄에는 윗선을 안 긋는다**(2026-08-11). 바로 위 표 머리가 이미 `border-b`로
+             선을 그어서, 첫 줄의 `border-t`와 겹쳐 **그 한 줄만 2px로 진해** 보였다 —
+             옆 카드(팀 체계)의 같은 자리와 굵기가 달라 눈에 띄었다.
+        */
+        "group border-border relative flex h-[38px] items-center gap-2 transition-[background-color,opacity] not-first:border-t",
         insetClassName,
         isDragged ? "opacity-40" : "hover:bg-secondary/60",
         // 점선 = 여기 들어온다. 하단 "직급명 입력"의 점선과 같은 표현이다.

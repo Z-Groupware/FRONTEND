@@ -13,7 +13,7 @@ function startOfToday(today: Date): Date {
 
 /**
  * 카드가 지금 몇 칸에 있는지 — **완료만 저장된 값**이고 나머지는 항상 날짜로 계산한다.
- * 오늘이 시작일보다 이르면 할일, 아니면 진행중(마감이 지났어도 진행중 칸 안에서
+ * 오늘이 시작일보다 이르면 할 일, 아니면 진행중(마감이 지났어도 진행중 칸 안에서
  * "지연" 배지로만 표시한다 — 별도 칸이 아니다, `isCardDelayed` 참고).
  */
 export function getBoardColumn(
@@ -33,8 +33,8 @@ export function isCardDelayed(card: Pick<BoardCard, "isDone" | "dueDate">, today
 }
 
 /**
- * 드래그 허용 규칙 — 할일→진행중·진행중→완료·완료→진행중만 된다.
- * 그 외(할일↔완료 직행, 진행중→할일)는 전부 막는다(§상태 정책).
+ * 드래그 허용 규칙 — 할 일→진행중·진행중→완료·완료→진행중만 된다.
+ * 그 외(할 일↔완료 직행, 진행중→할 일)는 전부 막는다(§상태 정책).
  */
 export function canMoveCard(from: BoardColumnId, to: BoardColumnId): boolean {
   if (from === to) return true;

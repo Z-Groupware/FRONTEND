@@ -83,10 +83,7 @@ export function CancelSubscription({
           ⚠️ **다른 카드 머리와 같은 규격**이다(점 표식 + 15px semibold). 이 카드만 14px에
              점이 없어서, 곁 컬럼 셋(플랜·결제 수단·해지) 중 하나만 다른 물건처럼 보였다.
         */}
-        <h2 className="flex items-center gap-2 text-[15px] leading-6 font-semibold tracking-[-0.2px]">
-          <span className="bg-foreground size-2 rounded-full" aria-hidden />
-          구독 해지
-        </h2>
+        <h2 className="text-[17px] leading-7 font-semibold tracking-[-0.3px]">구독 해지</h2>
 
         {/*
           ⚠️ **한 문장 안에서 굵기를 바꾸지 않는다.** 전에는 날짜만 진하고 나머지가 흐려서

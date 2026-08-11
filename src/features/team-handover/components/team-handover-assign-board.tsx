@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils";
 import { completeTeamHandoverAction, rejectTeamHandoverAction } from "../actions";
 import { buildTimelineInput, isReadyToComplete, toAssignmentList } from "../lib";
 import type { TeamHandoverDetail } from "../types";
-import { TeamHandoverActionChip } from "./team-handover-action-chip";
+import { TeamHandoverAssignRow } from "./team-handover-assign-row";
 
 interface TeamHandoverAssignBoardProps {
   handover: TeamHandoverDetail;
@@ -119,18 +119,28 @@ export function TeamHandoverAssignBoard({ handover, todayIso }: TeamHandoverAssi
         )}
       </div>
 
+      {/* ⚠️ 높이는 그대로 둔다 — 액션이 여러 줄일 때를 위해 미리 잡아 둔 자리다 */}
       <section className="border-border bg-card flex h-[280px] flex-col rounded-2xl border p-5">
         <ActionTimeline items={timelineItems} today={today} emptyLabel="넘길 액션이 없습니다." />
       </section>
 
-      <section className="border-border bg-card flex flex-col gap-3 rounded-2xl border p-5">
-        <h2 className="flex items-center gap-2 text-[15px] leading-6 font-semibold tracking-[-0.2px]">
-          <span className="bg-foreground size-2 rounded-full" aria-hidden />
-          배정할 액션
-        </h2>
-        <div className="flex flex-col gap-2">
+      <section className="border-border bg-card flex flex-col overflow-hidden rounded-2xl border">
+        <div className="flex items-baseline justify-between gap-3 px-7 pt-6 pb-3">
+          <h2 className="text-[17px] leading-7 font-semibold tracking-[-0.3px]">배정할 액션</h2>
+        </div>
+
+        {/* 표 머리 — 머리와 값이 열마다 같은 축을 쓴다(§DESIGN 3) */}
+        <div className="border-border text-muted-foreground bg-secondary/50 flex items-center gap-4 border-y px-7 py-3 text-[12px] leading-4">
+          <span className="w-[76px] shrink-0 text-center">프로젝트</span>
+          <span className="min-w-0 flex-1">액션</span>
+          <span className="w-[72px] shrink-0 text-center">상태</span>
+          <span className="w-24 shrink-0 text-center">마감</span>
+          <span className="w-40 shrink-0">담당자</span>
+        </div>
+
+        <ul>
           {handover.actions.map((action) => (
-            <TeamHandoverActionChip
+            <TeamHandoverAssignRow
               key={action.id}
               action={action}
               teammates={handover.teammates}
@@ -140,7 +150,7 @@ export function TeamHandoverAssignBoard({ handover, todayIso }: TeamHandoverAssi
               }
             />
           ))}
-        </div>
+        </ul>
       </section>
 
       <div className="flex justify-end gap-2">

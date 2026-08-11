@@ -41,9 +41,7 @@ export default async function AppNoticeDetailPage({ params }: AppNoticeDetailPag
           action={canManage ? <NoticeCreateDialog /> : null}
           className="min-h-[560px]"
         />
-        <div className="flex justify-center">
-          <NoticeDetail notice={notice} canManage={canManage} />
-        </div>
+        <NoticeDetail notice={notice} canManage={canManage} />
       </div>
     </main>
   );

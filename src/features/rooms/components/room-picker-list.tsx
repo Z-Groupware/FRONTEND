@@ -29,13 +29,13 @@ export function RoomPickerList({ rooms, selectedId, onChange, error }: RoomPicke
             aria-checked={selected}
             onClick={() => onChange(room.id)}
             className={cn(
-              "flex items-center justify-between rounded-lg border px-3.5 py-2.5 text-left text-sm transition-colors",
+              "flex items-center justify-between rounded-lg border px-3.5 py-2.5 text-left text-[13px] leading-5 transition-colors",
               selected ? "border-foreground bg-foreground/5" : "border-input hover:bg-muted",
               error && !selected && "border-destructive/40",
             )}
           >
             <span>{room.name}</span>
-            <span className="text-muted-foreground text-xs">{room.location}</span>
+            <span className="text-muted-foreground text-[12px] leading-4">{room.location}</span>
           </button>
         );
       })}

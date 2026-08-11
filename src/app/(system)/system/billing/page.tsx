@@ -53,7 +53,7 @@ export default async function SystemBillingPage() {
           action={
             <Link
               href="/system/companies"
-              className="text-muted-foreground hover:text-foreground focus-visible:ring-ring group inline-flex shrink-0 items-center gap-1 rounded text-xs transition-colors focus-visible:ring-2 focus-visible:outline-none"
+              className="text-muted-foreground hover:text-foreground focus-visible:ring-ring group inline-flex shrink-0 items-center gap-1 rounded text-[12px] leading-4 transition-colors focus-visible:ring-2 focus-visible:outline-none"
             >
               전체 기업 목록 보기
               <ArrowRight

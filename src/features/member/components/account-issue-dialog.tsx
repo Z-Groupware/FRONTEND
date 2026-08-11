@@ -144,7 +144,7 @@ export function AccountIssueDialog({
           (hasControl ? (
             <Label htmlFor={`account-${key}`}>{label}</Label>
           ) : (
-            <p className="text-sm leading-none font-medium">{label}</p>
+            <p className="text-[13px] leading-none font-medium">{label}</p>
           ))}
         {help}
       </span>
@@ -395,7 +395,7 @@ export function AccountIssueDialog({
                 <PopoverTrigger
                   type="button"
                   aria-label="관리자 겸직이 무엇인지 보기"
-                  className="border-border text-muted-foreground hover:text-foreground hover:border-foreground/40 focus-visible:ring-ring flex size-4 shrink-0 items-center justify-center rounded-full border text-[10px] leading-none transition-colors focus-visible:ring-2 focus-visible:outline-hidden"
+                  className="border-border text-muted-foreground hover:text-foreground hover:border-foreground/40 focus-visible:ring-ring flex size-4 shrink-0 items-center justify-center rounded-full border text-[11px] leading-none transition-colors focus-visible:ring-2 focus-visible:outline-hidden"
                 >
                   ?
                 </PopoverTrigger>

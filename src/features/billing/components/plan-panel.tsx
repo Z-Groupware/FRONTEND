@@ -135,7 +135,7 @@ function Metric({ label, value, hint }: { label: string; value: string; hint?: s
     <div className="bg-secondary/40 flex items-center justify-between gap-4 rounded-xl px-4 py-3">
       <dt className="text-muted-foreground shrink-0 text-[12px] leading-5">{label}</dt>
       <dd className="min-w-0 text-right">
-        <span className="block text-[15px] leading-5 font-semibold tracking-[-0.2px] whitespace-nowrap tabular-nums">
+        <span className="block text-[13px] leading-5 font-semibold whitespace-nowrap tabular-nums">
           {value}
         </span>
         {hint && (
