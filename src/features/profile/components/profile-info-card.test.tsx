@@ -1,16 +1,17 @@
 import { render, screen } from "@testing-library/react";
 
-import { PROFILE_INFO_CARD_TITLE, PROFILE_INFO_ROW_LABEL } from "@/constants/profile";
+import { PROFILE_INFO_ROW_LABEL } from "@/constants/profile";
 import { formatYearMonthDay } from "@/lib/date";
 
 import { MY_PROFILE_MOCK } from "../mock/profile";
 import { ProfileInfoCard } from "./profile-info-card";
 
 describe("ProfileInfoCard", () => {
-  it("기본 정보 제목과 각 행의 라벨·값을 정해진 순서대로 보여준다", () => {
-    render(<ProfileInfoCard profile={MY_PROFILE_MOCK} />);
+  it("머리를 그대로 이고, 각 행의 라벨·값을 정해진 순서대로 보여준다", () => {
+    render(<ProfileInfoCard profile={MY_PROFILE_MOCK} header={<p>아바타 줄</p>} />);
 
-    expect(screen.getByText(PROFILE_INFO_CARD_TITLE)).toBeInTheDocument();
+    // 카드 제목 자리는 **머리로 넘어갔다**(2026-08-11) — 이름·아바타가 그 몫을 한다
+    expect(screen.getByText("아바타 줄")).toBeInTheDocument();
 
     const expectedRows: [string, string][] = [
       [PROFILE_INFO_ROW_LABEL.NAME, MY_PROFILE_MOCK.name],
@@ -26,9 +27,15 @@ describe("ProfileInfoCard", () => {
       expect(row).toHaveTextContent(value);
     });
 
-    const renderedLabels = expectedRows.map(([label]) => screen.getByText(label));
-    const documentOrder: Element[] = [...document.body.querySelectorAll("p")];
-    const indices = renderedLabels.map((node) => documentOrder.indexOf(node));
+    /*
+      ⚠️ 순서는 `dt`로 본다 — 값 목록이 `<dl>`이라 라벨은 `<p>`가 아니다(§a11y: 라벨과 값을
+         짝지어 읽힌다). `p`로 찾으면 하나도 못 찾은 채로 단언이 조용히 통과한다.
+    */
+    const labelNodes = [...document.body.querySelectorAll("dt")];
+    const indices = expectedRows.map(([label]) =>
+      labelNodes.findIndex((node) => node.textContent === label),
+    );
+    expect(indices).not.toContain(-1);
     expect(indices).toEqual([...indices].sort((a, b) => a - b));
   });
 });

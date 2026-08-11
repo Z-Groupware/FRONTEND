@@ -8,10 +8,16 @@ interface ProfileHeaderProps {
   profile: MyProfile;
 }
 
-/** 마이페이지 맨 위 — 아바타·이름·이메일·역할 배지·소속. 편집 불가(읽기 전용, §명세 없음). */
+/**
+ * 기본 정보 카드의 **머리** — 아바타·이름·이메일·역할 배지·소속. 편집 불가(읽기 전용, §명세 없음).
+ *
+ * ⚠️ **카드 안으로 들어왔다**(2026-08-11). 전에는 카드 밖 한 줄로 떠 있어서, 폭을 넓히자
+ *    이름과 [로그아웃] 사이가 1400px씩 벌어진 빈 띠가 됐다 — 같은 사람을 말하는 값이라
+ *    한 카드에 담고, 아래 값들과 선 하나로 나눈다.
+ */
 export function ProfileHeader({ profile }: ProfileHeaderProps) {
   return (
-    <div className="border-border flex items-center gap-3.5 border-b pb-5">
+    <div className="flex items-center gap-3.5 px-7 py-6">
       <div className="bg-foreground text-background flex size-14 shrink-0 items-center justify-center rounded-full text-[22px] font-medium">
         {profile.name.charAt(0)}
       </div>

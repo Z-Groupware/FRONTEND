@@ -122,7 +122,8 @@ export function ScreenScaleCard() {
         aria-label="화면 배율"
         onKeyDown={handleScaleKeys}
         /* ⚠️ 네 칸 격자다 — 곁 칸(360)에 들어가면 `flex-wrap`이 `100%`만 다음 줄로 떨어뜨려 셋+하나로 갈렸다 */
-        className="grid grid-cols-4 gap-2 pt-5"
+        /* ⚠️ 폭에 상한을 건다 — 카드가 전폭의 절반이 되면서 `75%` 한 낱말이 140px 버튼에 떠 있었다 */
+        className="grid max-w-[420px] grid-cols-4 gap-2 pt-5"
       >
         {SCREEN_SCALES.map((value) => (
           <button

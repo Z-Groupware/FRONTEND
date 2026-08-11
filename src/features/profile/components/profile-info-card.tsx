@@ -1,4 +1,6 @@
-import { PROFILE_INFO_CARD_TITLE, PROFILE_INFO_ROW_LABEL } from "@/constants/profile";
+import type { ReactNode } from "react";
+
+import { PROFILE_INFO_ROW_LABEL } from "@/constants/profile";
 import { formatYearMonthDay } from "@/lib/date";
 
 import type { MyProfile } from "../types";
@@ -10,6 +12,8 @@ interface InfoRow {
 
 interface ProfileInfoCardProps {
   profile: MyProfile;
+  /** 카드 머리 — 아바타 줄(`ProfileHeader`)이 들어온다. */
+  header: ReactNode;
 }
 
 /** 기본 정보 표시용 필드 — 편집 기능은 명세가 없어 만들지 않는다(§명세에 없는 화면·기능은 안 만든다). */
@@ -30,7 +34,7 @@ function toRows(profile: MyProfile): InfoRow[] {
 }
 
 /** 마이페이지 "기본 정보" 카드 — 읽기 전용. */
-export function ProfileInfoCard({ profile }: ProfileInfoCardProps) {
+export function ProfileInfoCard({ profile, header }: ProfileInfoCardProps) {
   const rows = toRows(profile);
 
   return (
@@ -41,14 +45,14 @@ export function ProfileInfoCard({ profile }: ProfileInfoCardProps) {
          값이 짧은 목록은 나란히 세우는 편이 낫다.
       ⚠️ 라벨은 위, 값은 아래다 — 사원 상세의 값 카드와 같은 결이다.
     */
-    <section className="border-border bg-card rounded-2xl border">
-      <div className="px-7 pt-6 pb-3">
-        <h2 className="text-[17px] leading-7 font-semibold tracking-[-0.3px]">
-          {PROFILE_INFO_CARD_TITLE}
-        </h2>
-      </div>
+    <section className="border-border bg-card overflow-hidden rounded-2xl border">
+      {header}
 
-      <dl className="border-border grid gap-x-10 gap-y-6 border-t px-7 py-6 sm:grid-cols-2">
+      {/*
+        ⚠️ **세 칸이다.** 두 칸으로 두니 값이 다섯 개뿐이라 카드가 세로로 늘어지고 오른쪽이
+           남았다 — 값이 짧은 목록은 칸을 늘려 가로로 펴는 편이 낫다.
+      */}
+      <dl className="border-border grid gap-x-10 gap-y-6 border-t px-7 py-6 sm:grid-cols-2 xl:grid-cols-3">
         {rows.map((row) => (
           <div key={row.label} className="flex min-w-0 flex-col gap-1">
             <dt className="text-muted-foreground text-[12px] leading-4">{row.label}</dt>

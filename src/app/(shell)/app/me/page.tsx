@@ -102,23 +102,18 @@ export default async function AppMePage({ searchParams }: AppMePageProps) {
             </div>
           ) : (
             <div className="flex flex-col gap-7">
-              <ProfileHeader profile={profile} />
-
               {/*
-                ⚠️ **두 칸으로 가른다**(2026-08-11). 폭을 넓히면서 카드를 세로로 쌓아 두니
-                   1440짜리 띠 세 장이 되어 안이 헐거워졌다 — 왼쪽은 **나에 대한 것**(기본 정보),
-                   오른쪽은 **이 기기에 대한 것**(화면 배율·테마)이다. 저장되는 자리가 서로
-                   다르다(회사 계정 / 이 브라우저)라, 섞어 쌓으면 같은 종류로 읽힌다.
-                ⚠️ 곁 칸은 360px 고정이다 — 인수인계 상세와 같은 값이다(§DESIGN 4).
+                ⚠️ **기본 정보가 맨 위 전폭**이다. 나를 말하는 값이라 화면에서 가장 먼저 오고,
+                   아바타 줄을 그 카드의 머리로 이고 있다(2026-08-11).
+                ⚠️ 아래 두 장은 **이 기기에 대한 것**(화면 배율·테마)이라 한 층으로 묶어 나란히
+                   둔다 — 저장되는 자리가 회사 계정이 아니라 이 브라우저다.
+                ⚠️ 좁아지면 세로로 쌓인다(`lg:`).
               */}
-              <div className="flex flex-col gap-7 lg:flex-row lg:items-start">
-                <div className="min-w-0 flex-1">
-                  <ProfileInfoCard profile={profile} />
-                </div>
-                <div className="flex flex-col gap-5 lg:w-[360px] lg:shrink-0">
-                  <ScreenScaleCard />
-                  <ThemeCard />
-                </div>
+              <ProfileInfoCard profile={profile} header={<ProfileHeader profile={profile} />} />
+
+              <div className="grid gap-7 lg:grid-cols-2 lg:items-start">
+                <ScreenScaleCard />
+                <ThemeCard />
               </div>
             </div>
           )}
