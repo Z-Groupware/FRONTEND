@@ -21,6 +21,8 @@ export interface BeProjectSummary {
   tag: string;
   color: string;
   name: string;
+  /** 목록 카드 첫 줄 요약용 — 2026-08-11 이홍근 요청으로 추가됨. */
+  description: string;
   status: ProjectStatus;
   /** 마이그레이션 이전 생성 프로젝트는 `null` — 채울 원천이 없다. */
   startDate: string | null;
@@ -93,9 +95,8 @@ export function toProjectListItem(be: BeProjectSummary): ProjectListItem {
   return {
     id: be.id,
     name: be.name,
-    // ⚠️ 목록 응답(ProjectSummaryResponse)엔 description이 없다 — 상세에만 있다(BE 실코드 확인,
-    //    2026-08-10). 목록 카드가 첫 줄 스니펫으로 이 값을 쓰고 있어 지금은 빈 문자열로 채운다.
-    description: "",
+    // ⚠️ 2026-08-11 해결 — ProjectSummaryResponse에 description 추가됨(이홍근 요청).
+    description: be.description,
     tag: be.tag,
     departments: be.teamNames,
     actionTotal: be.actionCount,
