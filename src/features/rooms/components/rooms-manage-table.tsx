@@ -23,11 +23,12 @@ export function RoomsManageTable({ rooms, canManage }: RoomsManageTableProps) {
   return (
     <div className="border-border bg-card overflow-hidden rounded-2xl border">
       <div className="flex items-baseline justify-between gap-3 px-7 pt-6 pb-3">
-        {/* ⚠️ 제목 앞 검은 점 대신 상단바와 같은 아이콘을 쓴다 — 점은 상태점과 헷갈린다(DESIGN §5) */}
-        <h2 className="flex items-center gap-2 text-[17px] leading-7 font-semibold tracking-[-0.3px]">
-          <CalendarRange className="text-muted-foreground size-4" aria-hidden />
-          회의실 목록
-        </h2>
+        {/*
+          ⚠️ **제목 앞 아이콘을 뺀다**(2026-08-11). 상단바가 이미 같은 달력 아이콘으로 이 화면을
+             가리키고 있어서, 카드 제목에 한 번 더 달면 같은 표식이 한 화면에 둘이 된다 —
+             카드 제목은 글자로 충분하다(예약 화면의 `회의실 목록` 카드와 같은 규격).
+        */}
+        <h2 className="text-[17px] leading-7 font-semibold tracking-[-0.3px]">회의실 목록</h2>
         {/* ⚠️ `text-xs`가 아니라 `text-[12px] leading-4`다 — 다섯 크기를 클래스로도 같게 적는다(§DESIGN 4) */}
         <p className="text-muted-foreground text-[12px] leading-4 tabular-nums">
           전체 {rooms.length}개 · 위치 {locationCount}곳
