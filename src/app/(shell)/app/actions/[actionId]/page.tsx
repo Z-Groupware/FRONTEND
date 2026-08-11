@@ -7,10 +7,26 @@ import {
   ActionDetailInfoRows,
 } from "@/components/common/action-detail-info-card";
 import { formatMeetingDate } from "@/components/common/dashboard-meeting-item";
+import { ProjectTag } from "@/components/common/project-tag";
 import { getPersonalActionDetail } from "@/features/action/server";
 import { getProjectDetail } from "@/features/project/server";
 import { formatMonthDayWeekday } from "@/lib/date";
-import { pickPaletteColor } from "@/lib/palette";
+
+/**
+ * 팀 이름 칩 — 프로젝트 태그와 **같은 몸집, 다른 옷**이다.
+ *
+ * ⚠️ 한 화면 안에서 생김새가 갈려 있었다(2026-08-11). 제목 옆은 `py-px leading-4 font-medium`,
+ *    행 안쪽은 `py-0.5 leading-none font-semibold`라 같은 팀 이름이 두 모양으로 떴다.
+ * ⚠️ **색을 안 쓴다.** 색은 프로젝트를 가르는 표식이라(§palette), 팀까지 물들이면 한 줄에
+ *    색 칩이 둘이 되어 무엇이 프로젝트인지 알 수 없다.
+ */
+function TeamChip({ team }: { team: string }) {
+  return (
+    <span className="bg-muted text-muted-foreground inline-flex h-[18px] w-fit shrink-0 items-center rounded-md px-1.5 text-[11px] font-medium tracking-[-0.1px] whitespace-nowrap">
+      {team}
+    </span>
+  );
+}
 
 interface PersonalActionDetailPageProps {
   params: Promise<{ actionId: string }>;
@@ -32,8 +48,6 @@ export default async function PersonalActionDetailPage({ params }: PersonalActio
   const project = await getProjectDetail(String(action.projectId));
   if (!project) notFound();
 
-  const tagColor = pickPaletteColor(action.projectTag);
-
   const infoItems: ActionDetailInfoItem[] = [
     {
       key: "assignee",
@@ -54,12 +68,7 @@ export default async function PersonalActionDetailPage({ params }: PersonalActio
               <>
                 <div className="flex items-center gap-1.5">
                   <p className="truncate">{action.sourceMeeting.title}</p>
-                  <span
-                    className="shrink-0 rounded px-1.5 py-px text-[11px] leading-4 font-medium"
-                    style={{ backgroundColor: tagColor.bgColor, color: tagColor.textColor }}
-                  >
-                    {action.projectTag}
-                  </span>
+                  <ProjectTag tag={action.projectTag} />
                 </div>
                 <p className="text-muted-foreground text-[11px] leading-4">
                   {formatMeetingDate(action.sourceMeeting.scheduledAt)}
@@ -80,15 +89,8 @@ export default async function PersonalActionDetailPage({ params }: PersonalActio
               <>
                 <div className="flex items-center gap-1.5">
                   <p className="truncate">{action.parentTeamAction.name}</p>
-                  <span
-                    className="shrink-0 rounded px-1.5 py-px text-[11px] leading-4 font-medium"
-                    style={{ backgroundColor: tagColor.bgColor, color: tagColor.textColor }}
-                  >
-                    {action.projectTag}
-                  </span>
-                  <span className="bg-muted text-muted-foreground shrink-0 rounded px-1.5 py-0.5 text-[10px] leading-none font-semibold">
-                    {action.parentTeamAction.team}
-                  </span>
+                  <ProjectTag tag={action.projectTag} />
+                  <TeamChip team={action.parentTeamAction.team} />
                 </div>
                 <p className="text-muted-foreground text-[11px] leading-4">
                   {formatMonthDayWeekday(action.parentTeamAction.dueDate) ?? "-"}까지
@@ -107,12 +109,7 @@ export default async function PersonalActionDetailPage({ params }: PersonalActio
         <>
           <div className="flex items-center gap-1.5">
             <p className="truncate">{project.name}</p>
-            <span
-              className="shrink-0 rounded px-1.5 py-px text-[11px] leading-4 font-medium"
-              style={{ backgroundColor: tagColor.bgColor, color: tagColor.textColor }}
-            >
-              {project.tag}
-            </span>
+            <ProjectTag tag={project.tag} />
           </div>
           <p className="text-muted-foreground text-[11px] leading-4">
             {formatMonthDayWeekday(project.dueDate) ?? "-"}까지
@@ -133,18 +130,12 @@ export default async function PersonalActionDetailPage({ params }: PersonalActio
           ⚠️ 칩 규격은 목록·회의와 같다(11px, `font-mono` 아님).
         */}
         <div className="flex items-center gap-2">
-          <h2 className="text-foreground text-xl leading-7 font-semibold tracking-[-0.4px]">
+          {/* ⚠️ 화면 제목은 22px이다 — 인수인계 상세·검토 화면과 같은 자리다(§DESIGN 4: 새 숫자를 만들지 않는다) */}
+          <h2 className="text-foreground text-[22px] leading-[30px] font-semibold tracking-[-0.4px]">
             {action.name}
           </h2>
-          <span
-            className="shrink-0 rounded px-1.5 py-px text-[11px] leading-4 font-medium"
-            style={{ backgroundColor: tagColor.bgColor, color: tagColor.textColor }}
-          >
-            {action.projectTag}
-          </span>
-          <span className="bg-muted text-muted-foreground shrink-0 rounded px-1.5 py-px text-[11px] leading-4 font-medium">
-            {action.team}
-          </span>
+          <ProjectTag tag={action.projectTag} />
+          <TeamChip team={action.team} />
         </div>
 
         {/*
@@ -159,8 +150,7 @@ export default async function PersonalActionDetailPage({ params }: PersonalActio
                눈이 다음 줄을 못 찾는다 — 좁혀야 하는 건 카드가 아니라 글이다.
           */}
         <section className="border-border bg-card w-full overflow-hidden rounded-2xl border">
-          <div className="flex items-center gap-2 px-7 pt-6 pb-5">
-            <span className="bg-foreground size-2 rounded-full" aria-hidden />
+          <div className="flex items-center gap-2 px-7 pt-6 pb-3">
             <h3 className="text-[17px] leading-7 font-semibold tracking-[-0.3px]">내용</h3>
           </div>
           {/*

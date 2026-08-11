@@ -25,7 +25,7 @@ export function InviteSendBar({ sendableCount, onAddRow }: InviteSendBarProps) {
   return (
     <div className="border-border bg-muted flex h-[54px] shrink-0 items-center gap-2 border-t px-4">
       {/* 몇 명이 나가는지 — [완료]를 누르면 이 수만큼 계정이 만들어진다 */}
-      <p className="text-muted-foreground/70 min-w-0 flex-1 truncate text-xs leading-4">
+      <p className="text-muted-foreground/70 min-w-0 flex-1 truncate text-[12px] leading-4">
         {sendableCount > 0
           ? `[완료]를 누르면 ${sendableCount}명에게 발송됩니다`
           : "주소를 적으면 [완료]에서 함께 발송됩니다"}
@@ -34,7 +34,7 @@ export function InviteSendBar({ sendableCount, onAddRow }: InviteSendBarProps) {
       <button
         type="button"
         onClick={onAddRow}
-        className="text-muted-foreground hover:text-foreground focus-visible:ring-ring flex h-8 shrink-0 items-center gap-1 rounded-md px-1.5 text-xs transition-colors focus-visible:ring-2 focus-visible:outline-hidden"
+        className="text-muted-foreground hover:text-foreground focus-visible:ring-ring flex h-8 shrink-0 items-center gap-1 rounded-md px-1.5 text-[12px] leading-4 transition-colors focus-visible:ring-2 focus-visible:outline-hidden"
       >
         <Plus className="size-3.5" />
         {/* 한글 글자가 상자 안에서 위쪽에 앉아 아이콘보다 떠 보인다 — 1px 내려 맞춘다 */}

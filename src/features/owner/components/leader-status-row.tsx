@@ -2,7 +2,7 @@
 
 import { Badge } from "@/components/ui/badge";
 import { TableCell, TableRow } from "@/components/ui/table";
-import { MEMBER_STATUS, MEMBER_STATUS_LABEL } from "@/constants/domain";
+import { MEMBER_STATUS_BADGE_CLASS, MEMBER_STATUS_LABEL } from "@/constants/domain";
 import type { OwnerDashboardLeaderRow } from "@/features/owner/types";
 import { useProfileAvatar } from "@/hooks/use-profile-avatar";
 
@@ -27,7 +27,6 @@ export const LEADER_NAME_WIDTH = 48;
 
 export function LeaderStatusRow({ leader }: LeaderStatusRowProps) {
   const avatar = useProfileAvatar(leader.id, 28);
-  const isOnVacation = leader.status === MEMBER_STATUS.VACATION;
 
   return (
     <TableRow className="h-14">
@@ -62,10 +61,14 @@ export function LeaderStatusRow({ leader }: LeaderStatusRowProps) {
       </TableCell>
       <TableCell className="text-muted-foreground text-center">{leader.department}</TableCell>
       <TableCell className="text-center">
-        <Badge
-          variant={isOnVacation ? "outline" : "secondary"}
-          className={isOnVacation ? "border-warning text-warning" : undefined}
-        >
+        {/*
+            ⚠️ **상수를 쓴다**(2026-08-11). 여기서 `border-warning text-warning`을 덧칠하고 있었는데,
+               휴직은 **문제가 아니다** — 회색 표 안에서 배지 하나만 주황이라 경고처럼 읽혔다.
+               색으로 알리는 건 에러(빨강)뿐이다(DESIGN §5).
+            ⚠️ 생김새는 `MEMBER_STATUS_BADGE_CLASS`가 이미 상태별로 들고 있다. 화면이 따로
+               칠하면 상태가 늘 때 여기만 빠진다(§도메인 상수).
+          */}
+        <Badge variant="outline" className={MEMBER_STATUS_BADGE_CLASS[leader.status]}>
           {MEMBER_STATUS_LABEL[leader.status]}
         </Badge>
       </TableCell>

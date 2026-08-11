@@ -1,11 +1,18 @@
+import { CalendarClock } from "lucide-react";
+import { Users } from "lucide-react";
 import type { Metadata } from "next";
 
+import { AccessDenied } from "@/components/common/access-denied";
 import { DashboardMeetingItem } from "@/components/common/dashboard-meeting-item";
+import { EmptyState } from "@/components/common/empty-state";
 import { SummaryCard } from "@/components/common/summary-card";
 import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { roleHome } from "@/features/shell/home";
+import { getViewer } from "@/features/shell/viewer";
 import { MemberStatusRow } from "@/features/team/components/member-status-row";
 import { MEMBER_BOX_MAX_HEIGHT } from "@/features/team/lib";
 import { getTeamDashboardOverview } from "@/features/team/server";
+import { canAccessTeamScope } from "@/lib/permission";
 
 export const metadata: Metadata = {
   title: "대시보드",
@@ -15,6 +22,9 @@ export const metadata: Metadata = {
 const HEAD_CELL_CLASS = "text-muted-foreground h-9 text-[12px] leading-4 font-normal";
 
 export default async function TeamDashboardPage() {
+  const viewer = await getViewer();
+  if (!canAccessTeamScope(viewer)) return <AccessDenied homeHref={roleHome(viewer.role)} />;
+
   const {
     teamName,
     teamActionCount,
@@ -36,6 +46,9 @@ export default async function TeamDashboardPage() {
   return (
     <main className="scrollbar-hidden min-h-0 flex-1 overflow-y-auto px-8 py-7">
       <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-7">
+        {/* ⚠️ 화면엔 제목을 안 그리지만 문서에는 있어야 한다 — `h1`이 없으면 층이 `h2`부터다(§a11y) */}
+        <h1 className="sr-only">팀장 대시보드</h1>
+
         <SummaryCard items={summaryItems} />
 
         <section
@@ -49,25 +62,25 @@ export default async function TeamDashboardPage() {
                아래 띠에 달라붙어 보였다.
             ⚠️ 대신 아래 여백을 12 → 20으로 벌린다. 선이 하던 일을 여백이 한다.
           */}
-          <div className="border-border flex shrink-0 items-baseline justify-between gap-3 px-7 pt-6 pb-5">
-            <h2 className="flex items-center gap-2 text-[17px] leading-7 font-semibold tracking-[-0.3px]">
-              <span className="bg-foreground size-2 rounded-full" aria-hidden />
-              팀원 현황
-            </h2>
+          <div className="border-border flex shrink-0 items-baseline justify-between gap-3 px-7 pt-6 pb-3">
+            <h2 className="text-[17px] leading-7 font-semibold tracking-[-0.3px]">팀원 현황</h2>
             <span className="text-muted-foreground text-[12px] leading-4">
               {teamName} · {members.length}명
             </span>
           </div>
           {members.length === 0 ? (
-            <p className="text-muted-foreground flex flex-1 items-center justify-center px-7 py-10 text-center text-[13px] leading-5 break-keep">
-              아직 등록된 팀원이 없습니다.
-            </p>
+            <EmptyState
+              className="flex-1"
+              icon={Users}
+              title="아직 등록된 팀원이 없습니다."
+              description="사원 관리에서 이 팀에 사원을 배치하면 여기에 나타납니다."
+            />
           ) : (
             <div className="scrollbar-hidden flex-1 overflow-auto [&_[data-slot=table-container]]:overflow-visible">
               <Table className="min-w-[560px] table-fixed text-[13px]">
                 {/* 머리 띠·셀 규격은 오너 대시보드와 같다(DESIGN §3) — 두 화면이 같은 표다 */}
                 <TableHeader>
-                  <TableRow className="bg-foreground/[0.06] border-border hover:bg-foreground/[0.06] border-b">
+                  <TableRow className="bg-secondary/50 border-border hover:bg-secondary/50 border-b">
                     <TableHead className={`${HEAD_CELL_CLASS} pl-6`}>이름</TableHead>
                     <TableHead className={`${HEAD_CELL_CLASS} text-center`}>직급</TableHead>
                     <TableHead className={`${HEAD_CELL_CLASS} text-center`}>역할</TableHead>
@@ -87,17 +100,17 @@ export default async function TeamDashboardPage() {
 
         {/* 높이를 고정하지 않는다 — 다섯 건이 하드 캡이라 자라 봐야 다섯 줄이다(`lib.ts` 참고) */}
         <section className="border-border bg-card flex flex-col overflow-hidden rounded-2xl border">
-          <div className="border-border flex shrink-0 items-baseline justify-between gap-3 border-b px-7 pt-6 pb-5">
-            <h2 className="flex items-center gap-2 text-[17px] leading-7 font-semibold tracking-[-0.3px]">
-              <span className="bg-foreground size-2 rounded-full" aria-hidden />
-              최근 팀 회의
-            </h2>
+          <div className="border-border flex shrink-0 items-baseline justify-between gap-3 border-b px-7 pt-6 pb-3">
+            <h2 className="text-[17px] leading-7 font-semibold tracking-[-0.3px]">최근 팀 회의</h2>
             <span className="text-muted-foreground text-[12px] leading-4">최신 5건</span>
           </div>
           {meetings.length === 0 ? (
-            <p className="text-muted-foreground flex flex-1 items-center justify-center px-7 py-10 text-center text-[13px] leading-5 break-keep">
-              예정된 팀 회의가 없습니다.
-            </p>
+            <EmptyState
+              className="flex-1"
+              icon={CalendarClock}
+              title="예정된 팀 회의가 없습니다."
+              description="회의실을 예약하면 그 자리에서 회의가 열립니다."
+            />
           ) : (
             <ul>
               {meetings.map((meeting, index) => (

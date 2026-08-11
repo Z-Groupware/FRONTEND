@@ -145,10 +145,7 @@ export function InviteSetup({ departments, positions }: InviteSetupProps) {
         <section className="border-border bg-card flex h-[460px] flex-1 flex-col overflow-hidden rounded-xl border shadow-sm [@media(min-height:820px)]:lg:h-full">
           {/* 1·2단계 카드 헤더와 **같은 높이·글자**다(h-12 · 13px) — 단계마다 다르면 넘길 때 화면이 들썩인다 */}
           <header className="border-border bg-muted flex h-12 shrink-0 items-center border-b px-4">
-            <h2 className="flex items-center gap-2 text-[13px] leading-5">
-              <span className="bg-foreground size-2 rounded-full" aria-hidden />
-              초대 목록
-            </h2>
+            <h2 className="flex items-center gap-2 text-[13px] leading-5">초대 목록</h2>
           </header>
 
           <InviteColumnHead />

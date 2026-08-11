@@ -15,7 +15,14 @@ export function NoticeDetail({ notice, canManage }: { notice: Notice; canManage:
          시작하는 자리 하나뿐").
       ⚠️ 안쪽 여백은 `px-7`이다 — 목록 카드와 같은 값이라 오갈 때 글 시작선이 안 흔들린다.
     */
-    <article className="border-border bg-card mx-auto flex min-h-[560px] w-full max-w-[720px] flex-col overflow-hidden rounded-2xl border">
+    /*
+      ⚠️ **카드는 칸을 다 쓴다**(2026-08-11). 720으로 묶어 가운데 띄워 뒀더니 카드 좌우가
+         똑같이 비어 어디에도 안 붙은 채 떠 보였다 — 곁 목록(360)과 나란히 서는 상세라
+         남는 폭은 카드가 가져간다(액션 상세와 같은 판단).
+      ⚠️ 대신 **글줄만 720에서 끊는다**(§DESIGN 4: 읽는 글은 좁게 둔다). 좁혀야 하는 건
+         카드가 아니라 글이다.
+    */
+    <article className="border-border bg-card flex min-h-[560px] w-full flex-col overflow-hidden rounded-2xl border">
       {/* 열람하면 읽음 처리 — 화면엔 아무것도 안 그린다 */}
       <MarkNoticeRead id={notice.id} />
 
@@ -57,7 +64,7 @@ export function NoticeDetail({ notice, canManage }: { notice: Notice; canManage:
            720px을 넘으면 넘친 만큼 조용히 잘려 나가고 스크롤도 안 생겨, 글자가 있었다는 것조차
            안 보인다(§정직성). 공지 본문은 사용자가 쓰는 글이라 무엇이 들어올지 모른다.
       */}
-      <p className="text-foreground/85 px-7 py-6 text-[13px] leading-[22px] break-words whitespace-pre-line">
+      <p className="text-foreground/85 max-w-[720px] px-7 py-6 text-[13px] leading-[22px] break-words whitespace-pre-line">
         {notice.body}
       </p>
     </article>

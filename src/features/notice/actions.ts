@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
+import { FLASH_TOAST_PARAM } from "@/constants/flash-toast";
 import { getMockActor } from "@/lib/mock-actor";
 import { canManageNotice } from "@/lib/permission";
 import { isMock } from "@/mocks/config";
@@ -129,6 +130,10 @@ export async function deleteNoticeAction(formData: FormData): Promise<void> {
   deleteMockNotice(id);
 
   revalidatePath(LIST_PATH);
-  // ⚠️ `redirect`는 내부적으로 예외를 던진다 — try/catch 밖에 둔다(§렌더링·데이터)
-  redirect(LIST_PATH);
+  /*
+    ⚠️ `redirect`는 내부적으로 예외를 던진다 — try/catch 밖에 둔다(§렌더링·데이터).
+    ⚠️ **지웠다는 말을 주소에 실어 보낸다.** 상세가 사라지고 목록으로 튕기는 조작이라,
+       아무 말도 없으면 지워진 건지 화면이 튄 건지 알 수 없다(§토스트).
+  */
+  redirect(`${LIST_PATH}?${FLASH_TOAST_PARAM}=NOTICE_DELETED`);
 }

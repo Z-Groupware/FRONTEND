@@ -65,7 +65,7 @@ export function AuthCard({
         </h1>
         {description && (
           <p
-            className={`text-muted-foreground pt-2.5 text-[15px] leading-6 break-keep ${mark ? "text-center text-balance" : ""}`}
+            className={`text-muted-foreground pt-2.5 text-[13px] leading-5 break-keep ${mark ? "text-center text-balance" : ""}`}
           >
             {description}
           </p>

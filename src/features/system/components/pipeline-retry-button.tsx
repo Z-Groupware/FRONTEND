@@ -25,7 +25,7 @@ export function PipelineRetryButton({ meetingId }: PipelineRetryButtonProps) {
 
   if (isDone) {
     return (
-      <span className="text-foreground inline-flex items-center gap-1 text-xs font-medium">
+      <span className="text-foreground inline-flex items-center gap-1 text-[12px] leading-4 font-medium">
         <Check className="size-3" strokeWidth={3} aria-hidden />
         완료
       </span>

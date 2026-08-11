@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
+import { FLASH_TOAST_PARAM } from "@/constants/flash-toast";
 import { requireAccessToken } from "@/features/auth/session";
 import { getViewer } from "@/features/shell/viewer";
 import { ApiError, serverApi } from "@/lib/api";
@@ -17,6 +18,11 @@ import type { ProjectDraft, ProjectFormErrors } from "./types";
 import { validateProjectDraft } from "./validate";
 
 const LIST_PATH = "/app/projects";
+/*
+  ⚠️ **만들었다는 말을 주소에 실어 보낸다.** `redirect`가 걸린 액션은 성공을 화면에 돌려주지
+     못해 토스트를 띄울 자리가 없다 — 목록에 도착한 화면이 `FlashToast`로 대신 말한다.
+*/
+const CREATED_PATH = `${LIST_PATH}?${FLASH_TOAST_PARAM}=PROJECT_CREATED`;
 
 /** 생성 폼 결과 — `useActionState`가 그대로 들고 있는 모양. */
 export interface ProjectFormState {
@@ -68,14 +74,14 @@ export async function createProjectAction(
     }
 
     revalidatePath(LIST_PATH);
-    redirect(LIST_PATH);
+    redirect(CREATED_PATH);
   }
 
   addMockProject(draft);
 
   revalidatePath(LIST_PATH);
   // ⚠️ `redirect`는 내부적으로 예외를 던진다 — try/catch 밖에 둔다(§렌더링·데이터)
-  redirect(LIST_PATH);
+  redirect(CREATED_PATH);
 }
 
 /**

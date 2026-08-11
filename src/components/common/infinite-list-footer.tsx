@@ -32,13 +32,13 @@ export function InfiniteListFooter({
     <div ref={sentinelRef} role="status" aria-live="polite" className="flex justify-center py-1">
       {error ? (
         <div className="flex items-center gap-2">
-          <p className="text-muted-foreground text-xs">불러오지 못했습니다</p>
+          <p className="text-muted-foreground text-[12px] leading-4">불러오지 못했습니다</p>
           <Button type="button" variant="outline" size="xs" onClick={onLoadMore}>
             다시 시도
           </Button>
         </div>
       ) : isLoadingMore ? (
-        <p className="text-muted-foreground text-xs">불러오는 중…</p>
+        <p className="text-muted-foreground text-[12px] leading-4">불러오는 중…</p>
       ) : null}
     </div>
   );

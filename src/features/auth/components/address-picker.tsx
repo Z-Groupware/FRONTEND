@@ -142,7 +142,7 @@ export function AddressPicker({
               lng: picked?.lng ?? 0,
             })
           }
-          placeholder="회사 주소를 입력하세요"
+          placeholder="회사 주소를 입력해 주세요"
           autoComplete="street-address"
           aria-invalid={hasError}
           aria-describedby="company-address-error"
@@ -277,7 +277,8 @@ export function AddressPicker({
       {picked && (
         <>
           <p className="text-muted-foreground flex items-center gap-1.5 text-[12px] leading-4">
-            <Check className="text-success size-3.5 shrink-0" aria-hidden />
+            {/* ⚠️ 초록은 규칙에 없는 색이다 — 골랐다는 건 체크 표시가 이미 말한다(DESIGN §5) */}
+            <Check className="text-foreground size-3.5 shrink-0" aria-hidden />
             <span>{picked.address}</span>
           </p>
           {/*

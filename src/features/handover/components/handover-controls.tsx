@@ -31,8 +31,12 @@ function buildHref(preview: HandoverPreview, type: HandoverType): string {
 export function HandoverControls({ activePreview, activeType }: HandoverControlsProps) {
   return (
     <div className="flex flex-col gap-3">
-      <div className="border-warning/40 bg-warning/5 flex items-center gap-3 rounded-lg border px-3 py-2">
-        <span className="text-warning shrink-0 text-[12px] leading-4 font-medium">
+      {/*
+        ⚠️ **무채색이다**(2026-08-11). 주황 테두리·바탕이었는데, 이건 연동 전 임시 도구이지
+           경고가 아니다 — 색으로 알리는 건 에러(빨강)뿐이다(DESIGN §5).
+      */}
+      <div className="border-border bg-secondary/50 flex items-center gap-3 rounded-lg border px-3 py-2">
+        <span className="text-muted-foreground shrink-0 text-[12px] leading-4 font-medium">
           임시 미리보기
         </span>
         <div role="group" aria-label="미리보기 인물" className="flex items-center gap-1">
@@ -64,7 +68,7 @@ export function HandoverControls({ activePreview, activeType }: HandoverControls
             href={buildHref(activePreview, tab.type)}
             aria-current={activeType === tab.type ? "page" : undefined}
             className={cn(
-              "-mb-px border-b-2 px-1 pb-2 text-sm font-medium transition-colors",
+              "-mb-px border-b-2 px-1 pb-2 text-[13px] leading-5 font-medium transition-colors",
               activeType === tab.type
                 ? "border-foreground text-foreground"
                 : "text-muted-foreground hover:text-foreground border-transparent",

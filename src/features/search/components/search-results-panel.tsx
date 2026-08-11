@@ -1,5 +1,7 @@
 import { SearchX } from "lucide-react";
 
+import { EmptyState } from "@/components/common/empty-state";
+
 import type { ProjectBrowseItem, SearchQuery, SearchResults } from "../types";
 import { SearchFilterBar } from "./search-filter-bar";
 import { SearchResultRow } from "./search-result-row";
@@ -40,12 +42,12 @@ export function SearchResultsPanel({
       </div>
 
       {results.items.length === 0 ? (
-        <div className="border-border bg-card flex flex-col items-center gap-2 rounded-2xl border px-6 py-16 text-center">
-          <SearchX className="text-muted-foreground/50 size-6" aria-hidden />
-          <p className="text-foreground text-[13px] leading-5 font-medium">검색 결과가 없습니다</p>
-          <p className="text-muted-foreground text-[12px] leading-4">
-            다른 검색어로 찾거나 필터를 전체로 바꿔 주세요.
-          </p>
+        <div className="border-border bg-card rounded-2xl border">
+          <EmptyState
+            icon={SearchX}
+            title="검색 결과가 없습니다."
+            description="다른 검색어로 찾거나 필터를 전체로 바꿔 주세요."
+          />
         </div>
       ) : (
         <ul className="flex flex-col gap-2">

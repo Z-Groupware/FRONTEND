@@ -102,7 +102,7 @@ export function NoticeComposeCard({ companies }: { companies: NoticeTargetCompan
             onChange={(event) => setContent(event.target.value)}
             placeholder="공지 내용을 입력하세요"
             rows={5}
-            className="border-input placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 min-h-[120px] w-full resize-none rounded-lg border bg-transparent px-2.5 py-2 text-sm transition-colors outline-none focus-visible:ring-3"
+            className="border-input placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 min-h-[120px] w-full resize-none rounded-lg border bg-transparent px-2.5 py-2 text-[13px] leading-5 transition-colors outline-none focus-visible:ring-3"
           />
         </div>
 
@@ -142,7 +142,7 @@ export function NoticeComposeCard({ companies }: { companies: NoticeTargetCompan
           <div
             role="status"
             aria-live="polite"
-            className="border-border text-foreground flex items-center gap-2 rounded-lg border px-3 py-2.5 text-xs font-medium"
+            className="border-border text-foreground flex items-center gap-2 rounded-lg border px-3 py-2.5 text-[12px] leading-4 font-medium"
           >
             <Check className="size-3.5 shrink-0" strokeWidth={2.5} aria-hidden />
             공지를 발행했습니다

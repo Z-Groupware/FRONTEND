@@ -120,7 +120,7 @@ export function KakaoMap({ lat, lng, label, address, mapUrl, searchKeyword }: Ka
           <div className="bg-dot-grid absolute inset-0" aria-hidden />
           <div className="relative flex flex-col items-center gap-2 text-center">
             <MapPin className="size-4 shrink-0 text-white/90" aria-hidden />
-            <p className="text-[14px] leading-[21px] font-medium break-keep">{address}</p>
+            <p className="text-[13px] leading-[21px] font-medium break-keep">{address}</p>
             <a
               href={mapUrl}
               target="_blank"

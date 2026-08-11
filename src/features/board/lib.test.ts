@@ -22,7 +22,7 @@ describe("getBoardColumn", () => {
     expect(getBoardColumn(card({ isDone: true, startDate: "2026-08-01" }), TODAY)).toBe("DONE");
   });
 
-  it("시작일이 오늘보다 뒤면 할일이다", () => {
+  it("시작일이 오늘보다 뒤면 할 일이다", () => {
     expect(getBoardColumn(card({ startDate: "2026-08-07" }), TODAY)).toBe("TODO");
   });
 
@@ -49,7 +49,7 @@ describe("isCardDelayed", () => {
 });
 
 describe("canMoveCard", () => {
-  it("할일→진행중, 진행중→완료, 완료→진행중만 허용한다", () => {
+  it("할 일→진행중, 진행중→완료, 완료→진행중만 허용한다", () => {
     expect(canMoveCard("TODO", "IN_PROGRESS")).toBe(true);
     expect(canMoveCard("IN_PROGRESS", "DONE")).toBe(true);
     expect(canMoveCard("DONE", "IN_PROGRESS")).toBe(true);
@@ -59,7 +59,7 @@ describe("canMoveCard", () => {
     expect(canMoveCard("TODO", "TODO")).toBe(true);
   });
 
-  it("할일↔완료 직행, 진행중→할일은 막는다", () => {
+  it("할 일↔완료 직행, 진행중→할 일은 막는다", () => {
     expect(canMoveCard("TODO", "DONE")).toBe(false);
     expect(canMoveCard("DONE", "TODO")).toBe(false);
     expect(canMoveCard("IN_PROGRESS", "TODO")).toBe(false);

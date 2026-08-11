@@ -51,7 +51,7 @@ export function SubscriptionBlockedDialog({ status }: { status: SubscriptionStat
       action={
         <Link
           href="/login"
-          className={cn(buttonVariants({ variant: "ink" }), "h-11 w-full text-[14px] leading-none")}
+          className={cn(buttonVariants({ variant: "ink" }), "h-11 w-full text-[13px] leading-none")}
         >
           로그인 화면으로
         </Link>

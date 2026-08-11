@@ -145,7 +145,7 @@ export function SupportWidget() {
             </span>
 
             <span>
-              <span className="text-popover-foreground block text-[14px] leading-5 font-medium">
+              <span className="text-popover-foreground block text-[13px] leading-5 font-medium">
                 도움말
               </span>
               {/* ⚠️ 무엇인지 정확히 말한다 — "AI 상담원"이 아니다 */}

@@ -29,7 +29,7 @@ export function ClosingSection() {
             href="/plans"
             className={cn(
               buttonVariants({ variant: "outline" }),
-              "border-landing-dark-border text-landing-dark-foreground hover:bg-landing-dark-surface landing-light:bg-gradient-to-b landing-light:from-white landing-light:to-[#fbfbfa] h-11 rounded-lg bg-transparent px-5 text-[14px]",
+              "border-landing-dark-border text-landing-dark-foreground hover:bg-landing-dark-surface landing-light:bg-gradient-to-b landing-light:from-white landing-light:to-[#fbfbfa] h-11 rounded-lg bg-transparent px-5 text-[13px]",
             )}
           >
             요금제 보기
@@ -39,7 +39,7 @@ export function ClosingSection() {
             href="/register"
             className={cn(
               buttonVariants(),
-              "bg-foreground text-background hover:bg-foreground/90 h-11 gap-1.5 rounded-lg px-6 text-[14px]",
+              "bg-foreground text-background hover:bg-foreground/90 h-11 gap-1.5 rounded-lg px-6 text-[13px]",
             )}
           >
             시작하기

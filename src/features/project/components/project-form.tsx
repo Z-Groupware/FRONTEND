@@ -1,6 +1,6 @@
 "use client";
 
-import { Paperclip, Plus, X } from "lucide-react";
+import { Check, Paperclip, Plus, X } from "lucide-react";
 import Link from "next/link";
 import type { CSSProperties } from "react";
 import { useActionState, useRef, useState } from "react";
@@ -94,256 +94,291 @@ export function ProjectForm({ action, teamOptions, cancelHref }: ProjectFormProp
   }
 
   return (
-    <form action={formAction} className="flex flex-col gap-5">
+    <form action={formAction} className="flex flex-col gap-6">
       <input type="hidden" name="tagColor" value={tagColor} />
 
-      <div className="flex items-start gap-4">
-        <div className="flex flex-1 flex-col gap-1.5">
-          <Label htmlFor="project-name">
-            프로젝트명 <span className="text-destructive">*</span>
-          </Label>
-          <Input
-            id="project-name"
-            name="name"
-            value={name}
-            onChange={(event) => setName(event.target.value)}
-            placeholder="예: 온라인 굿즈샵 웹 구축"
-            aria-invalid={Boolean(state.errors.name)}
-          />
-          <FieldError message={state.errors.name} />
-        </div>
-
-        <div className="flex w-40 flex-col gap-1.5">
-          <Label htmlFor="project-tag">
-            프로젝트 태그 <span className="text-destructive">*</span>
-          </Label>
-          <Input
-            id="project-tag"
-            name="tag"
-            value={tag}
-            onChange={(event) => setTag(toTagInput(event.target.value))}
-            placeholder="GOODS"
-            maxLength={PROJECT_TAG_MAX_LENGTH}
-            className="font-mono"
-            aria-invalid={Boolean(state.errors.tag)}
-          />
-          <p className="text-muted-foreground text-xs">
-            영문 대문자만, 최대 {PROJECT_TAG_MAX_LENGTH}자
-          </p>
-          <FieldError message={state.errors.tag} />
-        </div>
-      </div>
-
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="project-description">
-          세부 설명 <span className="text-destructive">*</span>
-        </Label>
-        <textarea
-          id="project-description"
-          name="description"
-          rows={4}
-          value={description}
-          onChange={(event) =>
-            setDescription(event.target.value.slice(0, PROJECT_DESCRIPTION_MAX_LENGTH))
-          }
-          placeholder="예: 아티스트 공식 굿즈를 판매하는 온라인 커머스 웹을 신규 구축합니다."
-          maxLength={PROJECT_DESCRIPTION_MAX_LENGTH}
-          aria-invalid={Boolean(state.errors.description)}
-          className="border-input placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:border-destructive dark:bg-input/30 w-full resize-none rounded-lg border bg-transparent px-2.5 py-2 text-sm transition-colors outline-none focus-visible:ring-3"
-        />
-        <p className="text-muted-foreground text-right text-xs tabular-nums">
-          {description.length}/{PROJECT_DESCRIPTION_MAX_LENGTH}
-        </p>
-        <FieldError message={state.errors.description} />
-      </div>
-
-      <div className="grid grid-cols-[minmax(0,1fr)_120px_120px] items-start gap-4">
-        <div className="flex flex-col gap-1.5">
-          <Label>
-            태그 색상 <span className="text-destructive">*</span>
-          </Label>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={cycleTagColor}
-              className="ring-offset-background size-8 shrink-0 rounded-full ring-2 ring-offset-2 transition-transform outline-none active:scale-95"
-              style={
-                {
-                  backgroundColor: mainColor.solidColor,
-                  "--tw-ring-color": mainColor.solidColor,
-                } as CSSProperties
-              }
-              aria-label={`태그 색상: ${TAG_NAME_LABEL[tagColor]} (클릭하면 다른 색으로 바뀌어요)`}
+      {/*
+        ⚠️ **두 칸으로 가른다**(2026-08-11). 폭을 1440으로 넓히면서 한 줄에 `태그 색상 … 시작일`을
+           나란히 두니, 왼쪽 칸 하나와 오른쪽 칸 하나 사이가 700px씩 벌어져 같은 줄인데도
+           서로 상관없어 보였다 — 왼쪽은 **적는 것**(이름·설명·참여 팀), 오른쪽은
+           **정하는 것**(태그·색·기간·첨부)이다(§DESIGN 4 detail 2컬럼, 인수인계 상세와 같은 해부).
+        ⚠️ 곁 칸은 300px 고정이다. 비율로 두면 화면 폭에 따라 날짜 칸이 늘었다 줄었다 한다.
+        ⚠️ 좁아지면 한 줄로 떨어진다(`lg:`).
+      */}
+      <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:gap-10">
+        <div className="flex min-w-0 flex-1 flex-col gap-5">
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="project-name">
+              프로젝트명 <span className="text-destructive">*</span>
+            </Label>
+            <Input
+              id="project-name"
+              name="name"
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              placeholder="예: 온라인 굿즈샵 웹 구축"
+              aria-invalid={Boolean(state.errors.name)}
             />
+            <FieldError message={state.errors.name} />
+          </div>
 
-            <Popover open={colorPickerOpen} onOpenChange={setColorPickerOpen}>
-              <PopoverTrigger
-                render={
-                  <Button type="button" variant="outline" size="sm">
-                    더보기
-                  </Button>
-                }
-              />
-              {/* 버튼 우측에, 바닥면을 버튼 바닥과 맞춰서 띄운다. */}
-              <PopoverContent side="right" align="end" sideOffset={8} className="w-56">
-                <div className="grid grid-cols-4 gap-2">
-                  {TAG_NAMES.map((colorName) => {
-                    const color = paletteColorByName(colorName);
-                    const label = TAG_NAME_LABEL[colorName];
-                    return (
-                      <button
-                        key={colorName}
-                        type="button"
-                        onClick={() => {
-                          setTagColor(colorName);
-                          setColorPickerOpen(false);
-                        }}
-                        className={cn(
-                          "hover:bg-muted focus-visible:ring-ring/50 flex flex-col items-center gap-1 rounded-md p-1.5 outline-none focus-visible:ring-3",
-                          colorName === tagColor && "bg-muted",
-                        )}
-                      >
-                        <span
-                          className="size-6 rounded-full"
-                          style={{ backgroundColor: color.solidColor }}
-                          aria-hidden
-                        />
-                        {/* 4글자부터 칸 폭에서 줄바꿈되므로 그만큼 작게 — 전부 한 줄로 보이게 */}
-                        <span
-                          className={cn(
-                            "text-muted-foreground whitespace-nowrap",
-                            label.length >= 4 ? "text-[9px]" : "text-[11px]",
-                          )}
+          {/* ⚠️ 폭 상한은 안 건다 — 본문 칸 자체가 곁 칸(300)을 뺀 나머지라 이미 좁다 */}
+          <div className="flex flex-col gap-1.5">
+            {/* ⚠️ 글자 수는 **라벨 줄 오른쪽**이다 — 칸 아래에 두면 다음 항목과 붙어 어디 것인지 흐리다 */}
+            <div className="flex items-baseline justify-between gap-3">
+              <Label htmlFor="project-description">
+                세부 설명 <span className="text-destructive">*</span>
+              </Label>
+              <span className="text-muted-foreground text-[12px] leading-4 tabular-nums">
+                {description.length}/{PROJECT_DESCRIPTION_MAX_LENGTH}
+              </span>
+            </div>
+            <textarea
+              id="project-description"
+              name="description"
+              /* ⚠️ 곁 칸(태그·색·기간·첨부)과 키를 맞춘다 — 4줄이면 왼쪽 아래가 통째로 비었다 */
+              rows={8}
+              value={description}
+              onChange={(event) =>
+                setDescription(event.target.value.slice(0, PROJECT_DESCRIPTION_MAX_LENGTH))
+              }
+              placeholder="예: 아티스트 공식 굿즈를 판매하는 온라인 커머스 웹을 신규 구축합니다."
+              maxLength={PROJECT_DESCRIPTION_MAX_LENGTH}
+              aria-invalid={Boolean(state.errors.description)}
+              className="border-input placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:border-destructive dark:bg-input/30 w-full resize-none rounded-lg border bg-transparent px-2.5 py-2 text-[13px] leading-5 transition-colors outline-none focus-visible:ring-3"
+            />
+            <FieldError message={state.errors.description} />
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label>
+              참여 팀 <span className="text-destructive">*</span>
+            </Label>
+            {/*
+              ⚠️ **두 칸으로 깐다**(2026-08-11). 팀 줄을 세로로만 쌓으니 선택칸이 360px인데
+                 본문 칸은 그 세 배라, 줄이 늘어날수록 **오른쪽 절반이 통째로 빈 채로 아래로만**
+                 길어졌다 — 화면 가운데 아래에 구멍이 생기는 자리가 여기다.
+              ⚠️ 칸은 남는 폭을 채운다(`w-full`). 팀 이름은 짧지만, 옆줄과 오른쪽 끝이 맞아야
+                 두 칸이 표처럼 읽힌다.
+            */}
+            <div className="grid gap-2 sm:grid-cols-2">
+              {teamRows.map((row) => (
+                <div key={row.rowId} className="flex items-center gap-2">
+                  <Select
+                    value={row.team}
+                    onValueChange={(value) => updateTeamRow(row.rowId, value ?? "")}
+                  >
+                    <SelectTrigger aria-label="참여 팀 선택" className="w-full">
+                      <SelectValue placeholder="팀 선택" />
+                    </SelectTrigger>
+                    <SelectContent side="bottom" alignItemWithTrigger={false}>
+                      {teamOptions.map((team) => (
+                        <SelectItem
+                          key={team}
+                          value={team}
+                          disabled={team !== row.team && usedTeams.has(team)}
                         >
-                          {label}
-                        </span>
-                      </button>
-                    );
-                  })}
+                          {team}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {teamRows.length > 1 && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-sm"
+                      aria-label="이 팀 지정 삭제"
+                      onClick={() => removeTeamRow(row.rowId)}
+                    >
+                      <X />
+                    </Button>
+                  )}
+                  {row.team && <input type="hidden" name="teamNames" value={row.team} />}
                 </div>
-              </PopoverContent>
-            </Popover>
+              ))}
+
+              {/* ⚠️ [팀 추가]는 격자 아래 한 줄이다 — 칸 하나를 차지하면 빈 선택칸처럼 보인다 */}
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="w-fit sm:col-span-2"
+                disabled={!canAddTeamRow}
+                onClick={() => setTeamRows((rows) => [...rows, { rowId: nextRowId++, team: "" }])}
+              >
+                <Plus />팀 추가
+              </Button>
+            </div>
+            <FieldError message={state.errors.teamNames} />
           </div>
         </div>
 
-        <div className="flex flex-col gap-1.5">
-          {/* ⚠️ 화면엔 노출하지 않는다 — 상태·타임라인 계산용 값일 뿐 마감일처럼 보여줄 정보가
-              아니다(사용자 확인). 생성 폼에서만 받는다. */}
-          <Label htmlFor="project-start-date">
-            시작일 <span className="text-destructive">*</span>
-          </Label>
-          <DatePickerField
-            id="project-start-date"
-            name="startDate"
-            value={startDate}
-            onChange={setStartDate}
-            max={dueDate || undefined}
-            aria-invalid={Boolean(state.errors.startDate)}
-            className="w-full"
-          />
-          <FieldError message={state.errors.startDate} />
-        </div>
+        {/* 곁 칸 — 정하는 것 */}
+        <div className="flex flex-col gap-5 lg:w-[300px] lg:shrink-0">
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="project-tag">
+              프로젝트 태그 <span className="text-destructive">*</span>
+            </Label>
+            <Input
+              id="project-tag"
+              name="tag"
+              value={tag}
+              onChange={(event) => setTag(toTagInput(event.target.value))}
+              placeholder="GOODS"
+              maxLength={PROJECT_TAG_MAX_LENGTH}
+              className="font-mono"
+              aria-invalid={Boolean(state.errors.tag)}
+            />
+            <p className="text-muted-foreground text-[12px] leading-4">
+              영문 대문자만, 최대 {PROJECT_TAG_MAX_LENGTH}자
+            </p>
+            <FieldError message={state.errors.tag} />
+          </div>
 
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="project-due-date">
-            마감 기한 <span className="text-destructive">*</span>
-          </Label>
-          <DatePickerField
-            id="project-due-date"
-            name="dueDate"
-            value={dueDate}
-            onChange={setDueDate}
-            min={startDate || undefined}
-            aria-invalid={Boolean(state.errors.dueDate)}
-            className="w-full"
-          />
-          <FieldError message={state.errors.dueDate} />
-        </div>
-      </div>
+          <div className="flex flex-col gap-1.5">
+            <Label>
+              태그 색상 <span className="text-destructive">*</span>
+            </Label>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={cycleTagColor}
+                /*
+                  ⚠️ 테두리 링은 **고른 색**을 두르는 장식이라, 포커스 표시를 그 링에 맡길 수 없다
+                     — `outline-none`만 두면 키보드로 온 사람에게 이 칸이 어디인지 알릴 방법이 없다.
+                     포커스는 먹색 윤곽(`--ring`)으로 따로 그린다(§디자인 토큰: 포커스 링은 먹색).
+                */
+                className="ring-offset-background focus-visible:outline-ring size-8 shrink-0 rounded-full ring-2 ring-offset-2 transition-transform outline-none focus-visible:outline-2 focus-visible:outline-offset-2 active:scale-95"
+                style={
+                  {
+                    backgroundColor: mainColor.solidColor,
+                    "--tw-ring-color": mainColor.solidColor,
+                  } as CSSProperties
+                }
+                aria-label={`태그 색상: ${TAG_NAME_LABEL[tagColor]} (누르면 다른 색으로 바뀝니다)`}
+              />
 
-      <div className="grid grid-cols-[minmax(0,1fr)_160px] items-start gap-6">
-        <div className="flex flex-col gap-1.5">
-          <Label>
-            참여 팀 <span className="text-destructive">*</span>
-          </Label>
-          <div className="flex flex-col gap-2">
-            {teamRows.map((row) => (
-              <div key={row.rowId} className="flex items-center gap-2">
-                <Select
-                  value={row.team}
-                  onValueChange={(value) => updateTeamRow(row.rowId, value ?? "")}
-                >
-                  <SelectTrigger aria-label="참여 팀 선택" className="w-48">
-                    <SelectValue placeholder="팀 선택" />
-                  </SelectTrigger>
-                  <SelectContent side="bottom" alignItemWithTrigger={false}>
-                    {teamOptions.map((team) => (
-                      <SelectItem
-                        key={team}
-                        value={team}
-                        disabled={team !== row.team && usedTeams.has(team)}
-                      >
-                        {team}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {teamRows.length > 1 && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon-sm"
-                    aria-label="이 팀 지정 삭제"
-                    onClick={() => removeTeamRow(row.rowId)}
-                  >
-                    <X />
-                  </Button>
-                )}
-                {row.team && <input type="hidden" name="teamNames" value={row.team} />}
-              </div>
-            ))}
+              <Popover open={colorPickerOpen} onOpenChange={setColorPickerOpen}>
+                <PopoverTrigger
+                  render={
+                    <Button type="button" variant="outline" size="sm">
+                      더보기
+                    </Button>
+                  }
+                />
+                {/*
+                ⚠️ **이름을 칸마다 적지 않는다**(2026-08-11). 색 이름이 한 글자(`틸`)부터 네 글자
+                   (`에메랄드`)까지라 격자 아래 글자 길이가 제각각이었고, 넘치는 걸 막느라
+                   네 글자만 9px로 줄여 놔서 같은 목록 안에 글자 크기가 둘이었다(§DESIGN 4는
+                   다섯 크기뿐이다). 고르는 건 **색**이지 이름이 아니다.
+                ⚠️ 대신 **이름을 한 곳에** 둔다 — 지금 고른 색 이름을 격자 아래 한 줄로 적는다.
+                   색을 못 가리는 사람에게도 무엇을 골랐는지 남는다(§a11y: 색 하나로만 알리지 않는다).
+                ⚠️ 칸마다 `title`·`aria-label`에는 이름이 그대로 들어간다.
+              */}
+                {/* ⚠️ 아래로 편다 — 오른쪽에 자리가 없어 왼쪽으로 뒤집히면서 폼 본문을 덮었다 */}
+                <PopoverContent side="bottom" align="start" sideOffset={8} className="w-64">
+                  <div className="grid grid-cols-6 gap-2">
+                    {TAG_NAMES.map((colorName) => {
+                      const color = paletteColorByName(colorName);
+                      const label = TAG_NAME_LABEL[colorName];
+                      const isPicked = colorName === tagColor;
+                      return (
+                        <button
+                          key={colorName}
+                          type="button"
+                          title={label}
+                          aria-label={`태그 색상 ${label}`}
+                          aria-pressed={isPicked}
+                          onClick={() => {
+                            setTagColor(colorName);
+                            setColorPickerOpen(false);
+                          }}
+                          className={cn(
+                            "focus-visible:ring-ring/50 ring-offset-background flex size-8 items-center justify-center rounded-full transition-transform outline-none focus-visible:ring-3 active:scale-95",
+                            isPicked && "ring-foreground ring-2 ring-offset-2",
+                          )}
+                          style={{ backgroundColor: color.solidColor }}
+                        >
+                          {/* 고른 칸만 체크 — 링만으로는 밝은 색에서 잘 안 보인다 */}
+                          {isPicked && <Check className="size-4 text-white" aria-hidden />}
+                        </button>
+                      );
+                    })}
+                  </div>
 
+                  <p className="text-muted-foreground pt-3 text-[12px] leading-4">
+                    지금 고른 색 ·{" "}
+                    <span className="text-foreground font-medium">{TAG_NAME_LABEL[tagColor]}</span>
+                  </p>
+                </PopoverContent>
+              </Popover>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            {/* ⚠️ 화면엔 노출하지 않는다 — 상태·타임라인 계산용 값일 뿐 마감일처럼 보여줄 정보가
+                아니다(사용자 확인). 생성 폼에서만 받는다. */}
+            <Label htmlFor="project-start-date">
+              시작일 <span className="text-destructive">*</span>
+            </Label>
+            <DatePickerField
+              id="project-start-date"
+              name="startDate"
+              value={startDate}
+              onChange={setStartDate}
+              max={dueDate || undefined}
+              aria-invalid={Boolean(state.errors.startDate)}
+              className="w-full"
+            />
+            <FieldError message={state.errors.startDate} />
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="project-due-date">
+              마감 기한 <span className="text-destructive">*</span>
+            </Label>
+            <DatePickerField
+              id="project-due-date"
+              name="dueDate"
+              value={dueDate}
+              onChange={setDueDate}
+              min={startDate || undefined}
+              aria-invalid={Boolean(state.errors.dueDate)}
+              className="w-full"
+            />
+            <FieldError message={state.errors.dueDate} />
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="project-attachment">첨부파일</Label>
+            <input
+              ref={fileInputRef}
+              id="project-attachment"
+              type="file"
+              className="hidden"
+              onChange={(event) => setAttachmentName(event.target.files?.[0]?.name)}
+            />
             <Button
               type="button"
               variant="outline"
               size="sm"
-              className="w-fit"
-              disabled={!canAddTeamRow}
-              onClick={() => setTeamRows((rows) => [...rows, { rowId: nextRowId++, team: "" }])}
+              className="w-full justify-start"
+              onClick={() => fileInputRef.current?.click()}
             >
-              <Plus />팀 추가
+              <Paperclip />
+              {attachmentName ?? "파일 첨부 (선택)"}
             </Button>
+            {attachmentName && <input type="hidden" name="attachmentName" value={attachmentName} />}
+            <p className="text-muted-foreground text-[12px] leading-4">
+              프로젝트 기획서 등 참고 문서가 있다면 첨부해 주세요.
+            </p>
           </div>
-          <FieldError message={state.errors.teamNames} />
-        </div>
-
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="project-attachment">첨부파일</Label>
-          <input
-            ref={fileInputRef}
-            id="project-attachment"
-            type="file"
-            className="hidden"
-            onChange={(event) => setAttachmentName(event.target.files?.[0]?.name)}
-          />
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="w-full justify-start"
-            onClick={() => fileInputRef.current?.click()}
-          >
-            <Paperclip />
-            {attachmentName ?? "파일 첨부 (선택)"}
-          </Button>
-          {attachmentName && <input type="hidden" name="attachmentName" value={attachmentName} />}
-          <p className="text-muted-foreground text-xs">
-            프로젝트 기획서 등 참고 문서가 있다면 첨부해주세요.
-          </p>
         </div>
       </div>
 
-      <div className="flex justify-end gap-2">
+      {/* ⚠️ 제출은 **두 칸 아래 한 줄**이다 — 곁 칸에 붙이면 본문을 다 적기 전에 눈에 들어온다 */}
+      <div className="border-border flex justify-end gap-2 border-t pt-5">
         <Link href={cancelHref} className={buttonVariants({ variant: "outline", size: "sm" })}>
           취소
         </Link>

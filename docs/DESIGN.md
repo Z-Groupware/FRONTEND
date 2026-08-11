@@ -101,10 +101,7 @@ export default function Layout({ children }: { children: ReactNode }) {
   {/* 표가 들어가면 overflow-hidden 을 더한다 */}
 
   <div className="flex items-baseline justify-between gap-3 px-7 pt-6 pb-3">
-    <h2 className="flex items-center gap-2 text-[17px] leading-7 font-semibold tracking-[-0.3px]">
-      <span className="bg-foreground size-2 rounded-full" aria-hidden />
-      프로젝트별 사용량
-    </h2>
+    <h2 className="text-[17px] leading-7 font-semibold tracking-[-0.3px]">프로젝트별 사용량</h2>
     <p className="text-muted-foreground text-[12px] leading-4 tabular-nums">전체 5개</p>
   </div>
 
@@ -112,7 +109,9 @@ export default function Layout({ children }: { children: ReactNode }) {
 </section>
 ```
 
-- **머리 표식**(먹색 `size-2` 점)은 모든 카드 제목에 붙인다.
+- **카드 제목 앞에 점을 붙이지 않는다**(2026-08-11 변경). 전에는 먹색 `size-2` 점을 모든 카드
+  머리에 붙였는데, **상태점과 크기·모양이 같아** 뜻이 있는 표식처럼 읽혔다 — 색으로 뜻을
+  나르는 자리는 상태점 하나뿐이라(§5) 그 값이 떨어진다. 17px 굵은 제목이면 머리로 충분하다.
 - **오른쪽 끝에 보조 정보 한 줄** — 전체 건수·주기 범위. 버튼은 안 둔다.
 - **제목과 안내 문구 사이에 선을 긋지 않는다.** 한 덩어리다. 카드 안의 선은 **표가 시작하는 자리** 하나뿐.
 
@@ -208,6 +207,19 @@ export default function Layout({ children }: { children: ReactNode }) {
 <span className="w-[58px] shrink-0 text-right tabular-nums">{formatGb(gb)}</span>
 ```
 
+### 조작은 키가 같다 ⭐
+
+입력칸 · 셀렉트 · 날짜 칸 · 아이콘 버튼은 **모두 32px**이다. 한 줄에 섞여 서는 것들이라
+하나만 40이면 그 줄의 중앙이 어긋난다 — 공용 컴포넌트(`Input`·`SelectTrigger`·
+`DatePickerField`·`Button`)가 이미 32로 맞춰져 있으니 화면에서 높이를 덧칠하지 않는다.
+
+### 선은 한 번만 긋는다 ⭐
+
+**같은 자리에 선이 두 번 그이면 그 줄만 2px로 진해진다.** 머리에 `border-b`가 있으면
+첫 줄에는 `border-t`를 안 준다(`not-first:border-t`). 카드 맨 아래 줄도 카드 테두리와
+겹치므로 아랫선을 안 긋는다. 라이브러리(react-big-calendar 등)는 자기 기본 선을 따로
+그으므로 **한쪽을 지우고 하나만 남긴다.**
+
 ### 그 밖에
 
 - **아이콘만 있는 열에도 머리글을 준다.** `sr-only`로만 두면 표가 한 칸 덜 끝난 것처럼 보인다.
@@ -237,7 +249,8 @@ export default function Layout({ children }: { children: ReactNode }) {
 본문 바깥   px-8 py-7
 카드 사이   gap-7
 카드 안쪽   px-7 · 머리 pt-6 pb-3 · 단일 카드 p-7
-표 셀       px-4 py-3.5 · 이름 열과 지우기 열만 px-6 / pr-5
+            머리 아래가 **띠 없이 바로 줄이면 pb-5** (툴바가 든 머리도 pb-5)
+표 셀       px-4 py-3.5 · **첫 열은 px-7**(카드 제목과 같은 세로선) · 지우기 열만 pr-5
 ```
 
 ### 폭
@@ -248,6 +261,9 @@ export default function Layout({ children }: { children: ReactNode }) {
 폼 한 장 · 읽는 글  max-w-[720px]
 로그인·확인        max-w-[560px]
 ```
+
+**화면 제목(카드 밖, 상단바 아래)은 22px이다** — `text-[22px] leading-[30px] tracking-[-0.4px]`.
+카드 제목(17px)과 다른 층이라 다섯 크기 표 밖에 따로 둔다. 20px·24px를 새로 만들지 않는다.
 
 - **새 숫자를 만들지 않는다.** 1080·1144처럼 중간값이 늘면 화면마다 여백이 달라진다.
 - ⚠️ 위 넷 말고 **`PAYMENT_WIDTH`(1120)** 가 하나 더 있다 — 온보딩·구독 재개가 같이 쓰는
@@ -378,6 +394,10 @@ toast("삭제하지 못했습니다");
   놓치면 안 되는 건 화면에 남긴다.
 - **~합니다체.** `발송했어요` ❌ → `발송했습니다` ✅.
 
+**`redirect`가 걸린 액션은 토스트를 띄울 자리가 없다.** 서버가 바로 다음 주소로 보내
+성공을 화면에 못 돌려주기 때문이다 — 주소에 열쇠를 실어 보내고(`?toast=…`) 도착한 화면이
+공용 `FlashToast`로 대신 말한다. 띄운 뒤 그 파라미터만 지운다(새로고침·공유에서 다시 뜨지 않게).
+
 ### 확인 창 (`ConfirmDialog`)
 
 ```tsx
@@ -439,7 +459,12 @@ toast("삭제하지 못했습니다");
 - 안 켜면 상단바 56px + 100dvh가 되어 아래가 잘리고 스크롤도 안 된다 — 창이 낮으면
   [다시 시도] 버튼이 잘려 **오류에서 빠져나갈 길이 사라진다.**
 - 셸 안에서는 `h1`을 쓰지 않는다(`PageHeader`가 이미 갖고 있다).
-- **empty는 "무엇이 없는지 + 다음에 뭘 하면 되는지"** 를 같이 적는다.
+- **empty는 공용 `EmptyState`를 쓴다** — 아이콘(무엇이 없는지) + 문구 + 다음 걸음.
+  화면마다 `<p>…없습니다</p>` 한 줄을 새로 적지 않는다. 여백도 거기서 나온다.
+  아이콘은 제 도메인을 가리킨다(회의가 없으면 캘린더, 사람이 없으면 사람).
+- **막힌 화면은 401 · 403 · 404가 한 벌이다**(`StatusScreen`) — Z 로고 → 숫자 → 제목 →
+  안내 → 나갈 문. 권한이 없는 화면에 404를 띄우지 않는다(주소는 맞고 자격이 없는 것이라
+  다음에 할 일이 다르다). 오류 화면(`ScreenError`)도 같은 몸을 쓰되 숫자는 안 붙인다.
 - 사이드바는 **화면이 있는지 자동으로 안다**(`routes.ts`). 손으로 `isReady`를 켜지 않는다.
 
 ---

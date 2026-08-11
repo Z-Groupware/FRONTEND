@@ -40,7 +40,7 @@ export function ProjectListTable({ projects }: ProjectListTableProps) {
                왼쪽 끝이 들쭉날쭉해져 세로로 훑을 수가 없다.
           */}
           <tr className="text-muted-foreground bg-secondary/50 border-border border-b text-[12px] leading-4">
-            <th className="px-6 py-3 text-left font-normal">프로젝트</th>
+            <th className="px-7 py-3 text-left font-normal">프로젝트</th>
             {/*
               ⚠️ 머리글은 **막대+숫자 묶음의 가운데**에 선다. 칸 가운데에 두면 막대 위에
                  얹히고, 숫자에 맞추면 오른쪽 끝에 붙어 묶음과 따로 논다 — 이 열이 가리키는
@@ -103,7 +103,7 @@ function Row({ project }: { project: ProjectListItemModel }) {
            `border-left`로 그리면 hover 배경이 띠까지 덮고 줄 사이 구분선과 모서리에서 겹친다.
         ⚠️ 띠는 `aria-hidden`이다 — 색이 말하는 건 태그 글자가 이미 말한다.
       */}
-      <td className="relative px-6 py-3.5">
+      <td className="relative px-7 py-3.5">
         <span
           className="absolute inset-y-0 left-0 w-1"
           style={{ backgroundColor: tagColor.solidColor }}

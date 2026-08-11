@@ -1,5 +1,8 @@
-import { AUTHORITY } from "@/constants/authority";
+import { headers } from "next/headers";
+
+import { AUTHORITY, type Authority } from "@/constants/authority";
 import { getMe } from "@/features/auth/me";
+import { PATHNAME_HEADER } from "@/lib/pathname-header";
 import type { Actor } from "@/lib/permission";
 import { isMock } from "@/mocks/config";
 
@@ -21,9 +24,60 @@ export interface Viewer extends Actor {
   name: string;
 }
 
+/**
+ * 목으로 돌 때 **주소가 사람을 정한다** — `/team`은 팀장, `/my`는 사원.
+ *
+ * ⚠️ **로그인 전까지만이다.** 세션이 붙으면 이 함수는 안 불리고 `getMe()`가 사람을 준다 —
+ *    화면을 바꿀 필요가 없도록 판정은 계속 이 파일 한 곳에 있다(§Mock → Live 격리막).
+ * ⚠️ 이 값으로 **권한 판정까지 돈다.** 대표 대시보드(`/owner`)를 보는 동안에는 대표고,
+ *    팀 화면으로 옮기면 팀장이다 — 목에서 역할별 화면을 확인하려면 이 편이 맞다.
+ * ⚠️ `/app/*`은 **전원이 쓰는 공용 워크벤치**라 여기서 가르지 않는다(기본은 대표).
+ */
+const MOCK_PEOPLE: Record<Authority, { id: number; name: string }> = {
+  [AUTHORITY.OWNER]: { id: 1, name: "대표 계정" },
+  [AUTHORITY.LEADER]: { id: 2, name: "김서준" },
+  [AUTHORITY.MEMBER]: { id: 3, name: "이하윤" },
+  [AUTHORITY.SYSTEM]: { id: 0, name: "Z 운영자" },
+};
+
+/**
+ * 목 전용 **미리보기 스위치** — `?as=member`처럼 붙이면 그 역할로 화면을 본다.
+ *
+ * ⚠️ 주소로만 역할을 정하면 `/owner`는 언제나 대표라, **막히는 화면(403)을 확인할 길이 없다** —
+ *    가드가 실제로 도는지 눈으로 보려면 다른 사람으로 그 주소를 열어 봐야 한다.
+ * ⚠️ 로그인이 붙으면 이 분기 자체가 안 돈다(`isMock`) — 세션이 사람을 정한다.
+ */
+function previewRoleFrom(search: string): Authority | null {
+  const value = new URLSearchParams(search).get("as")?.toUpperCase();
+  if (!value) return null;
+  return AUTHORITY_BY_NAME[value] ?? null;
+}
+
+const AUTHORITY_BY_NAME: Record<string, Authority> = {
+  OWNER: AUTHORITY.OWNER,
+  LEADER: AUTHORITY.LEADER,
+  MEMBER: AUTHORITY.MEMBER,
+};
+
+function mockRoleFor(pathname: string): Authority {
+  if (pathname === "/team" || pathname.startsWith("/team/")) return AUTHORITY.LEADER;
+  if (pathname === "/my" || pathname.startsWith("/my/")) return AUTHORITY.MEMBER;
+  if (pathname === "/system" || pathname.startsWith("/system/")) return AUTHORITY.SYSTEM;
+  return AUTHORITY.OWNER;
+}
+
 export async function getViewer(): Promise<Viewer> {
   if (isMock) {
-    return { id: 1, name: "대표 계정", role: AUTHORITY.OWNER, isAdmin: false };
+    /*
+      ⚠️ 주소는 **문지기가 헤더로** 넘겨준다(`proxy.ts`) — 서버 컴포넌트는 지금 주소를 모른다.
+      ⚠️ 헤더가 없으면(문지기를 안 거치는 자리) 대표로 둔다 — 지금까지와 같다.
+    */
+    const url = (await headers()).get(PATHNAME_HEADER) ?? "";
+    const [pathname = "", search = ""] = url.split("?");
+    const role = previewRoleFrom(search) ?? mockRoleFor(pathname);
+    const person = MOCK_PEOPLE[role];
+
+    return { id: person.id, name: person.name, role, isAdmin: false };
   }
 
   /*

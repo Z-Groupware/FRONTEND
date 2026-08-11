@@ -22,7 +22,7 @@ const OVERDUE: TimelineActionInput = {
 
 const UPCOMING: TimelineActionInput = {
   id: "a2",
-  title: "할일 액션",
+  title: "할 일 액션",
   tag: "COLLAB",
   tagBgColor: "var(--tag-sky-bg)",
   tagTextColor: "var(--tag-sky-fg)",
@@ -88,7 +88,7 @@ describe("buildActionTimeline", () => {
     expect(overdue?.ddayLabel).toBe("D+2");
     expect(overdue?.periodLabel).toBe("8월 1일~8월 3일");
 
-    // 할일: 08-09(8) ~ 08-11(10) → 3칸, 오늘선 오른쪽
+    // 할 일: 08-09(8) ~ 08-11(10) → 3칸, 오늘선 오른쪽
     expect(upcoming?.leftPx).toBeCloseTo(8 * TIMELINE_DAY_WIDTH_PX);
     expect(upcoming?.widthPx).toBeCloseTo(3 * TIMELINE_DAY_WIDTH_PX);
     expect(upcoming?.ddayLabel).toBe("D-6");

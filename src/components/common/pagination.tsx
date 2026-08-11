@@ -12,7 +12,7 @@ interface PaginationProps {
 }
 
 const ITEM_CLASS =
-  "focus-visible:ring-ring flex size-8 items-center justify-center rounded-md text-sm transition-colors focus-visible:ring-2 focus-visible:outline-none";
+  "focus-visible:ring-ring flex size-8 items-center justify-center rounded-md text-[13px] leading-5 transition-colors focus-visible:ring-2 focus-visible:outline-none";
 
 /**
  * 목록 하단 페이지네이션 — 순수 서버 컴포넌트다(`Link` 이동만 하므로 클라이언트 JS가 없다).
@@ -38,7 +38,7 @@ export function Pagination({ page, totalPages, buildHref }: PaginationProps) {
           <span
             key={`ellipsis-${index}`}
             aria-hidden
-            className="text-muted-foreground flex size-8 items-center justify-center text-sm"
+            className="text-muted-foreground flex size-8 items-center justify-center text-[13px] leading-5"
           >
             …
           </span>

@@ -21,7 +21,7 @@ export function AuthError({ title, reset }: AuthErrorProps) {
   return (
     <div className="bg-background min-h-screen-z flex flex-col items-center justify-center gap-4 px-6 text-center">
       <div className="flex flex-col gap-2">
-        <h1 className="text-lg font-semibold tracking-tight">{title}</h1>
+        <h1 className="text-[17px] leading-7 font-semibold tracking-[-0.3px]">{title}</h1>
         <p className="text-muted-foreground text-[13px] leading-[21px] break-keep">
           잠시 후 다시 시도해 주세요. 계속 안 되면 담당자에게 알려주세요.
         </p>

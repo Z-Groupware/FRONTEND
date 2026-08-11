@@ -64,7 +64,7 @@ const CASES: PreviewCase[] = [
   {
     key: "member-admin",
     title: `${AUTHORITY_LABEL[AUTHORITY.MEMBER]} + Admin`,
-    note: "사원인 채로 회사 운영이 덧붙는다. 기업 설정·팀장 인수인계는 Owner 것이라 없다",
+    note: "사원인 채로 회사 운영이 덧붙는다. 기업 설정·인수인계서 관리는 Owner 것이라 없다",
     viewer: person(AUTHORITY.MEMBER, "이사원", true),
   },
 ];
@@ -99,7 +99,7 @@ function PreviewColumn({ item }: { item: PreviewCase }) {
   return (
     <section className="flex w-[220px] shrink-0 flex-col gap-2.5">
       <div className="min-h-[72px]">
-        <h2 className="text-[15px] leading-6 font-semibold tracking-[-0.2px]">{item.title}</h2>
+        <h2 className="text-[17px] leading-7 font-semibold tracking-[-0.3px]">{item.title}</h2>
         <p className="text-muted-foreground/80 pt-1 text-[12px] leading-[18px] break-keep">
           {item.note}
         </p>

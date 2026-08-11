@@ -66,11 +66,8 @@ export function ThemeCard() {
   };
 
   return (
-    <section className="border-border bg-card rounded-2xl border p-7">
-      <h2 className="flex items-center gap-2 text-[17px] leading-7 font-semibold tracking-[-0.3px]">
-        <span className="bg-foreground size-2 rounded-full" aria-hidden />
-        테마
-      </h2>
+    <section className="border-border bg-card flex h-full flex-col rounded-2xl border p-7">
+      <h2 className="text-[17px] leading-7 font-semibold tracking-[-0.3px]">테마</h2>
 
       <p className="text-muted-foreground pt-2 text-[13px] leading-[21px] break-keep">
         화면을 라이트·다크 중 하나로 고정하거나, 기기 설정을 따르게 둘 수 있습니다.
@@ -80,7 +77,8 @@ export function ThemeCard() {
         role="radiogroup"
         aria-label="테마"
         onKeyDown={handleKeys}
-        className="flex flex-wrap gap-2 pt-5"
+        /* ⚠️ 세 칸 격자다 — 곁 칸(360)에서 `flex-wrap`이 `시스템`만 다음 줄로 떨어뜨렸다 */
+        className="grid grid-cols-3 gap-2 pt-5"
       >
         {THEME_OPTIONS.map((option) => {
           const isSelected = mounted && theme === option.value;
@@ -95,7 +93,7 @@ export function ThemeCard() {
               data-theme-option={option.value}
               onClick={() => setTheme(option.value)}
               className={cn(
-                "focus-visible:ring-ring flex min-w-[132px] flex-1 flex-col items-center gap-2 rounded-xl border p-2 transition-colors focus-visible:ring-2 focus-visible:outline-hidden",
+                "focus-visible:ring-ring flex flex-col items-center gap-2 rounded-xl border p-2 transition-colors focus-visible:ring-2 focus-visible:outline-hidden",
                 isSelected ? "border-foreground" : "border-border hover:bg-secondary",
               )}
             >

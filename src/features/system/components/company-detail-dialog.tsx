@@ -197,8 +197,8 @@ export function CompanyDetailDialog({ company, closeHref, currentPath }: Company
                   }}
                   className={
                     isSuspended
-                      ? "border-foreground h-11 w-full border text-[14px]"
-                      : "border-destructive/40 h-11 w-full border text-[14px]"
+                      ? "border-foreground h-11 w-full border text-[13px]"
+                      : "border-destructive/40 h-11 w-full border text-[13px]"
                   }
                 >
                   {isSuspended ? "정지 해제" : "정지"}

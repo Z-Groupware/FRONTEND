@@ -27,7 +27,7 @@ export interface ProjectListItem {
   /** 그중 완료 액션 수 — 진척율 = done/total */
   actionDone: number;
   /**
-   * 시작일 `YYYY-MM-DD`. ⚠️ 화면엔 노출하지 않는다 — 상태(할일/진행중/지연)·타임라인 계산용
+   * 시작일 `YYYY-MM-DD`. ⚠️ 화면엔 노출하지 않는다 — 상태(할 일/진행중/지연)·타임라인 계산용
    * 값일 뿐이다. 사용자가 볼 수 있는 값은 마감일뿐이다(2026-08-06 확정).
    */
   startDate: string;

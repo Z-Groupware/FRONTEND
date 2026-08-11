@@ -1,3 +1,6 @@
+import { Receipt } from "lucide-react";
+
+import { EmptyState } from "@/components/common/empty-state";
 import { formatFullDate, isReadableDate } from "@/lib/date";
 
 import { formatWon } from "../pricing";
@@ -23,17 +26,16 @@ interface PaymentHistoryPanelProps {
 export function PaymentHistoryPanel({ payments }: PaymentHistoryPanelProps) {
   return (
     <section className="border-border bg-card rounded-2xl border">
-      <h2 className="flex items-center gap-2 px-7 py-6 text-[15px] leading-6 font-semibold tracking-[-0.2px]">
-        {/* 온보딩 카드 머리와 같은 표식 — 화면이 달라도 같은 서비스로 읽힌다 */}
-        <span className="bg-foreground size-2 rounded-full" aria-hidden />
-        결제 내역
-      </h2>
+      <h2 className="px-7 py-6 text-[17px] leading-7 font-semibold tracking-[-0.3px]">결제 내역</h2>
 
       {payments.length === 0 ? (
         /* 빈 상태 — 언제 여기 채워지는지까지 적는다(§3상태) */
-        <p className="text-muted-foreground border-border border-t px-6 py-10 text-center text-[13px] leading-5 break-keep">
-          결제 내역이 없습니다.
-        </p>
+        <EmptyState
+          bordered
+          icon={Receipt}
+          title="결제 내역이 없습니다."
+          description="결제가 이뤄지면 그 즉시 이 목록에 쌓입니다."
+        />
       ) : (
         <div className="border-border overflow-x-auto border-t">
           <table className="w-full min-w-[640px] border-collapse">
@@ -43,7 +45,7 @@ export function PaymentHistoryPanel({ payments }: PaymentHistoryPanelProps) {
                    읽힌다. `--secondary`는 흰 카드와 2%밖에 차이가 없어 안 보이므로 먹색을
                    옅게 깐다(행 hover보다 진해야 위아래가 안 뒤집힌다).
               */}
-              <tr className="bg-foreground/[0.06] border-border text-muted-foreground border-b text-[12px] leading-4">
+              <tr className="bg-secondary/50 border-border text-muted-foreground border-b text-[12px] leading-4">
                 <th scope="col" className="px-6 py-3 text-center font-medium">
                   결제일
                 </th>

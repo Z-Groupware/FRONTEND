@@ -88,7 +88,7 @@ function AttendeeRow({
   const avatar = useProfileAvatar(member.id, AVATAR_SIZE);
 
   return (
-    <label className="hover:bg-muted flex cursor-pointer items-center gap-2.5 px-3 py-2 text-sm transition-colors">
+    <label className="hover:bg-muted flex cursor-pointer items-center gap-2.5 px-3 py-2 text-[13px] leading-5 transition-colors">
       <input
         type="checkbox"
         name="attendeeIds"
@@ -158,7 +158,9 @@ export function RoomAttendeePicker({
 
       <div className="border-border min-h-0 flex-1 overflow-y-auto rounded-lg border">
         {visible.length === 0 ? (
-          <p className="text-muted-foreground px-3 py-3 text-xs">검색 결과가 없습니다</p>
+          <p className="text-muted-foreground px-3 py-3 text-[12px] leading-4">
+            검색 결과가 없습니다
+          </p>
         ) : (
           visible.map((member) => (
             <AttendeeRow

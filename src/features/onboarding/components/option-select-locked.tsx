@@ -35,7 +35,7 @@ export function LockedSelect({ text, label, width, className }: LockedSelectProp
       className={cn(
         // ⚠️ `opacity`로 흐리지 않는다 — 테두리까지 같이 흐려져 옆 칸과 세기가 어긋난다.
         //    잠겼다는 건 **글자 색**만으로 말하고, 테두리는 옆 칸과 똑같이 둔다.
-        "text-muted-foreground/60 border-input flex h-8 cursor-not-allowed items-center justify-center gap-1 rounded-lg border pr-1.5 pl-2.5 text-[14px]",
+        "text-muted-foreground/60 border-input flex h-8 cursor-not-allowed items-center justify-center gap-1 rounded-lg border pr-1.5 pl-2.5 text-[13px]",
         className,
       )}
     >
@@ -65,7 +65,7 @@ export function EmptySelect({
       // ⚠️ 이름을 준다 — `부서 없음`만 읽히면 어느 줄의 무슨 칸인지 알 수 없다
       aria-label={`${label} — ${text}`}
       className={cn(
-        "text-muted-foreground border-input flex h-8 cursor-not-allowed items-center justify-center rounded-lg border px-2.5 text-[14px]",
+        "text-muted-foreground border-input flex h-8 cursor-not-allowed items-center justify-center rounded-lg border px-2.5 text-[13px]",
         className,
       )}
     >

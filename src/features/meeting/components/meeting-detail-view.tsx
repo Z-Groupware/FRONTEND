@@ -1,6 +1,17 @@
-import { CalendarClock, MapPin } from "lucide-react";
+import {
+  CalendarClock,
+  CircleAlert,
+  ClipboardCheck,
+  ListChecks,
+  type LucideIcon,
+  MapPin,
+  MessageSquareOff,
+  Radio,
+  Sparkles,
+} from "lucide-react";
 import Link from "next/link";
 
+import { EmptyState } from "@/components/common/empty-state";
 import { ProfileAvatar } from "@/components/common/profile-avatar";
 import { ProjectTag } from "@/components/common/project-tag";
 import { StatusDot } from "@/components/common/status-dot";
@@ -70,12 +81,35 @@ const PENDING_MESSAGE: Record<MeetingContentPending, string> = {
   FAILED: "회의 내용을 요약하지 못했습니다. 개설자가 다시 요약해야 표시됩니다.",
 };
 
+/** 아직 볼 것이 없는 이유마다 표식이 다르다 — 훑을 때 글자보다 먼저 걸린다 */
+const PENDING_ICON: Record<MeetingContentPending, LucideIcon> = {
+  SCHEDULED: CalendarClock,
+  IN_PROGRESS: Radio,
+  SUMMARIZING: Sparkles,
+  FAILED: CircleAlert,
+};
+
+/**
+ * 회의가 아직 안 끝났거나 요약 중이라 칸이 빈 경우.
+ *
+ * ⚠️ 빈 상태와 **같은 생김새**를 쓴다(2026-08-11). 문장 한 줄만 가운데 띄워 두니 카드가
+ *    반쯤 지어진 것처럼 보였고, 바로 아래 다른 칸의 빈 상태와도 달라 보였다.
+ */
 function SectionNotice({ reason }: { reason: MeetingContentPending }) {
-  return (
-    <p className="text-muted-foreground px-7 pt-2 pb-8 text-center text-[13px] leading-5">
-      {PENDING_MESSAGE[reason]}
-    </p>
-  );
+  const [title, description] = splitNotice(PENDING_MESSAGE[reason]);
+
+  return <EmptyState icon={PENDING_ICON[reason]} title={title} description={description} />;
+}
+
+/**
+ * `"...입니다. ...표시됩니다."` 두 문장을 제목·설명으로 가른다.
+ *
+ * ⚠️ 문구는 **`PENDING_MESSAGE` 한 곳**에 그대로 둔다. 제목·설명을 따로 적으면 같은 말이
+ *    두 벌이 되어 한쪽만 고쳐진다(§도메인 상수: 값 목록은 한 곳).
+ */
+function splitNotice(message: string): [string, string | undefined] {
+  const [first, ...rest] = message.split(/(?<=\.)\s+/);
+  return [first ?? message, rest.length > 0 ? rest.join(" ") : undefined];
 }
 
 /**
@@ -111,25 +145,39 @@ function actionsSectionStateOf(detail: MeetingDetail): ActionsSectionState {
 }
 
 /** 확정 대기·중단 안내 — 문구는 공통, Host에게만 갈 곳을 더 보여준다. */
+/**
+ * 산출물 칸이 비는 세 경우(검토 대기·중단·0건)를 **빈 상태와 같은 생김새**로 알린다.
+ *
+ * ⚠️ 글자 한 줄만 띄우면 카드가 반쯤 지어진 것처럼 보인다 — 앱 전체가 쓰는 `EmptyState`를
+ *    그대로 쓴다(2026-08-11). 다른 건 아이콘과 다음 걸음뿐이다.
+ */
 function ActionsNotice({
+  icon,
   message,
+  description,
   action,
 }: {
+  icon: LucideIcon;
   message: string;
+  description?: string;
   action: { href: string; label: string } | null;
 }) {
   return (
-    <div className="px-7 pt-2 pb-8 text-center">
-      <p className="text-muted-foreground text-[13px] leading-5">{message}</p>
-      {action && (
-        <Link
-          href={action.href}
-          className="text-foreground focus-visible:ring-ring mt-2 inline-block rounded-md text-[13px] leading-5 font-medium underline underline-offset-2 transition-opacity hover:opacity-70 focus-visible:ring-2 focus-visible:outline-hidden"
-        >
-          {action.label}
-        </Link>
-      )}
-    </div>
+    <EmptyState
+      icon={icon}
+      title={message}
+      description={description}
+      action={
+        action && (
+          <Link
+            href={action.href}
+            className="text-foreground focus-visible:ring-ring rounded-md text-[13px] leading-5 font-medium underline underline-offset-2 transition-opacity hover:opacity-70 focus-visible:ring-2 focus-visible:outline-hidden"
+          >
+            {action.label}
+          </Link>
+        )
+      }
+    />
   );
 }
 
@@ -251,7 +299,9 @@ export function MeetingDetailView({ detail }: { detail: MeetingDetail }) {
             <SectionNotice reason={actionsState.reason} />
           ) : actionsState.kind === "pendingReview" ? (
             <ActionsNotice
-              message="아직 액션 분배가 확정되지 않았습니다"
+              icon={ClipboardCheck}
+              message="아직 액션 분배가 확정되지 않았습니다."
+              description="검토 화면에서 [액션 분배 확정]을 눌러야 액션이 생깁니다."
               action={
                 detail.isHost
                   ? { href: `/app/meeting/${detail.id}/review`, label: "액션 검토" }
@@ -260,15 +310,18 @@ export function MeetingDetailView({ detail }: { detail: MeetingDetail }) {
             />
           ) : actionsState.kind === "stalled" ? (
             <ActionsNotice
-              message="AI 요약이 중단되어 액션이 생성되지 않았습니다"
+              icon={CircleAlert}
+              message="AI 요약이 중단되어 액션이 생성되지 않았습니다."
               action={
                 detail.isHost ? { href: "/app/me", label: "마이페이지에서 다시 분석하기" } : null
               }
             />
           ) : actionsState.kind === "empty" ? (
-            <p className="text-muted-foreground px-7 pt-2 pb-8 text-center text-[13px] leading-5">
-              이 회의에서 하달된 {detail.outputKindLabel}이 없습니다.
-            </p>
+            /* ⚠️ 확정은 했는데 남은 것이 없는 자리다 — "확정을 누르세요"는 위 `pendingReview`가 한다 */
+            <EmptyState
+              icon={ListChecks}
+              title={`이 회의에서 하달된 ${detail.outputKindLabel}이 없습니다.`}
+            />
           ) : (
             <ul className="border-border border-t">
               {detail.outputs.map((output) => (
@@ -279,7 +332,7 @@ export function MeetingDetailView({ detail }: { detail: MeetingDetail }) {
                     className="hover:bg-foreground/[0.04] flex items-center gap-3 px-4 py-3.5 transition-colors sm:gap-4 sm:px-7"
                   >
                     {/*
-                      ⚠️ **이름이 먼저다.** 상태를 맨 왼쪽에 두니 훑을 때 `진행중·할일·진행중`이
+                      ⚠️ **이름이 먼저다.** 상태를 맨 왼쪽에 두니 훑을 때 `진행중·할 일·진행중`이
                          먼저 읽히고 정작 무슨 액션인지가 뒤로 밀렸다 — 왼쪽은 무엇인지,
                          오른쪽은 어떤 상태인지로 축을 가른다(DESIGN §3).
                     */}
@@ -318,9 +371,7 @@ export function MeetingDetailView({ detail }: { detail: MeetingDetail }) {
           {detail.pendingReason ? (
             <SectionNotice reason={detail.pendingReason} />
           ) : detail.script.length === 0 ? (
-            <p className="text-muted-foreground px-7 pt-2 pb-8 text-center text-[13px] leading-5">
-              남아 있는 발화 기록이 없습니다.
-            </p>
+            <EmptyState icon={MessageSquareOff} title="남아 있는 발화 기록이 없습니다." />
           ) : (
             /* ⚠️ 읽는 글은 좁게 둔다(§4 폭 720) — 1440을 가로지르면 눈이 다음 줄을 못 찾는다 */
             <ul className="flex max-w-[720px] flex-col gap-2.5 px-7 pt-2 pb-7">

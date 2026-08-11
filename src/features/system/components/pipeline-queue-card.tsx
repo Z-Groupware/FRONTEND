@@ -53,7 +53,7 @@ export function PipelineQueueCard({ queue }: PipelineQueueCardProps) {
           <li key={row.label} className="flex items-center justify-between gap-3">
             <span className="flex flex-col">
               <span className="text-foreground text-[13px] leading-5">{row.label}</span>
-              <span className="text-muted-foreground text-xs leading-4">{row.meta}</span>
+              <span className="text-muted-foreground text-[12px] leading-4">{row.meta}</span>
             </span>
             {/*
               ⚠️ 색으로 알리는 건 **에러(빨강)뿐**이다(CLAUDE.md §디자인 토큰).
@@ -83,7 +83,7 @@ export function PipelineQueueCard({ queue }: PipelineQueueCardProps) {
       */}
       <Link
         href="/system/monitor"
-        className="text-muted-foreground hover:text-foreground hover:bg-foreground/[0.03] focus-visible:ring-ring border-border group mt-auto flex items-center justify-between gap-2 rounded-b-2xl border-t px-7 py-4 text-xs transition-colors duration-150 focus-visible:ring-2 focus-visible:outline-none"
+        className="text-muted-foreground hover:text-foreground hover:bg-foreground/[0.03] focus-visible:ring-ring border-border group mt-auto flex items-center justify-between gap-2 rounded-b-2xl border-t px-7 py-4 text-[12px] leading-4 transition-colors duration-150 focus-visible:ring-2 focus-visible:outline-none"
       >
         <span>시스템 모니터링에서 보기</span>
         <ChevronRight

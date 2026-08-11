@@ -117,7 +117,7 @@ export function PlanSummaryCard({ config }: { config: BillingConfig }) {
         <div className="flex pt-5 sm:justify-center">
           <ul className="grid w-fit gap-x-14 gap-y-4 sm:[grid-template-columns:repeat(3,max-content)]">
             {CURRENT_PLAN.features.map((feature) => (
-              <li key={feature} className="flex items-center gap-2.5 text-[14px] leading-[22px]">
+              <li key={feature} className="flex items-center gap-2.5 text-[13px] leading-[22px]">
                 <Check className="text-muted-foreground size-4 shrink-0" aria-hidden />
                 <span>{feature}</span>
               </li>
@@ -157,7 +157,7 @@ function Included({
         <span>{label}</span>
       </dt>
       <dd className="flex items-baseline justify-center gap-1.5 pt-2.5">
-        {unit && <span className="text-muted-foreground text-[14px] leading-8">{unit}</span>}
+        {unit && <span className="text-muted-foreground text-[13px] leading-8">{unit}</span>}
         <span className="text-[30px] leading-9 font-semibold tracking-[-0.8px] tabular-nums">
           {value}
         </span>

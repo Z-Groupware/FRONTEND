@@ -28,11 +28,7 @@ export function UsagePanel({ subscription, config }: UsagePanelProps) {
   return (
     <section className="border-border bg-card rounded-2xl border p-6">
       <div className="flex items-baseline justify-between gap-3">
-        <h2 className="flex items-center gap-2 text-[15px] leading-6 font-semibold tracking-[-0.2px]">
-          {/* 온보딩 카드 머리와 같은 표식 — 화면이 달라도 같은 서비스로 읽힌다 */}
-          <span className="bg-foreground size-2 rounded-full" aria-hidden />
-          이번 주기 사용량
-        </h2>
+        <h2 className="text-[17px] leading-7 font-semibold tracking-[-0.3px]">이번 주기 사용량</h2>
         {/*
           ⚠️ **못 읽는 쪽만 `—`로 둔다.** 범위 표기라 한쪽이 비어도 `9월 1일 ~ —`로 읽히고,
              어느 끝을 모르는지가 그대로 드러난다 — 줄을 통째로 숨기면 주기가 없는 것처럼 보인다.

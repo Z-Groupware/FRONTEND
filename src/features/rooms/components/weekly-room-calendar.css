@@ -3,15 +3,38 @@
  * `personal-calendar.css`(월간 뷰)와 짝이지만, 이 화면은 `work_week`(시간대) 뷰라 다른 클래스를 쓴다.
  */
 
+/*
+  ⚠️ **카드 한 장이다**(2026-08-11). 툴바는 격자 위에 떠 있고 격자만 테두리를 두르고 있어서,
+     개인 캘린더(카드 안에 머리+격자)와 생김새가 갈렸다 — 테두리·모서리·그림자를 뿌리로
+     옮겨 머리와 격자를 한 장에 담는다. 라이브러리 마크업은 그대로다.
+*/
 .rbc-calendar {
   color: var(--foreground);
   font-family: var(--font-sans);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-2xl);
+  background-color: var(--card);
+  overflow: hidden;
+  box-shadow:
+    0 1px 2px color-mix(in oklch, var(--foreground) 4%, transparent),
+    0 1px 3px color-mix(in oklch, var(--foreground) 3%, transparent);
 }
 
+.dark .rbc-calendar {
+  box-shadow: none;
+}
+
+/*
+  ⚠️ **카드처럼 보이게 한다**(2026-08-11). 개인 캘린더(`/app/calendar`)는 카드 한 장 안에
+     격자가 들어 있는데 이 화면만 표처럼 각져 있어서, 같은 앱의 같은 종류 화면인데도
+     느낌이 갈렸다 — 라이브러리는 그대로 두고 **면·모서리·그림자만** 카드 규격으로 맞춘다.
+  ⚠️ 그림자 값은 셸의 카드 규칙(`.app-shell .bg-card`)과 같은 식이다. 다크에서는 안 건다.
+*/
+/* 격자 자체는 이제 테두리를 안 두른다 — 카드가 뿌리에 있다 */
 .rbc-time-view {
-  border-color: var(--border);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
+  border: 0;
+  border-radius: 0;
+  background-color: var(--card);
 }
 
 /*
@@ -26,18 +49,63 @@
   overflow-y: hidden !important;
 }
 
+/*
+  ⚠️ **선 색을 남김없이 토큰으로 바꾼다**(2026-08-11). 라이브러리 기본 CSS가 곳곳에
+     `#DDD`를 직접 박아 두는데, 라이트에서는 우리 보더색과 비슷해 티가 안 나지만
+     **다크에서는 흰 줄로 번쩍인다** — 하루 종일 세로줄만 밝게 떠 있었다.
+  ⚠️ 열 사이 세로선은 `.rbc-timeslot-group`·`.rbc-events-container`가 그린다(칸 자체가 아니다).
+*/
 .rbc-header,
 .rbc-time-header-content,
 .rbc-time-content,
-.rbc-time-gutter {
+.rbc-time-gutter,
+.rbc-time-header.rbc-overflowing,
+.rbc-timeslot-group,
+.rbc-day-slot .rbc-events-container,
+.rbc-time-content > * + * {
   border-color: var(--border) !important;
 }
 
+/*
+  ⚠️ **요일 줄과 격자 사이는 선 하나다**(2026-08-11). RBC 기본값이 요일 칸에 아래선 1px,
+     본문 위에 **2px**를 따로 그어서 경계가 3px 굵은 이중선으로 보였다(시간 눈금 칸에서는
+     2px만 보여 좌우 굵기까지 달랐다) — 요일 쪽 선을 지우고 본문 위 선 하나만 1px로 남긴다.
+*/
 .rbc-header {
-  background-color: var(--secondary);
+  border-bottom: 0 !important;
+}
+
+.rbc-time-content {
+  border-top: 1px solid var(--border) !important;
+}
+
+/*
+  ⚠️ 요일 줄에 **회색 띠를 깔지 않는다**(2026-08-11). 표 머리처럼 보여서 개인 캘린더의
+     요일 줄(민 바탕 + 흐린 글자)과 달랐다 — 나누는 일은 아래 선 하나가 한다(§DESIGN 2).
+*/
+.rbc-header {
+  background-color: transparent;
   color: var(--muted-foreground);
-  padding: 6px 0;
+  padding: 10px 0;
+  font-size: 12px;
+  line-height: 16px;
   font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+/*
+  오늘 요일 — 개인 캘린더가 **오늘 날짜에 먹색 알약**을 씌우는 것과 같은 결이다.
+  띠를 깔면 표 머리로 돌아가므로, 글자만 진하게 세운다.
+*/
+.rbc-header.rbc-today {
+  color: var(--foreground);
+  font-weight: 600;
+}
+
+/* 시간 눈금 — 숫자는 자릿수가 흔들리지 않게 */
+.rbc-time-gutter .rbc-label {
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
 }
 
 /*
@@ -67,6 +135,16 @@
 */
 .rbc-timeslot-group {
   border-bottom: 1px solid var(--border) !important;
+}
+
+/*
+  ⚠️ 마지막 시간대는 아랫선을 안 긋는다 — 카드 테두리와 겹쳐 바닥만 2px로 굵어진다.
+  ⚠️ `:last-child`도 `:last-of-type`도 못 잡는다 — 칸 맨 끝에 예약 막대를 담는
+     `.rbc-events-container`가 하나 더 붙는데 그것도 `div`라, 둘 다 그 칸을 가리킨다.
+     **뒤에 시간대가 더 없는 것**을 직접 고른다.
+*/
+.rbc-timeslot-group:not(:has(~ .rbc-timeslot-group)) {
+  border-bottom: 0 !important;
 }
 
 .rbc-time-slot {
@@ -108,8 +186,16 @@
   background-color: var(--card);
 }
 
-.rbc-today {
-  background-color: var(--card);
+/*
+  오늘 칸 — 카드 면 위에 먹색 3%. 이보다 진하면 예약 막대보다 바탕이 먼저 읽히고,
+  이보다 옅으면 어제·내일과 구분이 안 된다.
+*/
+/*
+  ⚠️ 요일 머리는 뺀다(`:not(.rbc-header)`). `.rbc-today`는 머리 칸에도 붙어 있어서, 그냥 두면
+     위에서 "띠를 깔지 않는다"고 정한 머리에 3% 띠가 도로 깔린다.
+*/
+.rbc-today:not(.rbc-header) {
+  background-color: color-mix(in srgb, var(--foreground) 3%, var(--card));
 }
 
 /*
@@ -144,6 +230,30 @@
   outline-offset: 1px;
 }
 
+/*
+  지금 시각 — **먹색이다**(2026-08-11). 빨강은 이 앱에서 잘못됐다는 뜻이라(§DESIGN 5),
+  그냥 지금이 몇 시인지 알려 주는 선에 쓰면 예약이 잘못된 것처럼 읽힌다.
+  왼쪽 끝에 점을 찍어 눈금과 이어지는 시각임을 알린다.
+*/
 .rbc-current-time-indicator {
-  background-color: var(--destructive);
+  height: 2px;
+  border-radius: 9999px;
+  background-color: var(--foreground);
+}
+
+/*
+  왼쪽 끝 점 — **바탕색 링을 두른다.** 점이 격자선 위에 바로 얹히면 선과 뭉쳐 보이는데,
+  카드 면 색으로 한 겹 둘러 주면 격자에서 살짝 떠 보여 "지금"이 또렷해진다.
+*/
+.rbc-current-time-indicator::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 8px;
+  height: 8px;
+  border-radius: 9999px;
+  background-color: var(--foreground);
+  box-shadow: 0 0 0 3px var(--card);
+  transform: translate(-4px, -50%);
 }

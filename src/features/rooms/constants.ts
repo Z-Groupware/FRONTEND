@@ -43,7 +43,9 @@ export const ROOMS_CALENDAR_TOOLBAR_LABEL = {
 /** 회의실 목록 패널(`room-list-panel.tsx`) 카피 — 위 툴바 상수와 같은 이유로 뺐다. */
 export const ROOM_LIST_PANEL_LABEL = {
   title: "회의실 목록",
-  guidance: "예약 가능 시간을 확인하세요.",
+  /* ⚠️ 명령이 아니라 **설명**이다 — `~하세요`는 §카피(명령은 `~해 주세요`) 밖이고, 이 줄은
+     시키는 말이 아니라 이 목록이 무엇인지 알리는 말이다. */
+  guidance: "회의실별 예약 가능 시간입니다.",
   countSuffix: "개",
 } as const;
 

@@ -59,7 +59,7 @@ export function InvitePreview({ invites, departments, rolesOf, positions }: Invi
                  오른쪽 부서·직급만 보조 정보라 한 단 연하게 둔다.
             */}
             <span className="bg-foreground size-[5px] shrink-0 rounded-full" aria-hidden />
-            <span className="truncate font-mono text-[10px]">{invite.email.trim()}</span>
+            <span className="truncate font-mono text-[11px]">{invite.email.trim()}</span>
             {(department || role || position) && (
               <span className="text-muted-foreground/60 ml-auto shrink-0 text-[9px]">
                 {[department, role, position].filter(Boolean).join(" · ")}

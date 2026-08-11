@@ -103,16 +103,27 @@ export function InlineEditableField({
       <span
         className={cn(
           "min-w-0 truncate",
+          /*
+            ⚠️ **이름에 무게를 준다**(2026-08-11). 이름 13px medium과 설명 12px가 한 단 차이라
+               훑을 때 둘이 뭉쳐 어느 것이 액션 이름인지 안 잡혔다 — 굵기를 한 단 올리고
+               설명은 흐린 채로 둬서 층을 벌린다(§DESIGN 4: 크기는 다섯뿐이라 무게로 가른다).
+          */
           multiline
-            ? "text-muted-foreground text-[12px] leading-4"
-            : "text-[13px] leading-5 font-medium",
+            ? "text-muted-foreground text-[12px] leading-[18px]"
+            : "text-[13px] leading-5 font-semibold",
           !value && "text-muted-foreground/60",
         )}
       >
         {value || placeholder}
       </span>
+      {/*
+        ⚠️ **평소엔 숨긴다**(2026-08-11). 연필이 글자 바로 뒤에 붙어 있어서, 줄마다 이름 길이가
+           다른 만큼 아이콘도 제각각인 자리에 떠 **열이 들쭉날쭉**했다 — 자리는 그대로 잡아 두고
+           (`opacity`) 커서를 얹거나 키보드로 짚었을 때만 드러낸다. 눌러 고칠 수 있다는 사실은
+           `aria-label`이 늘 말한다(§a11y).
+      */}
       <Pencil
-        className="text-muted-foreground/40 group-hover:text-muted-foreground mt-0.5 size-3 shrink-0"
+        className="text-muted-foreground mt-0.5 size-3 shrink-0 opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100"
         aria-hidden
       />
     </button>

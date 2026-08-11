@@ -35,10 +35,10 @@ describe("Owner", () => {
     expect(titles(navFor(actor(AUTHORITY.OWNER)))).toContain("회사 운영");
   });
 
-  it("기업 설정·팀장 인수인계는 Owner만 본다", () => {
+  it("기업 설정·인수인계서 관리는 Owner만 본다", () => {
     const items = labels(navFor(actor(AUTHORITY.OWNER)), "회사 운영");
     expect(items).toContain("기업 설정");
-    expect(items).toContain("팀장 인수인계");
+    expect(items).toContain("인수인계서 관리");
   });
 
   it("내 액션·인수인계가 **없다** — 액션을 받는 자리가 아니고 인수인계를 쓰는 쪽도 아니다", () => {
@@ -100,10 +100,10 @@ describe("Admin 겸직", () => {
     expect(navFor(actor(AUTHORITY.LEADER, true))[0]?.items[0]?.href).toBe("/team");
   });
 
-  it("겸직자에게 기업 설정·팀장 인수인계는 **안 보인다** — 위계상 Owner의 것이다", () => {
+  it("겸직자에게 기업 설정·인수인계서 관리는 **안 보인다** — 위계상 Owner의 것이다", () => {
     const items = labels(navFor(actor(AUTHORITY.MEMBER, true)), "회사 운영");
     expect(items).not.toContain("기업 설정");
-    expect(items).not.toContain("팀장 인수인계");
+    expect(items).not.toContain("인수인계서 관리");
   });
 
   it("**계정 발급은 별도 탭이 아니다** — 사원 관리 화면 안 버튼이라 사이드바엔 안 뜬다", () => {

@@ -20,7 +20,7 @@ export function FeatureHandoverMock() {
           <FileText className="size-3.5" aria-hidden />
           인수인계서 자동 구성
         </p>
-        <span className="border-border text-muted-foreground/70 flex shrink-0 items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] leading-4">
+        <span className="border-border text-muted-foreground/70 flex shrink-0 items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] leading-4">
           <Check className="size-3" aria-hidden />
           <span className="tabular-nums">3 / 3</span>
         </span>
@@ -43,7 +43,7 @@ export function FeatureHandoverMock() {
         <FileText className="text-foreground size-4 shrink-0" aria-hidden />
         <span className="min-w-0 flex-1">
           <span className="block text-[11px] leading-4 font-medium">전임 → 후임 인수인계서</span>
-          <span className="text-muted-foreground/70 block text-[10px] leading-[14px]">
+          <span className="text-muted-foreground/70 block text-[11px] leading-[14px]">
             후임자에게 전달할 준비가 끝났습니다
           </span>
         </span>

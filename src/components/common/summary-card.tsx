@@ -55,7 +55,7 @@ export function SummaryCard({ items }: SummaryCardProps) {
                 {item.value}
               </span>
               {item.unit && (
-                <span className="text-muted-foreground text-[14px] leading-5 font-medium">
+                <span className="text-muted-foreground text-[13px] leading-5 font-medium">
                   {item.unit}
                 </span>
               )}

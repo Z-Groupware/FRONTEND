@@ -79,7 +79,7 @@ export function MeetingTopicList({ topics, onChange, error }: MeetingTopicListPr
         type="button"
         variant="link"
         size="xs"
-        className="w-fit px-0 text-xs"
+        className="w-fit px-0 text-[12px] leading-4"
         onClick={addTopic}
       >
         <Plus aria-hidden className="size-3.5" />

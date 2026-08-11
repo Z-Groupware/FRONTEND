@@ -10,7 +10,7 @@ export function StepHintList({ items }: { items: readonly string[] }) {
       {items.map((item) => (
         <li
           key={item}
-          className="text-muted-foreground flex gap-[7px] text-xs leading-[19px] break-keep"
+          className="text-muted-foreground flex gap-[7px] text-[12px] leading-[19px] break-keep"
         >
           <CheckMark size={14} className="mt-[3px]" />
           {item}

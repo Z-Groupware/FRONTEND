@@ -54,7 +54,7 @@ export function AppPreview() {
            둘이 다르게 생기면 떠 있는 것끼리 따로 놀아 화면이 어수선해진다.
       */}
       <div className="border-foreground/25 landing-light:border-border bg-popover landing-light:bg-card animate-float absolute top-10 -left-12 z-10 rounded-2xl border px-4 py-3.5 shadow-lg lg:-left-16">
-        <span className="bg-landing-violet/10 text-landing-violet inline-flex items-center gap-1 rounded-full py-0.5 pr-2.5 pl-2 text-[10px] leading-4 font-semibold">
+        <span className="bg-landing-violet/10 text-landing-violet inline-flex items-center gap-1 rounded-full py-0.5 pr-2.5 pl-2 text-[11px] leading-4 font-semibold">
           <Sparkles className="size-3 shrink-0" aria-hidden />
           <span>AI 요약</span>
         </span>
@@ -76,7 +76,7 @@ export function AppPreview() {
            (`방금 전 · 3줄 요약` → `3줄 · 방금 전`). 세로가 세 줄이라 짧아도 납작해지지 않는다.
       */}
       <div className="border-foreground/25 landing-light:border-border bg-popover landing-light:bg-card animate-float absolute -right-8 -bottom-8 z-10 rounded-2xl border px-4 py-3.5 shadow-lg [animation-delay:-2s] lg:-right-12">
-        <span className="bg-landing-accent/10 text-landing-accent inline-flex rounded-full px-2.5 py-0.5 text-[10px] leading-4 font-semibold">
+        <span className="bg-landing-accent/10 text-landing-accent inline-flex rounded-full px-2.5 py-0.5 text-[11px] leading-4 font-semibold">
           액션
         </span>
         <p className="pt-2 text-[12px] leading-[18px] font-semibold">와이어프레임 작성</p>
@@ -108,7 +108,7 @@ export function AppPreview() {
             </span>
             {/* ⚠️ `--card`(어두운 무대에서 흰색 4%)가 아니라 `--background`다 — 입력칸은 껍데기보다
                 한 단 눌러야 눌린 자리로 읽히고, 반투명이 아니라 실제로 보인다 */}
-            <span className="border-border bg-background text-muted-foreground/70 flex-1 rounded border px-2 py-0.5 text-[10px] leading-4">
+            <span className="border-border bg-background text-muted-foreground/70 flex-1 rounded border px-2 py-0.5 text-[11px] leading-4">
               app.getz.kr
             </span>
           </div>
@@ -118,11 +118,11 @@ export function AppPreview() {
               <span className="flex items-center gap-1.5 px-1.5 pb-2">
                 <ZLogo className="text-foreground size-3" />
               </span>
-              <span className="bg-foreground text-background rounded px-2 py-1 text-[10px] leading-4">
+              <span className="bg-foreground text-background rounded px-2 py-1 text-[11px] leading-4">
                 대시보드
               </span>
               {["프로젝트", "보드", "회의"].map((item) => (
-                <span key={item} className="text-muted-foreground px-2 py-1 text-[10px] leading-4">
+                <span key={item} className="text-muted-foreground px-2 py-1 text-[11px] leading-4">
                   {item}
                 </span>
               ))}

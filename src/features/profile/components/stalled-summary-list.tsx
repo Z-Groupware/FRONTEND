@@ -37,7 +37,7 @@ export function StalledSummaryList({ summaries }: StalledSummaryListProps) {
         return (
           <div
             key={summary.meetingId}
-            className="border-border flex items-center justify-between gap-3 border-t px-7 py-4 first:border-t-0"
+            className="border-border flex items-center justify-between gap-3 px-7 py-3.5 not-first:border-t"
           >
             <div className="flex min-w-0 flex-col gap-0.5">
               <p className="truncate text-[13px] leading-5 font-medium">{summary.meetingTitle}</p>

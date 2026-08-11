@@ -341,7 +341,7 @@ function EnterCard({
         <Button
           type="button"
           variant="ink"
-          className="mt-6 h-11 w-full text-[14px]"
+          className="mt-6 h-11 w-full text-[13px]"
           onClick={onEnter}
         >
           입장
@@ -511,10 +511,7 @@ function AttendeeCard({ attendees }: { attendees: CaptureAttendee[] }) {
   return (
     <section className="border-border bg-card flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border">
       <div className="flex items-center justify-between gap-3 px-7 pt-6 pb-3">
-        <h2 className="flex items-center gap-2 text-[17px] leading-7 font-semibold tracking-[-0.3px]">
-          <span className="bg-foreground size-2 rounded-full" aria-hidden />
-          참가자
-        </h2>
+        <h2 className="text-[17px] leading-7 font-semibold tracking-[-0.3px]">참가자</h2>
         <span className="text-muted-foreground text-[12px] leading-4 tabular-nums">
           {attendees.length}명
         </span>

@@ -11,7 +11,13 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { cn } from "@/lib/utils";
 
 const VALUE_FORMAT = "yyyy-MM-dd";
-const DISPLAY_FORMAT = "yyyy년 M월 d일(EEE)";
+/*
+  ⚠️ **연도를 안 붙인다**(2026-08-11). 앱의 날짜 표기 정본은 `8월 5일(수)`이고(§카피),
+     연도는 결제처럼 계약이 걸린 자리에만 붙인다(`formatFullDate`) — 캘린더 칸만 `2026년`을
+     달고 있어서, 한 화면에 날짜가 여럿이면 줄마다 `2026년`이 먼저 읽혔다.
+  ⚠️ 어느 해인지는 **달력을 열면** 머리(`2026년 8월`)가 말한다.
+*/
+const DISPLAY_FORMAT = "M월 d일(EEE)";
 
 function parseValue(value: string): Date | undefined {
   if (!value) return undefined;
@@ -77,7 +83,12 @@ export function DatePickerField({
             disabled={disabled}
             aria-label={ariaLabel}
             aria-invalid={ariaInvalid}
-            className={cn("h-10 justify-start gap-2 font-normal", className)}
+            /*
+              ⚠️ **높이는 32다**(2026-08-11). `h-10`(40)이라 옆에 선 입력칸(`Input` 32)·
+                 셀렉트(32)보다 혼자 8px 높아, 같은 줄에 두면 키가 안 맞았다 —
+                 폼 조작의 키는 앱 전체가 하나다.
+            */
+            className={cn("h-8 justify-start gap-2 font-normal", className)}
           />
         }
       >

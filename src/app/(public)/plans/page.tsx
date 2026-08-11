@@ -68,7 +68,7 @@ export default async function PlansPage() {
             <span className="bg-foreground text-background flex size-6 items-center justify-center rounded-full text-[12px] leading-none font-semibold tabular-nums">
               {index + 1}
             </span>
-            <p className="pt-3.5 text-[14px] leading-[21px] font-semibold">{step.title}</p>
+            <p className="pt-3.5 text-[13px] leading-[21px] font-semibold">{step.title}</p>
             <p className="text-muted-foreground pt-1 text-[12px] leading-[19px] break-keep">
               {step.detail}
             </p>

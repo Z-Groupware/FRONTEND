@@ -1,5 +1,7 @@
+import { Megaphone } from "lucide-react";
 import type { ReactNode } from "react";
 
+import { EmptyState } from "@/components/common/empty-state";
 import { cn } from "@/lib/utils";
 
 import type { NoticeSummary } from "../types";
@@ -44,10 +46,16 @@ export function NoticeList({ notices, action, activeId, className }: NoticeListP
       </div>
 
       {notices.length === 0 ? (
-        <div className="flex flex-1 items-center justify-center p-10 text-center">
-          {/* ⚠️ `text-sm`은 규격 밖이다 — 다섯 크기 중 13px를 쓴다(§DESIGN 4) */}
-          <p className="text-muted-foreground text-[13px] leading-5">아직 등록된 공지가 없습니다</p>
-        </div>
+        /*
+          ⚠️ 머리에 이미 `border-b`가 있어 `bordered`를 켜지 않는다 — 선이 두 줄이 된다.
+          ⚠️ `flex-1` — 공지 상세 왼쪽 목록으로도 쓰여서, 빈 상태가 그 칸을 채워야 한다(develop #327).
+        */
+        <EmptyState
+          className="flex-1"
+          icon={Megaphone}
+          title="아직 등록된 공지가 없습니다."
+          description="공지를 올리면 전 사원이 이 목록에서 봅니다."
+        />
       ) : (
         <ul className="divide-border min-h-0 flex-1 divide-y overflow-y-auto">
           {notices.map((notice) => (
