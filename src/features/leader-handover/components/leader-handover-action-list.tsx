@@ -31,7 +31,7 @@ export function LeaderHandoverActionList({ actions }: { actions: LeaderHandoverA
         <>
           {/* 표 머리 — 띠 하나로 값이 시작하는 자리를 알린다(§DESIGN 2: 카드 안의 선은 여기뿐) */}
           <div className="border-border text-muted-foreground bg-secondary/50 flex items-center gap-4 border-y px-7 py-3 text-[12px] leading-4">
-            <span className="w-[76px] shrink-0">프로젝트</span>
+            <span className="w-[76px] shrink-0 text-center">프로젝트</span>
             <span className="min-w-0 flex-1">액션</span>
             <span className="w-[72px] shrink-0 text-center">상태</span>
             <span className="w-24 shrink-0 text-center">마감</span>
@@ -52,8 +52,10 @@ export function LeaderHandoverActionList({ actions }: { actions: LeaderHandoverA
                     ⚠️ **칩은 따로 선다.** 이름 앞에 붙여 두니 위층은 칩 뒤에서, 아래층은 왼쪽 끝에서
                        시작해 **두 줄의 시작선이 어긋나** 왼쪽 구석에 뭉쳐 보였다 — 칩을 제 열로
                        빼면 두 줄이 한 세로선에서 시작한다(§DESIGN 3: 열마다 축이 따로 선다).
+                    ⚠️ 칩 열은 **가운데 정렬**이다. 머리 글자(`프로젝트` 4자)와 칩(`GOODS`·`COLLAB`)은
+                       폭이 제각각이라, 왼쪽에 맞추면 둘의 **중앙이 어긋나** 보인다.
                   */}
-                  <span className="flex w-[76px] shrink-0 items-center">
+                  <span className="flex w-[76px] shrink-0 items-center justify-center">
                     <ProjectTag tag={action.projectTag} />
                   </span>
                   <span className="flex min-w-0 flex-1 flex-col gap-1">
