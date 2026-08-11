@@ -33,7 +33,7 @@ function BoardCardBody({ card, isDelayed }: BoardCardProps) {
            (회의 카드의 위쪽 띠와 같은 결이다). 둥근 모서리는 `overflow-hidden`이 잘라 준다.
       */}
       <span
-        className="absolute inset-y-0 left-0 w-[3px]"
+        className="absolute inset-y-0 left-0 w-1.5"
         style={{ backgroundColor: pickPaletteColor(card.tagLabel).solidColor }}
         aria-hidden
       />
@@ -75,7 +75,7 @@ function BoardCardBody({ card, isDelayed }: BoardCardProps) {
  *    이건 칸 안에 줄지어 서는 작은 카드라 한 단계 작다(검색 화면과 같은 규칙).
  */
 const CARD_SHAPE =
-  "border-border bg-card relative flex overflow-hidden rounded-xl border py-3.5 pr-4 pl-[18px]";
+  "border-border bg-card relative flex overflow-hidden rounded-xl border py-3.5 pr-4 pl-5";
 
 /**
  * 보드 카드 한 장 — 드래그 핸들은 카드 전체(클릭해서 상세로 이동하는 화면이 아니라 옮기는 화면).
