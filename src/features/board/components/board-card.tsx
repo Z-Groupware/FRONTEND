@@ -42,7 +42,7 @@ function BoardCardBody({ card, isDelayed }: BoardCardProps) {
         style={{ backgroundColor: pickPaletteColor(card.tagLabel).solidColor }}
         aria-hidden
       />
-      <div className="flex min-w-0 flex-1 flex-col gap-2">
+      <div className="flex min-w-0 flex-1 flex-col gap-3">
         {/*
         ⚠️ **제목이 먼저다.** 칩·제목·날짜를 세 층으로 쌓아 두니 카드가 필요 이상으로 길고,
            셋 다 왼쪽 끝에 붙어 오른쪽이 통째로 비었다 — 카드에서 읽는 건 **무슨 일인가**이고
@@ -79,11 +79,11 @@ function BoardCardBody({ card, isDelayed }: BoardCardProps) {
  * ⚠️ 라운드는 `rounded-lg`(10px)다. 한 단계 위(`xl` 14px)로 뒀더니 **모서리 곡선이 왼쪽 띠의
  *    위아래를 14px씩 먹어** 띠가 잘린 것처럼 보였다 — 곡선을 줄이면 띠의 곧은 구간이 그만큼
  *    길어진다. 칸 안에 줄지어 서는 작은 카드라 원래도 큰 카드(`2xl` 18px)보다 작아야 한다.
- * ⚠️ 세로 여백도 함께 키운다(`py-[18px]`). 띠 길이는 결국 카드 높이라, 곡선만 줄여서는
- *    한계가 있다.
+ * ⚠️ 세로 여백을 넉넉히 준다(`py-6`). **띠 길이는 결국 카드 높이다** — 띠만 손봐서는 길어지지
+ *    않는다. 두 줄 사이 간격도 함께 벌려 늘어난 높이가 한쪽 여백에만 쏠리지 않게 한다.
  */
 const CARD_SHAPE =
-  "border-border bg-card relative flex overflow-hidden rounded-lg rounded-l-none border py-[18px] pr-4 pl-4";
+  "border-border bg-card relative flex overflow-hidden rounded-lg rounded-l-none border py-6 pr-4 pl-4";
 
 /**
  * 보드 카드 한 장 — 드래그 핸들은 카드 전체(클릭해서 상세로 이동하는 화면이 아니라 옮기는 화면).
