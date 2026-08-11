@@ -34,7 +34,7 @@ export default async function AppNoticeDetailPage({ params }: AppNoticeDetailPag
            목록을 곁들여 오갈 때 상세 화면에서 바로 다른 공지로 넘어갈 수 있게 한다.
            곁 컬럼 폭은 §1의 360px 고정 규칙을 그대로 따른다.
       */}
-      <div className="mx-auto grid w-full max-w-[1440px] grid-cols-1 gap-7 lg:grid-cols-[360px_minmax(0,1fr)]">
+      <div className="mx-auto grid h-full w-full max-w-[1440px] grid-cols-1 grid-rows-[minmax(0,1fr)] gap-7 lg:grid-cols-[360px_minmax(0,1fr)]">
         <NoticeList
           notices={notices}
           activeId={notice.id}

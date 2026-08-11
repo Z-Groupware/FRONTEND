@@ -6,15 +6,14 @@ import { cn } from "@/lib/utils";
 
 import type { NoticeSummary } from "../types";
 
-/** 공지 목록 한 줄 — 누르면 상세로 간다. 순수 표시라 서버에서 그린다. */
-export function NoticeListItem({
-  notice,
-  isActive = false,
-}: {
+interface NoticeListItemProps {
   notice: NoticeSummary;
   /** 상세 화면 왼쪽 목록에서 지금 보고 있는 공지 표시 — 목록 단독 화면에서는 항상 false. */
   isActive?: boolean;
-}) {
+}
+
+/** 공지 목록 한 줄 — 누르면 상세로 간다. 순수 표시라 서버에서 그린다. */
+export function NoticeListItem({ notice, isActive = false }: NoticeListItemProps) {
   return (
     <Link
       href={`/app/notice/${notice.id}`}

@@ -49,7 +49,7 @@ export function NoticeList({ notices, action, activeId, className }: NoticeListP
           <p className="text-muted-foreground text-[13px] leading-5">아직 등록된 공지가 없습니다</p>
         </div>
       ) : (
-        <ul className="divide-border flex-1 divide-y overflow-y-auto">
+        <ul className="divide-border min-h-0 flex-1 divide-y overflow-y-auto">
           {notices.map((notice) => (
             <li key={notice.id}>
               <NoticeListItem notice={notice} isActive={notice.id === activeId} />
