@@ -65,7 +65,7 @@ export function RoomReservationFields({
           name="title"
           value={form.title}
           onChange={(event) => setForm((prev) => ({ ...prev, title: event.target.value }))}
-          placeholder="회의 제목을 입력해 주세요"
+          placeholder="회의 제목을 입력하세요"
           aria-invalid={Boolean(errors.title)}
         />
         <FieldError reserveSpace message={errors.title} />
