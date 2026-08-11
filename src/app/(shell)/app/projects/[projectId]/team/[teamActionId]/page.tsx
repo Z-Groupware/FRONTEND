@@ -186,7 +186,6 @@ export default async function TeamActionDetailPage({
           */
           <section className="border-border bg-card w-full overflow-hidden rounded-2xl border">
             <div className="flex items-center gap-2 px-7 pt-6 pb-5">
-              <span className="bg-foreground size-2 rounded-full" aria-hidden />
               <h3 className="text-[17px] leading-7 font-semibold tracking-[-0.3px]">내용</h3>
             </div>
             {/*
@@ -209,7 +208,6 @@ export default async function TeamActionDetailPage({
           >
             <div className="border-border flex shrink-0 items-baseline justify-between gap-3 border-b px-7 pt-6 pb-3">
               <h3 className="flex items-center gap-2 text-[17px] leading-7 font-semibold tracking-[-0.3px]">
-                <span className="bg-foreground size-2 rounded-full" aria-hidden />
                 팀원별 액션 타임라인
               </h3>
               <ActionTimelineLegend />

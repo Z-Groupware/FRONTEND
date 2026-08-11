@@ -68,7 +68,6 @@ export function ThemeCard() {
   return (
     <section className="border-border bg-card rounded-2xl border p-7">
       <h2 className="flex items-center gap-2 text-[17px] leading-7 font-semibold tracking-[-0.3px]">
-        <span className="bg-foreground size-2 rounded-full" aria-hidden />
         테마
       </h2>
 

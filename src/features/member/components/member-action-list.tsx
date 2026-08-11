@@ -17,8 +17,6 @@ export function MemberActionList({ actions }: { actions: ManagedMemberAction[] }
     <section className="border-border bg-card overflow-hidden rounded-2xl border">
       <div className="flex items-baseline justify-between gap-3 px-7 pt-6 pb-5">
         <h2 className="flex items-center gap-2 text-[15px] leading-6 font-semibold tracking-[-0.2px]">
-          {/* 다른 카드 머리와 같은 표식 — 화면이 달라도 같은 서비스로 읽힌다 */}
-          <span className="bg-foreground size-2 rounded-full" aria-hidden />
           담당 액션
         </h2>
         <p className="text-foreground/75 shrink-0 text-[12px] leading-4 tabular-nums">

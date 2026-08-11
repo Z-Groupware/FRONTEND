@@ -157,7 +157,6 @@ export function VacationForm({ context }: VacationFormProps) {
           <section className="border-border bg-card flex flex-col rounded-2xl border">
             <div className="px-7 pt-6 pb-3">
               <h2 className="flex items-center gap-2 text-[15px] leading-6 font-semibold tracking-[-0.2px]">
-                <span className="bg-foreground size-2 rounded-full" aria-hidden />
                 선택한 액션에 담당자를 지정해 주세요
               </h2>
               <p className="text-muted-foreground mt-1 text-[12px] leading-4">

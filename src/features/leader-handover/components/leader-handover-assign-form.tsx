@@ -64,7 +64,7 @@ export function LeaderHandoverAssignForm({ handover }: LeaderHandoverAssignFormP
     <section className="border-border bg-card flex flex-col gap-4 rounded-2xl border p-7">
       <div className="flex items-center justify-between gap-3">
         <h2 className="flex items-center gap-2 text-[15px] leading-6 font-semibold tracking-[-0.2px]">
-          <span className="bg-foreground size-2 rounded-full" aria-hidden />새 팀장에게 귀속
+          새 팀장에게 귀속
         </h2>
         <Button
           type="button"

@@ -125,7 +125,6 @@ export function TeamHandoverAssignBoard({ handover, todayIso }: TeamHandoverAssi
 
       <section className="border-border bg-card flex flex-col gap-3 rounded-2xl border p-5">
         <h2 className="flex items-center gap-2 text-[15px] leading-6 font-semibold tracking-[-0.2px]">
-          <span className="bg-foreground size-2 rounded-full" aria-hidden />
           배정할 액션
         </h2>
         <div className="flex flex-col gap-2">

@@ -1,3 +1,4 @@
+import { ChevronRight } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -41,40 +42,72 @@ export default async function LeaderHandoversPage({ searchParams }: LeaderHandov
 
   return (
     <main className="scrollbar-hidden min-h-0 flex-1 overflow-y-auto px-8 py-7">
-      <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-5">
-        <nav aria-label="귀속 상태 필터" className="flex items-center gap-1">
-          {LEADER_HANDOVER_FILTER_TABS.map((tab) => (
-            <Link
-              key={tab.value}
-              href={
-                tab.value === "all"
-                  ? "/owner/leader-handovers"
-                  : `/owner/leader-handovers?status=${tab.value}`
-              }
-              aria-current={activeFilter === tab.value ? "page" : undefined}
-              className={cn(
-                "rounded-lg px-2.5 py-1.5 text-[13px] leading-5 transition-colors",
-                activeFilter === tab.value
-                  ? "bg-foreground text-background font-medium"
-                  : "text-muted-foreground hover:bg-muted",
-              )}
+      <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-7">
+        {/*
+          ⚠️ **거르개를 카드 안으로 들인다**(2026-08-11). 카드 밖에 검은 알약으로 떠 있어서
+             ① 목록이 어디서 시작하는지 화면에 안 그려졌고 ② 이 화면에서 제일 무거운 것이
+             거르개가 됐다 — **고르는 자리는 버튼이 아니다.** 프로젝트·사원 관리는 이미
+             한 카드 안에 툴바 한 줄 + 표로 서 있다.
+          ⚠️ 그래서 모양도 그 둘과 같다: 틀(트랙) 안에서 **고른 것만 떠오른다.** 배경으로
+             알리지 않고 층으로 알린다(§DESIGN 5 — 색을 하나 더 쓰지 않는다).
+        */}
+        <section className="border-border bg-card overflow-hidden rounded-2xl border">
+          <div className="flex flex-wrap items-center gap-3 px-7 pt-6 pb-5">
+            <nav
+              aria-label="귀속 상태 필터"
+              className="border-border bg-secondary/60 flex items-center gap-0.5 rounded-lg border p-0.5"
             >
-              {tab.label}
-            </Link>
-          ))}
-        </nav>
+              {LEADER_HANDOVER_FILTER_TABS.map((tab) => {
+                const selected = activeFilter === tab.value;
+                return (
+                  <Link
+                    key={tab.value}
+                    href={
+                      tab.value === "all"
+                        ? "/owner/leader-handovers"
+                        : `/owner/leader-handovers?status=${tab.value}`
+                    }
+                    aria-current={selected ? "page" : undefined}
+                    className={cn(
+                      "focus-visible:ring-ring flex h-7 items-center rounded-md px-3 text-[13px] leading-5 transition-colors focus-visible:ring-2 focus-visible:outline-hidden",
+                      selected
+                        ? "bg-card text-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    {tab.label}
+                  </Link>
+                );
+              })}
+            </nav>
 
-        <div className="border-border bg-card overflow-hidden rounded-2xl border">
-          <div className="border-border text-muted-foreground flex items-center gap-4 border-b px-6 py-3 text-[12px] leading-4">
+            {/* 남는 자리는 비워 둔다 — 건수가 오른쪽 끝에 선다 */}
+            <span className="flex-1" aria-hidden />
+
+            {/* ⚠️ **전체 건수를 머리에 적는다**(CLAUDE.md §목록) — 얼마나 남았는지 알 수 없으면 안 된다 */}
+            <p className="text-muted-foreground text-[12px] leading-4 tabular-nums">
+              전체 {items.length}건
+            </p>
+          </div>
+
+          {/*
+            표 머리 — 값이 어느 열인지 알린다(DESIGN §3).
+            ⚠️ **머리와 값이 열마다 같은 축을 쓴다.** 폭만 맞추고 정렬을 안 정해 두면 글자
+               길이에 따라 축이 흔들려 오와 열이 어긋난다 — 날짜는 오른쪽, 상태는 가운데,
+               나머지는 왼쪽이다(§DESIGN 3: 사람이 훑는 건 끝에 오는 값이다).
+          */}
+          <div className="border-border text-muted-foreground bg-secondary/50 flex items-center gap-4 border-y px-7 py-3 text-[12px] leading-4">
             <span className="min-w-0 flex-1">인수인계서명</span>
             <span className="w-28 shrink-0">퇴사 팀장</span>
             <span className="w-28 shrink-0">팀</span>
-            <span className="w-32 shrink-0">오프보딩 승인일</span>
-            <span className="w-20 shrink-0 text-right">상태</span>
+            <span className="w-32 shrink-0 text-right">오프보딩 승인일</span>
+            <span className="w-20 shrink-0 text-center">상태</span>
+            {/* chevron 자리 — 머리에는 라벨을 안 붙인다 */}
+            <span className="w-4 shrink-0" aria-hidden />
           </div>
 
           {items.length === 0 ? (
-            <p className="text-muted-foreground px-6 py-10 text-center text-[13px] leading-5">
+            <p className="text-muted-foreground px-7 py-14 text-center text-[13px] leading-5">
               해당하는 인수인계서가 없습니다.
             </p>
           ) : (
@@ -82,10 +115,10 @@ export default async function LeaderHandoversPage({ searchParams }: LeaderHandov
               {items.map((item) => {
                 const isAssigned = item.custodyStatus === LEADER_HANDOVER_CUSTODY_STATUS.ASSIGNED;
                 return (
-                  <li key={item.id} className="border-border border-b last:border-b-0">
+                  <li key={item.id} className="border-border not-first:border-t">
                     <Link
                       href={`/owner/leader-handovers/${item.id}`}
-                      className="hover:bg-muted/50 flex items-center gap-4 px-6 py-3.5 text-[13px] leading-5 transition-colors"
+                      className="hover:bg-foreground/[0.04] focus-visible:ring-ring group flex items-center gap-4 px-7 py-4 text-[13px] leading-5 transition-colors focus-visible:ring-2 focus-visible:outline-hidden"
                     >
                       <span className="min-w-0 flex-1 truncate font-medium">{item.title}</span>
                       <span className="text-muted-foreground w-28 shrink-0 truncate">
@@ -94,26 +127,35 @@ export default async function LeaderHandoversPage({ searchParams }: LeaderHandov
                       <span className="text-muted-foreground w-28 shrink-0 truncate">
                         {item.teamName}
                       </span>
-                      <span className="text-muted-foreground w-32 shrink-0 tabular-nums">
+                      <span className="text-muted-foreground w-32 shrink-0 text-right tabular-nums">
                         {formatMonthDayWeekday(item.offboardingApprovedAt)}
                       </span>
+                      {/*
+                        ⚠️ 상태는 **명도로 가른다**(§DESIGN 5 — 색은 에러뿐). 아직 안 넘긴 것이
+                           진하고, 넘긴 것은 흐리다 — 지금 다뤄야 할 것이 먼저 읽혀야 한다.
+                      */}
                       <span
                         className={cn(
-                          "w-20 shrink-0 rounded border px-2 py-0.5 text-center text-[11px] leading-4",
+                          "inline-flex h-6 w-20 shrink-0 items-center justify-center rounded-md border text-[11px] leading-4",
                           isAssigned
-                            ? "border-border/50 text-muted-foreground/60"
-                            : "border-foreground/35 bg-foreground/[0.06] text-foreground font-medium",
+                            ? "border-border text-muted-foreground/70"
+                            : "border-foreground/30 bg-foreground/[0.06] text-foreground font-medium",
                         )}
                       >
                         {LEADER_HANDOVER_CUSTODY_STATUS_LABEL[item.custodyStatus]}
                       </span>
+                      {/* ⚠️ 줄이 눌린다는 걸 적어 둔다 — 손가락 커서는 얹어야 보인다 */}
+                      <ChevronRight
+                        className="text-muted-foreground/50 group-hover:text-muted-foreground size-4 shrink-0 transition-colors"
+                        aria-hidden
+                      />
                     </Link>
                   </li>
                 );
               })}
             </ul>
           )}
-        </div>
+        </section>
       </div>
     </main>
   );

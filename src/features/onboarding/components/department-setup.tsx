@@ -81,9 +81,7 @@ export function DepartmentSetup({
         {/* 높이 고정 — 팀을 아무리 추가해도 카드 크기는 그대로고 안에서만 스크롤된다 */}
         <section className="border-border bg-card flex h-[460px] flex-1 flex-col overflow-hidden rounded-xl border shadow-sm [@media(min-height:820px)]:lg:h-full">
           <header className="border-border bg-muted flex h-12 shrink-0 items-center justify-between border-b px-4">
-            <h2 className="flex items-center gap-2 text-[13px] leading-5">
-              <span className="bg-foreground size-2 rounded-full" aria-hidden />팀 구조 미리보기
-            </h2>
+            <h2 className="flex items-center gap-2 text-[13px] leading-5">팀 구조 미리보기</h2>
             {/* 계층 제약 안내는 좌측 안내문에 있다 — 헤더에 겹쳐 쓰면 지저분해진다 */}
             <span className="text-muted-foreground/70 text-xs leading-4 tabular-nums">
               팀 {total}개

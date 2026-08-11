@@ -62,7 +62,6 @@ export default async function OwnerDashboardPage() {
           */}
           <div className="border-border flex shrink-0 items-baseline justify-between gap-3 px-7 pt-6 pb-5">
             <h2 className="flex items-center gap-2 text-[17px] leading-7 font-semibold tracking-[-0.3px]">
-              <span className="bg-foreground size-2 rounded-full" aria-hidden />
               팀장 현황
             </h2>
             {/* 카드 제목 줄 오른쪽 끝은 보조 정보 한 줄이다(DESIGN §2) */}
@@ -138,7 +137,6 @@ export default async function OwnerDashboardPage() {
         <section className="border-border bg-card flex flex-col overflow-hidden rounded-2xl border">
           <div className="border-border flex shrink-0 items-baseline justify-between gap-3 border-b px-7 pt-6 pb-5">
             <h2 className="flex items-center gap-2 text-[17px] leading-7 font-semibold tracking-[-0.3px]">
-              <span className="bg-foreground size-2 rounded-full" aria-hidden />
               최근 프로젝트 회의
             </h2>
             {/*

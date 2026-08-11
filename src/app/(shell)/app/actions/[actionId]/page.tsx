@@ -149,7 +149,6 @@ export default async function PersonalActionDetailPage({ params }: PersonalActio
           */}
         <section className="border-border bg-card w-full overflow-hidden rounded-2xl border">
           <div className="flex items-center gap-2 px-7 pt-6 pb-5">
-            <span className="bg-foreground size-2 rounded-full" aria-hidden />
             <h3 className="text-[17px] leading-7 font-semibold tracking-[-0.3px]">내용</h3>
           </div>
           {/*

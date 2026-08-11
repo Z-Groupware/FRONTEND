@@ -84,7 +84,6 @@ export function CancelSubscription({
              점이 없어서, 곁 컬럼 셋(플랜·결제 수단·해지) 중 하나만 다른 물건처럼 보였다.
         */}
         <h2 className="flex items-center gap-2 text-[15px] leading-6 font-semibold tracking-[-0.2px]">
-          <span className="bg-foreground size-2 rounded-full" aria-hidden />
           구독 해지
         </h2>
 

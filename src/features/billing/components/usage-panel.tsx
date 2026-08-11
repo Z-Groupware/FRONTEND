@@ -29,8 +29,6 @@ export function UsagePanel({ subscription, config }: UsagePanelProps) {
     <section className="border-border bg-card rounded-2xl border p-6">
       <div className="flex items-baseline justify-between gap-3">
         <h2 className="flex items-center gap-2 text-[15px] leading-6 font-semibold tracking-[-0.2px]">
-          {/* 온보딩 카드 머리와 같은 표식 — 화면이 달라도 같은 서비스로 읽힌다 */}
-          <span className="bg-foreground size-2 rounded-full" aria-hidden />
           이번 주기 사용량
         </h2>
         {/*

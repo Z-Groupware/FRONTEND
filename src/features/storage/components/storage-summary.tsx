@@ -50,8 +50,6 @@ export function StorageSummary({ totals, freeableGb, deletableCount }: StorageSu
   return (
     <section className="border-border bg-card rounded-2xl border p-7">
       <h2 className="flex items-center gap-2 text-[17px] leading-7 font-semibold tracking-[-0.3px]">
-        {/* 다른 카드 머리와 같은 표식 — 화면이 달라도 같은 서비스로 읽힌다 */}
-        <span className="bg-foreground size-2 rounded-full" aria-hidden />
         전체 용량
       </h2>
 

@@ -180,7 +180,7 @@ export default async function ProjectDetailPage({ params, searchParams }: Projec
           */}
             <div className="border-border flex shrink-0 items-baseline justify-between gap-3 px-7 pt-6 pb-5">
               <h3 className="flex items-center gap-2 text-[17px] leading-7 font-semibold tracking-[-0.3px]">
-                <span className="bg-foreground size-2 rounded-full" aria-hidden />팀 액션 타임라인
+                팀 액션 타임라인
               </h3>
               <ActionTimelineLegend />
             </div>

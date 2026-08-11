@@ -82,10 +82,7 @@ export function PositionSetup({ initialPositions }: PositionSetupProps) {
         {/* 높이 고정 — 직급을 아무리 추가해도 카드 크기는 그대로고 안에서만 스크롤된다 */}
         <section className="border-border bg-card flex h-[460px] flex-1 flex-col overflow-hidden rounded-xl border shadow-sm [@media(min-height:820px)]:lg:h-full">
           <header className="border-border bg-muted flex h-12 shrink-0 items-center border-b px-4">
-            <h2 className="flex items-center gap-2 text-[13px] leading-5">
-              <span className="bg-foreground size-2 rounded-full" aria-hidden />
-              직급과 권한
-            </h2>
+            <h2 className="flex items-center gap-2 text-[13px] leading-5">직급과 권한</h2>
           </header>
 
           {/*

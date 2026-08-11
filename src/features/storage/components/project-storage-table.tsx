@@ -53,7 +53,6 @@ export function ProjectStorageTable({
     <section className="border-border bg-card overflow-hidden rounded-2xl border">
       <div className="flex items-baseline justify-between gap-3 px-7 pt-6 pb-3">
         <h2 className="flex items-center gap-2 text-[17px] leading-7 font-semibold tracking-[-0.3px]">
-          <span className="bg-foreground size-2 rounded-full" aria-hidden />
           프로젝트별 사용량
         </h2>
         {/*

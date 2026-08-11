@@ -130,7 +130,6 @@ export function HandoverApprovalCard({
     <section className="border-foreground/25 bg-card overflow-hidden rounded-2xl border">
       <div className="flex items-center justify-between gap-3 px-7 pt-6 pb-5">
         <h2 className="flex items-center gap-2 text-[15px] leading-6 font-semibold tracking-[-0.2px]">
-          <span className="bg-foreground size-2 rounded-full" aria-hidden />
           {applicantTypeLabel} {typeLabel} 최종 승인 대기
         </h2>
         {/* ⚠️ 배지도 명도로 세운다 — 이 화면에서 제일 진한 표식이라 색 없이도 먼저 읽힌다 */}

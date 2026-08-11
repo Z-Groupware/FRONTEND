@@ -41,7 +41,6 @@ export default async function MemberDashboardPage() {
         >
           <div className="border-border flex shrink-0 items-baseline justify-between gap-3 border-b px-7 pt-6 pb-5">
             <h2 className="flex items-center gap-2 text-[17px] leading-7 font-semibold tracking-[-0.3px]">
-              <span className="bg-foreground size-2 rounded-full" aria-hidden />
               처리할 액션
             </h2>
             <ActionTimelineLegend />
@@ -57,7 +56,6 @@ export default async function MemberDashboardPage() {
         <section className="border-border bg-card flex shrink-0 flex-col overflow-hidden rounded-2xl border">
           <div className="border-border flex shrink-0 items-baseline justify-between gap-3 border-b px-7 pt-6 pb-5">
             <h2 className="flex items-center gap-2 text-[17px] leading-7 font-semibold tracking-[-0.3px]">
-              <span className="bg-foreground size-2 rounded-full" aria-hidden />
               참석 회의
             </h2>
             <span className="text-muted-foreground text-[12px] leading-4">최신 5건</span>
