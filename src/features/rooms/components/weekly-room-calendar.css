@@ -200,17 +200,23 @@
 */
 .rbc-current-time-indicator {
   height: 2px;
+  border-radius: 9999px;
   background-color: var(--foreground);
 }
 
+/*
+  왼쪽 끝 점 — **바탕색 링을 두른다.** 점이 격자선 위에 바로 얹히면 선과 뭉쳐 보이는데,
+  카드 면 색으로 한 겹 둘러 주면 격자에서 살짝 떠 보여 "지금"이 또렷해진다.
+*/
 .rbc-current-time-indicator::before {
   content: "";
   position: absolute;
   top: 50%;
   left: 0;
-  width: 7px;
-  height: 7px;
+  width: 8px;
+  height: 8px;
   border-radius: 9999px;
   background-color: var(--foreground);
-  transform: translate(-3px, -50%);
+  box-shadow: 0 0 0 3px var(--card);
+  transform: translate(-4px, -50%);
 }

@@ -104,27 +104,38 @@ export function RoomsCalendarToolbar({
           </SelectContent>
         </Select>
 
-        <Button
-          type="button"
-          variant="outline"
-          size="icon-sm"
-          aria-label="지난 주"
-          onClick={() => onNavigate("PREV")}
-        >
-          <ChevronLeft />
-        </Button>
-        <Button type="button" variant="outline" size="sm" onClick={() => onNavigate("TODAY")}>
-          오늘
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          size="icon-sm"
-          aria-label="다음 주"
-          onClick={() => onNavigate("NEXT")}
-        >
-          <ChevronRight />
-        </Button>
+        {/*
+          ⚠️ **테두리 하나 안에 세 칸**이다(2026-08-11, 개인 캘린더와 같은 조작). 버튼 셋을
+             떼어 놓으면 테두리가 세 번 반복되고 사이 간격까지 생겨, 조작 하나가 아니라
+             잡동사니로 보인다.
+          ⚠️ [오늘]이 가운데다 — 달력에서 가장 자주 하는 일이 "오늘로 돌아가기"라
+             화살표 사이에 두면 손이 움직이는 거리가 가장 짧다.
+        */}
+        <div className="border-border inline-flex items-center overflow-hidden rounded-lg border">
+          <button
+            type="button"
+            aria-label="지난 주"
+            onClick={() => onNavigate("PREV")}
+            className="text-muted-foreground hover:text-foreground hover:bg-foreground/[0.04] focus-visible:ring-ring flex size-7 items-center justify-center transition-colors focus-visible:ring-2 focus-visible:outline-hidden"
+          >
+            <ChevronLeft className="size-3.5" aria-hidden />
+          </button>
+          <button
+            type="button"
+            onClick={() => onNavigate("TODAY")}
+            className="border-border text-muted-foreground hover:text-foreground hover:bg-foreground/[0.04] focus-visible:ring-ring flex h-7 items-center border-x px-2.5 text-[11px] leading-4 transition-colors focus-visible:ring-2 focus-visible:outline-hidden"
+          >
+            오늘
+          </button>
+          <button
+            type="button"
+            aria-label="다음 주"
+            onClick={() => onNavigate("NEXT")}
+            className="text-muted-foreground hover:text-foreground hover:bg-foreground/[0.04] focus-visible:ring-ring flex size-7 items-center justify-center transition-colors focus-visible:ring-2 focus-visible:outline-hidden"
+          >
+            <ChevronRight className="size-3.5" aria-hidden />
+          </button>
+        </div>
       </div>
     </div>
   );

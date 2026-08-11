@@ -19,7 +19,12 @@ interface RoomListPanelProps {
 export function RoomListPanel({ rooms, onAddClick }: RoomListPanelProps) {
   return (
     <aside className="border-border bg-card flex w-full shrink-0 flex-col overflow-hidden rounded-2xl border lg:h-full lg:w-[280px] lg:max-w-[280px]">
-      <div className="flex flex-col gap-0.5 px-5 py-4">
+      {/*
+        ⚠️ **머리에 숨 쉴 자리를 준다**(2026-08-11). 제목·[회의 추가]·안내·개수가 4px 간격으로
+           붙어 있어 네 덩이가 한 뭉치로 읽혔다 — 제목 줄과 안내 줄 사이를 벌리고
+           위아래 여백도 카드 규격 쪽으로 올린다.
+      */}
+      <div className="flex flex-col gap-2.5 px-5 pt-5 pb-4">
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-foreground text-[17px] leading-7 font-semibold tracking-[-0.3px]">
             {ROOM_LIST_PANEL_LABEL.title}
@@ -44,7 +49,7 @@ export function RoomListPanel({ rooms, onAddClick }: RoomListPanelProps) {
         {rooms.map((room) => (
           <li
             key={room.id}
-            className="border-border hover:bg-foreground/[0.03] flex items-center justify-between border-t px-5 py-3 transition-colors"
+            className="border-border hover:bg-foreground/[0.03] flex items-center justify-between gap-3 border-t px-5 py-3.5 transition-colors"
           >
             <span className="text-foreground text-[13px] leading-5">{room.name}</span>
             <span className="text-muted-foreground text-[12px] leading-4 tabular-nums">
