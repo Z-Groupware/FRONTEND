@@ -136,7 +136,7 @@ export function ensureMockMeetingsSeeded(): void {
   });
 
   /*
-    m3 — Owner의 예정 회의. 완료가 아니라 상세가 없다 — 목록에서 [입장]만 보이는 경우를
+    m3 — Owner의 예정 회의. 완료가 아니라 상세가 없다 — 목록에서 [녹음하기]만 보이는 경우를
     확인하는 자리다(캡처 화면은 #217).
   */
   addMockMeeting({
