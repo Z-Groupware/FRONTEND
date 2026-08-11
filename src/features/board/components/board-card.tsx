@@ -96,7 +96,7 @@ const CARD_SHAPE =
 function ColorEdge({ tag }: { tag: string }) {
   return (
     <span
-      className="pointer-events-none absolute inset-y-0 left-0 w-1"
+      className="pointer-events-none absolute inset-y-5 left-0 w-1 rounded-full"
       style={{ backgroundColor: pickPaletteColor(tag).solidColor }}
       aria-hidden
     />
