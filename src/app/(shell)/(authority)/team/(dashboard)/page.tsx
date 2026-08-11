@@ -66,7 +66,7 @@ export default async function TeamDashboardPage() {
               <Table className="min-w-[560px] table-fixed text-[13px]">
                 {/* 머리 띠·셀 규격은 오너 대시보드와 같다(DESIGN §3) — 두 화면이 같은 표다 */}
                 <TableHeader>
-                  <TableRow className="bg-foreground/[0.06] border-border hover:bg-foreground/[0.06] border-b">
+                  <TableRow className="bg-secondary/50 border-border hover:bg-secondary/50 border-b">
                     <TableHead className={`${HEAD_CELL_CLASS} pl-6`}>이름</TableHead>
                     <TableHead className={`${HEAD_CELL_CLASS} text-center`}>직급</TableHead>
                     <TableHead className={`${HEAD_CELL_CLASS} text-center`}>역할</TableHead>

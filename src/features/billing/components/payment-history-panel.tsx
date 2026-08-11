@@ -41,7 +41,7 @@ export function PaymentHistoryPanel({ payments }: PaymentHistoryPanelProps) {
                    읽힌다. `--secondary`는 흰 카드와 2%밖에 차이가 없어 안 보이므로 먹색을
                    옅게 깐다(행 hover보다 진해야 위아래가 안 뒤집힌다).
               */}
-              <tr className="bg-foreground/[0.06] border-border text-muted-foreground border-b text-[12px] leading-4">
+              <tr className="bg-secondary/50 border-border text-muted-foreground border-b text-[12px] leading-4">
                 <th scope="col" className="px-6 py-3 text-center font-medium">
                   결제일
                 </th>

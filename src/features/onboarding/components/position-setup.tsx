@@ -90,7 +90,7 @@ export function PositionSetup({ initialPositions }: PositionSetupProps) {
             ⚠️ 높이·글자는 3단계 열 머리(`InviteColumnHead`)와 **같다**(h-8 · 12px) —
                `gap`만 다른 건 행의 칸 간격이 단계마다 다르기 때문이다.
           */}
-          <div className="text-muted-foreground/60 border-border bg-card flex h-8 shrink-0 items-center gap-2 border-b px-4 text-[12px] leading-4">
+          <div className="text-muted-foreground border-border bg-secondary/50 flex h-8 shrink-0 items-center gap-2 border-b px-4 text-[12px] leading-4">
             <span className={cn(POSITION_COLUMN.INDEX, "shrink-0")} aria-hidden />
             <span className={cn(POSITION_COLUMN.NAME, "shrink-0 text-center")}>직급명</span>
             <span className="flex-1" aria-hidden />

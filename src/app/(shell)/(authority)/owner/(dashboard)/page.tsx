@@ -93,7 +93,7 @@ export default async function OwnerDashboardPage() {
                      안 먹는다 — 행 높이를 정하는 건 셀이다.
                 */}
                 <TableHeader>
-                  <TableRow className="bg-foreground/[0.06] border-border hover:bg-foreground/[0.06] border-b">
+                  <TableRow className="bg-secondary/50 border-border hover:bg-secondary/50 border-b">
                     {/*
                       ⚠️ **머리글과 이름이 같은 세로선에서 가운데를 맞춘다.** 그냥 `pl-6`으로 두면
                          머리글이 아바타 위에 서고, 왼쪽만 맞추면 이름 길이가 달라질 때 다시

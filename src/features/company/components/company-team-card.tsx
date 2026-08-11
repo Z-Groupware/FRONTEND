@@ -203,7 +203,7 @@ export function CompanyTeamCard({ initial, memberCounts }: CompanyTeamCardProps)
           ⚠️ 여백은 카드 전체와 같은 28px다. 아래 목록은 `DepartmentNode`가 자기 몫으로
              8px(`px-2`)를 쓰므로 컨테이너가 20px만 대서 합이 28이 된다.
         */}
-        <div className="text-muted-foreground bg-muted border-border flex items-center justify-between border-b px-7 py-3 text-[12px] leading-4">
+        <div className="text-muted-foreground bg-secondary/50 border-border flex items-center justify-between border-b px-7 py-3 text-[12px] leading-4">
           <span>팀 · 역할</span>
           <span>구분</span>
         </div>

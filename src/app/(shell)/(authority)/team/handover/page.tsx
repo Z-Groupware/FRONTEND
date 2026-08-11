@@ -22,7 +22,7 @@ export default async function TeamHandoverPage() {
     <main className="scrollbar-hidden min-h-0 flex-1 overflow-y-auto px-8 py-7">
       <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-5">
         <div className="border-border bg-card overflow-hidden rounded-2xl border">
-          <div className="border-border text-muted-foreground flex items-center gap-4 border-b px-6 py-3 text-[12px] leading-4">
+          <div className="border-border text-muted-foreground bg-secondary/50 flex items-center gap-4 border-b px-6 py-3 text-[12px] leading-4">
             <span className="min-w-0 flex-1">인수인계서명</span>
             <span className="w-28 shrink-0">담당자</span>
             <span className="w-20 shrink-0">유형</span>

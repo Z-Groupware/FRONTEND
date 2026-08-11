@@ -11,7 +11,7 @@ import { INVITE_COLUMN } from "./invite-columns";
  */
 export function InviteColumnHead() {
   return (
-    <div className="text-muted-foreground/60 border-border bg-card flex h-8 shrink-0 items-center gap-3 border-b px-4 text-[12px] leading-4">
+    <div className="text-muted-foreground border-border bg-secondary/50 flex h-8 shrink-0 items-center gap-3 border-b px-4 text-[12px] leading-4">
       <span className={cn(INVITE_COLUMN.INDEX, "shrink-0")} aria-hidden />
       <span className={cn(INVITE_COLUMN.NAME, "shrink-0 text-center")}>이름</span>
       <span className={cn(INVITE_COLUMN.EMAIL, "ml-1 shrink-0 pl-2.5")}>이메일</span>

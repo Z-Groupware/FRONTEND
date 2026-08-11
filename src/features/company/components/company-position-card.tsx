@@ -136,7 +136,7 @@ export function CompanyPositionCard({ initial }: { initial: Position[] }) {
         }
       >
         {/* 칸 너비는 행(`PositionRow`)과 같은 곳에서 온다 — 따로 적으면 머리와 몸이 어긋난다 */}
-        <div className="text-muted-foreground bg-muted border-border flex shrink-0 items-center gap-2 border-b px-7 py-3 text-[12px] leading-4">
+        <div className="text-muted-foreground bg-secondary/50 border-border flex shrink-0 items-center gap-2 border-b px-7 py-3 text-[12px] leading-4">
           <span className={cn(POSITION_COLUMN.INDEX, "shrink-0")} aria-hidden />
           <span className={cn(POSITION_COLUMN.NAME, "shrink-0 text-center")}>직급명</span>
           <span className="flex-1" aria-hidden />
