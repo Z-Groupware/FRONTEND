@@ -6,6 +6,8 @@ import {
   type LucideIcon,
   MapPin,
   MessageSquareOff,
+  Radio,
+  Sparkles,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -79,12 +81,35 @@ const PENDING_MESSAGE: Record<MeetingContentPending, string> = {
   FAILED: "회의 내용을 요약하지 못했습니다. 개설자가 다시 요약해야 표시됩니다.",
 };
 
+/** 아직 볼 것이 없는 이유마다 표식이 다르다 — 훑을 때 글자보다 먼저 걸린다 */
+const PENDING_ICON: Record<MeetingContentPending, LucideIcon> = {
+  SCHEDULED: CalendarClock,
+  IN_PROGRESS: Radio,
+  SUMMARIZING: Sparkles,
+  FAILED: CircleAlert,
+};
+
+/**
+ * 회의가 아직 안 끝났거나 요약 중이라 칸이 빈 경우.
+ *
+ * ⚠️ 빈 상태와 **같은 생김새**를 쓴다(2026-08-11). 문장 한 줄만 가운데 띄워 두니 카드가
+ *    반쯤 지어진 것처럼 보였고, 바로 아래 다른 칸의 빈 상태와도 달라 보였다.
+ */
 function SectionNotice({ reason }: { reason: MeetingContentPending }) {
-  return (
-    <p className="text-muted-foreground px-7 pt-2 pb-8 text-center text-[13px] leading-5">
-      {PENDING_MESSAGE[reason]}
-    </p>
-  );
+  const [title, description] = splitNotice(PENDING_MESSAGE[reason]);
+
+  return <EmptyState icon={PENDING_ICON[reason]} title={title} description={description} />;
+}
+
+/**
+ * `"...입니다. ...표시됩니다."` 두 문장을 제목·설명으로 가른다.
+ *
+ * ⚠️ 문구는 **`PENDING_MESSAGE` 한 곳**에 그대로 둔다. 제목·설명을 따로 적으면 같은 말이
+ *    두 벌이 되어 한쪽만 고쳐진다(§도메인 상수: 값 목록은 한 곳).
+ */
+function splitNotice(message: string): [string, string | undefined] {
+  const [first, ...rest] = message.split(/(?<=\.)\s+/);
+  return [first ?? message, rest.length > 0 ? rest.join(" ") : undefined];
 }
 
 /**
