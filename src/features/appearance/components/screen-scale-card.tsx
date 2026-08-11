@@ -117,38 +117,48 @@ export function ScreenScaleCard() {
            탭은 **선택된 칸 하나**에만 멈추고(나머지 `tabIndex={-1}`), 좌우/상하 키로
            고르며 이동한다.
       */}
-      <div
-        role="radiogroup"
-        aria-label="화면 배율"
-        onKeyDown={handleScaleKeys}
-        /*
+      {/*
+        ⚠️ **옆 카드(테마)의 타일과 가운데를 맞춘다**(2026-08-11). 둘 다 카드 바닥에 붙어 있는데
+           타일은 83px, 배율 버튼은 36px이라 바닥만 같고 **가운데가 23px 어긋나** 보였다 —
+           버튼을 타일과 같은 높이의 띠 안에 넣어 세로 가운데에 세운다.
+        ⚠️ 83은 타일의 조립값이다: 미리보기 44 + 라벨 13 + 안쪽 여백 8×3 + 테두리 2.
+           타일이 바뀌면 이 값도 같이 본다.
+      */}
+      <div className="mt-auto pt-5">
+        <div className="flex min-h-[83px] items-center">
+          <div
+            role="radiogroup"
+            aria-label="화면 배율"
+            onKeyDown={handleScaleKeys}
+            /*
           ⚠️ 네 칸 격자다 — `flex-wrap`은 남는 폭이 모자라면 `100%`만 다음 줄로 떨어뜨려 셋+하나로 갈린다.
           ⚠️ **카드 폭을 다 쓴다.** 상한을 걸어 왼쪽에 몰아 뒀더니 옆 카드(테마)는 세 칸이
              고르게 퍼져 있는데 여기만 한쪽으로 쏠려 보였다 — 같은 층에 선 카드끼리는
              안쪽 리듬도 같아야 한다.
         */
-        /* ⚠️ 조작은 **카드 바닥**이다(`mt-auto`) — 옆 카드(테마)의 타일과 같은 자리에 선다 */
-        className="mt-auto grid grid-cols-4 gap-2 pt-5"
-      >
-        {SCREEN_SCALES.map((value) => (
-          <button
-            key={value}
-            type="button"
-            role="radio"
-            aria-checked={value === scale}
-            tabIndex={value === scale ? 0 : -1}
-            data-scale={value}
-            onClick={() => writeScale(value)}
-            className={cn(
-              "focus-visible:ring-ring h-9 rounded-lg border px-2 text-[13px] leading-none tabular-nums transition-colors focus-visible:ring-2 focus-visible:outline-hidden",
-              value === scale
-                ? "border-foreground bg-foreground text-background"
-                : "border-border hover:bg-secondary",
-            )}
+            className="grid w-full grid-cols-4 gap-2"
           >
-            {value}%
-          </button>
-        ))}
+            {SCREEN_SCALES.map((value) => (
+              <button
+                key={value}
+                type="button"
+                role="radio"
+                aria-checked={value === scale}
+                tabIndex={value === scale ? 0 : -1}
+                data-scale={value}
+                onClick={() => writeScale(value)}
+                className={cn(
+                  "focus-visible:ring-ring h-9 rounded-lg border px-2 text-[13px] leading-none tabular-nums transition-colors focus-visible:ring-2 focus-visible:outline-hidden",
+                  value === scale
+                    ? "border-foreground bg-foreground text-background"
+                    : "border-border hover:bg-secondary",
+                )}
+              >
+                {value}%
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
       {hint !== "none" && (
