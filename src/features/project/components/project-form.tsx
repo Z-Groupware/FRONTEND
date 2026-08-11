@@ -244,7 +244,12 @@ export function ProjectForm({ action, teamOptions, cancelHref }: ProjectFormProp
               <button
                 type="button"
                 onClick={cycleTagColor}
-                className="ring-offset-background size-8 shrink-0 rounded-full ring-2 ring-offset-2 transition-transform outline-none active:scale-95"
+                /*
+                  ⚠️ 테두리 링은 **고른 색**을 두르는 장식이라, 포커스 표시를 그 링에 맡길 수 없다
+                     — `outline-none`만 두면 키보드로 온 사람에게 이 칸이 어디인지 알릴 방법이 없다.
+                     포커스는 먹색 윤곽(`--ring`)으로 따로 그린다(§디자인 토큰: 포커스 링은 먹색).
+                */
+                className="ring-offset-background focus-visible:outline-ring size-8 shrink-0 rounded-full ring-2 ring-offset-2 transition-transform outline-none focus-visible:outline-2 focus-visible:outline-offset-2 active:scale-95"
                 style={
                   {
                     backgroundColor: mainColor.solidColor,

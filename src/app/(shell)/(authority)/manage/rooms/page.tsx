@@ -19,8 +19,15 @@ export const metadata: Metadata = {
  * ⚠️ 화면 가드는 UX일 뿐이다 — 추가·수정 Server Action이 `canManageRooms`로 다시 본다(§권한).
  */
 export default async function ManageRoomsPage() {
-  const [rooms, viewer] = await Promise.all([getMeetingRooms(), getViewer()]);
+  /*
+    ⚠️ **문을 먼저 보고 데이터를 뒤에 부른다.** `Promise.all`로 나란히 부르면 권한 없는 요청도
+       회의실 조회를 한 번 때린다 — 실연동에서 그 조회가 403을 던지면 우리가 준비한
+       `AccessDenied` 대신 에러 화면이 뜬다(§권한: 검증은 서버에서).
+  */
+  const viewer = await getViewer();
   if (!canAccessManageScope(viewer)) return <AccessDenied homeHref={roleHome(viewer.role)} />;
+
+  const rooms = await getMeetingRooms();
 
   const canManage = canManageRooms(viewer);
 

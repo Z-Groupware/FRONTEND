@@ -30,9 +30,13 @@ interface PaymentMethodsPanelProps {
 export function PaymentMethodsPanel({ method, canManage, onChange }: PaymentMethodsPanelProps) {
   return (
     <section className="border-border bg-card rounded-2xl border">
-      <h2 className="px-7 py-6 text-[17px] leading-7 font-semibold tracking-[-0.3px]">결제 수단</h2>
+      {/* ⚠️ 머리 아래 여백은 20이다(§DESIGN 3) — 24로 두면 선까지의 거리가 다른 카드와 달라진다 */}
+      <h2 className="px-7 pt-6 pb-5 text-[17px] leading-7 font-semibold tracking-[-0.3px]">
+        결제 수단
+      </h2>
 
-      <div className="border-border flex items-center gap-3 border-t px-6 py-5">
+      {/* ⚠️ 좌우 여백은 머리와 같은 28이다 — 24였던 탓에 카드·아이콘이 제목보다 4px 밖에 섰다 */}
+      <div className="border-border flex items-center gap-3 border-t px-7 py-5">
         <span className="border-border bg-secondary flex h-8 w-11 shrink-0 items-center justify-center rounded-md border">
           <CreditCard className="text-muted-foreground size-4" aria-hidden />
         </span>

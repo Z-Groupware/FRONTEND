@@ -37,13 +37,11 @@ export const metadata: Metadata = {
  *    `4개월 전` 같은 표기는 전부 이 값 하나에서 계산된다.
  */
 export default async function ManageStoragePage() {
-  const [overview, config, viewer] = await Promise.all([
-    getStorageOverview(),
-    getBillingConfig(),
-    getViewer(),
-  ]);
-
+  /* ⚠️ 문(권한)을 먼저 본다 — 나란히 부르면 권한 없는 요청도 조회를 한 번 때린다(§권한) */
+  const viewer = await getViewer();
   if (!canAccessManageScope(viewer)) return <AccessDenied homeHref={roleHome(viewer.role)} />;
+
+  const [overview, config] = await Promise.all([getStorageOverview(), getBillingConfig()]);
 
   return (
     <StorageView

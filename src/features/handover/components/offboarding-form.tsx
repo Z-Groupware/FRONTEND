@@ -76,7 +76,8 @@ export function OffboardingForm({ context }: OffboardingFormProps) {
             id="offboarding-last-working-day"
             value={lastWorkingDay}
             onChange={setLastWorkingDay}
-            className="w-56"
+            /* ⚠️ 상한이지 고정폭이 아니다 — 좁은 화면에서 224를 못 박으면 카드 밖으로 나간다 */
+            className="w-full max-w-56"
           />
         </div>
 

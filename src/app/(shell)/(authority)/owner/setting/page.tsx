@@ -35,15 +35,19 @@ export const metadata: Metadata = {
  * ⚠️ 편집 조각은 온보딩 것을 그대로 쓴다 — 두 벌이면 한쪽만 고쳐지고 조작이 갈린다.
  */
 export default async function OwnerSettingPage() {
-  const [setting, viewer] = await Promise.all([getCompanySetting(), getViewer()]);
+  const viewer = await getViewer();
 
   /*
     ⚠️ **403이다**(2026-08-11 뒤집음). 전에는 "있다는 사실 자체를 안 알린다"며 `notFound()`로
        뒀는데, 기업 설정 화면이 있다는 것은 랜딩의 역할 안내(`/roles`)에도 적혀 있어 숨겨서
        지킬 것이 없었다 — 정작 잃는 건 **잘못 온 사람이 다음에 무엇을 할지**다(§정직성).
     ⚠️ 값 자체는 여전히 안 나간다. 판정이 조회보다 **앞**이라 권한 없는 요청은 BE까지 가지 않는다.
+       ⚠️ 그래서 `Promise.all`로 묶지 않는다 — 나란히 부르면 판정 전에 조회가 한 번 나가고,
+          그 조회가 403을 던지면 이 화면 대신 에러 화면이 뜬다.
   */
   if (!canManageCompany(viewer)) return <AccessDenied homeHref={roleHome(viewer.role)} />;
+
+  const setting = await getCompanySetting();
 
   return (
     <div className="flex-1 overflow-y-auto px-8 py-7">

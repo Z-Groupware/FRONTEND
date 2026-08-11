@@ -29,13 +29,11 @@ export const dynamic = "force-dynamic";
  *    화면 숨김은 UX일 뿐 보안이 아니다(§권한).
  */
 export default async function OwnerBillingPage() {
-  const [overview, config, viewer] = await Promise.all([
-    getBillingOverview(),
-    getBillingConfig(),
-    getViewer(),
-  ]);
-
+  /* ⚠️ 문(권한)을 먼저 본다 — 돈이 걸린 화면이라 판정 전 조회를 한 번도 내보내지 않는다(§권한) */
+  const viewer = await getViewer();
   if (!canAccessManageScope(viewer)) return <AccessDenied homeHref={roleHome(viewer.role)} />;
+
+  const [overview, config] = await Promise.all([getBillingOverview(), getBillingConfig()]);
 
   /*
     ⚠️ 판정은 **`canManageBilling` 한 곳**이 한다. 전에는 여기만 `const canManage = true`로

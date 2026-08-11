@@ -53,6 +53,13 @@ export default async function OwnerDashboardPage() {
   return (
     <main className="scrollbar-hidden min-h-0 flex-1 overflow-y-auto px-8 py-7">
       <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-7">
+        {/*
+          ⚠️ 대시보드는 **제목을 안 그린다** — 사이드바에서 방금 고른 자리라 화면에 한 번 더
+             적으면 같은 말이 두 번이다. 그래도 문서에는 제목이 있어야 한다: `h1`이 없으면
+             스크린 리더가 이 화면의 이름을 못 말하고 층이 `h2`부터 시작한다(§a11y).
+        */}
+        <h1 className="sr-only">대표 대시보드</h1>
+
         <SummaryCard items={summaryItems} />
 
         {/*

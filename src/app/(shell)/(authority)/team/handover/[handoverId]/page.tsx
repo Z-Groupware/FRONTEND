@@ -38,9 +38,10 @@ export default async function TeamHandoverDetailPage({ params }: TeamHandoverDet
       */}
       <div className="mx-auto flex w-full max-w-[1440px] flex-1 flex-col gap-5">
         <div>
-          <h2 className="text-[22px] leading-[30px] font-semibold tracking-[-0.4px]">
+          {/* ⚠️ 이게 이 화면의 제목이다 — `h1`이어야 층이 여기서 시작한다(§a11y·§SEO: h1 1개) */}
+          <h1 className="text-[22px] leading-[30px] font-semibold tracking-[-0.4px]">
             {handover.memberName} · {HANDOVER_TYPE_LABEL[handover.type]}
-          </h2>
+          </h1>
           {/*
             ⚠️ **화면에 실제로 담긴 수를 적는다**(2026-08-11). `actionCount`는 목록에서 온
                값이라 이 화면이 그리는 액션 수와 어긋나, 위에는 `3건`인데 아래는 `0/1건`이

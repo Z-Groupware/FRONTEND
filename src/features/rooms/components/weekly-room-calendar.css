@@ -190,7 +190,11 @@
   오늘 칸 — 카드 면 위에 먹색 3%. 이보다 진하면 예약 막대보다 바탕이 먼저 읽히고,
   이보다 옅으면 어제·내일과 구분이 안 된다.
 */
-.rbc-today {
+/*
+  ⚠️ 요일 머리는 뺀다(`:not(.rbc-header)`). `.rbc-today`는 머리 칸에도 붙어 있어서, 그냥 두면
+     위에서 "띠를 깔지 않는다"고 정한 머리에 3% 띠가 도로 깔린다.
+*/
+.rbc-today:not(.rbc-header) {
   background-color: color-mix(in srgb, var(--foreground) 3%, var(--card));
 }
 

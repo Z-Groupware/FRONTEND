@@ -46,6 +46,9 @@ export default async function TeamDashboardPage() {
   return (
     <main className="scrollbar-hidden min-h-0 flex-1 overflow-y-auto px-8 py-7">
       <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-7">
+        {/* ⚠️ 화면엔 제목을 안 그리지만 문서에는 있어야 한다 — `h1`이 없으면 층이 `h2`부터다(§a11y) */}
+        <h1 className="sr-only">팀장 대시보드</h1>
+
         <SummaryCard items={summaryItems} />
 
         <section
