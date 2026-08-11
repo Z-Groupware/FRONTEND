@@ -16,7 +16,7 @@ import {
 import { isMock } from "@/mocks/config";
 
 import { formatMeetingSchedule } from "./lib";
-import { type BeMeetingDetail, isEnded, toMeetingCaptureInfo } from "./mapper";
+import { type BeMeetingDetail, isClosed, isHostOf, toMeetingCaptureInfo } from "./mapper";
 import { findMockMeeting, listMockMeetings } from "./mock/meetings";
 import { ensureMockMeetingsSeeded, findMockMeetingExtras } from "./mock/seed";
 import { findMockMeetingReview } from "./review/mock/review";
@@ -305,11 +305,14 @@ export async function getMeetingCapture(id: string, viewer: Actor): Promise<Meet
  * ⚠️ **판정 순서를 목과 똑같이 맞춘다**(없음 → Host 아님 → 이미 끝남 → 통과). 순서가 갈리면
  *    같은 회의가 목에서는 `notHost`, 실서버에서는 `alreadyDone`으로 다르게 막혀 화면이
  *    다른 말을 한다.
- * ⚠️ **404는 값으로 돌린다.** 던지면 `error.tsx`가 뜨는데, 없는 회의는 고장이 아니라
+ * ⚠️ **404(`MT-001`)는 값으로 돌린다.** 던지면 `error.tsx`가 뜨는데, 없는 회의는 고장이 아니라
  *    "그런 회의가 없습니다"라고 말해 줄 일이다(§view-types: 못 들어가는 이유를 값으로).
  *    나머지 오류(500·네트워크)는 그대로 던진다 — 그건 진짜 고장이라 에러 화면이 맞다.
- * ⚠️ 403도 `notFound`로 뭉개지 않는다. BE가 막았다면 그건 **우리 판정이 틀렸다는 뜻**이라,
- *    조용히 다른 화면을 그리면 어긋난 걸 아무도 모른다.
+ * ⚠️ **403(`MT-011` 열람 권한 없음)은 뭉개지 않는다.** BE가 막았다면 우리 판정이 틀렸다는
+ *    뜻이라, 조용히 다른 화면을 그리면 어긋난 걸 아무도 모른다.
+ * ⚠️ **개설자 판정을 BE 응답으로 한다.** `canCaptureMeeting(viewer, { hostId })`에 넘길 값이
+ *    응답에서는 `host.memberId`라 매퍼가 꺼내 준다 — `server.ts`가 중첩을 직접 벗기면
+ *    shape이 바뀔 때 여기까지 고쳐야 한다.
  */
 async function getLiveMeetingCapture(id: string, viewer: Actor): Promise<MeetingCaptureResult> {
   const accessToken = await requireAccessToken();
@@ -322,8 +325,8 @@ async function getLiveMeetingCapture(id: string, viewer: Actor): Promise<Meeting
     throw error;
   }
 
-  if (!canCaptureMeeting(viewer, detail)) return { kind: "notHost", title: detail.title };
-  if (isEnded(detail)) return { kind: "alreadyDone", title: detail.title };
+  if (!isHostOf(detail, viewer.id)) return { kind: "notHost", title: detail.title };
+  if (isClosed(detail)) return { kind: "alreadyDone", title: detail.title };
 
   return { kind: "ok", meeting: toMeetingCaptureInfo(detail) };
 }
