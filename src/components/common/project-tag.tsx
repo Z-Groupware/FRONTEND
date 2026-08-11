@@ -46,7 +46,7 @@ export function ProjectTag({ tag, size = "sm", className }: ProjectTagProps) {
              (옐로우·라임)에서 카드와 경계가 사라져 글자가 떠 있는 것처럼 보인다.
         */
         "inline-flex w-fit shrink-0 items-center justify-center rounded-md font-medium",
-        "inset-ring inset-ring-current/15 tracking-[-0.1px] whitespace-nowrap",
+        "tracking-[-0.1px] whitespace-nowrap inset-ring inset-ring-current/15",
         SIZE_CLASS[size],
         className,
       )}
