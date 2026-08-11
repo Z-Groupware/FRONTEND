@@ -1,7 +1,9 @@
+import { FolderOpen, SearchX } from "lucide-react";
 import { Plus } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { EmptyState } from "@/components/common/empty-state";
 import { buttonVariants } from "@/components/ui/button";
 import { ProjectFilterTabs } from "@/features/project/components/project-filter-tabs";
 import { ProjectListTable } from "@/features/project/components/project-list-table";
@@ -85,9 +87,16 @@ export default async function ProjectsPage({ searchParams }: ProjectsPageProps) 
 
           {projects.length === 0 ? (
             /* 빈 상태 — 무엇이 없는지 적는다(§3상태) */
-            <p className="text-muted-foreground border-border border-t px-6 py-12 text-center text-[13px] leading-5 break-keep">
-              {keyword?.trim() ? "검색 결과가 없습니다." : "해당 상태의 프로젝트가 없습니다."}
-            </p>
+            <EmptyState
+              bordered
+              icon={keyword?.trim() ? SearchX : FolderOpen}
+              title={keyword?.trim() ? "검색 결과가 없습니다." : "해당 상태의 프로젝트가 없습니다."}
+              description={
+                keyword?.trim()
+                  ? "다른 이름이나 태그로 찾아 주세요."
+                  : "위 필터를 바꾸면 다른 상태의 프로젝트를 볼 수 있습니다."
+              }
+            />
           ) : (
             <ProjectListTable projects={projects} />
           )}

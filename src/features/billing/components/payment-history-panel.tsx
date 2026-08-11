@@ -1,3 +1,6 @@
+import { Receipt } from "lucide-react";
+
+import { EmptyState } from "@/components/common/empty-state";
 import { formatFullDate, isReadableDate } from "@/lib/date";
 
 import { formatWon } from "../pricing";
@@ -27,9 +30,12 @@ export function PaymentHistoryPanel({ payments }: PaymentHistoryPanelProps) {
 
       {payments.length === 0 ? (
         /* 빈 상태 — 언제 여기 채워지는지까지 적는다(§3상태) */
-        <p className="text-muted-foreground border-border border-t px-6 py-10 text-center text-[13px] leading-5 break-keep">
-          결제 내역이 없습니다.
-        </p>
+        <EmptyState
+          bordered
+          icon={Receipt}
+          title="결제 내역이 없습니다."
+          description="결제가 이뤄지면 그 즉시 이 목록에 쌓입니다."
+        />
       ) : (
         <div className="border-border overflow-x-auto border-t">
           <table className="w-full min-w-[640px] border-collapse">

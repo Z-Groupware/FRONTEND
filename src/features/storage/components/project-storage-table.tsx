@@ -1,8 +1,10 @@
 "use client";
 
+import { HardDrive } from "lucide-react";
 import { Trash2 } from "lucide-react";
 import Link from "next/link";
 
+import { EmptyState } from "@/components/common/empty-state";
 import { StatusDot } from "@/components/common/status-dot";
 import { PROJECT_STATUS_LABEL } from "@/constants/project";
 import { formatGb } from "@/features/billing/pricing";
@@ -87,9 +89,12 @@ export function ProjectStorageTable({
 
       {projects.length === 0 ? (
         /* ⚠️ 빈 상태 — 무엇이 없는지 적는다(§3상태) */
-        <p className="text-muted-foreground border-border border-t px-7 py-14 text-center text-[13px] leading-5 break-keep">
-          저장소를 쓰는 프로젝트가 없습니다
-        </p>
+        <EmptyState
+          bordered
+          icon={HardDrive}
+          title="저장소를 쓰는 프로젝트가 없습니다."
+          description="회의를 녹음하면 그 프로젝트가 이 목록에 쌓입니다."
+        />
       ) : (
         <div className="border-border overflow-x-auto border-t">
           <table className="w-full min-w-[760px] table-fixed text-[13px]">

@@ -1,8 +1,11 @@
+import { CalendarClock } from "lucide-react";
+import { Users } from "lucide-react";
 import { ArrowRight } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 
 import { DashboardMeetingItem } from "@/components/common/dashboard-meeting-item";
+import { EmptyState } from "@/components/common/empty-state";
 import { SummaryCard } from "@/components/common/summary-card";
 import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { LEADER_NAME_WIDTH, LeaderStatusRow } from "@/features/owner/components/leader-status-row";
@@ -74,9 +77,12 @@ export default async function OwnerDashboardPage() {
                  0이 됐다 — `flex-1`은 나눌 것이 없으면 아무 일도 안 해서 문구가 머리 줄
                  보더에 붙어 버린다(세 대시보드 다섯 자리가 같은 상태였다).
             */
-            <p className="text-muted-foreground flex flex-1 items-center justify-center px-7 py-10 text-center text-[13px] leading-5 break-keep">
-              아직 등록된 팀장이 없습니다.
-            </p>
+            <EmptyState
+              className="flex-1"
+              icon={Users}
+              title="아직 등록된 팀장이 없습니다."
+              description="사원 관리에서 팀장을 지정하면 팀별 진척이 여기에 쌓입니다."
+            />
           ) : (
             // 가로·세로 스크롤을 모두 이 컨테이너가 갖고(스크롤바 숨김), 좁은 화면에서 컬럼이
             // 과도하게 줄지 않게 테이블에 최소 폭을 준다. shadcn Table이 자체적으로 두는
@@ -154,9 +160,12 @@ export default async function OwnerDashboardPage() {
             </Link>
           </div>
           {projectMeetings.length === 0 ? (
-            <p className="text-muted-foreground flex flex-1 items-center justify-center px-7 py-10 text-center text-[13px] leading-5 break-keep">
-              예정된 프로젝트 회의가 없습니다.
-            </p>
+            <EmptyState
+              className="flex-1"
+              icon={CalendarClock}
+              title="예정된 프로젝트 회의가 없습니다."
+              description="회의실을 예약하면 그 자리에서 회의가 열립니다."
+            />
           ) : (
             <ul>
               {projectMeetings.map((meeting, index) => (

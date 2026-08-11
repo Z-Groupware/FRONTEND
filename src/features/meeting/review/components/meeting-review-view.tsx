@@ -1,9 +1,11 @@
 "use client";
 
+import { CircleCheck } from "lucide-react";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 
 import { ConfirmDialog } from "@/components/common/confirm-dialog";
+import { EmptyState } from "@/components/common/empty-state";
 import { Button } from "@/components/ui/button";
 import { type ActionRejectReason, AI_CONFIDENCE } from "@/constants/meeting";
 
@@ -143,11 +145,12 @@ export function MeetingReviewView({ review }: MeetingReviewViewProps) {
 
   if (isConfirmed) {
     return (
-      <section className="border-border bg-card rounded-2xl border px-7 py-10 text-center">
-        <p className="text-[13px] leading-5 font-medium">액션 분배를 확정했습니다.</p>
-        <p className="text-muted-foreground mt-1 text-[13px] leading-5">
-          이 화면은 다시 열 수 없습니다 — 확정 결과는 각 액션 상세에서 확인해 주세요.
-        </p>
+      <section className="border-border bg-card rounded-2xl border">
+        <EmptyState
+          icon={CircleCheck}
+          title="액션 분배를 확정했습니다."
+          description="이 화면은 다시 열 수 없습니다 — 확정 결과는 각 액션 상세에서 확인해 주세요."
+        />
       </section>
     );
   }

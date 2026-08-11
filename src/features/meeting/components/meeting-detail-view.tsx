@@ -1,6 +1,8 @@
+import { ListChecks, MessageSquareOff } from "lucide-react";
 import { CalendarClock, MapPin } from "lucide-react";
 import Link from "next/link";
 
+import { EmptyState } from "@/components/common/empty-state";
 import { ProfileAvatar } from "@/components/common/profile-avatar";
 import { ProjectTag } from "@/components/common/project-tag";
 import { StatusDot } from "@/components/common/status-dot";
@@ -192,9 +194,11 @@ export function MeetingDetailView({ detail }: { detail: MeetingDetail }) {
           {detail.pendingReason ? (
             <SectionNotice reason={detail.pendingReason} />
           ) : detail.outputs.length === 0 ? (
-            <p className="text-muted-foreground px-7 pt-2 pb-8 text-center text-[13px] leading-5">
-              이 회의에서 하달된 {detail.outputKindLabel}이 없습니다.
-            </p>
+            <EmptyState
+              icon={ListChecks}
+              title={`이 회의에서 하달된 ${detail.outputKindLabel}이 없습니다.`}
+              description="검토 화면에서 [액션 분배 확정]을 눌러야 액션이 생깁니다."
+            />
           ) : (
             <ul className="border-border border-t">
               {detail.outputs.map((output) => (
@@ -244,9 +248,7 @@ export function MeetingDetailView({ detail }: { detail: MeetingDetail }) {
           {detail.pendingReason ? (
             <SectionNotice reason={detail.pendingReason} />
           ) : detail.script.length === 0 ? (
-            <p className="text-muted-foreground px-7 pt-2 pb-8 text-center text-[13px] leading-5">
-              남아 있는 발화 기록이 없습니다.
-            </p>
+            <EmptyState icon={MessageSquareOff} title="남아 있는 발화 기록이 없습니다." />
           ) : (
             /* ⚠️ 읽는 글은 좁게 둔다(§4 폭 720) — 1440을 가로지르면 눈이 다음 줄을 못 찾는다 */
             <ul className="flex max-w-[720px] flex-col gap-2.5 px-7 pt-2 pb-7">

@@ -1,3 +1,6 @@
+import { ListChecks } from "lucide-react";
+
+import { EmptyState } from "@/components/common/empty-state";
 import { ProjectTag } from "@/components/common/project-tag";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ACTION_DELAYED_LABEL, ACTION_STATUS_LABEL, isDelayed } from "@/constants/domain";
@@ -38,9 +41,12 @@ export function HandoverActionListCard({
       </div>
 
       {actions.length === 0 ? (
-        <p className="text-muted-foreground border-border border-t px-7 py-14 text-center text-[13px] leading-5">
-          완료하지 않은 담당 액션이 없습니다.
-        </p>
+        <EmptyState
+          bordered
+          icon={ListChecks}
+          title="완료하지 않은 담당 액션이 없습니다."
+          description="넘길 액션이 없어도 인수인계서는 신청할 수 있습니다."
+        />
       ) : (
         <>
           {/*

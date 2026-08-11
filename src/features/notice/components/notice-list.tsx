@@ -1,4 +1,7 @@
+import { Megaphone } from "lucide-react";
 import type { ReactNode } from "react";
+
+import { EmptyState } from "@/components/common/empty-state";
 
 import type { NoticeSummary } from "../types";
 import { NoticeListItem } from "./notice-list-item";
@@ -27,12 +30,12 @@ export function NoticeList({ notices, action }: { notices: NoticeSummary[]; acti
       </div>
 
       {notices.length === 0 ? (
-        <div className="flex items-center justify-center p-10 text-center">
-          {/* ⚠️ `text-[13px] leading-5`은 규격 밖이다 — 다섯 크기 중 13px를 쓴다(§DESIGN 4) */}
-          <p className="text-muted-foreground text-[13px] leading-5">
-            아직 등록된 공지가 없습니다.
-          </p>
-        </div>
+        <EmptyState
+          bordered
+          icon={Megaphone}
+          title="아직 등록된 공지가 없습니다."
+          description="공지를 올리면 전 사원이 이 목록에서 봅니다."
+        />
       ) : (
         <ul className="divide-border divide-y">
           {notices.map((notice) => (

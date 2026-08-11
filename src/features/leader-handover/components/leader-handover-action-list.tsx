@@ -1,3 +1,6 @@
+import { ListChecks } from "lucide-react";
+
+import { EmptyState } from "@/components/common/empty-state";
 import { ProjectTag } from "@/components/common/project-tag";
 import { ACTION_DELAYED_LABEL, ACTION_STATUS_LABEL, isDelayed } from "@/constants/domain";
 import { formatMonthDayWeekday } from "@/lib/date";
@@ -24,9 +27,7 @@ export function LeaderHandoverActionList({ actions }: { actions: LeaderHandoverA
       </div>
 
       {actions.length === 0 ? (
-        <p className="text-muted-foreground border-border border-t px-7 py-14 text-center text-[13px] leading-5">
-          담긴 액션이 없습니다.
-        </p>
+        <EmptyState bordered icon={ListChecks} title="담긴 액션이 없습니다." />
       ) : (
         <>
           {/* 표 머리 — 띠 하나로 값이 시작하는 자리를 알린다(§DESIGN 2: 카드 안의 선은 여기뿐) */}

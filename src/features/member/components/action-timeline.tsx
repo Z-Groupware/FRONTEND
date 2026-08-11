@@ -1,5 +1,7 @@
+import { ListChecks, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 
+import { EmptyState } from "@/components/common/empty-state";
 import type { StatusTone } from "@/components/common/status-dot";
 import { ACTION_DELAYED_LABEL, ACTION_STATUS, ACTION_STATUS_LABEL } from "@/constants/domain";
 import {
@@ -111,20 +113,30 @@ interface ActionTimelineProps {
   today: Date;
   /** 비었을 때 문구 */
   emptyLabel?: string;
+  /** 비었을 때 아이콘 — 무엇이 안 하달됐는지 가리킨다(기본: 액션) */
+  emptyIcon?: LucideIcon;
 }
 
 export function ActionTimeline({
   items,
   today,
   emptyLabel = "표시할 액션이 없습니다.",
+  emptyIcon = ListChecks,
 }: ActionTimelineProps) {
   const model = buildActionTimeline(items, today);
 
   if (!model) {
+    /*
+      ⚠️ **카드를 채운다**(2026-08-11). 회색 글씨 한 줄만 남겨 두니 제목 바로 밑에서 카드가
+         뚝 끊겨, 아직 안 그려진 화면처럼 보였다 — 빈 상태도 화면이다(§3상태).
+    */
     return (
-      <p className="text-muted-foreground flex flex-1 items-center justify-center text-[13px] leading-5">
-        {emptyLabel}
-      </p>
+      <EmptyState
+        icon={emptyIcon}
+        title={emptyLabel}
+        description="회의에서 액션이 하달되면 이 자리에 기간 막대로 쌓입니다."
+        className="flex-1"
+      />
     );
   }
 

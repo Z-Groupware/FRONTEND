@@ -1,6 +1,8 @@
+import { ClipboardList } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { EmptyState } from "@/components/common/empty-state";
 import { HANDOVER_TYPE_LABEL } from "@/constants/domain";
 import { listTeamHandovers } from "@/features/team-handover/server";
 import { formatMonthDayWeekday } from "@/lib/date";
@@ -30,9 +32,11 @@ export default async function TeamHandoverPage() {
           </div>
 
           {items.length === 0 ? (
-            <p className="text-muted-foreground px-6 py-10 text-center text-[13px] leading-5">
-              처리할 인수인계서가 없습니다.
-            </p>
+            <EmptyState
+              icon={ClipboardList}
+              title="처리할 인수인계서가 없습니다."
+              description="팀원이 휴직·오프보딩을 신청하면 이 자리에 올라옵니다."
+            />
           ) : (
             <ul>
               {items.map((item) => (

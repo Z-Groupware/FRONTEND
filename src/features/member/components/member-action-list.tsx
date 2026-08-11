@@ -1,3 +1,6 @@
+import { ListChecks } from "lucide-react";
+
+import { EmptyState } from "@/components/common/empty-state";
 import { ACTION_DELAYED_LABEL, ACTION_STATUS_LABEL, isDelayed } from "@/constants/domain";
 import { formatMonthDayWeekday } from "@/lib/date";
 import { cn } from "@/lib/utils";
@@ -23,9 +26,7 @@ export function MemberActionList({ actions }: { actions: ManagedMemberAction[] }
       </div>
 
       {actions.length === 0 ? (
-        <p className="text-muted-foreground border-border border-t px-7 py-14 text-center text-[13px] leading-5">
-          맡고 있는 액션이 없습니다.
-        </p>
+        <EmptyState bordered icon={ListChecks} title="맡고 있는 액션이 없습니다." />
       ) : (
         <>
           {/*

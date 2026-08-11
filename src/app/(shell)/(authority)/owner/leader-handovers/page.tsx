@@ -1,8 +1,10 @@
+import { ClipboardList } from "lucide-react";
 import { ChevronRight } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { EmptyState } from "@/components/common/empty-state";
 import {
   LEADER_HANDOVER_CUSTODY_STATUS,
   LEADER_HANDOVER_CUSTODY_STATUS_LABEL,
@@ -108,9 +110,11 @@ export default async function LeaderHandoversPage({ searchParams }: LeaderHandov
           </div>
 
           {items.length === 0 ? (
-            <p className="text-muted-foreground px-7 py-14 text-center text-[13px] leading-5">
-              해당하는 인수인계서가 없습니다.
-            </p>
+            <EmptyState
+              icon={ClipboardList}
+              title="해당하는 인수인계서가 없습니다."
+              description="팀장이 오프보딩을 신청하면 이 자리에 올라옵니다."
+            />
           ) : (
             <ul>
               {items.map((item) => {

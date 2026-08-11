@@ -1,6 +1,9 @@
+import { CalendarClock } from "lucide-react";
+import { Users } from "lucide-react";
 import type { Metadata } from "next";
 
 import { DashboardMeetingItem } from "@/components/common/dashboard-meeting-item";
+import { EmptyState } from "@/components/common/empty-state";
 import { SummaryCard } from "@/components/common/summary-card";
 import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { MemberStatusRow } from "@/features/team/components/member-status-row";
@@ -56,9 +59,12 @@ export default async function TeamDashboardPage() {
             </span>
           </div>
           {members.length === 0 ? (
-            <p className="text-muted-foreground flex flex-1 items-center justify-center px-7 py-10 text-center text-[13px] leading-5 break-keep">
-              아직 등록된 팀원이 없습니다.
-            </p>
+            <EmptyState
+              className="flex-1"
+              icon={Users}
+              title="아직 등록된 팀원이 없습니다."
+              description="사원 관리에서 이 팀에 사원을 배치하면 여기에 나타납니다."
+            />
           ) : (
             <div className="scrollbar-hidden flex-1 overflow-auto [&_[data-slot=table-container]]:overflow-visible">
               <Table className="min-w-[560px] table-fixed text-[13px]">
@@ -89,9 +95,12 @@ export default async function TeamDashboardPage() {
             <span className="text-muted-foreground text-[12px] leading-4">최신 5건</span>
           </div>
           {meetings.length === 0 ? (
-            <p className="text-muted-foreground flex flex-1 items-center justify-center px-7 py-10 text-center text-[13px] leading-5 break-keep">
-              예정된 팀 회의가 없습니다.
-            </p>
+            <EmptyState
+              className="flex-1"
+              icon={CalendarClock}
+              title="예정된 팀 회의가 없습니다."
+              description="회의실을 예약하면 그 자리에서 회의가 열립니다."
+            />
           ) : (
             <ul>
               {meetings.map((meeting, index) => (

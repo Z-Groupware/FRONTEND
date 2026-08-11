@@ -1,3 +1,7 @@
+import { CalendarDays } from "lucide-react";
+
+import { EmptyState } from "@/components/common/empty-state";
+
 import type { MeetingRoom } from "../types";
 import { RoomRowActions } from "./room-row-actions";
 
@@ -26,9 +30,12 @@ export function RoomsManageTable({ rooms, canManage }: RoomsManageTableProps) {
              제목과 안내문이 한 덩이로 붙어 카드가 반쯤 지어진 것처럼 보였다 — 다른 목록
              카드와 같은 자리·같은 여백을 쓴다.
         */
-        <p className="text-muted-foreground border-border border-t px-7 py-14 text-center text-[13px] leading-5">
-          등록된 회의실이 없습니다.
-        </p>
+        <EmptyState
+          bordered
+          icon={CalendarDays}
+          title="등록된 회의실이 없습니다."
+          description="회의실을 추가하면 예약 화면의 목록에 바로 나타납니다."
+        />
       ) : (
         <div className="border-border overflow-x-auto border-t">
           <table className="w-full min-w-[560px] table-fixed text-[13px]">

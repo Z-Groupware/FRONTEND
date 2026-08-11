@@ -1,6 +1,8 @@
+import { CalendarClock } from "lucide-react";
 import type { Metadata } from "next";
 
 import { DashboardMeetingItem } from "@/components/common/dashboard-meeting-item";
+import { EmptyState } from "@/components/common/empty-state";
 import { isDelayed } from "@/constants/domain";
 import type { TimelineActionInput } from "@/features/member/action-timeline";
 import { ActionTimeline, ActionTimelineLegend } from "@/features/member/components/action-timeline";
@@ -57,9 +59,12 @@ export default async function MemberDashboardPage() {
             <span className="text-muted-foreground text-[12px] leading-4">최신 5건</span>
           </div>
           {attendedMeetings.length === 0 ? (
-            <p className="text-muted-foreground flex flex-1 items-center justify-center px-7 py-10 text-center text-[13px] leading-5 break-keep">
-              참석할 회의가 없습니다.
-            </p>
+            <EmptyState
+              className="flex-1"
+              icon={CalendarClock}
+              title="참석할 회의가 없습니다."
+              description="회의에 참석자로 담기면 이 자리에 쌓입니다."
+            />
           ) : (
             <ul>
               {attendedMeetings.map((meeting, index) => (

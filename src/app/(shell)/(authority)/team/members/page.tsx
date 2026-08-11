@@ -1,5 +1,7 @@
+import { Users } from "lucide-react";
 import type { Metadata } from "next";
 
+import { EmptyState } from "@/components/common/empty-state";
 import { TeamMemberAccordionCard } from "@/features/team/members/components/team-member-accordion-card";
 import { TeamMemberControls } from "@/features/team/members/components/team-member-controls";
 import { parseTeamMemberFilter, parseTeamMemberSort } from "@/features/team/members/lib";
@@ -46,10 +48,12 @@ export default async function TeamMembersPage({ searchParams }: TeamMembersPageP
         <TeamMemberControls activeSort={sort} activeFilter={filter} />
 
         {members.length === 0 ? (
-          <div className="border-border bg-card rounded-2xl border px-7 py-10 text-center">
-            <p className="text-muted-foreground text-[13px] leading-5">
-              조건에 맞는 팀원이 없습니다.
-            </p>
+          <div className="border-border bg-card rounded-2xl border">
+            <EmptyState
+              icon={Users}
+              title="조건에 맞는 팀원이 없습니다."
+              description="위 정렬·필터를 바꾸면 다른 팀원을 볼 수 있습니다."
+            />
           </div>
         ) : (
           <div className="flex flex-col gap-3">

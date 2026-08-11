@@ -1,6 +1,8 @@
+import { UserSearch } from "lucide-react";
 import { ShieldCheck } from "lucide-react";
 import Link from "next/link";
 
+import { EmptyState } from "@/components/common/empty-state";
 import { ProfileAvatar } from "@/components/common/profile-avatar";
 import { AUTHORITY_BADGE_CLASS, AUTHORITY_LABEL } from "@/constants/authority";
 import { MEMBER_STATUS_BADGE_CLASS, MEMBER_STATUS_LABEL } from "@/constants/member";
@@ -94,9 +96,12 @@ function StatusCell({ status }: { status: ManagedMember["status"] }) {
 export function MemberTable({ members }: { members: ManagedMember[] }) {
   if (members.length === 0) {
     return (
-      <p className="text-muted-foreground border-border border-t px-7 py-14 text-center text-[13px] leading-5 break-keep">
-        찾는 사원이 없습니다
-      </p>
+      <EmptyState
+        bordered
+        icon={UserSearch}
+        title="찾는 사원이 없습니다."
+        description="이름·팀·직급으로 찾습니다. 검색어를 지우면 전체가 보입니다."
+      />
     );
   }
 
