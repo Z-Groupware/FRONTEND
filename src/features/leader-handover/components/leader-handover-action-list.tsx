@@ -29,9 +29,10 @@ export function LeaderHandoverActionList({ actions }: { actions: LeaderHandoverA
       {actions.length === 0 ? (
         <EmptyState bordered icon={ListChecks} title="담긴 액션이 없습니다." />
       ) : (
-        <>
+        /* ⚠️ 머리와 줄을 한 통에 넣고 가로로 굴린다 — 좁은 화면에서 제목 열이 쭈그러들지 않게 */
+        <div className="overflow-x-auto">
           {/* 표 머리 — 띠 하나로 값이 시작하는 자리를 알린다(§DESIGN 2: 카드 안의 선은 여기뿐) */}
-          <div className="border-border text-muted-foreground bg-secondary/50 flex items-center gap-4 border-y px-7 py-3 text-[12px] leading-4">
+          <div className="border-border text-muted-foreground bg-secondary/50 flex min-w-[720px] items-center gap-4 border-y px-7 py-3 text-[12px] leading-4">
             <span className="w-[76px] shrink-0 text-center">프로젝트</span>
             <span className="min-w-0 flex-1">액션</span>
             <span className="w-[72px] shrink-0 text-center">상태</span>
@@ -44,7 +45,7 @@ export function LeaderHandoverActionList({ actions }: { actions: LeaderHandoverA
               return (
                 <li
                   key={action.id}
-                  className="border-border flex items-center gap-4 px-7 py-3.5 not-first:border-t"
+                  className="border-border flex min-w-[720px] items-center gap-4 px-7 py-3.5 not-first:border-t"
                 >
                   {/*
                     ⚠️ **이름과 출처를 두 층으로 쌓는다**(2026-08-11). 칩·상위 액션·이름·상태·마감을
@@ -90,7 +91,7 @@ export function LeaderHandoverActionList({ actions }: { actions: LeaderHandoverA
               );
             })}
           </ul>
-        </>
+        </div>
       )}
     </section>
   );

@@ -100,71 +100,79 @@ export default async function LeaderHandoversPage({ searchParams }: LeaderHandov
                길이에 따라 축이 흔들려 오와 열이 어긋난다 — 날짜는 오른쪽, 상태는 가운데,
                나머지는 왼쪽이다(§DESIGN 3: 사람이 훑는 건 끝에 오는 값이다).
           */}
-          <div className="border-border text-muted-foreground bg-secondary/50 flex items-center gap-4 border-y px-7 py-3 text-[12px] leading-4">
-            <span className="min-w-0 flex-1">인수인계서명</span>
-            <span className="w-24 shrink-0 text-center">퇴사 팀장</span>
-            <span className="w-24 shrink-0 text-center">팀</span>
-            <span className="w-32 shrink-0 text-center">오프보딩 승인일</span>
-            <span className="w-24 shrink-0 text-center">상태</span>
-            {/* chevron 자리 — 머리에는 라벨을 안 붙인다 */}
-            <span className="w-4 shrink-0" aria-hidden />
-          </div>
+          {/*
+            ⚠️ **머리와 줄을 한 통에 넣고 가로로 굴린다**(2026-08-11, 코드래빗 지적).
+               고정폭 열이 다섯인데 제목만 `flex-1`이라, 좁은 화면에서는 제목이 0에 가깝게
+               쭈그러들거나 줄이 화면 밖으로 나갔다 — 표는 `overflow-x-auto`로 감싼다(§CLAUDE 디자인 토큰).
+            ⚠️ 머리와 줄이 **같은 통** 안에 있어야 한다. 따로 감싸면 가로로 굴릴 때 둘이 어긋난다.
+          */}
+          <div className="overflow-x-auto">
+            <div className="border-border text-muted-foreground bg-secondary/50 flex min-w-[860px] items-center gap-4 border-y px-7 py-3 text-[12px] leading-4">
+              <span className="min-w-0 flex-1">인수인계서명</span>
+              <span className="w-24 shrink-0 text-center">퇴사 팀장</span>
+              <span className="w-24 shrink-0 text-center">팀</span>
+              <span className="w-32 shrink-0 text-center">오프보딩 승인일</span>
+              <span className="w-24 shrink-0 text-center">상태</span>
+              {/* chevron 자리 — 머리에는 라벨을 안 붙인다 */}
+              <span className="w-4 shrink-0" aria-hidden />
+            </div>
 
-          {items.length === 0 ? (
-            <EmptyState
-              icon={ClipboardList}
-              title="해당하는 인수인계서가 없습니다."
-              description="팀장이 오프보딩을 신청하면 이 자리에 올라옵니다."
-            />
-          ) : (
-            <ul>
-              {items.map((item) => {
-                const isAssigned = item.custodyStatus === LEADER_HANDOVER_CUSTODY_STATUS.ASSIGNED;
-                return (
-                  <li key={item.id} className="border-border not-first:border-t">
-                    <Link
-                      href={`/owner/leader-handovers/${item.id}`}
-                      className="hover:bg-foreground/[0.04] focus-visible:ring-ring group flex items-center gap-4 px-7 py-4 text-[13px] leading-5 transition-colors focus-visible:ring-2 focus-visible:outline-hidden"
-                    >
-                      <span className="min-w-0 flex-1 truncate font-medium">{item.title}</span>
-                      <span className="text-muted-foreground w-24 shrink-0 truncate text-center">
-                        {item.formerLeaderName}
-                      </span>
-                      <span className="text-muted-foreground w-24 shrink-0 truncate text-center">
-                        {item.teamName}
-                      </span>
-                      <span className="text-muted-foreground w-32 shrink-0 text-center tabular-nums">
-                        {formatMonthDayWeekday(item.offboardingApprovedAt)}
-                      </span>
-                      {/*
+            {items.length === 0 ? (
+              <EmptyState
+                icon={ClipboardList}
+                title="해당하는 인수인계서가 없습니다."
+                description="팀장이 오프보딩을 신청하면 이 자리에 올라옵니다."
+              />
+            ) : (
+              <ul>
+                {items.map((item) => {
+                  const isAssigned = item.custodyStatus === LEADER_HANDOVER_CUSTODY_STATUS.ASSIGNED;
+                  return (
+                    <li key={item.id} className="border-border not-first:border-t">
+                      <Link
+                        href={`/owner/leader-handovers/${item.id}`}
+                        className="hover:bg-foreground/[0.04] focus-visible:ring-ring group flex min-w-[860px] items-center gap-4 px-7 py-4 text-[13px] leading-5 transition-colors focus-visible:ring-2 focus-visible:outline-hidden"
+                      >
+                        <span className="min-w-0 flex-1 truncate font-medium">{item.title}</span>
+                        <span className="text-muted-foreground w-24 shrink-0 truncate text-center">
+                          {item.formerLeaderName}
+                        </span>
+                        <span className="text-muted-foreground w-24 shrink-0 truncate text-center">
+                          {item.teamName}
+                        </span>
+                        <span className="text-muted-foreground w-32 shrink-0 text-center tabular-nums">
+                          {formatMonthDayWeekday(item.offboardingApprovedAt)}
+                        </span>
+                        {/*
                         ⚠️ 상태는 **명도로 가른다**(§DESIGN 5 — 색은 에러뿐). 아직 안 넘긴 것이
                            진하고, 넘긴 것은 흐리다 — 지금 다뤄야 할 것이 먼저 읽혀야 한다.
                         ⚠️ 배지를 열 폭(`w-24`) 안에서 가운데 놓는다. 배지 자체를 열로 쓰면
                            글자 길이에 따라 축이 흔들려 머리와 어긋난다.
                       */}
-                      <span className="w-24 shrink-0">
-                        <span
-                          className={cn(
-                            "mx-auto flex h-6 w-20 items-center justify-center rounded-md border text-[11px] leading-4",
-                            isAssigned
-                              ? "border-border text-muted-foreground/70"
-                              : "border-foreground/30 bg-foreground/[0.06] text-foreground font-medium",
-                          )}
-                        >
-                          {LEADER_HANDOVER_CUSTODY_STATUS_LABEL[item.custodyStatus]}
+                        <span className="w-24 shrink-0">
+                          <span
+                            className={cn(
+                              "mx-auto flex h-6 w-20 items-center justify-center rounded-md border text-[11px] leading-4",
+                              isAssigned
+                                ? "border-border text-muted-foreground/70"
+                                : "border-foreground/30 bg-foreground/[0.06] text-foreground font-medium",
+                            )}
+                          >
+                            {LEADER_HANDOVER_CUSTODY_STATUS_LABEL[item.custodyStatus]}
+                          </span>
                         </span>
-                      </span>
-                      {/* ⚠️ 줄이 눌린다는 걸 적어 둔다 — 손가락 커서는 얹어야 보인다 */}
-                      <ChevronRight
-                        className="text-muted-foreground/50 group-hover:text-muted-foreground size-4 shrink-0 transition-colors"
-                        aria-hidden
-                      />
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
+                        {/* ⚠️ 줄이 눌린다는 걸 적어 둔다 — 손가락 커서는 얹어야 보인다 */}
+                        <ChevronRight
+                          className="text-muted-foreground/50 group-hover:text-muted-foreground size-4 shrink-0 transition-colors"
+                          aria-hidden
+                        />
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
         </section>
       </div>
     </main>

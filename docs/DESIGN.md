@@ -101,10 +101,7 @@ export default function Layout({ children }: { children: ReactNode }) {
   {/* 표가 들어가면 overflow-hidden 을 더한다 */}
 
   <div className="flex items-baseline justify-between gap-3 px-7 pt-6 pb-3">
-    <h2 className="flex items-center gap-2 text-[17px] leading-7 font-semibold tracking-[-0.3px]">
-      <span className="bg-foreground size-2 rounded-full" aria-hidden />
-      프로젝트별 사용량
-    </h2>
+    <h2 className="text-[17px] leading-7 font-semibold tracking-[-0.3px]">프로젝트별 사용량</h2>
     <p className="text-muted-foreground text-[12px] leading-4 tabular-nums">전체 5개</p>
   </div>
 

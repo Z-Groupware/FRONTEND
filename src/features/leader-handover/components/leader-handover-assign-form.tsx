@@ -101,9 +101,15 @@ export function LeaderHandoverAssignForm({ handover }: LeaderHandoverAssignFormP
           </p>
         </div>
       ) : (
-        <div className="flex items-center gap-3">
+        /*
+          ⚠️ **세로로 쌓는다**(2026-08-11, 코드래빗 지적). 곁 칸은 360이고 카드 안쪽 여백을
+             빼면 304px인데, `w-56`(224) 셀렉트와 이름이 든 버튼(`○○○에게 귀속`)을 한 줄에
+             두면 이름이 길 때 버튼이 잘려 **귀속을 끝낼 수 없다.**
+          ⚠️ 둘 다 칸 폭을 다 쓴다 — 좁은 칸에서 반씩 나누면 이름이 양쪽 다 잘린다.
+        */
+        <div className="flex flex-col gap-2.5">
           <Select value={selectedId} onValueChange={(value) => setSelectedId(value ?? "")}>
-            <SelectTrigger aria-label="수신자 선택" className="w-56">
+            <SelectTrigger aria-label="수신자 선택" className="w-full">
               {/* 원본 값(id)이 아니라 이름·팀 라벨을 보여준다(다른 화면의 담당자 선택과 같은 패턴) */}
               <SelectValue placeholder="수신자(신규 팀장) 선택">
                 {(value) => {
@@ -123,7 +129,7 @@ export function LeaderHandoverAssignForm({ handover }: LeaderHandoverAssignFormP
           <Button
             type="button"
             disabled={!selectedId}
-            className="bg-foreground text-background hover:bg-foreground/90"
+            className="bg-foreground text-background hover:bg-foreground/90 w-full"
             onClick={() => setConfirmOpen(true)}
           >
             {selectedCandidate ? `${selectedCandidate.name}에게 귀속` : "귀속"}
