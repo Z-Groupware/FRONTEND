@@ -303,15 +303,14 @@ export function CaptureView({
  *    백엔드의 "입장" API가 상태를 바꾸는 자리로 오해될 소지가 있었다. 회의가 실제로
  *    시작되는 순간은 [녹음 시작] 하나뿐이다.
  */
-function ReadyCard({
-  meeting,
-  support,
-  onReady,
-}: {
+interface ReadyCardProps {
   meeting: MeetingCaptureInfo;
+  /** 이 브라우저가 받쳐 주는가 — 하나라도 없으면 안내를 먼저 띄운다 */
   support: { stt: boolean; recording: boolean };
   onReady: () => void;
-}) {
+}
+
+function ReadyCard({ meeting, support, onReady }: ReadyCardProps) {
   const unsupported = !support.stt || !support.recording;
 
   return (

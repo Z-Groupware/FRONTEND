@@ -73,7 +73,27 @@ function isBeMeetingDetail(value: unknown): value is BeMeetingDetail {
     typeof detail.project?.tag === "string" &&
     typeof detail.meetingRoom?.name === "string" &&
     typeof detail.host?.memberId === "number" &&
-    Array.isArray(detail.attendees)
+    Array.isArray(detail.attendees) &&
+    detail.attendees.every(isBeMeetingAttendee)
+  );
+}
+
+/**
+ * 참석자 한 줄 — **배열인지만 보면 모자란다**(코드래빗 지적, 2026-08-11).
+ *
+ * ⚠️ `[null]`이나 모양이 다른 객체는 배열 검사를 그냥 통과하고, 나중에 명단을 그릴 때
+ *    `TypeError`로 터진다 — 막을 자리는 응답을 받는 여기다.
+ * ⚠️ 팀·직급은 **없을 수 있다**(팀 없는 대표). `null`은 정상이고 `undefined`나 숫자가 비정상이다.
+ */
+function isBeMeetingAttendee(value: unknown): value is BeMeetingAttendee {
+  if (typeof value !== "object" || value === null) return false;
+  const attendee = value as Partial<BeMeetingAttendee>;
+
+  return (
+    typeof attendee.memberId === "number" &&
+    typeof attendee.name === "string" &&
+    (attendee.teamName === null || typeof attendee.teamName === "string") &&
+    (attendee.jobPosition === null || typeof attendee.jobPosition === "string")
   );
 }
 
@@ -101,9 +121,15 @@ export function isClosed(detail: Pick<BeMeetingDetail, "status">): boolean {
   return detail.status === "DONE" || detail.status === "CANCELED";
 }
 
-/** 개설자인가 — 권한 ②축(리소스 소유권). 역할이 아니라 이 회의를 연 사람 한 명이다 */
-export function isHostOf(detail: Pick<BeMeetingDetail, "host">, memberId: number): boolean {
-  return detail.host.memberId === memberId;
+/**
+ * 개설자 id만 꺼낸다 — **판정은 여기서 하지 않는다**(코드래빗 지적, 2026-08-11).
+ *
+ * ⚠️ 매퍼가 아는 건 "그 값이 응답 어디에 들어 있나"뿐이다. 들어갈 수 있냐 없냐는
+ *    `lib/permission.ts`의 `canCaptureMeeting`이 정한다 — 권한 판정이 도메인마다
+ *    흩어지면 화면과 서버가 서로 다른 기준을 쓴다(CLAUDE.md §권한).
+ */
+export function hostIdOf(detail: Pick<BeMeetingDetail, "host">): number {
+  return detail.host.memberId;
 }
 
 /**

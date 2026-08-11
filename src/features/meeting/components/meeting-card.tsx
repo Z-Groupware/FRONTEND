@@ -193,14 +193,16 @@ function CardFooter({
           ⚠️ 전에는 [입장]이었다(2026-08-11 개명) — 회의에 들어가는 별도 단계가 있는 것처럼
              읽혔지만, 이 버튼은 캡처 화면으로 옮겨 주는 링크일 뿐이다. 회의가 실제로
              시작되는 자리는 그 화면의 [녹음 시작] 하나다.
+          ⚠️ **진행중 Host에게도 뜬다**(2026-08-11 고침, 코드래빗 지적). `live`는 예정·진행중
+             둘 다인데 여기서 예정만 봤던 탓에, **녹음 중 새로고침하면 목록에서 캡처로
+             돌아갈 길이 사라졌다** — 판정은 `meetingCardAffordanceOf` 하나라고 해 놓고
+             카드가 자기 조건을 따로 들고 있었다(§status: 판정은 여기 한 곳이다).
         */}
-        {meeting.status === MEETING_STATUS.SCHEDULED ? (
-          meeting.isHost && (
-            <Link href={`/app/meeting/${meeting.id}/capture`} className={ACTION_CLASS}>
-              <Mic className="size-3.5" aria-hidden />
-              <span>녹음하기</span>
-            </Link>
-          )
+        {affordance === "live" && meeting.isHost ? (
+          <Link href={`/app/meeting/${meeting.id}/capture`} className={ACTION_CLASS}>
+            <Mic className="size-3.5" aria-hidden />
+            <span>녹음하기</span>
+          </Link>
         ) : affordance === "review" ? (
           /* ⚠️ 검토가 밀리면 액션이 아무에게도 안 간다 — 회의록보다 급해서 이 자리를 가져간다 */
           <Link
@@ -210,11 +212,13 @@ function CardFooter({
             <Sparkles className="size-3.5" aria-hidden />
             <span>액션 검토</span>
           </Link>
-        ) : (
+        ) : meeting.status === MEETING_STATUS.SCHEDULED ? null : (
           /*
             ⚠️ **진행중에도 있다.** 상세는 이제 모든 상태에서 열리고(메타는 보여주고 덜 찬
                칸에만 안내한다), 진행중 카드에 아무것도 없으면 죽은 카드로 보인다.
             ⚠️ 📄 WORKFLOW §3-2의 "예정·진행중 카드는 클릭해도 반응 없음"은 이 결정이 덮는다.
+            ⚠️ **예정만 예외로 비운다**(바로 위 `null`). 아직 아무것도 안 남긴 회의라 회의록으로
+               보낼 것이 없다 — 참석자에게는 그래서 이 자리가 빈다(2026-08-10 팀 확정).
           */
           <Link
             href={`/app/meeting/${meeting.id}`}

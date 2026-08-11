@@ -1,7 +1,7 @@
 import {
   type BeMeetingDetail,
+  hostIdOf,
   isClosed,
-  isHostOf,
   parseMeetingDetail,
   toMeetingCaptureInfo,
 } from "./mapper";
@@ -49,10 +49,10 @@ describe("toMeetingCaptureInfo", () => {
   });
 });
 
-describe("isHostOf", () => {
-  it("이 회의를 연 사람 한 명만 참이다 — 역할과 무관하다", () => {
-    expect(isHostOf(BASE, 1)).toBe(true);
-    expect(isHostOf(BASE, 2)).toBe(false);
+describe("hostIdOf", () => {
+  /* ⚠️ 매퍼는 값이 어디 있는지만 안다 — 들어갈 수 있냐는 `canCaptureMeeting`이 정한다 */
+  it("중첩 안의 개설자 id를 꺼낸다", () => {
+    expect(hostIdOf(BASE)).toBe(1);
   });
 });
 
@@ -82,6 +82,12 @@ describe("parseMeetingDetail", () => {
     ["참석자가 배열이 아니면", { ...BASE, attendees: null }],
     ["id가 문자열로 오면", { ...BASE, meetingId: "12" }],
     ["응답이 비면", null],
+    ["참석자에 null이 섞이면", { ...BASE, attendees: [null] }],
+    ["참석자에 이름이 없으면", { ...BASE, attendees: [{ memberId: 2, teamName: null }] }],
+    [
+      "참석자 직급이 문자열도 null도 아니면",
+      { ...BASE, attendees: [{ memberId: 2, name: "김서준", teamName: null, jobPosition: 3 }] },
+    ],
   ])("%s 판정 전에 멈춘다", (_label, broken) => {
     expect(() => parseMeetingDetail(broken)).toThrow("약속한 모양");
   });
