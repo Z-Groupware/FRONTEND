@@ -5,7 +5,7 @@ import Link from "next/link";
 import { DashboardMeetingItem } from "@/components/common/dashboard-meeting-item";
 import { SummaryCard } from "@/components/common/summary-card";
 import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { LeaderStatusRow } from "@/features/owner/components/leader-status-row";
+import { LEADER_NAME_WIDTH, LeaderStatusRow } from "@/features/owner/components/leader-status-row";
 import { getDaysUntilDue, LEADER_BOX_MAX_HEIGHT } from "@/features/owner/lib";
 import { getOwnerDashboardOverview } from "@/features/owner/server";
 
@@ -95,7 +95,26 @@ export default async function OwnerDashboardPage() {
                 */}
                 <TableHeader>
                   <TableRow className="bg-foreground/[0.06] border-border hover:bg-foreground/[0.06] border-b">
-                    <TableHead className={`${HEAD_CELL_CLASS} pl-6`}>이름</TableHead>
+                    {/*
+                      ⚠️ **머리글과 이름이 같은 세로선에서 가운데를 맞춘다.** 그냥 `pl-6`으로 두면
+                         머리글이 아바타 위에 서고, 왼쪽만 맞추면 이름 길이가 달라질 때 다시
+                         어긋난다(`김서준` 34px·`오현우` 34px이라도 두 글자 이름이 오면 갈린다).
+                      ⚠️ 그래서 **아바타 자리(28px)를 비우고 이름 상자 가운데**에 세운다 —
+                         아래 칸도 같은 상자(`LEADER_NAME_WIDTH`)를 쓰므로 이름이 몇 글자든
+                         두 중심이 겹친다.
+                      ⚠️ 남는 폭을 다 주지 않는다. 그러면 이름이 아바타에서 떨어져 따로 논다.
+                      ⚠️ 숫자를 손으로 맞추지 않는다. 아래 칸과 **같은 값**(`w-7`·`gap-2`)을 쓴다 —
+                         아바타 크기를 바꾸면 두 곳이 같이 움직여야 한다.
+                      ⚠️ 나머지 열이 전부 가운데다 — 이 열만 왼쪽이면 표 안에서 혼자 논다.
+                    */}
+                    <TableHead className={`${HEAD_CELL_CLASS} pl-6`}>
+                      <span className="flex items-center gap-2">
+                        <span className="w-7 shrink-0" aria-hidden />
+                        <span className="text-center" style={{ minWidth: LEADER_NAME_WIDTH }}>
+                          이름
+                        </span>
+                      </span>
+                    </TableHead>
                     <TableHead className={`${HEAD_CELL_CLASS} text-center`}>이메일</TableHead>
                     <TableHead className={`${HEAD_CELL_CLASS} text-center`}>팀</TableHead>
                     <TableHead className={`${HEAD_CELL_CLASS} text-center`}>상태</TableHead>

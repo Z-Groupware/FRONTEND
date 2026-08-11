@@ -136,13 +136,22 @@ export function DashboardMeetingItem({ meeting, showDivider }: DashboardMeetingI
                그쪽을 맞춰야 눈이 한 세로선을 따라간다.
             ⚠️ 가운뎃점(`·`)을 걷어냈다. 열이 갈리면 구분자가 할 일이 없고, 점까지 있으면
                값 사이가 8px로 좁아져 넷이 한 덩이로 뭉친다.
+            ⚠️ **덩어리에 폭을 주고(520) 그 안에서 벌린다**(`justify-between`). 처음엔 값에 딱
+               맞는 폭에 16px 간격이었는데, 넷이 합쳐 300px도 안 돼 **오른쪽 끝에 뭉치고 줄
+               가운데가 400px 넘게 비었다** — 제목은 왼쪽 끝, 값은 오른쪽 끝이라 눈이 그 사이를
+               건너뛰어야 했다. 간격만 벌려서는 덩어리가 그대로 오른쪽에 붙어 있어 안 풀린다.
+            ⚠️ **열은 그래도 안 흔들린다.** 제목 칸이 `flex-1`이라 이 덩어리의 왼쪽 끝은 줄마다
+               같은 자리다 — 그 안에서 상자 폭이 고정이므로 회의실은 회의실끼리, 시간은
+               시간끼리 한 세로선에 선다.
+            ⚠️ 회의실도 **오른쪽 정렬**로 바꿨다. 왼쪽 정렬이면 상자를 넓힌 만큼 회의실만
+               왼쪽으로 떨어져 나가 열 넷이 다시 어긋난다.
           */}
-          <div className="text-muted-foreground flex shrink-0 items-center gap-4 text-[12px] leading-4">
-            <span className="w-[52px] truncate">{meeting.room}</span>
-            <span className="w-[104px] text-right tabular-nums">
+          <div className="text-muted-foreground flex w-[520px] shrink-0 items-center justify-between text-[12px] leading-4">
+            <span className="w-[76px] truncate text-right">{meeting.room}</span>
+            <span className="w-[124px] text-right tabular-nums">
               {formatMeetingDate(meeting.scheduledAt)}
             </span>
-            <span className="w-[52px] text-right tabular-nums">참석 {meeting.attendeeCount}명</span>
+            <span className="w-[64px] text-right tabular-nums">참석 {meeting.attendeeCount}명</span>
             <span
               className={cn(
                 "inline-flex h-5 w-[48px] shrink-0 items-center justify-center rounded-full text-[11px] leading-4 font-medium",
