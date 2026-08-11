@@ -1,5 +1,6 @@
 import { DEFAULT_PROJECT_SORT, type ProjectSort, type ProjectStatus } from "@/constants/domain";
 import { COMPANY_TEAM_NAMES } from "@/constants/project";
+import { type BeActionSummary, toTeamActionPersonalItem } from "@/features/action/mapper";
 import { requireAccessToken } from "@/features/auth/session";
 import { ApiError, serverApi } from "@/lib/api";
 import { ep } from "@/lib/endpoints";
@@ -176,7 +177,17 @@ export async function getTeamActionPersonalItems(
     return TEAM_ACTION_PERSONAL_ITEMS_MOCK[numericId] ?? [];
   }
 
-  throw new Error("서버 연동 미구현 — ERD·API 스펙 확정 후 매퍼 작성");
+  const numericId = Number(teamActionId);
+  if (!Number.isInteger(numericId)) return [];
+
+  // ⚠️ 이 함수는 실연동 준비만 끝난 상태다 — 유일한 호출부(팀 액션 상세 페이지)가
+  //    `getTeamActionDetail`(아래, 필드 부족으로 여전히 미구현) 뒤에 있어서 지금은 화면에서
+  //    닿지 않는다. 상세 필드가 채워지면 그 페이지를 여는 순간 바로 같이 동작한다.
+  const accessToken = await requireAccessToken();
+  const items = await serverApi<BeActionSummary[]>(ep.teamActionTimeline(numericId), {
+    accessToken,
+  });
+  return items.map(toTeamActionPersonalItem);
 }
 
 /** 프로젝트 생성 폼의 "참여 팀" 선택지 — 회사 전체 팀 목록. */

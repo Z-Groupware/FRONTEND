@@ -40,3 +40,26 @@ export function fallbackActionStartDate(startDate: string | null): string {
   tomorrow.setDate(tomorrow.getDate() + 1);
   return tomorrow.toISOString().slice(0, 10);
 }
+
+/**
+ * 팀 액션 상세의 타임라인 탭(`GET /api/team/actions/{id}?tab=timeline`) 한 줄 → UI 계약.
+ * ⚠️ `assigneeRoleLabel`은 못 채운다 — `ActionSummaryResponse`에 직급 라벨이 없다(이름만 옴).
+ *    타입이 optional이라 없어도 화면은 이름만 보여주는 쪽으로 정상 동작한다.
+ */
+export function toTeamActionPersonalItem(be: BeActionSummary): {
+  id: number;
+  title: string;
+  assigneeName: string;
+  startDate: string;
+  dueDate: string;
+  status: ActionStatus;
+} {
+  return {
+    id: be.id,
+    title: be.title,
+    assigneeName: be.assigneeName ?? "",
+    startDate: fallbackActionStartDate(be.startDate),
+    dueDate: be.dueDate,
+    status: be.status,
+  };
+}
