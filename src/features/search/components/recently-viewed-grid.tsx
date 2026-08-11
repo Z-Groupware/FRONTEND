@@ -1,9 +1,8 @@
-import Link from "next/link";
-
 import { pickPaletteColor } from "@/lib/palette";
 
 import type { SearchRecentViewItem } from "../types";
 import { KindBadge } from "./kind-badge";
+import { RecordViewLink } from "./record-view-link";
 import { SearchSection } from "./search-section";
 
 interface RecentlyViewedGridProps {
@@ -93,13 +92,15 @@ function RecentlyViewedCard({ item }: RecentlyViewedCardProps) {
 
   if (item.kind === "PROJECT") {
     return (
-      <Link
+      <RecordViewLink
+        kind="PROJECT"
+        itemId={item.id}
         href={`/app/projects/${item.id}`}
         /* ⚠️ 누를 수 있는 것만 면이 짙어진다 — 넷 중 프로젝트 하나만 링크다 */
         className={`${shape} hover:border-foreground/25 transition-colors`}
       >
         {inner}
-      </Link>
+      </RecordViewLink>
     );
   }
 

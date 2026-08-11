@@ -8,6 +8,7 @@ import { ep } from "@/lib/endpoints";
 import { isMock } from "@/mocks/config";
 
 import { addMockRecentSearch } from "./mock/recent-searches";
+import type { SearchKind } from "./types";
 
 /**
  * 검색 기록 — 검색창에서 값을 확정(입력을 멈춘 뒤)했을 때 클라이언트가 부른다.
@@ -39,5 +40,30 @@ export async function recordSearchAction(keyword: string): Promise<void> {
     revalidatePath("/app/search");
   } catch {
     // 위 주석대로 — 기록 실패를 검색 흐름에 되돌리지 않는다.
+  }
+}
+
+/**
+ * 최근 본 항목 기록 — 검색/랜딩에서 결과 하나를 열 때(지금은 프로젝트만 실제 이동이라
+ * 프로젝트 클릭에서만 불린다, `record-view-link.tsx`) 클라이언트가 부른다.
+ * ⚠️ **이동을 막지 않는다.** 링크를 누른 김에 fire-and-forget으로 보내는 부가 기록이라,
+ *    실패해도 페이지 이동은 그대로 진행된다(`recordSearchAction`과 같은 이유).
+ * ⚠️ 목엔 대응하는 저장소가 없다 — `SearchHome.recentlyViewed`가 정적 목이라 클릭해도
+ *    안 바뀐다(§정직한 목업: 없는 걸 있는 척 안 한다).
+ */
+export async function recordRecentViewAction(kind: SearchKind, id: number): Promise<void> {
+  if (isMock) return;
+
+  /* [스펙 전달, BE 실코드 미대조] `POST /api/v1/search/recent-views` — 몸통은 `{ type, id }` */
+  try {
+    const accessToken = await requireAccessToken();
+    await serverApi<unknown>(ep.searchRecentViews(), {
+      method: "POST",
+      accessToken,
+      json: { type: kind, id },
+    });
+    revalidatePath("/app/search");
+  } catch {
+    // 위 주석대로 — 기록 실패를 이동 흐름에 되돌리지 않는다.
   }
 }

@@ -1,11 +1,10 @@
-import Link from "next/link";
-
 import { ProfileAvatar } from "@/components/common/profile-avatar";
 import { ProjectTag } from "@/components/common/project-tag";
 import { AUTHORITY_BADGE_CLASS, AUTHORITY_LABEL } from "@/constants/authority";
 import { pickPaletteColor } from "@/lib/palette";
 
 import type { PersonBrowseItem, ProjectBrowseItem } from "../types";
+import { RecordViewLink } from "./record-view-link";
 import { SearchSection } from "./search-section";
 
 interface BrowseProjectsProps {
@@ -27,7 +26,9 @@ export function BrowseProjects({ projects }: BrowseProjectsProps) {
       <ul className="flex flex-col gap-2">
         {projects.map((project) => (
           <li key={project.id}>
-            <Link
+            <RecordViewLink
+              kind="PROJECT"
+              itemId={project.id}
               href={`/app/projects/${project.id}`}
               className="border-border bg-card hover:border-foreground/25 focus-visible:ring-ring flex items-stretch gap-2.5 rounded-xl border py-3 pr-4 pl-3 text-[13px] transition-colors focus-visible:ring-2 focus-visible:outline-hidden [&>*:not(:first-child)]:self-center"
             >
@@ -47,7 +48,7 @@ export function BrowseProjects({ projects }: BrowseProjectsProps) {
               <span className="text-muted-foreground shrink-0 text-[12px] leading-4 tabular-nums">
                 회의 {project.meetingCount}건
               </span>
-            </Link>
+            </RecordViewLink>
           </li>
         ))}
       </ul>
