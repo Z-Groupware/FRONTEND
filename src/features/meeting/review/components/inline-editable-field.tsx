@@ -111,8 +111,14 @@ export function InlineEditableField({
       >
         {value || placeholder}
       </span>
+      {/*
+        ⚠️ **평소엔 숨긴다**(2026-08-11). 연필이 글자 바로 뒤에 붙어 있어서, 줄마다 이름 길이가
+           다른 만큼 아이콘도 제각각인 자리에 떠 **열이 들쭉날쭉**했다 — 자리는 그대로 잡아 두고
+           (`opacity`) 커서를 얹거나 키보드로 짚었을 때만 드러낸다. 눌러 고칠 수 있다는 사실은
+           `aria-label`이 늘 말한다(§a11y).
+      */}
       <Pencil
-        className="text-muted-foreground/40 group-hover:text-muted-foreground mt-0.5 size-3 shrink-0"
+        className="text-muted-foreground mt-0.5 size-3 shrink-0 opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100"
         aria-hidden
       />
     </button>
