@@ -11,7 +11,7 @@ import {
   ACTION_STATUS,
   ACTION_STATUS_LABEL,
   isDelayed,
-  MEMBER_STATUS,
+  MEMBER_STATUS_BADGE_CLASS,
   MEMBER_STATUS_LABEL,
 } from "@/constants/domain";
 import { useProfileAvatar } from "@/hooks/use-profile-avatar";
@@ -34,7 +34,6 @@ interface TeamMemberAccordionCardProps {
 export function TeamMemberAccordionCard({ member }: TeamMemberAccordionCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const avatar = useProfileAvatar(member.id, 36);
-  const isVacation = member.status === MEMBER_STATUS.VACATION;
   const percent = getMemberProgressPercent(member.actions);
   const doneCount = member.actions.filter((action) => action.status === ACTION_STATUS.DONE).length;
 
@@ -63,9 +62,16 @@ export function TeamMemberAccordionCard({ member }: TeamMemberAccordionCardProps
 
         <span className="flex-1" aria-hidden />
 
+        {/*
+            ⚠️ **상수를 쓴다**(2026-08-11). 여기서 `border-warning text-warning`을 덧칠하고 있었는데,
+               휴직은 **문제가 아니다** — 회색 표 안에서 배지 하나만 주황이라 경고처럼 읽혔다.
+               색으로 알리는 건 에러(빨강)뿐이다(DESIGN §5).
+            ⚠️ 생김새는 `MEMBER_STATUS_BADGE_CLASS`가 이미 상태별로 들고 있다. 화면이 따로
+               칠하면 상태가 늘 때 여기만 빠진다(§도메인 상수).
+          */}
         <Badge
-          variant={isVacation ? "outline" : "secondary"}
-          className={cn("shrink-0", isVacation && "border-warning text-warning")}
+          variant="outline"
+          className={cn("shrink-0", MEMBER_STATUS_BADGE_CLASS[member.status])}
         >
           {MEMBER_STATUS_LABEL[member.status]}
         </Badge>

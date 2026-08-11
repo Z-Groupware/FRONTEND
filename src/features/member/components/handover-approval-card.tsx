@@ -123,16 +123,18 @@ export function HandoverApprovalCard({
 
   return (
     /*
-      ⚠️ **면을 물들이지 않는다.** 색으로 알리는 건 에러뿐이고(§디자인 토큰), 카드 전체가
-         노래지면 그 안의 글자 대비가 떨어진다 — 테두리와 배지만 경고 색을 쓴다.
+      ⚠️ **주황을 걷어냈다**(2026-08-11). 테두리와 배지에 경고 색을 쓰고 있었는데, 승인 대기는
+         **할 일이지 문제가 아니다** — 색으로 알리는 건 에러(빨강)뿐이다(DESIGN §5).
+      ⚠️ 대신 **테두리를 진하게** 해서 눈에 걸리게 한다. 급한 것은 명도로 가른다(§DESIGN 5).
     */
-    <section className="border-warning/50 bg-card overflow-hidden rounded-2xl border">
+    <section className="border-foreground/25 bg-card overflow-hidden rounded-2xl border">
       <div className="flex items-center justify-between gap-3 px-7 pt-6 pb-5">
         <h2 className="flex items-center gap-2 text-[15px] leading-6 font-semibold tracking-[-0.2px]">
           <span className="bg-foreground size-2 rounded-full" aria-hidden />
           {applicantTypeLabel} {typeLabel} 최종 승인 대기
         </h2>
-        <span className="border-warning/40 text-warning shrink-0 rounded border px-2 py-0.5 text-[11px] leading-4">
+        {/* ⚠️ 배지도 명도로 세운다 — 이 화면에서 제일 진한 표식이라 색 없이도 먼저 읽힌다 */}
+        <span className="bg-foreground text-background shrink-0 rounded px-2 py-0.5 text-[11px] leading-4 font-medium">
           검토 필요
         </span>
       </div>
