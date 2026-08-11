@@ -82,40 +82,19 @@ function BoardCardBody({ card, isDelayed }: BoardCardProps) {
  */
 const CARD_SHAPE = "border-border bg-card relative flex rounded-lg border py-6 pr-4 pl-4";
 
-/** 색이 바닥을 타고 들어가는 길이(px) — 곡선을 돈 뒤 이만큼 더 간다 */
-const COLOR_FOOT_WIDTH = 40;
-
 /**
- * 위쪽에서 색이 시작하지 않는 높이(px).
+ * 왼쪽 색 막대 — **위아래 끝이 둥근 막대**다.
  *
- * ⚠️ 모서리 반지름(10px)보다 살짝 커서 **위 곡선을 건드리지 않는다.** 위아래를 다 감싸면
- *    대괄호(`[`)가 되는데, 그건 카드를 양쪽에서 집는 모양이라 무겁다 — 위는 평평하게 자르고
- *    아래만 돌아 바닥으로 흘리면 `L` 자가 되어 **아래로 흐르는 방향**이 생긴다.
- */
-const COLOR_TOP_INSET = 13;
-
-/**
- * 왼쪽 색 테두리 — **카드와 똑같은 둥근 테두리를 한 겹 더 얹고 왼쪽만 남긴다**(`clip-path`).
- *
- * ⚠️ 네 번 헤맨 자리다. 막대를 세우면 곡선에서 잘리고, `border-left`는 색이 곡선 중간에서
- *    끊기고, 원뿔 그러데이션은 각도가 길이가 아니라 **방향**이라 카드 비율에 따라 색이 위·아래
- *    변까지 타고 올라갔다.
- * ⚠️ 이 방법은 카드 곡선과 **정확히 같은 선** 위에 그려지므로, 색이 아래 모서리를 그대로 타고
- *    돌아 바닥으로 이어진다 — 어긋나거나 끊길 자리가 없다.
- * ⚠️ `-inset-px`로 한 픽셀 밖에 그린다. 같은 자리에 겹치면 회색 테두리가 비쳐 색이 탁해진다.
+ * ⚠️ 끝처리가 전부다. 각지게 자르면 잘린 것처럼 보이고, 카드 곡선을 타고 돌면 대괄호나 `L`이
+ *    되어 카드를 감싸는 다른 모양이 된다 — 막대는 **곧게 서고 양 끝만 둥글다.**
+ * ⚠️ 위아래를 8px씩 들여 카드 모서리 곡선과 겹치지 않게 한다. 겹치면 곡선이 캡을 깎는다.
+ * ⚠️ 왼쪽은 `0`이다. 안쪽으로 들이면 카드 테두리와 막대 사이에 흰 틈이 생겨 눈금처럼 뜬다.
  */
 function ColorEdge({ tag }: { tag: string }) {
   return (
     <span
-      className="pointer-events-none absolute -inset-px rounded-[11px] border-4"
-      style={{
-        borderColor: pickPaletteColor(tag).solidColor,
-        /*
-          ⚠️ 위는 `COLOR_TOP_INSET`만큼 잘라 **평평하게 끝내고**, 오른쪽은 `COLOR_FOOT_WIDTH`만
-             남겨 색이 아래 곡선을 돌아 바닥을 조금 타고 가다 끝나게 한다 — `L` 자다.
-        */
-        clipPath: `inset(${COLOR_TOP_INSET}px calc(100% - ${COLOR_FOOT_WIDTH}px) 0 0)`,
-      }}
+      className="pointer-events-none absolute inset-y-2 left-0 w-[5px] rounded-full"
+      style={{ backgroundColor: pickPaletteColor(tag).solidColor }}
       aria-hidden
     />
   );
