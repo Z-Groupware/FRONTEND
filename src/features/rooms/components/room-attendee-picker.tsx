@@ -158,7 +158,7 @@ export function RoomAttendeePicker({
 
       <div className="border-border min-h-0 flex-1 overflow-y-auto rounded-lg border">
         {visible.length === 0 ? (
-          <p className="text-muted-foreground px-3 py-3 text-xs">검색 결과가 없어요</p>
+          <p className="text-muted-foreground px-3 py-3 text-xs">검색 결과가 없습니다</p>
         ) : (
           visible.map((member) => (
             <AttendeeRow

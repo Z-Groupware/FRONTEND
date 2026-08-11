@@ -62,7 +62,7 @@ export function BrowsePeople({ people }: BrowsePeopleProps) {
           <li key={person.id} className="flex items-center gap-2.5 px-5 py-3.5 text-[13px]">
             <span className="min-w-0 flex-1 truncate">{person.name}</span>
             <span
-              className={`${AUTHORITY_BADGE_CLASS[person.authority]} shrink-0 rounded px-1.5 py-0.5 text-[10px] leading-4`}
+              className={`${AUTHORITY_BADGE_CLASS[person.authority]} shrink-0 rounded px-1.5 py-0.5 text-[11px] leading-4`}
             >
               {AUTHORITY_LABEL[person.authority]}
             </span>

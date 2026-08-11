@@ -73,7 +73,7 @@ export function NoticeCompanyPicker({
       {keyword.trim().length > 0 && (
         <div className="border-border overflow-hidden rounded-lg border">
           {results.length === 0 ? (
-            <p className="text-muted-foreground px-3 py-3 text-xs">검색 결과가 없어요</p>
+            <p className="text-muted-foreground px-3 py-3 text-xs">검색 결과가 없습니다</p>
           ) : (
             <ul>
               {results.map((company) => (

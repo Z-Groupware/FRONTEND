@@ -77,7 +77,7 @@ export function SearchInput({ keyword }: SearchInputProps) {
         id="workbench-search"
         value={value}
         onChange={(event) => setValue(event.target.value)}
-        placeholder="회의·액션·프로젝트·사람을 검색해 보세요"
+        placeholder="회의·액션·프로젝트·사람을 검색해 주세요"
         className="h-11 rounded-xl pl-11"
       />
       <label htmlFor="workbench-search" className="sr-only">

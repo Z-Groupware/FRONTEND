@@ -48,7 +48,7 @@ export function SearchResultRow({ item, keyword }: SearchResultRowProps) {
         <span
           className={cn(
             AUTHORITY_BADGE_CLASS[item.authority],
-            "shrink-0 rounded px-1.5 py-0.5 text-[10px] leading-4",
+            "shrink-0 rounded px-1.5 py-0.5 text-[11px] leading-4",
           )}
         >
           {AUTHORITY_LABEL[item.authority]}

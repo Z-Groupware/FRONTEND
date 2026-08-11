@@ -18,7 +18,7 @@ export function NoticeList({ notices }: { notices: NoticeSummary[] }) {
 
       {notices.length === 0 ? (
         <div className="flex items-center justify-center p-10 text-center">
-          <p className="text-muted-foreground text-sm">아직 등록된 공지가 없어요</p>
+          <p className="text-muted-foreground text-sm">아직 등록된 공지가 없습니다</p>
         </div>
       ) : (
         <ul className="border-border divide-border divide-y border-t">
