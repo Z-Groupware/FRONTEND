@@ -64,7 +64,7 @@ const CASES: PreviewCase[] = [
   {
     key: "member-admin",
     title: `${AUTHORITY_LABEL[AUTHORITY.MEMBER]} + Admin`,
-    note: "사원인 채로 회사 운영이 덧붙는다. 기업 설정·팀장 인수인계는 Owner 것이라 없다",
+    note: "사원인 채로 회사 운영이 덧붙는다. 기업 설정·인수인계서 관리는 Owner 것이라 없다",
     viewer: person(AUTHORITY.MEMBER, "이사원", true),
   },
 ];

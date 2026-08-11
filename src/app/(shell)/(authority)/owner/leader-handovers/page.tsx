@@ -19,7 +19,7 @@ import { canManageLeaderHandovers } from "@/lib/permission";
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
-  title: "팀장급 인수인계서 관리",
+  title: "인수인계서 관리",
 };
 
 interface LeaderHandoversPageProps {
@@ -27,7 +27,7 @@ interface LeaderHandoversPageProps {
 }
 
 /**
- * 팀장급 인수인계서 관리 — 오프보딩 최종 승인이 끝난 뒤 담당자 없이 남는 개인 액션
+ * 인수인계서 관리 — 오프보딩 최종 승인이 끝난 뒤 담당자 없이 남는 개인 액션
  * 뭉치를 새 팀장에게 넘길 때까지 모아 보여준다(WORKFLOW.md §7).
  * ⚠️ **오프보딩만** 올라온다 — 팀장 휴직은 본인이 재할당을 마치고 올라가 여기 없다.
  * ⚠️ 사원 관리 최종 승인과의 실제 연동은 범위 밖이다(고정 mock, 2026-08-08 사용자 확인).

@@ -54,7 +54,7 @@ const MY_PAGE: NavItem = { href: "/app/me", label: "마이페이지", icon: "me"
  *    "사원 관리" 화면 안의 버튼으로 옮겼다 — `/manage/members`가 Owner·Admin 공통이라
  *    (`canManageMembers`) 발급도 같은 문으로 자연히 열린다. 두 화면(사원 관리·계정 발급)을
  *    갈라 두면 나중에 권한이 갈릴 때마다 두 곳을 같이 고쳐야 한다.
- * ⚠️ **기업 설정·팀장 인수인계는 Owner만** 본다. 위계상 admin이 대신할 수 없다.
+ * ⚠️ **기업 설정·인수인계서 관리는 Owner만** 본다. 위계상 admin이 대신할 수 없다.
  * ⚠️ 겹치는 넷(사원 관리·회의실·구독·결제·녹음 용량)은 `/manage/*` 하나로 모여 있다 —
  *    역할 경로에 두면 겸직자에게 주소가 거짓말을 한다(DECISIONS §관리 기능).
  */
@@ -66,7 +66,7 @@ const MANAGE_SHARED: NavItem[] = [
 ];
 
 const OWNER_ONLY: NavItem[] = [
-  { href: "/owner/leader-handovers", label: "팀장 인수인계", icon: "approval" },
+  { href: "/owner/leader-handovers", label: "인수인계서 관리", icon: "approval" },
   { href: "/owner/setting", label: "기업 설정", icon: "setting" },
 ];
 

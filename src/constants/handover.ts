@@ -70,7 +70,7 @@ export const HANDOVER_TYPE_LABEL: Record<HandoverType, string> = {
 };
 
 /**
- * "팀장급 인수인계서 관리"(`/owner/leader-handovers`)의 상태 — **오프보딩 최종 승인
+ * "인수인계서 관리"(`/owner/leader-handovers`)의 상태 — **오프보딩 최종 승인
  * 뒤에만** 생긴다(WORKFLOW.md §7). `HANDOVER_STATUS`와 다른 축이다: 저건 신청→승인
  * 흐름이고, 이건 승인이 끝난 뒤 "담당자 없는 액션 뭉치를 누구에게 넘길지"의 흐름이다.
  * ⚠️ 팀장 **휴직**은 여기 안 온다 — 휴직은 본인이 재할당을 마치고 올라간다(§7).

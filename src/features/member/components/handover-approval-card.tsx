@@ -197,7 +197,7 @@ export function HandoverApprovalCard({
             href="/owner/leader-handovers"
             className="text-muted-foreground hover:text-foreground text-[12px] leading-4 underline underline-offset-2"
           >
-            팀장급 인수인계서 관리로 가기
+            인수인계서 관리로 가기
           </Link>
         )}
 

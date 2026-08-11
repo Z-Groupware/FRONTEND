@@ -1,7 +1,7 @@
 import type { ActionStatus, LeaderHandoverCustodyStatus } from "@/constants/domain";
 
 /**
- * "팀장급 인수인계서 관리"(`/owner/leader-handovers`)의 **UI 계약**(CLAUDE.md §Mock 격리막).
+ * "인수인계서 관리"(`/owner/leader-handovers`)의 **UI 계약**(CLAUDE.md §Mock 격리막).
  * WORKFLOW.md §7 — 팀장 오프보딩이 최종 승인된 뒤 담당자 없이 남는 개인 액션 뭉치를
  * 새 팀장이 정해질 때까지 붙들고 있다가 일괄 이전한다.
  */
