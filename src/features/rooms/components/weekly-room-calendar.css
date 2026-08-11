@@ -49,10 +49,20 @@
   overflow-y: hidden !important;
 }
 
+/*
+  ⚠️ **선 색을 남김없이 토큰으로 바꾼다**(2026-08-11). 라이브러리 기본 CSS가 곳곳에
+     `#DDD`를 직접 박아 두는데, 라이트에서는 우리 보더색과 비슷해 티가 안 나지만
+     **다크에서는 흰 줄로 번쩍인다** — 하루 종일 세로줄만 밝게 떠 있었다.
+  ⚠️ 열 사이 세로선은 `.rbc-timeslot-group`·`.rbc-events-container`가 그린다(칸 자체가 아니다).
+*/
 .rbc-header,
 .rbc-time-header-content,
 .rbc-time-content,
-.rbc-time-gutter {
+.rbc-time-gutter,
+.rbc-time-header.rbc-overflowing,
+.rbc-timeslot-group,
+.rbc-day-slot .rbc-events-container,
+.rbc-time-content > * + * {
   border-color: var(--border) !important;
 }
 
