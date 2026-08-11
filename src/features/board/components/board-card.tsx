@@ -20,23 +20,30 @@ function BoardCardBody({ card, isDelayed }: BoardCardProps) {
   return (
     <>
       {/*
-        ⚠️ **공용 칩을 쓴다**(`components/common/project-tag`). 여기만 손으로 그린
-           `font-mono text-[10px]` 칩이라 같은 프로젝트가 회의·검색·보드에서 저마다 다른
-           모양으로 떴다 — 칩은 프로젝트를 알아보는 표식이라 모양이 흔들리면 표식 노릇을 못 한다.
-      */}
-      <ProjectTag tag={card.tagLabel} />
-      {/*
+        ⚠️ **제목이 먼저다.** 칩·제목·날짜를 세 층으로 쌓아 두니 카드가 필요 이상으로 길고,
+           셋 다 왼쪽 끝에 붙어 오른쪽이 통째로 비었다 — 카드에서 읽는 건 **무슨 일인가**이고
+           태그·마감은 그 곁 정보다.
         ⚠️ 글자는 다섯 크기다(DESIGN §4). `text-sm`(14px)·`text-xs`(12px)는 규격 밖이라
-           13px·12px로 맞춘다 — 한 화면에 여섯째 크기가 끼면 어느 것이 기준인지 흐려진다.
+           13px·12px로 맞춘다.
       */}
-      <p className="text-foreground text-[13px] leading-5 font-medium">{card.title}</p>
-      {isDelayed ? (
-        <StatusDot tone="DELAYED" label="지연" className="text-[12px] leading-4" />
-      ) : (
-        <p className="text-muted-foreground text-[12px] leading-4 tabular-nums">
-          {due ? `${due}까지` : "-"}
-        </p>
-      )}
+      <p className="text-foreground text-[13px] leading-5 font-medium break-keep">{card.title}</p>
+
+      {/*
+        ⚠️ **곁 정보는 한 줄에 좌우로 벌린다.** 왼쪽은 어느 프로젝트인지, 오른쪽은 언제까지인지 —
+           축을 가르면(DESIGN §3) 카드가 한 층 짧아지고 폭도 다 쓴다.
+        ⚠️ 공용 칩을 쓴다(`components/common/project-tag`). 여기만 손으로 그린 칩이라 같은
+           프로젝트가 회의·검색·보드에서 저마다 다른 모양으로 떴다.
+      */}
+      <div className="flex items-center justify-between gap-2">
+        <ProjectTag tag={card.tagLabel} />
+        {isDelayed ? (
+          <StatusDot tone="DELAYED" label="지연" className="text-[12px] leading-4 font-medium" />
+        ) : (
+          <span className="text-muted-foreground text-[12px] leading-4 tabular-nums">
+            {due ? `${due}까지` : "-"}
+          </span>
+        )}
+      </div>
     </>
   );
 }
@@ -47,7 +54,7 @@ function BoardCardBody({ card, isDelayed }: BoardCardProps) {
  * ⚠️ 라운드는 `rounded-xl`(14px)이다. `2xl`(18px)은 화면을 나누는 **큰 카드**의 값이고,
  *    이건 칸 안에 줄지어 서는 작은 카드라 한 단계 작다(검색 화면과 같은 규칙).
  */
-const CARD_SHAPE = "border-border bg-card flex flex-col gap-2 rounded-xl border p-4";
+const CARD_SHAPE = "border-border bg-card flex flex-col gap-2.5 rounded-xl border px-4 py-3.5";
 
 /**
  * 보드 카드 한 장 — 드래그 핸들은 카드 전체(클릭해서 상세로 이동하는 화면이 아니라 옮기는 화면).

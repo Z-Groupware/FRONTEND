@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import { commitBoardChangesAction } from "../actions";
 import { canMoveCard, getBoardColumn, isCardDelayed } from "../lib";
 import {
+  BOARD_COLUMN,
   BOARD_COLUMN_LABEL,
   BOARD_COLUMNS,
   type BoardCard,
@@ -161,7 +162,14 @@ export function BoardView({ boardType, cards, todayIso }: BoardViewProps) {
               id={columnId}
               label={BOARD_COLUMN_LABEL[columnId]}
               cards={groups[columnId]}
-              isDelayed={(card) => isCardDelayed(card, today)}
+              /*
+                ⚠️ **지금 서 있는 칸으로 판정한다**(2026-08-11 고침). `card.isDone`은 저장된 값이라,
+                   지연된 카드를 `완료`로 끌어다 놓아도 배지가 그대로 `지연`이었다 — 보드는
+                   저장 전 미리보기 화면이라 눈에 보이는 자리와 배지가 어긋나면 안 된다.
+              */
+              isDelayed={(card) =>
+                columnOf(card) !== BOARD_COLUMN.DONE && isCardDelayed(card, today)
+              }
               isInvalidTarget={activeInvalidTarget === columnId}
             />
           ))}

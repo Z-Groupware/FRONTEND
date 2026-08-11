@@ -33,6 +33,19 @@ export const OWNER_DASHBOARD_MOCK: OwnerDashboardOverview = {
       dueDate: "2026-10-15",
       status: PROJECT_STATUS.IN_PROGRESS,
     },
+    /*
+      ⚠️ 프로젝트 목록 목(`project/mock/projects.ts`)의 **진행중 넷과 수를 맞춘다**(2026-08-11).
+         대시보드는 집계된 값을 받는다는 전제라 목이 따로 있는데, 한쪽만 늘려 뒀더니
+         `전체 프로젝트 3`인데 목록은 `진행중 4`로 화면 둘이 다른 말을 했다.
+    */
+    {
+      id: "goods-payment",
+      name: "결제 모듈 고도화",
+      tag: "GOODS",
+      color: "#7C3AED",
+      dueDate: "2026-08-07",
+      status: PROJECT_STATUS.IN_PROGRESS,
+    },
   ],
   activeMemberCount: 10,
   onLeaveMemberCount: 0,

@@ -4,7 +4,7 @@ import { useDroppable } from "@dnd-kit/core";
 
 import { cn } from "@/lib/utils";
 
-import type { BoardCard as BoardCardModel, BoardColumnId } from "../types";
+import { BOARD_COLUMN, type BoardCard as BoardCardModel, type BoardColumnId } from "../types";
 import { BoardCard } from "./board-card";
 
 interface BoardColumnProps {
@@ -16,16 +16,50 @@ interface BoardColumnProps {
   isInvalidTarget: boolean;
 }
 
+/**
+ * 칸 머리의 색 — **상태점이 쓰는 그 색 그대로**다(할일=회색·진행중=초록·완료=보라).
+ *
+ * ⚠️ 새 색을 만들지 않는다. `--status-*`는 상태를 가리키는 색으로 이미 정해져 있고
+ *    (DESIGN §5: 상태점은 색을 써도 되는 자리), 보드의 칸은 그 상태 자체다 — 같은 뜻에
+ *    같은 색을 쓰는 것이라 뜻이 둘로 갈리지 않는다.
+ * ⚠️ **아주 옅게 쓴다**(배경 10%·점 100%). 머리를 진하게 칠하면 정작 읽어야 할 카드보다
+ *    머리가 먼저 읽힌다 — 색은 "여기가 무슨 칸인가"를 스치듯 알리는 몫이다.
+ */
+const COLUMN_TONE: Record<BoardColumnId, { head: string; dot: string; rule: string }> = {
+  [BOARD_COLUMN.TODO]: {
+    head: "bg-status-todo/10",
+    dot: "bg-status-todo",
+    rule: "bg-status-todo/25",
+  },
+  [BOARD_COLUMN.IN_PROGRESS]: {
+    head: "bg-status-progress/10",
+    dot: "bg-status-progress",
+    rule: "bg-status-progress/25",
+  },
+  [BOARD_COLUMN.DONE]: {
+    head: "bg-status-done/10",
+    dot: "bg-status-done",
+    rule: "bg-status-done/25",
+  },
+};
+
 export function BoardColumn({ id, label, cards, isDelayed, isInvalidTarget }: BoardColumnProps) {
   const { setNodeRef, isOver } = useDroppable({ id });
+  const tone = COLUMN_TONE[id];
+  const isBlocked = isOver && isInvalidTarget;
 
   return (
     <div
       ref={setNodeRef}
       className={cn(
-        "border-border bg-secondary/30 flex h-full min-h-0 flex-col rounded-2xl border p-3 transition-all",
+        /*
+          ⚠️ **칸 바탕을 비운다**(2026-08-11). 세 칸에 회색(`bg-secondary/30`)을 깔았더니 화면
+             대부분이 회색 면이라 **시멘트처럼** 보였고, 그 위의 흰 카드는 오히려 묻혔다 —
+             칸을 알리는 일은 테두리와 머리 색이 하고, 바탕은 셸과 같은 색으로 비운다.
+        */
+        "border-border flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border transition-all",
         isOver &&
-          (isInvalidTarget
+          (isBlocked
             ? /*
                 ⚠️ **못 놓는 자리는 점선이다**(2026-08-10). 실선 테두리에 옅은 빨강만 깔았더니
                    "여기가 지금 대상"과 "여기는 안 된다"가 같은 생김새라, 색이 조금 붉은지
@@ -41,26 +75,36 @@ export function BoardColumn({ id, label, cards, isDelayed, isInvalidTarget }: Bo
       )}
     >
       {/*
-        ⚠️ **머리 밑에 선을 긋는다**(2026-08-10). 제목과 카드가 같은 여백으로 붙어 있어 첫 카드가
-           그 칸의 제목처럼 읽혔다 — 선 하나면 "여기부터가 이 칸에 든 것"이 눈에 바로 들어온다.
-        ⚠️ 선은 칸 폭 끝까지 뺀다(`-mx-3`). 안쪽에만 그으면 칸을 가르는 선이 아니라
-           제목에 딸린 밑줄로 보인다(공지·회의 카드가 쓰는 해부와 같다).
-        ⚠️ 못 놓는 자리일 때는 선도 같이 붉어진다 — 칸 전체가 한 상태로 읽혀야 한다.
+        ⚠️ **머리에만 색을 준다.** 셋이 회색 상자 세 개로 똑같이 생겨서 제목 글자를 읽어야만
+           어느 칸인지 알 수 있었다 — 색은 훑을 때 걸리는 표식이고, 글자는 그다음이다.
+        ⚠️ 머리 아래 **가는 선도 같은 색**이다. 회색 선 하나면 칸마다 똑같아 머리 색이
+           떠 있는 것처럼 보였다 — 색이 위에서 아래로 이어져야 그 칸의 것이 된다.
       */}
-      <div
-        className={cn(
-          "-mx-3 flex shrink-0 items-center justify-between border-b px-4 pb-2.5",
-          isOver && isInvalidTarget ? "border-destructive/25" : "border-border",
-        )}
-      >
-        {/* 글자는 다섯 크기다(DESIGN §4) — `text-sm`·`text-xs`는 규격 밖이라 13px·12px로 맞춘다 */}
-        <h3 className="text-[13px] leading-5 font-semibold">{label}</h3>
-        <span className="text-muted-foreground text-[12px] leading-4 tabular-nums">
-          {cards.length}
-        </span>
+      <div className={cn("shrink-0", isBlocked ? "bg-destructive/[0.06]" : tone.head)}>
+        <div className="flex items-center justify-between px-4 py-3">
+          <span className="flex items-center gap-2">
+            {/* 점은 상태점과 같은 색·같은 크기다(`components/common/status-dot`) */}
+            <span
+              className={cn(
+                "size-1.5 shrink-0 rounded-full",
+                isBlocked ? "bg-destructive" : tone.dot,
+              )}
+              aria-hidden
+            />
+            {/* 글자는 다섯 크기다(DESIGN §4) — `text-sm`·`text-xs`는 규격 밖이라 13px·12px로 맞춘다 */}
+            <h3 className="text-[13px] leading-5 font-semibold">{label}</h3>
+          </span>
+          <span className="text-muted-foreground text-[12px] leading-4 tabular-nums">
+            {cards.length}
+          </span>
+        </div>
+        <div
+          className={cn("h-px w-full", isBlocked ? "bg-destructive/30" : tone.rule)}
+          aria-hidden
+        />
       </div>
 
-      <div className="scrollbar-hidden flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto pt-3">
+      <div className="scrollbar-hidden flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto p-3">
         {cards.length === 0 ? (
           <p className="text-muted-foreground flex h-20 items-center justify-center text-[12px] leading-4">
             해당 항목이 없습니다
