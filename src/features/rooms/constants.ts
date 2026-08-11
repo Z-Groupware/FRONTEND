@@ -32,7 +32,8 @@ export const ROOM_ATTENDEE_FILTER_LABEL: Record<RoomAttendeeFilter, string> = {
   myTeam: "내 부서만",
 };
 
-/** 회의실 주간 캘린더 툴바(`rooms-calendar-toolbar.tsx`) 카피 — 라벨 하드코딩 금지 원칙에 맞춰 뺐다. */
+/** 회의실 캘린더 툴바(`rooms-calendar-toolbar.tsx`)·회의실 목록(`room-list-panel.tsx`) 카피
+ * — 라벨 하드코딩 금지 원칙에 맞춰 뺐다. */
 export const ROOMS_CALENDAR_TOOLBAR_LABEL = {
   roomFilter: "회의실 필터",
   allRooms: "전체 회의실",

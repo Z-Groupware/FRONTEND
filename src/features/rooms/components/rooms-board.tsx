@@ -37,9 +37,9 @@ interface RoomsBoardProps {
  *    `slotStart !== null`로만 판단한다(별도 `isOpen` state를 안 둔다).
  * 주의: 주를 옮기면(`?week=`) 서버가 새 `initialReservations`를 내려주는데, 이 컴포넌트는 그때마다
  *    호출부에서 `key={week}`로 다시 마운트된다(개인 캘린더와 같은 이유).
- * 주의: "회의 추가" 진입점은 캘린더 툴바 안(`오늘` 버튼 옆, 2026-08-10 이전엔 이 컴포넌트 위
- *    별도 버튼)으로 옮겼다 — 여는 시각은 `getNextAvailableSlot`이 "지금"을 30분 단위로 올려
- *    계산하는 로직은 그대로다.
+ * 주의: "회의 추가" 진입점은 `RoomListPanel` 상단(2026-08-11, 캘린더 툴바 안에서 이동)에
+ *    있다 — 여는 시각은 `getNextAvailableSlot`이 "지금"을 30분 단위로 올려 계산하는
+ *    로직은 그대로다.
  */
 export function RoomsBoard({
   initialReservations,
@@ -63,11 +63,13 @@ export function RoomsBoard({
           rooms={rooms}
           week={week}
           onSelectSlot={setSlotStart}
-          onAddClick={() => setSlotStart(getNextAvailableSlot(new Date()))}
         />
       </div>
 
-      <RoomListPanel rooms={rooms} />
+      <RoomListPanel
+        rooms={rooms}
+        onAddClick={() => setSlotStart(getNextAvailableSlot(new Date()))}
+      />
 
       <RoomReservationDialog
         slotStart={slotStart}

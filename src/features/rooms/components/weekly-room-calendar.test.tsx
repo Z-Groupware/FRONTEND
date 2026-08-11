@@ -110,7 +110,6 @@ function renderCalendar() {
       rooms={ROOMS}
       week="2026-08-10"
       onSelectSlot={jest.fn()}
-      onAddClick={jest.fn()}
     />,
   );
 }
