@@ -92,10 +92,19 @@ export async function getSearchProjects(): Promise<ProjectBrowseItem[]> {
  * ⚠️ **미래 날짜는 포함하지 않는다.** "최근 N일"은 지난 일을 묻는 말이라, 아직 안 지난
  *    마감일까지 걸리면 "최근"이라는 말과 어긋난다.
  */
-function withinPeriod(iso: string, days: number | null, todayMs: number): boolean {
+function isoToUtcMs(iso: string): number | null {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
+  if (!match) return null;
+  const [, y, m, d] = match;
+  return Date.UTC(Number(y), Number(m) - 1, Number(d));
+}
+
+function withinPeriod(iso: string, days: number | null, todayIsoValue: string): boolean {
   if (days === null) return true;
-  const target = new Date(`${iso}T00:00:00`).getTime();
-  const diffDays = (todayMs - target) / 86_400_000;
+  const target = isoToUtcMs(iso);
+  const today = isoToUtcMs(todayIsoValue);
+  if (target === null || today === null) return false;
+  const diffDays = (today - target) / 86_400_000;
   return diffDays >= 0 && diffDays <= days;
 }
 
@@ -142,11 +151,11 @@ function matchesProject(item: MockSearchRecord, projectTag: string | null): bool
 function matchesPeriod(
   item: MockSearchRecord,
   period: SearchQuery["period"],
-  todayMs: number,
+  todayIsoValue: string,
 ): boolean {
   const days = PERIOD_DAYS[period];
-  if (item.kind === "MEETING") return withinPeriod(item.meetingDate, days, todayMs);
-  if (item.kind === "ACTION") return withinPeriod(item.dueDate, days, todayMs);
+  if (item.kind === "MEETING") return withinPeriod(item.meetingDate, days, todayIsoValue);
+  if (item.kind === "ACTION") return withinPeriod(item.dueDate, days, todayIsoValue);
   return true;
 }
 
@@ -247,12 +256,12 @@ export async function getSearchResults(query: SearchQuery): Promise<SearchResult
   }
 
   if (isMock) {
-    const todayMs = Date.now();
+    const today = todayIso();
     const matched = allMockRecords().filter(
       (item) =>
         matchesKeyword(item, keyword) &&
         matchesProject(item, query.projectTag) &&
-        matchesPeriod(item, query.period, todayMs),
+        matchesPeriod(item, query.period, today),
     );
 
     const counts = matched.reduce(
