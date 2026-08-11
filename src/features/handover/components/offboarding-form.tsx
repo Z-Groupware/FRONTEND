@@ -80,7 +80,8 @@ export function OffboardingForm({ context }: OffboardingFormProps) {
           />
         </div>
 
-        <div className="flex flex-col gap-1.5">
+        {/* ⚠️ 쓰는 글도 좁게 둔다(§DESIGN 4) — 한 줄이 1400px이면 눈이 다음 줄을 못 찾는다 */}
+        <div className="flex max-w-[720px] flex-col gap-1.5">
           <Label htmlFor="offboarding-description">
             담당 업무 및 인수인계 상세 설명 <span className="text-destructive">*</span>
           </Label>

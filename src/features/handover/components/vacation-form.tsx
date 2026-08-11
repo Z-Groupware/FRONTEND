@@ -112,7 +112,8 @@ export function VacationForm({ context }: VacationFormProps) {
           */}
           <section className="border-border bg-card flex flex-col gap-4 rounded-2xl border p-7">
             <h2 className="text-[17px] leading-7 font-semibold tracking-[-0.3px]">휴직 기간</h2>
-            <div className="grid grid-cols-2 gap-4">
+            {/* ⚠️ 날짜 두 칸은 상한을 건다 — 카드가 1440이라도 값이 짧은 입력은 폭도 짧아야 한다 */}
+            <div className="grid max-w-[640px] grid-cols-2 gap-4">
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="vacation-start">
                   휴직 시작 날짜 <span className="text-destructive">*</span>
