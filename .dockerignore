@@ -1,0 +1,12 @@
+node_modules
+.next
+.git
+.github
+coverage
+*.md
+.env
+.env.local
+.env*.local
+.claude
+Dockerfile
+.dockerignore

@@ -16,6 +16,9 @@ export const metadata: Metadata = {
   title: "회의실",
 };
 
+// 미연동 상태에선 server.ts가 throw한다 — 정적 프리렌더로 굳히면 build 자체가 죽는다.
+export const dynamic = "force-dynamic";
+
 const DATE_PARAM_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
 function parseWeekParam(raw: string | undefined): Date {
