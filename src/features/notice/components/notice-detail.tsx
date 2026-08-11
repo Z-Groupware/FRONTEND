@@ -15,7 +15,7 @@ export function NoticeDetail({ notice, canManage }: { notice: Notice; canManage:
          시작하는 자리 하나뿐").
       ⚠️ 안쪽 여백은 `px-7`이다 — 목록 카드와 같은 값이라 오갈 때 글 시작선이 안 흔들린다.
     */
-    <article className="border-border bg-card mx-auto max-w-[720px] overflow-hidden rounded-2xl border">
+    <article className="border-border bg-card mx-auto flex min-h-[560px] w-full max-w-[720px] flex-col overflow-hidden rounded-2xl border">
       {/* 열람하면 읽음 처리 — 화면엔 아무것도 안 그린다 */}
       <MarkNoticeRead id={notice.id} />
 
