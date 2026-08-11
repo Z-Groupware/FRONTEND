@@ -25,22 +25,10 @@ interface BoardColumnProps {
  * ⚠️ **아주 옅게 쓴다**(배경 10%·점 100%). 머리를 진하게 칠하면 정작 읽어야 할 카드보다
  *    머리가 먼저 읽힌다 — 색은 "여기가 무슨 칸인가"를 스치듯 알리는 몫이다.
  */
-const COLUMN_TONE: Record<BoardColumnId, { head: string; dot: string; rule: string }> = {
-  [BOARD_COLUMN.TODO]: {
-    head: "bg-status-todo/10",
-    dot: "bg-status-todo",
-    rule: "bg-status-todo/25",
-  },
-  [BOARD_COLUMN.IN_PROGRESS]: {
-    head: "bg-status-progress/10",
-    dot: "bg-status-progress",
-    rule: "bg-status-progress/25",
-  },
-  [BOARD_COLUMN.DONE]: {
-    head: "bg-status-done/10",
-    dot: "bg-status-done",
-    rule: "bg-status-done/25",
-  },
+const COLUMN_TONE: Record<BoardColumnId, { head: string; dot: string }> = {
+  [BOARD_COLUMN.TODO]: { head: "bg-status-todo/10", dot: "bg-status-todo" },
+  [BOARD_COLUMN.IN_PROGRESS]: { head: "bg-status-progress/10", dot: "bg-status-progress" },
+  [BOARD_COLUMN.DONE]: { head: "bg-status-done/10", dot: "bg-status-done" },
 };
 
 export function BoardColumn({ id, label, cards, isDelayed, isInvalidTarget }: BoardColumnProps) {
@@ -75,10 +63,8 @@ export function BoardColumn({ id, label, cards, isDelayed, isInvalidTarget }: Bo
       )}
     >
       {/*
-        ⚠️ **머리에만 색을 준다.** 셋이 회색 상자 세 개로 똑같이 생겨서 제목 글자를 읽어야만
+        ⚠️ **머리에도 옅게 깐다.** 셋이 회색 상자 세 개로 똑같이 생겨서 제목 글자를 읽어야만
            어느 칸인지 알 수 있었다 — 색은 훑을 때 걸리는 표식이고, 글자는 그다음이다.
-        ⚠️ 머리 아래 **가는 선도 같은 색**이다. 회색 선 하나면 칸마다 똑같아 머리 색이
-           떠 있는 것처럼 보였다 — 색이 위에서 아래로 이어져야 그 칸의 것이 된다.
       */}
       <div className={cn("shrink-0", isBlocked ? "bg-destructive/[0.06]" : tone.head)}>
         <div className="flex items-center justify-between px-4 py-3">
@@ -98,8 +84,9 @@ export function BoardColumn({ id, label, cards, isDelayed, isInvalidTarget }: Bo
             {cards.length}
           </span>
         </div>
+        {/* ⚠️ 머리와 카드를 가르는 선 — 색은 세로 띠가 맡으므로 여기선 보통 테두리색이다 */}
         <div
-          className={cn("h-px w-full", isBlocked ? "bg-destructive/30" : tone.rule)}
+          className={cn("h-px w-full", isBlocked ? "bg-destructive/30" : "bg-border")}
           aria-hidden
         />
       </div>
