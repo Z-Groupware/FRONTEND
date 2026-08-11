@@ -86,29 +86,19 @@ export function LeaderHandoverAssignForm({ handover }: LeaderHandoverAssignFormP
              생기기 전까지는 넘길 곳이 없다는 뜻이라, 빈 셀렉트 대신 다음 할 일을 알려준다.
         */
         /*
-          ⚠️ **안내를 한 덩이로 묶는다**(2026-08-11). 문장 안에 `사원 관리`를 인라인 링크로 두니
-             좁은 곁 컬럼(360px)에서 **줄 중간에 끊겨** `사원 / 관리`로 갈라졌고, 밑줄까지
-             두 줄로 나뉘어 링크인지도 흐려졌다.
-          ⚠️ 그렇다고 링크를 **꽉 찬 버튼**으로 빼니 아래 [PDF]와 같은 무게가 되어 둘 중 무엇을
-             눌러야 하는지 알 수 없었다 — 지금 할 일은 팀장을 세우는 것이고 PDF는 곁다리다.
-          ⚠️ 그래서 **옅은 띠 안에 상태·설명·이동을 함께** 둔다. 띠가 "지금은 못 넘긴다"를
-             한눈에 말하고, 이동은 그 안에서 화살표 링크로 이어진다.
+          ⚠️ **문장 안에 링크를 두지 않는다**(2026-08-11). 좁은 곁 컬럼(360px)에서 `사원 관리`가
+             줄 중간에 끊겨 `사원 / 관리`로 갈라졌고, 밑줄까지 두 줄로 나뉘어 링크인지도
+             흐려졌다 — 읽는 글과 누르는 것을 섞지 않는다.
+          ⚠️ 문장은 **두 줄로 끊어 적는다.** 무엇이 문제인지(팀장이 없다)와 무엇을 해야 하는지
+             (승급해라)는 다른 말이라, 한 문장에 이으면 둘 다 흐릿하게 읽힌다.
         */
-        <div className="bg-secondary/50 flex flex-col gap-2 rounded-xl px-4 py-3.5">
-          <p className="text-[13px] leading-5 font-medium break-keep">
-            {handover.teamName}에 아직 새 팀장이 없습니다
+        <div className="flex flex-col gap-1">
+          <p className="text-[13px] leading-6 break-keep">
+            {handover.teamName}에 아직 새 팀장이 지정되지 않았습니다.
           </p>
-          <p className="text-muted-foreground text-[12px] leading-[18px] break-keep">
-            그 팀 소속 사원을 팀장으로 승급하면 인수인계서를 넘길 수 있습니다.
+          <p className="text-muted-foreground text-[13px] leading-6 break-keep">
+            그 팀 소속 사원을 팀장으로 승급해 주세요.
           </p>
-          {/* ⚠️ 한 줄로 붙여 둔다(`whitespace-nowrap`) — 화살표가 다음 줄로 떨어지면 링크가 끊겨 보인다 */}
-          <Link
-            href="/manage/members"
-            className="text-foreground hover:text-foreground/70 focus-visible:ring-ring flex w-fit items-center gap-1 rounded-md pt-1 text-[13px] leading-5 font-medium whitespace-nowrap transition-colors focus-visible:ring-2 focus-visible:outline-hidden"
-          >
-            사원 관리로 가기
-            <ArrowRight className="size-3.5" aria-hidden />
-          </Link>
         </div>
       ) : (
         <div className="flex items-center gap-3">
@@ -141,16 +131,31 @@ export function LeaderHandoverAssignForm({ handover }: LeaderHandoverAssignFormP
         </div>
       )}
 
-      <Button
-        type="button"
-        size="sm"
-        variant="outline"
-        className="w-full"
-        onClick={() => toast("PDF 생성은 아직 연동되지 않았습니다")}
-      >
-        <Download />
-        인수인계서 PDF 다운로드
-      </Button>
+      <div className="flex flex-col gap-2">
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          className="w-full"
+          onClick={() => toast("PDF 생성은 아직 연동되지 않았습니다")}
+        >
+          <Download />
+          인수인계서 PDF 다운로드
+        </Button>
+
+        {/*
+          ⚠️ **PDF 아래에 글자 링크로 둔다.** 같은 테두리 버튼으로 두면 둘이 같은 무게가 되어
+             무엇을 눌러야 하는지 알 수 없다 — 이 카드에서 할 일은 귀속이고, 아래 둘은 곁다리다.
+          ⚠️ 한 줄로 붙여 둔다(`whitespace-nowrap`) — 화살표가 다음 줄로 떨어지면 링크가 끊겨 보인다.
+        */}
+        <Link
+          href="/manage/members"
+          className="text-muted-foreground hover:text-foreground focus-visible:ring-ring flex h-8 items-center justify-center gap-1 rounded-md text-[13px] leading-5 whitespace-nowrap transition-colors focus-visible:ring-2 focus-visible:outline-hidden"
+        >
+          사원 관리로 가기
+          <ArrowRight className="size-3.5" aria-hidden />
+        </Link>
+      </div>
 
       <ConfirmDialog
         isOpen={confirmOpen}
