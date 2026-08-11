@@ -111,7 +111,8 @@ export default async function AppMePage({ searchParams }: AppMePageProps) {
               */}
               <ProfileInfoCard profile={profile} header={<ProfileHeader profile={profile} />} />
 
-              <div className="grid gap-7 lg:grid-cols-2 lg:items-start">
+              {/* ⚠️ `items-start`를 안 쓴다 — 두 카드가 **바닥까지 같이** 서야 한 층으로 읽힌다 */}
+              <div className="grid gap-7 lg:grid-cols-2">
                 <ScreenScaleCard />
                 <ThemeCard />
               </div>

@@ -66,7 +66,7 @@ export function ThemeCard() {
   };
 
   return (
-    <section className="border-border bg-card rounded-2xl border p-7">
+    <section className="border-border bg-card flex h-full flex-col rounded-2xl border p-7">
       <h2 className="text-[17px] leading-7 font-semibold tracking-[-0.3px]">테마</h2>
 
       <p className="text-muted-foreground pt-2 text-[13px] leading-[21px] break-keep">

@@ -100,7 +100,8 @@ export function ScreenScaleCard() {
   };
 
   return (
-    <section className="border-border bg-card rounded-2xl border p-7">
+    /* ⚠️ 옆 카드(테마)와 **바닥을 맞춘다** — 마지막 줄을 아래로 밀어(`mt-auto`) 높이를 채운다 */
+    <section className="border-border bg-card flex h-full flex-col rounded-2xl border p-7">
       <h2 className="text-[17px] leading-7 font-semibold tracking-[-0.3px]">화면 배율</h2>
 
       <p className="text-muted-foreground pt-2 text-[13px] leading-[21px] break-keep">
@@ -121,9 +122,13 @@ export function ScreenScaleCard() {
         role="radiogroup"
         aria-label="화면 배율"
         onKeyDown={handleScaleKeys}
-        /* ⚠️ 네 칸 격자다 — 곁 칸(360)에 들어가면 `flex-wrap`이 `100%`만 다음 줄로 떨어뜨려 셋+하나로 갈렸다 */
-        /* ⚠️ 폭에 상한을 건다 — 카드가 전폭의 절반이 되면서 `75%` 한 낱말이 140px 버튼에 떠 있었다 */
-        className="grid max-w-[420px] grid-cols-4 gap-2 pt-5"
+        /*
+          ⚠️ 네 칸 격자다 — `flex-wrap`은 남는 폭이 모자라면 `100%`만 다음 줄로 떨어뜨려 셋+하나로 갈린다.
+          ⚠️ **카드 폭을 다 쓴다.** 상한을 걸어 왼쪽에 몰아 뒀더니 옆 카드(테마)는 세 칸이
+             고르게 퍼져 있는데 여기만 한쪽으로 쏠려 보였다 — 같은 층에 선 카드끼리는
+             안쪽 리듬도 같아야 한다.
+        */
+        className="grid grid-cols-4 gap-2 pt-5"
       >
         {SCREEN_SCALES.map((value) => (
           <button
@@ -152,7 +157,7 @@ export function ScreenScaleCard() {
       */}
       {width > 0 && (
         // ⚠️ `/70`을 걷어낸다 — 12px 본문이 라이트에서 2.73:1로 4.5:1에 못 미친다(§a11y)
-        <p className="text-muted-foreground pt-4 text-[12px] leading-4 tabular-nums">
+        <p className="text-muted-foreground mt-auto pt-4 text-[12px] leading-4 tabular-nums">
           지금 화면 폭 {width}px · 설계 기준 {REFERENCE_WIDTH}px
         </p>
       )}
