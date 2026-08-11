@@ -85,11 +85,12 @@ const CARD_SHAPE = "border-border bg-card relative flex rounded-lg border py-6 p
 /**
  * 왼쪽 색 테두리가 덮는 폭(px).
  *
- * ⚠️ **모서리 반지름(10px) + 테두리(3px)만큼**이다. 넓게 잡으면(44px) 색이 곡선을 다 돌고도
- *    위·아래 **직선 구간까지 30px씩 더 타고 들어가** 카드를 ㄷ자로 감싼다 — 원하는 건
- *    왼쪽 변과 그 끝의 곡선까지다. 곡선이 끝나는 자리에서 색도 끝나야 한다.
+ * ⚠️ **모서리 반지름(10px)보다 조금 짧게** 둔다. 곡선을 끝까지 다 돌면 색이 위·아래 직선에
+ *    닿아 카드를 감싸는 것처럼 보인다 — 곡선을 **타다가 만다.** 잘린 끝이 직선과 만나기 전에
+ *    끝나므로 마무리가 깔끔하다.
+ * ⚠️ 44px로 뒀을 때는 곡선을 다 돌고도 직선을 30px씩 더 타고 들어가 ㄷ자가 됐다.
  */
-const COLOR_EDGE_WIDTH = 14;
+const COLOR_EDGE_WIDTH = 9;
 
 /**
  * 왼쪽 색 테두리 — **카드와 똑같은 둥근 테두리를 한 겹 더 얹고 왼쪽만 남긴다**(`clip-path`).
@@ -104,7 +105,7 @@ const COLOR_EDGE_WIDTH = 14;
 function ColorEdge({ tag }: { tag: string }) {
   return (
     <span
-      className="pointer-events-none absolute -inset-px rounded-[11px] border-[3px]"
+      className="pointer-events-none absolute -inset-px rounded-[11px] border-4"
       style={{
         borderColor: pickPaletteColor(tag).solidColor,
         clipPath: `inset(0 calc(100% - ${COLOR_EDGE_WIDTH}px) 0 0)`,
