@@ -82,7 +82,18 @@ export function RoomsCalendarToolbar({
           onValueChange={(value) => onSelectedRoomChange(value ?? ALL_ROOMS_VALUE)}
         >
           <SelectTrigger size="sm" aria-label={ROOMS_CALENDAR_TOOLBAR_LABEL.roomFilter}>
-            <SelectValue placeholder={ROOMS_CALENDAR_TOOLBAR_LABEL.allRooms} />
+            {/*
+              ⚠️ **값이 아니라 라벨을 그린다**(2026-08-11 고침). 그냥 두면 셀렉트가 원본 값을
+                 그대로 그려 화면에 **`all`이라는 영문 id가 노출**됐다 — 코드엔 영문 상수,
+                 화면엔 한글이다(§도메인 상수). 담당자 선택(인수인계)도 같은 방식이다.
+            */}
+            <SelectValue placeholder={ROOMS_CALENDAR_TOOLBAR_LABEL.allRooms}>
+              {(value) =>
+                value === ALL_ROOMS_VALUE
+                  ? ROOMS_CALENDAR_TOOLBAR_LABEL.allRooms
+                  : (rooms.find((room) => room.id === value)?.name ?? value)
+              }
+            </SelectValue>
           </SelectTrigger>
           <SelectContent>
             <SelectItem value={ALL_ROOMS_VALUE}>{ROOMS_CALENDAR_TOOLBAR_LABEL.allRooms}</SelectItem>

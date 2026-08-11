@@ -45,7 +45,7 @@ export function ManualDraftForm({
           <Input
             value={title}
             onChange={(event) => setTitle(event.target.value)}
-            placeholder="액션명을 입력하세요"
+            placeholder="액션명을 입력해 주세요"
             aria-label="액션명"
           />
           <textarea

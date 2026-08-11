@@ -52,7 +52,7 @@ export function ActionReviewRow({
             value={draft.description}
             onChange={onDescriptionChange}
             ariaLabel="세부 내용"
-            placeholder="세부 내용을 입력하세요"
+            placeholder="세부 내용을 입력해 주세요"
             multiline
             allowEmpty
           />

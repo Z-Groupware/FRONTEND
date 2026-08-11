@@ -18,7 +18,7 @@ export function RoomListPanel({ rooms }: RoomListPanelProps) {
             회의실 목록
           </h2>
           <p className="text-muted-foreground mt-0.5 text-[12px] leading-4">
-            예약 가능 시간을 확인하세요.
+            예약 가능 시간을 확인해 주세요.
           </p>
         </div>
         <span className="text-muted-foreground shrink-0 text-[12px] leading-4">
