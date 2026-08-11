@@ -34,24 +34,28 @@ export function ProfileInfoCard({ profile }: ProfileInfoCardProps) {
   const rows = toRows(profile);
 
   return (
-    <div className="border-border bg-card rounded-2xl border">
-      <div className="border-border border-b px-4 py-3">
-        <p className="text-[13px] leading-5 font-medium">{PROFILE_INFO_CARD_TITLE}</p>
+    /*
+      ⚠️ **카드 규격을 따른다**(2026-08-11). 머리가 `px-4 py-3`에 13px 글자라 다른 카드보다
+         한 단 작았다 — 같은 화면에 선 카드끼리 머리 크기가 다르면 층이 어긋나 보인다(§DESIGN 2).
+      ⚠️ **두 칸 격자다.** 값 다섯 개를 한 줄씩 쌓으니 카드 오른쪽 절반이 통째로 비었다 —
+         값이 짧은 목록은 나란히 세우는 편이 낫다.
+      ⚠️ 라벨은 위, 값은 아래다 — 사원 상세의 값 카드와 같은 결이다.
+    */
+    <section className="border-border bg-card rounded-2xl border">
+      <div className="px-7 pt-6 pb-3">
+        <h2 className="text-[17px] leading-7 font-semibold tracking-[-0.3px]">
+          {PROFILE_INFO_CARD_TITLE}
+        </h2>
       </div>
 
-      {rows.map((row, index) => (
-        <div
-          key={row.label}
-          className={
-            index === 0
-              ? "flex items-center gap-3.5 px-4 py-3"
-              : "border-border flex items-center gap-3.5 border-t px-4 py-3"
-          }
-        >
-          <p className="text-muted-foreground w-16 shrink-0 text-[12px] leading-4">{row.label}</p>
-          <p className="text-[13px] leading-5">{row.value}</p>
-        </div>
-      ))}
-    </div>
+      <dl className="border-border grid gap-x-10 gap-y-6 border-t px-7 py-6 sm:grid-cols-2">
+        {rows.map((row) => (
+          <div key={row.label} className="flex min-w-0 flex-col gap-1">
+            <dt className="text-muted-foreground text-[12px] leading-4">{row.label}</dt>
+            <dd className="truncate text-[13px] leading-5">{row.value}</dd>
+          </div>
+        ))}
+      </dl>
+    </section>
   );
 }

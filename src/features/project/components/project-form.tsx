@@ -130,7 +130,8 @@ export function ProjectForm({ action, teamOptions, cancelHref }: ProjectFormProp
             <textarea
               id="project-description"
               name="description"
-              rows={4}
+              /* ⚠️ 곁 칸(태그·색·기간·첨부)과 키를 맞춘다 — 4줄이면 왼쪽 아래가 통째로 비었다 */
+              rows={8}
               value={description}
               onChange={(event) =>
                 setDescription(event.target.value.slice(0, PROJECT_DESCRIPTION_MAX_LENGTH))
