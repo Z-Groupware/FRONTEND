@@ -80,20 +80,20 @@ function BoardCardBody({ card, isDelayed }: BoardCardProps) {
  * ⚠️ 세로 여백을 넉넉히 준다(`py-6`). **띠 길이는 결국 카드 높이다** — 띠만 손봐서는 길어지지
  *    않는다. 두 줄 사이 간격도 함께 벌려 늘어난 높이가 한쪽 여백에만 쏠리지 않게 한다.
  */
-const CARD_SHAPE = "border-border bg-card relative flex rounded-lg border py-6 pr-4 pl-4";
+const CARD_SHAPE =
+  "border-border bg-card relative flex overflow-hidden rounded-lg border py-6 pr-4 pl-4";
 
 /**
- * 왼쪽 색 막대 — **위아래 끝이 둥근 막대**다.
+ * 왼쪽 색 막대 — **한 가지 색으로 카드 높이를 꽉 채운다.**
  *
- * ⚠️ 끝처리가 전부다. 각지게 자르면 잘린 것처럼 보이고, 카드 곡선을 타고 돌면 대괄호나 `L`이
- *    되어 카드를 감싸는 다른 모양이 된다 — 막대는 **곧게 서고 양 끝만 둥글다.**
- * ⚠️ 위아래를 8px씩 들여 카드 모서리 곡선과 겹치지 않게 한다. 겹치면 곡선이 캡을 깎는다.
- * ⚠️ 왼쪽은 `0`이다. 안쪽으로 들이면 카드 테두리와 막대 사이에 흰 틈이 생겨 눈금처럼 뜬다.
+ * ⚠️ 투명도를 섞지 않는다. 끝을 흐려 봤더니 색이 옅어진 자리가 **번져 보여** 오히려 지저분했다.
+ * ⚠️ 카드에 `overflow-hidden`이 있어 둥근 모서리가 막대 끝을 정리해 준다 — 반지름(10px)이
+ *    작고 막대가 4px이라 깎이는 양이 3px 남짓이라 눈에 안 걸린다.
  */
 function ColorEdge({ tag }: { tag: string }) {
   return (
     <span
-      className="pointer-events-none absolute inset-y-2 left-0 w-[5px] rounded-full"
+      className="pointer-events-none absolute inset-y-0 left-0 w-1"
       style={{ backgroundColor: pickPaletteColor(tag).solidColor }}
       aria-hidden
     />
