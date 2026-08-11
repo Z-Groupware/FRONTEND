@@ -87,7 +87,7 @@ export function ProjectStorageTable({
 
       {projects.length === 0 ? (
         /* ⚠️ 빈 상태 — 무엇이 없는지 적는다(§3상태) */
-        <p className="text-muted-foreground border-border border-t px-6 py-12 text-center text-[13px] leading-5 break-keep">
+        <p className="text-muted-foreground border-border border-t px-7 py-14 text-center text-[13px] leading-5 break-keep">
           저장소를 쓰는 프로젝트가 없습니다
         </p>
       ) : (
@@ -123,7 +123,7 @@ export function ProjectStorageTable({
                    색을 늘리는 게 아니라 §디자인 토큰이 정해 둔 표면을 쓰는 것이다.
               */}
               <tr className="text-muted-foreground bg-secondary/50 border-border border-b text-[12px] leading-4">
-                <th className="px-6 py-3 text-left font-normal">프로젝트</th>
+                <th className="px-7 py-3 text-left font-normal">프로젝트</th>
                 {/*
                   ⚠️ 상태는 **자기 열**이다. 이름 옆에 붙여 두면 이름 길이에 따라 좌우로 밀려서
                      세로로 훑을 수가 없다 — 지울 수 있는 줄을 고르는 게 이 표의 일이라
@@ -234,7 +234,7 @@ function Row({
            띠까지 덮고, 줄 사이 가로 구분선(`border-t`)과 모서리에서 겹친다.
         ⚠️ 띠는 `aria-hidden`이다 — 색이 말하는 건 태그 글자가 이미 말한다(§a11y).
       */}
-      <td className="relative px-6 py-3.5">
+      <td className="relative px-7 py-3.5">
         <span
           aria-hidden
           className="absolute inset-y-0 left-0 w-[3px]"
@@ -261,7 +261,7 @@ function Row({
           </Link>
         </span>
       </td>
-      <td className="px-6 py-3.5">
+      <td className="px-7 py-3.5">
         {/*
           ⚠️ 라벨을 손으로 적지 않는다 — `PROJECT_STATUS_LABEL`이 정본이다(§도메인 상수).
              `진행중`이라고 박아 두면 라벨이 바뀔 때 이 화면만 옛말을 한다.
@@ -286,7 +286,7 @@ function Row({
       <td className="text-muted-foreground px-4 py-3.5 text-center tabular-nums">
         {project.meetingCount}개
       </td>
-      <td className="px-6 py-3.5">
+      <td className="px-7 py-3.5">
         {/*
           ⚠️ 막대는 **전체 음성 대비 비중**이다. 포함량(50GB) 기준으로 그리면 한 프로젝트가
              차지하는 조각이 너무 작아 다섯 줄이 전부 비슷해 보인다.

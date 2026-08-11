@@ -94,7 +94,7 @@ function StatusCell({ status }: { status: ManagedMember["status"] }) {
 export function MemberTable({ members }: { members: ManagedMember[] }) {
   if (members.length === 0) {
     return (
-      <p className="text-muted-foreground border-border border-t px-6 py-12 text-center text-[13px] leading-5 break-keep">
+      <p className="text-muted-foreground border-border border-t px-7 py-14 text-center text-[13px] leading-5 break-keep">
         찾는 사원이 없습니다
       </p>
     );
@@ -133,7 +133,7 @@ export function MemberTable({ members }: { members: ManagedMember[] }) {
               ⚠️ 숫자를 손으로 맞추지 않는다 — 아래 칸과 **같은 값**(`size-7`·`gap-2.5`)을 쓴다.
                  아바타 크기를 바꾸면 두 곳이 같이 움직여야 한다.
             */}
-            <th className="px-6 py-3 text-left font-normal">
+            <th className="px-7 py-3 text-left font-normal">
               <span className="inline-flex items-center gap-2.5">
                 <span className="w-7 shrink-0" aria-hidden />
                 이름
@@ -155,7 +155,7 @@ export function MemberTable({ members }: { members: ManagedMember[] }) {
               key={member.id}
               className="border-border hover:bg-secondary/50 border-b transition-colors last:border-b-0"
             >
-              <th scope="row" className="px-6 py-3.5 text-left font-normal">
+              <th scope="row" className="px-7 py-3.5 text-left font-normal">
                 <Link
                   href={`/manage/members/${member.id}`}
                   className="focus-visible:ring-ring flex items-center gap-2.5 rounded focus-visible:ring-2 focus-visible:outline-hidden"

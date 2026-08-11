@@ -21,9 +21,14 @@ export function RoomsManageTable({ rooms, canManage }: RoomsManageTableProps) {
       </div>
 
       {rooms.length === 0 ? (
-        <div className="flex items-center justify-center p-10 text-center">
-          <p className="text-muted-foreground text-[13px] leading-5">등록된 회의실이 없습니다.</p>
-        </div>
+        /*
+          ⚠️ **빈 자리도 표가 시작하는 선 아래다**(2026-08-11). 선 없이 글자만 띄워 두니
+             제목과 안내문이 한 덩이로 붙어 카드가 반쯤 지어진 것처럼 보였다 — 다른 목록
+             카드와 같은 자리·같은 여백을 쓴다.
+        */
+        <p className="text-muted-foreground border-border border-t px-7 py-14 text-center text-[13px] leading-5">
+          등록된 회의실이 없습니다.
+        </p>
       ) : (
         <div className="border-border overflow-x-auto border-t">
           <table className="w-full min-w-[560px] table-fixed text-[13px]">
@@ -35,7 +40,7 @@ export function RoomsManageTable({ rooms, canManage }: RoomsManageTableProps) {
             </colgroup>
             <thead>
               <tr className="text-muted-foreground bg-secondary/50 border-border border-b text-[12px] leading-4">
-                <th className="px-6 py-3 text-left font-normal">이름</th>
+                <th className="px-7 py-3 text-left font-normal">이름</th>
                 <th className="px-4 py-3 text-center font-normal">위치</th>
                 <th className="px-4 py-3 text-center font-normal">이용 가능 시간</th>
                 <th className="px-4 py-3 text-center font-normal">
@@ -49,7 +54,7 @@ export function RoomsManageTable({ rooms, canManage }: RoomsManageTableProps) {
                   key={room.id}
                   className="group border-border hover:bg-foreground/[0.04] transition-colors not-first:border-t"
                 >
-                  <td className="px-6 py-3.5 text-left">{room.name}</td>
+                  <td className="px-7 py-3.5 text-left">{room.name}</td>
                   <td className="px-4 py-3.5 text-center">{room.location}</td>
                   <td className="px-4 py-3.5 text-center tabular-nums">
                     {room.openTime} - {room.closeTime}
