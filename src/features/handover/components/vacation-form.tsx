@@ -4,6 +4,7 @@ import { useMemo, useState, useTransition } from "react";
 
 import { ConfirmDialog } from "@/components/common/confirm-dialog";
 import { DatePickerField } from "@/components/common/date-picker-field";
+import { ProjectTag } from "@/components/common/project-tag";
 import { ResultDialog } from "@/components/common/result-dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -15,7 +16,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { AUTHORITY, HANDOVER_TYPE } from "@/constants/domain";
-import { pickPaletteColor } from "@/lib/palette";
 
 import { submitHandoverAction } from "../actions";
 import { sortActionsForVacation } from "../lib";
@@ -92,7 +92,13 @@ export function VacationForm({ context }: VacationFormProps) {
     <div className="flex flex-col gap-5">
       {step === 1 && (
         <>
+          {/*
+            ⚠️ **머리 없는 카드를 두지 않는다**(2026-08-11). 날짜 두 칸만 든 흰 상자가 위에 떠
+               있어 무엇을 적는 자리인지 카드 밖에서는 알 수 없었다 — 아래 `내 담당 액션`은
+               제목이 있는데 이 카드만 없어 둘이 다른 물건처럼 보였다.
+          */}
           <section className="border-border bg-card flex flex-col gap-4 rounded-2xl border p-7">
+            <h2 className="text-[17px] leading-7 font-semibold tracking-[-0.3px]">휴직 기간</h2>
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="vacation-start">
@@ -159,24 +165,28 @@ export function VacationForm({ context }: VacationFormProps) {
               <h2 className="text-[17px] leading-7 font-semibold tracking-[-0.3px]">
                 선택한 액션에 담당자를 지정해 주세요
               </h2>
+              {/* ⚠️ 카피는 ~합니다체다(2026-08-04 변경) — `~할 수 있어요`는 그 전 말투다 */}
               <p className="text-muted-foreground mt-1 text-[12px] leading-4">
-                본인 개인 액션이라 팀원에게 바로 나눠 줄 수 있어요. 부담되는 액션은 1단계로 돌아가
+                본인 개인 액션이라 팀원에게 바로 나눠 줄 수 있습니다. 부담되는 액션은 1단계로 돌아가
                 선택을 해제해 주세요.
               </p>
             </div>
-            <ul className="border-border border-t">
+            {/* 표 머리 — 다른 목록과 같은 띠다(§DESIGN 2: 카드 안의 선은 표가 시작하는 자리 하나뿐) */}
+            <div className="border-border text-muted-foreground bg-secondary/50 flex items-center gap-4 border-y px-7 py-3 text-[12px] leading-4">
+              <span className="w-[76px] shrink-0 text-center">프로젝트</span>
+              <span className="min-w-0 flex-1">액션</span>
+              <span className="w-40 shrink-0">담당자</span>
+            </div>
+            <ul>
               {selectedActions.map((action) => {
-                const tagColor = pickPaletteColor(action.projectTag);
                 return (
                   <li
                     key={action.id}
-                    className="border-border flex items-center gap-3 border-b px-7 py-3 last:border-b-0"
+                    className="border-border flex items-center gap-4 px-7 py-3 not-first:border-t"
                   >
-                    <span
-                      className="w-fit shrink-0 rounded px-1.5 py-0.5 font-mono text-[11px] font-semibold"
-                      style={{ backgroundColor: tagColor.bgColor, color: tagColor.textColor }}
-                    >
-                      {action.projectTag}
+                    {/* ⚠️ 칩은 제 열에 가운데로 선다 — 태그 길이가 제각각이라 왼쪽에 맞추면 줄마다 중앙이 어긋난다 */}
+                    <span className="flex w-[76px] shrink-0 items-center justify-center">
+                      <ProjectTag tag={action.projectTag} />
                     </span>
                     <span className="min-w-0 flex-1 truncate text-[13px] leading-5">
                       {action.title}
@@ -189,7 +199,10 @@ export function VacationForm({ context }: VacationFormProps) {
                         setAssignments((prev) => ({ ...prev, [action.id]: Number(value) }))
                       }
                     >
-                      <SelectTrigger aria-label={`${action.title} 담당자 선택`} className="w-40">
+                      <SelectTrigger
+                        aria-label={`${action.title} 담당자 선택`}
+                        className="w-40 shrink-0"
+                      >
                         <SelectValue placeholder="담당자 선택" />
                       </SelectTrigger>
                       <SelectContent side="bottom" alignItemWithTrigger={false}>

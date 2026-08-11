@@ -57,34 +57,48 @@ export function OffboardingForm({ context }: OffboardingFormProps) {
 
   return (
     <div className="flex flex-col gap-5">
-      <section className="border-border bg-card flex flex-col gap-1.5 rounded-2xl border p-7">
-        <Label htmlFor="offboarding-last-working-day">
-          마지막 근무일 <span className="text-destructive">*</span>
-        </Label>
-        <DatePickerField
-          id="offboarding-last-working-day"
-          value={lastWorkingDay}
-          onChange={setLastWorkingDay}
-          className="w-full"
-        />
-      </section>
+      {/*
+        ⚠️ **한 장으로 합친다**(2026-08-11). 날짜 한 칸과 설명 한 칸을 각각 카드로 두니 흰 상자
+           셋이 세로로 쌓여, 어디까지가 신청서고 어디부터가 액션 목록인지 모양으로는 알 수
+           없었다 — 같이 적어 내는 값이면 한 카드다.
+        ⚠️ 머리를 붙인다. 아래 `내 담당 액션`은 제목이 있는데 이 카드만 없으면 둘이 다른
+           물건처럼 보인다.
+      */}
+      <section className="border-border bg-card flex flex-col gap-5 rounded-2xl border p-7">
+        <h2 className="text-[17px] leading-7 font-semibold tracking-[-0.3px]">신청 내용</h2>
 
-      <section className="border-border bg-card flex flex-col gap-1.5 rounded-2xl border p-7">
-        <Label htmlFor="offboarding-description">
-          담당 업무 및 인수인계 상세 설명 <span className="text-destructive">*</span>
-        </Label>
-        <textarea
-          id="offboarding-description"
-          rows={4}
-          value={description}
-          onChange={(event) => setDescription(event.target.value.slice(0, DESCRIPTION_MAX_LENGTH))}
-          placeholder="담당했던 업무, 진행 맥락, 인수받을 사람이 알아야 할 사항을 작성해 주세요. PDF에도 함께 포함됩니다."
-          maxLength={DESCRIPTION_MAX_LENGTH}
-          className="border-input placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 w-full resize-none rounded-lg border bg-transparent px-2.5 py-2 text-[13px] leading-5 transition-colors outline-none focus-visible:ring-3"
-        />
-        <p className="text-muted-foreground text-right text-[12px] leading-4 tabular-nums">
-          {description.length}/{DESCRIPTION_MAX_LENGTH}
-        </p>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="offboarding-last-working-day">
+            마지막 근무일 <span className="text-destructive">*</span>
+          </Label>
+          {/* ⚠️ 날짜 한 칸이 카드 폭을 다 먹지 않는다 — 값이 짧은 입력은 폭도 짧아야 무엇을 넣는 칸인지 읽힌다 */}
+          <DatePickerField
+            id="offboarding-last-working-day"
+            value={lastWorkingDay}
+            onChange={setLastWorkingDay}
+            className="w-56"
+          />
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="offboarding-description">
+            담당 업무 및 인수인계 상세 설명 <span className="text-destructive">*</span>
+          </Label>
+          <textarea
+            id="offboarding-description"
+            rows={4}
+            value={description}
+            onChange={(event) =>
+              setDescription(event.target.value.slice(0, DESCRIPTION_MAX_LENGTH))
+            }
+            placeholder="담당했던 업무, 진행 맥락, 인수받을 사람이 알아야 할 사항을 작성해 주세요. PDF에도 함께 포함됩니다."
+            maxLength={DESCRIPTION_MAX_LENGTH}
+            className="border-input placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 w-full resize-none rounded-lg border bg-transparent px-2.5 py-2 text-[13px] leading-5 transition-colors outline-none focus-visible:ring-3"
+          />
+          <p className="text-muted-foreground text-right text-[12px] leading-4 tabular-nums">
+            {description.length}/{DESCRIPTION_MAX_LENGTH}
+          </p>
+        </div>
       </section>
 
       <HandoverActionListCard actions={actions} selectedIds={selectedIds} locked />
