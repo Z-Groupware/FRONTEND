@@ -22,7 +22,7 @@ export function TaskGroupSection({
   children,
 }: TaskGroupSectionProps) {
   return (
-    <section className="border-border bg-card rounded-2xl border">
+    <section className="border-border bg-card flex h-full flex-col rounded-2xl border">
       {/*
         ⚠️ **아이콘과 제목이 한 줄이다**(2026-08-11). `h2` 안에 svg를 그냥 넣어 뒀더니
            (preflight가 `svg { display: block }`이라) 아이콘이 제목 **위에 한 층**으로 서서
@@ -40,7 +40,8 @@ export function TaskGroupSection({
           {emptyMessage}
         </p>
       ) : (
-        <div className="flex flex-col">{children}</div>
+        /* ⚠️ 카드 안의 선은 **표가 시작하는 자리** 하나다(§DESIGN 2) — 머리와 줄을 여기서 나눈다 */
+        <div className="border-border flex flex-col border-t">{children}</div>
       )}
     </section>
   );

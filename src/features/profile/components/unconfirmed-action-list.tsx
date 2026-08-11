@@ -20,7 +20,7 @@ export function UnconfirmedActionList({ reviews }: UnconfirmedActionListProps) {
         <Link
           key={review.meetingId}
           href={`/app/meeting/${review.meetingId}/review`}
-          className="border-border hover:bg-muted/50 flex items-center justify-between gap-3 border-t px-7 py-4 transition-colors first:border-t-0"
+          className="border-border hover:bg-muted/50 flex items-center justify-between gap-3 px-7 py-3.5 transition-colors not-first:border-t"
         >
           <div className="flex min-w-0 flex-col gap-0.5">
             <p className="truncate text-[13px] leading-5 font-medium">{review.meetingTitle}</p>

@@ -9,7 +9,6 @@ import {
   nextScaleByKey,
   parseScale,
   recommendScale,
-  REFERENCE_WIDTH,
   SCREEN_SCALES,
   suggestScale,
 } from "../scale";
@@ -128,7 +127,8 @@ export function ScreenScaleCard() {
              고르게 퍼져 있는데 여기만 한쪽으로 쏠려 보였다 — 같은 층에 선 카드끼리는
              안쪽 리듬도 같아야 한다.
         */
-        className="grid grid-cols-4 gap-2 pt-5"
+        /* ⚠️ 조작은 **카드 바닥**이다(`mt-auto`) — 옆 카드(테마)의 타일과 같은 자리에 선다 */
+        className="mt-auto grid grid-cols-4 gap-2 pt-5"
       >
         {SCREEN_SCALES.map((value) => (
           <button
@@ -150,17 +150,6 @@ export function ScreenScaleCard() {
           </button>
         ))}
       </div>
-
-      {/*
-        ⚠️ **지금 폭을 적어 준다.** 두 기기가 다르게 보일 때, 이 숫자를 맞추면 같아진다 —
-           "작아 보인다"는 느낌만으로는 어느 쪽으로 얼마나 옮길지 알 수 없다.
-      */}
-      {width > 0 && (
-        // ⚠️ `/70`을 걷어낸다 — 12px 본문이 라이트에서 2.73:1로 4.5:1에 못 미친다(§a11y)
-        <p className="text-muted-foreground mt-auto pt-4 text-[12px] leading-4 tabular-nums">
-          지금 화면 폭 {width}px · 설계 기준 {REFERENCE_WIDTH}px
-        </p>
-      )}
 
       {hint !== "none" && (
         /*
