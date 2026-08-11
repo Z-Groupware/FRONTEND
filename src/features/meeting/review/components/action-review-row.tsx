@@ -85,14 +85,14 @@ export function ActionReviewRow({
           value={draft.startDate}
           max={draft.dueDate}
           onChange={onStartDateChange}
-          className="w-[150px]"
+          className="w-[180px]"
         />
         <DatePickerField
           aria-label="마감일"
           value={draft.dueDate}
           min={draft.startDate}
           onChange={onDueDateChange}
-          className="w-[150px]"
+          className="w-[180px]"
         />
 
         <Button

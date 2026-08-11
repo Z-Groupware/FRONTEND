@@ -18,9 +18,14 @@ export function ActionReviewGroup({ confidence, count, children }: ActionReviewG
 
   return (
     <section className="border-border bg-card rounded-2xl border">
-      <div className="flex items-baseline justify-between gap-3 px-7 pt-6 pb-3">
-        <h2 className="text-[17px] leading-7 font-semibold tracking-[-0.3px]">
-          <Icon className="text-foreground size-4" aria-hidden />
+      {/*
+        ⚠️ **아이콘과 제목이 한 줄이다**(2026-08-11). `h2` 안에 svg를 그냥 넣어 뒀더니
+           (preflight가 `svg { display: block }`이라) 아이콘이 제목 **위에 한 층**으로 서서
+           머리가 두 줄이 됐다 — 아이콘은 제목의 표식이지 제목 위의 딱지가 아니다.
+      */}
+      <div className="flex items-center justify-between gap-3 px-7 pt-6 pb-3">
+        <h2 className="flex items-center gap-2 text-[17px] leading-7 font-semibold tracking-[-0.3px]">
+          <Icon className="text-muted-foreground size-4 shrink-0" aria-hidden />
           {AI_CONFIDENCE_LABEL[confidence]}
         </h2>
         <p className="text-muted-foreground text-[12px] leading-4 tabular-nums">{count}건</p>
