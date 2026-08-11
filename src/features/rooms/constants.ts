@@ -40,6 +40,13 @@ export const ROOMS_CALENDAR_TOOLBAR_LABEL = {
   addMeeting: "회의 추가",
 } as const;
 
+/** 회의실 목록 패널(`room-list-panel.tsx`) 카피 — 위 툴바 상수와 같은 이유로 뺐다. */
+export const ROOM_LIST_PANEL_LABEL = {
+  title: "회의실 목록",
+  guidance: "예약 가능 시간을 확인하세요.",
+  countSuffix: "개",
+} as const;
+
 /** 회의실 삭제 확인창 문구 — `room-delete-dialog.tsx` 하나만 쓰지만, 카피 하드코딩 금지
  * 원칙(CLAUDE.md §도메인 상수)에 맞춰 컴포넌트 밖으로 뺐다(`NOTICE_DELETE_CONFIRM`과 같은 자리). */
 export const ROOM_DELETE_CONFIRM = {
