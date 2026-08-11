@@ -59,3 +59,26 @@ export interface MyActionListItem {
   dueDate: string;
   status: ActionStatus;
 }
+
+/** 팀 액션 관리(`/team/action`) 타임라인의 팀 액션 한 줄. */
+export interface TeamActionTimelineItem {
+  id: number;
+  name: string;
+  /** 작업 시작일 `YYYY-MM-DD` — 타임라인 막대 왼쪽 끝 */
+  startDate: string;
+  /** 마감일 `YYYY-MM-DD` */
+  dueDate: string;
+  status: ActionStatus;
+}
+
+/**
+ * 팀 액션 관리 화면 — 프로젝트별로 묶은 팀 액션 그룹.
+ * ⚠️ 하위 개인 액션 진척률(게이지)은 이 목록 API(`GET /api/team/actions`)에 값이 없어 아직 없다
+ *    — BE에 `childDoneCount`·`childTotalCount` 추가 요청해 둠(2026-08-11). 나오면 게이지만 얹는다.
+ */
+export interface TeamActionProjectGroup {
+  projectId: number;
+  projectName: string;
+  projectTag: string;
+  teamActions: TeamActionTimelineItem[];
+}
