@@ -39,3 +39,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# 로컬 개발 서버 설정 (개인 환경)
+.claude/launch.json

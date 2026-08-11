@@ -1,0 +1,259 @@
+"use client";
+
+import { Download } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { toast } from "sonner";
+
+import { ConfirmDialog } from "@/components/common/confirm-dialog";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { HANDOVER_TYPE } from "@/constants/domain";
+import { ActionTimeline } from "@/features/member/components/action-timeline";
+import { cn } from "@/lib/utils";
+
+import { completeTeamHandoverAction, rejectTeamHandoverAction } from "../actions";
+import { buildTimelineInput, isReadyToComplete, toAssignmentList } from "../lib";
+import type { TeamHandoverDetail } from "../types";
+import { TeamHandoverActionChip } from "./team-handover-action-chip";
+
+interface TeamHandoverAssignBoardProps {
+  handover: TeamHandoverDetail;
+  /** 서버가 렌더링한 오늘. `YYYY-MM-DD`. */
+  todayIso: string;
+}
+
+const LIST_PATH = "/team/handover";
+/** 반려 사유 상한 — `handover-approval-card.tsx`와 같은 값. */
+const REASON_MAX = 200;
+
+/**
+ * 위(타임라인, 읽기 전용)에서 액션을 한눈에 확인하고, 아래 "배정할 액션" 목록의
+ * `<Select>`로 각 액션의 담당자를 고른다. [인수인계 확정]을 눌러야 실제로 반영된다
+ * (`board-view.tsx`의 "로컬에서 바꾸고 확정 시에만 서버 반영" 원칙과 같음).
+ * ⚠️ **드래그 앤 드롭·별도 팀원 보드 영역은 없다**(2026-08-09 디자인 리뷰로 제거) —
+ *    배정한 항목이 "배정할 액션"에도 그대로 남아 보여 어디에 배정됐는지 헷갈렸고,
+ *    화면 하나에 같은 정보(담당자)가 두 군데(칩의 `<Select>` 값 + 팀원 칸 안 카드)로
+ *    중복 표시되는 문제가 있었다 — `<Select>` 하나로 배정 상태를 표현하는 게 더 명확하다.
+ * ⚠️ **[반려]도 여기서 한다**(WORKFLOW.md §7, 2026-08-09 팀 확정) — 오너의 최종 승인/반려와
+ *    별개로, 팀장이 인계 액션 누락·오배정을 이 단계에서 먼저 걸러낸다.
+ */
+export function TeamHandoverAssignBoard({ handover, todayIso }: TeamHandoverAssignBoardProps) {
+  const today = useMemo(() => new Date(`${todayIso}T00:00:00`), [todayIso]);
+  const timelineItems = useMemo(() => buildTimelineInput(handover.actions), [handover.actions]);
+  const [assignments, setAssignments] = useState<Record<number, number>>({});
+  /** 지금 확인을 기다리는 일 — 확정도 반려도 되돌릴 수 없다(§handover-approval-card와 같은 원칙). */
+  const [confirming, setConfirming] = useState<"complete" | "reject" | null>(null);
+  const [reason, setReason] = useState("");
+  const [reasonError, setReasonError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
+  const router = useRouter();
+  const reasonRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (confirming === "reject") reasonRef.current?.focus();
+  }, [confirming]);
+
+  const assignedCount = Object.keys(assignments).length;
+  const totalCount = handover.actions.length;
+  const ready = isReadyToComplete(handover.actions, assignments);
+
+  function handleComplete() {
+    setError(null);
+    startTransition(async () => {
+      const result = await completeTeamHandoverAction(
+        handover.memberId,
+        toAssignmentList(assignments),
+      );
+      if (!result.isSuccess) {
+        setError(result.message ?? "처리하지 못했습니다");
+        return;
+      }
+      setConfirming(null);
+      toast.success("인수인계를 확정했습니다");
+      router.replace(LIST_PATH);
+    });
+  }
+
+  function handleReject() {
+    if (!reason.trim()) {
+      setReasonError("반려 사유를 적어 주세요");
+      reasonRef.current?.focus();
+      return;
+    }
+    setReasonError(null);
+    setError(null);
+    startTransition(async () => {
+      const result = await rejectTeamHandoverAction(handover.memberId, reason);
+      if (!result.isSuccess) {
+        setError(result.message ?? "처리하지 못했습니다");
+        return;
+      }
+      setConfirming(null);
+      toast.success("인수인계서를 반려했습니다");
+      router.replace(LIST_PATH);
+    });
+  }
+
+  return (
+    <div className="flex min-h-0 flex-1 flex-col gap-5">
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-muted-foreground text-[13px] leading-5 tabular-nums">
+          {assignedCount}/{totalCount}건 배정 완료
+        </p>
+        {/*
+          ⚠️ **오프보딩만 PDF를 둔다.** 휴직은 돌아올 사람이라 이 화면의 배정 자체가 임시
+             기록이지만, 오프보딩은 퇴사 뒤 남는 유일한 인수인계 문서라 보관용 PDF가 필요하다.
+        */}
+        {handover.type === HANDOVER_TYPE.OFFBOARDING && (
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            onClick={() => toast("PDF 생성은 아직 연동되지 않았습니다")}
+          >
+            <Download />
+            인수인계서 PDF 다운로드
+          </Button>
+        )}
+      </div>
+
+      <section className="border-border bg-card flex h-[280px] flex-col rounded-2xl border p-5">
+        <ActionTimeline items={timelineItems} today={today} emptyLabel="넘길 액션이 없습니다." />
+      </section>
+
+      <section className="border-border bg-card flex flex-col gap-3 rounded-2xl border p-5">
+        <h2 className="flex items-center gap-2 text-[15px] leading-6 font-semibold tracking-[-0.2px]">
+          <span className="bg-foreground size-2 rounded-full" aria-hidden />
+          배정할 액션
+        </h2>
+        <div className="flex flex-col gap-2">
+          {handover.actions.map((action) => (
+            <TeamHandoverActionChip
+              key={action.id}
+              action={action}
+              teammates={handover.teammates}
+              assignedTo={assignments[action.id] ?? null}
+              onAssign={(assigneeId) =>
+                setAssignments((prev) => ({ ...prev, [action.id]: assigneeId }))
+              }
+            />
+          ))}
+        </div>
+      </section>
+
+      <div className="flex justify-end gap-2">
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          className="text-destructive border-destructive/30 hover:bg-destructive/5"
+          onClick={() => {
+            setError(null);
+            setConfirming("reject");
+          }}
+        >
+          반려
+        </Button>
+        <Button
+          size="sm"
+          disabled={!ready}
+          onClick={() => {
+            setError(null);
+            setConfirming("complete");
+          }}
+          className="bg-foreground text-background hover:bg-foreground/90"
+        >
+          인수인계 확정
+        </Button>
+      </div>
+
+      <ConfirmDialog
+        isOpen={confirming === "complete"}
+        onOpenChange={(open) => {
+          setConfirming(open ? "complete" : null);
+          if (!open) setError(null);
+        }}
+        title="인수인계를 확정할까요?"
+        description={`배정한 대로 액션 ${totalCount}건의 담당자가 바뀌고, 팀장 중간 승인이 기록됩니다. 되돌릴 수 없습니다.`}
+        confirmLabel="인수인계 확정"
+        isPending={isPending}
+        pendingLabel="처리 중"
+        error={error}
+        onConfirm={handleComplete}
+      />
+
+      {/*
+        ⚠️ **사유를 이 창에서 받는다**(`handover-approval-card.tsx`와 같은 이유) — 카드 안에
+           붉은 칸을 펼치고 그다음 확인 창을 또 띄우면 같은 일을 두 번 묻는다.
+      */}
+      <ConfirmDialog
+        isOpen={confirming === "reject"}
+        onOpenChange={(open) => {
+          setConfirming(open ? "reject" : null);
+          if (!open) {
+            setReason("");
+            setReasonError(null);
+            setError(null);
+          }
+        }}
+        error={error}
+        title={`${handover.memberName} 님의 인수인계서를 반려할까요?`}
+        description={
+          <>
+            신청이 되돌아가고 {handover.memberName} 님은 다시 재직 상태가 됩니다.
+            <br />
+            다시 신청하려면 인수인계부터 새로 밟아야 합니다.
+          </>
+        }
+        confirmLabel="반려"
+        isDestructive
+        mark="alert"
+        isPending={isPending}
+        pendingLabel="반려 중…"
+        onConfirm={handleReject}
+      >
+        <div className="border-border flex flex-col gap-2 border-t pt-5 text-left">
+          <Label htmlFor="team-handover-reject-reason" className="text-[13px] leading-5">
+            반려 사유
+          </Label>
+
+          <textarea
+            ref={reasonRef}
+            id="team-handover-reject-reason"
+            value={reason}
+            onChange={(event) => {
+              setReason(event.target.value.slice(0, REASON_MAX));
+              setReasonError(null);
+            }}
+            rows={3}
+            maxLength={REASON_MAX}
+            aria-invalid={reasonError !== null}
+            aria-describedby={reasonError ? "team-handover-reject-reason-error" : undefined}
+            placeholder="예) 인계 대상 액션이 빠졌습니다. 다시 올려 주세요."
+            className={cn(
+              "placeholder:text-muted-foreground/70 focus-visible:ring-ring/50 bg-card w-full resize-none rounded-lg border px-3 py-2.5 text-[13px] leading-5 transition-colors outline-none focus-visible:ring-3",
+              reasonError
+                ? "border-destructive focus-visible:border-destructive"
+                : "border-input focus-visible:border-ring",
+            )}
+          />
+
+          <div className="text-muted-foreground flex items-baseline justify-between gap-3 text-[12px] leading-4">
+            {reasonError ? (
+              <p id="team-handover-reject-reason-error" role="alert" className="text-destructive">
+                {reasonError}
+              </p>
+            ) : (
+              <span aria-hidden />
+            )}
+            <p className="shrink-0 tabular-nums">
+              {reason.length} / {REASON_MAX}
+            </p>
+          </div>
+        </div>
+      </ConfirmDialog>
+    </div>
+  );
+}
