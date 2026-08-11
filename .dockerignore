@@ -4,9 +4,7 @@ node_modules
 .github
 coverage
 *.md
-.env
-.env.local
-.env*.local
+.env*
 .claude
 Dockerfile
 .dockerignore

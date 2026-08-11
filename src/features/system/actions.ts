@@ -79,7 +79,9 @@ export async function suspendCompanyAction(formData: FormData): Promise<void> {
   const id = String(formData.get("companyId") ?? "");
   const path = String(formData.get("path") ?? "/system/companies");
 
-  setMockCompanyStatus(id, COMPANY_STATUS.SUSPENDED);
+  if (!setMockCompanyStatus(id, COMPANY_STATUS.SUSPENDED)) {
+    throw new Error("존재하지 않는 기업입니다.");
+  }
   revalidatePath(path);
 }
 
@@ -87,7 +89,9 @@ export async function unsuspendCompanyAction(formData: FormData): Promise<void> 
   const id = String(formData.get("companyId") ?? "");
   const path = String(formData.get("path") ?? "/system/companies");
 
-  setMockCompanyStatus(id, COMPANY_STATUS.ACTIVE);
+  if (!setMockCompanyStatus(id, COMPANY_STATUS.ACTIVE)) {
+    throw new Error("존재하지 않는 기업입니다.");
+  }
   revalidatePath(path);
 }
 
