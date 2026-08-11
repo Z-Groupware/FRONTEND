@@ -68,6 +68,38 @@ export interface PaletteColor {
   solidColor: string;
 }
 
+/**
+ * BE가 저장하는 프로젝트 `color`(자유 HEX가 아니라 이 11개로 검증이 좁혀져 있다,
+ * `ProjectColorPalette.REGEXP` — 2026-08-10 이홍근 요청으로 BE에 반영됨)를 팔레트 이름으로
+ * 되돌린다. BE는 팔레트 키가 아니라 이 HEX 문자열 그대로를 저장·반환하므로, 화면이 라이트/다크
+ * 짝을 알려면 이 역매핑을 거쳐야 한다.
+ * ⚠️ 대소문자 무시(BE 검증도 무시) — 항상 대문자로 비교한다.
+ */
+const HEX_TO_TAG_NAME: Record<string, TagColorName> = {
+  "#475569": "slate",
+  "#A16207": "yellow",
+  "#4D7C0F": "lime",
+  "#059669": "emerald",
+  "#0D9488": "teal",
+  "#0891B2": "cyan",
+  "#0284C7": "sky",
+  "#4F46E5": "indigo",
+  "#9333EA": "purple",
+  "#C026D3": "fuchsia",
+  "#DB2777": "pink",
+};
+
+/** BE `color` 값(HEX) → 팔레트 이름. 모르는 값이면 `slate`로 떨어뜨린다(임의로 지어내지 않는다). */
+export function tagNameFromHex(hex: string): TagColorName {
+  return HEX_TO_TAG_NAME[hex.toUpperCase()] ?? "slate";
+}
+
+/** 팔레트 이름 → BE에 보낼 `color` 값(HEX). `HEX_TO_TAG_NAME`의 역방향. */
+export function hexFromTagName(name: TagColorName): string {
+  const entry = Object.entries(HEX_TO_TAG_NAME).find(([, tagName]) => tagName === name);
+  return entry?.[0] ?? "#475569";
+}
+
 function hashString(value: string): number {
   let hash = 0;
   for (let index = 0; index < value.length; index++) {

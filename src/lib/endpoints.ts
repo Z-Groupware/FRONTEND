@@ -7,6 +7,31 @@
  * ⚠️ 아래 **[확인]** 표시가 붙은 경로는 BE 레포 실코드로 대조했다(2026-08-10).
  *   나머지는 아직 **FE 제안 경로**다 — 쓰기 전에 컨트롤러를 먼저 본다(§연동 검증).
  */
+/** 목록 3종(`GET /api/projects`·`/api/actions`·`/api/team/actions`)이 공유하는 쿼리 파라미터. */
+export interface ProjectListParams {
+  status?: "TODO" | "IN_PROGRESS" | "DONE";
+  sort?: "dueDate" | "createdAt";
+  order?: "asc" | "desc";
+  page?: number;
+  size?: number;
+}
+
+/** 개인 액션 목록만 갖는 `overdue` 필터가 추가된다. */
+export interface ActionListParams extends ProjectListParams {
+  overdue?: boolean;
+}
+
+/** `undefined`·`null` 값은 쿼리에서 빠진다 — 서버 기본값을 그대로 쓰게 둔다. */
+function toQuery(params: object | undefined): string {
+  if (!params) return "";
+  const entries = Object.entries(params).filter(
+    ([, value]) => value !== undefined && value !== null,
+  );
+  if (entries.length === 0) return "";
+  const search = new URLSearchParams(entries.map(([key, value]) => [key, String(value)]));
+  return `?${search.toString()}`;
+}
+
 export const ep = {
   /* 인증 — [확인] identity/auth/presentation/api/AuthController.java */
   login: () => "/api/auth/login",
@@ -65,13 +90,44 @@ export const ep = {
   /** AI 처리 상태(CAP-06) — 종료 뒤 폴링 */
   processingStatus: (meetingId: number) => `/api/meetings/${meetingId}/processing-status`,
 
-  /* 액션 */
-  actions: () => "/api/actions",
-  action: (id: number) => `/api/actions/${id}`,
+  /*
+   * 액션 · 프로젝트 · 캘린더 — [확인] BE 실코드 대조(2026-08-10, 잇다 REST API 연동 가이드 최종본)
+   *   `project/presentation/api/{ProjectController,ProjectAttachmentController}.java`
+   *   `action/presentation/api/{ActionController,TeamActionController,MeetingActionController}.java`
+   *   `calendar/presentation/api/{CalendarController,TodoController}.java`(경로 추정 — 컨트롤러
+   *   클래스명은 아직 실코드로 못 봤다, `/api/calendar`·`/api/todos` 자체는 문서로 확인됨)
+   *
+   * 목록 3종(`projects`·`actions`·`teamActions`)은 `GET /api/projects` 등이 `PageResponse` 봉투로
+   * 오므로 `page`/`size`/`status`/`sort`/`order` 쿼리를 여기서 조립한다 — 값이 없으면 그 파라미터
+   * 자체를 안 붙인다(서버 기본값을 그대로 쓰게).
+   */
+  projects: (params?: ProjectListParams) => `/api/projects${toQuery(params)}`,
+  project: (id: number) => `/api/projects/${id}`,
+  projectStatusBulk: () => "/api/projects/status/bulk",
+  projectTimeline: (id: number) => `/api/projects/${id}/timeline`,
+  projectAttachmentUploadUrl: (projectId: number) =>
+    `/api/projects/${projectId}/attachments/upload-url`,
+  projectAttachmentConfirm: (projectId: number) => `/api/projects/${projectId}/attachments/confirm`,
+  projectAttachmentDownloadUrl: (projectId: number, attachmentId: number) =>
+    `/api/projects/${projectId}/attachments/${attachmentId}/download-url`,
+  projectAttachment: (projectId: number, attachmentId: number) =>
+    `/api/projects/${projectId}/attachments/${attachmentId}`,
 
-  /* 프로젝트 */
-  projects: () => "/api/projects",
-  project: (tag: string) => `/api/projects/${tag}`,
+  actions: (params?: ActionListParams) => `/api/actions${toQuery(params)}`,
+  action: (id: number) => `/api/actions/${id}`,
+  actionCompleteBulk: () => "/api/actions/complete/bulk",
+  meetingActions: (meetingId: number) => `/api/meetings/${meetingId}/actions`,
+
+  teamActions: (params?: ProjectListParams) => `/api/team/actions${toQuery(params)}`,
+  teamAction: (id: number) => `/api/team/actions/${id}`,
+  teamActionTimeline: (id: number) => `/api/team/actions/${id}?tab=timeline`,
+  teamActionAttachmentDownloadUrl: (teamActionId: number, attachmentId: number) =>
+    `/api/team/actions/${teamActionId}/attachments/${attachmentId}/download-url`,
+
+  /** `month` 생략 시 이번 달(서버 기본값) */
+  calendar: (month?: string) => `/api/calendar${toQuery(month ? { month } : undefined)}`,
+  todos: () => "/api/todos",
+  todoComplete: (id: number) => `/api/todos/${id}/complete`,
 
   /* 인수인계 */
   handovers: () => "/api/handovers",
