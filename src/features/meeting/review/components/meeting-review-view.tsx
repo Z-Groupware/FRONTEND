@@ -159,17 +159,27 @@ export function MeetingReviewView({ review }: MeetingReviewViewProps) {
     <div className="flex flex-col gap-7">
       <ReviewLeaveGuard isBlocked />
 
-      <div>
+      {/*
+        ⚠️ **머리를 한 줄로 눕힌다**(2026-08-11). 제목·회의·안내를 세로로 쌓아 네 줄을 쓰다 보니
+           정작 고쳐야 할 표가 화면 한참 아래에서 시작했다 — 왼쪽은 **무엇을 보는 화면인지**,
+           오른쪽은 **어느 회의이고 무엇까지 고칠 수 있는지**로 나눠 한 층에 담는다.
+        ⚠️ 오른쪽 글은 오른끝 정렬이다. 가운데로 두면 두 줄의 시작선이 어긋난다.
+        ⚠️ 좁아지면 다시 세로로 쌓인다(`sm:`) — 그때는 원래대로 위아래로 읽는다.
+      */}
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
         {/* ⚠️ h1 아니다 — 셸 `PageHeader`(layout.tsx)가 이미 h1을 그린다(§한 페이지 h1 하나). */}
         <h2 className="text-[22px] leading-[30px] font-semibold tracking-[-0.4px]">
           AI가 처리한 액션 분배 결과가 나왔습니다!
         </h2>
-        <p className="text-muted-foreground mt-1 text-[13px] leading-5">
-          {review.meetingTitle} · {review.scheduleLabel}
-        </p>
-        <p className="text-muted-foreground mt-3 text-[12px] leading-4">
-          두 그룹 모두 확정 전까지 내용·담당자·시작일·마감일을 수정할 수 있습니다.
-        </p>
+
+        <div className="flex shrink-0 flex-col gap-1 sm:items-end">
+          <p className="text-muted-foreground text-[13px] leading-5">
+            {review.meetingTitle} · {review.scheduleLabel}
+          </p>
+          <p className="text-muted-foreground text-[12px] leading-4">
+            두 그룹 모두 확정 전까지 내용·담당자·시작일·마감일을 수정할 수 있습니다.
+          </p>
+        </div>
       </div>
 
       <ActionReviewGroup confidence={AI_CONFIDENCE.HIGH} count={highConfidence.length}>
