@@ -28,20 +28,18 @@ function BoardCardBody({ card, isDelayed }: BoardCardProps) {
            표식(색)이다 — 눈은 글자를 읽기 전에 색을 먼저 본다.
         ⚠️ 색은 **태그 이름에서 나온다**(`pickPaletteColor`) — 어느 화면에서든 같은 프로젝트는
            같은 색이다. 상태색(회색·초록·보라)과 다른 팔레트라 뜻이 섞이지 않는다.
-        ⚠️ **왼쪽 모서리를 각지게 두고 띠를 그 변에 세운다**(2026-08-11). 세 번 고쳐 온 자리다 —
-           카드 안에 띄운 막대는 위아래가 뜬 **눈금**, 둥근 모서리에 붙인 막대는 **잘린 것**,
-           왼쪽 테두리로 만든 것은 색이 곡선을 돌다 회색으로 바뀌어 **따로 노는** 느낌이었다.
-           셋 다 원인이 같다: **곡선과 곧은 띠가 같은 자리를 다툰다.**
-        ⚠️ 그래서 왼쪽만 각지게 한다(`rounded-l-none`). 띠가 위에서 아래까지 **한 번도 꺾이지
-           않고** 카드 변 그 자체가 되므로, 잘릴 데도 뜰 데도 없다. 오른쪽 세 모서리는 그대로
-           둥글어 카드다움을 잃지 않는다.
-        ⚠️ 색은 **태그 이름에서 나온다**(`pickPaletteColor`) — 클래스로 못 적어 인라인이다.
+        ⚠️ **색이 모서리를 넉넉히 감싼다**(원뿔 그러데이션 테두리, 2026-08-11). 네 번 고쳐 온
+           자리다 — 카드 안에 띄운 막대는 위아래가 뜬 **눈금**, 모서리에 붙인 막대는 곡선에 깎여
+           **잘린 것**, 왼쪽 테두리(`border-l`)는 색이 곡선 중간에서 회색으로 **뚝 끊긴** 느낌,
+           왼쪽 변을 각지게 한 건 곡선을 잃었다.
+        ⚠️ 답은 **테두리 전체를 한 겹으로 두고 그 위에 색을 칠하는 것**이다. `conic-gradient`로
+           왼쪽 270°를 중심으로 ±55°를 색으로, 나머지를 테두리색으로 칠하면 색이 위·아래
+           모서리 곡선을 **타고 넘어가며** 끊기는 자리 없이 이어진다.
+        ⚠️ 경계는 10°씩 **번지게** 둔다. 딱 끊으면 그 지점이 또 "끊긴 자리"로 보인다.
+        ⚠️ 안쪽 면은 `padding-box`, 색은 `border-box`다 — 한 요소에 배경 두 겹을 겹쳐
+           테두리에만 색이 보이게 하는 방법이다.
       */}
-      <span
-        className="absolute inset-y-0 left-0 w-[3px]"
-        style={{ backgroundColor: pickPaletteColor(card.tagLabel).solidColor }}
-        aria-hidden
-      />
+      <ColorEdge tag={card.tagLabel} />
       <div className="flex min-w-0 flex-1 flex-col gap-3">
         {/*
         ⚠️ **제목이 먼저다.** 칩·제목·날짜를 세 층으로 쌓아 두니 카드가 필요 이상으로 길고,
@@ -82,8 +80,39 @@ function BoardCardBody({ card, isDelayed }: BoardCardProps) {
  * ⚠️ 세로 여백을 넉넉히 준다(`py-6`). **띠 길이는 결국 카드 높이다** — 띠만 손봐서는 길어지지
  *    않는다. 두 줄 사이 간격도 함께 벌려 늘어난 높이가 한쪽 여백에만 쏠리지 않게 한다.
  */
-const CARD_SHAPE =
-  "border-border bg-card relative flex overflow-hidden rounded-lg rounded-l-none border py-6 pr-4 pl-4";
+const CARD_SHAPE = "border-border bg-card relative flex rounded-lg border py-6 pr-4 pl-4";
+
+/**
+ * 왼쪽 색 테두리가 덮는 폭(px).
+ *
+ * ⚠️ **모서리 반지름(10px) + 테두리(3px)만큼**이다. 넓게 잡으면(44px) 색이 곡선을 다 돌고도
+ *    위·아래 **직선 구간까지 30px씩 더 타고 들어가** 카드를 ㄷ자로 감싼다 — 원하는 건
+ *    왼쪽 변과 그 끝의 곡선까지다. 곡선이 끝나는 자리에서 색도 끝나야 한다.
+ */
+const COLOR_EDGE_WIDTH = 14;
+
+/**
+ * 왼쪽 색 테두리 — **카드와 똑같은 둥근 테두리를 한 겹 더 얹고 왼쪽만 남긴다**(`clip-path`).
+ *
+ * ⚠️ 네 번 헤맨 자리다. 막대를 세우면 곡선에서 잘리고, `border-left`는 색이 곡선 중간에서
+ *    끊기고, 원뿔 그러데이션은 각도가 길이가 아니라 **방향**이라 카드 비율에 따라 색이 위·아래
+ *    변까지 타고 올라갔다.
+ * ⚠️ 이 방법은 카드 곡선과 **정확히 같은 선** 위에 그려지므로, 색이 왼쪽 변을 지나 위·아래
+ *    모서리를 그대로 타고 돌다 끝난다 — 어긋나거나 끊길 자리가 없다.
+ * ⚠️ `-inset-px`로 한 픽셀 밖에 그린다. 같은 자리에 겹치면 회색 테두리가 비쳐 색이 탁해진다.
+ */
+function ColorEdge({ tag }: { tag: string }) {
+  return (
+    <span
+      className="pointer-events-none absolute -inset-px rounded-[11px] border-[3px]"
+      style={{
+        borderColor: pickPaletteColor(tag).solidColor,
+        clipPath: `inset(0 calc(100% - ${COLOR_EDGE_WIDTH}px) 0 0)`,
+      }}
+      aria-hidden
+    />
+  );
+}
 
 /**
  * 보드 카드 한 장 — 드래그 핸들은 카드 전체(클릭해서 상세로 이동하는 화면이 아니라 옮기는 화면).
@@ -105,12 +134,12 @@ export function BoardCard({ card, isDelayed }: BoardCardProps) {
       {...attributes}
       className={cn(
         CARD_SHAPE,
-        "hover:border-foreground/25 cursor-grab transition-colors active:cursor-grabbing",
+        "cursor-grab transition-shadow hover:shadow-sm active:cursor-grabbing",
         /*
           ⚠️ **내용만 감춘다**(`[&>*]:invisible`). 감싸는 `div`로 숨기면 그 `div`가 카드의
              가로 배치(띠 + 내용)에 끼어들어 **색 띠가 늘어나질 못한다** — 자식에 바로 건다.
         */
-        isDragging && "border-dashed bg-transparent [&>*]:invisible",
+        isDragging && "opacity-40 [&>*]:invisible",
       )}
     >
       <BoardCardBody card={card} isDelayed={isDelayed} />
