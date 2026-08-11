@@ -134,7 +134,16 @@ export function BoardView({ boardType, cards, todayIso }: BoardViewProps) {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-4">
-      <div className="flex shrink-0 justify-end">
+      {/*
+        ⚠️ **빈 줄에 안내를 둔다.** 버튼 하나만 오른쪽 끝에 떠 있어 그 줄이 통째로 비었고,
+           무엇보다 **드래그가 곧 저장이 아니라는 것**을 화면이 말하지 않았다 — 옮겨 놓고
+           나가면 되돌아간다(§보드는 저장 전 미리보기).
+        ⚠️ 옮긴 게 없으면 문구도 없다. 늘 떠 있으면 안내가 아니라 배경이 된다.
+      */}
+      <div className="flex shrink-0 items-center justify-between gap-3">
+        <p className="text-muted-foreground text-[12px] leading-4">
+          {changeCount > 0 ? "옮긴 뒤 [저장하기]를 눌러야 반영됩니다." : ""}
+        </p>
         <Button
           size="sm"
           disabled={changeCount === 0}

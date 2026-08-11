@@ -28,14 +28,16 @@ function BoardCardBody({ card, isDelayed }: BoardCardProps) {
            표식(색)이다 — 눈은 글자를 읽기 전에 색을 먼저 본다.
         ⚠️ 색은 **태그 이름에서 나온다**(`pickPaletteColor`) — 어느 화면에서든 같은 프로젝트는
            같은 색이다. 상태색(회색·초록·보라)과 다른 팔레트라 뜻이 섞이지 않는다.
-        ⚠️ `h-full`은 부모 높이가 auto라 0이 된다 — 늘어나야 하므로 `self-stretch`다.
+        ⚠️ **카드 모서리에 붙인다**(`absolute inset-y-0 left-0`). 안쪽에 여백을 두고 세웠더니
+           위아래가 뜬 채 **눈금처럼** 보였다 — 모서리까지 닿아야 카드를 세로로 묶는 띠가 된다
+           (회의 카드의 위쪽 띠와 같은 결이다). 둥근 모서리는 `overflow-hidden`이 잘라 준다.
       */}
       <span
-        className="w-1 shrink-0 self-stretch rounded-full"
+        className="absolute inset-y-0 left-0 w-[3px]"
         style={{ backgroundColor: pickPaletteColor(card.tagLabel).solidColor }}
         aria-hidden
       />
-      <div className="flex min-w-0 flex-1 flex-col gap-2.5">
+      <div className="flex min-w-0 flex-1 flex-col gap-2">
         {/*
         ⚠️ **제목이 먼저다.** 칩·제목·날짜를 세 층으로 쌓아 두니 카드가 필요 이상으로 길고,
            셋 다 왼쪽 끝에 붙어 오른쪽이 통째로 비었다 — 카드에서 읽는 건 **무슨 일인가**이고
@@ -73,7 +75,7 @@ function BoardCardBody({ card, isDelayed }: BoardCardProps) {
  *    이건 칸 안에 줄지어 서는 작은 카드라 한 단계 작다(검색 화면과 같은 규칙).
  */
 const CARD_SHAPE =
-  "border-border bg-card flex items-stretch gap-3 rounded-xl border py-3.5 pr-4 pl-3";
+  "border-border bg-card relative flex overflow-hidden rounded-xl border py-3.5 pr-4 pl-[18px]";
 
 /**
  * 보드 카드 한 장 — 드래그 핸들은 카드 전체(클릭해서 상세로 이동하는 화면이 아니라 옮기는 화면).
