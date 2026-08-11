@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
 
+import { AccessDenied } from "@/components/common/access-denied";
 import { RoomCreateDialog } from "@/features/rooms/components/room-create-dialog";
 import { RoomsManageTable } from "@/features/rooms/components/rooms-manage-table";
 import { getMeetingRooms } from "@/features/rooms/server";
+import { roleHome } from "@/features/shell/home";
 import { getViewer } from "@/features/shell/viewer";
+import { canAccessManageScope } from "@/lib/permission";
 import { canManageRooms } from "@/lib/permission";
 
 export const metadata: Metadata = {
@@ -17,6 +20,8 @@ export const metadata: Metadata = {
  */
 export default async function ManageRoomsPage() {
   const [rooms, viewer] = await Promise.all([getMeetingRooms(), getViewer()]);
+  if (!canAccessManageScope(viewer)) return <AccessDenied homeHref={roleHome(viewer.role)} />;
+
   const canManage = canManageRooms(viewer);
 
   return (

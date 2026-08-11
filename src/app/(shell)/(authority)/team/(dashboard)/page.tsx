@@ -2,13 +2,17 @@ import { CalendarClock } from "lucide-react";
 import { Users } from "lucide-react";
 import type { Metadata } from "next";
 
+import { AccessDenied } from "@/components/common/access-denied";
 import { DashboardMeetingItem } from "@/components/common/dashboard-meeting-item";
 import { EmptyState } from "@/components/common/empty-state";
 import { SummaryCard } from "@/components/common/summary-card";
 import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { roleHome } from "@/features/shell/home";
+import { getViewer } from "@/features/shell/viewer";
 import { MemberStatusRow } from "@/features/team/components/member-status-row";
 import { MEMBER_BOX_MAX_HEIGHT } from "@/features/team/lib";
 import { getTeamDashboardOverview } from "@/features/team/server";
+import { canAccessTeamScope } from "@/lib/permission";
 
 export const metadata: Metadata = {
   title: "대시보드",
@@ -18,6 +22,9 @@ export const metadata: Metadata = {
 const HEAD_CELL_CLASS = "text-muted-foreground h-9 text-[12px] leading-4 font-normal";
 
 export default async function TeamDashboardPage() {
+  const viewer = await getViewer();
+  if (!canAccessTeamScope(viewer)) return <AccessDenied homeHref={roleHome(viewer.role)} />;
+
   const {
     teamName,
     teamActionCount,

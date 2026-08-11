@@ -174,6 +174,36 @@ export function canAccessTeamScope(actor: Actor): boolean {
   return actor.role === AUTHORITY.LEADER;
 }
 
+/**
+ * 대표 화면(`/owner/*`) — OWNER 전용.
+ *
+ * ⚠️ **화면에도 문을 단다**(2026-08-11). 지금까지 대시보드에는 판정이 아예 없어서, 로그인이
+ *    붙는 순간 사원이 주소만 쳐도 대표 대시보드가 열리는 상태였다 — 사이드바에서 안 보이는 건
+ *    UX일 뿐 보안이 아니다(§권한).
+ */
+export function canAccessOwnerScope(actor: Actor): boolean {
+  return actor.role === AUTHORITY.OWNER;
+}
+
+/**
+ * 개인 화면(`/my/*`) — **대표만 못 들어간다.**
+ *
+ * ⚠️ 대표에게는 개인 액션이라는 것이 없다(§라우트 그룹: `/app/my/actions`는 OWNER 접근 불가).
+ *    팀장은 자기 개인 액션이 있으므로 막지 않는다 — 팀장 본인 휴직·인수인계가 그 자리다.
+ */
+export function canAccessPersonalScope(actor: Actor): boolean {
+  return actor.role !== AUTHORITY.OWNER;
+}
+
+/**
+ * 회사 운영 구역(`/manage/*`) 화면 접근 — **사이드바가 그 구역을 여는 문과 같은 판정**이다
+ * (`nav-config.ts`가 `canManageBilling`으로 구역 전체를 연다).
+ *
+ * ⚠️ 화면 안에서 무엇을 할 수 있는지는 **또 따로 본다** — 회의실 추가·수정은 `canManageRooms`,
+ *    용량 삭제는 `canManageStorage`다. 들어올 수 있다고 다 할 수 있는 것은 아니다.
+ */
+export const canAccessManageScope = canManageBilling;
+
 /** 프로젝트 생성 — OWNER 전용 */
 export function canCreateProject(actor: Actor): boolean {
   return actor.role === AUTHORITY.OWNER;

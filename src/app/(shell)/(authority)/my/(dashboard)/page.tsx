@@ -1,6 +1,7 @@
 import { CalendarClock } from "lucide-react";
 import type { Metadata } from "next";
 
+import { AccessDenied } from "@/components/common/access-denied";
 import { DashboardMeetingItem } from "@/components/common/dashboard-meeting-item";
 import { EmptyState } from "@/components/common/empty-state";
 import { isDelayed } from "@/constants/domain";
@@ -8,13 +9,19 @@ import type { TimelineActionInput } from "@/features/member/action-timeline";
 import { ActionTimeline, ActionTimelineLegend } from "@/features/member/components/action-timeline";
 import { DUE_SOON_BOX_MIN_HEIGHT } from "@/features/member/lib";
 import { getMemberDashboardOverview } from "@/features/member/server";
+import { roleHome } from "@/features/shell/home";
+import { getViewer } from "@/features/shell/viewer";
 import { pickPaletteColor } from "@/lib/palette";
+import { canAccessPersonalScope } from "@/lib/permission";
 
 export const metadata: Metadata = {
   title: "대시보드",
 };
 
 export default async function MemberDashboardPage() {
+  const viewer = await getViewer();
+  if (!canAccessPersonalScope(viewer)) return <AccessDenied homeHref={roleHome(viewer.role)} />;
+
   const { dueSoonActions, attendedMeetings } = await getMemberDashboardOverview();
 
   // 지연은 상태가 아니라 마감 경과 파생값이라 여기서 계산해 tone으로 넘긴다(§도메인 상수).

@@ -1,11 +1,15 @@
 import { Users } from "lucide-react";
 import type { Metadata } from "next";
 
+import { AccessDenied } from "@/components/common/access-denied";
 import { EmptyState } from "@/components/common/empty-state";
+import { roleHome } from "@/features/shell/home";
+import { getViewer } from "@/features/shell/viewer";
 import { TeamMemberAccordionCard } from "@/features/team/members/components/team-member-accordion-card";
 import { TeamMemberControls } from "@/features/team/members/components/team-member-controls";
 import { parseTeamMemberFilter, parseTeamMemberSort } from "@/features/team/members/lib";
 import { getTeamMemberStatuses } from "@/features/team/members/server";
+import { canAccessTeamScope } from "@/lib/permission";
 
 export const metadata: Metadata = {
   title: "팀원 관리",
@@ -20,6 +24,9 @@ interface TeamMembersPageProps {
  * ⚠️ 팀원 ~6명 규모 가정 — 페이지네이션 없이 전부 렌더링한다.
  */
 export default async function TeamMembersPage({ searchParams }: TeamMembersPageProps) {
+  const viewer = await getViewer();
+  if (!canAccessTeamScope(viewer)) return <AccessDenied homeHref={roleHome(viewer.role)} />;
+
   const params = await searchParams;
   const sort = parseTeamMemberSort(params.sort);
   const filter = parseTeamMemberFilter(params.filter);

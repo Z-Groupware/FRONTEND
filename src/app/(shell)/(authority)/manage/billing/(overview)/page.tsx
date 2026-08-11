@@ -1,8 +1,11 @@
 import type { Metadata } from "next";
 
+import { AccessDenied } from "@/components/common/access-denied";
 import { BillingView } from "@/features/billing/components/billing-view";
 import { getBillingConfig, getBillingOverview } from "@/features/billing/server";
+import { roleHome } from "@/features/shell/home";
 import { getViewer } from "@/features/shell/viewer";
+import { canAccessManageScope } from "@/lib/permission";
 import { canManageBilling } from "@/lib/permission";
 
 export const metadata: Metadata = {
@@ -31,6 +34,8 @@ export default async function OwnerBillingPage() {
     getBillingConfig(),
     getViewer(),
   ]);
+
+  if (!canAccessManageScope(viewer)) return <AccessDenied homeHref={roleHome(viewer.role)} />;
 
   /*
     ⚠️ 판정은 **`canManageBilling` 한 곳**이 한다. 전에는 여기만 `const canManage = true`로

@@ -45,7 +45,8 @@ function withPathname(request: NextRequest) {
        `NextResponse.next({ request })`가 이번 렌더에 넘길 헤더를 갈아 끼우는 자리다.
   */
   const headers = new Headers(request.headers);
-  headers.set(PATHNAME_HEADER, request.nextUrl.pathname);
+  /* ⚠️ 조건(`?as=`)까지 싣는다 — 목에서 다른 역할로 화면을 확인할 때 쓴다(`getViewer`). */
+  headers.set(PATHNAME_HEADER, request.nextUrl.pathname + request.nextUrl.search);
   return NextResponse.next({ request: { headers } });
 }
 

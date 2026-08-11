@@ -1,10 +1,13 @@
 import type { Metadata } from "next";
 
+import { AccessDenied } from "@/components/common/access-denied";
 import { getBillingConfig } from "@/features/billing/server";
+import { roleHome } from "@/features/shell/home";
 import { getViewer } from "@/features/shell/viewer";
 import { StorageView } from "@/features/storage/components/storage-view";
 import { getStorageOverview } from "@/features/storage/server";
 import { todayIso } from "@/lib/date";
+import { canAccessManageScope } from "@/lib/permission";
 import { canManageStorage } from "@/lib/permission";
 
 /*
@@ -39,6 +42,8 @@ export default async function ManageStoragePage() {
     getBillingConfig(),
     getViewer(),
   ]);
+
+  if (!canAccessManageScope(viewer)) return <AccessDenied homeHref={roleHome(viewer.role)} />;
 
   return (
     <StorageView

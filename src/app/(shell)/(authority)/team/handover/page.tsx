@@ -2,10 +2,14 @@ import { ChevronRight, ClipboardList } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { AccessDenied } from "@/components/common/access-denied";
 import { EmptyState } from "@/components/common/empty-state";
 import { HANDOVER_TYPE_LABEL } from "@/constants/domain";
+import { roleHome } from "@/features/shell/home";
+import { getViewer } from "@/features/shell/viewer";
 import { listTeamHandovers } from "@/features/team-handover/server";
 import { formatMonthDayWeekday } from "@/lib/date";
+import { canAccessTeamScope } from "@/lib/permission";
 
 export const metadata: Metadata = {
   title: "인수인계서 관리",
@@ -18,6 +22,9 @@ export const metadata: Metadata = {
  *    `/team/(dashboard)`와 같은 전례.
  */
 export default async function TeamHandoverPage() {
+  const viewer = await getViewer();
+  if (!canAccessTeamScope(viewer)) return <AccessDenied homeHref={roleHome(viewer.role)} />;
+
   const items = await listTeamHandovers();
 
   return (

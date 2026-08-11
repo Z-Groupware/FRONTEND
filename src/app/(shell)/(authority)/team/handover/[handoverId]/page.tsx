@@ -1,10 +1,14 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
+import { AccessDenied } from "@/components/common/access-denied";
 import { HANDOVER_TYPE_LABEL } from "@/constants/domain";
+import { roleHome } from "@/features/shell/home";
+import { getViewer } from "@/features/shell/viewer";
 import { TeamHandoverAssignBoard } from "@/features/team-handover/components/team-handover-assign-board";
 import { getTeamHandoverDetail } from "@/features/team-handover/server";
 import { todayIso } from "@/lib/date";
+import { canAccessTeamScope } from "@/lib/permission";
 
 export const metadata: Metadata = {
   title: "인수인계서 상세",
@@ -15,6 +19,9 @@ interface TeamHandoverDetailPageProps {
 }
 
 export default async function TeamHandoverDetailPage({ params }: TeamHandoverDetailPageProps) {
+  const viewer = await getViewer();
+  if (!canAccessTeamScope(viewer)) return <AccessDenied homeHref={roleHome(viewer.role)} />;
+
   const { handoverId } = await params;
   const memberId = Number(handoverId);
   if (!Number.isInteger(memberId)) notFound();
