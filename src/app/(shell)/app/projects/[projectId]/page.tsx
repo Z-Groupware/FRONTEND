@@ -1,13 +1,14 @@
-import { Paperclip } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { AttachmentList } from "@/components/common/attachment-list";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { isDelayed } from "@/constants/domain";
 import type { TimelineActionInput } from "@/features/member/action-timeline";
 import { ActionTimeline, ActionTimelineLegend } from "@/features/member/components/action-timeline";
+import { getProjectAttachmentDownloadUrlAction } from "@/features/project/actions";
 import {
   parseProjectDetailTab,
   PROJECT_DETAIL_TABS,
@@ -157,14 +158,10 @@ export default async function ProjectDetailPage({ params, searchParams }: Projec
             <p className="text-muted-foreground border-border border-t pt-5 text-[13px] leading-[22px] whitespace-pre-wrap">
               {project.description}
             </p>
-            {project.attachmentName && (
-              // ⚠️ 목 단계라 다운로드 URL이 없다(§9 화면은 사실만 말한다) — 죽은 링크(href="#") 대신
-              //    지금 있는 파일명만 정직하게 보여준다. API 스펙 확정 후 실제 다운로드 링크로 바꾼다.
-              <span className="text-muted-foreground inline-flex w-fit items-center gap-1.5 text-[13px] leading-5">
-                <Paperclip className="size-3.5" />
-                {project.attachmentName}
-              </span>
-            )}
+            <AttachmentList
+              attachments={project.attachments}
+              fetchDownloadUrl={getProjectAttachmentDownloadUrlAction.bind(null, project.id)}
+            />
           </section>
         ) : (
           <section

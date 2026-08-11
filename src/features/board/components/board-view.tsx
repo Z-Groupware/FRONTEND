@@ -64,6 +64,21 @@ export function BoardView({ boardType, cards, todayIso }: BoardViewProps) {
     return overrides[card.id] ?? getBoardColumn(card, today);
   }
 
+  /**
+   * 서버에 실제로 저장된 칸 — override를 무시한다.
+   * ⚠️ **드래그 유효성은 항상 이 값 기준으로 본다**, 화면에 보이는 `columnOf`(override 포함) 기준이
+   *    아니다(2026-08-11 버그 수정). override 기준으로 검사하면 두 가지 문제가 있었다:
+   *    ① 할일→진행중으로 옮긴 걸 다시 할일로 되돌리려 하면 "진행중→할일은 금지"에 걸려 막혔다 —
+   *       원본과 같은 칸으로 돌아가는 건 사실 아무것도 안 바뀐 것인데 금지 규칙이 잘못 적용됨.
+   *    ② 할일→진행중→완료를 드래그 두 번으로 이으면 로컬에서는 통과됐지만, 저장 시 서버는
+   *       "할일→완료 직행"으로 보고 거부했다(서버는 마지막 상태만 본다) — 잠재 버그였다.
+   *    원본 기준으로 보면 되돌리기는 항상 허용(같은 칸)되고, 두 번째 문제도 드래그 시점에
+   *    바로 막혀서 저장 실패로 이어지지 않는다.
+   */
+  function originalColumnOf(card: BoardCard): BoardColumnId {
+    return getBoardColumn(card, today);
+  }
+
   const groups: Record<BoardColumnId, BoardCard[]> = { TODO: [], IN_PROGRESS: [], DONE: [] };
   for (const card of cards) groups[columnOf(card)].push(card);
 
@@ -83,7 +98,7 @@ export function BoardView({ boardType, cards, todayIso }: BoardViewProps) {
     const card = cards.find((c) => c.id === event.active.id);
     const targetColumn = event.over.id as BoardColumnId;
     if (!card) return;
-    setActiveInvalidTarget(canMoveCard(columnOf(card), targetColumn) ? null : targetColumn);
+    setActiveInvalidTarget(canMoveCard(originalColumnOf(card), targetColumn) ? null : targetColumn);
   }
 
   function handleDragEnd(event: DragEndEvent) {
@@ -93,10 +108,20 @@ export function BoardView({ boardType, cards, todayIso }: BoardViewProps) {
     if (!event.over) return;
     const card = cards.find((c) => c.id === event.active.id);
     if (!card) return;
-    const from = columnOf(card);
     const to = event.over.id as BoardColumnId;
-    if (from === to) return;
-    if (!canMoveCard(from, to)) {
+    if (columnOf(card) === to) return; // 화면에 이미 보이는 칸으로 또 놓은 것 — 아무것도 안 한다.
+
+    const originalColumn = originalColumnOf(card);
+    if (originalColumn === to) {
+      // 원래 있던 칸으로 되돌아왔다 — 실제로는 변경이 없는 것이니 override를 지운다.
+      setOverrides((prev) => {
+        const next = { ...prev };
+        delete next[card.id];
+        return next;
+      });
+      return;
+    }
+    if (!canMoveCard(originalColumn, to)) {
       toast.error("여기로는 옮길 수 없습니다");
       return;
     }

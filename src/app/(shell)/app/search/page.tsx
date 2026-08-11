@@ -7,7 +7,6 @@ import { SearchLanding } from "@/features/search/components/search-landing";
 import { SearchResultsPanel } from "@/features/search/components/search-results-panel";
 import { parseSearchQuery } from "@/features/search/lib";
 import { getSearchHome, getSearchProjects, getSearchResults } from "@/features/search/server";
-import type { RecentSearchEntry } from "@/features/search/types";
 import { PageHeader } from "@/features/shell/components/page-header";
 
 export const metadata: Metadata = {
@@ -38,7 +37,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
 
   let content: ReactNode;
   /* 최근 검색어는 입력 바로 아래에 서므로 페이지가 들고 있는다 — 검색 중일 때는 안 띄운다 */
-  let recentSearches: RecentSearchEntry[] = [];
+  let recentSearches: string[] = [];
   if (keyword) {
     const [results, projects] = await Promise.all([getSearchResults(query), getSearchProjects()]);
     content = (

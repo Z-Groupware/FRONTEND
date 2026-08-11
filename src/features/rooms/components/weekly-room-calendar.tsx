@@ -35,8 +35,6 @@ interface WeeklyRoomCalendarProps {
   week: string;
   /** 빈 슬롯을 선택하면(30분 칸 클릭) 그 시작 시각을 올려보낸다 — 예약 모달이 이 값으로 연다. */
   onSelectSlot: (start: Date) => void;
-  /** 툴바의 "회의 추가" 버튼(2026-08-10 이전엔 캘린더 위 별도 버튼이었다). */
-  onAddClick: () => void;
 }
 
 /**
@@ -58,7 +56,6 @@ export function WeeklyRoomCalendar({
   rooms,
   week,
   onSelectSlot,
-  onAddClick,
 }: WeeklyRoomCalendarProps) {
   const router = useRouter();
   const [selectedRoomId, setSelectedRoomId] = useState<string>(ALL_ROOMS_VALUE);
@@ -103,10 +100,9 @@ export function WeeklyRoomCalendar({
         rooms={rooms}
         selectedRoomId={selectedRoomId}
         onSelectedRoomChange={setSelectedRoomId}
-        onAddClick={onAddClick}
       />
     ),
-    [rooms, selectedRoomId, onAddClick],
+    [rooms, selectedRoomId],
   );
 
   return (

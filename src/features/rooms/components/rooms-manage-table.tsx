@@ -1,4 +1,4 @@
-import { CalendarDays } from "lucide-react";
+import { CalendarRange, Clock, MapPin } from "lucide-react";
 
 import { EmptyState } from "@/components/common/empty-state";
 
@@ -17,11 +17,21 @@ interface RoomsManageTableProps {
  *    "위치"·"수정" 열이 더 있다.
  */
 export function RoomsManageTable({ rooms, canManage }: RoomsManageTableProps) {
+  // 파생값 — "위치 N곳"은 저장된 필드가 아니라 회의실 목록에서 그때 계산한다(CLAUDE.md §도메인 상수).
+  const locationCount = new Set(rooms.map((room) => room.location)).size;
+
   return (
     <div className="border-border bg-card overflow-hidden rounded-2xl border">
       <div className="flex items-baseline justify-between gap-3 px-7 pt-6 pb-3">
-        <h2 className="text-[17px] leading-7 font-semibold tracking-[-0.3px]">회의실 목록</h2>
-        <p className="text-muted-foreground text-[12px] leading-4">전체 {rooms.length}개</p>
+        {/* ⚠️ 제목 앞 검은 점 대신 상단바와 같은 아이콘을 쓴다 — 점은 상태점과 헷갈린다(DESIGN §5) */}
+        <h2 className="flex items-center gap-2 text-[17px] leading-7 font-semibold tracking-[-0.3px]">
+          <CalendarRange className="text-muted-foreground size-4" aria-hidden />
+          회의실 목록
+        </h2>
+        {/* ⚠️ `text-xs`가 아니라 `text-[12px] leading-4`다 — 다섯 크기를 클래스로도 같게 적는다(§DESIGN 4) */}
+        <p className="text-muted-foreground text-[12px] leading-4 tabular-nums">
+          전체 {rooms.length}개 · 위치 {locationCount}곳
+        </p>
       </div>
 
       {rooms.length === 0 ? (
@@ -32,7 +42,7 @@ export function RoomsManageTable({ rooms, canManage }: RoomsManageTableProps) {
         */
         <EmptyState
           bordered
-          icon={CalendarDays}
+          icon={CalendarRange}
           title="등록된 회의실이 없습니다."
           description="회의실을 추가하면 예약 화면의 목록에 바로 나타납니다."
         />
@@ -61,10 +71,19 @@ export function RoomsManageTable({ rooms, canManage }: RoomsManageTableProps) {
                   key={room.id}
                   className="group border-border hover:bg-foreground/[0.04] transition-colors not-first:border-t"
                 >
-                  <td className="px-7 py-3.5 text-left">{room.name}</td>
-                  <td className="px-4 py-3.5 text-center">{room.location}</td>
+                  {/* ⚠️ 첫 열은 `px-7` — 카드 제목과 같은 세로선에 선다(사원·프로젝트·저장소 표와 같은 값) */}
+                  <td className="px-7 py-3.5 text-left font-medium">{room.name}</td>
+                  <td className="px-4 py-3.5 text-center">
+                    <span className="text-muted-foreground inline-flex items-center gap-1.5">
+                      <MapPin className="size-3.5 shrink-0" aria-hidden />
+                      {room.location}
+                    </span>
+                  </td>
                   <td className="px-4 py-3.5 text-center tabular-nums">
-                    {room.openTime} - {room.closeTime}
+                    <span className="text-muted-foreground inline-flex items-center gap-1.5">
+                      <Clock className="size-3.5 shrink-0" aria-hidden />
+                      {room.openTime} - {room.closeTime}
+                    </span>
                   </td>
                   <td className="px-4 py-3.5 text-center">
                     {canManage && <RoomRowActions room={room} />}

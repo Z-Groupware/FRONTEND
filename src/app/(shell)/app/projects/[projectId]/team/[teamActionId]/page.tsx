@@ -7,10 +7,12 @@ import {
   type ActionDetailInfoItem,
   ActionDetailInfoRows,
 } from "@/components/common/action-detail-info-card";
+import { AttachmentList } from "@/components/common/attachment-list";
 import { formatMeetingDate } from "@/components/common/dashboard-meeting-item";
 import { isDelayed } from "@/constants/domain";
 import type { TimelineActionInput } from "@/features/member/action-timeline";
 import { ActionTimeline, ActionTimelineLegend } from "@/features/member/components/action-timeline";
+import { getTeamActionAttachmentDownloadUrlAction } from "@/features/project/actions";
 import {
   parseTeamActionDetailTab,
   TEAM_ACTION_DETAIL_TABS,
@@ -73,34 +75,45 @@ export default async function TeamActionDetailPage({
   });
 
   const infoItems: ActionDetailInfoItem[] = [
-    {
-      key: "assignee",
-      icon: User,
-      label: "담당자",
-      content: `${teamAction.assigneeName}(${teamAction.assigneeRoleLabel})`,
-    },
-    {
-      key: "source-meeting",
-      icon: Video,
-      label: "출처 회의",
-      // ⚠️ 회의 상세(`/app/meeting/:id`) 라우트가 아직 없어 href 없이 텍스트만(§9 화면은 사실만).
-      content: (
-        <>
-          <div className="flex items-center gap-1.5">
-            <p className="truncate">{teamAction.sourceMeeting.title}</p>
-            <span
-              className="shrink-0 rounded px-1.5 py-px text-[11px] leading-4 font-medium"
-              style={{ backgroundColor: tagColor.bgColor, color: tagColor.textColor }}
-            >
-              {teamAction.projectTag}
-            </span>
-          </div>
-          <p className="text-muted-foreground text-[11px] leading-4">
-            {formatMeetingDate(teamAction.sourceMeeting.scheduledAt)}
-          </p>
-        </>
-      ),
-    },
+    // ⚠️ 팀장 공석이면 담당자 행 자체를 안 보여준다 — 없는 사람을 지어내지 않는다(§정직성).
+    ...(teamAction.assigneeName
+      ? [
+          {
+            key: "assignee",
+            icon: User,
+            label: "담당자",
+            content: teamAction.assigneeRoleLabel
+              ? `${teamAction.assigneeName}(${teamAction.assigneeRoleLabel})`
+              : teamAction.assigneeName,
+          } satisfies ActionDetailInfoItem,
+        ]
+      : []),
+    ...(teamAction.sourceMeeting
+      ? [
+          {
+            key: "source-meeting",
+            icon: Video,
+            label: "출처 회의",
+            content: (
+              <>
+                <div className="flex items-center gap-1.5">
+                  <p className="truncate">{teamAction.sourceMeeting.title}</p>
+                  <span
+                    className="shrink-0 rounded px-1.5 py-px text-[11px] leading-4 font-medium"
+                    style={{ backgroundColor: tagColor.bgColor, color: tagColor.textColor }}
+                  >
+                    {teamAction.projectTag}
+                  </span>
+                </div>
+                <p className="text-muted-foreground text-[11px] leading-4">
+                  {formatMeetingDate(teamAction.sourceMeeting.scheduledAt)}
+                </p>
+              </>
+            ),
+            href: `/app/meeting/${teamAction.sourceMeeting.id}`,
+          } satisfies ActionDetailInfoItem,
+        ]
+      : []),
     // ⚠️ 상위 팀 액션 — 팀 액션 상세엔 없음(개인 액션 상세에서만 씀).
     {
       key: "project",
@@ -194,10 +207,17 @@ export default async function TeamActionDetailPage({
                  선은 카드 끝까지 이어지는데 이 선만 짧아 카드가 깨져 보였다.
                  선·안쪽 여백은 전폭 래퍼가, 720은 **글에만** 건다(§4 읽는 글은 좁게 둔다).
             */}
-            <div className="border-border border-t px-7 py-6">
+            <div className="border-border flex flex-col gap-4 border-t px-7 py-6">
               <p className="text-muted-foreground max-w-[720px] text-[13px] leading-[22px] whitespace-pre-wrap">
                 {teamAction.description}
               </p>
+              <AttachmentList
+                attachments={teamAction.attachments}
+                fetchDownloadUrl={getTeamActionAttachmentDownloadUrlAction.bind(
+                  null,
+                  teamAction.id,
+                )}
+              />
             </div>
             <ActionDetailInfoRows items={infoItems} />
           </section>

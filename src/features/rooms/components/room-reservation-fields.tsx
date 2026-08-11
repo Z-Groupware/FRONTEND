@@ -1,6 +1,7 @@
 "use client";
 
 import type { Dispatch, SetStateAction } from "react";
+import { useMemo } from "react";
 
 import { FieldError } from "@/components/common/field-error";
 import { Input } from "@/components/ui/input";
@@ -52,8 +53,27 @@ export function RoomReservationFields({
   teamActions,
 }: RoomReservationFieldsProps) {
   const selectedProjectTag = projects.find((project) => project.id === form.projectId)?.tag;
-  const availableTeamActions = teamActions.filter(
-    (teamAction) => teamAction.projectTag === selectedProjectTag,
+
+  /*
+    ⚠️ `useMemo`로 참조를 고정한다 — `.filter()`는 매 렌더 새 배열을 만들고, 거기서 파생한
+       `items` 객체도 매번 새 참조가 된다. base-ui `Select`의 내부 이펙트가 참조 변화 → store
+       갱신 → 리렌더 → 새 객체를... 반복해 "Maximum update depth exceeded"로 이어진다
+       (`search-filter-bar.tsx`가 같은 이유로 `useMemo`를 쓰던 걸 놓쳤다가 실제로 터졌다).
+  */
+  const availableTeamActions = useMemo(
+    () => teamActions.filter((teamAction) => teamAction.projectTag === selectedProjectTag),
+    [teamActions, selectedProjectTag],
+  );
+  const projectItems = useMemo(
+    () => Object.fromEntries(projects.map((project) => [project.id, project.name])),
+    [projects],
+  );
+  const teamActionItems = useMemo(
+    () =>
+      Object.fromEntries(
+        availableTeamActions.map((teamAction) => [String(teamAction.id), teamAction.name]),
+      ),
+    [availableTeamActions],
   );
 
   return (
@@ -85,6 +105,10 @@ export function RoomReservationFields({
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="reservation-project">프로젝트</Label>
         <Select
+          // ⚠️ `items`(값→라벨 맵)를 넘긴다 — 안 넘기면 트리거가 닫혀 있는 동안 `SelectContent`가
+          //    아직 안 그려져 라벨을 못 찾고 원문 값(`project.id`)이 그대로 보인다
+          //    (`search-filter-bar.tsx`와 같은 이유).
+          items={projectItems}
           value={form.projectId}
           onValueChange={(value) =>
             // 프로젝트를 바꾸면 그 프로젝트 소속이 아닌 상위 팀 액션 선택은 의미가 없어진다.
@@ -113,6 +137,7 @@ export function RoomReservationFields({
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="reservation-parent-team-action">상위 팀 액션</Label>
           <Select
+            items={teamActionItems}
             value={form.parentTeamActionId}
             onValueChange={(value) =>
               setForm((prev) => ({ ...prev, parentTeamActionId: value ?? "" }))

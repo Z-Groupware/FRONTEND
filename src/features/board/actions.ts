@@ -3,12 +3,16 @@
 import { revalidatePath } from "next/cache";
 
 import { ACTION_STATUS } from "@/constants/domain";
+import { requireAccessToken } from "@/features/auth/session";
 import { TOP_LEVEL_PROJECTS } from "@/features/project/mock/projects";
 import { TEAM_ACTION_PERSONAL_ITEMS_MOCK } from "@/features/project/mock/team-action-detail";
+import { serverApi } from "@/lib/api";
 import { todayIso } from "@/lib/date";
+import { ep } from "@/lib/endpoints";
 import { isMock } from "@/mocks/config";
 
 import { canMoveCard, getBoardColumn } from "./lib";
+import { getMyActionBoard, getProjectBoard } from "./server";
 import { BOARD_COLUMN, type BoardChange, type BoardColumnId, type BoardType } from "./types";
 
 const BOARD_PATH = "/app/board";
@@ -29,9 +33,7 @@ export async function commitBoardChangesAction(
   boardType: BoardType,
   changes: BoardChange[],
 ): Promise<{ appliedCount: number }> {
-  if (!isMock) {
-    throw new Error("서버 연동 미구현 — ERD·API 스펙 확정 후 매퍼 작성");
-  }
+  if (!isMock) return commitBoardChangesLive(boardType, changes);
 
   const today = new Date();
   const items = boardType === "project" ? TOP_LEVEL_PROJECTS : findAllPersonalItems();
@@ -54,6 +56,56 @@ export async function commitBoardChangesAction(
 
   revalidatePath(BOARD_PATH);
   return { appliedCount };
+}
+
+/**
+ * 실연동 저장 — mock의 `applyColumnChange`(로컬 배열 직접 수정)를 못 쓴다. 대신 **지금
+ * 카드 상태를 다시 조회**해 각 변경의 현재 칸을 알아내고(§권한: 화면 숨김은 보안이 아니다,
+ * 클라가 보낸 `toColumn`만 믿지 않는다), `canMoveCard`로 한 번 더 거른 뒤 유효한 것만
+ * bulk API로 보낸다. 두 벌크 API(`/api/projects/status/bulk`·`/api/actions/complete/bulk`)
+ * 둘 다 all-or-nothing이라, 유효한 항목만 추려 보내면 실패할 이유가 없다(호출자 소유
+ * 액션만 보드에 뜨므로 "담당자 본인" 검사도 걸릴 게 없다).
+ */
+async function commitBoardChangesLive(
+  boardType: BoardType,
+  changes: BoardChange[],
+): Promise<{ appliedCount: number }> {
+  const today = new Date();
+  const currentCards =
+    boardType === "project" ? await getProjectBoard() : await getMyActionBoard("");
+
+  const validItems = changes
+    .map((change) => {
+      const card = currentCards.find((candidate) => candidate.id === change.id);
+      if (!card) return null;
+      const currentColumn = getBoardColumn(card, today);
+      if (!canMoveCard(currentColumn, change.toColumn)) return null;
+      return { id: change.id, status: change.toColumn };
+    })
+    .filter((item): item is { id: number; status: BoardColumnId } => item !== null);
+
+  if (validItems.length === 0) {
+    revalidatePath(BOARD_PATH);
+    return { appliedCount: 0 };
+  }
+
+  const accessToken = await requireAccessToken();
+  if (boardType === "project") {
+    await serverApi(ep.projectStatusBulk(), {
+      method: "PATCH",
+      accessToken,
+      json: { items: validItems.map((item) => ({ projectId: item.id, status: item.status })) },
+    });
+  } else {
+    await serverApi(ep.actionCompleteBulk(), {
+      method: "PATCH",
+      accessToken,
+      json: { items: validItems.map((item) => ({ actionId: item.id, status: item.status })) },
+    });
+  }
+
+  revalidatePath(BOARD_PATH);
+  return { appliedCount: validItems.length };
 }
 
 function findAllPersonalItems() {

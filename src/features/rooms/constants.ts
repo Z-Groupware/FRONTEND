@@ -32,11 +32,19 @@ export const ROOM_ATTENDEE_FILTER_LABEL: Record<RoomAttendeeFilter, string> = {
   myTeam: "내 부서만",
 };
 
-/** 회의실 주간 캘린더 툴바(`rooms-calendar-toolbar.tsx`) 카피 — 라벨 하드코딩 금지 원칙에 맞춰 뺐다. */
+/** 회의실 캘린더 툴바(`rooms-calendar-toolbar.tsx`)·회의실 목록(`room-list-panel.tsx`) 카피
+ * — 라벨 하드코딩 금지 원칙에 맞춰 뺐다. */
 export const ROOMS_CALENDAR_TOOLBAR_LABEL = {
   roomFilter: "회의실 필터",
   allRooms: "전체 회의실",
   addMeeting: "회의 추가",
+} as const;
+
+/** 회의실 목록 패널(`room-list-panel.tsx`) 카피 — 위 툴바 상수와 같은 이유로 뺐다. */
+export const ROOM_LIST_PANEL_LABEL = {
+  title: "회의실 목록",
+  guidance: "예약 가능 시간을 확인하세요.",
+  countSuffix: "개",
 } as const;
 
 /** 회의실 삭제 확인창 문구 — `room-delete-dialog.tsx` 하나만 쓰지만, 카피 하드코딩 금지

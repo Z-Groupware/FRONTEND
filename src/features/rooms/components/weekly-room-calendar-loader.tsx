@@ -28,7 +28,6 @@ interface WeeklyRoomCalendarLoaderProps {
   rooms: MeetingRoom[];
   week: string;
   onSelectSlot: (start: Date) => void;
-  onAddClick: () => void;
 }
 
 export function WeeklyRoomCalendarLoader(props: WeeklyRoomCalendarLoaderProps) {

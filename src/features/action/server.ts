@@ -1,5 +1,9 @@
+import { requireAccessToken } from "@/features/auth/session";
+import { ApiError, serverApi } from "@/lib/api";
+import { ep } from "@/lib/endpoints";
 import { isMock } from "@/mocks/config";
 
+import { type BeActionDetail, toPersonalActionDetail } from "./mapper";
 import { PERSONAL_ACTION_DETAIL_MOCK } from "./mock/action-detail";
 import type { PersonalActionDetail } from "./types";
 
@@ -13,5 +17,15 @@ export async function getPersonalActionDetail(
     return PERSONAL_ACTION_DETAIL_MOCK[numericId] ?? null;
   }
 
-  throw new Error("서버 연동 미구현 — ERD·API 스펙 확정 후 매퍼 작성");
+  const numericId = Number(actionId);
+  if (!Number.isInteger(numericId)) return null;
+
+  const accessToken = await requireAccessToken();
+  try {
+    const detail = await serverApi<BeActionDetail>(ep.action(numericId), { accessToken });
+    return toPersonalActionDetail(detail);
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) return null;
+    throw error;
+  }
 }

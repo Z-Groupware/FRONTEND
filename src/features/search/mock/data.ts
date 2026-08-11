@@ -5,6 +5,7 @@ import type {
   SearchMeetingResult,
   SearchPersonResult,
   SearchProjectResult,
+  SearchRecentViewItem,
 } from "../types";
 
 /**
@@ -153,10 +154,35 @@ export const SEARCH_MOCK_PEOPLE: SearchPersonResult[] = [
   },
 ];
 
-/** 최근 본 항목 — 회의 둘·액션 하나·프로젝트 하나(2×2로 그린다) */
-export const SEARCH_MOCK_RECENTLY_VIEWED = [
-  ROADMAP_MEETING,
-  PAYMENT_API_ACTION,
-  BRAND_KICKOFF_MEETING,
-  GOODS_PROJECT,
+/**
+ * 최근 본 항목 — 회의 둘·액션 하나·프로젝트 하나.
+ * ⚠️ `GET /search/overview`의 `recentItems`는 `{ type, id, title, meta }`뿐이다 —
+ *    종류별 상세 필드(발췌·담당자·마감일 등)를 안 주므로, `meta`는 BE가 이미 조합해
+ *    내려줄 보조 문구를 그대로 흉내 낸다.
+ */
+export const SEARCH_MOCK_RECENTLY_VIEWED: SearchRecentViewItem[] = [
+  {
+    kind: "MEETING",
+    id: ROADMAP_MEETING.id,
+    title: ROADMAP_MEETING.title,
+    meta: `${ROADMAP_MEETING.projectName} · ${ROADMAP_MEETING.meetingDate}`,
+  },
+  {
+    kind: "ACTION",
+    id: PAYMENT_API_ACTION.id,
+    title: PAYMENT_API_ACTION.title,
+    meta: `${PAYMENT_API_ACTION.assigneeName} · 마감 ${PAYMENT_API_ACTION.dueDate}`,
+  },
+  {
+    kind: "MEETING",
+    id: BRAND_KICKOFF_MEETING.id,
+    title: BRAND_KICKOFF_MEETING.title,
+    meta: `${BRAND_KICKOFF_MEETING.projectName} · ${BRAND_KICKOFF_MEETING.meetingDate}`,
+  },
+  {
+    kind: "PROJECT",
+    id: GOODS_PROJECT.id,
+    title: GOODS_PROJECT.name,
+    meta: `회의 ${GOODS_PROJECT.meetingCount}건 · 액션 ${GOODS_PROJECT.actionCount}건`,
+  },
 ];

@@ -6,12 +6,22 @@ import { cn } from "@/lib/utils";
 
 import type { NoticeSummary } from "../types";
 
+interface NoticeListItemProps {
+  notice: NoticeSummary;
+  /** 상세 화면 왼쪽 목록에서 지금 보고 있는 공지 표시 — 목록 단독 화면에서는 항상 false. */
+  isActive?: boolean;
+}
+
 /** 공지 목록 한 줄 — 누르면 상세로 간다. 순수 표시라 서버에서 그린다. */
-export function NoticeListItem({ notice }: { notice: NoticeSummary }) {
+export function NoticeListItem({ notice, isActive = false }: NoticeListItemProps) {
   return (
     <Link
       href={`/app/notice/${notice.id}`}
-      className="hover:bg-foreground/[0.04] focus-visible:ring-ring flex items-center gap-3 px-4 py-4 transition-colors focus-visible:ring-2 focus-visible:outline-none"
+      aria-current={isActive ? "page" : undefined}
+      className={cn(
+        "hover:bg-foreground/[0.04] focus-visible:ring-ring flex items-center gap-3 px-4 py-4 transition-colors focus-visible:ring-2 focus-visible:outline-none",
+        isActive && "bg-foreground/[0.04]",
+      )}
     >
       {/*
         미읽음 점 — 읽었으면 자리는 남기고 숨긴다(줄이 밀리지 않게).
@@ -39,7 +49,13 @@ export function NoticeListItem({ notice }: { notice: NoticeSummary }) {
         {formatDate(notice.publishedAt)}
       </span>
 
-      <ChevronRight className="text-muted-foreground/70 size-4 shrink-0" aria-hidden />
+      <ChevronRight
+        className={cn(
+          "size-4 shrink-0",
+          isActive ? "text-foreground/70" : "text-muted-foreground/70",
+        )}
+        aria-hidden
+      />
     </Link>
   );
 }

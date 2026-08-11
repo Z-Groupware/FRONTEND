@@ -28,6 +28,14 @@ const DEFAULT_SORT = COMPANY_SORT.JOINED_DESC;
 /** 필터 셀렉트의 "전체" 값 — 빈 문자열은 URLSearchParams가 지워버려 구분이 안 된다 */
 const ALL = "ALL";
 
+/*
+  ⚠️ 컴포넌트 밖(모듈 스코프)에 둔다 — 렌더마다 새 객체를 `Select`의 `items`로 넘기면
+     base-ui 내부 이펙트가 참조 변화 → store 갱신 → 리렌더 → 새 객체를... 반복해
+     "Maximum update depth exceeded"로 이어진다(CI에서 실제로 터졌다). 값이 상수라
+     `useMemo`도 필요 없이 여기서 한 번만 만들면 참조가 계속 같다.
+*/
+const STATUS_ITEMS = { [ALL]: "전체 상태", ...COMPANY_STATUS_LABEL };
+
 /**
  * 기업명·코드 검색 + 규모·상태 필터.
  *
@@ -96,6 +104,7 @@ export function CompanyFilterBar() {
       </Select>
 
       <Select
+        items={STATUS_ITEMS}
         value={searchParams.get("status") ?? ALL}
         onValueChange={(value) => pushWith({ q: keyword, status: value ?? ALL })}
       >
