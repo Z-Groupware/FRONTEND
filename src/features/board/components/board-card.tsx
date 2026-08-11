@@ -87,14 +87,16 @@ const CARD_SHAPE =
  *
  * ⚠️ 막대에 `rounded-full`을 주지 않는다. 스스로 둥근 알약은 카드와 따로 노는 눈금처럼 보였다 —
  *    **카드가 깎아 주는 곡선**이라야 막대가 카드의 일부로 읽힌다.
- * ⚠️ 그래서 카드 라운드를 크게 잡는다(`20px`). 막대가 6px로 얇아도 깎이는 폭이 넓어 끝이
- *    시원하게 둥글다 — 얇기와 둥근 끝을 **둘 다** 얻는 유일한 조합이다(2026-08-11 확정).
+ * ⚠️ 그래서 카드 라운드를 크게 잡는다(`20px`). 곡선이 크고 막대가 얇을수록(4px) 깎이는 구간이
+ *    길어져, 막대가 **위아래로 갈수록 가늘어지다 곡선 안에서 끝난다** — 직선 구간에 닿기 전에
+ *    사라지므로 끝이 뭉툭하게 잘린 자리가 안 보인다(2026-08-11 확정).
+ * ⚠️ 두껍게 하면(6~8px) 깎이는 구간이 짧아져 끝이 뭉툭해지고, 직선 구간까지 닿는다.
  * ⚠️ 카드에 `overflow-hidden`이 있어야 이 깎임이 생긴다.
  */
 function ColorEdge({ tag }: { tag: string }) {
   return (
     <span
-      className="pointer-events-none absolute inset-y-0 left-0 w-1.5"
+      className="pointer-events-none absolute inset-y-0 left-0 w-1"
       style={{ backgroundColor: pickPaletteColor(tag).solidColor }}
       aria-hidden
     />
