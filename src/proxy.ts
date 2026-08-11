@@ -3,6 +3,7 @@ import { type NextRequest, NextResponse } from "next/server";
 import {
   ACCESS_TOKEN_COOKIE,
   ACCESS_TOKEN_MAX_AGE,
+  isSecureRequest,
   KEEP_SIGNED_IN_COOKIE,
   REFRESH_TOKEN_COOKIE,
   REFRESH_TOKEN_MAX_AGE,
@@ -156,21 +157,24 @@ function withSession(
 
   const response = NextResponse.next({ request });
   const refreshMaxAge = keepSignedIn ? REFRESH_TOKEN_MAX_AGE : undefined;
+  // ⚠️ 재발급한 쿠키도 로그인 때와 **같은 기준**으로 구워야 한다 — 여기만 `secure`가 어긋나면
+  //    갱신 직후에 쿠키가 버려져 30분마다 로그인 화면으로 튕긴다.
+  const isSecure = isSecureRequest(request.headers.get("x-forwarded-proto"));
 
   response.cookies.set(
     ACCESS_TOKEN_COOKIE,
     tokens.accessToken,
-    tokenCookieOptions(ACCESS_TOKEN_MAX_AGE),
+    tokenCookieOptions(ACCESS_TOKEN_MAX_AGE, isSecure),
   );
   response.cookies.set(
     REFRESH_TOKEN_COOKIE,
     tokens.refreshToken,
-    tokenCookieOptions(refreshMaxAge),
+    tokenCookieOptions(refreshMaxAge, isSecure),
   );
   response.cookies.set(
     KEEP_SIGNED_IN_COOKIE,
     keepSignedIn ? "1" : "0",
-    tokenCookieOptions(refreshMaxAge),
+    tokenCookieOptions(refreshMaxAge, isSecure),
   );
 
   return response;

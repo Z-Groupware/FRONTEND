@@ -224,21 +224,40 @@ export interface LoginState {
   error?: string;
   /** 검증은 통과했지만 더 갈 수 없을 때 보여 줄 말 */
   notice?: string;
+  /**
+   * 방금 적은 이메일 — **실패했을 때 되살린다.**
+   *
+   * ⚠️ React 19의 `<form action={서버액션}>`은 액션이 끝나면 **폼을 리셋한다.** 그래서
+   *    비밀번호를 한 번 틀리면 이메일까지 통째로 날아가 처음부터 다시 적어야 했다.
+   * ⚠️ **비밀번호는 안 돌려준다.** 서버가 받은 비밀번호를 화면 상태로 되돌리면 그게 그대로
+   *    RSC 응답에 실려 나간다 — 틀린 값을 지우고 다시 치는 게 맞다.
+   */
+  email?: string;
+  /** 몇 번째 시도인가 — 화면이 입력칸의 `key`를 바꿔 되살리는 데 쓴다 */
+  attempt: number;
 }
 
-export async function loginAction(_prevState: LoginState, formData: FormData): Promise<LoginState> {
+export async function loginAction(prevState: LoginState, formData: FormData): Promise<LoginState> {
   const email = String(formData.get("email") ?? "");
   const password = String(formData.get("password") ?? "");
+
+  /** 실패하면 적어 둔 이메일을 함께 돌려준다 — 되살리는 건 화면이 한다 */
+  const keep = (state: Omit<LoginState, "email" | "attempt">): LoginState => ({
+    ...state,
+    email,
+    attempt: prevState.attempt + 1,
+  });
+
   const errors = validateCredentials({ email, password });
-  if (Object.keys(errors).length > 0) return { errors };
+  if (Object.keys(errors).length > 0) return keep({ errors });
 
   const companyCode = String(formData.get("companyCode") ?? "").trim();
   if (!companyCode) {
     // 1단계에서 확인한 코드가 숨은 칸으로 실려 온다 — 없으면 회사부터 다시 고르게 한다
-    return {
+    return keep({
       errors: {},
       error: "기업 코드를 다시 확인해 주세요. [변경]을 눌러 다시 연결해 주세요.",
-    };
+    });
   }
 
   if (!isMock) {
@@ -251,7 +270,7 @@ export async function loginAction(_prevState: LoginState, formData: FormData): P
         keepSignedIn: formData.get("keepSignedIn") === "on",
       });
     } catch (error) {
-      return { errors: {}, error: toUserMessage(error) };
+      return keep({ errors: {}, error: toUserMessage(error) });
     }
 
     /*
@@ -266,10 +285,10 @@ export async function loginAction(_prevState: LoginState, formData: FormData): P
     목으로 돌 때는 로그인시킬 서버가 없다. 조용히 아무것도 안 하면 사용자는 비밀번호가
     틀린 줄 안다 — 안 되는 건 안 된다고 말한다(§정직성).
   */
-  return {
+  return keep({
     errors: {},
     notice: "목 모드입니다. 실제 로그인은 `NEXT_PUBLIC_USE_MOCK=false`로 켜집니다.",
-  };
+  });
 }
 
 /**
