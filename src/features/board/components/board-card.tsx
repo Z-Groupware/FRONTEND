@@ -31,9 +31,11 @@ function BoardCardBody({ card, isDelayed }: BoardCardProps) {
         ⚠️ **카드 모서리에 붙인다**(`absolute inset-y-0 left-0`). 안쪽에 여백을 두고 세웠더니
            위아래가 뜬 채 **눈금처럼** 보였다 — 모서리까지 닿아야 카드를 세로로 묶는 띠가 된다
            (회의 카드의 위쪽 띠와 같은 결이다). 둥근 모서리는 `overflow-hidden`이 잘라 준다.
+        ⚠️ **얇게 세로로 길게**(3px). 두껍게 하면 모서리 곡선에서 뭉툭한 덩이로 보여 띠가 아니라
+           색칠한 면이 된다 — 가늘고 위아래로 곧게 뻗어야 줄로 읽힌다.
       */}
       <span
-        className="absolute inset-y-0 left-0 w-1.5"
+        className="absolute inset-y-0 left-0 w-[3px]"
         style={{ backgroundColor: pickPaletteColor(card.tagLabel).solidColor }}
         aria-hidden
       />
@@ -75,7 +77,7 @@ function BoardCardBody({ card, isDelayed }: BoardCardProps) {
  *    이건 칸 안에 줄지어 서는 작은 카드라 한 단계 작다(검색 화면과 같은 규칙).
  */
 const CARD_SHAPE =
-  "border-border bg-card relative flex overflow-hidden rounded-xl border py-3.5 pr-4 pl-5";
+  "border-border bg-card relative flex overflow-hidden rounded-xl border py-4 pr-4 pl-[18px]";
 
 /**
  * 보드 카드 한 장 — 드래그 핸들은 카드 전체(클릭해서 상세로 이동하는 화면이 아니라 옮기는 화면).
