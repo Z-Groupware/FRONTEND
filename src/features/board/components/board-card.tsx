@@ -79,25 +79,32 @@ function BoardCardBody({ card, isDelayed }: BoardCardProps) {
  * ⚠️ 세로 여백을 넉넉히 준다(`py-6`). **띠 길이는 결국 카드 높이다** — 띠만 손봐서는 길어지지
  *    않는다. 두 줄 사이 간격도 함께 벌려 늘어난 높이가 한쪽 여백에만 쏠리지 않게 한다.
  */
-const CARD_SHAPE =
-  "border-border bg-card relative flex overflow-hidden rounded-[20px] border py-6 pr-4 pl-4";
+const CARD_SHAPE = "border-border bg-card relative flex rounded-[20px] border py-6 pr-4 pl-4";
+
+/** 카드 모서리 반지름(px) — 색 테두리가 곡선을 어디까지 타는지도 이 값으로 정한다 */
+const CARD_RADIUS = 20;
 
 /**
- * 왼쪽 색 막대 — 카드 높이를 꽉 채우고, **큰 모서리 곡선에 깎여 끝이 둥글게 마무리된다.**
+ * 왼쪽 색 테두리 — 왼쪽 변을 따라 내려오다 **위·아래 곡선을 끝까지 타고, 직선이 시작되는
+ * 자리에서 정확히 끝난다.**
  *
- * ⚠️ 막대에 `rounded-full`을 주지 않는다. 스스로 둥근 알약은 카드와 따로 노는 눈금처럼 보였다 —
- *    **카드가 깎아 주는 곡선**이라야 막대가 카드의 일부로 읽힌다.
- * ⚠️ 그래서 카드 라운드를 크게 잡는다(`20px`). 곡선이 크고 막대가 얇을수록(4px) 깎이는 구간이
- *    길어져, 막대가 **위아래로 갈수록 가늘어지다 곡선 안에서 끝난다** — 직선 구간에 닿기 전에
- *    사라지므로 끝이 뭉툭하게 잘린 자리가 안 보인다(2026-08-11 확정).
- * ⚠️ 두껍게 하면(6~8px) 깎이는 구간이 짧아져 끝이 뭉툭해지고, 직선 구간까지 닿는다.
- * ⚠️ 카드에 `overflow-hidden`이 있어야 이 깎임이 생긴다.
+ * ⚠️ 세로 막대로는 이게 안 된다. 곧은 막대를 카드가 깎으면 곡선의 **절반쯤에서 멈춘다** —
+ *    폭 4px짜리 막대는 곡선이 x=4에 닿는 높이까지만 살아남기 때문이다(반지름 20이면 위에서
+ *    8px 지점). 곡선을 끝까지 타려면 막대가 아니라 **곡선을 따라 도는 선**이어야 한다.
+ * ⚠️ 그래서 카드와 똑같은 둥근 테두리를 한 겹 더 얹고, 왼쪽 `CARD_RADIUS`만큼만 남기게
+ *    잘라낸다(`clip-path`). 자르는 폭이 반지름과 같으므로 색은 곡선이 끝나는 바로 그 자리,
+ *    직선이 시작되기 직전에 끝난다(2026-08-11 확정).
+ * ⚠️ `-inset-px`로 한 픽셀 밖에 그린다. 같은 자리에 겹치면 회색 테두리가 비쳐 색이 탁해진다.
  */
 function ColorEdge({ tag }: { tag: string }) {
   return (
     <span
-      className="pointer-events-none absolute inset-y-0 left-0 w-1"
-      style={{ backgroundColor: pickPaletteColor(tag).solidColor }}
+      className="pointer-events-none absolute -inset-px border-4"
+      style={{
+        borderColor: pickPaletteColor(tag).solidColor,
+        borderRadius: CARD_RADIUS + 1,
+        clipPath: `inset(0 calc(100% - ${CARD_RADIUS}px) 0 0)`,
+      }}
       aria-hidden
     />
   );
