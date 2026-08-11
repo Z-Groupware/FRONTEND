@@ -73,11 +73,14 @@ function BoardCardBody({ card, isDelayed }: BoardCardProps) {
 /**
  * 카드 겉모양 — 실제 카드와 사본이 같은 값을 쓴다.
  *
- * ⚠️ 라운드는 `rounded-xl`(14px)이다. `2xl`(18px)은 화면을 나누는 **큰 카드**의 값이고,
- *    이건 칸 안에 줄지어 서는 작은 카드라 한 단계 작다(검색 화면과 같은 규칙).
+ * ⚠️ 라운드는 `rounded-lg`(10px)다. 한 단계 위(`xl` 14px)로 뒀더니 **모서리 곡선이 왼쪽 띠의
+ *    위아래를 14px씩 먹어** 띠가 잘린 것처럼 보였다 — 곡선을 줄이면 띠의 곧은 구간이 그만큼
+ *    길어진다. 칸 안에 줄지어 서는 작은 카드라 원래도 큰 카드(`2xl` 18px)보다 작아야 한다.
+ * ⚠️ 세로 여백도 함께 키운다(`py-[18px]`). 띠 길이는 결국 카드 높이라, 곡선만 줄여서는
+ *    한계가 있다.
  */
 const CARD_SHAPE =
-  "border-border bg-card relative flex overflow-hidden rounded-xl border py-4 pr-4 pl-[18px]";
+  "border-border bg-card relative flex overflow-hidden rounded-lg border py-[18px] pr-4 pl-[18px]";
 
 /**
  * 보드 카드 한 장 — 드래그 핸들은 카드 전체(클릭해서 상세로 이동하는 화면이 아니라 옮기는 화면).
