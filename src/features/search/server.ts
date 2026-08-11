@@ -1,8 +1,13 @@
 import "server-only";
 
+import { requireAccessToken } from "@/features/auth/session";
+import { serverApi } from "@/lib/api";
+import { ep } from "@/lib/endpoints";
 import { isMock } from "@/mocks/config";
 
 import { categoryOf, textIncludes } from "./lib";
+import type { BeSearchOverview } from "./mapper";
+import { toPersonBrowseItem, toProjectBrowseItem, toRecentViewItems } from "./mapper";
 import {
   SEARCH_MOCK_ACTIONS,
   SEARCH_MOCK_MEETINGS,
@@ -45,8 +50,19 @@ export async function getSearchHome(): Promise<SearchHome> {
     };
   }
 
-  // ⚠️ 미구현 — API 스펙 확정 후 검색 랜딩 경로로 fetch하고 매퍼로 UI 계약에 맞춘다.
-  throw new Error("검색 랜딩 API가 아직 연결되지 않았습니다.");
+  /*
+    [스펙 전달, BE 실코드 미대조] `GET /api/v1/search/overview` — 최근 검색어·최근 본 항목·
+    둘러보기용 프로젝트·사람 목록을 한 번에 준다. 회사·사람은 토큰 기준으로 서버가 정한다.
+  */
+  const accessToken = await requireAccessToken();
+  const overview = await serverApi<BeSearchOverview>(ep.searchOverview(), { accessToken });
+
+  return {
+    recentSearches: overview.recentQueries,
+    recentlyViewed: toRecentViewItems(overview.recentItems),
+    projects: overview.projects.map(toProjectBrowseItem),
+    people: overview.people.map(toPersonBrowseItem),
+  };
 }
 
 /**

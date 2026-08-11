@@ -124,6 +124,15 @@ export const ep = {
   notices: () => "/api/notices",
   subscription: () => "/api/subscription",
 
+  /**
+   * 검색 — API 스펙 전달받음(2026-08-11), **BE 실코드 미대조**(§연동 검증: 문서와 코드가
+   * 다르면 코드가 맞다 — 구현 붙일 때 컨트롤러로 재확인한다).
+   */
+  searchOverview: () => "/api/v1/search/overview",
+  search: () => "/api/v1/search",
+  searchRecentQueries: () => "/api/v1/search/recent-queries",
+  searchRecentViews: () => "/api/v1/search/recent-views",
+
   /* 시스템 운영자 */
   systemDashboard: () => "/api/system/dashboard",
 } as const;

@@ -1,23 +1,21 @@
 import Link from "next/link";
 
-import { ProjectTag } from "@/components/common/project-tag";
-import { formatDate } from "@/lib/date";
 import { pickPaletteColor } from "@/lib/palette";
 
-import type { SearchResultItem } from "../types";
+import type { SearchRecentViewItem } from "../types";
 import { KindBadge } from "./kind-badge";
 import { SearchSection } from "./search-section";
 
 interface RecentlyViewedGridProps {
-  items: SearchResultItem[];
+  items: SearchRecentViewItem[];
 }
 
 /**
  * 최근 본 항목 — 2열 카드. 순수 표시(+ 프로젝트만 이동)라 서버에서 그린다.
  *
- * ⚠️ **프로젝트만 링크다.** 회의·액션·사람 상세는 이 검색 목이 별도로 부여한 값이라
- *    실제 회의·액션 상세 화면의 id 체계와 안 이어져 있다 — 안 되는 이동을 만드느니
- *    지금은 정보만 보여준다(§명세에 없는 기능은 안 만든다). 연동되면 실제 id로 이어 붙인다.
+ * ⚠️ **프로젝트만 링크다.** 회의·액션·사람 상세 화면 경로가 아직 이 목의 id 체계로
+ *    안 정해져 있다 — 안 되는 이동을 만드느니 지금은 정보만 보여준다
+ *    (§명세에 없는 기능은 안 만든다). 정해지면 실제 경로로 이어 붙인다.
  */
 export function RecentlyViewedGrid({ items }: RecentlyViewedGridProps) {
   if (items.length === 0) return null;
@@ -42,95 +40,43 @@ export function RecentlyViewedGrid({ items }: RecentlyViewedGridProps) {
   );
 }
 
-/**
- * 보조값을 **둘로 가른다** — 왼쪽은 사람·프로젝트 같은 '누구/무엇', 오른쪽은 날짜·개수 같은 '언제/얼마'.
- *
- * ⚠️ 전에는 `A · B` 한 문장이라 통째로 오른쪽 끝에 붙었고, 제목이 짧은 줄은 **가운데가
- *    400px 넘게 비었다** — 눈이 그 사이를 건너뛰어야 했다.
- * ⚠️ 갈라서 각자 열에 세우면 줄 전체로 퍼지면서도 **열마다 축이 선다**(DESIGN §3).
- */
-function metaParts(item: SearchResultItem): { lead: string; trail: string } {
-  switch (item.kind) {
-    case "MEETING":
-      return { lead: item.projectName, trail: formatDate(item.meetingDate) };
-    case "ACTION":
-      return { lead: item.assigneeName, trail: `마감 ${formatDate(item.dueDate)}` };
-    case "PROJECT":
-      return { lead: `회의 ${item.meetingCount}건`, trail: `액션 ${item.actionCount}건` };
-    case "PERSON":
-      return { lead: item.team ?? "소속 없음", trail: "" };
-  }
-}
-
-function title(item: SearchResultItem): string {
-  switch (item.kind) {
-    case "MEETING":
-    case "ACTION":
-      return item.title;
-    case "PROJECT":
-    case "PERSON":
-      return item.name;
-  }
-}
-
 interface RecentlyViewedCardProps {
-  item: SearchResultItem;
+  item: SearchRecentViewItem;
 }
 
 function RecentlyViewedCard({ item }: RecentlyViewedCardProps) {
   /*
-    ⚠️ **프로젝트도 자기 태그와 색이 있다.** 전에는 "제목이 곧 프로젝트"라며 뺐는데, 그러면
-       그 줄만 막대·칩 자리가 비어 **혼자 텅 빈 것처럼** 보였다 — 태그(`GOODS`)는 짧은
-       코드고 제목은 긴 이름이라 서로 대신하지 못한다.
+    ⚠️ **이 API는 프로젝트 태그를 안 준다**(`GET /search/overview`의 `recentItems`는
+       `{ type, id, title, meta }`뿐). 태그별 색 대신 `search-result-row.tsx`의 사람 항목과
+       같은 규칙 — **자기 id로 고른 색**을 막대에 쓴다(`use-profile-avatar`와 같은 키 규칙).
   */
-  const tag =
-    item.kind === "MEETING" || item.kind === "ACTION"
-      ? item.projectTag
-      : item.kind === "PROJECT"
-        ? item.tag
-        : null;
-  const parts = metaParts(item);
-
   const inner = (
     <>
-      {/*
-        ⚠️ **왼쪽에 프로젝트 색 막대를 세운다.** 한 줄짜리 행이 넷 쌓이니 전부 같은 무게로
-           읽혀 눈에 안 걸렸다 — 색 한 줄이 행마다 다른 표식이 되어 훑을 때 걸린다
-           (대시보드 회의 줄이 쓰는 것과 같은 방식).
-        ⚠️ **프로젝트 항목에도 선다.** 태그가 곧 제목이라 칩은 안 붙지만(아래 자리는 비운다)
-           막대는 그 프로젝트 색이다 — 여기만 비우면 넷 중 하나에 표식이 없어 오히려 튄다.
-      */}
       <span
         /* ⚠️ `h-full`은 부모 높이가 auto라 0이 된다 — 늘어나야 하므로 `self-stretch`다 */
         className="w-1 shrink-0 self-stretch rounded-full"
-        style={{ backgroundColor: tag ? pickPaletteColor(tag).solidColor : "transparent" }}
+        style={{ backgroundColor: pickPaletteColor(String(item.id)).solidColor }}
         aria-hidden
       />
       <KindBadge kind={item.kind} />
-      {/*
-        ⚠️ **태그 자리를 고정한다.** 프로젝트 항목엔 태그가 없어서, 자리를 안 잡아 두면
-           그 줄만 제목이 앞으로 당겨져 오와 열이 어긋난다.
-      */}
-      <span className="flex w-[76px] shrink-0 items-center">{tag && <ProjectTag tag={tag} />}</span>
       {/*
         ⚠️ **줄어들 수 있어야 말줄임이 듣는다**(2026-08-10 리뷰). `shrink-0 truncate`는 서로
            어긋나는 조합이라 — 못 줄이는 상자에는 넘칠 일이 없으니 `truncate`가 아무 일도
            안 한다 — 긴 제목이 그대로 카드를 밀고 나갔다. 줄어드는 쪽은 제목이다.
       */}
       <span className="text-foreground min-w-0 truncate text-[13px] leading-5 font-semibold">
-        {title(item)}
+        {item.title}
       </span>
       {/*
         ⚠️ **제목 뒤에 이어 붙인다.** 오른쪽 끝에 고정 열로 세워 봤더니 제목과 너무 멀어
            한 줄인데 두 덩이로 읽혔다 — 눈이 가운데 빈 자리를 건너뛰어야 했다.
-           검색 결과는 "무엇 · 어디 · 언제"가 한 문장처럼 이어져야 읽힌다.
-        ⚠️ 그래서 제목도 `flex-1`이 아니다. 늘어나면 다시 벌어진다.
+        ⚠️ `meta`는 BE가 이미 조합해 내려준 한 줄이다 — 여기서 더 쪼개지 않는다.
       */}
-      <span className="text-muted-foreground min-w-0 truncate text-[12px] leading-4">
-        {parts.lead}
-        {parts.trail && <span className="px-1.5 opacity-50">·</span>}
-        {parts.trail}
-      </span>
+      {item.meta && (
+        <span className="text-muted-foreground min-w-0 truncate text-[12px] leading-4">
+          {item.meta}
+        </span>
+      )}
     </>
   );
 

@@ -8,15 +8,14 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
 
 import { recordSearchAction } from "../actions";
-import type { RecentSearchEntry } from "../types";
 
 /** 적기를 멈춘 뒤 이만큼 지나면 보낸다 — 짧으면 요청이 줄줄이 나가고 길면 굼떠 보인다 */
 const SEARCH_DEBOUNCE_MS = 300;
 
 interface SearchInputProps {
   keyword: string;
-  /** 입력을 눌렀을 때 아래로 펼칠 최근 검색어 */
-  recentSearches?: RecentSearchEntry[];
+  /** 입력을 눌렀을 때 아래로 펼칠 최근 검색어 — 최신순 */
+  recentSearches?: string[];
 }
 
 /**
@@ -148,17 +147,17 @@ export function SearchInput({ keyword, recentSearches = [] }: SearchInputProps) 
           <li className="text-muted-foreground/70 px-4 pt-1 pb-1.5 text-[11px] leading-4">
             최근 검색어
           </li>
-          {recentSearches.map((entry) => (
-            <li key={entry.keyword}>
+          {recentSearches.map((keyword) => (
+            <li key={keyword}>
               <Link
-                href={`/app/search?q=${encodeURIComponent(entry.keyword)}`}
+                href={`/app/search?q=${encodeURIComponent(keyword)}`}
                 /* ⚠️ 마우스 다운이 포커스를 빼앗아 목록이 먼저 닫히는 것을 막는다 */
                 onMouseDown={(event) => event.preventDefault()}
                 onClick={() => setIsOpen(false)}
                 className="hover:bg-foreground/5 focus-visible:bg-foreground/5 flex items-center gap-2.5 px-4 py-2 text-[13px] leading-5 outline-hidden"
               >
                 <Clock className="text-muted-foreground/70 size-3.5 shrink-0" aria-hidden />
-                <span className="truncate">{entry.keyword}</span>
+                <span className="truncate">{keyword}</span>
               </Link>
             </li>
           ))}
