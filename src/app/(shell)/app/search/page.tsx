@@ -13,9 +13,6 @@ export const metadata: Metadata = {
   title: "검색",
 };
 
-// 미연동 상태에선 server.ts가 throw한다 — 정적 프리렌더로 굳히면 build 자체가 죽는다.
-export const dynamic = "force-dynamic";
-
 interface SearchPageProps {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }

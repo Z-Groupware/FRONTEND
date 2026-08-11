@@ -10,9 +10,6 @@ export const metadata: Metadata = {
   title: "회의실 관리",
 };
 
-// 미연동 상태에선 server.ts가 throw한다 — 정적 프리렌더로 굳히면 build 자체가 죽는다.
-export const dynamic = "force-dynamic";
-
 /**
  * 회의실 관리(`/manage/rooms`, is_admin 전용, WORKFLOW.md §10-A) — 목록 + 추가/수정 모달.
  * 예약 승인 절차가 없다 — 저장 즉시 `/app/rooms` 예약 모달의 회의실 select에 나타난다.

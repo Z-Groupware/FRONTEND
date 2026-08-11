@@ -7,10 +7,6 @@ export const metadata: Metadata = {
   title: "구성원",
 };
 
-// ⚠️ getPeopleDirectory()가 member 도메인의 listManagedMembers()를 부르는데, 그 함수는
-// 실서버에선 throw한다(전체 조회 금지, §목록·페이지네이션) — 정적 프리렌더로 굳히면 build가 죽는다.
-export const dynamic = "force-dynamic";
-
 /** 주소에서 온 검색어를 한 줄로 맞춘다 — 여러 번 왔으면 **첫 값**만 쓴다 */
 function toKeyword(value: string | string[] | undefined): string {
   if (Array.isArray(value)) return value[0] ?? "";

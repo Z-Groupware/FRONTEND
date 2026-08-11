@@ -9,10 +9,6 @@ export const metadata: Metadata = {
   title: "인수인계서 관리",
 };
 
-// ⚠️ listTeamHandovers()가 member 도메인의 listManagedMembers()를 잘못 호출 중이라(근본원인은
-// 별도 이슈) 실서버에선 throw한다 — 정적 프리렌더로 굳히면 build 자체가 죽는다.
-export const dynamic = "force-dynamic";
-
 /**
  * 팀원(신청자) 인수인계서 목록 — 팀장 중간 승인을 기다리는 신청만 보인다
  * (WORKFLOW.md §7). 이미 중간 승인된 건은 오너의 최종 승인 대기로 넘어가 여기서 할 일이 없다.

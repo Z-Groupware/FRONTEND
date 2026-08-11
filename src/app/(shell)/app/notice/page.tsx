@@ -10,9 +10,6 @@ export const metadata: Metadata = {
   title: "공지",
 };
 
-// 미연동 상태에선 server.ts가 throw한다 — 정적 프리렌더로 굳히면 build 자체가 죽는다.
-export const dynamic = "force-dynamic";
-
 export default async function AppNoticePage() {
   const notices = await getNotices();
   // 작성 권한이 있을 때만 "새 공지"를 보인다 — 서버 재검사는 createNoticeAction이 다시 한다(§권한).
