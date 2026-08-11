@@ -111,7 +111,7 @@ export function SubscriptionTable({ subscriptions, action }: SubscriptionTablePr
   if (subscriptions.length === 0) {
     return (
       <div className="border-border bg-card flex items-center justify-center rounded-2xl border p-10 text-center">
-        <p className="text-muted-foreground text-sm">구독 중인 기업이 없습니다</p>
+        <p className="text-muted-foreground text-[13px] leading-5">구독 중인 기업이 없습니다</p>
       </div>
     );
   }

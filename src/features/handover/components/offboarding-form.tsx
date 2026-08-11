@@ -80,9 +80,9 @@ export function OffboardingForm({ context }: OffboardingFormProps) {
           onChange={(event) => setDescription(event.target.value.slice(0, DESCRIPTION_MAX_LENGTH))}
           placeholder="담당했던 업무, 진행 맥락, 인수받을 사람이 알아야 할 사항을 작성해 주세요. PDF에도 함께 포함됩니다."
           maxLength={DESCRIPTION_MAX_LENGTH}
-          className="border-input placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 w-full resize-none rounded-lg border bg-transparent px-2.5 py-2 text-sm transition-colors outline-none focus-visible:ring-3"
+          className="border-input placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 w-full resize-none rounded-lg border bg-transparent px-2.5 py-2 text-[13px] leading-5 transition-colors outline-none focus-visible:ring-3"
         />
-        <p className="text-muted-foreground text-right text-xs tabular-nums">
+        <p className="text-muted-foreground text-right text-[12px] leading-4 tabular-nums">
           {description.length}/{DESCRIPTION_MAX_LENGTH}
         </p>
       </section>

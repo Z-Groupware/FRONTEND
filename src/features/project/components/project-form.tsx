@@ -127,7 +127,7 @@ export function ProjectForm({ action, teamOptions, cancelHref }: ProjectFormProp
             className="font-mono"
             aria-invalid={Boolean(state.errors.tag)}
           />
-          <p className="text-muted-foreground text-xs">
+          <p className="text-muted-foreground text-[12px] leading-4">
             영문 대문자만, 최대 {PROJECT_TAG_MAX_LENGTH}자
           </p>
           <FieldError message={state.errors.tag} />
@@ -149,9 +149,9 @@ export function ProjectForm({ action, teamOptions, cancelHref }: ProjectFormProp
           placeholder="예: 아티스트 공식 굿즈를 판매하는 온라인 커머스 웹을 신규 구축합니다."
           maxLength={PROJECT_DESCRIPTION_MAX_LENGTH}
           aria-invalid={Boolean(state.errors.description)}
-          className="border-input placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:border-destructive dark:bg-input/30 w-full resize-none rounded-lg border bg-transparent px-2.5 py-2 text-sm transition-colors outline-none focus-visible:ring-3"
+          className="border-input placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:border-destructive dark:bg-input/30 w-full resize-none rounded-lg border bg-transparent px-2.5 py-2 text-[13px] leading-5 transition-colors outline-none focus-visible:ring-3"
         />
-        <p className="text-muted-foreground text-right text-xs tabular-nums">
+        <p className="text-muted-foreground text-right text-[12px] leading-4 tabular-nums">
           {description.length}/{PROJECT_DESCRIPTION_MAX_LENGTH}
         </p>
         <FieldError message={state.errors.description} />
@@ -337,7 +337,7 @@ export function ProjectForm({ action, teamOptions, cancelHref }: ProjectFormProp
             {attachmentName ?? "파일 첨부 (선택)"}
           </Button>
           {attachmentName && <input type="hidden" name="attachmentName" value={attachmentName} />}
-          <p className="text-muted-foreground text-xs">
+          <p className="text-muted-foreground text-[12px] leading-4">
             프로젝트 기획서 등 참고 문서가 있다면 첨부해주세요.
           </p>
         </div>

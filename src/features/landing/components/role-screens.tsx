@@ -55,7 +55,7 @@ export function RoleScreen({ name }: { name: RoleName }) {
             <span className="text-muted-foreground/80 text-[9px] leading-[13px]">
               {mock.progress.label}
             </span>
-            <span className="text-[10px] leading-[14px] font-medium tabular-nums">
+            <span className="text-[11px] leading-[14px] font-medium tabular-nums">
               {mock.progress.value}
             </span>
           </div>
@@ -70,8 +70,8 @@ export function RoleScreen({ name }: { name: RoleName }) {
 
         {/* 지금 손대야 하는 것 하나 — 역할 색은 여기서만 쓴다(실제 사용량 카드의 안내 띠와 같다) */}
         <div className={cn("mt-3 rounded-lg px-3 py-2", mock.surface)}>
-          <p className="text-[10px] leading-[14px] font-semibold">{mock.banner.title}</p>
-          <p className="text-foreground/80 truncate pt-0.5 text-[10px] leading-[14px]">
+          <p className="text-[11px] leading-[14px] font-semibold">{mock.banner.title}</p>
+          <p className="text-foreground/80 truncate pt-0.5 text-[11px] leading-[14px]">
             {mock.banner.detail}
           </p>
         </div>
@@ -122,7 +122,7 @@ export function RoleScreen({ name }: { name: RoleName }) {
 function Card({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className="border-border bg-popover animate-in fade-in-0 slide-in-from-bottom-1 fill-mode-both rounded-xl border p-3 duration-500">
-      <h3 className="flex items-center gap-1.5 pb-2 text-[10px] leading-[14px] font-semibold">
+      <h3 className="flex items-center gap-1.5 pb-2 text-[11px] leading-[14px] font-semibold">
         <span className="bg-foreground size-[5px] rounded-full" aria-hidden />
         {title}
       </h3>

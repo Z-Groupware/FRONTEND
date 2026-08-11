@@ -30,14 +30,14 @@ export default async function MeetingReviewPage({ params }: MeetingReviewPagePro
            *    임시로 안내만 보여준다. 그 라우트가 들어오면 `redirect()`로 바꾼다.
            */
           <section className="border-border bg-card rounded-2xl border px-7 py-10 text-center">
-            <p className="text-[15px] leading-6 font-medium">이미 액션 분배를 확정한 회의입니다.</p>
+            <p className="text-[13px] leading-5 font-medium">이미 액션 분배를 확정한 회의입니다.</p>
             <p className="text-muted-foreground mt-1 text-[13px] leading-5">
               이 화면은 다시 열 수 없습니다.
             </p>
           </section>
         ) : (
           <section className="border-border bg-card rounded-2xl border px-7 py-10 text-center">
-            <p className="text-[15px] leading-6 font-medium">Host만 열 수 있는 화면입니다.</p>
+            <p className="text-[13px] leading-5 font-medium">Host만 열 수 있는 화면입니다.</p>
             <p className="text-muted-foreground mt-1 text-[13px] leading-5">
               이 회의를 개설한 사람만 액션 분배를 검토할 수 있습니다.
             </p>

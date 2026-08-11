@@ -122,7 +122,7 @@ export function MemberGradeCard({
 
   return (
     <section className="border-border bg-card overflow-hidden rounded-2xl border">
-      <h2 className="flex items-center gap-2 px-7 pt-6 pb-3 text-[15px] leading-6 font-semibold tracking-[-0.2px]">
+      <h2 className="px-7 pt-6 pb-3 text-[17px] leading-7 font-semibold tracking-[-0.3px]">
         직급·권한 변경
       </h2>
       <p className="text-muted-foreground px-7 pb-5 text-[12px] leading-[18px] break-keep">
@@ -264,7 +264,7 @@ export function MemberGradeCard({
                   <PopoverTrigger
                     type="button"
                     aria-label="관리자 권한이 무엇인지 보기"
-                    className="border-border text-muted-foreground hover:text-foreground hover:border-foreground/40 focus-visible:ring-ring flex size-4 shrink-0 items-center justify-center rounded-full border text-[10px] leading-none transition-colors focus-visible:ring-2 focus-visible:outline-hidden"
+                    className="border-border text-muted-foreground hover:text-foreground hover:border-foreground/40 focus-visible:ring-ring flex size-4 shrink-0 items-center justify-center rounded-full border text-[11px] leading-none transition-colors focus-visible:ring-2 focus-visible:outline-hidden"
                   >
                     ?
                   </PopoverTrigger>

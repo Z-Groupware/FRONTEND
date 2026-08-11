@@ -45,7 +45,7 @@ function BoardCardBody({ card, isDelayed }: BoardCardProps) {
         ⚠️ **제목이 먼저다.** 칩·제목·날짜를 세 층으로 쌓아 두니 카드가 필요 이상으로 길고,
            셋 다 왼쪽 끝에 붙어 오른쪽이 통째로 비었다 — 카드에서 읽는 건 **무슨 일인가**이고
            태그·마감은 그 곁 정보다.
-        ⚠️ 글자는 다섯 크기다(DESIGN §4). `text-sm`(14px)·`text-xs`(12px)는 규격 밖이라
+        ⚠️ 글자는 다섯 크기다(DESIGN §4). `text-[13px]`(14px)·`text-[12px] leading-4`(12px)는 규격 밖이라
            13px·12px로 맞춘다.
       */}
         <p className="text-foreground text-[13px] leading-5 font-medium break-keep">{card.title}</p>

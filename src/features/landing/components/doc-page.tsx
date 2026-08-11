@@ -77,7 +77,7 @@ export function DocPage({
             </div>
             <Link
               href="/plans"
-              className="border-border bg-secondary hover:bg-accent focus-visible:ring-ring flex h-11 shrink-0 items-center gap-1.5 rounded-lg border px-5 text-[14px] leading-5 font-medium transition-colors focus-visible:ring-2 focus-visible:outline-hidden"
+              className="border-border bg-secondary hover:bg-accent focus-visible:ring-ring flex h-11 shrink-0 items-center gap-1.5 rounded-lg border px-5 text-[13px] leading-5 font-medium transition-colors focus-visible:ring-2 focus-visible:outline-hidden"
             >
               요금제 보기
               <ArrowRight className="size-4" aria-hidden />
@@ -140,7 +140,7 @@ export function DocSection({
         )}
         <span>{title}</span>
       </h2>
-      <div className="text-muted-foreground relative flex flex-col gap-3 pt-3 pl-[15px] text-[14px] leading-[24px] break-keep">
+      <div className="text-muted-foreground relative flex flex-col gap-3 pt-3 pl-[15px] text-[13px] leading-[24px] break-keep">
         {children}
       </div>
     </section>

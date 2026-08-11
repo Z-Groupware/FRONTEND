@@ -35,7 +35,7 @@ export function AuthPreview() {
         <span className="flex size-[21px] items-center justify-center rounded bg-white/10">
           <ZLogo className="size-3 text-white/85" />
         </span>
-        <span className="flex gap-2 text-[10px] leading-4 text-white/45">
+        <span className="flex gap-2 text-[11px] leading-4 text-white/45">
           {["회의", "프로젝트", "액션", "보드"].map((tab) => (
             <span key={tab}>{tab}</span>
           ))}

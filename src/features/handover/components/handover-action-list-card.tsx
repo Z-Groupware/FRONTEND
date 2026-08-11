@@ -31,9 +31,7 @@ export function HandoverActionListCard({
   return (
     <section className="border-border bg-card overflow-hidden rounded-2xl border">
       <div className="flex items-baseline justify-between gap-3 px-7 pt-6 pb-3">
-        <h2 className="flex items-center gap-2 text-[15px] leading-6 font-semibold tracking-[-0.2px]">
-          내 담당 액션
-        </h2>
+        <h2 className="text-[17px] leading-7 font-semibold tracking-[-0.3px]">내 담당 액션</h2>
         <p className="text-muted-foreground text-[12px] leading-4 tabular-nums">
           {selectedIds.size}/{actions.length}건 선택
         </p>
@@ -62,7 +60,7 @@ export function HandoverActionListCard({
                   aria-label={`${action.title} 인수인계 대상 선택`}
                 />
                 <span
-                  className="w-fit shrink-0 rounded px-1.5 py-0.5 font-mono text-[10px] font-semibold"
+                  className="w-fit shrink-0 rounded px-1.5 py-0.5 font-mono text-[11px] font-semibold"
                   style={{ backgroundColor: tagColor.bgColor, color: tagColor.textColor }}
                 >
                   {action.projectTag}
@@ -74,7 +72,7 @@ export function HandoverActionListCard({
                   {action.title}
                 </span>
                 {highlightedIds?.has(action.id) && (
-                  <span className="border-border text-muted-foreground shrink-0 rounded border px-1.5 py-0.5 text-[10px] leading-4">
+                  <span className="border-border text-muted-foreground shrink-0 rounded border px-1.5 py-0.5 text-[11px] leading-4">
                     기간 중 마감
                   </span>
                 )}

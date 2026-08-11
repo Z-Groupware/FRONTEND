@@ -49,9 +49,7 @@ export function StorageSummary({ totals, freeableGb, deletableCount }: StorageSu
 
   return (
     <section className="border-border bg-card rounded-2xl border p-7">
-      <h2 className="flex items-center gap-2 text-[17px] leading-7 font-semibold tracking-[-0.3px]">
-        전체 용량
-      </h2>
+      <h2 className="text-[17px] leading-7 font-semibold tracking-[-0.3px]">전체 용량</h2>
 
       {/*
         ⚠️ **가로 막대 하나로 그린다.** 링을 써 봤는데 이 화면에는 안 맞았다 —
@@ -68,7 +66,7 @@ export function StorageSummary({ totals, freeableGb, deletableCount }: StorageSu
             <span className="text-[32px] leading-10 font-semibold tracking-[-0.9px]">
               {formatGb(totals.usedGb)}
             </span>
-            <span className="text-muted-foreground text-[15px] leading-6">
+            <span className="text-muted-foreground text-[13px] leading-5">
               / {formatGb(totals.includedGb)}
             </span>
           </p>
@@ -166,7 +164,7 @@ export function StorageSummary({ totals, freeableGb, deletableCount }: StorageSu
           */}
           <div className="border-border ml-auto flex items-baseline gap-2 border-l pl-7">
             <dt className="text-muted-foreground text-[13px] leading-5">삭제 가능</dt>
-            <dd className="text-[15px] leading-6 font-semibold tabular-nums">
+            <dd className="text-[13px] leading-5 font-semibold tabular-nums">
               {formatGb(freeableGb)}
             </dd>
             <dd className="text-muted-foreground text-[12px] leading-4">

@@ -19,7 +19,7 @@ export function ActionReviewGroup({ confidence, count, children }: ActionReviewG
   return (
     <section className="border-border bg-card rounded-2xl border">
       <div className="flex items-baseline justify-between gap-3 px-7 pt-6 pb-3">
-        <h2 className="flex items-center gap-2 text-[17px] leading-7 font-semibold tracking-[-0.3px]">
+        <h2 className="text-[17px] leading-7 font-semibold tracking-[-0.3px]">
           <Icon className="text-foreground size-4" aria-hidden />
           {AI_CONFIDENCE_LABEL[confidence]}
         </h2>

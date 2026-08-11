@@ -59,7 +59,7 @@ export default async function AppMePage({ searchParams }: AppMePageProps) {
                 href={t.tab === "info" ? "/app/me" : `/app/me?tab=${t.tab}`}
                 aria-current={activeTab === t.tab ? "page" : undefined}
                 className={cn(
-                  "-mb-px border-b-2 px-1 pb-2 text-sm font-medium transition-colors",
+                  "-mb-px border-b-2 px-1 pb-2 text-[13px] leading-5 font-medium transition-colors",
                   activeTab === t.tab
                     ? "border-foreground text-foreground"
                     : "text-muted-foreground hover:text-foreground border-transparent",

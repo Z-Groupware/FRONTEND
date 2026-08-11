@@ -14,10 +14,16 @@ export function RoomListPanel({ rooms }: RoomListPanelProps) {
     <aside className="border-border bg-card flex w-full shrink-0 flex-col overflow-hidden rounded-2xl border lg:h-full lg:w-[280px] lg:max-w-[280px]">
       <div className="flex items-center justify-between gap-3 px-5 py-4">
         <div>
-          <h2 className="text-foreground text-base font-semibold">회의실 목록</h2>
-          <p className="text-muted-foreground mt-0.5 text-xs">예약 가능 시간을 확인하세요.</p>
+          <h2 className="text-foreground text-[17px] leading-7 font-semibold tracking-[-0.3px]">
+            회의실 목록
+          </h2>
+          <p className="text-muted-foreground mt-0.5 text-[12px] leading-4">
+            예약 가능 시간을 확인하세요.
+          </p>
         </div>
-        <span className="text-muted-foreground shrink-0 text-xs">{rooms.length}개</span>
+        <span className="text-muted-foreground shrink-0 text-[12px] leading-4">
+          {rooms.length}개
+        </span>
       </div>
 
       <ul className="min-h-0 flex-1 overflow-y-auto">
@@ -26,8 +32,8 @@ export function RoomListPanel({ rooms }: RoomListPanelProps) {
             key={room.id}
             className="border-border flex items-center justify-between border-t px-5 py-3"
           >
-            <span className="text-foreground text-sm">{room.name}</span>
-            <span className="text-muted-foreground text-xs tabular-nums">
+            <span className="text-foreground text-[13px] leading-5">{room.name}</span>
+            <span className="text-muted-foreground text-[12px] leading-4 tabular-nums">
               {room.openTime} - {room.closeTime}
             </span>
           </li>

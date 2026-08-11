@@ -156,7 +156,7 @@ export function VacationForm({ context }: VacationFormProps) {
         <>
           <section className="border-border bg-card flex flex-col rounded-2xl border">
             <div className="px-7 pt-6 pb-3">
-              <h2 className="flex items-center gap-2 text-[15px] leading-6 font-semibold tracking-[-0.2px]">
+              <h2 className="text-[17px] leading-7 font-semibold tracking-[-0.3px]">
                 선택한 액션에 담당자를 지정해 주세요
               </h2>
               <p className="text-muted-foreground mt-1 text-[12px] leading-4">
@@ -173,7 +173,7 @@ export function VacationForm({ context }: VacationFormProps) {
                     className="border-border flex items-center gap-3 border-b px-7 py-3 last:border-b-0"
                   >
                     <span
-                      className="w-fit shrink-0 rounded px-1.5 py-0.5 font-mono text-[10px] font-semibold"
+                      className="w-fit shrink-0 rounded px-1.5 py-0.5 font-mono text-[11px] font-semibold"
                       style={{ backgroundColor: tagColor.bgColor, color: tagColor.textColor }}
                     >
                       {action.projectTag}

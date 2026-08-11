@@ -74,7 +74,7 @@ export function CompanyList({
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-muted-foreground text-xs">전체 {totalCount}건</p>
+        <p className="text-muted-foreground text-[12px] leading-4">전체 {totalCount}건</p>
         {filterBar}
       </div>
 

@@ -41,7 +41,7 @@ export function AfterScreen() {
         </div>
 
         <div className="p-4">
-          <p className="text-muted-foreground/70 text-[10px] leading-4 font-semibold tracking-[0.6px] uppercase">
+          <p className="text-muted-foreground/70 text-[11px] leading-4 font-semibold tracking-[0.6px] uppercase">
             결정
           </p>
           <div className="flex flex-col gap-1.5 pt-2">
@@ -51,7 +51,7 @@ export function AfterScreen() {
                 className="border-border flex items-center gap-2 rounded-md border px-2.5 py-1.5 text-[12px] leading-[18px]"
               >
                 <span
-                  className="shrink-0 rounded px-1.5 py-0.5 text-[10px] leading-4 font-semibold text-white"
+                  className="shrink-0 rounded px-1.5 py-0.5 text-[11px] leading-4 font-semibold text-white"
                   style={{ backgroundColor: row.color }}
                 >
                   {row.tag}
@@ -61,7 +61,7 @@ export function AfterScreen() {
             ))}
           </div>
 
-          <p className="text-muted-foreground/70 pt-4 text-[10px] leading-4 font-semibold tracking-[0.6px] uppercase">
+          <p className="text-muted-foreground/70 pt-4 text-[11px] leading-4 font-semibold tracking-[0.6px] uppercase">
             액션
           </p>
           <div className="flex flex-col gap-1.5 pt-2">
@@ -92,7 +92,7 @@ export function AfterScreen() {
                   >
                     {action.what}
                   </span>
-                  <span className="text-muted-foreground block text-[10px] leading-[14px]">
+                  <span className="text-muted-foreground block text-[11px] leading-[14px]">
                     {action.who}
                   </span>
                 </span>

@@ -136,7 +136,7 @@ function ActionMock() {
           >
             <span className="min-w-0 flex-1">
               <span className="block truncate text-[12px] leading-[18px]">{action.what}</span>
-              <span className="text-muted-foreground/70 block text-[10px] leading-[14px]">
+              <span className="text-muted-foreground/70 block text-[11px] leading-[14px]">
                 {action.who}
               </span>
             </span>
@@ -158,8 +158,8 @@ function ActionMock() {
                 style={{ animationDelay: `${index * 0.45}s` }}
                 className={
                   action.isSure
-                    ? "animate-stamp text-landing-violet relative block rounded-full bg-[#8b5cf6]/12 px-2 py-0.5 text-[10px] leading-4 font-medium"
-                    : "bg-warning/12 text-landing-warning animate-stamp relative block rounded-full px-2 py-0.5 text-[10px] leading-4 font-medium"
+                    ? "animate-stamp text-landing-violet relative block rounded-full bg-[#8b5cf6]/12 px-2 py-0.5 text-[11px] leading-4 font-medium"
+                    : "bg-warning/12 text-landing-warning animate-stamp relative block rounded-full px-2 py-0.5 text-[11px] leading-4 font-medium"
                 }
               >
                 {action.confidence}

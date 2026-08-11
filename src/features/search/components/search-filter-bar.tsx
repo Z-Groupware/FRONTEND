@@ -60,7 +60,7 @@ export function SearchFilterBar({
 
   return (
     <div className="flex items-center gap-2">
-      <span className="text-muted-foreground text-xs">필터:</span>
+      <span className="text-muted-foreground text-[12px] leading-4">필터:</span>
 
       <Select
         items={projectItems}

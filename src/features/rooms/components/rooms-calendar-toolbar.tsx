@@ -64,7 +64,7 @@ export function RoomsCalendarToolbar({
         >
           <ChevronLeft />
         </Button>
-        <p className="max-w-28 shrink-0 truncate text-center text-base font-semibold tabular-nums sm:max-w-40">
+        <p className="max-w-28 shrink-0 truncate text-center text-[13px] leading-5 font-semibold tabular-nums sm:max-w-40">
           {rangeLabel}
         </p>
         <Button

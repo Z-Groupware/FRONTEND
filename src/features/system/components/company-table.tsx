@@ -72,7 +72,7 @@ export function CompanyTable({ companies, buildDetailHref, pageSize }: CompanyTa
         className="border-border bg-card flex flex-col items-center justify-center rounded-2xl border p-10 text-center"
         style={{ height: TABLE_HEAD_HEIGHT_PX + pageSize * ROW_HEIGHT_PX }}
       >
-        <p className="text-muted-foreground text-sm">조건에 맞는 기업이 없습니다</p>
+        <p className="text-muted-foreground text-[13px] leading-5">조건에 맞는 기업이 없습니다</p>
       </div>
     );
   }
@@ -80,7 +80,7 @@ export function CompanyTable({ companies, buildDetailHref, pageSize }: CompanyTa
   return (
     <div className="border-border bg-card overflow-hidden rounded-2xl border">
       <div className="overflow-x-auto">
-        <Table className="min-w-[760px] table-fixed text-xs">
+        <Table className="min-w-[760px] table-fixed text-[12px] leading-4">
           {/* 각 컬럼 폭을 %로 고정 — 기업명이 길어져도 다른 컬럼이 밀리지 않는다(위 COLUMN_WIDTH 참고) */}
           <colgroup>
             <col style={{ width: COLUMN_WIDTH.name }} />

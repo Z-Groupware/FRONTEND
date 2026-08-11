@@ -26,7 +26,7 @@ export function PositionPreview({ positions }: { positions: Position[] }) {
         <PreviewRow key={position.id} name={position.name} role={position.role} />
       ))}
       {positions.length === 0 && (
-        <li className="text-muted-foreground/70 py-1 text-center text-[10px]">
+        <li className="text-muted-foreground/70 py-1 text-center text-[11px]">
           아직 직급이 없습니다
         </li>
       )}
@@ -37,7 +37,7 @@ export function PositionPreview({ positions }: { positions: Position[] }) {
 function PreviewRow({ name, role }: { name: string; role: AssignableRole }) {
   return (
     <li className="animate-in fade-in slide-in-from-bottom-1 flex h-[18px] items-center justify-between gap-2 duration-200">
-      <span className="text-muted-foreground truncate text-[10px]">{name}</span>
+      <span className="text-muted-foreground truncate text-[11px]">{name}</span>
       <RoleBadge role={role} className="text-[9px]" />
     </li>
   );

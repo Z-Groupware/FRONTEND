@@ -36,9 +36,9 @@ export function OnboardingShell({ step, isDone = false, children }: OnboardingSh
       <BrandBar
         right={
           isDone ? (
-            <span className="text-foreground text-xs leading-[18px]">완료</span>
+            <span className="text-foreground text-[12px] leading-[18px]">완료</span>
           ) : (
-            <span className="text-muted-foreground/70 text-xs leading-[18px] tabular-nums">
+            <span className="text-muted-foreground/70 text-[12px] leading-[18px] tabular-nums">
               단계 <span className="text-foreground">{step}</span> / {ONBOARDING_TOTAL_STEPS}
             </span>
           )
@@ -89,7 +89,7 @@ export function OnboardingShell({ step, isDone = false, children }: OnboardingSh
             </StepCircle>
             <span
               className={cn(
-                "text-xs leading-[18px]",
+                "text-[12px] leading-[18px]",
                 isDone ? "text-foreground" : "text-muted-foreground/70",
               )}
             >
@@ -125,7 +125,7 @@ function StepperItem({
   return (
     <span
       className={cn(
-        "flex items-center gap-[7px] text-xs leading-[18px]",
+        "flex items-center gap-[7px] text-[12px] leading-[18px]",
         isDone && "text-foreground",
         isCurrent && "text-foreground",
         !isDone && !isCurrent && "text-muted-foreground/70",

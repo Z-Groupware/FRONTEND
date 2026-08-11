@@ -49,10 +49,8 @@ export default async function TeamDashboardPage() {
                아래 띠에 달라붙어 보였다.
             ⚠️ 대신 아래 여백을 12 → 20으로 벌린다. 선이 하던 일을 여백이 한다.
           */}
-          <div className="border-border flex shrink-0 items-baseline justify-between gap-3 px-7 pt-6 pb-5">
-            <h2 className="flex items-center gap-2 text-[17px] leading-7 font-semibold tracking-[-0.3px]">
-              팀원 현황
-            </h2>
+          <div className="border-border flex shrink-0 items-baseline justify-between gap-3 px-7 pt-6 pb-3">
+            <h2 className="text-[17px] leading-7 font-semibold tracking-[-0.3px]">팀원 현황</h2>
             <span className="text-muted-foreground text-[12px] leading-4">
               {teamName} · {members.length}명
             </span>
@@ -86,10 +84,8 @@ export default async function TeamDashboardPage() {
 
         {/* 높이를 고정하지 않는다 — 다섯 건이 하드 캡이라 자라 봐야 다섯 줄이다(`lib.ts` 참고) */}
         <section className="border-border bg-card flex flex-col overflow-hidden rounded-2xl border">
-          <div className="border-border flex shrink-0 items-baseline justify-between gap-3 border-b px-7 pt-6 pb-5">
-            <h2 className="flex items-center gap-2 text-[17px] leading-7 font-semibold tracking-[-0.3px]">
-              최근 팀 회의
-            </h2>
+          <div className="border-border flex shrink-0 items-baseline justify-between gap-3 border-b px-7 pt-6 pb-3">
+            <h2 className="text-[17px] leading-7 font-semibold tracking-[-0.3px]">최근 팀 회의</h2>
             <span className="text-muted-foreground text-[12px] leading-4">최신 5건</span>
           </div>
           {meetings.length === 0 ? (

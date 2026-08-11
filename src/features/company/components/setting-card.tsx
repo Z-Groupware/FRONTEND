@@ -31,9 +31,7 @@ export function SettingCard({
   return (
     <section className="border-border bg-card flex h-full flex-col overflow-hidden rounded-2xl border">
       <div className="flex items-baseline justify-between gap-3 px-7 pt-6 pb-3">
-        <h2 className="flex items-center gap-2 text-[17px] leading-7 font-semibold tracking-[-0.3px]">
-          {title}
-        </h2>
+        <h2 className="text-[17px] leading-7 font-semibold tracking-[-0.3px]">{title}</h2>
         {aside && (
           <p className="text-foreground/75 shrink-0 -translate-x-px text-[12px] leading-4 tabular-nums">
             {aside}

@@ -122,7 +122,7 @@ export function TimePickerField({
                   setOpen(false);
                 }}
                 className={cn(
-                  "hover:bg-muted flex w-full items-center rounded-md px-2 py-1.5 text-left text-sm tabular-nums",
+                  "hover:bg-muted flex w-full items-center rounded-md px-2 py-1.5 text-left text-[13px] leading-5 tabular-nums",
                   isSelected && "bg-foreground text-background hover:bg-foreground",
                 )}
               >

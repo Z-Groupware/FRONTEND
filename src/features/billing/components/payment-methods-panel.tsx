@@ -30,9 +30,7 @@ interface PaymentMethodsPanelProps {
 export function PaymentMethodsPanel({ method, canManage, onChange }: PaymentMethodsPanelProps) {
   return (
     <section className="border-border bg-card rounded-2xl border">
-      <h2 className="flex items-center gap-2 px-7 py-6 text-[15px] leading-6 font-semibold tracking-[-0.2px]">
-        결제 수단
-      </h2>
+      <h2 className="px-7 py-6 text-[17px] leading-7 font-semibold tracking-[-0.3px]">결제 수단</h2>
 
       <div className="border-border flex items-center gap-3 border-t px-6 py-5">
         <span className="border-border bg-secondary flex h-8 w-11 shrink-0 items-center justify-center rounded-md border">

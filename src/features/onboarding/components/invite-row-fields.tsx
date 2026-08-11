@@ -62,7 +62,7 @@ export function InviteRowFields({
               ⚠️ 옆의 선택 칸과 **같은 모양**을 쓴다(테두리 · 둥근 모서리 · 같은 높이).
                  전에는 테두리 없이 글자만 떠 있어서, 알약처럼 생긴 선택 칸들과 따로 놀았다.
             */
-            "border-input h-8 w-full min-w-0 rounded-lg bg-transparent px-2.5 text-[14px] shadow-none",
+            "border-input h-8 w-full min-w-0 rounded-lg bg-transparent px-2.5 text-[13px] shadow-none",
             // ⚠️ 이름만 가운데 정렬이다 — 칸이 좁아(68px) 글자가 왼쪽에 붙으면
             //    머리글 `이름`과 세로축이 어긋나 열이 밀려 보인다. 주소는 길어서 왼쪽 정렬을 유지한다.
             "placeholder:text-muted-foreground/45 text-center",
@@ -98,7 +98,7 @@ export function InviteRowFields({
           aria-describedby={errorId}
           onChange={(event) => onChangeEmail(invite.id, event.target.value)}
           className={cn(
-            "border-input placeholder:text-muted-foreground/45 h-8 w-full min-w-0 rounded-lg bg-transparent px-2.5 text-[14px] shadow-none",
+            "border-input placeholder:text-muted-foreground/45 h-8 w-full min-w-0 rounded-lg bg-transparent px-2.5 text-[13px] shadow-none",
             errorText && "border-destructive/60",
           )}
         />

@@ -56,7 +56,9 @@ export function ScreenError({ title, reset, isInsideShell }: ScreenErrorProps) {
       )}
     >
       <div className="flex flex-col gap-2">
-        <Heading className="text-lg font-semibold tracking-tight break-keep">{title}</Heading>
+        <Heading className="text-[17px] leading-7 font-semibold tracking-[-0.3px] break-keep">
+          {title}
+        </Heading>
         <p className="text-muted-foreground text-[13px] leading-[21px] break-keep">
           잠시 후 다시 시도해 주세요. 계속 안 되면 담당자에게 알려주세요.
         </p>

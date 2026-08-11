@@ -109,7 +109,7 @@ export function AnalyzeAside() {
       <div className="border-landing-dark-border mt-auto grid grid-cols-3 gap-2 border-t pt-3">
         {ANALYZED_COUNTS.map((item) => (
           <div key={item.label}>
-            <p className="text-landing-dark-muted text-[10px] leading-[14px]">{item.label}</p>
+            <p className="text-landing-dark-muted text-[11px] leading-[14px]">{item.label}</p>
             <p className="pt-0.5 text-[15px] leading-[21px] font-semibold tabular-nums">
               {item.value}
             </p>

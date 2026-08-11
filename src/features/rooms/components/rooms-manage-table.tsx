@@ -16,15 +16,13 @@ export function RoomsManageTable({ rooms, canManage }: RoomsManageTableProps) {
   return (
     <div className="border-border bg-card overflow-hidden rounded-2xl border">
       <div className="flex items-baseline justify-between gap-3 px-7 pt-6 pb-3">
-        <h2 className="flex items-center gap-2 text-[17px] leading-7 font-semibold tracking-[-0.3px]">
-          회의실 목록
-        </h2>
-        <p className="text-muted-foreground text-xs">전체 {rooms.length}개</p>
+        <h2 className="text-[17px] leading-7 font-semibold tracking-[-0.3px]">회의실 목록</h2>
+        <p className="text-muted-foreground text-[12px] leading-4">전체 {rooms.length}개</p>
       </div>
 
       {rooms.length === 0 ? (
         <div className="flex items-center justify-center p-10 text-center">
-          <p className="text-muted-foreground text-sm">등록된 회의실이 없습니다</p>
+          <p className="text-muted-foreground text-[13px] leading-5">등록된 회의실이 없습니다.</p>
         </div>
       ) : (
         <div className="border-border overflow-x-auto border-t">

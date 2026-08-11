@@ -149,9 +149,7 @@ export function OrgChartView({
   return (
     <section className="border-border bg-card rounded-2xl border">
       <div className="flex items-baseline justify-between gap-3 px-7 pt-6 pb-3">
-        <h2 className="flex items-center gap-2 text-[17px] leading-7 font-semibold tracking-[-0.3px]">
-          조직도
-        </h2>
+        <h2 className="text-[17px] leading-7 font-semibold tracking-[-0.3px]">조직도</h2>
         <p className="text-muted-foreground text-[12px] leading-4 tabular-nums">
           <ChartMeta summary={summary} chart={chart} isSearching={isSearching} />
         </p>

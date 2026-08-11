@@ -58,7 +58,7 @@ export function PositionAddRow({
             onSubmit();
           }
         }}
-        className="h-8 flex-1 rounded-md border bg-transparent px-2.5 text-xs"
+        className="h-8 flex-1 rounded-md border bg-transparent px-2.5 text-[12px] leading-4"
       />
       <RoleSelect
         value={role}
@@ -70,7 +70,7 @@ export function PositionAddRow({
       <button
         type="button"
         onClick={onSubmit}
-        className="text-muted-foreground bg-foreground/5 hover:bg-foreground/10 focus-visible:ring-ring flex h-8 shrink-0 items-center gap-1 rounded-md px-2.5 text-xs transition-colors focus-visible:ring-2 focus-visible:outline-hidden"
+        className="text-muted-foreground bg-foreground/5 hover:bg-foreground/10 focus-visible:ring-ring flex h-8 shrink-0 items-center gap-1 rounded-md px-2.5 text-[12px] leading-4 transition-colors focus-visible:ring-2 focus-visible:outline-hidden"
       >
         <Plus className="size-3.5" />
         <span className="leading-none">추가</span>

@@ -102,7 +102,7 @@ export function OnboardingGuide({ step, isOpen, onToggle }: OnboardingGuideProps
           <ol className="flex flex-col gap-2.5">
             {GUIDE_STEPS[step].map((text, index) => (
               <li key={text} className="flex gap-2.5">
-                <span className="bg-guide-border text-guide-foreground mt-px flex size-4 shrink-0 items-center justify-center rounded-full text-[10px] leading-none tabular-nums">
+                <span className="bg-guide-border text-guide-foreground mt-px flex size-4 shrink-0 items-center justify-center rounded-full text-[11px] leading-none tabular-nums">
                   {index + 1}
                 </span>
                 <p className="text-guide-muted text-[12px] leading-[19px] break-keep">{text}</p>

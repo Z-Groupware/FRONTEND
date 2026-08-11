@@ -238,7 +238,7 @@ export default function Layout({ children }: { children: ReactNode }) {
 ```text
 본문 바깥   px-8 py-7
 카드 사이   gap-7
-카드 안쪽   px-7 · 머리 pt-6 pb-3 · 단일 카드 p-7
+카드 안쪽   px-7 · 머리 pt-6 pb-3 · 툴바가 든 머리만 pb-5 · 단일 카드 p-7
 표 셀       px-4 py-3.5 · 이름 열과 지우기 열만 px-6 / pr-5
 ```
 

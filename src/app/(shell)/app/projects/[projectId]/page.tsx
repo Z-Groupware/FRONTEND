@@ -178,8 +178,8 @@ export default async function ProjectDetailPage({ params, searchParams }: Projec
                아래 띠에 달라붙어 보였다.
             ⚠️ 대신 아래 여백을 12 → 20으로 벌린다. 선이 하던 일을 여백이 한다.
           */}
-            <div className="border-border flex shrink-0 items-baseline justify-between gap-3 px-7 pt-6 pb-5">
-              <h3 className="flex items-center gap-2 text-[17px] leading-7 font-semibold tracking-[-0.3px]">
+            <div className="border-border flex shrink-0 items-baseline justify-between gap-3 px-7 pt-6 pb-3">
+              <h3 className="text-[17px] leading-7 font-semibold tracking-[-0.3px]">
                 팀 액션 타임라인
               </h3>
               <ActionTimelineLegend />

@@ -16,7 +16,7 @@ import type { LeaderHandoverAction } from "../types";
 export function LeaderHandoverActionList({ actions }: { actions: LeaderHandoverAction[] }) {
   return (
     <section className="border-border bg-card overflow-hidden rounded-2xl border">
-      <div className="flex items-center justify-between gap-3 px-7 pt-6 pb-5">
+      <div className="flex items-center justify-between gap-3 px-7 pt-6 pb-3">
         <h2 className="text-[17px] leading-7 font-semibold tracking-[-0.3px]">담긴 액션</h2>
         <p className="text-muted-foreground text-[12px] leading-4 tabular-nums">
           전체 {actions.length}건

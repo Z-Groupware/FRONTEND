@@ -72,7 +72,7 @@ export function LandingHero() {
               href="/register"
               className={cn(
                 buttonVariants(),
-                "group bg-foreground text-background hover:bg-foreground/90 h-11 gap-1.5 rounded-lg px-5 text-[14px] shadow-lg transition-shadow hover:shadow-xl",
+                "group bg-foreground text-background hover:bg-foreground/90 h-11 gap-1.5 rounded-lg px-5 text-[13px] shadow-lg transition-shadow hover:shadow-xl",
               )}
             >
               시작하기
@@ -83,7 +83,7 @@ export function LandingHero() {
               href="/plans"
               className={cn(
                 buttonVariants({ variant: "outline" }),
-                "border-border bg-card hover:bg-secondary h-11 rounded-lg px-5 text-[14px] shadow-sm transition-shadow hover:shadow-md",
+                "border-border bg-card hover:bg-secondary h-11 rounded-lg px-5 text-[13px] shadow-sm transition-shadow hover:shadow-md",
               )}
             >
               요금제 보기

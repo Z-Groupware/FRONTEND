@@ -134,7 +134,7 @@ export function WeeklyRoomCalendar({
         today: "오늘",
         previous: "이전",
         next: "다음",
-        noEventsInRange: "이번 주에는 예약된 회의가 없습니다",
+        noEventsInRange: "이번 주에는 예약된 회의가 없습니다.",
       }}
     />
   );

@@ -31,7 +31,7 @@ export function NoticeListItem({ notice }: { notice: NoticeSummary }) {
         ⚠️ **날짜를 아래로 내리지 않고 오른쪽 끝에 세운다.** 아래에 두면 한 줄이 두 줄을 먹고,
            줄마다 제목 길이가 달라 날짜가 들쭉날쭉했다 — 오른쪽 고정이면 한 세로선에 선다.
       */}
-      <span className="text-foreground min-w-0 flex-1 truncate text-[15px] leading-6 font-semibold">
+      <span className="text-foreground min-w-0 flex-1 truncate text-[13px] leading-5 font-semibold">
         {notice.title}
       </span>
 

@@ -21,7 +21,7 @@ interface CalendarToolbarProps {
 export function CalendarToolbar({ month, onNavigate }: CalendarToolbarProps) {
   return (
     <div className="mb-6 flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
-      <h2 className="flex items-center gap-2 text-[17px] leading-7 font-semibold tracking-[-0.3px]">
+      <h2 className="text-[17px] leading-7 font-semibold tracking-[-0.3px]">
         <span className="bg-foreground size-2 shrink-0 rounded-full" aria-hidden />
         {/*
           ⚠️ **고정 너비**를 준다 — `9월`·`12월`처럼 글자수가 달라지면 제목 폭이 흔들려

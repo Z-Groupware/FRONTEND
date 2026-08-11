@@ -49,7 +49,7 @@ export function TeamMemberAccordionCard({ member }: TeamMemberAccordionCardProps
         {avatar}
 
         <div className="flex min-w-0 flex-col gap-0.5">
-          <span className="flex items-center gap-1.5 text-[14px] leading-5 font-semibold">
+          <span className="flex items-center gap-1.5 text-[13px] leading-5 font-semibold">
             <span className="truncate">{member.name}</span>
             <span className="text-muted-foreground shrink-0 text-[12px] leading-4 font-normal">
               ({member.role || "없음"})
@@ -118,7 +118,7 @@ export function TeamMemberAccordionCard({ member }: TeamMemberAccordionCardProps
                       className="hover:bg-muted/50 flex items-center gap-3 px-6 py-2.5 transition-colors"
                     >
                       <span
-                        className="w-fit shrink-0 rounded px-1.5 py-0.5 font-mono text-[10px] font-semibold"
+                        className="w-fit shrink-0 rounded px-1.5 py-0.5 font-mono text-[11px] font-semibold"
                         style={{ backgroundColor: tagColor.bgColor, color: tagColor.textColor }}
                       >
                         {action.projectTag}

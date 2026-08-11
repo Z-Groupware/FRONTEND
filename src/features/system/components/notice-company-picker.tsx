@@ -73,7 +73,9 @@ export function NoticeCompanyPicker({
       {keyword.trim().length > 0 && (
         <div className="border-border overflow-hidden rounded-lg border">
           {results.length === 0 ? (
-            <p className="text-muted-foreground px-3 py-3 text-xs">검색 결과가 없습니다</p>
+            <p className="text-muted-foreground px-3 py-3 text-[12px] leading-4">
+              검색 결과가 없습니다
+            </p>
           ) : (
             <ul>
               {results.map((company) => (
@@ -83,7 +85,9 @@ export function NoticeCompanyPicker({
                     onClick={() => add(company.id)}
                     className="hover:bg-muted focus-visible:ring-ring flex w-full items-center justify-between gap-2 px-3 py-2 text-left transition-colors focus-visible:ring-2 focus-visible:outline-none"
                   >
-                    <span className="text-foreground truncate text-xs">{company.name}</span>
+                    <span className="text-foreground truncate text-[12px] leading-4">
+                      {company.name}
+                    </span>
                     <span className="text-muted-foreground shrink-0 font-mono text-[11px]">
                       {company.code}
                     </span>
@@ -101,7 +105,7 @@ export function NoticeCompanyPicker({
           {selected.map((company) => (
             <span
               key={company.id}
-              className="bg-muted text-foreground inline-flex items-center gap-1 rounded-md py-1 pr-1 pl-2 text-xs"
+              className="bg-muted text-foreground inline-flex items-center gap-1 rounded-md py-1 pr-1 pl-2 text-[12px] leading-4"
             >
               {company.name}
               <button

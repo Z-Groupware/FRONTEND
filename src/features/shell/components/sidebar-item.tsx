@@ -123,7 +123,7 @@ function SidebarItemInner({ item }: { item: NavItem }) {
         </>
       )}
       {item.badge !== undefined && (
-        <span className="bg-foreground text-background flex h-[17px] min-w-[17px] shrink-0 items-center justify-center rounded-full px-[3.5px] text-[10px] leading-none font-semibold tabular-nums">
+        <span className="bg-foreground text-background flex h-[17px] min-w-[17px] shrink-0 items-center justify-center rounded-full px-[3.5px] text-[11px] leading-none font-semibold tabular-nums">
           {item.badge}
         </span>
       )}

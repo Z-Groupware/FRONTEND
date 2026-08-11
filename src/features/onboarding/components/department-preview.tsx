@@ -41,8 +41,8 @@ export function DepartmentPreview({ departments }: { departments: DepartmentNode
           <span
             className={
               depth === 0
-                ? "text-foreground truncate text-[10px]"
-                : "text-muted-foreground truncate text-[10px]"
+                ? "text-foreground truncate text-[11px]"
+                : "text-muted-foreground truncate text-[11px]"
             }
           >
             {name}

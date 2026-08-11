@@ -18,7 +18,7 @@ export function ProfileHeader({ profile }: ProfileHeaderProps) {
 
       <div className="flex min-w-0 flex-1 flex-col gap-1">
         <p className="text-[17px] leading-[26px] font-semibold">{profile.name}</p>
-        <p className="text-muted-foreground text-xs">{profile.email}</p>
+        <p className="text-muted-foreground text-[12px] leading-4">{profile.email}</p>
 
         <div className="flex items-center gap-1.5 pt-0.5">
           <span

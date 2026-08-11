@@ -23,13 +23,15 @@ export default async function AppProjectNewPage() {
     <main className="scrollbar-hidden min-h-0 flex-1 overflow-y-auto px-8 py-7">
       <div className="mx-auto flex w-full max-w-[720px] flex-col gap-4">
         <div className="flex flex-col gap-1">
-          <p className="text-muted-foreground text-xs">
+          <p className="text-muted-foreground text-[12px] leading-4">
             <Link href="/app/projects" className="hover:text-foreground">
               프로젝트
             </Link>{" "}
             &gt; 새 프로젝트
           </p>
-          <h2 className="text-foreground text-base font-semibold">새 프로젝트</h2>
+          <h2 className="text-foreground text-[17px] leading-7 font-semibold tracking-[-0.3px]">
+            새 프로젝트
+          </h2>
         </div>
 
         <div className="border-border bg-card rounded-2xl border p-7">

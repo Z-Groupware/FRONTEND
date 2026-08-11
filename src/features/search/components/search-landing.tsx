@@ -21,7 +21,7 @@ export function SearchLanding({ home }: SearchLandingProps) {
     return (
       <div className="flex flex-col items-center justify-center gap-1 py-24 text-center">
         <p className="text-foreground text-[13px] leading-5 font-medium">
-          아직 둘러본 것이 없습니다
+          아직 둘러본 것이 없습니다.
         </p>
         <p className="text-muted-foreground text-[12px] leading-4">검색어를 입력해 찾아 주세요.</p>
       </div>

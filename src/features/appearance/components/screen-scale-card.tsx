@@ -101,9 +101,7 @@ export function ScreenScaleCard() {
 
   return (
     <section className="border-border bg-card rounded-2xl border p-7">
-      <h2 className="flex items-center gap-2 text-[17px] leading-7 font-semibold tracking-[-0.3px]">
-        화면 배율
-      </h2>
+      <h2 className="text-[17px] leading-7 font-semibold tracking-[-0.3px]">화면 배율</h2>
 
       <p className="text-muted-foreground pt-2 text-[13px] leading-[21px] break-keep">
         글자와 여백이 한 번에 커지고 작아집니다.{" "}

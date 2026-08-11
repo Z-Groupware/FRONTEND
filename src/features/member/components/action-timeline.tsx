@@ -122,7 +122,7 @@ export function ActionTimeline({
 
   if (!model) {
     return (
-      <p className="text-muted-foreground flex flex-1 items-center justify-center text-sm">
+      <p className="text-muted-foreground flex flex-1 items-center justify-center text-[13px] leading-5">
         {emptyLabel}
       </p>
     );

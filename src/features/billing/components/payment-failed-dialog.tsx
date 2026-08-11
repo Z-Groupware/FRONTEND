@@ -41,7 +41,7 @@ export function PaymentFailedDialog({ isOpen, onOpenChange, message }: PaymentFa
           type="button"
           variant="ink"
           onClick={() => onOpenChange(false)}
-          className="h-11 w-full text-[14px]"
+          className="h-11 w-full text-[13px]"
         >
           확인
         </Button>

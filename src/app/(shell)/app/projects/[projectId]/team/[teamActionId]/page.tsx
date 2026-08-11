@@ -185,7 +185,7 @@ export default async function TeamActionDetailPage({
                눈이 다음 줄을 못 찾는다 — 좁혀야 하는 건 카드가 아니라 글이다.
           */
           <section className="border-border bg-card w-full overflow-hidden rounded-2xl border">
-            <div className="flex items-center gap-2 px-7 pt-6 pb-5">
+            <div className="flex items-center gap-2 px-7 pt-6 pb-3">
               <h3 className="text-[17px] leading-7 font-semibold tracking-[-0.3px]">내용</h3>
             </div>
             {/*
@@ -207,7 +207,7 @@ export default async function TeamActionDetailPage({
             style={{ maxHeight: TEAM_ACTION_TIMELINE_BOX_MAX_HEIGHT }}
           >
             <div className="border-border flex shrink-0 items-baseline justify-between gap-3 border-b px-7 pt-6 pb-3">
-              <h3 className="flex items-center gap-2 text-[17px] leading-7 font-semibold tracking-[-0.3px]">
+              <h3 className="text-[17px] leading-7 font-semibold tracking-[-0.3px]">
                 팀원별 액션 타임라인
               </h3>
               <ActionTimelineLegend />

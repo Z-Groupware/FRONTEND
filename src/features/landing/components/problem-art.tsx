@@ -13,7 +13,7 @@ const NOTE_LINES = ["결정 · API 문서 최신화 우선", "액션 · 이번 �
 export function EmptyNotesArt() {
   return (
     <div className="w-full" aria-hidden>
-      <div className="text-muted-foreground flex items-center justify-between text-[10px] leading-4">
+      <div className="text-muted-foreground flex items-center justify-between text-[11px] leading-4">
         <span className="flex items-center gap-1.5">
           <PenLine className="size-3" />
           회의록 작성 중
@@ -93,7 +93,7 @@ export function LostContextArt() {
           <span className="border-border bg-secondary text-muted-foreground flex size-12 items-center justify-center rounded-full border">
             <User className="size-5" />
           </span>
-          <span className="text-muted-foreground text-[10px] leading-4">전임 담당자</span>
+          <span className="text-muted-foreground text-[11px] leading-4">전임 담당자</span>
         </span>
 
         {/* 흐르는 점선 위로 비행기가 지나간다 — 선은 이어져 보여도 전달은 끝나지 않는다 */}
@@ -108,7 +108,7 @@ export function LostContextArt() {
           <span className="border-border bg-background flex size-12 animate-pulse items-center justify-center rounded-full border border-dashed text-[16px]">
             ?
           </span>
-          <span className="text-[10px] leading-4">후임 담당자</span>
+          <span className="text-[11px] leading-4">후임 담당자</span>
         </span>
       </div>
     </div>

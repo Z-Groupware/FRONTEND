@@ -172,7 +172,7 @@ export function ConfirmDialog({
             variant="outline"
             disabled={isPending}
             onClick={() => onOpenChange(false)}
-            className="h-11 flex-1 text-[14px]"
+            className="h-11 flex-1 text-[13px]"
           >
             {cancelLabel}
           </Button>
@@ -189,8 +189,8 @@ export function ConfirmDialog({
             onClick={onConfirm}
             className={
               isDestructive
-                ? "border-destructive/40 h-11 flex-1 border text-[14px]"
-                : "border-foreground h-11 flex-1 border text-[14px]"
+                ? "border-destructive/40 h-11 flex-1 border text-[13px]"
+                : "border-foreground h-11 flex-1 border text-[13px]"
             }
           >
             {isPending ? (pendingLabel ?? confirmLabel) : confirmLabel}

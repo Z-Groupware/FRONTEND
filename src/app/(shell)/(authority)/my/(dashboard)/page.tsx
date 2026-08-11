@@ -39,10 +39,8 @@ export default async function MemberDashboardPage() {
           className="border-border bg-card flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border"
           style={{ minHeight: DUE_SOON_BOX_MIN_HEIGHT }}
         >
-          <div className="border-border flex shrink-0 items-baseline justify-between gap-3 border-b px-7 pt-6 pb-5">
-            <h2 className="flex items-center gap-2 text-[17px] leading-7 font-semibold tracking-[-0.3px]">
-              처리할 액션
-            </h2>
+          <div className="border-border flex shrink-0 items-baseline justify-between gap-3 border-b px-7 pt-6 pb-3">
+            <h2 className="text-[17px] leading-7 font-semibold tracking-[-0.3px]">처리할 액션</h2>
             <ActionTimelineLegend />
           </div>
           <ActionTimeline
@@ -54,10 +52,8 @@ export default async function MemberDashboardPage() {
 
         {/* 참석 회의 — 최신 5건 고정 */}
         <section className="border-border bg-card flex shrink-0 flex-col overflow-hidden rounded-2xl border">
-          <div className="border-border flex shrink-0 items-baseline justify-between gap-3 border-b px-7 pt-6 pb-5">
-            <h2 className="flex items-center gap-2 text-[17px] leading-7 font-semibold tracking-[-0.3px]">
-              참석 회의
-            </h2>
+          <div className="border-border flex shrink-0 items-baseline justify-between gap-3 border-b px-7 pt-6 pb-3">
+            <h2 className="text-[17px] leading-7 font-semibold tracking-[-0.3px]">참석 회의</h2>
             <span className="text-muted-foreground text-[12px] leading-4">최신 5건</span>
           </div>
           {attendedMeetings.length === 0 ? (

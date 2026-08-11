@@ -29,7 +29,7 @@ export function ProfileInfoCard({ profile }: ProfileInfoCardProps) {
   return (
     <div className="border-border rounded-[10px] border">
       <div className="border-border border-b px-4 py-3">
-        <p className="text-sm font-medium">{PROFILE_INFO_CARD_TITLE}</p>
+        <p className="text-[13px] leading-5 font-medium">{PROFILE_INFO_CARD_TITLE}</p>
       </div>
 
       {rows.map((row, index) => (
@@ -41,8 +41,8 @@ export function ProfileInfoCard({ profile }: ProfileInfoCardProps) {
               : "border-border flex items-center gap-3.5 border-t px-4 py-3"
           }
         >
-          <p className="text-muted-foreground w-16 shrink-0 text-xs">{row.label}</p>
-          <p className="text-sm">{row.value}</p>
+          <p className="text-muted-foreground w-16 shrink-0 text-[12px] leading-4">{row.label}</p>
+          <p className="text-[13px] leading-5">{row.value}</p>
         </div>
       ))}
     </div>

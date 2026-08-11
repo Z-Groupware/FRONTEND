@@ -23,9 +23,7 @@ interface PaymentHistoryPanelProps {
 export function PaymentHistoryPanel({ payments }: PaymentHistoryPanelProps) {
   return (
     <section className="border-border bg-card rounded-2xl border">
-      <h2 className="flex items-center gap-2 px-7 py-6 text-[15px] leading-6 font-semibold tracking-[-0.2px]">
-        결제 내역
-      </h2>
+      <h2 className="px-7 py-6 text-[17px] leading-7 font-semibold tracking-[-0.3px]">결제 내역</h2>
 
       {payments.length === 0 ? (
         /* 빈 상태 — 언제 여기 채워지는지까지 적는다(§3상태) */

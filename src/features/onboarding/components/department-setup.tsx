@@ -83,7 +83,7 @@ export function DepartmentSetup({
           <header className="border-border bg-muted flex h-12 shrink-0 items-center justify-between border-b px-4">
             <h2 className="flex items-center gap-2 text-[13px] leading-5">팀 구조 미리보기</h2>
             {/* 계층 제약 안내는 좌측 안내문에 있다 — 헤더에 겹쳐 쓰면 지저분해진다 */}
-            <span className="text-muted-foreground/70 text-xs leading-4 tabular-nums">
+            <span className="text-muted-foreground/70 text-[12px] leading-4 tabular-nums">
               팀 {total}개
             </span>
           </header>

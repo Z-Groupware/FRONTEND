@@ -41,7 +41,7 @@ export function RoomReservationEvent({
     >
       <span className="truncate text-[11px] font-medium">{event.title}</span>
       <span className="flex items-center justify-between gap-1">
-        <span className="text-muted-foreground truncate text-[10px] tabular-nums">
+        <span className="text-muted-foreground truncate text-[11px] tabular-nums">
           {format(event.start, "HH:mm")}–{format(event.end, "HH:mm")}
         </span>
         <AttendeeAvatarStack memberIds={event.attendeeIds} members={members} />

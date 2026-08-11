@@ -31,7 +31,7 @@ export default function NotFound() {
         <h1 className="text-[24px] leading-8 font-semibold tracking-[-0.5px] break-keep">
           찾으시는 화면이 없습니다
         </h1>
-        <p className="text-muted-foreground max-w-[380px] text-[14px] leading-6 break-keep">
+        <p className="text-muted-foreground max-w-[380px] text-[13px] leading-6 break-keep">
           주소가 바뀌었거나 지워진 화면일 수 있습니다. 홈에서 다시 찾아보시겠습니까?
         </p>
       </div>
@@ -40,7 +40,7 @@ export default function NotFound() {
         href="/"
         className={cn(
           buttonVariants(),
-          "bg-foreground text-background hover:bg-foreground/90 h-11 gap-1.5 px-5 text-[14px]",
+          "bg-foreground text-background hover:bg-foreground/90 h-11 gap-1.5 px-5 text-[13px]",
         )}
       >
         <ArrowLeft className="size-4" />

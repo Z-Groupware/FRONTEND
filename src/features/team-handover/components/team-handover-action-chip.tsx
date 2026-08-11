@@ -41,7 +41,7 @@ export function TeamHandoverActionChip({
     <div className="border-border bg-card flex items-center gap-3 rounded-xl border p-3">
       <div className="flex min-w-0 flex-1 items-center gap-3">
         <span
-          className="w-fit shrink-0 rounded px-1.5 py-0.5 font-mono text-[10px] font-semibold"
+          className="w-fit shrink-0 rounded px-1.5 py-0.5 font-mono text-[11px] font-semibold"
           style={{ backgroundColor: color.bgColor, color: color.textColor }}
         >
           {action.projectTag}

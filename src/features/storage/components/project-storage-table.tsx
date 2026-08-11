@@ -52,9 +52,7 @@ export function ProjectStorageTable({
   return (
     <section className="border-border bg-card overflow-hidden rounded-2xl border">
       <div className="flex items-baseline justify-between gap-3 px-7 pt-6 pb-3">
-        <h2 className="flex items-center gap-2 text-[17px] leading-7 font-semibold tracking-[-0.3px]">
-          프로젝트별 사용량
-        </h2>
+        <h2 className="text-[17px] leading-7 font-semibold tracking-[-0.3px]">프로젝트별 사용량</h2>
         {/*
           ⚠️ 전체 건수를 적는다 — 끝이 안 보이는 목록은 얼마나 남았는지 알 수 없다.
           ⚠️ 색은 `--muted-foreground`보다 **한 단 진하다**(`foreground/75`). 표 머리글과 같은

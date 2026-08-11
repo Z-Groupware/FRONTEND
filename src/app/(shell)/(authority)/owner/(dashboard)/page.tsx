@@ -60,10 +60,8 @@ export default async function OwnerDashboardPage() {
                아래 띠에 달라붙어 보였다.
             ⚠️ 대신 아래 여백을 12 → 20으로 벌린다. 선이 하던 일을 여백이 한다.
           */}
-          <div className="border-border flex shrink-0 items-baseline justify-between gap-3 px-7 pt-6 pb-5">
-            <h2 className="flex items-center gap-2 text-[17px] leading-7 font-semibold tracking-[-0.3px]">
-              팀장 현황
-            </h2>
+          <div className="border-border flex shrink-0 items-baseline justify-between gap-3 px-7 pt-6 pb-3">
+            <h2 className="text-[17px] leading-7 font-semibold tracking-[-0.3px]">팀장 현황</h2>
             {/* 카드 제목 줄 오른쪽 끝은 보조 정보 한 줄이다(DESIGN §2) */}
             <p className="text-muted-foreground text-[12px] leading-4 tabular-nums">
               전체 {leaderRows.length}팀
@@ -135,8 +133,8 @@ export default async function OwnerDashboardPage() {
         {/* ⚠️ 여기도 높이를 고정하지 않는다 — 다섯 건이 하드 캡이라 자라 봐야 다섯 줄이다.
             고정했을 때는 머리 줄 높이를 20px 적게 잡아 **마지막 줄이 잘려** 나갔다. */}
         <section className="border-border bg-card flex flex-col overflow-hidden rounded-2xl border">
-          <div className="border-border flex shrink-0 items-baseline justify-between gap-3 border-b px-7 pt-6 pb-5">
-            <h2 className="flex items-center gap-2 text-[17px] leading-7 font-semibold tracking-[-0.3px]">
+          <div className="border-border flex shrink-0 items-baseline justify-between gap-3 border-b px-7 pt-6 pb-3">
+            <h2 className="text-[17px] leading-7 font-semibold tracking-[-0.3px]">
               최근 프로젝트 회의
             </h2>
             {/*

@@ -71,7 +71,7 @@ export function RoleSection() {
 
             <Link
               href="/roles"
-              className="text-landing-accent flex w-fit items-center gap-1 pt-1 text-[14px] leading-5 hover:underline"
+              className="text-landing-accent flex w-fit items-center gap-1 pt-1 text-[13px] leading-5 hover:underline"
             >
               권한 매트릭스 전체 보기
               <ArrowRight className="size-3.5" aria-hidden />
@@ -111,7 +111,7 @@ export function RoleSection() {
                     <span
                       key={item}
                       className={cn(
-                        "flex h-[22px] items-center rounded-md px-2 text-[10px] leading-4 whitespace-nowrap",
+                        "flex h-[22px] items-center rounded-md px-2 text-[11px] leading-4 whitespace-nowrap",
                         index === 0 ? "bg-foreground text-background" : "text-muted-foreground",
                       )}
                     >
@@ -145,7 +145,7 @@ export function RoleSection() {
                   {/* 본문 — 카드가 뜨도록 아주 옅게만 눌러 둔다(점 격자는 위 주석 참고) */}
                   <div className="bg-secondary/30 min-w-0 flex-1 p-3.5">
                     <RoleScreen name={role.name} />
-                    <p className="text-muted-foreground/70 pt-3 text-[10px] leading-4">
+                    <p className="text-muted-foreground/70 pt-3 text-[11px] leading-4">
                       화면 구성 예시 — 숫자는 실제 데이터가 아닙니다
                     </p>
                   </div>

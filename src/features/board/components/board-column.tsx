@@ -95,7 +95,7 @@ export function BoardColumn({ id, label, cards, isDelayed, isInvalidTarget }: Bo
               )}
               aria-hidden
             />
-            {/* 글자는 다섯 크기다(DESIGN §4) — `text-sm`·`text-xs`는 규격 밖이라 13px·12px로 맞춘다 */}
+            {/* 글자는 다섯 크기다(DESIGN §4) — `text-[13px]`·`text-[12px] leading-4`는 규격 밖이라 13px·12px로 맞춘다 */}
             <h3 className="text-[13px] leading-5 font-semibold">{label}</h3>
           </span>
           {/*
@@ -139,7 +139,7 @@ export function BoardColumn({ id, label, cards, isDelayed, isInvalidTarget }: Bo
               tone.empty,
             )}
           >
-            여기로 옮겨 주세요
+            여기로 옮겨 주세요.
           </p>
         ) : (
           cards.map((card) => <BoardCard key={card.id} card={card} isDelayed={isDelayed(card)} />)

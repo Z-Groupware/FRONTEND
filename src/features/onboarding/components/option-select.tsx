@@ -104,7 +104,7 @@ export function OptionSelect({
           // 꺽쇠(size-4)가 좁은 칸에서 글자 자리를 뺏어 `프론트엔드`가 잘렸다 —
           // 한 치수 줄여(3.5) 글자에 자리를 돌려준다
           // 꺽쇠는 **오른쪽 끝에 붙인다** — 오른쪽 여백을 왼쪽보다 좁게(2.5 → 1.5) 준다
-          "h-8 pr-1.5 pl-2.5 text-[14px] leading-none data-[size=default]:h-8 [&>svg]:size-3.5",
+          "h-8 pr-1.5 pl-2.5 text-[13px] leading-none data-[size=default]:h-8 [&>svg]:size-3.5",
           /*
             ⚠️ 값 칸은 `flex-1`(남는 자리 전부) 그대로 두고, **그 안에서** 글자를 가운데로 보낸다.
                칸을 내용만큼만 줄여 글자+꺽쇠를 함께 가운데로 모으면 꺽쇠가 안쪽으로 딸려 들어온다.
@@ -153,7 +153,7 @@ export function OptionSelect({
             key={option.id}
             value={option.id}
             disabled={option.disabled && option.id !== value}
-            className="text-[14px]"
+            className="text-[13px]"
           >
             {option.name}
           </SelectItem>

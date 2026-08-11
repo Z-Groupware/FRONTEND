@@ -191,7 +191,7 @@ export function ApprovalDetailDialog({ company, closeHref }: ApprovalDetailDialo
                 <Button
                   type="button"
                   variant="outline"
-                  className="border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive h-11 flex-1 text-[14px]"
+                  className="border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive h-11 flex-1 text-[13px]"
                   onClick={() => {
                     setConfirmed({
                       action: APPROVAL_RESULT.REJECT,
@@ -206,7 +206,7 @@ export function ApprovalDetailDialog({ company, closeHref }: ApprovalDetailDialo
                 <Button
                   type="button"
                   variant="ink"
-                  className="border-foreground h-11 flex-1 border text-[14px]"
+                  className="border-foreground h-11 flex-1 border text-[13px]"
                   onClick={() => {
                     setConfirmed({
                       action: APPROVAL_RESULT.APPROVE,

@@ -57,7 +57,7 @@ export function LoginForm() {
             <Building2 className="size-4" aria-hidden />
           </span>
           <span className="min-w-0 flex-1">
-            <span className="block truncate text-[14px] leading-5 font-medium">{company.name}</span>
+            <span className="block truncate text-[13px] leading-5 font-medium">{company.name}</span>
             <span className="text-muted-foreground block truncate text-[11px] leading-4 tracking-[0.5px]">
               {company.code}
             </span>
