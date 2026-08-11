@@ -1,3 +1,5 @@
+import { CalendarRange, Clock, MapPin } from "lucide-react";
+
 import type { MeetingRoom } from "../types";
 import { RoomRowActions } from "./room-row-actions";
 
@@ -13,14 +15,20 @@ interface RoomsManageTableProps {
  *    "위치"·"수정" 열이 더 있다.
  */
 export function RoomsManageTable({ rooms, canManage }: RoomsManageTableProps) {
+  // 파생값 — "위치 N곳"은 저장된 필드가 아니라 회의실 목록에서 그때 계산한다(CLAUDE.md §도메인 상수).
+  const locationCount = new Set(rooms.map((room) => room.location)).size;
+
   return (
     <div className="border-border bg-card overflow-hidden rounded-2xl border">
       <div className="flex items-baseline justify-between gap-3 px-7 pt-6 pb-3">
+        {/* ⚠️ 제목 앞 검은 점 대신 상단바와 같은 아이콘을 쓴다 — 점은 상태점과 헷갈린다(DESIGN §5) */}
         <h2 className="flex items-center gap-2 text-[17px] leading-7 font-semibold tracking-[-0.3px]">
-          <span className="bg-foreground size-2 rounded-full" aria-hidden />
+          <CalendarRange className="text-muted-foreground size-4" aria-hidden />
           회의실 목록
         </h2>
-        <p className="text-muted-foreground text-xs">전체 {rooms.length}개</p>
+        <p className="text-muted-foreground text-xs tabular-nums">
+          전체 {rooms.length}개 · 위치 {locationCount}곳
+        </p>
       </div>
 
       {rooms.length === 0 ? (
@@ -52,10 +60,18 @@ export function RoomsManageTable({ rooms, canManage }: RoomsManageTableProps) {
                   key={room.id}
                   className="group border-border hover:bg-foreground/[0.04] transition-colors not-first:border-t"
                 >
-                  <td className="px-6 py-3.5 text-left">{room.name}</td>
-                  <td className="px-4 py-3.5 text-center">{room.location}</td>
+                  <td className="px-6 py-3.5 text-left font-medium">{room.name}</td>
+                  <td className="px-4 py-3.5 text-center">
+                    <span className="text-muted-foreground inline-flex items-center gap-1.5">
+                      <MapPin className="size-3.5 shrink-0" aria-hidden />
+                      {room.location}
+                    </span>
+                  </td>
                   <td className="px-4 py-3.5 text-center tabular-nums">
-                    {room.openTime} - {room.closeTime}
+                    <span className="text-muted-foreground inline-flex items-center gap-1.5">
+                      <Clock className="size-3.5 shrink-0" aria-hidden />
+                      {room.openTime} - {room.closeTime}
+                    </span>
                   </td>
                   <td className="px-4 py-3.5 text-center">
                     {canManage && <RoomRowActions room={room} />}

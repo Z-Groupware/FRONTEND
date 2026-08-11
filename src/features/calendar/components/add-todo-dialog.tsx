@@ -134,84 +134,90 @@ export function AddTodoDialog({ defaultDate, onCreated }: AddTodoDialogProps) {
             <FieldError reserveSpace message={state.errors.title} />
           </div>
 
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="todo-date">시작 날짜</Label>
-            <Popover open={datePopoverOpen} onOpenChange={setDatePopoverOpen}>
-              <PopoverTrigger
-                render={
-                  <Button
-                    id="todo-date"
-                    type="button"
-                    variant="outline"
-                    className="h-10 w-full justify-start gap-2 font-normal"
-                  />
-                }
-              >
-                {/* ⚠️ 아이콘과 글자를 **같은 색**으로 — 아이콘만 흐리면 한 버튼이 두 톤으로 갈린다 */}
-                <CalendarIcon aria-hidden className="size-4 text-current" />
-                {format(date, "yyyy년 M월 d일(EEE)", { locale: ko })}
-              </PopoverTrigger>
-              {/*
-                ⚠️ 달력은 **넉넉하게** 편다. 기본 셀(28px)로는 날짜를 손으로 짚기 어렵고
-                   눌러야 할 것이 빽빽해 보인다 — 고르는 게 이 창의 일이다.
-              */}
-              <PopoverContent align="start" className="w-auto p-3 [--cell-size:--spacing(9)]">
+          {/* ⚠️ 시작일·마감일을 좌우로 나란히 둔다 — 위아래로 쌓으면 두 날짜가 한 범위라는 게 잘 안 읽힌다. */}
+          <div className="flex gap-3">
+            <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+              <Label htmlFor="todo-date">시작일</Label>
+              <Popover open={datePopoverOpen} onOpenChange={setDatePopoverOpen}>
+                <PopoverTrigger
+                  render={
+                    <Button
+                      id="todo-date"
+                      type="button"
+                      variant="outline"
+                      className="h-10 w-full min-w-0 justify-start gap-1.5 px-2.5 font-normal"
+                    />
+                  }
+                >
+                  {/* ⚠️ 아이콘과 글자를 **같은 색**으로 — 아이콘만 흐리면 한 버튼이 두 톤으로 갈린다 */}
+                  <CalendarIcon aria-hidden className="size-4 shrink-0 text-current" />
+                  {/* ⚠️ 420px 모달의 좌우 절반 폭에 맞춰 연도는 뺀다 — 넣으면 줄바꿈 없이 넘친다 */}
+                  <span className="truncate">{format(date, "M월 d일(EEE)", { locale: ko })}</span>
+                </PopoverTrigger>
                 {/*
-                  ⚠️ 고른 날짜를 **먹색**으로 칠한다. 공용 `Calendar`의 기본은 `--primary`(파랑)인데,
-                     이 서비스의 주 버튼·선택 색은 먹색이고 파랑은 링크·강조용이다(DESIGN §5).
-                     다크에서도 `--foreground`/`--background`가 함께 뒤집혀 대비가 유지된다.
+                  ⚠️ 달력은 **넉넉하게** 편다. 기본 셀(28px)로는 날짜를 손으로 짚기 어렵고
+                     눌러야 할 것이 빽빽해 보인다 — 고르는 게 이 창의 일이다.
                 */}
-                <Calendar
-                  className="[&_[data-selected-single=true]]:bg-foreground [&_[data-selected-single=true]]:text-background [&_[data-selected-single=true]]:hover:bg-foreground"
-                  mode="single"
-                  locale={ko}
-                  selected={date}
-                  onSelect={(selected) => {
-                    if (!selected) return;
-                    setDate(selected);
-                    // ⚠️ 끝 날짜가 시작보다 앞서게 되면 시작 날짜로 같이 밀어둔다 — 범위가 뒤집힌 채로 남지 않게.
-                    if (endDate < selected) setEndDate(selected);
-                    setDatePopoverOpen(false);
-                  }}
-                />
-              </PopoverContent>
-            </Popover>
-            <FieldError reserveSpace message={state.errors.date} />
-          </div>
-
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="todo-end-date">끝 날짜</Label>
-            <Popover open={endDatePopoverOpen} onOpenChange={setEndDatePopoverOpen}>
-              <PopoverTrigger
-                render={
-                  <Button
-                    id="todo-end-date"
-                    type="button"
-                    variant="outline"
-                    className="h-10 w-full justify-start gap-2 font-normal"
+                <PopoverContent align="start" className="w-auto p-3 [--cell-size:--spacing(9)]">
+                  {/*
+                    ⚠️ 고른 날짜를 **먹색**으로 칠한다. 공용 `Calendar`의 기본은 `--primary`(파랑)인데,
+                       이 서비스의 주 버튼·선택 색은 먹색이고 파랑은 링크·강조용이다(DESIGN §5).
+                       다크에서도 `--foreground`/`--background`가 함께 뒤집혀 대비가 유지된다.
+                  */}
+                  <Calendar
+                    className="[&_[data-selected-single=true]]:bg-foreground [&_[data-selected-single=true]]:text-background [&_[data-selected-single=true]]:hover:bg-foreground"
+                    mode="single"
+                    locale={ko}
+                    selected={date}
+                    onSelect={(selected) => {
+                      if (!selected) return;
+                      setDate(selected);
+                      // ⚠️ 끝 날짜가 시작보다 앞서게 되면 시작 날짜로 같이 밀어둔다 — 범위가 뒤집힌 채로 남지 않게.
+                      if (endDate < selected) setEndDate(selected);
+                      setDatePopoverOpen(false);
+                    }}
                   />
-                }
-              >
-                <CalendarIcon aria-hidden className="size-4 text-current" />
-                {format(endDate, "yyyy년 M월 d일(EEE)", { locale: ko })}
-              </PopoverTrigger>
-              <PopoverContent align="start" className="w-auto p-3 [--cell-size:--spacing(9)]">
-                <Calendar
-                  className="[&_[data-selected-single=true]]:bg-foreground [&_[data-selected-single=true]]:text-background [&_[data-selected-single=true]]:hover:bg-foreground"
-                  mode="single"
-                  locale={ko}
-                  selected={endDate}
-                  // 시작 날짜 이전은 고를 수 없다 — 범위가 뒤집히는 입력 자체를 막는다.
-                  disabled={{ before: date }}
-                  onSelect={(selected) => {
-                    if (!selected) return;
-                    setEndDate(selected);
-                    setEndDatePopoverOpen(false);
-                  }}
-                />
-              </PopoverContent>
-            </Popover>
-            <FieldError reserveSpace message={state.errors.endDate} />
+                </PopoverContent>
+              </Popover>
+              <FieldError reserveSpace message={state.errors.date} />
+            </div>
+
+            <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+              <Label htmlFor="todo-end-date">마감일</Label>
+              <Popover open={endDatePopoverOpen} onOpenChange={setEndDatePopoverOpen}>
+                <PopoverTrigger
+                  render={
+                    <Button
+                      id="todo-end-date"
+                      type="button"
+                      variant="outline"
+                      className="h-10 w-full min-w-0 justify-start gap-1.5 px-2.5 font-normal"
+                    />
+                  }
+                >
+                  <CalendarIcon aria-hidden className="size-4 shrink-0 text-current" />
+                  <span className="truncate">
+                    {format(endDate, "M월 d일(EEE)", { locale: ko })}
+                  </span>
+                </PopoverTrigger>
+                <PopoverContent align="start" className="w-auto p-3 [--cell-size:--spacing(9)]">
+                  <Calendar
+                    className="[&_[data-selected-single=true]]:bg-foreground [&_[data-selected-single=true]]:text-background [&_[data-selected-single=true]]:hover:bg-foreground"
+                    mode="single"
+                    locale={ko}
+                    selected={endDate}
+                    // 시작 날짜 이전은 고를 수 없다 — 범위가 뒤집히는 입력 자체를 막는다.
+                    disabled={{ before: date }}
+                    onSelect={(selected) => {
+                      if (!selected) return;
+                      setEndDate(selected);
+                      setEndDatePopoverOpen(false);
+                    }}
+                  />
+                </PopoverContent>
+              </Popover>
+              <FieldError reserveSpace message={state.errors.endDate} />
+            </div>
           </div>
         </div>
       </ConfirmDialog>

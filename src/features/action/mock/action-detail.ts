@@ -17,7 +17,7 @@ export const PERSONAL_ACTION_DETAIL_MOCK: Record<number, PersonalActionDetail> =
     projectTag: "GOODS",
     assigneeName: "이하윤",
     assigneeRoleLabel: "프론트엔드",
-    sourceMeeting: { title: "앱 개발 착수 팀 액션 회의", scheduledAt: "2026-07-21T10:00" },
+    sourceMeeting: { id: 1, title: "앱 개발 착수 팀 액션 회의", scheduledAt: "2026-07-21T10:00" },
     parentTeamAction: { id: 1, name: "앱 개발 착수", team: "개발팀", dueDate: "2026-08-29" },
   },
   2: {
@@ -29,7 +29,7 @@ export const PERSONAL_ACTION_DETAIL_MOCK: Record<number, PersonalActionDetail> =
     projectTag: "GOODS",
     assigneeName: "박도현",
     assigneeRoleLabel: "백엔드",
-    sourceMeeting: { title: "앱 개발 착수 팀 액션 회의", scheduledAt: "2026-07-21T10:00" },
+    sourceMeeting: { id: 2, title: "앱 개발 착수 팀 액션 회의", scheduledAt: "2026-07-21T10:00" },
     parentTeamAction: { id: 1, name: "앱 개발 착수", team: "개발팀", dueDate: "2026-08-29" },
   },
   3: {
@@ -41,7 +41,7 @@ export const PERSONAL_ACTION_DETAIL_MOCK: Record<number, PersonalActionDetail> =
     projectTag: "GOODS",
     assigneeName: "김서준",
     assigneeRoleLabel: "팀장",
-    sourceMeeting: { title: "앱 개발 착수 팀 액션 회의", scheduledAt: "2026-07-21T10:00" },
+    sourceMeeting: { id: 3, title: "앱 개발 착수 팀 액션 회의", scheduledAt: "2026-07-21T10:00" },
     parentTeamAction: { id: 1, name: "앱 개발 착수", team: "개발팀", dueDate: "2026-08-29" },
   },
   4: {
@@ -53,7 +53,11 @@ export const PERSONAL_ACTION_DETAIL_MOCK: Record<number, PersonalActionDetail> =
     projectTag: "GOODS",
     assigneeName: "박도현",
     assigneeRoleLabel: "백엔드",
-    sourceMeeting: { title: "결제 시스템 연동 팀 액션 회의", scheduledAt: "2026-08-11T10:00" },
+    sourceMeeting: {
+      id: 4,
+      title: "결제 시스템 연동 팀 액션 회의",
+      scheduledAt: "2026-08-11T10:00",
+    },
     parentTeamAction: { id: 2, name: "결제 시스템 연동", team: "개발팀", dueDate: "2026-09-12" },
   },
   5: {
@@ -66,6 +70,7 @@ export const PERSONAL_ACTION_DETAIL_MOCK: Record<number, PersonalActionDetail> =
     assigneeName: "최유진",
     assigneeRoleLabel: "팀장",
     sourceMeeting: {
+      id: 9,
       title: "TV 광고 계약 및 모델 섭외 팀 액션 회의",
       scheduledAt: "2026-08-11T13:00",
     },
@@ -85,7 +90,11 @@ export const PERSONAL_ACTION_DETAIL_MOCK: Record<number, PersonalActionDetail> =
     projectTag: "GOODS",
     assigneeName: "강서연",
     assigneeRoleLabel: "팀장",
-    sourceMeeting: { title: "굿즈 디자인 시안 제작 팀 액션 회의", scheduledAt: "2026-07-21T15:00" },
+    sourceMeeting: {
+      id: 5,
+      title: "굿즈 디자인 시안 제작 팀 액션 회의",
+      scheduledAt: "2026-07-21T15:00",
+    },
     parentTeamAction: {
       id: 4,
       name: "굿즈 디자인 시안 제작",
@@ -102,7 +111,11 @@ export const PERSONAL_ACTION_DETAIL_MOCK: Record<number, PersonalActionDetail> =
     projectTag: "BRAND",
     assigneeName: "강서연",
     assigneeRoleLabel: "팀장",
-    sourceMeeting: { title: "로고·가이드라인 개편 팀 액션 회의", scheduledAt: "2026-08-01T14:00" },
+    sourceMeeting: {
+      id: 6,
+      title: "로고·가이드라인 개편 팀 액션 회의",
+      scheduledAt: "2026-08-01T14:00",
+    },
     parentTeamAction: {
       id: 5,
       name: "로고·가이드라인 개편",
@@ -119,7 +132,11 @@ export const PERSONAL_ACTION_DETAIL_MOCK: Record<number, PersonalActionDetail> =
     projectTag: "BRAND",
     assigneeName: "최유진",
     assigneeRoleLabel: "팀장",
-    sourceMeeting: { title: "캠페인 자산 제작 팀 액션 회의", scheduledAt: "2026-08-15T14:00" },
+    sourceMeeting: {
+      id: 7,
+      title: "캠페인 자산 제작 팀 액션 회의",
+      scheduledAt: "2026-08-15T14:00",
+    },
     parentTeamAction: { id: 6, name: "캠페인 자산 제작", team: "마케팅팀", dueDate: "2026-09-12" },
   },
   9: {
@@ -131,7 +148,11 @@ export const PERSONAL_ACTION_DETAIL_MOCK: Record<number, PersonalActionDetail> =
     projectTag: "COLLAB",
     assigneeName: "김서준",
     assigneeRoleLabel: "팀장",
-    sourceMeeting: { title: "협업툴 리뉴얼 착수 팀 액션 회의", scheduledAt: "2026-07-25T11:00" },
+    sourceMeeting: {
+      id: 8,
+      title: "협업툴 리뉴얼 착수 팀 액션 회의",
+      scheduledAt: "2026-07-25T11:00",
+    },
     parentTeamAction: { id: 7, name: "협업툴 리뉴얼 착수", team: "개발팀", dueDate: "2026-08-25" },
   },
   10: {
@@ -144,6 +165,7 @@ export const PERSONAL_ACTION_DETAIL_MOCK: Record<number, PersonalActionDetail> =
     assigneeName: "오현우",
     assigneeRoleLabel: "팀장",
     sourceMeeting: {
+      id: 10,
       title: "회의·문서·일정 흐름 통합 설계 팀 액션 회의",
       scheduledAt: "2026-08-10T14:00",
     },

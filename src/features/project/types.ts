@@ -60,6 +60,13 @@ export type ProjectFormErrors = Partial<
   }
 >;
 
+/** 프로젝트 첨부파일 한 건 — 다운로드는 클릭 시점에 별도로 URL을 발급받아 연다(5분 만료). */
+export interface ProjectAttachment {
+  id: number;
+  fileName: string;
+  fileSize: number;
+}
+
 /**
  * 프로젝트 상세(`/app/projects/:projectId`)의 기획 탭. `ProjectListItem`과 필드가 겹치지만
  * 목록에 없는 첨부파일이 있어 별도 타입으로 둔다 — 목록 카드에 첨부파일까지 끌고 오지 않는다.
@@ -74,8 +81,8 @@ export interface ProjectDetail {
   dueDate: string;
   /** 참여 팀 전체 — 목록과 달리 자르지 않는다(상세라 다 보여준다) */
   teamNames: string[];
-  /** ⚠️ 목 단계라 파일명만 — 실제 다운로드는 API 스펙 확정 후 */
-  attachmentName?: string;
+  /** 여러 개 가능(2026-08-10 다운로드 URL 발급 API 반영) — 예전엔 파일명 하나만 목 단계로 들고 있었다. */
+  attachments: ProjectAttachment[];
 }
 
 /**
@@ -96,8 +103,10 @@ export interface ProjectTeamAction {
 
 /**
  * 팀 액션 상세(`/app/projects/:projectId/team/:teamActionId`)의 상세 탭.
- * ⚠️ 담당자는 이 팀 액션을 받은 팀의 **팀장**이다(`assigneeRoleLabel`은 항상 "팀장") —
- *    개인 액션 상세를 만들 때는 같은 필드에 그 사람 본인 역할이 들어간다.
+ * ⚠️ **담당자는 저장된 값이 아니다** — BE가 그 팀의 현재 팀장을 그때그때 유도해서 채운다
+ *    (2026-08-11, BACKEND PR #339). 팀장 공석이면 `assigneeName`·`assigneeRoleLabel` 둘 다 없다
+ *    — 실제로 "팀장 없음"이 정상 상태라 optional이다(개인 액션 상세를 만들 때는 같은 자리에
+ *    그 사람 본인 역할이 들어간다는 점만 개념이 다르다).
  */
 export interface TeamActionDetail {
   /** BE 자동증가 정수 PK — `ProjectTeamAction.id`와 같은 값. */
@@ -107,14 +116,18 @@ export interface TeamActionDetail {
   team: string;
   projectId: number;
   projectTag: string;
-  assigneeName: string;
-  assigneeRoleLabel: string;
-  /** 이 팀 액션이 나온 프로젝트 회의. ⚠️ 회의 상세(`/app/meeting/:id`) 라우트가 아직 없어 링크는 없다. */
-  sourceMeeting: {
+  /** 팀장 공석이면 없음. */
+  assigneeName?: string;
+  /** `"{팀명}장"` 고정 포맷(BE가 조립) — 팀장 공석이면 없음. */
+  assigneeRoleLabel?: string;
+  /** 이 팀 액션이 나온 프로젝트 회의 — 수동 추가 등으로 출처가 없으면 없음. 클릭 시 `/app/meeting/:id`로 이동. */
+  sourceMeeting?: {
+    id: number;
     title: string;
     /** ISO datetime */
     scheduledAt: string;
   };
+  attachments: ProjectAttachment[];
 }
 
 /** 팀 액션 상세의 타임라인 탭 한 줄 — 이 팀 액션에 속한 개인 액션 한 건(담당자별 행). */

@@ -51,7 +51,7 @@ export default async function AppMePage({ searchParams }: AppMePageProps) {
   return (
     <div className="flex-1 overflow-y-auto px-8 py-7">
       <div className="mx-auto w-full max-w-[1440px]">
-        <div className="mx-auto flex w-full max-w-[600px] flex-col gap-5">
+        <div className="mx-auto flex w-full max-w-[720px] flex-col gap-5">
           <nav aria-label="마이페이지 탭" className="border-border flex gap-4 border-b">
             {PROFILE_TABS.map((t) => (
               <Link

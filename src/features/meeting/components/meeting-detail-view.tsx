@@ -11,7 +11,8 @@ import type { MeetingContentPending, MeetingDetail } from "../view-types";
 import { ProjectAccent } from "./project-accent";
 
 /**
- * 회의 상세 — **완료 회의만** 여기까지 온다(WORKFLOW §3-2).
+ * 회의 상세 — **예정·진행중도 여기까지 온다**(2026-08-10 팀 협의, WORKFLOW §3-2). 메타(시간·
+ * 장소·참석자·안건)는 늘 보여주고, 아직 없는 것(산출물·발화 기록)만 그 두 칸 안에서 안내한다.
  *
  * 라벨 4종(§12): 프로젝트 태그 · (Owner 개설 / 상위 팀 액션) · 회의 안건 · 산출물 목록.
  * ⚠️ 태그·상위 팀 액션은 **실제로 이동하는 링크**다 — 순환 추적의 핵심이라 눌리지 않는
@@ -77,7 +78,64 @@ function SectionNotice({ reason }: { reason: MeetingContentPending }) {
   );
 }
 
+/**
+ * 산출물(하달된 액션) 칸이 **지금 무엇을 보여줄지**.
+ *
+ * ⚠️ **대기·중단을 "없음"으로 뭉치지 않는다.** 요약이 끝났는데 Host가 [액션 분배 확정]을
+ *    아직 안 눌렀거나(`pendingReview`) 요약 자체가 서버 문제로 중단된 것(`stalled`)은 진짜로
+ *    하달된 게 없는 것과 다른 사정이라 각자 다른 문구·다른 Host용 이동 수단이 필요하다.
+ * ⚠️ 순서가 있다. 회의가 안 끝났거나 요약 중이면(`SectionNotice` 3종) 그게 먼저다 — 아직
+ *    검토·중단을 말할 단계조차 아니다.
+ */
+type ActionsSectionState =
+  | { kind: "notice"; reason: MeetingContentPending }
+  | { kind: "list" }
+  | { kind: "pendingReview" }
+  | { kind: "stalled" }
+  | { kind: "empty" };
+
+function actionsSectionStateOf(detail: MeetingDetail): ActionsSectionState {
+  if (
+    detail.pendingReason === "SCHEDULED" ||
+    detail.pendingReason === "IN_PROGRESS" ||
+    detail.pendingReason === "SUMMARIZING"
+  ) {
+    return { kind: "notice", reason: detail.pendingReason };
+  }
+  if (detail.outputs.length > 0) return { kind: "list" };
+  if (detail.pendingActionCount > 0) return { kind: "pendingReview" };
+  if (detail.pendingReason === "FAILED") {
+    return detail.isStalled ? { kind: "stalled" } : { kind: "notice", reason: "FAILED" };
+  }
+  return { kind: "empty" };
+}
+
+/** 확정 대기·중단 안내 — 문구는 공통, Host에게만 갈 곳을 더 보여준다. */
+function ActionsNotice({
+  message,
+  action,
+}: {
+  message: string;
+  action: { href: string; label: string } | null;
+}) {
+  return (
+    <div className="px-7 pt-2 pb-8 text-center">
+      <p className="text-muted-foreground text-[13px] leading-5">{message}</p>
+      {action && (
+        <Link
+          href={action.href}
+          className="text-foreground focus-visible:ring-ring mt-2 inline-block rounded-md text-[13px] leading-5 font-medium underline underline-offset-2 transition-opacity hover:opacity-70 focus-visible:ring-2 focus-visible:outline-hidden"
+        >
+          {action.label}
+        </Link>
+      )}
+    </div>
+  );
+}
+
 export function MeetingDetailView({ detail }: { detail: MeetingDetail }) {
+  const actionsState = actionsSectionStateOf(detail);
+
   return (
     /*
       ⚠️ **한 컬럼이다.** 곁 컬럼(360)에 참석자만 두니 이름 몇 줄 아래로 오른쪽이 통째로 비었다 —
@@ -181,17 +239,33 @@ export function MeetingDetailView({ detail }: { detail: MeetingDetail }) {
             <h2 className="text-[17px] leading-7 font-semibold tracking-[-0.3px]">
               하달된 {detail.outputKindLabel}
             </h2>
-            {/* ⚠️ 아직 안 찬 회의에 `전체 0건`이라 적으면 하나도 안 나온 회의로 읽힌다 */}
-            {!detail.pendingReason && (
+            {/* ⚠️ 아직 안 찬·확정 대기·중단된 회의에 `전체 0건`이라 적으면 하나도 안 나온 회의로 읽힌다 */}
+            {(actionsState.kind === "list" || actionsState.kind === "empty") && (
               <p className="text-muted-foreground text-[12px] leading-4 tabular-nums">
                 전체 {detail.outputs.length}건
               </p>
             )}
           </div>
 
-          {detail.pendingReason ? (
-            <SectionNotice reason={detail.pendingReason} />
-          ) : detail.outputs.length === 0 ? (
+          {actionsState.kind === "notice" ? (
+            <SectionNotice reason={actionsState.reason} />
+          ) : actionsState.kind === "pendingReview" ? (
+            <ActionsNotice
+              message="아직 액션 분배가 확정되지 않았습니다"
+              action={
+                detail.isHost
+                  ? { href: `/app/meeting/${detail.id}/review`, label: "액션 검토" }
+                  : null
+              }
+            />
+          ) : actionsState.kind === "stalled" ? (
+            <ActionsNotice
+              message="AI 요약이 중단되어 액션이 생성되지 않았습니다"
+              action={
+                detail.isHost ? { href: "/app/me", label: "마이페이지에서 다시 분석하기" } : null
+              }
+            />
+          ) : actionsState.kind === "empty" ? (
             <p className="text-muted-foreground px-7 pt-2 pb-8 text-center text-[13px] leading-5">
               이 회의에서 하달된 {detail.outputKindLabel}이 없습니다.
             </p>
