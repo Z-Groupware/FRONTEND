@@ -74,28 +74,27 @@ function BoardCardBody({ card, isDelayed }: BoardCardProps) {
 /**
  * 카드 겉모양 — 실제 카드와 사본이 같은 값을 쓴다.
  *
- * ⚠️ 라운드는 `rounded-xl`(14px)이다. 왼쪽 막대는 이 곡선에 **안 깎인다** — 막대가 스스로
- *    둥글기 때문에 카드 라운드를 자유롭게 정할 수 있다(§ColorEdge).
+ * ⚠️ 라운드는 **20px**이다. 규격(`lg` 10 · `xl` 14 · `2xl` 18)보다 큰 값을 쓰는 이유는 왼쪽
+ *    색 막대 때문이다 — 곡선이 커야 얇은 막대(6px) 끝이 둥글게 깎인다(§ColorEdge).
  * ⚠️ 세로 여백을 넉넉히 준다(`py-6`). **띠 길이는 결국 카드 높이다** — 띠만 손봐서는 길어지지
  *    않는다. 두 줄 사이 간격도 함께 벌려 늘어난 높이가 한쪽 여백에만 쏠리지 않게 한다.
  */
-const CARD_SHAPE = "border-border bg-card relative flex rounded-xl border py-6 pr-4 pl-4";
+const CARD_SHAPE =
+  "border-border bg-card relative flex overflow-hidden rounded-[20px] border py-6 pr-4 pl-4";
 
 /**
- * 왼쪽 색 막대 — **양 끝이 완전히 둥근 얇은 알약**이다.
+ * 왼쪽 색 막대 — 카드 높이를 꽉 채우고, **큰 모서리 곡선에 깎여 끝이 둥글게 마무리된다.**
  *
- * ⚠️ 카드가 깎지 않는다. `overflow-hidden`으로 자르면 끝이 카드 모서리 곡선에 잘려 평평해지고,
- *    그러면 **얇게 하는 순간 일자 막대**가 된다 — 두께와 끝 모양이 서로 묶여 버린다.
- *    막대가 스스로 둥글면(`rounded-full`) 두께와 상관없이 끝이 늘 둥글다.
- * ⚠️ 위아래를 6px만 들인다. 많이 들이면 짧아져 떠 있는 눈금처럼 보이고, 0이면 카드 모서리와
- *    겹쳐 어색하다.
- * ⚠️ 왼쪽은 `-left-px`로 테두리 위에 살짝 얹는다. 안쪽으로 들이면 테두리와 막대 사이에 흰 틈이
- *    보인다.
+ * ⚠️ 막대에 `rounded-full`을 주지 않는다. 스스로 둥근 알약은 카드와 따로 노는 눈금처럼 보였다 —
+ *    **카드가 깎아 주는 곡선**이라야 막대가 카드의 일부로 읽힌다.
+ * ⚠️ 그래서 카드 라운드를 크게 잡는다(`20px`). 막대가 6px로 얇아도 깎이는 폭이 넓어 끝이
+ *    시원하게 둥글다 — 얇기와 둥근 끝을 **둘 다** 얻는 유일한 조합이다(2026-08-11 확정).
+ * ⚠️ 카드에 `overflow-hidden`이 있어야 이 깎임이 생긴다.
  */
 function ColorEdge({ tag }: { tag: string }) {
   return (
     <span
-      className="pointer-events-none absolute inset-y-1.5 -left-px w-[5px] rounded-full"
+      className="pointer-events-none absolute inset-y-0 left-0 w-1.5"
       style={{ backgroundColor: pickPaletteColor(tag).solidColor }}
       aria-hidden
     />
