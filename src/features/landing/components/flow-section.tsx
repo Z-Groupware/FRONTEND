@@ -1,7 +1,13 @@
 "use client";
 
 import { type LucideIcon } from "lucide-react";
-import { useMotionValueEvent, useReducedMotion, useScroll } from "motion/react";
+import {
+  motion,
+  useMotionValueEvent,
+  useReducedMotion,
+  useScroll,
+  useTransform,
+} from "motion/react";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 
 import { cn } from "@/lib/utils";
@@ -33,7 +39,6 @@ function FlowMockView({ mock }: { mock: FlowMock }) {
 
 export function FlowSection() {
   const [selected, setSelected] = useState(0);
-  const active = FLOW_STEPS[selected] ?? FLOW_STEPS[0]!;
 
   /*
     ⚠️ **스크롤이 단계를 넘긴다**(2026-08-12). 눌러야만 바뀌면, 네 단계가 이어진 하나의 흐름이라는
@@ -90,6 +95,14 @@ export function FlowSection() {
     setSelected((prev) => (prev === index ? prev : index));
   });
 
+  /*
+    ⚠️ **손이 움직이면 화면도 움직여야 한다.** 고정 구간에서 아무것도 안 움직이면 사람은
+       "여기 스크롤이 안 되나?" 하고 손을 뗀다 — 단계는 네 번만 바뀌지만, 진행 막대와 패널은
+       **스크롤에 붙어 계속** 움직여서 지금 굴러가는 중임을 몸으로 알린다(2026-08-12 피드백).
+  */
+  const progressScale = useTransform(scrollYProgress, [0, 1], [0, 1]);
+  const panelDrift = useTransform(scrollYProgress, [0, 1], [14, -14]);
+
   /** 누른 단계의 스크롤 자리로 옮긴다 — 스크롤과 상태가 다투지 않게 */
   function goToStep(index: number) {
     setSelected(index);
@@ -120,8 +133,20 @@ export function FlowSection() {
       */
       className={cn(isPinned && "relative h-[400vh]")}
     >
-      <div className={cn(isPinned && "sticky top-0 flex min-h-screen items-center")}>
-        <DarkSection>
+      {/*
+        ⚠️ **세로 방향 flex다**(`flex-col`). 가로 방향으로 두면 안쪽 `<section>`이 flex 아이템이
+           되어 **내용 폭만큼만 넓어진다** — 가운데 정렬(`mx-auto`)이 죽고 화면 왼쪽에 몰린다
+           (2026-08-12에 실제로 그렇게 깨졌다).
+      */}
+      <div className={cn(isPinned && "sticky top-0 flex min-h-screen flex-col justify-center")}>
+        <DarkSection
+          /*
+        ⚠️ **고정 화면에서는 위아래 여백을 줄인다.** 원래 여백(py-20/28)은 페이지를 흘려보낼 때의
+           값이라, 화면 하나에 제목·카드 넉 장·축소판을 다 담아야 하는 여기서는 아래가 잘린다
+           (2026-08-12에 실제로 잘렸다).
+      */
+          className={cn(isPinned && "py-12 lg:py-12")}
+        >
           {/* 밝은 섹션과 같은 헤더 문법 — eyebrow + 중앙 제목 */}
           <div className="flex flex-col items-center gap-2.5 text-center">
             <p className="text-landing-accent text-[11px] leading-4 font-semibold tracking-[1.1px] uppercase">
@@ -176,6 +201,21 @@ export function FlowSection() {
           </ol>
 
           {/*
+        진행 막대 — 이 구간을 얼마나 지났는지 한 줄로 말한다.
+        ⚠️ 고정된 화면에서 **유일하게 손을 따라 움직이는 것**이라, 이게 없으면 화면이 멈춘 줄 안다.
+        ⚠️ 고정을 안 걸 때는 그릴 이유가 없다 — 스크롤이 곧 페이지 이동이라 이미 티가 난다.
+      */}
+          {isPinned && (
+            <div className="bg-landing-dark-border relative mt-6 h-px w-full overflow-hidden">
+              <motion.span
+                aria-hidden
+                style={{ scaleX: progressScale }}
+                className="bg-landing-accent absolute inset-0 block origin-left"
+              />
+            </div>
+          )}
+
+          {/*
         고른 단계의 화면 축소판 — 단계가 바뀌면 아래에서 다시 떠오른다.
         ⚠️ 폭은 **위 카드 줄과 같다.** 카드 넉 장이 화면을 가로지르는데 아래 패널만 좁으면
            아래가 빈 것처럼 보인다 — 대신 축소판이 헐거워지지 않게 안을 두 칸으로 채웠다
@@ -184,21 +224,40 @@ export function FlowSection() {
            누를 때마다 패널이 커졌다 작아졌다 하면 그 출렁임이 내용보다 먼저 보인다.
            내용이 짧은 단계는 각 축소판이 `mt-auto`로 아래를 채운다.
       */}
-          <div
-            key={active.step}
+          <motion.div
+            style={isPinned ? { y: panelDrift } : undefined}
             className={cn(
-              "border-landing-dark-border bg-landing-dark-surface landing-light:bg-gradient-to-b landing-light:from-white landing-light:to-[#fbfbfa] animate-in fade-in-0 slide-in-from-bottom-2 mt-6 flex h-[352px] flex-col rounded-xl border p-5 backdrop-blur duration-300",
+              "border-landing-dark-border bg-landing-dark-surface landing-light:bg-gradient-to-b landing-light:from-white landing-light:to-[#fbfbfa] mt-6 h-[352px] overflow-hidden rounded-xl border backdrop-blur",
               "landing-light:shadow-[0_1px_2px_rgba(37,99,235,0.05),0_12px_30px_-14px_rgba(37,99,235,0.18)]",
             )}
           >
-            {/* ⚠️ 목업 문장("API 문서 최신화" 등)은 **가짜다.** 스크린 리더가 실제 정보처럼
-            읽으면 안 된다 — 화면 전체를 한 번에 숨긴다(§정직성·a11y) */}
-            {/* ⚠️ 이 래퍼도 `flex flex-col flex-1`이어야 한다 — 안 그러면 축소판의 `mt-auto`가
-            죽어 내용이 카드 위쪽에 몰리고 아래가 텅 빈다 */}
-            <div aria-hidden className="flex flex-1 flex-col">
-              <FlowMockView mock={active.mock} />
+            {/*
+              ⚠️ **넷을 한 줄에 두고 옆으로 민다**(2026-08-12). 한 장씩 갈아 끼우면 "바뀌었다"는
+                 결과만 남고 **움직임이 안 보인다** — 옆으로 밀리면 네 단계가 이어진 한 줄이라는
+                 것이 눈에 잡히고, 스크롤이 그 줄을 굴리는 중임이 몸으로 읽힌다.
+              ⚠️ 넷 다 그려 두므로 전환에 빈 화면이 없다. 목업 문장은 가짜라 통째로 숨긴다
+                 (§정직성·a11y) — 넷을 다 두어도 스크린 리더가 네 배로 읽지 않는다.
+              ⚠️ 폭은 `400%`, 각 칸은 `w-1/4`다 — 단계 수가 바뀌면 두 값을 같이 본다.
+            */}
+            {/*
+              ⚠️ **미는 일은 CSS가 한다.** motion에게 `x: "-50%"`를 시켰더니 퍼센트를 제 폭이
+                 아닌 다른 기준으로 풀어 76px만 움직이고 멈췄다(2026-08-12에 직접 확인) —
+                 CSS `translateX(%)`는 **제 폭 기준**이라 칸이 정확히 한 칸씩 넘어간다.
+              ⚠️ 시간은 500ms다. 토큰(100/150/250)보다 길지만, 이건 상태가 바뀌는 게 아니라
+                 **화면 한 칸이 통째로 지나가는 이동**이라 그 거리에 맞는 시간이 필요하다.
+            */}
+            <div
+              aria-hidden
+              className="flex h-full w-[400%] transition-transform duration-500 ease-out motion-reduce:transition-none"
+              style={{ transform: `translateX(-${selected * 25}%)` }}
+            >
+              {FLOW_STEPS.map((item) => (
+                <div key={item.step} className="flex h-full w-1/4 flex-col p-5">
+                  <FlowMockView mock={item.mock} />
+                </div>
+              ))}
             </div>
-          </div>
+          </motion.div>
         </DarkSection>
       </div>
     </div>
