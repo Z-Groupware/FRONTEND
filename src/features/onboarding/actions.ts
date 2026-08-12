@@ -89,6 +89,11 @@ export async function commitOnboardingAction(input: {
       skipped: data.skipped,
     };
   } catch (error) {
-    return { ok: false, error: toUserMessage(error), issuedEmails: [], skipped: [] };
+    return {
+      ok: false,
+      error: toUserMessage(error),
+      issuedEmails: [],
+      skipped: [],
+    };
   }
 }

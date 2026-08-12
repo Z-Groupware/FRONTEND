@@ -3,11 +3,18 @@ import { format } from "date-fns";
 import type { PaletteColor } from "@/lib/palette";
 
 import { NEUTRAL_ACCENT_COLOR } from "../accent-color";
-import type { RoomMember, RoomReservation } from "../types";
+import type { RoomMember } from "../types";
 import { AttendeeAvatarStack } from "./attendee-avatar-stack";
 
 interface RoomReservationEventProps {
-  event: RoomReservation;
+  title: string;
+  start: Date;
+  end: Date;
+  /**
+   * 참석자 id — 방금 만든 예약만 채워진다(주간 그리드 API는 참석자 id를 안 내려준다,
+   * ROOM-02 규칙). 없으면 아바타 자리를 그리지 않는다.
+   */
+  attendeeIds?: number[];
   members: RoomMember[];
   /**
    * 막대 색 — 이 컴포넌트는 계산하지 않고 그대로 받아 그린다(호출부 `weekly-room-calendar.tsx`가
@@ -26,7 +33,10 @@ interface RoomReservationEventProps {
  *    관측돼 화면 전체가 죽는 것보다 중립색으로라도 그리는 쪽을 택한다.
  */
 export function RoomReservationEvent({
-  event,
+  title,
+  start,
+  end,
+  attendeeIds,
   members,
   accentColor = NEUTRAL_ACCENT_COLOR,
 }: RoomReservationEventProps) {
@@ -39,12 +49,12 @@ export function RoomReservationEvent({
       }}
       className="flex h-full flex-col justify-center gap-0.5 overflow-hidden rounded-[5px] border-l-2 px-1.5 py-0.5 text-left leading-tight"
     >
-      <span className="truncate text-[11px] font-medium">{event.title}</span>
+      <span className="truncate text-[11px] font-medium">{title}</span>
       <span className="flex items-center justify-between gap-1">
         <span className="text-muted-foreground truncate text-[11px] tabular-nums">
-          {format(event.start, "HH:mm")}–{format(event.end, "HH:mm")}
+          {format(start, "HH:mm")}–{format(end, "HH:mm")}
         </span>
-        <AttendeeAvatarStack memberIds={event.attendeeIds} members={members} />
+        {attendeeIds && <AttendeeAvatarStack memberIds={attendeeIds} members={members} />}
       </span>
     </div>
   );

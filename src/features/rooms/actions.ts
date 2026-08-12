@@ -2,13 +2,23 @@
 
 import { revalidatePath } from "next/cache";
 
+import { requireAccessToken } from "@/features/auth/session";
 import { TOP_LEVEL_PROJECTS } from "@/features/project/mock/projects";
 import { PROJECT_TEAM_ACTIONS_MOCK } from "@/features/project/mock/team-actions";
+import { ApiError, serverApi } from "@/lib/api";
+import { ep } from "@/lib/endpoints";
 import { getMockActor } from "@/lib/mock-actor";
 import { canManageRooms, requiresParentTeamAction } from "@/lib/permission";
 import { isMock } from "@/mocks/config";
 
 import { RESERVATION_DURATION_MINUTES } from "./constants";
+import {
+  type BeCreateMeetingRoomResponse,
+  type BeMeetingRoom,
+  toCreatedMeetingRoom,
+  toCreateMeetingRoomPayload,
+  toMeetingRoom,
+} from "./mapper";
 import { findMockMember } from "./mock/members";
 import { addMockReservation, listMockReservationsByRoom } from "./mock/reservations";
 import { addMockRoom, deleteMockRoom, findMockRoom, updateMockRoom } from "./mock/rooms";
@@ -22,6 +32,34 @@ import type {
   RoomReservationFormErrors,
 } from "./types";
 import { validateMeetingRoomDraft, validateRoomReservationDraft } from "./validate";
+
+const ROOM_NAME_CONFLICT_MESSAGE = "이미 같은 이름의 회의실이 있습니다";
+
+const ROOM_NOT_FOUND_MESSAGE = "수정할 회의실을 찾을 수 없습니다";
+
+/**
+ * 회의실 추가·수정 API 실패를 폼 필드 오류로 바꾼다(ROOM-03·04 공통).
+ * ⚠️ `MR-002`(이름 중복)는 `name` 칸에, `MR-003`(시간 역전)·`MR-006`(좁힌 시간 밖에 이미
+ *    예약된 슬롯 있음)은 `closeTime` 칸에 붙인다 — 이 폼엔 "회의실 전체" 오류를 보여줄 자리가
+ *    따로 없어서, 화면 가드가 이미 막아 준 `MR-004`(권한)를 포함해 나머지는 전부 `name` 칸에
+ *    얹는다(기존 권한 오류와 같은 자리). `MR-001`(존재하지 않는 회의실, 수정 전용)은 mock
+ *    분기의 "수정할 회의실을 찾을 수 없습니다"와 문구를 맞춘다.
+ */
+function toMeetingRoomFormErrors(error: unknown): MeetingRoomFormErrors {
+  if (!(error instanceof ApiError)) throw error;
+
+  switch (error.code) {
+    case "MR-001":
+      return { name: ROOM_NOT_FOUND_MESSAGE };
+    case "MR-002":
+      return { name: ROOM_NAME_CONFLICT_MESSAGE };
+    case "MR-003":
+    case "MR-006":
+      return { closeTime: error.message };
+    default:
+      return { name: error.message };
+  }
+}
 
 const ROOMS_PATH = "/app/rooms";
 const MANAGE_ROOMS_PATH = "/manage/rooms";
@@ -153,8 +191,19 @@ export async function createMeetingRoomAction(
   if (Object.keys(errors).length > 0) return { errors };
 
   if (!isMock) {
-    // ⚠️ 미구현 — API 스펙 확정 후 BFF 경로로 회의실 추가 요청을 보낸다.
-    throw new Error("회의실 추가 API가 아직 연결되지 않았습니다.");
+    const accessToken = await requireAccessToken();
+    try {
+      const { meetingRoomId } = await serverApi<BeCreateMeetingRoomResponse>(ep.meetingRooms(), {
+        method: "POST",
+        accessToken,
+        json: toCreateMeetingRoomPayload(draft),
+      });
+      revalidatePath(MANAGE_ROOMS_PATH);
+      revalidatePath(ROOMS_PATH);
+      return { errors: {}, room: toCreatedMeetingRoom(meetingRoomId, draft) };
+    } catch (error) {
+      return { errors: toMeetingRoomFormErrors(error) };
+    }
   }
 
   const room = addMockRoom(draft);
@@ -178,12 +227,23 @@ export async function updateMeetingRoomAction(
   if (Object.keys(errors).length > 0) return { errors };
 
   if (!isMock) {
-    // ⚠️ 미구현 — API 스펙 확정 후 BFF 경로로 회의실 수정 요청을 보낸다.
-    throw new Error("회의실 수정 API가 아직 연결되지 않았습니다.");
+    const accessToken = await requireAccessToken();
+    try {
+      const updated = await serverApi<BeMeetingRoom>(ep.meetingRoom(Number(id)), {
+        method: "PATCH",
+        accessToken,
+        json: toCreateMeetingRoomPayload(draft),
+      });
+      revalidatePath(MANAGE_ROOMS_PATH);
+      revalidatePath(ROOMS_PATH);
+      return { errors: {}, room: toMeetingRoom(updated) };
+    } catch (error) {
+      return { errors: toMeetingRoomFormErrors(error) };
+    }
   }
 
   const room = updateMockRoom(id, draft);
-  if (!room) return { errors: { name: "수정할 회의실을 찾을 수 없습니다" } };
+  if (!room) return { errors: { name: ROOM_NOT_FOUND_MESSAGE } };
 
   revalidatePath(MANAGE_ROOMS_PATH);
   revalidatePath(ROOMS_PATH);
@@ -191,21 +251,35 @@ export async function updateMeetingRoomAction(
 }
 
 /**
- * 회의실 삭제 — 추가·수정과 같은 규칙(권한·`isMock` 분기). 되돌릴 수 없는 조작이라 화면
- * (`RoomDeleteDialog`)에서 확인 Dialog를 먼저 띄운 뒤에만 이 액션이 실행된다(§토스트: 파괴적
+ * 회의실 삭제(비활성화) — 추가·수정과 같은 규칙(권한·`isMock` 분기). 되돌릴 수 없는 조작이라
+ * 화면(`RoomDeleteDialog`)에서 확인 Dialog를 먼저 띄운 뒤에만 이 액션이 실행된다(§토스트: 파괴적
  * 작업은 Dialog). 같은 화면에 머무르므로 `deleteNoticeAction`과 달리 `redirect`는 없다.
+ * ⚠️ **소프트 삭제다**(ROOM-05) — BE가 `deleted_at`만 채운다. 이미 없는(또는 이미 비활성인)
+ *    회의실을 다시 지우면 `MR-001`(404)이 오는데, mock 분기의 "중복 삭제 요청은 조용히
+ *    넘어간다"와 같은 결로 성공 취급한다(멱등). 미래 예약이 남아 있으면(`MR-005`, 409)
+ *    그건 진짜 막아야 하는 오류라 그대로 던진다 — 화면은 `RoomDeleteDialog`가 확인 뒤 바로
+ *    부르는 흐름이라 폼 오류 슬롯이 없고, 던진 오류는 가장 가까운 `error.tsx`가 받는다.
  */
 export async function deleteMeetingRoomAction(formData: FormData): Promise<void> {
   if (!canManageRooms(getMockActor())) {
     throw new Error("회의실을 삭제할 권한이 없습니다");
   }
 
+  const id = String(formData.get("id") ?? "");
+
   if (!isMock) {
-    // ⚠️ 미구현 — API 스펙 확정 후 BFF 경로로 회의실 삭제 요청을 보낸다.
-    throw new Error("회의실 삭제 API가 아직 연결되지 않았습니다.");
+    const accessToken = await requireAccessToken();
+    try {
+      await serverApi<null>(ep.meetingRoom(Number(id)), { method: "DELETE", accessToken });
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 404) return;
+      throw error;
+    }
+    revalidatePath(MANAGE_ROOMS_PATH);
+    revalidatePath(ROOMS_PATH);
+    return;
   }
 
-  const id = String(formData.get("id") ?? "");
   deleteMockRoom(id);
 
   revalidatePath(MANAGE_ROOMS_PATH);

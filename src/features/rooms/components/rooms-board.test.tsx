@@ -43,8 +43,9 @@ describe("RoomsBoard", () => {
     const user = userEvent.setup();
     render(
       <RoomsBoard
-        initialReservations={[]}
+        initialEvents={[]}
         rooms={ROOMS}
+        selectedRoomId="room-large"
         members={MEMBERS}
         projects={PROJECTS}
         showParentTeamAction={false}

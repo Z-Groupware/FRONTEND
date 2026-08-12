@@ -23,6 +23,13 @@ const nextConfig: NextConfig = {
        빌드 실패를 조용히 넘기지 않는다(§정직성).
   */
   devIndicators: false,
+  // 프록시(nginx) 뒤에서 도메인으로 접속하면 Server Action이 Origin 불일치로 막힌다.
+  experimental: {
+    serverActions: {
+      allowedOrigins: ["www.z-groupware.site", "z-groupware.site"],
+      bodySizeLimit: "100mb",
+    },
+  },
 };
 
 export default nextConfig;

@@ -62,10 +62,19 @@ export function TeamHandoverAssignBoard({ handover, todayIso }: TeamHandoverAssi
   function handleComplete() {
     setError(null);
     startTransition(async () => {
-      const result = await completeTeamHandoverAction(
-        handover.memberId,
-        toAssignmentList(assignments),
-      );
+      /*
+        ⚠️ **거절도 받아 낸다.** 액션은 BE 실패를 값으로 돌려주지만, 브라우저에서 Next 서버까지
+           가는 길이 끊기면(네트워크·서버 재시작·배포) `await` 자체가 던진다 — 안 잡으면 화면이
+           통째로 `error.tsx`로 넘어가거나 잠긴 채로 남는다(2026-08-12 전 화면 정리).
+      */
+      let result;
+      try {
+        result = await completeTeamHandoverAction(handover.memberId, toAssignmentList(assignments));
+      } catch {
+        setError("서버에 연결하지 못했습니다. 잠시 후 다시 시도해 주세요.");
+        return;
+      }
+
       if (!result.isSuccess) {
         setError(result.message ?? "처리하지 못했습니다");
         return;
@@ -85,7 +94,15 @@ export function TeamHandoverAssignBoard({ handover, todayIso }: TeamHandoverAssi
     setReasonError(null);
     setError(null);
     startTransition(async () => {
-      const result = await rejectTeamHandoverAction(handover.memberId, reason);
+      /* ⚠️ 확정과 같은 이유로 거절도 받아 낸다 — 위 주석 참고 */
+      let result;
+      try {
+        result = await rejectTeamHandoverAction(handover.memberId, reason);
+      } catch {
+        setError("서버에 연결하지 못했습니다. 잠시 후 다시 시도해 주세요.");
+        return;
+      }
+
       if (!result.isSuccess) {
         setError(result.message ?? "처리하지 못했습니다");
         return;

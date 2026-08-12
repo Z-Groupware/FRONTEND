@@ -45,11 +45,18 @@ export const ep = {
   companyMe: () => "/api/companies/me",
   companyOnboarding: () => "/api/companies/me/onboarding",
 
-  /* 회의 */
-  meetings: () => "/api/meetings",
-  meeting: (id: number) => `/api/meetings/${id}`,
-  meetingCapture: (id: number) => `/api/meetings/${id}/capture`,
-  meetingSummary: (id: number) => `/api/meetings/${id}/summary`,
+  /*
+   * 회의 — [확인] BE 실코드 대조(2026-08-11)
+   *   `meeting/presentation/api/{MeetingController,MeetingListController,MeetingDetailController}.java`
+   *
+   * ⚠️ **회의도 `/api/v1/`이다.** 전에 `/api/meetings`로 적어 뒀던 건 FE 제안 경로였고
+   *    실제 컨트롤러는 전부 `@RequestMapping("/api/v1/meetings")`다 — 그대로 부르면 404다.
+   * ⚠️ **캡처 전용 조회는 없다.** 캡처 화면도 상세(MEET-04)를 쓴다 — 있지도 않은
+   *    `/{id}/capture`를 지어내지 않는다(§환각 API 방지).
+   */
+  meetings: () => "/api/v1/meetings",
+  /** 상세(MEET-04) — 캡처 진입도 이걸 쓴다. 없으면 404 `MT-001`, 열람 권한 없으면 403 `MT-011` */
+  meeting: (id: number) => `/api/v1/meetings/${id}`,
 
   /*
    * 캡처 — [확인] BE 실코드 대조(2026-08-10)
@@ -171,7 +178,21 @@ export const ep = {
   jobPositions: () => "/api/job-positions",
   jobPosition: (id: number) => `/api/job-positions/${id}`,
   departments: () => "/api/departments",
-  rooms: () => "/api/rooms",
+
+  /**
+   * 회의실 — 도메인 문서(ROOM-01~05, 2026-08-12) 기준, **BE 실코드 미대조**(§연동 검증: 구현
+   *   붙일 때 컨트롤러로 재확인한다).
+   */
+  meetingRooms: () => "/api/meeting-rooms",
+  /** 회의실 한 건 수정(`PATCH`, ROOM-04)·비활성화(`DELETE`, ROOM-05)가 같은 경로를 쓴다. */
+  meetingRoom: (id: number) => `/api/meeting-rooms/${id}`,
+  /**
+   * 회의실 주간(월~금) 슬롯 현황(ROOM-02). `meetingRoomId`는 필수, `date`는 생략하면 서버가
+   * KST 오늘 기준 주를 채운다(§연동 검증 — 요청 축이 "회의실 1개 × 5일"로, 하루 단위 전체
+   * 회의실 조회는 폐기됐다).
+   */
+  meetingRoomAvailability: (params: { meetingRoomId: number; date?: string }) =>
+    `/api/meeting-rooms/availability${toQuery(params)}`,
 
   /* 기타 */
   notifications: () => "/api/notifications",

@@ -110,7 +110,19 @@ export function HandoverApprovalCard({
 
   const run = (task: () => Promise<{ isSuccess: boolean; message?: string }>, done: string) =>
     startTransition(async () => {
-      const result = await task();
+      /*
+        ⚠️ **거절도 받아 낸다.** 값으로 오는 실패는 아래에서 받지만, 브라우저에서 Next 서버까지
+           가는 길이 끊기면 `await`가 던진다 — 안 잡으면 이 화면이 통째로 `error.tsx`가 되어
+           **적어 둔 반려 사유까지 함께 날아간다**(팀 배정판은 이미 막아 뒀다, 2026-08-12).
+      */
+      let result;
+      try {
+        result = await task();
+      } catch {
+        setError("서버에 연결하지 못했습니다. 잠시 후 다시 시도해 주세요.");
+        return;
+      }
+
       if (!result.isSuccess) {
         setError(result.message ?? "처리하지 못했습니다");
         return;

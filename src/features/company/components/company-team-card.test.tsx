@@ -65,6 +65,27 @@ describe("저장 실패 문구", () => {
     expect(screen.queryByText("같은 이름이 둘 있습니다")).not.toBeInTheDocument();
   });
 
+  /*
+    ⚠️ **전송 자체가 거부되는 경우**다(적대적 리뷰 2026-08-12). 액션은 BE 실패를 값으로
+       돌려주지만, 브라우저에서 Next 서버까지 가는 길이 끊기면(배포·재시작·네트워크)
+       `await`가 던진다 — 안 잡으면 화면이 통째로 `error.tsx`로 넘어가 **방금 편집한 팀 트리를
+       잃는다.** 이 테스트가 없던 동안에는 그 방어를 통째로 지워도 933개가 전부 초록이었다.
+  */
+  it("전송이 거부돼도 화면이 죽지 않고 그 자리에 남는다", async () => {
+    const user = userEvent.setup();
+    saveMock.mockRejectedValue(new TypeError("Failed to fetch"));
+    renderCard();
+
+    await user.type(screen.getByPlaceholderText(/새 팀 이름/), "영업팀{Enter}");
+    await user.click(screen.getByRole("button", { name: "저장" }));
+
+    expect(
+      await screen.findByText("서버에 연결하지 못했습니다. 잠시 후 다시 시도해 주세요."),
+    ).toBeInTheDocument();
+    // 편집하던 값이 그대로 살아 있어야 한다 — 다시 누르면 되는 상태다
+    expect(screen.getByText("영업팀")).toBeInTheDocument();
+  });
+
   it("성공하면 아무 문구도 남기지 않는다", async () => {
     const user = userEvent.setup();
     saveMock.mockResolvedValue({ isSuccess: true });

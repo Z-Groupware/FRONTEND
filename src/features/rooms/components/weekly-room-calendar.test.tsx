@@ -1,5 +1,6 @@
+const pushMock = jest.fn();
 jest.mock("next/navigation", () => ({
-  useRouter: () => ({ push: jest.fn() }),
+  useRouter: () => ({ push: pushMock }),
 }));
 
 // react-big-calendar 자체는 무겁고 DOM 레이아웃(getBoundingClientRect 등)에 기대는 부분이 많다 —
@@ -33,10 +34,9 @@ jest.mock("react-big-calendar", () => {
   };
 });
 
-// 실제 툴바(회의실 select)는 base-ui 팝업 조작이 얽혀 있어 테스트 대상(필터링 로직)과
+// 실제 툴바(회의실 select)는 base-ui 팝업 조작이 얽혀 있어 테스트 대상(URL 전환 로직)과
 // 무관하다 — `onSelectedRoomChange`를 그대로 노출하는 버튼 스텁으로 바꿔 그 로직만 검증한다.
 jest.mock("./rooms-calendar-toolbar", () => ({
-  ALL_ROOMS_VALUE: "all",
   RoomsCalendarToolbar: ({
     rooms,
     onSelectedRoomChange,
@@ -45,9 +45,6 @@ jest.mock("./rooms-calendar-toolbar", () => ({
     onSelectedRoomChange: (roomId: string) => void;
   }) => (
     <div>
-      <button type="button" onClick={() => onSelectedRoomChange("all")}>
-        전체 회의실
-      </button>
       {rooms.map((room) => (
         <button key={room.id} type="button" onClick={() => onSelectedRoomChange(room.id)}>
           {room.name}
@@ -62,7 +59,7 @@ import userEvent from "@testing-library/user-event";
 
 import { AUTHORITY } from "@/constants/authority";
 
-import type { MeetingRoom, RoomMember, RoomReservation } from "../types";
+import type { MeetingRoom, RoomCalendarEvent, RoomMember } from "../types";
 import { WeeklyRoomCalendar } from "./weekly-room-calendar";
 
 const ROOMS: MeetingRoom[] = [
@@ -73,76 +70,47 @@ const MEMBERS: RoomMember[] = [
   { id: 1, name: "박대표", teamName: null, authority: AUTHORITY.OWNER },
 ];
 
-const RESERVATIONS: RoomReservation[] = [
+const EVENTS: RoomCalendarEvent[] = [
   {
     id: "res-a",
     title: "A 회의",
     start: new Date("2026-08-10T10:00:00"),
     end: new Date("2026-08-10T10:30:00"),
-    roomId: "room-a",
-    roomName: "대회의실",
-    projectId: "1",
-    projectTag: "GOODS",
-    topics: [{ main: "안건", sub: "" }],
     attendeeIds: [1],
-    ownerId: 1,
-  },
-  {
-    id: "res-b",
-    title: "B 회의",
-    start: new Date("2026-08-10T11:00:00"),
-    end: new Date("2026-08-10T11:30:00"),
-    roomId: "room-b",
-    roomName: "소회의실",
-    projectId: "1",
-    projectTag: "GOODS",
-    topics: [{ main: "안건", sub: "" }],
-    attendeeIds: [1],
-    ownerId: 1,
   },
 ];
 
 function renderCalendar() {
   return render(
     <WeeklyRoomCalendar
-      reservations={RESERVATIONS}
+      events={EVENTS}
       members={MEMBERS}
       rooms={ROOMS}
+      selectedRoomId="room-a"
       week="2026-08-10"
       onSelectSlot={jest.fn()}
     />,
   );
 }
 
-describe("WeeklyRoomCalendar visibleReservations", () => {
-  it("ALL_ROOMS_VALUE면 전체 예약을 Calendar에 넘긴다", () => {
+describe("WeeklyRoomCalendar", () => {
+  beforeEach(() => {
+    pushMock.mockClear();
+  });
+
+  it("서버가 내려준 events를 그대로 Calendar에 넘긴다", () => {
     renderCalendar();
 
     const list = screen.getByTestId("visible-events");
     expect(within(list).getByText("res-a")).toBeInTheDocument();
-    expect(within(list).getByText("res-b")).toBeInTheDocument();
   });
 
-  it("특정 회의실을 고르면 그 회의실 예약만 Calendar에 넘긴다", async () => {
-    const user = userEvent.setup();
-    renderCalendar();
-
-    await user.click(screen.getByRole("button", { name: "대회의실" }));
-
-    const list = screen.getByTestId("visible-events");
-    expect(within(list).getByText("res-a")).toBeInTheDocument();
-    expect(within(list).queryByText("res-b")).not.toBeInTheDocument();
-  });
-
-  it("전체 회의실로 되돌리면 다시 전체 예약을 보여준다", async () => {
+  it("다른 회의실을 고르면 그 회의실 id로 URL을 바꾼다(서버 재조회)", async () => {
     const user = userEvent.setup();
     renderCalendar();
 
     await user.click(screen.getByRole("button", { name: "소회의실" }));
-    await user.click(screen.getByRole("button", { name: "전체 회의실" }));
 
-    const list = screen.getByTestId("visible-events");
-    expect(within(list).getByText("res-a")).toBeInTheDocument();
-    expect(within(list).getByText("res-b")).toBeInTheDocument();
+    expect(pushMock).toHaveBeenCalledWith("/app/rooms?week=2026-08-10&roomId=room-b");
   });
 });

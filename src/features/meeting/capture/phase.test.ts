@@ -17,8 +17,8 @@ describe("단계 판정", () => {
     expect(isCapturing(CAPTURE_PHASE.READY)).toBe(false);
   });
 
-  it("입장 전과 종료 후에는 작업 화면을 안 그린다", () => {
-    expect(showsWorkspace(CAPTURE_PHASE.BEFORE_ENTER)).toBe(false);
+  it("준비 화면과 종료 후에는 작업 화면을 안 그린다", () => {
+    expect(showsWorkspace(CAPTURE_PHASE.BEFORE_START)).toBe(false);
     expect(showsWorkspace(CAPTURE_PHASE.ENDED)).toBe(false);
     expect(showsWorkspace(CAPTURE_PHASE.READY)).toBe(true);
     expect(showsWorkspace(CAPTURE_PHASE.PAUSED)).toBe(true);
@@ -26,7 +26,7 @@ describe("단계 판정", () => {
 
   /* 녹음 한 번 없이 종료하면 스크립트도 파일도 없는 회의가 되돌릴 수 없게 굳는다 */
   it("녹음을 시작하기 전에는 종료할 수 없다", () => {
-    expect(canSubmit(CAPTURE_PHASE.BEFORE_ENTER)).toBe(false);
+    expect(canSubmit(CAPTURE_PHASE.BEFORE_START)).toBe(false);
     expect(canSubmit(CAPTURE_PHASE.READY)).toBe(false);
     expect(canSubmit(CAPTURE_PHASE.RECORDING)).toBe(true);
     expect(canSubmit(CAPTURE_PHASE.PAUSED)).toBe(true);

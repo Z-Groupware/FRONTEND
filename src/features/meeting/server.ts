@@ -2,8 +2,11 @@ import "server-only";
 
 import { AI_SUMMARY_STATUS, MEETING_STATUS } from "@/constants/meeting";
 import { PERSONAL_ACTION_DETAIL_MOCK } from "@/features/action/mock/action-detail";
+import { requireAccessToken } from "@/features/auth/session";
 import { listMockManagedMembers } from "@/features/member/mock/managed";
 import { PROJECT_TEAM_ACTIONS_MOCK } from "@/features/project/mock/team-actions";
+import { ApiError, serverApi } from "@/lib/api";
+import { ep } from "@/lib/endpoints";
 import {
   type Actor,
   canCaptureMeeting,
@@ -13,6 +16,7 @@ import {
 import { isMock } from "@/mocks/config";
 
 import { formatMeetingSchedule } from "./lib";
+import { hostIdOf, isClosed, parseMeetingDetail, toMeetingCaptureInfo } from "./mapper";
 import { findMockMeeting, listMockMeetings } from "./mock/meetings";
 import { ensureMockMeetingsSeeded, findMockMeetingExtras } from "./mock/seed";
 import { findMockMeetingReview } from "./review/mock/review";
@@ -255,10 +259,7 @@ export async function getMeetingDetail(id: string, viewer: Actor): Promise<Meeti
  * ⚠️ 화면 판정일 뿐이다. 진짜 검사는 종료·업로드 API가 서버에서 다시 한다.
  */
 export async function getMeetingCapture(id: string, viewer: Actor): Promise<MeetingCaptureResult> {
-  if (!isMock) {
-    // TODO(BE 협의): `GET /meetings/{id}` — 캡처는 Host 판정에 쓸 최소 필드만 받으면 된다
-    throw new Error("회의 캡처 API가 아직 연결되지 않았습니다.");
-  }
+  if (!isMock) return getLiveMeetingCapture(id, viewer);
 
   ensureMockMeetingsSeeded();
   const meeting = findMockMeeting(id);
@@ -296,4 +297,42 @@ export async function getMeetingCapture(id: string, viewer: Actor): Promise<Meet
       }),
     },
   };
+}
+
+/**
+ * 캡처 진입 — 실서버.
+ *
+ * ⚠️ **판정 순서를 목과 똑같이 맞춘다**(없음 → Host 아님 → 이미 끝남 → 통과). 순서가 갈리면
+ *    같은 회의가 목에서는 `notHost`, 실서버에서는 `alreadyDone`으로 다르게 막혀 화면이
+ *    다른 말을 한다.
+ * ⚠️ **404(`MT-001`)는 값으로 돌린다.** 던지면 `error.tsx`가 뜨는데, 없는 회의는 고장이 아니라
+ *    "그런 회의가 없습니다"라고 말해 줄 일이다(§view-types: 못 들어가는 이유를 값으로).
+ *    나머지 오류(500·네트워크)는 그대로 던진다 — 그건 진짜 고장이라 에러 화면이 맞다.
+ * ⚠️ **403(`MT-011` 열람 권한 없음)은 뭉개지 않는다.** BE가 막았다면 우리 판정이 틀렸다는
+ *    뜻이라, 조용히 다른 화면을 그리면 어긋난 걸 아무도 모른다.
+ * ⚠️ **개설자 판정은 `canCaptureMeeting`이 한다** — 목 경로와 같은 함수다. 응답에서는 그 값이
+ *    `host.memberId`에 들어 있어 매퍼(`hostIdOf`)가 꺼내 준다. `server.ts`가 중첩을 직접
+ *    벗기면 shape이 바뀔 때 여기까지 고쳐야 한다.
+ */
+async function getLiveMeetingCapture(id: string, viewer: Actor): Promise<MeetingCaptureResult> {
+  const accessToken = await requireAccessToken();
+
+  let raw: unknown;
+  try {
+    raw = await serverApi<unknown>(ep.meeting(Number(id)), { accessToken });
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) return { kind: "notFound" };
+    throw error;
+  }
+
+  /* ⚠️ 단언이 아니라 **검사**다 — 모양이 어긋나면 판정 전에 여기서 멈춘다(매퍼 주석 참고) */
+  const detail = parseMeetingDetail(raw);
+
+  /* ⚠️ 판정은 목 경로와 **같은 함수**다 — 매퍼는 값이 어디 있는지만 알려 준다(§권한) */
+  if (!canCaptureMeeting(viewer, { hostId: hostIdOf(detail) })) {
+    return { kind: "notHost", title: detail.title };
+  }
+  if (isClosed(detail)) return { kind: "alreadyDone", title: detail.title };
+
+  return { kind: "ok", meeting: toMeetingCaptureInfo(detail) };
 }

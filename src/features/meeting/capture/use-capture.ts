@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { CAPTURE_FAILURE_MESSAGE } from "@/constants/meeting";
+
 import {
   completeMeetingAction,
   pauseCaptureSessionAction,
@@ -55,7 +57,16 @@ export interface UseCaptureResult {
   start(): Promise<void>;
   pause(): void;
   resume(): void;
-  end(): void;
+  /**
+   * 종료 — **서버가 받았는지까지 알려 준다**(2026-08-12).
+   *
+   * ⚠️ 로컬 정리(마이크·STT 끄기·상태 ENDED)는 **무조건** 먼저 끝낸다. 서버가 안 받아도
+   *    마이크는 꺼야 한다.
+   * ⚠️ 그 뒤 종료 알림(MEET-08) 결과를 돌려준다 — 부르는 쪽이 이 값을 보고 **목록으로
+   *    보낼지 말지**를 정한다. 실패했는데 "요약 중입니다"라고 말하면, 서버는 회의가 끝난 줄도
+   *    모르는데 사람은 다 끝난 줄 안다(§정직성).
+   */
+  end(): Promise<{ ok: boolean; error?: string }>;
 }
 
 /** 1초마다 다시 그린다 — 경과 시간이 흘러야 녹음 중인 게 보인다 */
@@ -78,7 +89,7 @@ const CAPTION_FLUSH_MS = 2_000;
 const SILENT_RMS_DBFS = -100;
 
 export function useCapture(meetingId: string, initialSeq = 0): UseCaptureResult {
-  const [phase, setPhase] = useState<CapturePhase>(CAPTURE_PHASE.BEFORE_ENTER);
+  const [phase, setPhase] = useState<CapturePhase>(CAPTURE_PHASE.BEFORE_START);
   const [spans, setSpans] = useState<RecordingSpan[]>([]);
   const [chunks, setChunks] = useState<TranscriptChunk[]>([]);
   const [partial, setPartial] = useState("");
@@ -411,9 +422,18 @@ export function useCapture(meetingId: string, initialSeq = 0): UseCaptureResult 
     setSpans((prev) => [...prev, { from: at, to: null }]);
     setPhase(CAPTURE_PHASE.RECORDING);
 
-    /* 오디오는 안 보내고 상태만 알린다(§3-3). 실패해도 녹음은 계속한다 — 이유만 남긴다 */
-    const session = await startCaptureSessionAction(Number(meetingId));
-    if (!session.ok) setError(session.error ?? "녹음 시작을 서버에 알리지 못했습니다.");
+    /*
+      오디오는 안 보내고 상태만 알린다(§3-3). 실패해도 녹음은 계속한다 — 이유만 남긴다.
+      ⚠️ **거절도 받아 낸다.** 액션은 BE 실패를 값으로 돌려주지만 브라우저→Next 구간이 끊기면
+         `await`가 던진다 — 안 잡으면 아무 말도 못 남긴 채 조용히 지나가고, 서버는 이 회의가
+         녹음 중인 줄 모른다(새로고침 복구·이어받기가 어긋난다).
+    */
+    try {
+      const session = await startCaptureSessionAction(Number(meetingId));
+      if (!session.ok) setError(session.error ?? "녹음 시작을 서버에 알리지 못했습니다.");
+    } catch {
+      setError("서버에 연결하지 못했습니다. 녹음은 계속되지만 서버는 아직 모릅니다.");
+    }
   }, [pushChunk, markPartial, meetingId]);
 
   const pause = useCallback(() => {
@@ -431,7 +451,9 @@ export function useCapture(meetingId: string, initialSeq = 0): UseCaptureResult 
       /* ⚠️ 조용히 삼키지 않는다 — 서버가 모르면 새로고침 복구·이어받기가 어긋난다 */
       .then((result) => {
         if (!result.ok) setError(result.error ?? "일시정지를 서버에 알리지 못했습니다.");
-      });
+      })
+      /* ⚠️ 전송 자체가 거부돼도 말은 남긴다 — 조용하면 서버가 아는 줄로 착각한다 */
+      .catch(() => setError("서버에 연결하지 못했습니다. 일시정지를 알리지 못했습니다."));
     const at = Date.now();
     setSpans((prev) => prev.map((span) => (span.to === null ? { ...span, to: at } : span)));
     setNow(at);
@@ -443,28 +465,30 @@ export function useCapture(meetingId: string, initialSeq = 0): UseCaptureResult 
     recorderRef.current?.resume();
     /* ⚠️ 쉬는 동안 마이크가 조용했으니 음량 창을 새로 연다 — 안 그러면 첫 문장이 무음으로 잡힌다 */
     levelRef.current?.mark();
-    void resumeCaptureSessionAction(Number(meetingId)).then((result) => {
-      if (!result.ok) setError(result.error ?? "재개를 서버에 알리지 못했습니다.");
-    });
+    void resumeCaptureSessionAction(Number(meetingId))
+      .then((result) => {
+        if (!result.ok) setError(result.error ?? "재개를 서버에 알리지 못했습니다.");
+      })
+      .catch(() => setError("서버에 연결하지 못했습니다. 재개를 알리지 못했습니다."));
     const at = Date.now();
     setNow(at);
     setSpans((prev) => [...prev, { from: at, to: null }]);
     setPhase(CAPTURE_PHASE.RECORDING);
   }, [meetingId]);
 
-  const end = useCallback(() => {
-    teardown();
+  const end = useCallback(async () => {
     /*
-      MEET-08 — 남은 자막을 마저 보내고 종료를 알린다.
-      ⚠️ **AI 분석을 프론트가 부르지 않는다**(§3-3 4번). 서버가 종료 처리 안에서 큐에 걸고
-         실패해도 재시도한다 — 사용자가 창을 닫아도 안전하다.
-      ⚠️ 되돌릴 수 없다. 확인 창을 거친 뒤에만 여기로 온다(§3-3 종료 정책).
+      ⚠️ **정리가 실패해도 종료 알림은 나간다**(2026-08-12, 코드래빗 지적). `MediaRecorder.stop()`
+         같은 브라우저 API는 상태가 어긋나면 던지는데(`InvalidStateError`), 그걸로 흐름이 멈추면
+         **회의는 끝났는데 서버만 모르는** 상태가 된다 — 요약도 액션 분배도 영영 안 돈다.
+         마이크 표시등은 화면을 떠날 때 정리 효과가 한 번 더 끈다.
     */
-    void drainCaptions()
-      .then(() => completeMeetingAction(Number(meetingId)))
-      .then((result) => {
-        if (!result.ok) setError(result.error ?? "회의 종료를 서버에 알리지 못했습니다.");
-      });
+    try {
+      teardown();
+    } catch {
+      /* 로컬 정리 실패는 사용자가 할 수 있는 일이 없다 — 알림을 계속 보내는 게 더 중요하다 */
+    }
+
     const at = Date.now();
     /*
       ⚠️ **열려 있는 구간만 닫는다.** 무조건 마지막 구간의 `to`를 덮어쓰면, 일시정지해 둔
@@ -474,6 +498,29 @@ export function useCapture(meetingId: string, initialSeq = 0): UseCaptureResult 
     setSpans((prev) => prev.map((span) => (span.to === null ? { ...span, to: at } : span)));
     setNow(at);
     setPhase(CAPTURE_PHASE.ENDED);
+
+    /*
+      MEET-08 — 남은 자막을 마저 보내고 종료를 알린다.
+      ⚠️ **AI 분석을 프론트가 부르지 않는다**(§3-3 4번). 서버가 종료 처리 안에서 큐에 걸고
+         실패해도 재시도한다 — 사용자가 창을 닫아도 안전하다.
+      ⚠️ 되돌릴 수 없다. 확인 창을 거친 뒤에만 여기로 온다(§3-3 종료 정책).
+      ⚠️ **결과를 삼키지 않고 돌려준다**(2026-08-12, 적대적 리뷰). 전에는 `void`로 흘려보내
+         실패해도 화면이 "요약 중입니다"라고 말하고 목록으로 떠났다 — 서버는 이 회의가 끝난
+         줄 모르니 요약도 액션 분배도 영영 안 돈다. 부르는 쪽이 보고 판단하게 한다.
+      ⚠️ 전송 자체가 거부되는 경우(브라우저→Next 단절)도 여기서 받는다.
+    */
+    try {
+      const result = await drainCaptions().then(() => completeMeetingAction(Number(meetingId)));
+      if (result.ok) return { ok: true };
+
+      const message = result.error ?? CAPTURE_FAILURE_MESSAGE.MEETING_END;
+      setError(message);
+      return { ok: false, error: message };
+    } catch {
+      const message = CAPTURE_FAILURE_MESSAGE.MEETING_END;
+      setError(message);
+      return { ok: false, error: message };
+    }
   }, [teardown, drainCaptions, meetingId]);
 
   return { phase, support, recordedMs, chunks, partial, error, enter, start, pause, resume, end };
