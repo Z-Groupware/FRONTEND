@@ -236,6 +236,8 @@ export const ep = {
   /** SSE 스트림 — BFF가 중계하며 토큰을 주입한다 */
   notificationStream: () => "/api/notifications/stream",
   notices: () => "/api/notices",
+  /** 공지 상세(`GET`, NOTI-02)·수정(`PUT`, NOTI-04)·삭제(`DELETE`, NOTI-05)가 같은 경로를 쓴다. */
+  notice: (noticeId: number) => `/api/notices/${noticeId}`,
   subscription: () => "/api/subscription",
 
   /**
