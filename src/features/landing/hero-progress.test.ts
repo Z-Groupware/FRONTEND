@@ -123,7 +123,7 @@ describe("shardFadeAt — 멀어질수록 옅어진다", () => {
        그렇다고 0이면 "부서졌다"가 아니라 "꺼졌다"로 보인다 — 흐릿하게 남아야 한다.
   */
   it("다 흩어졌을 때는 흐릿하게만 남는다", () => {
-    expect(shardFadeAt(1)).toBeLessThan(0.6);
+    expect(shardFadeAt(1)).toBeLessThan(0.8);
     expect(shardFadeAt(1)).toBeGreaterThan(0);
   });
 

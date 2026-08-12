@@ -498,8 +498,14 @@
     opacity: calc((0.9 - var(--hero-recede, 0) * 0.55) * (1 - var(--hero-shatter, 0) * 0.65));
   }
 
+  /*
+   * ⚠️ **밝은 무대에서는 부서졌다고 빼지 않는다**(2026-08-12). 어두운 쪽은 림라이트가 조각을
+   *    잡아 주지만 밝은 쪽은 흰 바탕 위 음영뿐이라, 같이 빼면 **아무것도 안 보인다** —
+   *    여기서는 안 빼야 겨우 보인다. 조각이 튀는 문제는 진하기가 아니라 **몸 색**으로 잡는다
+   *    (`three-z.tsx`의 `SHARD_COLOR`).
+   */
   .hero-z-light {
-    opacity: calc((0.3 - var(--hero-recede, 0) * 0.14) * (1 - var(--hero-shatter, 0) * 0.75));
+    opacity: calc(0.3 - var(--hero-recede, 0) * 0.14);
   }
 
   @media (prefers-reduced-motion: reduce) {

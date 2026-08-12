@@ -113,7 +113,7 @@ export function shardMixAt(scatter: number): number {
  *    가장 멀 때도 흐릿하게 남아 있어야 되돌아오는 게 읽힌다.
  */
 export function shardFadeAt(scatter: number): number {
-  return 1 - 0.45 * clamp01(scatter);
+  return 1 - 0.3 * clamp01(scatter);
 }
 
 /**
