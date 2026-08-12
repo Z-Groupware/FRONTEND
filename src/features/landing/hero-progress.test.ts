@@ -3,6 +3,7 @@ import {
   finaleAt,
   isTrackLongEnough,
   scatterAt,
+  shardFadeAt,
   shardMixAt,
   toHeroProgress,
 } from "./hero-progress";
@@ -99,6 +100,27 @@ describe("shardMixAt — 바꿔치기 구간", () => {
 
     expect(scatterAt(burstWhenMixStarts)).toBeCloseTo(0.12);
     expect(shardMixAt(scatterAt(0.09))).toBeGreaterThan(0.5);
+  });
+});
+
+describe("shardFadeAt — 멀어질수록 옅어진다", () => {
+  /* ⚠️ 모여 있을 때는 원본만큼 진해야 한다 — 옅으면 로고가 흐릿해진 채로 서 있는다 */
+  it("모여 있을 때는 그대로 진하다", () => {
+    expect(shardFadeAt(0)).toBe(1);
+  });
+
+  /*
+    ⚠️ 다 흩어졌을 때 진하면 흰 정육면체가 화면에 **얼룩처럼** 박힌다(2026-08-12 피드백).
+       그렇다고 0이면 "부서졌다"가 아니라 "꺼졌다"로 보인다 — 흐릿하게 남아야 한다.
+  */
+  it("다 흩어졌을 때는 흐릿하게만 남는다", () => {
+    expect(shardFadeAt(1)).toBeLessThan(0.35);
+    expect(shardFadeAt(1)).toBeGreaterThan(0);
+  });
+
+  it("범위를 벗어나도 진하기가 뒤집히지 않는다", () => {
+    expect(shardFadeAt(-1)).toBe(1);
+    expect(shardFadeAt(2)).toBe(shardFadeAt(1));
   });
 });
 

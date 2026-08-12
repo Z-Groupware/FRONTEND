@@ -4,7 +4,14 @@ import { Canvas, useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 
-import { burstAt, finaleAt, heroProgress, scatterAt, shardMixAt } from "../hero-progress";
+import {
+  burstAt,
+  finaleAt,
+  heroProgress,
+  scatterAt,
+  shardFadeAt,
+  shardMixAt,
+} from "../hero-progress";
 
 /**
  * 진짜 3D Z — 로고 세 조각(윗줄·사선·아랫줄)을 **코드로 압출**해 만든다.
@@ -192,10 +199,12 @@ function ZModel({
     /* ⚠️ 벌어진 정도로 판단한다 — 흩어짐 그대로 쓰면 계단 모양일 때 바뀐다(§hero-progress) */
     const scatter = scatterAt(burst);
     const shardMix = shardMixAt(scatter);
+    /* ⚠️ 멀어질수록 옅어진다 — 안 그러면 흰 사각형이 화면에 얼룩처럼 박힌다(§hero-progress) */
+    const shardAlpha = shardMix * shardFadeAt(scatter);
     if (solidMaterial.current) solidMaterial.current.opacity = 1 - shardMix;
-    if (shardMaterial.current) shardMaterial.current.opacity = shardMix;
+    if (shardMaterial.current) shardMaterial.current.opacity = shardAlpha;
     if (solid.current) solid.current.visible = shardMix < 0.99;
-    mesh.current.visible = shardMix > 0.01;
+    mesh.current.visible = shardAlpha > 0.01;
 
     if (shardMix < 0.01) return;
 
