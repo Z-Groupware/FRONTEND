@@ -6,6 +6,7 @@
 
 import type {
   MeetingRoom,
+  MeetingRoomDraft,
   RoomCalendarEvent,
   RoomDayAvailability,
   RoomReservation,
@@ -134,6 +135,40 @@ function toDayCalendarEvents(day: RoomDayAvailability, slotMinutes: number): Roo
 
 export function toRoomCalendarEvents(week: RoomWeekAvailability): RoomCalendarEvent[] {
   return week.days.flatMap((day) => toDayCalendarEvents(day, week.slotMinutes));
+}
+
+/** `POST /api/meeting-rooms`(ROOM-03) 요청 본문 — 폼 입력(`openTime`·`closeTime`)을 BE 필드명으로 바꾼다. */
+export interface BeCreateMeetingRoomPayload {
+  name: string;
+  location: string | null;
+  availableFrom: string;
+  availableTo: string;
+}
+
+export function toCreateMeetingRoomPayload(draft: MeetingRoomDraft): BeCreateMeetingRoomPayload {
+  const location = draft.location.trim();
+  return {
+    name: draft.name.trim(),
+    location: location.length > 0 ? location : null,
+    availableFrom: draft.openTime,
+    availableTo: draft.closeTime,
+  };
+}
+
+/** `POST /api/meeting-rooms` 성공 응답 — 생성된 id만 내려준다(나머지 필드는 요청값 그대로다). */
+export interface BeCreateMeetingRoomResponse {
+  meetingRoomId: number;
+}
+
+/** 응답의 id와 방금 보낸 폼 입력을 합쳐 화면이 바로 얹을 수 있는 `MeetingRoom`을 만든다. */
+export function toCreatedMeetingRoom(meetingRoomId: number, draft: MeetingRoomDraft): MeetingRoom {
+  return {
+    id: String(meetingRoomId),
+    name: draft.name.trim(),
+    location: draft.location.trim(),
+    openTime: draft.openTime,
+    closeTime: draft.closeTime,
+  };
 }
 
 /** 방금 만든 예약(`createRoomReservationAction`의 반환값)을 캘린더 막대 모양으로 맞춘다. */

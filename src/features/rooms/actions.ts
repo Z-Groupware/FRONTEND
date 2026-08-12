@@ -2,13 +2,21 @@
 
 import { revalidatePath } from "next/cache";
 
+import { requireAccessToken } from "@/features/auth/session";
 import { TOP_LEVEL_PROJECTS } from "@/features/project/mock/projects";
 import { PROJECT_TEAM_ACTIONS_MOCK } from "@/features/project/mock/team-actions";
+import { ApiError, serverApi } from "@/lib/api";
+import { ep } from "@/lib/endpoints";
 import { getMockActor } from "@/lib/mock-actor";
 import { canManageRooms, requiresParentTeamAction } from "@/lib/permission";
 import { isMock } from "@/mocks/config";
 
 import { RESERVATION_DURATION_MINUTES } from "./constants";
+import {
+  type BeCreateMeetingRoomResponse,
+  toCreatedMeetingRoom,
+  toCreateMeetingRoomPayload,
+} from "./mapper";
 import { findMockMember } from "./mock/members";
 import { addMockReservation, listMockReservationsByRoom } from "./mock/reservations";
 import { addMockRoom, deleteMockRoom, findMockRoom, updateMockRoom } from "./mock/rooms";
@@ -22,6 +30,28 @@ import type {
   RoomReservationFormErrors,
 } from "./types";
 import { validateMeetingRoomDraft, validateRoomReservationDraft } from "./validate";
+
+const ROOM_NAME_CONFLICT_MESSAGE = "이미 같은 이름의 회의실이 있습니다";
+
+/**
+ * 회의실 추가·수정 API 실패를 폼 필드 오류로 바꾼다(ROOM-03·04 공통).
+ * ⚠️ `MR-002`(이름 중복)는 `name` 칸에, `MR-003`(시간 역전)·`MR-006`(예약 충돌)은 `closeTime`
+ *    칸에 붙인다 — 이 폼엔 "회의실 전체" 오류를 보여줄 자리가 따로 없어서, 화면 가드가 이미
+ *    막아 준 `MR-004`(권한)를 포함해 나머지는 전부 `name` 칸에 얹는다(기존 권한 오류와 같은 자리).
+ */
+function toMeetingRoomFormErrors(error: unknown): MeetingRoomFormErrors {
+  if (!(error instanceof ApiError)) throw error;
+
+  switch (error.code) {
+    case "MR-002":
+      return { name: ROOM_NAME_CONFLICT_MESSAGE };
+    case "MR-003":
+    case "MR-006":
+      return { closeTime: error.message };
+    default:
+      return { name: error.message };
+  }
+}
 
 const ROOMS_PATH = "/app/rooms";
 const MANAGE_ROOMS_PATH = "/manage/rooms";
@@ -153,8 +183,19 @@ export async function createMeetingRoomAction(
   if (Object.keys(errors).length > 0) return { errors };
 
   if (!isMock) {
-    // ⚠️ 미구현 — API 스펙 확정 후 BFF 경로로 회의실 추가 요청을 보낸다.
-    throw new Error("회의실 추가 API가 아직 연결되지 않았습니다.");
+    const accessToken = await requireAccessToken();
+    try {
+      const { meetingRoomId } = await serverApi<BeCreateMeetingRoomResponse>(ep.meetingRooms(), {
+        method: "POST",
+        accessToken,
+        json: toCreateMeetingRoomPayload(draft),
+      });
+      revalidatePath(MANAGE_ROOMS_PATH);
+      revalidatePath(ROOMS_PATH);
+      return { errors: {}, room: toCreatedMeetingRoom(meetingRoomId, draft) };
+    } catch (error) {
+      return { errors: toMeetingRoomFormErrors(error) };
+    }
   }
 
   const room = addMockRoom(draft);
