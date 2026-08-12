@@ -9,6 +9,7 @@ import { ConfirmDialog } from "@/components/common/confirm-dialog";
 import { LeaveGuard } from "@/components/common/leave-guard";
 import { ProfileAvatar } from "@/components/common/profile-avatar";
 import { Button } from "@/components/ui/button";
+import { CAPTURE_FAILURE_MESSAGE } from "@/constants/meeting";
 import { pickPaletteColor } from "@/lib/palette";
 import { cn } from "@/lib/utils";
 
@@ -133,7 +134,7 @@ export function CaptureView({
     try {
       ended = await capture.end();
     } catch {
-      ended = { ok: false, error: "회의를 종료하지 못했습니다. 잠시 후 다시 시도해 주세요." };
+      ended = { ok: false, error: CAPTURE_FAILURE_MESSAGE.MEETING_END };
     }
 
     /*
@@ -141,7 +142,7 @@ export function CaptureView({
        화면에 남겨야 다시 누를 수 있고, 남은 자막·세그먼트도 이 화면이 쥐고 있다.
     */
     if (!ended.ok) {
-      toast.error("회의를 종료하지 못했습니다");
+      toast.error(CAPTURE_FAILURE_MESSAGE.MEETING_END_TOAST);
       return;
     }
 

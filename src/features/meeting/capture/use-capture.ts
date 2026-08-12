@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { CAPTURE_FAILURE_MESSAGE } from "@/constants/meeting";
+
 import {
   completeMeetingAction,
   pauseCaptureSessionAction,
@@ -475,7 +477,18 @@ export function useCapture(meetingId: string, initialSeq = 0): UseCaptureResult 
   }, [meetingId]);
 
   const end = useCallback(async () => {
-    teardown();
+    /*
+      ⚠️ **정리가 실패해도 종료 알림은 나간다**(2026-08-12, 코드래빗 지적). `MediaRecorder.stop()`
+         같은 브라우저 API는 상태가 어긋나면 던지는데(`InvalidStateError`), 그걸로 흐름이 멈추면
+         **회의는 끝났는데 서버만 모르는** 상태가 된다 — 요약도 액션 분배도 영영 안 돈다.
+         마이크 표시등은 화면을 떠날 때 정리 효과가 한 번 더 끈다.
+    */
+    try {
+      teardown();
+    } catch {
+      /* 로컬 정리 실패는 사용자가 할 수 있는 일이 없다 — 알림을 계속 보내는 게 더 중요하다 */
+    }
+
     const at = Date.now();
     /*
       ⚠️ **열려 있는 구간만 닫는다.** 무조건 마지막 구간의 `to`를 덮어쓰면, 일시정지해 둔
@@ -500,11 +513,11 @@ export function useCapture(meetingId: string, initialSeq = 0): UseCaptureResult 
       const result = await drainCaptions().then(() => completeMeetingAction(Number(meetingId)));
       if (result.ok) return { ok: true };
 
-      const message = result.error ?? "회의 종료를 서버에 알리지 못했습니다.";
+      const message = result.error ?? CAPTURE_FAILURE_MESSAGE.MEETING_END;
       setError(message);
       return { ok: false, error: message };
     } catch {
-      const message = "회의 종료를 서버에 알리지 못했습니다. 잠시 후 다시 시도해 주세요.";
+      const message = CAPTURE_FAILURE_MESSAGE.MEETING_END;
       setError(message);
       return { ok: false, error: message };
     }

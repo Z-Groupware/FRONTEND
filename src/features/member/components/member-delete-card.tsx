@@ -27,6 +27,16 @@ export function MemberDeleteCard({ member }: { member: ManagedMember }) {
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
+  /*
+    ⚠️ **다시 열 때 지난 오류를 지운다**(코드래빗 지적 2026-08-12). 실패한 뒤 창을 닫았다가
+       다시 열면, 아직 아무것도 안 눌렀는데 지난번 실패 문구가 그대로 떠 있었다 — 방금 한 일에
+       대한 말이 아닌데 그렇게 읽힌다.
+  */
+  const openConfirm = () => {
+    setError(null);
+    setIsConfirming(true);
+  };
+
   const handleDelete = () =>
     startTransition(async () => {
       /*
@@ -72,7 +82,7 @@ export function MemberDeleteCard({ member }: { member: ManagedMember }) {
           variant="outline"
           className="text-destructive border-destructive/30 hover:bg-destructive/5 ml-auto"
           disabled={isPending}
-          onClick={() => setIsConfirming(true)}
+          onClick={openConfirm}
         >
           탈퇴 처리
         </Button>
