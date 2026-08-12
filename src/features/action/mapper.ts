@@ -22,6 +22,12 @@ export interface BeActionSummary {
   status: ActionStatus;
   /** "아직 시작 안 함" 액션은 `null`이 정상이다(마이그레이션 문제 아님, BE 주석 확인). */
   startDate: string | null;
+  /**
+   * 검토 화면에서 사람이 정한 예정 시작일(2026-08-12 #386으로 전 경로 추가 — [확인]
+   * `ActionSummaryResponse.java`). `startDate`가 비어 있을 때 이 값을 먼저 쓴다 —
+   * **실값이 있는데 날짜를 지어내면 안 된다**(§정직성).
+   */
+  plannedStartDate: string | null;
   dueDate: string;
   needsReview: boolean;
   isDelayed: boolean;
@@ -33,9 +39,20 @@ export interface BeActionSummary {
   sourceMeetingTitle: string | null;
   parentActionId: number | null;
   parentActionTitle: string | null;
+  /**
+   * 하위 개인 액션 진척(2026-08-11 #355 — [확인] BE 실코드). **`null`과 0/0이 다르다**:
+   * `null`은 "하위 개념 자체가 없음"(개인 액션), 0/0은 "하위가 비어 있음"(BE 주석).
+   * `GET /api/team/actions` 경로에서만 실값이 온다.
+   */
+  childDoneCount: number | null;
+  childTotalCount: number | null;
 }
 
 /**
+ * ⚠️ 부르는 쪽이 **`startDate ?? plannedStartDate`를 넘긴다**(2026-08-12 고침). 전에는
+ *    `startDate`만 넘겨서, 검토 화면에서 사람이 정한 예정 시작일이 있는데도 **내일 날짜를
+ *    지어내고 있었다** — 지어내는 건 둘 다 없을 때뿐이어야 한다.
+ *
  * 보드 카드가 요구하는 `startDate`는 `null`을 못 받는다(`getBoardColumn`이 문자열로 가정) —
  * 시작 전 액션은 "아직 시작 안 함"이 곧 **할일 칸**이라는 뜻이므로, 오늘보다 하루 뒤 날짜로
  * 채워 항상 할일 칸에 떨어지게 한다(프로젝트 쪽 "과거 기록 없음 → 진행중으로 본다"와는
@@ -65,7 +82,7 @@ export function toTeamActionPersonalItem(be: BeActionSummary): {
     id: be.id,
     title: be.title,
     assigneeName: be.assigneeName ?? "",
-    startDate: fallbackActionStartDate(be.startDate),
+    startDate: fallbackActionStartDate(be.startDate ?? be.plannedStartDate),
     dueDate: be.dueDate,
     status: be.status,
   };
@@ -82,7 +99,7 @@ export function toMemberAction(be: BeActionSummary): MemberAction {
     title: be.title,
     projectTag: be.projectTag ?? "",
     status: be.status,
-    startDate: fallbackActionStartDate(be.startDate),
+    startDate: fallbackActionStartDate(be.startDate ?? be.plannedStartDate),
     dueDate: be.dueDate,
   };
 }
@@ -101,7 +118,7 @@ export function toMyActionListItem(be: BeActionSummary): MyActionListItem {
     projectId: be.projectId,
     projectName: be.projectName ?? "",
     projectTag: be.projectTag ?? "",
-    startDate: fallbackActionStartDate(be.startDate),
+    startDate: fallbackActionStartDate(be.startDate ?? be.plannedStartDate),
     dueDate: be.dueDate,
     status: be.status,
   };
@@ -127,9 +144,12 @@ export function groupTeamActionsByProject(items: BeActionSummary[]): TeamActionP
     group.teamActions.push({
       id: be.id,
       name: be.title,
-      startDate: fallbackActionStartDate(be.startDate),
+      startDate: fallbackActionStartDate(be.startDate ?? be.plannedStartDate),
       dueDate: be.dueDate,
       status: be.status,
+      /* 하위 진척 "3/5" — 값은 여기서 넘기고, 게이지 UI는 #421(화면 담당 몫) */
+      childDoneCount: be.childDoneCount,
+      childTotalCount: be.childTotalCount,
     });
   }
   return [...groups.values()];
