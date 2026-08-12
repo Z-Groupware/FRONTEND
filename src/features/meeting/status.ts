@@ -1,6 +1,7 @@
 import { AI_SUMMARY_STATUS, MEETING_STATUS, type MeetingStatus } from "@/constants/meeting";
 
 import type { Meeting } from "./types";
+import type { MeetingDetail } from "./view-types";
 import type { MeetingListItem } from "./view-types";
 
 /**
@@ -61,4 +62,24 @@ export function meetingCardAffordanceOf(
   if (meeting.aiSummaryStatus === AI_SUMMARY_STATUS.REVIEWED && meeting.isHost) return "review";
 
   return "open";
+}
+
+/**
+ * 참석자 명단 교체(MEET-09) 가능 여부 — **host만, 끝나지 않은 회의에서만**. `pendingReason`이
+ * "SCHEDULED"·"IN_PROGRESS"일 때만 회의가 아직 안 끝났다는 뜻이다(§view-types) — 그 값이
+ * `SUMMARIZING`·`FAILED`·`null`이면 이미 DONE이라 교체할 수 없다.
+ * ⚠️ 판정은 여기 한 곳이다 — 회의 상세 화면과 그 서버 컴포넌트가 각자 조합하면 조건이 갈린다.
+ */
+export function canEditMeetingAttendees(
+  detail: Pick<MeetingDetail, "isHost" | "pendingReason">,
+): boolean {
+  return (
+    detail.isHost &&
+    (detail.pendingReason === "SCHEDULED" || detail.pendingReason === "IN_PROGRESS")
+  );
+}
+
+/** 회의 취소(MEET-06) 가능 여부 — **시작 전(SCHEDULED)만**. 진행중은 종료(MEET-08)를 써야 한다. */
+export function canCancelMeeting(detail: Pick<MeetingDetail, "isHost" | "pendingReason">): boolean {
+  return detail.isHost && detail.pendingReason === "SCHEDULED";
 }

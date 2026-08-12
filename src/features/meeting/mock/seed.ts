@@ -284,7 +284,7 @@ export function ensureMockMeetingsSeeded(): void {
     hostAuthority: AUTHORITY.OWNER,
     roomReservationId: "seed-reservation-8",
   });
-  cancelMockMeeting(canceled.id, "2026-08-13T09:00:00.000Z");
+  cancelMockMeeting(canceled.id, "2026-08-11T09:00:00.000Z");
 }
 
 /** 테스트 전용 — 시드를 되돌린다(스토어는 `meetings.ts`가 들고 있어 함께 비운다) */

@@ -7,6 +7,7 @@
 import type {
   MeetingRoom,
   MeetingRoomDraft,
+  MeetingTopicInput,
   RoomCalendarEvent,
   RoomDayAvailability,
   RoomReservation,
@@ -101,8 +102,10 @@ function toDayCalendarEvents(day: RoomDayAvailability, slotMinutes: number): Roo
 
   const flush = () => {
     if (!current) return;
+    // ⚠️ `meetingId`만 쓰면 같은 회의가 주 전체에서 겹칠 일은 없어도, 여러 날짜를 flatMap하는
+    //    `toRoomCalendarEvents`에서 React key로 그대로 쓰이니 날짜까지 더해 겹칠 여지를 없앤다.
     events.push({
-      id: current.meetingId,
+      id: `${current.meetingId}-${day.date}`,
       title: current.title,
       start: current.start,
       end: current.end,
@@ -209,10 +212,23 @@ function toLocalDateTime(date: Date): string {
   );
 }
 
+/**
+ * 계약이 실제로 받는 안건 모양(대주제 1개 + 소주제 여러 개)으로 좁힌다 — `toCreateMeetingPayload`와
+ * `toReservationFromCreatedMeeting`이 같은 값을 써야 "폼엔 여러 대주제가 있었는데 화면은 하나만
+ * 보여준다" 같은 불일치가 안 생긴다(§정직성: 버려진 값을 저장된 것처럼 보이면 안 된다).
+ */
+function toSentTopics(topics: MeetingTopicInput[]): { mainTopic: string; subTopics: string[] } {
+  return {
+    mainTopic: topics[0]?.main.trim() ?? "",
+    subTopics: topics.map((topic) => topic.sub.trim()).filter((sub) => sub.length > 0),
+  };
+}
+
 export function toCreateMeetingPayload(
   draft: RoomReservationDraft,
   range: { start: Date; end: Date },
 ): BeCreateMeetingPayload {
+  const { mainTopic, subTopics } = toSentTopics(draft.topics);
   return {
     title: draft.title.trim(),
     projectId: Number(draft.projectId),
@@ -222,8 +238,8 @@ export function toCreateMeetingPayload(
     recordingConsent: false,
     relatedActionId: draft.parentTeamActionId,
     attendeeMemberIds: draft.attendeeIds,
-    mainTopic: draft.topics[0]?.main.trim() ?? "",
-    subTopics: draft.topics.map((topic) => topic.sub.trim()).filter((sub) => sub.length > 0),
+    mainTopic,
+    subTopics,
   };
 }
 
@@ -251,12 +267,16 @@ export interface BeCreateMeetingResponse {
  *    `getMeetingRooms()`를 따로 불러 이름을 찾을 필요가 없다.
  * ⚠️ `projectTag`만 빈 문자열로 남는다 — 계약 확정본에 `project`가 없다(BE가 안 준다, 추측
  *    아님). `revalidatePath` 뒤 캘린더 재조회(ROOM-02, 연동 완료)에는 정확한 값이 나온다.
+ * ⚠️ `topics`는 폼 입력을 그대로 echo하지 않는다 — 계약이 대주제 1개만 받아서(위 `toSentTopics`
+ *    참고) 둘째 쌍부터 `main`은 서버에 안 갔다. 그 값을 화면에 "저장됨"으로 보여주면 거짓말이라
+ *    실제로 보낸 값(첫 대주제 + 소주제 목록)으로만 되짚는다.
  */
 export function toReservationFromCreatedMeeting(
   response: BeCreateMeetingResponse,
   draft: RoomReservationDraft,
   range: { start: Date; end: Date },
 ): RoomReservation {
+  const { mainTopic, subTopics } = toSentTopics(draft.topics);
   return {
     id: String(response.meetingId),
     title: draft.title.trim(),
@@ -266,7 +286,7 @@ export function toReservationFromCreatedMeeting(
     roomName: response.meetingRoom.name,
     projectId: draft.projectId,
     projectTag: "",
-    topics: draft.topics.map((topic) => ({ main: topic.main.trim(), sub: topic.sub.trim() })),
+    topics: subTopics.map((sub) => ({ main: mainTopic, sub })),
     attendeeIds: draft.attendeeIds,
     ownerId: response.host.memberId,
   };
