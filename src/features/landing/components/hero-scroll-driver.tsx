@@ -31,9 +31,15 @@ export function HeroScrollDriver() {
            물러나야 아래 섹션의 글이 먼저 읽힌다 — 고정 투명도로 두면 둘 중 하나를 포기하게 된다.
         ⚠️ CSS 변수로 쓴다. 상태로 두면 스크롤마다 랜딩 전체가 다시 그려진다.
       */
+      /*
+        ⚠️ **물러남은 0~1 한 값으로만 준다.** 무대(어두움·밝음)마다 진하기 범위가 다른데, 그
+           계산을 여기서 하면 CSS와 두 벌이 된다 — 값은 하나, 해석은 CSS가 한다(`globals.css`의
+           `.hero-z-dark`·`.hero-z-light`).
+        ⚠️ 절반쯤 내려가면 다 물러난다. 그 아래는 글이 주인공이라 더 뺄 것이 없다.
+      */
       document.documentElement.style.setProperty(
-        "--hero-z-opacity",
-        String(0.9 - Math.min(progress, 0.5) * 1.1),
+        "--hero-recede",
+        String(Math.min(1, progress / 0.5)),
       );
     };
 
@@ -45,7 +51,7 @@ export function HeroScrollDriver() {
       scroller.removeEventListener("scroll", update);
       window.removeEventListener("resize", update);
       heroProgress.current = 0;
-      document.documentElement.style.removeProperty("--hero-z-opacity");
+      document.documentElement.style.removeProperty("--hero-recede");
     };
   }, []);
 

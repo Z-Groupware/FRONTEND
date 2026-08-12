@@ -93,7 +93,7 @@ export function LandingBackdrop() {
                첫 화면에서 0.9로 서 있다가 내려가면 0.35까지 물러난다 — 변수가 아직 없을 때
                (스크립트 전·모션 최소화)의 기본값을 함께 적어 둔다.
           */
-          isDark ? "opacity-(--hero-z-opacity,0.6)" : "landing-z-fade opacity-[0.24]",
+          isDark ? "hero-z-dark" : "landing-z-fade hero-z-light",
         )}
       >
         {/*

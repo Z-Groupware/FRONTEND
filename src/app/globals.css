@@ -481,6 +481,22 @@
     animation-name: assemble-in-right;
   }
 
+  /*
+   * 첫 화면 Z의 **진하기** — 스크롤을 따라 물러난다(`--hero-recede`, `hero-scroll-driver.tsx`).
+   *
+   * ⚠️ **두 무대의 범위가 다르다.** 어두운 무대에서는 진해도 글이 읽히지만, 밝은 무대에서는
+   *    같은 값이면 흰 덩어리가 글을 덮는다 — 밝은 쪽은 처음부터 옅게 시작해 더 옅게 물러난다.
+   * ⚠️ 변수가 아직 없을 때(스크립트 전·모션 최소화)의 기본값을 `0`으로 둔다 — 그때는 첫 화면
+   *    상태로 서 있으면 된다.
+   */
+  .hero-z-dark {
+    opacity: calc(0.9 - var(--hero-recede, 0) * 0.55);
+  }
+
+  .hero-z-light {
+    opacity: calc(0.3 - var(--hero-recede, 0) * 0.14);
+  }
+
   @media (prefers-reduced-motion: reduce) {
     ::view-transition-group(*),
     ::view-transition-old(*),

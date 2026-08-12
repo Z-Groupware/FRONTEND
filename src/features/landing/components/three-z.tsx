@@ -183,11 +183,12 @@ function ZModel({
     const finale = finaleAt(progress);
 
     /*
-      ⚠️ **아주 조금만 벌어져도 조각으로 넘긴다**(`burst * 5`). 천천히 섞으면 두 겹이 겹쳐 보이는
-         구간이 길어져 로고가 흐릿한 유령처럼 보인다 — 바꿔치기는 짧을수록 깔끔하다.
+      ⚠️ **거의 다 모였을 때 바꿔치기한다**(`burst * 24`). 5로 두었더니 조각이 아직 눈에 띄게
+         벌어진 상태(0.2)에서 원본이 튀어나와, 합쳐지는 순간 화면이 **툭 바뀌었다**
+         (2026-08-12 피드백). 24면 벌어짐이 0.04 아래일 때만 바뀌어 눈에 안 띈다.
       ⚠️ 다 사라진 쪽은 **아예 안 그린다**(`visible`). 투명도 0짜리도 그리기 비용은 그대로다.
     */
-    const shardMix = Math.min(1, burst * 5);
+    const shardMix = Math.min(1, burst * 24);
     if (solidMaterial.current) solidMaterial.current.opacity = 1 - shardMix;
     if (shardMaterial.current) shardMaterial.current.opacity = shardMix;
     if (solid.current) solid.current.visible = shardMix < 0.99;
@@ -200,9 +201,13 @@ function ZModel({
          "검은 조각이 좀 움직이네"로 끝난다 — 벌어질수록 파랑·보라 림라이트를 올리고,
          맨 밑에서 완성될 때 한 번 더 세게 준다. 빛이 있어야 조각이 눈에 잡힌다.
     */
-    const glow = 34 + burst * 90 + finale * 70;
+    /*
+      ⚠️ **밝은 무대에서는 빛을 훨씬 아낀다.** 몸체가 흰색이라 같은 세기를 주면 하얗게 타서
+         형태가 사라진다 — 어두운 무대는 빛으로 조각을 드러내고, 밝은 무대는 음영으로 드러낸다.
+    */
+    const boost = tone === "dark" ? burst * 90 + finale * 70 : burst * 26 + finale * 18;
     rim.current.forEach((light) => {
-      if (light) light.intensity = isFeature ? 32 : glow;
+      if (light) light.intensity = isFeature ? 32 : 34 + boost;
     });
 
     shards.forEach((shard, index) => {
