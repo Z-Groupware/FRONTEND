@@ -71,17 +71,31 @@ export function burstAt(progress: number): number {
 }
 
 /**
+ * 조각이 **실제로 벌어진 정도** — 흩어짐(`burstAt`)보다 훨씬 빨리 커진다.
+ *
+ * ⚠️ 벌어짐을 그대로 쓰면 초반에 조각이 제자리 근처에 머물러 **계단 모양 Z**가 그대로 보인다 —
+ *    바꿔치기 구간에서 그 계단과 매끈한 원본이 겹쳐 보이는 게 어색함의 진짜 원인이었다
+ *    (2026-08-12 재지적). 제곱근을 쓰면 **떠나는 건 빠르고 돌아오는 건 느긋해서**, 로고 모양이
+ *    남아 있는 시간이 짧다.
+ */
+export function scatterAt(burst: number): number {
+  return Math.sqrt(Math.min(1, Math.max(0, burst)));
+}
+
+/**
  * 매끈한 원본 → 조각으로 **바꿔치기하는 정도**(0=원본, 1=조각).
  *
  * ⚠️ **한창 흩어져 있을 때 바꾼다.** 다 모인 뒤에 바꾸면, 바로 직전까지 보이던 격자 실루엣과
  *    매끈한 원본이 나란히 비교되어 **띡 하고 바뀐 것처럼** 보인다(2026-08-12 피드백).
  *    조각이 이미 흩어져 제 모양을 잃은 구간에서 섞으면 눈이 둘을 견주지 못한다.
  * ⚠️ 그래서 구간이 넓다(0.12~0.45). 좁히면 그 자리가 다시 "바뀌는 순간"으로 보인다.
+ * ⚠️ **넘기는 값은 벌어진 정도(`scatterAt`)다.** 흩어짐 자체를 넘기면 조각이 아직 제자리
+ *    근처일 때 바뀌어, 계단 모양이 그대로 드러난다.
  */
-export function shardMixAt(burst: number): number {
+export function shardMixAt(scatter: number): number {
   const from = 0.12;
   const to = 0.45;
-  const t = Math.min(1, Math.max(0, (burst - from) / (to - from)));
+  const t = Math.min(1, Math.max(0, (scatter - from) / (to - from)));
   /* 양 끝을 부드럽게 — 선형이면 시작·끝에서 각이 진다(smoothstep) */
   return t * t * (3 - 2 * t);
 }

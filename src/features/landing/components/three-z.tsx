@@ -4,7 +4,7 @@ import { Canvas, useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 
-import { burstAt, finaleAt, heroProgress, shardMixAt } from "../hero-progress";
+import { burstAt, finaleAt, heroProgress, scatterAt, shardMixAt } from "../hero-progress";
 
 /**
  * 진짜 3D Z — 로고 세 조각(윗줄·사선·아랫줄)을 **코드로 압출**해 만든다.
@@ -189,7 +189,9 @@ function ZModel({
          매끈한 원본이 나란히 비교되지 않는다(§hero-progress).
       ⚠️ 다 사라진 쪽은 **아예 안 그린다**(`visible`). 투명도 0짜리도 그리기 비용은 그대로다.
     */
-    const shardMix = shardMixAt(burst);
+    /* ⚠️ 벌어진 정도로 판단한다 — 흩어짐 그대로 쓰면 계단 모양일 때 바뀐다(§hero-progress) */
+    const scatter = scatterAt(burst);
+    const shardMix = shardMixAt(scatter);
     if (solidMaterial.current) solidMaterial.current.opacity = 1 - shardMix;
     if (shardMaterial.current) shardMaterial.current.opacity = shardMix;
     if (solid.current) solid.current.visible = shardMix < 0.99;
@@ -219,10 +221,14 @@ function ZModel({
       const [hx, hy] = shard.home;
       const [dx, dy, dz] = shard.direction;
 
-      scratch.position.set(hx + dx * burst, hy + dy * burst, -0.07 + dz * burst);
-      scratch.rotation.set(burst * shard.spin * 0.5, burst * shard.spin * 0.4, burst * shard.spin);
+      scratch.position.set(hx + dx * scatter, hy + dy * scatter, -0.07 + dz * scatter);
+      scratch.rotation.set(
+        scatter * shard.spin * 0.5,
+        scatter * shard.spin * 0.4,
+        scatter * shard.spin,
+      );
       /* 흩어질수록 조각이 조금 작아진다 — 멀어지는 느낌을 거리 없이 만든다 */
-      scratch.scale.setScalar(1 - burst * 0.25);
+      scratch.scale.setScalar(1 - scatter * 0.25);
       scratch.updateMatrix();
       mesh.current.setMatrixAt(index, scratch.matrix);
     });

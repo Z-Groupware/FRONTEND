@@ -1,4 +1,11 @@
-import { burstAt, finaleAt, isTrackLongEnough, shardMixAt, toHeroProgress } from "./hero-progress";
+import {
+  burstAt,
+  finaleAt,
+  isTrackLongEnough,
+  scatterAt,
+  shardMixAt,
+  toHeroProgress,
+} from "./hero-progress";
 
 /**
  * 첫 화면 진행도 — **연출 전체가 이 값 하나로 움직인다.**
@@ -50,23 +57,48 @@ describe("finaleAt — 맨 밑에서 완성", () => {
   });
 });
 
+describe("scatterAt — 떠나는 건 빠르게", () => {
+  /*
+    ⚠️ 벌어짐을 그대로 쓰면 초반에 조각이 제자리 근처에 남아 **계단 모양 Z**가 그대로 보인다 —
+       그 계단이 매끈한 원본과 겹쳐 보이는 게 어색함의 진짜 원인이었다(2026-08-12 재지적).
+  */
+  it("조금만 흩어져도 크게 벌어진다", () => {
+    expect(scatterAt(0.04)).toBeCloseTo(0.2);
+    expect(scatterAt(0.25)).toBeCloseTo(0.5);
+  });
+
+  it("양 끝은 그대로다 — 모였을 때 0, 끝까지 흩어지면 1", () => {
+    expect(scatterAt(0)).toBe(0);
+    expect(scatterAt(1)).toBe(1);
+  });
+});
+
 describe("shardMixAt — 바꿔치기 구간", () => {
   /*
     ⚠️ **다 모인 뒤에 바꾸지 않는다.** 그러면 격자 실루엣과 매끈한 원본이 나란히 비교되어
        "띡" 하고 바뀐 것처럼 보인다 — 한창 흩어져 있을 때 섞어야 눈이 둘을 못 견준다.
   */
+  /* ⚠️ 넘기는 값은 **벌어진 정도**(`scatterAt`)다 — 흩어짐 자체가 아니다 */
   it("모여 있을 때는 매끈한 원본만 보인다", () => {
-    expect(shardMixAt(0)).toBe(0);
-    expect(shardMixAt(0.1)).toBe(0);
+    expect(shardMixAt(scatterAt(0))).toBe(0);
+    expect(shardMixAt(scatterAt(0.01))).toBe(0);
   });
 
   it("한창 흩어졌을 때 조각으로 완전히 넘어간다", () => {
-    expect(shardMixAt(0.5)).toBe(1);
-    expect(shardMixAt(1)).toBe(1);
+    expect(shardMixAt(scatterAt(0.25))).toBe(1);
+    expect(shardMixAt(scatterAt(1))).toBe(1);
   });
 
   it("가운데에서는 섞인다 — 그 구간이 넓어야 바뀌는 순간이 안 보인다", () => {
     expect(shardMixAt(0.285)).toBeCloseTo(0.5, 1);
+  });
+
+  /* ⚠️ 섞이기 시작할 땐 이미 조각이 **눈에 띄게 벌어져** 있어야 계단이 안 보인다 */
+  it("섞이기 시작하는 지점에서 이미 충분히 벌어져 있다", () => {
+    const burstWhenMixStarts = 0.12 * 0.12;
+
+    expect(scatterAt(burstWhenMixStarts)).toBeCloseTo(0.12);
+    expect(shardMixAt(scatterAt(0.09))).toBeGreaterThan(0.5);
   });
 });
 
