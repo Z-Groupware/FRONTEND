@@ -13,15 +13,19 @@ import { isMock } from "@/mocks/config";
 
 import { RESERVATION_DURATION_MINUTES } from "./constants";
 import {
+  type BeCreateMeetingResponse,
   type BeCreateMeetingRoomResponse,
   type BeMeetingRoom,
   toCreatedMeetingRoom,
+  toCreateMeetingPayload,
   toCreateMeetingRoomPayload,
   toMeetingRoom,
+  toReservationFromCreatedMeeting,
 } from "./mapper";
 import { findMockMember } from "./mock/members";
 import { addMockReservation, listMockReservationsByRoom } from "./mock/reservations";
 import { addMockRoom, deleteMockRoom, findMockRoom, updateMockRoom } from "./mock/rooms";
+import { getMeetingRooms } from "./server";
 import type {
   MeetingRoom,
   MeetingRoomDraft,
@@ -63,6 +67,36 @@ function toMeetingRoomFormErrors(error: unknown): MeetingRoomFormErrors {
 
 const ROOMS_PATH = "/app/rooms";
 const MANAGE_ROOMS_PATH = "/manage/rooms";
+
+/**
+ * 회의 개설(`POST /api/meetings`, MEET-01) 실패를 폼 필드 오류로 바꾼다.
+ * ⚠️ 필드 슬롯이 없는 오류(`PJ-001` 등)는 `title` 칸에 얹는다(회의실 도메인의 `toMeetingRoomFormErrors`
+ *    와 같은 자리 — 이 폼도 "전체 오류"를 보여줄 별도 자리가 없다).
+ */
+function toMeetingCreateFormErrors(error: unknown): RoomReservationFormErrors {
+  if (!(error instanceof ApiError)) throw error;
+
+  switch (error.code) {
+    case "MT-002":
+      return { roomId: "그 시간에는 이미 예약된 회의실입니다" };
+    case "MT-004":
+      return { startTime: "회의실 이용 가능 시간 안에서 선택해 주세요" };
+    case "MT-005":
+      return { startTime: "예약은 30분 단위로만 가능합니다" };
+    case "MT-010":
+      return { attendeeIds: "존재하지 않는 참석자가 있습니다" };
+    case "MT-012":
+      return { startTime: "지난 시간은 선택할 수 없습니다" };
+    case "MT-003":
+      return { startTime: error.message };
+    case "MR-001":
+      return { roomId: "존재하지 않는 회의실입니다" };
+    case "PJ-001":
+      return { projectId: "존재하지 않는 프로젝트입니다" };
+    default:
+      return { title: error.message };
+  }
+}
 
 /** 예약 폼 결과 — `useActionState`가 그대로 들고 있는 모양. */
 export interface RoomReservationFormState {
@@ -116,8 +150,28 @@ export async function createRoomReservationAction(
   if (Object.keys(errors).length > 0) return { errors };
 
   if (!isMock) {
-    // ⚠️ 미구현 — API 스펙 확정 후 BFF 경로로 예약 생성 요청을 보낸다.
-    throw new Error("회의실 예약 API가 아직 연결되지 않았습니다.");
+    const range = toReservedRange(draft);
+    const accessToken = await requireAccessToken();
+    try {
+      const response = await serverApi<BeCreateMeetingResponse>(ep.meetings(), {
+        method: "POST",
+        accessToken,
+        json: toCreateMeetingPayload(draft, range),
+      });
+      // ⚠️ 이름 조회는 이미 연동된 API(ROOM-01)만 쓴다 — 프로젝트 태그는 그 목록 API
+      //    (`getReservableProjects`)가 아직 미연동이라(다른 이슈) 비워 둔다(§mapper 주석).
+      const rooms = await getMeetingRooms();
+      const roomName = rooms.find((room) => room.id === draft.roomId)?.name ?? draft.roomId;
+      const created = toReservationFromCreatedMeeting(response, draft, range, {
+        roomName,
+        projectTag: "",
+        ownerId: actor.id,
+      });
+      revalidatePath(ROOMS_PATH);
+      return { errors: {}, created };
+    } catch (error) {
+      return { errors: toMeetingCreateFormErrors(error) };
+    }
   }
 
   // ⚠️ 화면 select·피커가 이미 실제 목록에서만 고르게 해도, 폼은 조작될 수 있다
