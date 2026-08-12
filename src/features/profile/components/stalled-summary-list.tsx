@@ -24,9 +24,19 @@ export function StalledSummaryList({ summaries }: StalledSummaryListProps) {
   function handleRetry(meetingId: string) {
     setPendingId(meetingId);
     startTransition(async () => {
-      await retryMeetingSummaryAction(meetingId);
-      toast("재분석을 요청했습니다");
-      setPendingId(null);
+      /*
+        ⚠️ **`finally`로 잠금을 푼다**(2026-08-12). 액션이 던지면 `setPendingId(null)`을 못
+           지나쳐 그 줄이 [요청 중]에 잠긴 채 남았다 — 버튼은 전부 잠겨 있어(중복 요청 방지)
+           다른 회의도 같이 못 누른다.
+      */
+      try {
+        await retryMeetingSummaryAction(meetingId);
+        toast("재분석을 요청했습니다");
+      } catch {
+        toast.error("서버에 연결하지 못했습니다. 잠시 후 다시 시도해 주세요.");
+      } finally {
+        setPendingId(null);
+      }
     });
   }
 

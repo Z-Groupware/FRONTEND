@@ -31,7 +31,18 @@ export function RoomDeleteDialog({ room, open, onOpenChange }: RoomDeleteDialogP
     // ⚠️ 콜백이 Promise를 반환해야 한다 — 반환하지 않으면 React가 삭제가 끝나기 전에
     //    전환을 "완료"로 보고 `isPending`이 너무 일찍 꺼져 버튼이 풀린다.
     startTransition(async () => {
-      await deleteMeetingRoomAction(formData);
+      /*
+        ⚠️ **실패를 삼키지 않는다**(2026-08-12). 전에는 결과를 안 보고 곧장 창을 닫고
+           "삭제했습니다"를 띄웠다 — 액션이 던지면(미연동·네트워크 단절) 지워지지도 않았는데
+           지웠다고 말하거나 화면이 통째로 죽었다(§정직성).
+      */
+      try {
+        await deleteMeetingRoomAction(formData);
+      } catch {
+        toast.error("서버에 연결하지 못했습니다. 잠시 후 다시 시도해 주세요.");
+        return;
+      }
+
       onOpenChange(false);
       router.refresh();
       toast.success("회의실을 삭제했습니다");
