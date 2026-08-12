@@ -1,6 +1,6 @@
 "use client";
 
-import Lenis from "lenis";
+import type Lenis from "lenis";
 import { useEffect } from "react";
 
 /**
@@ -11,6 +11,10 @@ import { useEffect } from "react";
  * ⚠️ **모션을 줄여 달라는 사람에게는 안 건다**(`prefers-reduced-motion`). 관성 스크롤은
  *    멀미를 유발하는 대표적인 연출이라, 이 설정을 무시하면 그 사람은 사이트를 못 본다.
  * ⚠️ 앵커 이동(`#가격` 같은 링크)도 Lenis가 맡는다 — 브라우저 기본과 섞이면 두 번 움직인다.
+ * ⚠️ **본체는 effect 안에서 늦게 받아 온다**(`await import`, 2026-08-14). 정적 import로 두면
+ *    랜딩 첫 로드 번들에 통째로 실리는데, 모션을 줄여 달라는 사람은 이걸 **아예 만들지도
+ *    않는다** — 안 쓸 사람에게까지 내려보내면 First Load JS 예산이 샌다(CLAUDE.md §성능).
+ *    `three`도 같은 이유로 `next/dynamic`으로 갈라 뒀다.
  * ⚠️ **스크롤 주체는 `window`가 아니라 `#app-scroll`이다**(2026-08-12에 발이 걸렸다). 화면 배율
  *    기능 때문에 `body`가 아니라 안쪽 상자가 스크롤을 맡는다(`globals.css`) — 그걸 안 알려주면
  *    Lenis는 아무것도 안 움직이는 창을 붙들고 헛돈다.
@@ -35,32 +39,44 @@ export function SmoothScroll() {
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
-    /*
-      ⚠️ 값은 **은은하게**. `lerp`가 크면 화면이 손보다 늦게 따라와 답답하고, 작으면 미끄러진다.
-         0.12는 "따라오긴 하는데 부드럽다"가 느껴지는 자리다.
-    */
     const wrapper = document.getElementById("app-scroll");
     if (!wrapper) return;
 
-    const lenis = new Lenis({
-      wrapper,
-      content: wrapper.firstElementChild ?? wrapper,
-      lerp: 0.12,
-      wheelMultiplier: 1,
-      touchMultiplier: 1.4,
-    });
-    current = lenis;
-
+    /*
+      ⚠️ 늦게 받아 오는 사이에 화면을 떠날 수 있다 — 그때는 만들지 않고 끝낸다.
+         안 그러면 이미 없어진 화면에 `raf` 루프가 남는다.
+    */
+    let disposed = false;
+    let lenis: Lenis | null = null;
     let frame = 0;
-    const raf = (time: number) => {
-      lenis.raf(time);
+
+    void import("lenis").then(({ default: LenisCtor }) => {
+      if (disposed) return;
+
+      /*
+        ⚠️ 값은 **은은하게**. `lerp`가 크면 화면이 손보다 늦게 따라와 답답하고, 작으면 미끄러진다.
+           0.12는 "따라오긴 하는데 부드럽다"가 느껴지는 자리다.
+      */
+      lenis = new LenisCtor({
+        wrapper,
+        content: wrapper.firstElementChild ?? wrapper,
+        lerp: 0.12,
+        wheelMultiplier: 1,
+        touchMultiplier: 1.4,
+      });
+      current = lenis;
+
+      const raf = (time: number) => {
+        lenis?.raf(time);
+        frame = requestAnimationFrame(raf);
+      };
       frame = requestAnimationFrame(raf);
-    };
-    frame = requestAnimationFrame(raf);
+    });
 
     return () => {
+      disposed = true;
       cancelAnimationFrame(frame);
-      lenis.destroy();
+      lenis?.destroy();
       current = null;
     };
   }, []);

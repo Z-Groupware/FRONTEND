@@ -28,7 +28,15 @@ export function LandingBackdrop() {
          (테마 토큰이 아직 안 붙은 첫 페인트 등) 이 층이 통째로 가려진다.
          이 위에 오는 콘텐츠는 `relative z-10`을 갖는다.
     */
-    <div aria-hidden className={cn("pointer-events-none fixed inset-0 z-0", "bg-landing-stage")}>
+    <div
+      aria-hidden
+      /*
+        ⚠️ `overflow-hidden`이 필요하다. 안쪽 3D Z가 **980px 고정**이라 그보다 좁은 창에서는
+           좌우로 삐져나간다 — 장식이라 잘려도 아무 손해가 없고, 안 자르면 가로 스크롤이
+           생길 위험만 남는다.
+      */
+      className={cn("pointer-events-none fixed inset-0 z-0 overflow-hidden", "bg-landing-stage")}
+    >
       {/* 화면 전체를 덮는 한 장의 그라데이션 — 위는 푸르게, 아래는 보랏빛으로 아주 천천히 넘어간다 */}
       <span
         className={cn(

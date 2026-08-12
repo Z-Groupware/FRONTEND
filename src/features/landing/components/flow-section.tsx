@@ -103,17 +103,36 @@ export function FlowSection() {
   const progressScale = useTransform(scrollYProgress, [0, 1], [0, 1]);
   const panelDrift = useTransform(scrollYProgress, [0, 1], [14, -14]);
 
-  /** 누른 단계의 스크롤 자리로 옮긴다 — 스크롤과 상태가 다투지 않게 */
+  /**
+   * 누른 단계의 스크롤 자리로 옮긴다 — 스크롤과 상태가 다투지 않게.
+   *
+   * ⚠️ **좌표를 전부 `#app-scroll` 기준으로 잰다**(2026-08-14). 예전엔 `offsetTop`(가장 가까운
+   *    `position` 조상 = `<main>` 기준)과 `window.innerHeight`(창 높이)를 섞어 썼는데,
+   *    스크롤을 맡는 건 `#app-scroll`이고 `body`에는 **화면 배율 `transform: scale()`** 이
+   *    걸려 있다(§globals.css). 75%·80%·90% 배율에서 두 좌표계가 어긋나 엉뚱한 자리로 갔다.
+   * ⚠️ `getBoundingClientRect`는 **배율이 적용된 뒤** 값이라, `scrollTop`이 쓰는 배율 전
+   *    좌표로 되돌려야 한다 — 그래서 배율로 나눈다.
+   */
   function goToStep(index: number) {
     setSelected(index);
     if (!isPinned || !track.current) return;
 
-    const { offsetTop, offsetHeight } = track.current;
-    const span = offsetHeight - window.innerHeight;
+    const container = document.getElementById("app-scroll");
+    if (!container) return;
+
+    const containerRect = container.getBoundingClientRect();
+    /* 화면에 찍힌 높이 ÷ 레이아웃 높이 = 지금 걸린 배율. 0으로 나누지 않게 막아 둔다 */
+    const scale = container.clientHeight > 0 ? containerRect.height / container.clientHeight : 1;
+    if (!Number.isFinite(scale) || scale <= 0) return;
+
+    const trackRect = track.current.getBoundingClientRect();
+    const trackTop = container.scrollTop + (trackRect.top - containerRect.top) / scale;
+    const span = trackRect.height / scale - container.clientHeight;
+
     /* 칸의 **가운데**로 간다 — 경계에 서면 다음 스크롤 한 칸에 옆 단계로 넘어간다 */
     const ratio = (index + 0.5) / FLOW_STEPS.length;
     /* ⚠️ `window.scrollTo`는 Lenis가 다음 프레임에 덮어써 안 먹는다 — 그쪽에 부탁한다 */
-    smoothScrollTo(offsetTop + span * ratio);
+    smoothScrollTo(trackTop + Math.max(0, span) * ratio);
   }
 
   return (
@@ -130,8 +149,12 @@ export function FlowSection() {
            단계를 넘기는 데 쓰인다 — 한 단계당 화면 하나만큼 내려가면 다음으로 간다.
         ⚠️ 고정을 안 걸 때는(모션 최소화) 예전처럼 **내용 높이 그대로** 둔다. 안 그러면
            아무 일도 없는 빈 화면 셋을 지나야 한다.
+        ⚠️ **배율로 나눈 `vh`** 다(2026-08-14). `body`가 `100% / var(--app-scale)` 크기로 잡히고
+           `transform: scale()`로 줄어들어서, 그 안에서 `100vh`는 실제 화면보다 **배율만큼 크다**
+           — 75% 배율이면 한 단계가 화면 1.33개 길이가 된다. `%`로 바꿔 봤더니 그건 부모 높이
+           기준이라 더 어긋났다(실측 20146px). `h-screen-z`가 `dvh`를 금지한 것과 같은 이유다.
       */
-      className={cn(isPinned && "relative h-[400vh]")}
+      className={cn(isPinned && "relative h-[calc(400vh/var(--app-scale))]")}
     >
       {/*
         ⚠️ **세로 방향 flex다**(`flex-col`). 가로 방향으로 두면 안쪽 `<section>`이 flex 아이템이

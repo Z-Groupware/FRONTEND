@@ -1,6 +1,7 @@
 "use client";
 
 import { Canvas, useFrame } from "@react-three/fiber";
+import { useReducedMotion } from "motion/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 
@@ -158,6 +159,15 @@ function ZModel({
   isFeature: boolean;
   reactsToScroll: boolean;
 }) {
+  /*
+    ⚠️ **모션을 줄여 달라면 여기도 멈춘다**(2026-08-14). 부드러운 스크롤·흐름 섹션 고정·숫자
+       카운트업은 이미 이 설정을 보는데 **화면에서 제일 크게 움직이는 이 3D만** 안 보고 있었다 —
+       980px짜리 Z가 스크롤 따라 계속 돌고 조각이 흩어졌다 모이면, 전정기관이 예민한 사람에게는
+       나머지를 다 꺼도 소용이 없다(§a11y).
+    ⚠️ 끄는 건 **움직임뿐**이다. 로고는 완성된 모습으로 그대로 서 있는다 — 안 보이게 하면
+       배경이 통째로 비어 화면이 달라진다.
+  */
+  const prefersReduced = useReducedMotion();
   const group = useRef<THREE.Group>(null!);
   const mesh = useRef<THREE.InstancedMesh>(null!);
   /** 매끈한 원본 Z — 모여 있을 때 보이는 쪽 */
@@ -213,8 +223,11 @@ function ZModel({
   useFrame(() => {
     if (!group.current || !mesh.current) return;
 
-    /* ⚠️ 짧은 페이지에서는 연출을 끈다 — 스크롤 몇 칸에 다 지나가면 정신없다(§hero-progress) */
-    const isChoreographed = reactsToScroll && heroProgress.active;
+    /*
+      ⚠️ 짧은 페이지에서는 연출을 끈다 — 스크롤 몇 칸에 다 지나가면 정신없다(§hero-progress).
+      ⚠️ 모션 최소화면 스크롤 연동도, 제자리 회전도 안 한다.
+    */
+    const isChoreographed = reactsToScroll && heroProgress.active && !prefersReduced;
     const progress = isChoreographed ? heroProgress.current : 0;
 
     if (isChoreographed) {
@@ -226,7 +239,7 @@ function ZModel({
       group.current.rotation.y = 0.4 + progress * Math.PI * 2;
       group.current.rotation.x = -0.15 + progress * 0.3 - finale * 0.15;
       group.current.scale.setScalar(1 - progress * 0.3 + finale * 0.22);
-    } else {
+    } else if (!prefersReduced) {
       group.current.rotation.y += velocity.current;
     }
 
@@ -250,9 +263,11 @@ function ZModel({
     if (solid.current) solid.current.visible = shardMix < 0.99;
     mesh.current.visible = shardAlpha > 0.01;
 
-    if (shardMix < 0.01) return;
-
     /*
+      ⚠️ **빛은 조각보다 먼저 갱신한다.** 아래 `shardMix < 0.01` 이른 반환이 이 위에 있었는데,
+         그 조건이 참이 되는 자리가 하필 **완성 구간**이다(조각이 다 모인 상태) — 그래서
+         `finale * 44` 림 부스트가 영영 안 걸리고, 빛이 직전 프레임 값에 멈춰 있었다.
+         빛은 조각이 보이든 말든 원본에도 닿으므로 여기서 매 프레임 갱신한다.
       ⚠️ **빛이 흩어짐을 따라간다**(2026-08-12). 어두운 금속이 어두운 배경에서 흩어지면
          "검은 조각이 좀 움직이네"로 끝난다 — 벌어질수록 파랑·보라 림라이트를 올리고,
          맨 밑에서 완성될 때 한 번 더 세게 준다. 빛이 있어야 조각이 눈에 잡힌다.
@@ -269,6 +284,9 @@ function ZModel({
     rim.current.forEach((light) => {
       if (light) light.intensity = isFeature ? 32 : 34 + boost;
     });
+
+    /* 조각이 다 모여 안 보이면 여기부터는 할 일이 없다 — 빛은 위에서 이미 갱신했다 */
+    if (shardMix < 0.01) return;
 
     shards.forEach((shard, index) => {
       const [hx, hy] = shard.home;
@@ -386,9 +404,15 @@ export default function ThreeZ({
     ⚠️ 그래도 못 살아나면 **배경 하나 없는 것뿐**이다 — 로고는 글자로 이미 있고, 이 캔버스는
        장식이라 화면이 깨지지 않는다(§정직성: 조용히 망가진 척은 안 하되, 본문은 지킨다).
   */
+  /*
+    ⚠️ **잃었다고 캔버스를 떼지 않는다**(2026-08-14). 예전엔 `if (isLost) return <div/>`로
+       통째로 언마운트했는데, 그러면 `<canvas>` 엘리먼트가 DOM에서 사라지면서 거기 걸어 둔
+       `webglcontextrestored` 리스너도 같이 사라진다 — 복구를 허용해 놓고도 **복구 신호를
+       받을 곳이 없어** 새로고침 전까지 영영 빈 자리로 남았다.
+    ⚠️ 그래서 캔버스는 그대로 두고 **보이지만 않게** 한다. 자리(size)는 유지하므로 레이아웃이
+       안 흔들리고, 복구되면 다시 켜진다.
+  */
   const [isLost, setIsLost] = useState(false);
-
-  if (isLost) return <div style={{ width: size, height: size }} aria-hidden />;
 
   return (
     <Canvas
@@ -404,7 +428,13 @@ export default function ThreeZ({
       }}
       camera={{ position: [0, 0, 2.1], fov: 45 }}
       className="cursor-grab active:cursor-grabbing"
-      style={{ width: size, height: size, touchAction: "none" }}
+      style={{
+        width: size,
+        height: size,
+        touchAction: "none",
+        // 컨텍스트를 잃은 동안만 감춘다 — 엘리먼트는 남아 있어야 복구 신호를 받는다
+        visibility: isLost ? "hidden" : undefined,
+      }}
     >
       {/*
         ⚠️ 밝은 무대에서는 주변광을 **크게 낮춘다.** 높이면 흰 몸체가 평평해져 형태가 사라진다 —
