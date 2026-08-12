@@ -108,16 +108,19 @@ describe("RoomAttendeePicker", () => {
     expect(screen.getByText("검색 결과가 없습니다")).toBeInTheDocument();
   });
 
-  it("'팀장급만'을 고르면 LEADER만 남는다", async () => {
+  it("Owner(팀 없음)가 열면 '전체·팀장급만'만 뜨고, 고르면 LEADER만 남는다", async () => {
     const user = userEvent.setup();
     render(
       <RoomAttendeePicker
         members={MEMBERS}
         selectedIds={[]}
         onChange={jest.fn()}
-        viewerTeamName="개발팀"
+        viewerTeamName={null}
       />,
     );
+
+    expect(screen.getByRole("radio", { name: "팀장급만" })).toBeInTheDocument();
+    expect(screen.queryByRole("radio", { name: "내 부서만" })).not.toBeInTheDocument();
 
     await user.click(screen.getByRole("radio", { name: "팀장급만" }));
 
@@ -126,7 +129,7 @@ describe("RoomAttendeePicker", () => {
     expect(screen.queryByText("이하윤")).not.toBeInTheDocument();
   });
 
-  it("'내 부서만'을 고르면 같은 부서만 남는다", async () => {
+  it("Leader/Member(소속 팀 있음)가 열면 '전체·내 부서만'만 뜨고, 고르면 같은 부서만 남는다", async () => {
     const user = userEvent.setup();
     render(
       <RoomAttendeePicker
@@ -136,6 +139,9 @@ describe("RoomAttendeePicker", () => {
         viewerTeamName="개발팀"
       />,
     );
+
+    expect(screen.getByRole("radio", { name: "내 부서만" })).toBeInTheDocument();
+    expect(screen.queryByRole("radio", { name: "팀장급만" })).not.toBeInTheDocument();
 
     await user.click(screen.getByRole("radio", { name: "내 부서만" }));
 
@@ -151,7 +157,7 @@ describe("RoomAttendeePicker", () => {
         members={MEMBERS}
         selectedIds={[]}
         onChange={jest.fn()}
-        viewerTeamName="개발팀"
+        viewerTeamName={null}
       />,
     );
 
@@ -161,10 +167,5 @@ describe("RoomAttendeePicker", () => {
     expect(screen.getByRole("radio", { name: "팀장급만" })).toBeChecked();
     expect(screen.getByText("김서준")).toBeInTheDocument();
     expect(screen.queryByText("박대표")).not.toBeInTheDocument();
-
-    await user.keyboard("{ArrowRight}");
-
-    expect(screen.getByRole("radio", { name: "내 부서만" })).toBeChecked();
-    expect(screen.getByText("이하윤")).toBeInTheDocument();
   });
 });

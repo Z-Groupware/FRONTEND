@@ -16,9 +16,11 @@ import { ProfileAvatar } from "@/components/common/profile-avatar";
 import { ProjectTag } from "@/components/common/project-tag";
 import { StatusDot } from "@/components/common/status-dot";
 import { ACTION_STATUS_LABEL } from "@/constants/action";
+import type { RoomMember } from "@/features/rooms/types";
 import { formatDate } from "@/lib/date";
 
 import type { MeetingContentPending, MeetingDetail } from "../view-types";
+import { MeetingAttendeesEditDialog } from "./meeting-attendees-edit-dialog";
 import { ProjectAccent } from "./project-accent";
 
 /**
@@ -181,8 +183,24 @@ function ActionsNotice({
   );
 }
 
-export function MeetingDetailView({ detail }: { detail: MeetingDetail }) {
+interface MeetingDetailViewProps {
+  detail: MeetingDetail;
+  /** 참석자 명단 교체(MEET-09) 다이얼로그가 고를 전체 사원 목록. */
+  members: RoomMember[];
+  /** "내 부서만"·"팀장급만" 필터 기준 — `RoomAttendeePicker`로 그대로 흘려보낸다. */
+  viewerTeamName: string | null;
+}
+
+export function MeetingDetailView({ detail, members, viewerTeamName }: MeetingDetailViewProps) {
   const actionsState = actionsSectionStateOf(detail);
+  /*
+    ⚠️ 참석자 교체는 **host만, 끝나지 않은 회의에서만**(MEET-09 규칙). `pendingReason`이
+    "SCHEDULED"·"IN_PROGRESS"일 때만 회의가 아직 안 끝났다는 뜻이다(§view-types) — 그 값이
+    `SUMMARIZING`·`FAILED`·`null`이면 이미 DONE이라 교체할 수 없다.
+  */
+  const canEditAttendees =
+    detail.isHost &&
+    (detail.pendingReason === "SCHEDULED" || detail.pendingReason === "IN_PROGRESS");
 
   return (
     /*
@@ -245,9 +263,19 @@ export function MeetingDetailView({ detail }: { detail: MeetingDetail }) {
             남고 그 아래가 비는데, 회의를 볼 때 "누가 있었나"는 제목·일정과 함께 읽는 값이다.
           */}
           <div className="border-border mt-5 border-t pt-5">
-            <p className="text-muted-foreground text-[12px] leading-4">
-              참석자 <span className="tabular-nums">{detail.attendees.length}명</span>
-            </p>
+            <div className="flex items-baseline justify-between gap-3">
+              <p className="text-muted-foreground text-[12px] leading-4">
+                참석자 <span className="tabular-nums">{detail.attendees.length}명</span>
+              </p>
+              {canEditAttendees && (
+                <MeetingAttendeesEditDialog
+                  meetingId={detail.id}
+                  currentAttendeeIds={detail.attendees.map((attendee) => attendee.id)}
+                  members={members}
+                  viewerTeamName={viewerTeamName}
+                />
+              )}
+            </div>
             <ul className="flex flex-wrap gap-2 pt-2">
               {detail.attendees.map((attendee) => (
                 <li
