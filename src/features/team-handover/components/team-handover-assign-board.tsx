@@ -131,7 +131,13 @@ export function TeamHandoverAssignBoard({ handover, todayIso }: TeamHandoverAssi
             type="button"
             size="sm"
             variant="outline"
-            onClick={() => toast("PDF 생성은 아직 연동되지 않았습니다")}
+            onClick={() =>
+              window.open(
+                `/api/handovers/${handover.handoverId}/pdf`,
+                "_blank",
+                "noopener,noreferrer",
+              )
+            }
           >
             <Download />
             인수인계서 PDF 다운로드
