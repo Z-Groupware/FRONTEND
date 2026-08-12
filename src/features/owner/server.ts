@@ -1,4 +1,5 @@
 import type { MemberStatus } from "@/constants/domain";
+import { isVisibleMemberStatus } from "@/constants/member";
 import { requireAccessToken } from "@/features/auth/session";
 import { serverApi } from "@/lib/api";
 import { ep } from "@/lib/endpoints";
@@ -79,7 +80,10 @@ export async function getOwnerDashboardOverview(): Promise<OwnerDashboardOvervie
     dueSoonProjectCount: projectSummary.dueSoonProjectCount,
     activeMemberCount: memberSummary.totalMemberCount,
     onLeaveMemberCount: memberSummary.onLeaveMemberCount,
-    leaderRows: leaders.map(toOwnerDashboardLeaderRow),
+    // ⚠️ 소프트 딜리트는 상태가 아니라 목록에서 빠지는 일이다 — 퇴사자는 남기고 그것만 거른다.
+    leaderRows: leaders
+      .filter((leader) => isVisibleMemberStatus(leader.status))
+      .map(toOwnerDashboardLeaderRow),
     // ⚠️ "최근 프로젝트 회의" API가 아직 BE에 없다(MEET-17, 모성진에게 요청함, 2026-08-12) —
     //    지어내지 않고 빈 배열로 둔다(§정직성). API 도착하면 이 자리만 고친다.
     projectMeetings: [],
