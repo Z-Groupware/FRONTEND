@@ -1,7 +1,7 @@
 "use client";
 
 import { Canvas, useFrame } from "@react-three/fiber";
-import { useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 
 /**
@@ -61,6 +61,12 @@ function ZModel({ tone, isFeature }: { tone: Tone; isFeature: boolean }) {
     [],
   );
 
+  /*
+    ⚠️ **떠날 때 GPU 자원을 돌려준다.** `ExtrudeGeometry`는 브라우저가 알아서 안 치운다 —
+       화면을 오갈 때마다 쌓이면 컨텍스트가 통째로 날아간다(`WebGLRenderer: Context Lost`).
+  */
+  useEffect(() => () => geometries.forEach((geometry) => geometry.dispose()), [geometries]);
+
   useFrame(() => {
     if (!group.current) return;
     group.current.rotation.y += velocity.current;
@@ -103,10 +109,31 @@ export default function ThreeZ({
   tone?: Tone;
   isFeature?: boolean;
 }) {
+  /*
+    ⚠️ **컨텍스트가 날아갈 수 있다.** 브라우저는 WebGL 컨텍스트를 몇 개까지만 들고 있어서,
+       탭을 많이 열어 두거나 GPU가 눌리면 조용히 뺏어 간다 — 배포 콘솔의
+       `THREE.WebGLRenderer: Context Lost`가 그것이다(2026-08-12).
+    ⚠️ **막지 않으면 영영 안 돌아온다.** 기본 동작은 그대로 잃는 것이라, 기본 동작을 멈춰야
+       (`preventDefault`) 브라우저가 복구를 시도한다. 복구되면 다시 그린다.
+    ⚠️ 그래도 못 살아나면 **배경 하나 없는 것뿐**이다 — 로고는 글자로 이미 있고, 이 캔버스는
+       장식이라 화면이 깨지지 않는다(§정직성: 조용히 망가진 척은 안 하되, 본문은 지킨다).
+  */
+  const [isLost, setIsLost] = useState(false);
+
+  if (isLost) return <div style={{ width: size, height: size }} aria-hidden />;
+
   return (
     <Canvas
       // 성능: 픽셀 밀도 상한 1.5, 카메라는 정면 고정
       dpr={[1, 1.5]}
+      onCreated={({ gl }) => {
+        const canvas = gl.domElement;
+        canvas.addEventListener("webglcontextlost", (event) => {
+          event.preventDefault();
+          setIsLost(true);
+        });
+        canvas.addEventListener("webglcontextrestored", () => setIsLost(false));
+      }}
       camera={{ position: [0, 0, 2.1], fov: 45 }}
       className="cursor-grab active:cursor-grabbing"
       style={{ width: size, height: size, touchAction: "none" }}

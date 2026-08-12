@@ -7,6 +7,7 @@ import { SupportWidget } from "@/features/support/components/support-widget";
 import { LandingBackdrop } from "./landing-backdrop";
 import { LandingFooter } from "./landing-footer";
 import { LandingHeader } from "./landing-header";
+import { SmoothScroll } from "./smooth-scroll";
 
 const STORAGE_KEY = "z:landing-theme";
 /** 스킨 토큰이 걸리는 자리 — globals.css가 이 id로 값을 내린다 */
@@ -109,6 +110,12 @@ export function LandingShell({ children }: { children: ReactNode }) {
         <LandingHeader />
 
         {/* 콘텐츠는 고정 배경(z-0) 위로 — 이 층이 없으면 배경이 글을 덮는다 */}
+        {/*
+          ⚠️ 부드러운 스크롤은 **랜딩에만** 건다(§smooth-scroll). 일하는 화면에서 관성이 붙으면
+             원하는 줄에 못 멈춘다.
+        */}
+        <SmoothScroll />
+
         <main className="relative z-10 flex-1">{children}</main>
 
         <LandingFooter />
