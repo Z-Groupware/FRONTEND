@@ -13,9 +13,11 @@ import type { MeetingListItem } from "./view-types";
  * ⚠️ `now`를 인자로 받는다 — 안에서 `new Date()`를 부르면 테스트가 시각을 못 잡는다.
  */
 export function meetingStatusOf(
-  meeting: Pick<Meeting, "start" | "endedAt">,
+  meeting: Pick<Meeting, "start" | "endedAt" | "canceledAt">,
   now: Date,
 ): MeetingStatus {
+  // ⚠️ 취소를 가장 먼저 본다 — 취소된 회의는 시작 전이었어도(§types) 예정으로 되돌아가지 않는다.
+  if (meeting.canceledAt !== null) return MEETING_STATUS.CANCELED;
   if (meeting.endedAt !== null) return MEETING_STATUS.DONE;
   if (now < meeting.start) return MEETING_STATUS.SCHEDULED;
   return MEETING_STATUS.IN_PROGRESS;
@@ -44,6 +46,9 @@ export type MeetingCardAffordance =
 export function meetingCardAffordanceOf(
   meeting: Pick<MeetingListItem, "status" | "aiSummaryStatus" | "isHost">,
 ): MeetingCardAffordance {
+  // ⚠️ 취소된 회의는 "live"가 아니다 — [녹음하기]를 띄우면 취소된 회의를 다시 시작할 수 있는
+  //    것처럼 보인다. 볼 것도 없다(산출물·발화 기록 자체가 없다) — 상세로만 보낸다.
+  if (meeting.status === MEETING_STATUS.CANCELED) return "open";
   if (meeting.status !== MEETING_STATUS.DONE) return "live";
 
   /*

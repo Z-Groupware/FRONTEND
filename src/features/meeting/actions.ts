@@ -11,8 +11,10 @@ import { canManageMeeting } from "@/lib/permission";
 import { isMock } from "@/mocks/config";
 
 import { attendeeIdsFrom, type BeUpdateAttendeesResponse } from "./mapper";
-import { findMockMeeting, updateMockMeetingAttendees } from "./mock/meetings";
+import { cancelMockMeeting, findMockMeeting, updateMockMeetingAttendees } from "./mock/meetings";
 import { meetingStatusOf } from "./status";
+
+const MEETING_LIST_PATH = "/app/meeting";
 
 /** 참석자 교체 폼 결과 — `useActionState`가 그대로 들고 있는 모양. */
 export interface UpdateMeetingAttendeesState {
@@ -77,5 +79,55 @@ export async function updateMeetingAttendeesAction(
     return { error: null, attendeeIds: attendeeIdsFrom(response) };
   } catch (error) {
     return { error: toAttendeesErrorMessage(error), attendeeIds: null };
+  }
+}
+
+/** 회의 취소 결과 — 다이얼로그가 성공/실패만 보고 토스트를 띄운다(필드 오류 자리가 없다). */
+export interface CancelMeetingResult {
+  error: string | null;
+}
+
+/**
+ * `DELETE /api/meetings/{meetingId}`(MEET-06) 실패를 문구 하나로 바꾼다.
+ * ⚠️ BE의 `message`가 이미 화면에 띄울 한국어 문장이다(§lib/api) — 코드로 문구를 새로 짓지 않는다.
+ */
+function toCancelErrorMessage(error: unknown): string {
+  if (!(error instanceof ApiError)) throw error;
+  return error.message;
+}
+
+/**
+ * 회의 취소(MEET-06) — **시작 전 회의만** 가능. 취소된 회의는 소프트 취소로 남는다(물리 삭제 아님).
+ * ⚠️ 권한은 `canManageMeeting`(host·OWNER·ADMIN) — MEET-09와 같은 축이다(§권한).
+ * ⚠️ "이미 시작된 회의"는 여기서 취소가 아니라 종료(MEET-08, 캡처 화면)를 써야 한다 —
+ *    화면은 SCHEDULED일 때만 [회의 취소]를 보여주지만, 서버에서 다시 확인한다.
+ */
+export async function cancelMeetingAction(meetingId: string): Promise<CancelMeetingResult> {
+  const actor = getMockActor();
+
+  if (isMock) {
+    const meeting = findMockMeeting(meetingId);
+    if (!meeting) return { error: "회의를 찾을 수 없습니다" };
+    if (!canManageMeeting(actor, { hostId: meeting.hostId })) {
+      return { error: "회의를 취소할 권한이 없습니다" };
+    }
+    if (meetingStatusOf(meeting, new Date()) !== MEETING_STATUS.SCHEDULED) {
+      return { error: "이미 시작된 회의는 취소할 수 없습니다 — 종료를 이용해 주세요" };
+    }
+
+    cancelMockMeeting(meetingId, new Date().toISOString());
+    revalidatePath(`/app/meeting/${meetingId}`);
+    revalidatePath(MEETING_LIST_PATH);
+    return { error: null };
+  }
+
+  const accessToken = await requireAccessToken();
+  try {
+    await serverApi<null>(ep.meeting(Number(meetingId)), { method: "DELETE", accessToken });
+    revalidatePath(`/app/meeting/${meetingId}`);
+    revalidatePath(MEETING_LIST_PATH);
+    return { error: null };
+  } catch (error) {
+    return { error: toCancelErrorMessage(error) };
   }
 }

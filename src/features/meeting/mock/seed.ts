@@ -3,7 +3,13 @@ import { AUTHORITY } from "@/constants/authority";
 import { AI_SUMMARY_STATUS } from "@/constants/meeting";
 
 import type { ScriptChunk } from "../view-types";
-import { addMockMeeting, endMockMeeting, listMockMeetings, setMockSummaryStatus } from "./meetings";
+import {
+  addMockMeeting,
+  cancelMockMeeting,
+  endMockMeeting,
+  listMockMeetings,
+  setMockSummaryStatus,
+} from "./meetings";
 
 /**
  * 회의 목 시드 — **화면을 만들 수 있게 회의 몇 건을 미리 깔아 둔다.**
@@ -258,6 +264,27 @@ export function ensureMockMeetingsSeeded(): void {
   endMockMeeting(stalled.id, "2026-08-06T15:31:00.000Z");
   setMockSummaryStatus(stalled.id, AI_SUMMARY_STATUS.FAILED);
   extras.set(stalled.id, { script: [], isStalled: true });
+
+  /*
+    m8 — Owner의 취소된 회의(MEET-06). 목록 카드에 `취소` 배지만 뜨고 [녹음하기]·[회의록]
+    모두 안 뜨는 경우, 상세에서 산출물·발화 기록 칸이 "취소된 회의입니다"로 갈리는 경우를
+    확인하는 자리다(§정직한 목업 — 취소도 회의 상태 하나라 시드 없이는 화면을 못 본다).
+  */
+  const canceled = addMockMeeting({
+    title: "굿즈 앱 프로모션 협의",
+    start: new Date("2026-08-20T13:00:00+09:00"),
+    end: new Date("2026-08-20T13:30:00+09:00"),
+    roomId: "room-small",
+    roomName: "소회의실",
+    projectId: 1,
+    projectTag: "GOODS",
+    topics: [{ main: "운영", sub: "프로모션" }],
+    attendeeIds: [1, 2, 5],
+    hostId: 1,
+    hostAuthority: AUTHORITY.OWNER,
+    roomReservationId: "seed-reservation-8",
+  });
+  cancelMockMeeting(canceled.id, "2026-08-13T09:00:00.000Z");
 }
 
 /** 테스트 전용 — 시드를 되돌린다(스토어는 `meetings.ts`가 들고 있어 함께 비운다) */

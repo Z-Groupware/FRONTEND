@@ -9,6 +9,8 @@ export const MEETING_STATUS = {
   SCHEDULED: "SCHEDULED",
   IN_PROGRESS: "IN_PROGRESS",
   DONE: "DONE",
+  /** 취소(MEET-06) — 소프트 취소다. BE도 물리 삭제 없이 `status`+`canceled_at`으로 남긴다. */
+  CANCELED: "CANCELED",
 } as const;
 export type MeetingStatus = (typeof MEETING_STATUS)[keyof typeof MEETING_STATUS];
 
@@ -16,6 +18,7 @@ export const MEETING_STATUS_LABEL: Record<MeetingStatus, string> = {
   SCHEDULED: "예정",
   IN_PROGRESS: "진행중",
   DONE: "완료",
+  CANCELED: "취소",
 };
 
 /** 캡처 세션 — 담당자만 조작 가능(권한 2축, lib/permission.ts) */
@@ -127,4 +130,6 @@ export const MEETING_STATUS_BADGE_CLASS: Record<MeetingStatus, string> = {
   SCHEDULED: "border-transparent bg-foreground/[0.08] text-foreground font-semibold",
   /** 끝난 것 — 테두리만. 더 볼 일이 없다는 뜻이라 일부러 물러나 있다 */
   DONE: "border-border text-muted-foreground font-medium",
+  /** 취소된 것 — DONE과 같은 무게(더 볼 일이 없다)다. 취소는 색이 아니라 라벨 글자로만 구분한다. */
+  CANCELED: "border-border text-muted-foreground font-medium",
 };
