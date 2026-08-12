@@ -10,6 +10,7 @@ import { ep } from "@/lib/endpoints";
 import { type Actor, requiresParentTeamAction } from "@/lib/permission";
 import { isMock } from "@/mocks/config";
 
+import { RESERVATION_DURATION_MINUTES } from "./constants";
 import {
   type BeMeetingRoom,
   type BeRoomWeekAvailability,
@@ -30,7 +31,6 @@ import type {
 } from "./types";
 
 const WEEKDAYS_PER_WEEK = 5;
-const SLOT_MINUTES = 30;
 
 function toMinutesOfDay(hhmm: string): number {
   const [hours, minutes] = hhmm.split(":").map(Number);
@@ -51,11 +51,11 @@ function buildMockDaySlots(date: Date, room: MeetingRoom): RoomDayAvailability {
   for (
     let minutesOfDay = toMinutesOfDay(room.openTime);
     minutesOfDay < toMinutesOfDay(room.closeTime);
-    minutesOfDay += SLOT_MINUTES
+    minutesOfDay += RESERVATION_DURATION_MINUTES
   ) {
     const startTime = toHHMM(minutesOfDay);
     const slotStart = new Date(`${format(date, "yyyy-MM-dd")}T${startTime}:00`);
-    const slotEnd = new Date(slotStart.getTime() + SLOT_MINUTES * 60_000);
+    const slotEnd = new Date(slotStart.getTime() + RESERVATION_DURATION_MINUTES * 60_000);
     const overlapping = reservations.find(
       (reservation) => reservation.start < slotEnd && reservation.end > slotStart,
     );
@@ -91,7 +91,7 @@ export async function getRoomWeekAvailability(
 
     return {
       weekStart: format(weekStart, "yyyy-MM-dd"),
-      slotMinutes: SLOT_MINUTES,
+      slotMinutes: RESERVATION_DURATION_MINUTES,
       meetingRoom: room,
       days,
     };

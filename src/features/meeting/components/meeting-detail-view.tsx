@@ -20,6 +20,7 @@ import { ACTION_STATUS_LABEL } from "@/constants/action";
 import type { RoomMember } from "@/features/rooms/types";
 import { formatDate } from "@/lib/date";
 
+import { canCancelMeeting, canEditMeetingAttendees } from "../status";
 import type { MeetingContentPending, MeetingDetail } from "../view-types";
 import { MeetingAttendeesEditDialog } from "./meeting-attendees-edit-dialog";
 import { MeetingCancelDialog } from "./meeting-cancel-dialog";
@@ -203,19 +204,8 @@ interface MeetingDetailViewProps {
 
 export function MeetingDetailView({ detail, members, viewerTeamName }: MeetingDetailViewProps) {
   const actionsState = actionsSectionStateOf(detail);
-  /*
-    ⚠️ 참석자 교체는 **host만, 끝나지 않은 회의에서만**(MEET-09 규칙). `pendingReason`이
-    "SCHEDULED"·"IN_PROGRESS"일 때만 회의가 아직 안 끝났다는 뜻이다(§view-types) — 그 값이
-    `SUMMARIZING`·`FAILED`·`null`이면 이미 DONE이라 교체할 수 없다.
-  */
-  const canEditAttendees =
-    detail.isHost &&
-    (detail.pendingReason === "SCHEDULED" || detail.pendingReason === "IN_PROGRESS");
-  /*
-    ⚠️ 취소는 참석자 교체보다 조건이 좁다 — **시작 전(SCHEDULED)만**(MEET-06 규칙: "시작 전
-    회의만 취소 가능"). 진행중은 종료(MEET-08, 캡처 화면)를 써야 한다.
-  */
-  const canCancel = detail.isHost && detail.pendingReason === "SCHEDULED";
+  const canEditAttendees = canEditMeetingAttendees(detail);
+  const canCancel = canCancelMeeting(detail);
 
   return (
     /*

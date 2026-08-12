@@ -37,7 +37,8 @@ function toAttendeesErrorMessage(error: unknown): string {
  * 재사용하는 다이얼로그(`MeetingAttendeesEditDialog`)가 이 액션을 부른다.
  * ⚠️ 권한은 `canManageMeeting`(host·OWNER·ADMIN) 하나로 본다 — 화면 가드는 UX일 뿐이라
  *    여기서 다시 확인한다(§권한).
- * ⚠️ **host는 자동 포함·제거 불가**다 — 폼에서 빠졌어도 여기서 끼워 넣는다.
+ * ⚠️ **host는 자동 포함·제거 불가**다 — 이 액션이 직접 끼워 넣지는 않는다. mock 분기는
+ *    `updateMockMeetingAttendees`가, 실연동은 서버(BE)가 그 규칙을 보장한다.
  */
 export async function updateMeetingAttendeesAction(
   _prev: UpdateMeetingAttendeesState,

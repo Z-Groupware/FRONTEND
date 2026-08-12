@@ -24,7 +24,11 @@ export async function getMemberDashboardOverview(): Promise<MemberDashboardOverv
         시절 목이다. 지금은 SCHEDULED·IN_PROGRESS만, 가까운 시간부터.
       */
       attendedMeetings: [...MEMBER_ATTENDED_MEETINGS_MOCK]
-        .filter((meeting) => meeting.status !== MEETING_STATUS.DONE)
+        .filter(
+          (meeting) =>
+            meeting.status === MEETING_STATUS.SCHEDULED ||
+            meeting.status === MEETING_STATUS.IN_PROGRESS,
+        )
         .sort((a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime())
         .slice(0, MEETING_MAX_ITEMS),
     };
@@ -34,20 +38,18 @@ export async function getMemberDashboardOverview(): Promise<MemberDashboardOverv
   //    본인 소유분만 스코프돼 있어서(토큰 기준), 여기선 PERSONAL만 남기고 마감 임박 필터·
   //    정렬만 클라에서 한다(BE 목록에 이 필터 자체가 없다).
   const accessToken = await requireAccessToken();
-  const page = await serverApi<BePageResponse<BeActionSummary>>(ep.actions({ size: 9999 }), {
-    accessToken,
-  });
+  const [page, { meetings }] = await Promise.all([
+    serverApi<BePageResponse<BeActionSummary>>(ep.actions({ size: 9999 }), { accessToken }),
+    // "참석 회의" = 내 예정 회의(MEET-03) — 정렬·필터(SCHEDULED/IN_PROGRESS·가까운 순)는 서버가 한다.
+    serverApi<BeUpcomingMeetingsResponse>(ep.meetingsUpcoming({ limit: MEETING_MAX_ITEMS }), {
+      accessToken,
+    }),
+  ]);
   const dueSoonActions = page.content
     .filter((action) => action.actionType === "PERSONAL")
     .map(toMemberAction)
     .filter(isDueSoon)
     .sort((a, b) => getDaysUntilDue(a.dueDate) - getDaysUntilDue(b.dueDate));
-
-  // "참석 회의" = 내 예정 회의(MEET-03) — 정렬·필터(SCHEDULED/IN_PROGRESS·가까운 순)는 서버가 한다.
-  const { meetings } = await serverApi<BeUpcomingMeetingsResponse>(
-    ep.meetingsUpcoming({ limit: MEETING_MAX_ITEMS }),
-    { accessToken },
-  );
 
   return { dueSoonActions, attendedMeetings: meetings.map(toDashboardMeeting) };
 }

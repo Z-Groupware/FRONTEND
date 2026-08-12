@@ -21,6 +21,11 @@ export const MEETING_STATUS_LABEL: Record<MeetingStatus, string> = {
   CANCELED: "취소",
 };
 
+/** URL 쿼리처럼 바깥에서 들어오는 값을 검증할 때 쓴다(`isVisibleMemberStatus`와 같은 패턴). */
+export function isMeetingStatus(value: string): value is MeetingStatus {
+  return (Object.values(MEETING_STATUS) as string[]).includes(value);
+}
+
 /** 캡처 세션 — 담당자만 조작 가능(권한 2축, lib/permission.ts) */
 export const CAPTURE_STATUS = {
   IDLE: "IDLE",
