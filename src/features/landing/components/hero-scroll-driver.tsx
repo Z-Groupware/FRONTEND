@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 
-import { heroProgress, isTrackLongEnough, toHeroProgress } from "../hero-progress";
+import { burstAt, heroProgress, isTrackLongEnough, toHeroProgress } from "../hero-progress";
 
 /**
  * 스크롤을 읽어 **첫 화면 진행도**를 채워 넣는다(그리는 일은 안 한다).
@@ -49,6 +49,17 @@ export function HeroScrollDriver() {
         "--hero-recede",
         String(Math.min(1, progress / 0.5)),
       );
+
+      /*
+        ⚠️ **부서진 정도도 내보낸다.** 모였을 때 뜨고 흩어질 때 빠져야 로고가 주인공으로 남는다 —
+           안 그러면 화면에서 제일 눈에 띄는 게 어질러진 조각이 된다(§globals.css `.hero-z-*`).
+        ⚠️ 짧은 페이지에서는 연출이 꺼져 있으니 늘 0이다 — 켜지지도 않은 흩어짐으로 로고를
+           지우면 안 된다.
+      */
+      document.documentElement.style.setProperty(
+        "--hero-shatter",
+        String(heroProgress.active ? burstAt(progress) : 0),
+      );
     };
 
     update();
@@ -61,6 +72,7 @@ export function HeroScrollDriver() {
       heroProgress.current = 0;
       heroProgress.active = false;
       document.documentElement.style.removeProperty("--hero-recede");
+      document.documentElement.style.removeProperty("--hero-shatter");
     };
   }, []);
 

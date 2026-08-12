@@ -489,12 +489,17 @@
    * ⚠️ 변수가 아직 없을 때(스크립트 전·모션 최소화)의 기본값을 `0`으로 둔다 — 그때는 첫 화면
    *    상태로 서 있으면 된다.
    */
+  /*
+   * ⚠️ **부서져 있을 때는 물러난다**(`--hero-shatter`, 2026-08-12 피드백: "합쳐져야 Z가 뜨던지").
+   *    부서진 상태가 제일 진하면 화면에서 제일 눈에 띄는 게 **어질러진 조각**이 된다 —
+   *    로고는 모였을 때 뜨고, 흩어지는 동안에는 조용히 빠져 있어야 이야기가 읽힌다.
+   */
   .hero-z-dark {
-    opacity: calc(0.9 - var(--hero-recede, 0) * 0.55);
+    opacity: calc((0.9 - var(--hero-recede, 0) * 0.55) * (1 - var(--hero-shatter, 0) * 0.65));
   }
 
   .hero-z-light {
-    opacity: calc(0.3 - var(--hero-recede, 0) * 0.14);
+    opacity: calc((0.3 - var(--hero-recede, 0) * 0.14) * (1 - var(--hero-shatter, 0) * 0.75));
   }
 
   @media (prefers-reduced-motion: reduce) {
