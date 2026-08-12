@@ -301,11 +301,11 @@ export async function approveHandoverAction(id: number): Promise<MemberActionRes
          `HO_FINALIZE_NOT_ALLOWED`) — 화면이 잘못 눌러도 서버가 막고, 그 메시지를
          `toUserMessage`로 그대로 보여준다. 규칙을 여기서 다시 베끼면 BE가 바뀔 때 둘이 갈린다.
     */
-    const pendingHandover = (await getManagedMember(id))?.pendingHandover;
-    if (!pendingHandover) return { isSuccess: false, message: NO_PENDING };
-
-    const accessToken = await requireAccessToken();
     try {
+      const pendingHandover = (await getManagedMember(id))?.pendingHandover;
+      if (!pendingHandover) return { isSuccess: false, message: NO_PENDING };
+
+      const accessToken = await requireAccessToken();
       await serverApi<unknown>(ep.handoverFinalize(Number(pendingHandover.id)), {
         method: "PATCH",
         accessToken,
@@ -347,11 +347,11 @@ export async function rejectHandoverAction(
     }
     rejectMockHandover(id);
   } else {
-    const pendingHandover = (await getManagedMember(id))?.pendingHandover;
-    if (!pendingHandover) return { isSuccess: false, message: NO_PENDING };
-
-    const accessToken = await requireAccessToken();
     try {
+      const pendingHandover = (await getManagedMember(id))?.pendingHandover;
+      if (!pendingHandover) return { isSuccess: false, message: NO_PENDING };
+
+      const accessToken = await requireAccessToken();
       await serverApi<unknown>(ep.handoverReject(Number(pendingHandover.id)), {
         method: "PATCH",
         json: { reason },

@@ -1,5 +1,7 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
+
 import {
   HANDOVER_STATUS,
   HANDOVER_TYPE,
@@ -13,6 +15,9 @@ import { ep } from "@/lib/endpoints";
 import { isMock } from "@/mocks/config";
 
 import { type SubmitHandoverPayload, toHandoverCreateRequestBody } from "./lib";
+
+/** 새 신청이 뜨는 목록 — 팀장 중간승인 대기 화면. */
+const TEAM_HANDOVER_LIST_PATH = "/team/handover";
 
 export type {
   SubmitHandoverPayload,
@@ -57,6 +62,8 @@ export async function submitHandoverAction(
       });
     }
   }
+
+  revalidatePath(TEAM_HANDOVER_LIST_PATH);
 
   return { status: mapHandoverStatusFromBe(created.status) };
 }

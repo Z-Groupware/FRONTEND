@@ -47,8 +47,9 @@ interface BeHandoverDetailForApproval {
 
 /**
  * 이 사원 명의로 처리 대기 중인 인수인계서 — `GET /api/handovers`(OWNER면 회사 전체,
- * 페이지네이션 없음)에서 `writerMemberId`로 찾는다. `status` 파라미터가 없어 전부 받아
- * 거른다 — 인수인계서는 회사 규모라 프로젝트·액션처럼 페이지 단위가 아니다.
+ * 페이지네이션 없음)에서 `writerMemberId`로 찾는다. **대기 중인 두 상태만** 따로
+ * 조회한다(`status=SUBMITTED`·`status=REASSIGNED`) — 전체 이력(FINALIZED·REJECTED
+ * 포함)을 받아 오면 회사가 커질수록 이 화면 하나의 응답 크기가 계속 늘어난다.
  *
  * ⚠️ **신청 당시 권한 스냅샷을 BE가 안 준다.** `requesterAuthority`는 지금 권한
  *    (`currentAuthority`)으로 근사한다 — 팀장 공석 중 승급된 사람이 신청했다면 그때는
@@ -60,10 +61,11 @@ async function findPendingHandoverForMember(
   currentAuthority: Authority,
   accessToken: string,
 ): Promise<PendingHandover | null> {
-  const summaries = await serverApi<BeHandoverSummaryResponse[]>(ep.handovers(), { accessToken });
-  const pending = summaries.find(
-    (h) => h.writerMemberId === memberId && (h.status === "SUBMITTED" || h.status === "REASSIGNED"),
-  );
+  const [submitted, reassigned] = await Promise.all([
+    serverApi<BeHandoverSummaryResponse[]>(ep.handovers({ status: "SUBMITTED" }), { accessToken }),
+    serverApi<BeHandoverSummaryResponse[]>(ep.handovers({ status: "REASSIGNED" }), { accessToken }),
+  ]);
+  const pending = [...submitted, ...reassigned].find((h) => h.writerMemberId === memberId);
   if (!pending) return null;
 
   const type = pending.handoverType as HandoverType;

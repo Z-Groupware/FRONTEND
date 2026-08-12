@@ -46,6 +46,8 @@ interface BeHandoverDetail {
   teamNameSnap: string;
   writerMemberId: number;
   writerNameSnap: string;
+  handoverType: string;
+  status: string;
   finalizedAt: string | null;
   items: BeHandoverItem[];
 }
@@ -150,6 +152,13 @@ export async function getLeaderHandoverDetail(id: string): Promise<LeaderHandove
     if (error instanceof ApiError && (error.status === 404 || error.status === 403)) return null;
     throw error;
   }
+
+  /*
+    ⚠️ **목록과 같은 조건을 여기서도 다시 본다**(§권한: 화면 숨김은 보안이 아니다). 목록은
+       OFFBOARDING·FINALIZED만 걸러 링크를 만들지만, 이 함수는 주소만 알면 다른 handover id로도
+       직접 불릴 수 있다 — 휴직 건이나 아직 SUBMITTED인 건을 열면 후보·귀속 버튼이 잘못 뜬다.
+  */
+  if (be.handoverType !== "OFFBOARDING" || be.status !== "FINALIZED") return null;
 
   const custodyStatus = isAllReassigned(be.items)
     ? LEADER_HANDOVER_CUSTODY_STATUS.ASSIGNED
