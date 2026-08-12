@@ -78,7 +78,7 @@ const CAPTION_FLUSH_MS = 2_000;
 const SILENT_RMS_DBFS = -100;
 
 export function useCapture(meetingId: string, initialSeq = 0): UseCaptureResult {
-  const [phase, setPhase] = useState<CapturePhase>(CAPTURE_PHASE.BEFORE_ENTER);
+  const [phase, setPhase] = useState<CapturePhase>(CAPTURE_PHASE.BEFORE_START);
   const [spans, setSpans] = useState<RecordingSpan[]>([]);
   const [chunks, setChunks] = useState<TranscriptChunk[]>([]);
   const [partial, setPartial] = useState("");

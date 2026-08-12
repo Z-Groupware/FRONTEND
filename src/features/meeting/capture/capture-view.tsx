@@ -20,7 +20,7 @@ import { useLiveCaptions } from "./use-live-captions";
 
 /**
  * 캡처 화면 — **Host 전용**(WORKFLOW §3-3). 한 화면이 다섯 자리를 지난다:
- * 입장 전 → 입장 후 → 녹음 중 → 일시정지 → 종료.
+ * 준비 → 준비 완료 → 녹음 중 → 일시정지 → 종료.
  *
  * ⚠️ **버튼은 2계열이다**(§3-3). [녹음 시작]이 [일시정지]/[재개] 토글로 바뀌고,
  *    [회의 종료 및 제출]은 녹음을 시작해야 열린다. 셋을 나란히 늘어놓지 않는다.
@@ -116,8 +116,8 @@ export function CaptureView({
     <>
       <LeaveGuard hasUnsaved={hasUnsaved} />
 
-      {capture.phase === CAPTURE_PHASE.BEFORE_ENTER ? (
-        <EnterCard meeting={meeting} support={capture.support} onEnter={capture.enter} />
+      {capture.phase === CAPTURE_PHASE.BEFORE_START ? (
+        <ReadyCard meeting={meeting} support={capture.support} onReady={capture.enter} />
       ) : (
         <div className="mx-auto flex min-h-0 w-full max-w-[1440px] flex-1 flex-col gap-7">
           {/*
@@ -294,20 +294,23 @@ export function CaptureView({
 }
 
 /**
- * 입장 전 — 가운데 한 장(DESIGN §4 폭: 확인 화면 560).
+ * 녹음 준비 — 가운데 한 장(DESIGN §4 폭: 확인 화면 560).
  *
- * ⚠️ 들어가기 전에 **무엇이 시작되고 무엇이 아직 아닌지** 적는다. 버튼만 두면 누르는 순간
+ * ⚠️ 시작하기 전에 **무엇이 시작되고 무엇이 아직 아닌지** 적는다. 버튼만 두면 누르는 순간
  *    마이크 권한 창이 떠서, 무슨 일인지 모른 채 거부하게 된다.
+ * ⚠️ 이 화면은 **서버를 안 부른다** — 브라우저·마이크를 확인하는 자리일 뿐이다. 전에는
+ *    [입장]이라 불렀는데(2026-08-11 개명), 회의에 들어가는 별도 단계가 있는 것처럼 읽혀
+ *    백엔드의 "입장" API가 상태를 바꾸는 자리로 오해될 소지가 있었다. 회의가 실제로
+ *    시작되는 순간은 [녹음 시작] 하나뿐이다.
  */
-function EnterCard({
-  meeting,
-  support,
-  onEnter,
-}: {
+interface ReadyCardProps {
   meeting: MeetingCaptureInfo;
+  /** 이 브라우저가 받쳐 주는가 — 하나라도 없으면 안내를 먼저 띄운다 */
   support: { stt: boolean; recording: boolean };
-  onEnter: () => void;
-}) {
+  onReady: () => void;
+}
+
+function ReadyCard({ meeting, support, onReady }: ReadyCardProps) {
   const unsupported = !support.stt || !support.recording;
 
   return (
@@ -342,12 +345,12 @@ function EnterCard({
           type="button"
           variant="ink"
           className="mt-6 h-11 w-full text-[13px]"
-          onClick={onEnter}
+          onClick={onReady}
         >
-          입장
+          준비 완료
         </Button>
         <p className="text-muted-foreground pt-2 text-[11px] leading-4 break-keep">
-          입장해도 녹음은 시작되지 않습니다. 회의 화면에서 [녹음 시작]을 눌러 주세요.
+          아직 녹음은 시작되지 않습니다. 다음 화면에서 [녹음 시작]을 눌러 주세요.
         </p>
       </section>
     </div>
@@ -562,7 +565,7 @@ function ProjectTag({ tag, className }: { tag: string; className?: string }) {
 /** 지금 무슨 상태인지 — 색이 아니라 **명도**로 가른다(DESIGN §5) */
 function PhaseBadge({ phase }: { phase: CapturePhase }) {
   const LABEL: Record<CapturePhase, string> = {
-    BEFORE_ENTER: "대기",
+    BEFORE_START: "대기",
     READY: "대기",
     RECORDING: "녹음 중",
     PAUSED: "일시정지",

@@ -45,11 +45,18 @@ export const ep = {
   companyMe: () => "/api/companies/me",
   companyOnboarding: () => "/api/companies/me/onboarding",
 
-  /* 회의 */
-  meetings: () => "/api/meetings",
-  meeting: (id: number) => `/api/meetings/${id}`,
-  meetingCapture: (id: number) => `/api/meetings/${id}/capture`,
-  meetingSummary: (id: number) => `/api/meetings/${id}/summary`,
+  /*
+   * 회의 — [확인] BE 실코드 대조(2026-08-11)
+   *   `meeting/presentation/api/{MeetingController,MeetingListController,MeetingDetailController}.java`
+   *
+   * ⚠️ **회의도 `/api/v1/`이다.** 전에 `/api/meetings`로 적어 뒀던 건 FE 제안 경로였고
+   *    실제 컨트롤러는 전부 `@RequestMapping("/api/v1/meetings")`다 — 그대로 부르면 404다.
+   * ⚠️ **캡처 전용 조회는 없다.** 캡처 화면도 상세(MEET-04)를 쓴다 — 있지도 않은
+   *    `/{id}/capture`를 지어내지 않는다(§환각 API 방지).
+   */
+  meetings: () => "/api/v1/meetings",
+  /** 상세(MEET-04) — 캡처 진입도 이걸 쓴다. 없으면 404 `MT-001`, 열람 권한 없으면 403 `MT-011` */
+  meeting: (id: number) => `/api/v1/meetings/${id}`,
 
   /*
    * 캡처 — [확인] BE 실코드 대조(2026-08-10)

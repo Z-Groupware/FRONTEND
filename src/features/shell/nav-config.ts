@@ -1,6 +1,6 @@
 import { AUTHORITY, type Authority } from "@/constants/authority";
 import type { Actor } from "@/lib/permission";
-import { canManageBilling } from "@/lib/permission";
+import { canManageBilling, canManageRooms } from "@/lib/permission";
 
 import type { NavItem, NavSection } from "./nav";
 import { hasRoute } from "./routes";
@@ -58,12 +58,23 @@ const MY_PAGE: NavItem = { href: "/app/me", label: "마이페이지", icon: "me"
  * ⚠️ 겹치는 넷(사원 관리·회의실·구독·결제·녹음 용량)은 `/manage/*` 하나로 모여 있다 —
  *    역할 경로에 두면 겸직자에게 주소가 거짓말을 한다(DECISIONS §관리 기능).
  */
-const MANAGE_SHARED: NavItem[] = [
-  { href: "/manage/members", label: "사원 관리", icon: "members" },
-  { href: "/manage/rooms", label: "회의실 관리", icon: "room" },
+const MANAGE_MEMBERS: NavItem = { href: "/manage/members", label: "사원 관리", icon: "members" };
+
+const MANAGE_MONEY: NavItem[] = [
   { href: "/manage/billing", label: "구독", icon: "billing" },
   { href: "/manage/storage", label: "저장소 관리", icon: "storage" },
 ];
+
+/**
+ * 회의실 관리 — **Admin 겸직자만**(WORKFLOW.md §10-A · `canManageRooms`).
+ *
+ * ⚠️ **Owner에게는 안 보인다**(2026-08-11). 전에는 `MANAGE_SHARED`에 있어 Owner도 봤는데,
+ *    화면 안에서 추가·수정 버튼이 `canManageRooms`로 다시 걸려 **들어가도 아무것도 못 하는
+ *    목록**이었다 — 메뉴가 할 수 없는 일을 가리키면 그것도 거짓말이다(§정직성).
+ * ⚠️ 판정을 `canManageRooms` **그대로** 쓴다. 여기서 `isAdmin`을 직접 보면 정책이 바뀔 때
+ *    메뉴와 화면이 갈린다(§권한: 판정은 `lib/permission.ts` 한 곳).
+ */
+const MANAGE_ROOMS: NavItem = { href: "/manage/rooms", label: "회의실 관리", icon: "room" };
 
 const OWNER_ONLY: NavItem[] = [
   { href: "/owner/leader-handovers", label: "인수인계서 관리", icon: "approval" },
@@ -139,9 +150,15 @@ export function navFor(viewer: Actor): NavSection[] {
        "메뉴는 보이는데 화면은 막힌다"가 안 생긴다.
   */
   if (canManageBilling(viewer)) {
+    /* 순서는 사원 → (회의실) → 구독 → 저장소 → Owner 전용이다. 회의실만 겸직자에게 끼어든다 */
     sections.push({
       title: "회사 운영",
-      items: [...MANAGE_SHARED, ...(isOwner ? OWNER_ONLY : [])],
+      items: [
+        MANAGE_MEMBERS,
+        ...(canManageRooms(viewer) ? [MANAGE_ROOMS] : []),
+        ...MANAGE_MONEY,
+        ...(isOwner ? OWNER_ONLY : []),
+      ],
     });
   }
 

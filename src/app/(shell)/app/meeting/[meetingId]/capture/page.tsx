@@ -17,7 +17,7 @@ export const metadata: Metadata = {
  *
  * 못 들어가는 세 경우가 **다른 화면**이다(§view-types):
  * - 없는 회의 → `notFound()`
- * - Host가 아님 → 참석자에게는 입장 개념이 없다(§3-2). 잠금이 아니라 다른 말이 필요하다.
+ * - Host가 아님 → 참석자가 들어올 화면이 아니다(§3-2, STT 충돌 방지). 잠금이 아니라 다른 말이 필요하다.
  * - 이미 끝남 → 종료는 되돌릴 수 없다. 다시 녹음하려면 회의를 새로 열어야 한다.
  */
 export default async function MeetingCapturePage({

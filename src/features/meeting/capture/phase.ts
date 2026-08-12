@@ -10,12 +10,17 @@
  *
  * ⚠️ `constants/meeting.ts`의 `CAPTURE_STATUS`와 **다른 것**이다. 그건 서버가 아는 세션
  *    상태(IDLE·RECORDING·SUBMITTING·DONE)이고, 이건 **화면이 지금 무엇을 그리는가**다 —
- *    `BEFORE_ENTER`와 `READY`는 서버가 보기엔 똑같이 IDLE이지만 화면은 전혀 다르다.
+ *    `BEFORE_START`와 `READY`는 서버가 보기엔 똑같이 IDLE이지만 화면은 전혀 다르다.
  */
 export const CAPTURE_PHASE = {
-  /** 아직 안 들어왔다 — 가운데 [입장] 하나뿐인 화면 */
-  BEFORE_ENTER: "BEFORE_ENTER",
-  /** 들어왔고 아직 녹음 전 */
+  /**
+   * 아직 준비 화면이다 — 가운데 한 장에 [준비 완료] 하나뿐인 화면.
+   * ⚠️ 전에는 `BEFORE_ENTER`("입장")였다(2026-08-11 개명). 이 화면은 서버를 안 부르는
+   *    **브라우저·마이크 안내**일 뿐인데 "입장"이라 부르니 회의에 들어가는 별도 단계처럼
+   *    읽혔다 — 회의가 실제로 시작되는 자리는 [녹음 시작] 하나뿐이다(팀 워크플로우 2단계).
+   */
+  BEFORE_START: "BEFORE_START",
+  /** 준비를 마쳤고 아직 녹음 전 */
   READY: "READY",
   RECORDING: "RECORDING",
   PAUSED: "PAUSED",
@@ -33,7 +38,7 @@ export function isCapturing(phase: CapturePhase): boolean {
   return phase === CAPTURE_PHASE.RECORDING;
 }
 
-/** 자막·참가자 같은 **작업 화면**을 그리는 단계인가 — 입장 전과 종료 후는 아니다 */
+/** 자막·참가자 같은 **작업 화면**을 그리는 단계인가 — 준비 화면과 종료 후는 아니다 */
 export function showsWorkspace(phase: CapturePhase): boolean {
   return (
     phase === CAPTURE_PHASE.READY ||
