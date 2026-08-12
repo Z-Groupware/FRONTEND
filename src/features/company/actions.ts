@@ -133,11 +133,14 @@ export async function saveCompanyProfileAction(
           name: draft.name,
           businessNumber: draft.businessNumber,
           /*
-            ⚠️ **`null`을 보내면 안 지워진다.** BE는 부분 수정이라 `null`을 "이 필드는 건드리지
-               말라"로 읽는다 — 주소를 비우려고 지운 사람에게는 옛 주소가 그대로 남는다.
-               빈 문자열을 보내야 실제로 비워진다(`@Size`만 걸려 있어 통과한다).
+            ⚠️ **비었으면 필드째 뺀다**(2026-08-12 고침). 전에는 빈 문자열을 보냈는데 BE가
+               `@Pattern`(NOT_BLANK_IF_PRESENT)으로 빈 값을 400으로 거절해서 **주소 없는
+               회사는 기본 정보 저장이 항상 실패**했다. BE는 부분 수정이라 필드가 없으면
+               "건드리지 말라"로 읽는다 — 저장은 되고, 대신 **한 번 넣은 주소를 지우는 길은
+               지금 계약에 없다**(빈 값 거부 + 생략 = 미변경). 지우기가 필요해지면 BE와
+               별도 협의한다(요청 문서에 적어 둠, §정직성: 되는 척하지 않는다).
           */
-          address: draft.place?.address ?? "",
+          ...(draft.place?.address ? { address: draft.place.address } : {}),
         },
       });
     } catch (error) {

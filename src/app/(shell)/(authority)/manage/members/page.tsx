@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 import { AccessDenied } from "@/components/common/access-denied";
-import { getCompanySetting } from "@/features/company/server";
+import { getCompanyOrg } from "@/features/company/server";
 import { MemberListView } from "@/features/member/components/member-list-view";
 import { getManagedMembersPage } from "@/features/member/manage-server";
 import { MEMBER_FILTER, type MemberFilter, type MemberQuery } from "@/features/member/manage-types";
@@ -67,9 +67,13 @@ export default async function ManageMembersPage({
        훑어서, 이 화면 하나에 목록 조회가 두 번 나갔다 — 팀의 정본은 기업 설정의 조직 체계이고
        이미 여기서 받고 있다.
   */
+  /*
+    ⚠️ `getCompanySetting`이 아니다(2026-08-12 고침) — 그건 OWNER 전용 `companies/me`를 물고
+       있어 Admin 겸직자가 이 페이지에서 403으로 죽었다. 여기 필요한 건 팀·직급 목록뿐이다.
+  */
   const [firstPage, company] = await Promise.all([
     getManagedMembersPage(query, 0),
-    getCompanySetting(),
+    getCompanyOrg(),
   ]);
   const teamNames = company.departments.map((team) => team.name);
 

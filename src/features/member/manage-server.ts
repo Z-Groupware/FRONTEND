@@ -158,12 +158,18 @@ export async function getManagedMembersPage(
   if (query.keyword.trim()) params.set("q", query.keyword.trim());
 
   /*
-    ⚠️ **`totalCount`다**(`totalElements` 아님 — [확인] BE `MemberPageResponse`). 이름을 잘못
-       읽으면 `undefined`가 되어 `전체 N건`이 비고 `totalPages`가 `NaN`이 된다 — 다음 페이지가
-       있는지 아무도 모르게 된다.
+    ⚠️ **`totalElements`다**(`totalCount` 아님 — [확인] BE `MemberPageResponse.java` record:
+       `totalElements·totalPages·hasNext·page·size·content`, 2026-08-12 재대조). 전에는
+       `totalCount`로 읽었는데 그 필드가 응답에 없어 `undefined`가 되고, `전체 N건`이 비고
+       `totalPages`가 `NaN`이라 **다음 페이지 판정이 통째로 무너졌다**. 주석의 [확인] 표시까지
+       반대로 적혀 있었다 — 이름 하나가 화면 전체를 조용히 죽이는 자리라 응답 그대로 옮긴다.
+    ⚠️ `totalPages`도 **서버 값을 그대로 쓴다.** 우리가 나눠 만들면 반올림 규칙이 갈릴 때
+       마지막 페이지가 한 번 더 불리거나 잘린다 — 세는 쪽과 자르는 쪽은 같은 곳이어야 한다.
   */
   const response = await serverApi<{
-    totalCount: number;
+    totalElements: number;
+    totalPages: number;
+    hasNext: boolean;
     page: number;
     size: number;
     content: BeMemberListItem[];
@@ -172,7 +178,7 @@ export async function getManagedMembersPage(
   /*
     ⚠️ **지워진 사람은 여기서 뺀다**(§도메인 상수). 퇴사자(`RESIGNED`)는 남는다 — 그 사람이
        남긴 회의·액션의 출처라 이름이 사라지면 추적이 끊긴다.
-    ⚠️ 거른 만큼 `totalCount`를 줄이지 않는다. 그 숫자는 **서버가 센 전체**이고, 화면의
+    ⚠️ 거른 만큼 전체 건수를 줄이지 않는다. 그 숫자는 **서버가 센 전체**이고, 화면의
        `전체 N건`은 그 값을 말해야 다음 페이지가 있는지와 어긋나지 않는다.
   */
   const items = response.content
@@ -182,9 +188,8 @@ export async function getManagedMembersPage(
   return {
     items,
     page: response.page,
-    /* ⚠️ `size`가 0으로 오면 0으로 나눠 `Infinity`가 된다 — 요청한 값으로 되돌린다 */
-    totalPages: Math.max(1, Math.ceil(response.totalCount / (response.size || pageSize))),
-    totalCount: response.totalCount,
+    totalPages: Math.max(1, response.totalPages),
+    totalCount: response.totalElements,
   };
 }
 
