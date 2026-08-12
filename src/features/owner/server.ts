@@ -1,9 +1,59 @@
+import type { MemberStatus } from "@/constants/domain";
+import { requireAccessToken } from "@/features/auth/session";
+import { serverApi } from "@/lib/api";
+import { ep } from "@/lib/endpoints";
+import { isMock } from "@/mocks/config";
+
 import { MEETING_MAX_ITEMS } from "./lib";
 import { OWNER_DASHBOARD_MOCK } from "./mock/dashboard";
-import type { OwnerDashboardOverview } from "./types";
+import type { OwnerDashboardLeaderRow, OwnerDashboardOverview } from "./types";
 
-// ⚠️ ERD·API 스펙 미확정(BE 협의 전) — 지금은 목 고정. 확정되면 이 분기만 손댄다.
-const isMock = true;
+/** [확인] BE `OwnerDashboardSummaryResponse`(project 도메인) — PR #354 머지 완료. */
+interface BeProjectDashboardSummary {
+  totalProjectCount: number;
+  dueSoonProjectCount: number;
+}
+
+/** [확인] BE `MemberDashboardSummaryResponse` — PR #385 머지 완료. */
+interface BeMemberDashboardSummary {
+  totalMemberCount: number;
+  onLeaveMemberCount: number;
+}
+
+/** [확인] BE `TeamLeaderStatusResponse` — PR #385 머지 완료. */
+interface BeTeamLeaderStatus {
+  memberId: number;
+  name: string;
+  email: string;
+  teamId: number;
+  teamName: string;
+  status: MemberStatus;
+  leaveStartDate: string | null;
+  leaveEndDate: string | null;
+}
+
+/** `2026-08-01`·`2026-08-15` → `8월 1일~15일`(같은 달이면 뒤쪽 월은 생략). */
+function formatLeavePeriod(start: string | null, end: string | null): string | null {
+  if (!start || !end) return null;
+
+  const s = new Date(`${start}T00:00:00`);
+  const e = new Date(`${end}T00:00:00`);
+  const sMonth = s.getMonth() + 1;
+  const eMonth = e.getMonth() + 1;
+  const endLabel = sMonth === eMonth ? `${e.getDate()}일` : `${eMonth}월 ${e.getDate()}일`;
+  return `${sMonth}월 ${s.getDate()}일~${endLabel}`;
+}
+
+function toOwnerDashboardLeaderRow(be: BeTeamLeaderStatus): OwnerDashboardLeaderRow {
+  return {
+    id: String(be.memberId),
+    name: be.name,
+    email: be.email,
+    department: be.teamName,
+    status: be.status,
+    leavePeriod: formatLeavePeriod(be.leaveStartDate, be.leaveEndDate),
+  };
+}
 
 export async function getOwnerDashboardOverview(): Promise<OwnerDashboardOverview> {
   if (isMock) {
@@ -16,5 +66,22 @@ export async function getOwnerDashboardOverview(): Promise<OwnerDashboardOvervie
         .slice(0, MEETING_MAX_ITEMS),
     };
   }
-  throw new Error("서버 연동 미구현 — ERD·API 스펙 확정 후 매퍼 작성");
+
+  const accessToken = await requireAccessToken();
+  const [projectSummary, memberSummary, leaders] = await Promise.all([
+    serverApi<BeProjectDashboardSummary>(ep.projectDashboardSummary(), { accessToken }),
+    serverApi<BeMemberDashboardSummary>(ep.memberDashboardSummary(), { accessToken }),
+    serverApi<BeTeamLeaderStatus[]>(ep.teamLeadersStatus(), { accessToken }),
+  ]);
+
+  return {
+    totalProjectCount: projectSummary.totalProjectCount,
+    dueSoonProjectCount: projectSummary.dueSoonProjectCount,
+    activeMemberCount: memberSummary.totalMemberCount,
+    onLeaveMemberCount: memberSummary.onLeaveMemberCount,
+    leaderRows: leaders.map(toOwnerDashboardLeaderRow),
+    // ⚠️ "최근 프로젝트 회의" API가 아직 BE에 없다(MEET-17, 모성진에게 요청함, 2026-08-12) —
+    //    지어내지 않고 빈 배열로 둔다(§정직성). API 도착하면 이 자리만 고친다.
+    projectMeetings: [],
+  };
 }

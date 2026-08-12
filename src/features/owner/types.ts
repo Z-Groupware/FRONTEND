@@ -1,15 +1,5 @@
 import type { DashboardMeeting } from "@/components/common/dashboard-meeting-item";
-import type { MemberStatus, ProjectStatus } from "@/constants/domain";
-
-export interface OwnerDashboardProject {
-  id: string;
-  name: string;
-  tag: string;
-  /** 자유 HEX(프로젝트 태그 색) — 고정 팔레트로 강제하지 않는다 */
-  color: string;
-  dueDate: string;
-  status: ProjectStatus;
-}
+import type { MemberStatus } from "@/constants/domain";
 
 export interface OwnerDashboardLeaderRow {
   id: string;
@@ -22,7 +12,9 @@ export interface OwnerDashboardLeaderRow {
 }
 
 export interface OwnerDashboardOverview {
-  projects: OwnerDashboardProject[];
+  /** [확인] `GET /api/projects/dashboard-summary` — 서버가 이미 집계한 값, 원본 목록을 다시 세지 않는다 */
+  totalProjectCount: number;
+  dueSoonProjectCount: number;
   activeMemberCount: number;
   onLeaveMemberCount: number;
   leaderRows: OwnerDashboardLeaderRow[];
