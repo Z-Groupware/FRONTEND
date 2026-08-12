@@ -2,6 +2,7 @@ import {
   burstAt,
   finaleAt,
   isTrackLongEnough,
+  plateauBetween,
   scatterAt,
   shardFadeAt,
   shardMixAt,
@@ -36,17 +37,57 @@ describe("toHeroProgress", () => {
   });
 });
 
+describe("plateauBetween — 벌어졌다 머물다 모인다", () => {
+  /* ⚠️ 구간 밖은 0이어야 두 구간을 이어 붙여도 서로 간섭하지 않는다 */
+  it("구간 밖에서는 0이다", () => {
+    expect(plateauBetween(0.1, 0.2, 0.8, 0.1)).toBe(0);
+    expect(plateauBetween(0.9, 0.2, 0.8, 0.1)).toBe(0);
+  });
+
+  /* ⚠️ **머무는 구간이 있다.** 산과 다른 점이 이것뿐이라, 없으면 쓸 이유가 없다 */
+  it("가운데에서는 1로 머문다", () => {
+    expect(plateauBetween(0.4, 0.2, 0.8, 0.1)).toBe(1);
+    expect(plateauBetween(0.6, 0.2, 0.8, 0.1)).toBe(1);
+  });
+
+  it("양쪽 경사가 같은 길이다", () => {
+    expect(plateauBetween(0.25, 0.2, 0.8, 0.1)).toBeCloseTo(plateauBetween(0.75, 0.2, 0.8, 0.1));
+  });
+
+  /* ⚠️ 0으로 나누면 `Infinity`가 나와 조각이 화면 밖으로 날아간다 */
+  it("경사 길이가 0이면 켜지지 않는다", () => {
+    expect(plateauBetween(0.5, 0.2, 0.8, 0)).toBe(0);
+  });
+});
+
 describe("burstAt — 두 번 흩어진다", () => {
   /* ⚠️ 사이에서 **완전히 모여야** 한다. 계속 벌어져 있으면 그냥 어수선한 배경이 된다 */
-  it("맨 위·중간·맨 밑에서는 모여 있다", () => {
+  it("맨 위·사이·맨 밑에서는 모여 있다", () => {
     expect(burstAt(0)).toBe(0);
-    expect(burstAt(0.4)).toBe(0);
+    expect(burstAt(0.62)).toBe(0);
     expect(burstAt(1)).toBe(0);
   });
 
-  it("첫 화면과 흐름 뒤, 두 번 벌어진다", () => {
-    expect(burstAt(0.2)).toBeGreaterThan(0.9);
-    expect(burstAt(0.66)).toBeGreaterThan(0.9);
+  /*
+    ⚠️ **붙박이 구간(0.18~0.50) 내내 가장 멀리 벌어져 있어야 한다.** 거기는 스크롤을 내려도
+       화면이 안 움직이는 자리라, **벌어진 채로 도는 것**이 그 구간의 유일한 사건이다
+       (2026-08-12 확정). 한가운데서 모여 버리면 볼 것이 없다 — 산이 아니라 평평한 구간을
+       쓰는 이유가 이것이다.
+  */
+  it("흐름 섹션이 붙박여 있는 동안 계속 벌어져 있다", () => {
+    expect(burstAt(0.18)).toBeGreaterThan(0.9);
+    expect(burstAt(0.32)).toBe(1);
+    expect(burstAt(0.44)).toBeGreaterThan(0.9);
+  });
+
+  /* ⚠️ 붙박이가 풀리면서 모인다 — 기능 섹션에 들어설 땐 온전한 Z다 */
+  it("붙박이가 풀리며 모인다", () => {
+    expect(burstAt(0.58)).toBe(0);
+  });
+
+  /* ⚠️ 두 번째는 **기능 섹션(0.61~0.77)**이다 — 거기서 다시 쪼개진다 */
+  it("기능 섹션에서 다시 쪼개진다", () => {
+    expect(burstAt(0.74)).toBe(1);
   });
 
   /*

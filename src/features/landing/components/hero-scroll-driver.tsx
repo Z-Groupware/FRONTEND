@@ -43,11 +43,13 @@ export function HeroScrollDriver() {
         ⚠️ **물러남은 0~1 한 값으로만 준다.** 무대(어두움·밝음)마다 진하기 범위가 다른데, 그
            계산을 여기서 하면 CSS와 두 벌이 된다 — 값은 하나, 해석은 CSS가 한다(`globals.css`의
            `.hero-z-dark`·`.hero-z-light`).
-        ⚠️ 절반쯤 내려가면 다 물러난다. 그 아래는 글이 주인공이라 더 뺄 것이 없다.
+        ⚠️ **붙박이 구간이 끝날 때까지는 다 물러나지 않는다**(0.5 → 0.62, 2026-08-12). 흐름
+           섹션(~0.50)에서 조각이 돌다가 합쳐지는 걸 보여 주기로 했는데, 거기서 이미 다
+           물러나 있으면 **합쳐지는 걸 볼 수가 없다**. 글이 주인공이 되는 건 그 아래부터다.
       */
       document.documentElement.style.setProperty(
         "--hero-recede",
-        String(Math.min(1, progress / 0.5)),
+        String(Math.min(1, progress / 0.62)),
       );
 
       /*

@@ -50,27 +50,46 @@ export function toHeroProgress(scrollTop: number, scrollableHeight: number): num
 }
 
 /**
- * 구간 안에서 **부풀었다 꺼지는** 산 하나(0 → 1 → 0).
+ * 구간 안에서 **벌어졌다가 — 그대로 머물다가 — 모인다**(0 → 1 → 1 → 0).
  *
- * ⚠️ 구간 밖은 0이다 — 그래야 산 두 개를 이어 붙여도 서로 간섭하지 않는다.
+ * ⚠️ 예전엔 산 하나(사인 곡선)였다. 산은 정점을 찍자마자 도로 모여서, **벌어진 채로 있어야 하는
+ *    구간**을 만들 수 없다 — 흐름 섹션처럼 화면이 붙박여 있는 자리에서는 조각이 가장 멀리
+ *    벌어진 채로 돌아야 한다(2026-08-12 확정). 산으로 두면 그 한가운데서 이미 모여 버린다.
+ * ⚠️ `ramp`는 벌어지는 데(그리고 모이는 데) 쓰는 길이다. 양쪽이 같아야 오갈 때 같은 속도로
+ *    보인다.
+ * ⚠️ 양 끝을 부드럽게 한다(smoothstep) — 선형이면 머무는 구간에 들어서고 나갈 때 각이 진다.
  */
-export function humpBetween(progress: number, from: number, to: number): number {
-  if (progress <= from || progress >= to || to <= from) return 0;
-  return Math.sin(((progress - from) / (to - from)) * Math.PI);
+export function plateauBetween(progress: number, from: number, to: number, ramp: number): number {
+  if (progress <= from || progress >= to || ramp <= 0) return 0;
+  const t = Math.min(clamp01((progress - from) / ramp), clamp01((to - progress) / ramp));
+  return t * t * (3 - 2 * t);
 }
 
 /**
  * 조각이 흩어진 정도 — **두 번 흩어진다.**
  *
- * ⚠️ 첫 번째는 첫 화면을 지나며(문제 제기 구간), 두 번째는 흐름 섹션을 지난 뒤다. 사이에는
- *    반드시 **0으로 완전히 모인다** — 계속 흩어져 있으면 그냥 어수선한 배경이 된다.
+ * ⚠️ 사이에는 반드시 **0으로 완전히 모인다** — 계속 흩어져 있으면 그냥 어수선한 배경이 된다.
  * ⚠️ **0에서 시작하지 않는다**(2026-08-12 변경). 0부터 부풀리면 스크롤 2%만에 Z가 다 부서져,
  *    첫 화면을 읽는 내내 로고는 없고 부스러기만 떠 있다 — 첫 화면에서는 **온전히 서 있다가**
  *    화면을 벗어날 때 부서져야 "부서졌다"가 읽힌다.
- * ⚠️ 마지막 구간(0.86~)에는 산을 두지 않는다. 거기서는 **완성된 모습**으로 서 있어야 한다.
+ * ⚠️ **구간은 페이지의 자리에 맞춘다**(2026-08-12 확정). 읽는 순서대로 이렇게 흐른다:
+ *    - 첫 화면(~0.06): 온전한 Z
+ *    - 첫 화면을 벗어나며(0.06~0.18): 부서진다
+ *    - **흐름 섹션이 붙박여 있는 동안(0.18~0.46): 가장 멀리 벌어진 채로 돈다.**
+ *      여기는 스크롤을 내려도 화면이 안 움직이는 자리다 — 조각이 도는 것 말고 사건이 없어야
+ *      스크롤이 굴러가는 중임이 로고로 읽힌다. 여기서 모여 버리면 볼 것이 없다.
+ *    - 붙박이가 풀리며(0.46~0.58): 모인다
+ *    - 기능 섹션(0.66~0.86): 다시 쪼개졌다 모인다
+ * ⚠️ 그래서 산이 아니라 **평평한 구간**(`plateauBetween`)이다. 산은 정점을 찍자마자 도로
+ *    모여서 "벌어진 채로 도는" 구간을 못 만든다.
+ * ⚠️ 자리 값은 레이아웃에서 잰 것이다 — 섹션을 넣거나 빼면 여기도 다시 재야 한다.
+ * ⚠️ 마지막 구간(0.86~)에는 아무것도 두지 않는다. 거기서는 **완성된 모습**으로 서 있어야 한다.
  */
 export function burstAt(progress: number): number {
-  return Math.max(humpBetween(progress, 0.06, 0.34), humpBetween(progress, 0.5, 0.82));
+  return Math.max(
+    plateauBetween(progress, 0.06, 0.58, 0.12),
+    plateauBetween(progress, 0.66, 0.86, 0.08),
+  );
 }
 
 /**
