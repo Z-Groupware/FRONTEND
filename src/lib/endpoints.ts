@@ -169,6 +169,8 @@ export const ep = {
   handoverComplete: (id: number) => `/api/handovers/${id}/complete`,
   handoverFinalize: (id: number) => `/api/handovers/${id}/finalize`,
   handoverReject: (id: number) => `/api/handovers/${id}/reject`,
+  /** 팀장 오프보딩 귀속 대기 일괄 이전 — OWNER·ADMIN 전용. */
+  handoverAttributeToLeader: (id: number) => `/api/handovers/${id}/attribute-to-leader`,
 
   /* 조직 */
   /* 조직 — [확인] identity/member/presentation/api/{Member,ManageMember}Controller.java */
