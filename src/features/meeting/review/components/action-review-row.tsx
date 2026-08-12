@@ -78,10 +78,24 @@ export function ActionReviewRow({
                 <MessageSquareQuote className="size-3.5 shrink-0 translate-y-0.5" aria-hidden />
                 <span className="min-w-0">
                   &ldquo;{draft.evidence.quote}&rdquo;
-                  <span className="text-muted-foreground/70 ml-2 tabular-nums">
-                    · {draft.evidence.timestamp}
-                  </span>
+                  {/* 시각이 없는 발화(화자 판정 포기 등)는 가운뎃점째 감춘다 — 00:00을 지어내지 않는다 */}
+                  {draft.evidence.timestamp && (
+                    <span className="text-muted-foreground/70 ml-2 tabular-nums">
+                      · {draft.evidence.timestamp}
+                    </span>
+                  )}
                 </span>
+              </p>
+            )}
+
+            {/*
+              ⚠️ 기한이 회의에서 안 나와 **프로젝트 마감일로 채워진 액션**은 그 사실을 적는다
+                 (BE `dueDateDefaulted`). 안 적으면 AI가 판단한 날짜처럼 읽혀, 고쳐야 할
+                 기한을 그냥 넘긴다(§정직성).
+            */}
+            {draft.isDueDateDefaulted && (
+              <p className="text-muted-foreground/70 text-[12px] leading-4">
+                마감일은 회의에서 정해지지 않아 프로젝트 마감일로 채웠습니다
               </p>
             )}
           </div>
@@ -95,8 +109,9 @@ export function ActionReviewRow({
         */}
         {/* ⚠️ 좁아지면 줄을 바꾼다 — 셋(180+140+140)+✕는 1180px 아래에서 글 칸을 0으로 밀어냈다 */}
         <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+          {/* ⚠️ 미정(null)은 빈 값으로 둔다 — String(null)은 "null"이라는 가짜 값이 된다 */}
           <Select
-            value={String(draft.assigneeId)}
+            value={draft.assigneeId === null ? "" : String(draft.assigneeId)}
             onValueChange={(value) => value && onAssigneeChange(Number(value))}
           >
             <SelectTrigger aria-label="담당자 선택" className="w-[180px]">
@@ -110,7 +125,8 @@ export function ActionReviewRow({
                   const option = assigneeOptions.find(
                     (candidate) => String(candidate.id) === value,
                   );
-                  if (!option) return value;
+                  /* AI가 못 짚었거나 명단 밖을 가리킨 액션 — 숨기지 말고 미정으로 보여준다(매퍼 주석) */
+                  if (!option) return <span className="text-muted-foreground">담당자 미정</span>;
                   return (
                     <>
                       <ProfileAvatar userId={option.id} size={18} />

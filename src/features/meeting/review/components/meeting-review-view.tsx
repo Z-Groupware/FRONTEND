@@ -48,12 +48,23 @@ export function MeetingReviewView({ review }: MeetingReviewViewProps) {
   const [isAddingManual, setIsAddingManual] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmError, setConfirmError] = useState<string | null>(null);
+  /*
+    ⚠️ BE가 확정을 멈춘 상태(409 — 확인되지 않은 STT 구간 등). 실수가 아니라 **알고
+       강행할지**를 사람이 정할 일이라, 버튼을 [그래도 확정]으로 바꿔 `force`로 다시 보낸다.
+  */
+  const [isBlocked, setIsBlocked] = useState(false);
   const [isConfirmed, setIsConfirmed] = useState(false);
   const [isPending, startTransition] = useTransition();
 
   const visibleDrafts = drafts.filter((draft) => !(draft.id in rejectedReasons));
   const highConfidence = visibleDrafts.filter((d) => d.confidence === AI_CONFIDENCE.HIGH);
   const needsReview = visibleDrafts.filter((d) => d.confidence === AI_CONFIDENCE.NEEDS_REVIEW);
+  /*
+    ⚠️ **담당자 미정이 남아 있으면 확정을 잠근다.** AI가 담당자를 못 짚은 액션은 "담당자
+       미정"으로 온다(매퍼 주석) — BE도 그 항목을 `NO_ASSIGNEE`로 걸러 분배하지 않으므로,
+       여기서 안 잠그면 확정이 끝난 줄 알았는데 몇 건이 조용히 남는다(§정직성).
+  */
+  const hasUnassigned = visibleDrafts.some((draft) => draft.assigneeId === null);
   function updateDraft(id: string, patch: Partial<AiActionDraft>) {
     setDrafts((prev) => prev.map((draft) => (draft.id === id ? { ...draft, ...patch } : draft)));
   }
@@ -90,38 +101,88 @@ export function MeetingReviewView({ review }: MeetingReviewViewProps) {
     setIsAddingManual(false);
   }
 
-  function handleConfirm() {
+  /**
+   * 로컬에서 새로 만든 초안인가 — BE에서 온 초안은 id가 숫자 문자열이고, 이 화면에서
+   * [액션 직접 추가]로 만든 것만 `manual-` 접두사를 갖는다(`nextManualDraftId`).
+   * ⚠️ `isManual`로 가르면 안 된다 — 지난 확정 시도에서 서버에 이미 만들어진 수동 액션이
+   *    재조회로 돌아오면 그것도 `isManual`이라, 같은 항목이 서버에 **한 번 더** 만들어진다.
+   */
+  function isLocalManual(id: string): boolean {
+    return id.startsWith("manual-");
+  }
+
+  function handleConfirm(force: boolean) {
     setConfirmError(null);
+    /* 처음 값과 대조해 **고친 칸만** 보낸다 — 안 고친 값까지 보내면 BE가 전부 "사람이
+       고쳤다"로 라벨을 남겨 틀린 학습 재료가 된다(actions.ts 주석). */
+    const initialById = new Map(review.drafts.map((draft) => [draft.id, draft]));
+
     startTransition(async () => {
       try {
-        const result = await confirmActionDistributionAction(review.meetingId, {
-          // ⚠️ 직접 추가한 항목은 `manuallyAdded`로 따로 보낸다 — 여기 넣으면 아래와 겹쳐 이중 집계된다.
-          confirmed: visibleDrafts
-            .filter((draft) => !draft.isManual)
-            .map((draft) => ({
-              id: draft.id,
-              title: draft.title,
-              description: draft.description,
-              assigneeId: draft.assigneeId,
-              startDate: draft.startDate,
-              dueDate: draft.dueDate,
-            })),
-          rejected: Object.entries(rejectedReasons).map(([id, reason]) => ({ id, reason })),
-          manuallyAdded: drafts
-            .filter((draft) => draft.isManual && !(draft.id in rejectedReasons))
-            .map((draft) => ({
-              title: draft.title,
-              description: draft.description,
-              assigneeId: draft.assigneeId,
-              startDate: draft.startDate,
-              dueDate: draft.dueDate,
-            })),
-        });
+        const result = await confirmActionDistributionAction(
+          review.meetingId,
+          {
+            reviewed: visibleDrafts
+              .filter((draft) => !isLocalManual(draft.id))
+              .map((draft) => {
+                const initial = initialById.get(draft.id);
+                const changes = {
+                  ...(initial && draft.title !== initial.title ? { title: draft.title } : {}),
+                  ...(initial && draft.description !== initial.description
+                    ? { description: draft.description }
+                    : {}),
+                  ...(initial &&
+                  draft.assigneeId !== initial.assigneeId &&
+                  draft.assigneeId !== null
+                    ? { assigneeId: draft.assigneeId }
+                    : {}),
+                  ...(initial && draft.dueDate !== initial.dueDate
+                    ? { dueDate: draft.dueDate }
+                    : {}),
+                };
+                return {
+                  id: draft.id,
+                  ...(draft.startDate ? { plannedStartDate: draft.startDate } : {}),
+                  ...(Object.keys(changes).length > 0 ? { changes } : {}),
+                };
+              }),
+            /* 로컬에서만 만든 초안의 반려는 서버에 보낼 게 없다 — 만들지 않으면 그만이다 */
+            rejected: Object.entries(rejectedReasons)
+              .filter(([id]) => !isLocalManual(id))
+              .map(([id, reason]) => ({ id, reason })),
+            // ⚠️ 직접 추가한 항목은 `manuallyAdded`로 따로 보낸다 — 위에 넣으면 겹쳐 이중 집계된다.
+            manuallyAdded: drafts
+              .filter((draft) => isLocalManual(draft.id) && !(draft.id in rejectedReasons))
+              .map((draft) => ({
+                title: draft.title,
+                description: draft.description,
+                // 폼이 담당자 없이는 추가를 막는다(`canAdd`) — 여기 null이 올 수 없다
+                assigneeId: draft.assigneeId ?? 0,
+                startDate: draft.startDate,
+                dueDate: draft.dueDate,
+              })),
+          },
+          { force },
+        );
 
         if (result.status === "notFound") {
           setConfirmError("회의를 찾을 수 없습니다. 페이지를 새로고침해 주세요.");
           return;
         }
+        if (result.status === "failed") {
+          setConfirmError(result.message);
+          return;
+        }
+        /*
+          ⚠️ BE가 멈춘 것(409)은 실패가 아니라 **경고**다 — 확인되지 않은 STT 구간이 남아
+             액션이 빠졌을 수 있다는 뜻이라, 원인을 적고 [그래도 확정]으로만 넘어가게 한다.
+        */
+        if (result.status === "blocked") {
+          setIsBlocked(true);
+          setConfirmError(result.message);
+          return;
+        }
+
         // "alreadyConfirmed"도 결과적으로 확정된 상태다 — 다른 탭에서 먼저 확정한 경우까지 포함.
         setConfirmOpen(false);
         setIsConfirmed(true);
@@ -132,6 +193,10 @@ export function MeetingReviewView({ review }: MeetingReviewViewProps) {
         */
         if (result.status === "confirmed") {
           toast.success(`${result.createdCount}건의 액션을 분배했습니다`);
+          /* 반려 말고도 안 나간 게 있다 — 조용히 넘기면 검토가 끝난 줄 안다(§정직성) */
+          if (result.skippedCount > 0) {
+            toast.warning(`${result.skippedCount}건은 분배되지 않았습니다`);
+          }
         } else {
           toast("이미 확정된 회의입니다");
         }
@@ -234,10 +299,16 @@ export function MeetingReviewView({ review }: MeetingReviewViewProps) {
         )}
       </ActionReviewGroup>
 
-      <div className="flex justify-end">
+      <div className="flex items-center justify-end gap-3">
+        {/* 왜 잠겼는지 버튼 옆에서 말한다 — 눌리지 않는 버튼만 두면 고장으로 읽힌다(§정직성) */}
+        {hasUnassigned && (
+          <p className="text-muted-foreground text-[12px] leading-4">
+            담당자 미정인 액션이 있습니다. 담당자를 지정해 주세요.
+          </p>
+        )}
         <Button
           type="button"
-          disabled={visibleDrafts.length === 0}
+          disabled={visibleDrafts.length === 0 || hasUnassigned}
           className="bg-foreground text-background hover:bg-foreground/90"
           onClick={() => setConfirmOpen(true)}
         >
@@ -258,7 +329,10 @@ export function MeetingReviewView({ review }: MeetingReviewViewProps) {
         isOpen={confirmOpen}
         onOpenChange={(open) => {
           setConfirmOpen(open);
-          if (!open) setConfirmError(null);
+          if (!open) {
+            setConfirmError(null);
+            setIsBlocked(false);
+          }
         }}
         title="액션 분배를 확정할까요?"
         description={
@@ -268,11 +342,11 @@ export function MeetingReviewView({ review }: MeetingReviewViewProps) {
             확정 뒤에는 이 화면을 다시 열 수 없습니다.
           </>
         }
-        confirmLabel="확정"
+        confirmLabel={isBlocked ? "그래도 확정" : "확정"}
         isPending={isPending}
         pendingLabel="확정 중"
         error={confirmError}
-        onConfirm={handleConfirm}
+        onConfirm={() => handleConfirm(isBlocked)}
       />
     </div>
   );
