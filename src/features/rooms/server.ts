@@ -1,43 +1,116 @@
 import "server-only";
 
-import { endOfWeek, startOfWeek } from "date-fns";
+import { addDays, format, startOfWeek } from "date-fns";
 
 import { requireAccessToken } from "@/features/auth/session";
 import { TOP_LEVEL_PROJECTS } from "@/features/project/mock/projects";
 import { PROJECT_TEAM_ACTIONS_MOCK } from "@/features/project/mock/team-actions";
-import { serverApi } from "@/lib/api";
+import { ApiError, serverApi } from "@/lib/api";
 import { ep } from "@/lib/endpoints";
 import { type Actor, requiresParentTeamAction } from "@/lib/permission";
 import { isMock } from "@/mocks/config";
 
-import { type BeMeetingRoom, toMeetingRoom } from "./mapper";
+import {
+  type BeMeetingRoom,
+  type BeRoomWeekAvailability,
+  toMeetingRoom,
+  toRoomWeekAvailability,
+} from "./mapper";
 import { listMockMembers } from "./mock/members";
-import { listMockReservations } from "./mock/reservations";
-import { listMockRooms } from "./mock/rooms";
+import { listMockReservationsByRoom } from "./mock/reservations";
+import { findMockRoom, listMockRooms } from "./mock/rooms";
 import type {
   MeetingRoom,
+  RoomAvailabilitySlot,
+  RoomDayAvailability,
   RoomMember,
   RoomProjectOption,
-  RoomReservation,
   RoomTeamActionOption,
+  RoomWeekAvailability,
 } from "./types";
 
-/**
- * 그 주(월요일 시작)와 겹치는 예약만 걸러 내려준다. 격리막(CLAUDE.md §Mock 격리막).
- * ⚠️ 예약 시작일 기준이 아니라 **그 주와 겹치는지**(start~end 구간)로 본다 — 지금은 예약이
- *    전부 하루 안에서 끝나 차이가 없지만, 개인 캘린더 월 필터와 같은 이유로 구간 비교로 둔다.
- */
-export async function getWeekReservations(weekOf: Date): Promise<RoomReservation[]> {
-  if (isMock) {
-    const weekStart = startOfWeek(weekOf, { weekStartsOn: 1 });
-    const weekEnd = endOfWeek(weekOf, { weekStartsOn: 1 });
-    return listMockReservations().filter(
-      (reservation) => reservation.start <= weekEnd && reservation.end >= weekStart,
+const WEEKDAYS_PER_WEEK = 5;
+const SLOT_MINUTES = 30;
+
+function toMinutesOfDay(hhmm: string): number {
+  const [hours, minutes] = hhmm.split(":").map(Number);
+  return hours! * 60 + minutes!;
+}
+
+function toHHMM(minutesOfDay: number): string {
+  const hours = Math.floor(minutesOfDay / 60);
+  const minutes = minutesOfDay % 60;
+  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+}
+
+/** 목 데이터로 하루치 슬롯을 만든다 — 회의실 운영 시간을 30분 단위로 나누고 겹치는 예약이 있으면 RESERVED로 채운다. */
+function buildMockDaySlots(date: Date, room: MeetingRoom): RoomDayAvailability {
+  const reservations = listMockReservationsByRoom(room.id);
+  const slots: RoomAvailabilitySlot[] = [];
+
+  for (
+    let minutesOfDay = toMinutesOfDay(room.openTime);
+    minutesOfDay < toMinutesOfDay(room.closeTime);
+    minutesOfDay += SLOT_MINUTES
+  ) {
+    const startTime = toHHMM(minutesOfDay);
+    const slotStart = new Date(`${format(date, "yyyy-MM-dd")}T${startTime}:00`);
+    const slotEnd = new Date(slotStart.getTime() + SLOT_MINUTES * 60_000);
+    const overlapping = reservations.find(
+      (reservation) => reservation.start < slotEnd && reservation.end > slotStart,
     );
+
+    slots.push({
+      startTime,
+      status: overlapping ? "RESERVED" : "AVAILABLE",
+      meetingId: overlapping?.id ?? null,
+      title: overlapping?.title ?? null,
+    });
   }
 
-  // ⚠️ 미구현 — API 스펙 확정 후 회의실 예약 조회 경로를 매퍼로 UI 계약에 맞춘다.
-  throw new Error("회의실 예약 조회 API가 아직 연결되지 않았습니다.");
+  return { date: format(date, "yyyy-MM-dd"), slots };
+}
+
+/**
+ * 회의실 하나의 주간(월~금) 슬롯 현황(`GET /api/meeting-rooms/availability`, ROOM-02).
+ * 회의실이 없으면 `null`(호출부가 "존재하지 않는 회의실" 처리).
+ * ⚠️ **축이 "회의실 1개 × 5일"이다**(기존 "하루 × 전체 회의실" 그리드는 폐기, 2026-08-10 전환).
+ */
+export async function getRoomWeekAvailability(
+  roomId: string,
+  weekOf: Date,
+): Promise<RoomWeekAvailability | null> {
+  if (isMock) {
+    const room = findMockRoom(roomId);
+    if (!room) return null;
+
+    const weekStart = startOfWeek(weekOf, { weekStartsOn: 1 });
+    const days = Array.from({ length: WEEKDAYS_PER_WEEK }, (_, index) =>
+      buildMockDaySlots(addDays(weekStart, index), room),
+    );
+
+    return {
+      weekStart: format(weekStart, "yyyy-MM-dd"),
+      slotMinutes: SLOT_MINUTES,
+      meetingRoom: room,
+      days,
+    };
+  }
+
+  const accessToken = await requireAccessToken();
+  try {
+    const be = await serverApi<BeRoomWeekAvailability>(
+      ep.meetingRoomAvailability({
+        meetingRoomId: Number(roomId),
+        date: format(weekOf, "yyyy-MM-dd"),
+      }),
+      { accessToken },
+    );
+    return toRoomWeekAvailability(be);
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) return null;
+    throw error;
+  }
 }
 
 /**

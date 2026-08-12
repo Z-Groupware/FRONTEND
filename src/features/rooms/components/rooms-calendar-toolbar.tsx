@@ -13,14 +13,13 @@ import {
 } from "@/components/ui/select";
 
 import { ROOMS_CALENDAR_TOOLBAR_LABEL } from "../constants";
-import type { MeetingRoom, RoomReservation } from "../types";
+import type { MeetingRoom, RoomCalendarEvent } from "../types";
 
-export const ALL_ROOMS_VALUE = "all";
-
-interface RoomsCalendarToolbarProps extends ToolbarProps<RoomReservation> {
+interface RoomsCalendarToolbarProps extends ToolbarProps<RoomCalendarEvent> {
   rooms: MeetingRoom[];
-  /** `ALL_ROOMS_VALUE` = 전체 회의실. */
+  /** 지금 그리드가 보여주는 회의실 — ROOM-02가 회의실 하나를 필수로 요구해서 "전체"는 없다. */
   selectedRoomId: string;
+  /** 회의실을 바꾸면 `WeeklyRoomCalendar`가 URL(`?roomId=`)을 바꿔 서버가 새 그리드를 내려준다. */
   onSelectedRoomChange: (roomId: string) => void;
 }
 
@@ -34,8 +33,9 @@ interface RoomsCalendarToolbarProps extends ToolbarProps<RoomReservation> {
  *    (`calendar-toolbar.tsx`와 같은 이유, CLAUDE.md §카피: 날짜는 한글로).
  * 주의: 구간 라벨은 좁은 화면에서 줄어들 수 있다 — 자릿수가 달라져도 `tabular-nums`로 숫자
  *    폭만 맞춘다(고정 폭 대신 `max-w`로 최소 여백만 보장).
- * 주의: 회의실 거르개는 **화면 표시만 거른다** — `weekly-room-calendar.tsx`가 `reservations`를
- *    `selectedRoomId`로 걸러 `Calendar`에 넘긴다(서버 재조회 없음, 이미 그 주 예약을 다 갖고 있다).
+ * 주의: 회의실 select는 이제 **서버 재조회 파라미터다**(ROOM-02 전환) — 고르면
+ *    `weekly-room-calendar.tsx`가 URL(`?roomId=`)을 바꿔 그 회의실의 새 그리드를 받아온다.
+ *    "전체 회의실"은 없다 — API가 회의실 하나를 필수로 요구한다.
  * 주의: 좁은 화면에서는 두 그룹(구간 라벨 / 거르개+주간 이동)을 세로로 쌓는다.
  */
 export function RoomsCalendarToolbar({
@@ -51,10 +51,7 @@ export function RoomsCalendarToolbar({
        이어진다(CI에서 실제로 터졌다 — `search-filter-bar.tsx`와 같은 이유).
   */
   const roomItems = useMemo(
-    () => ({
-      [ALL_ROOMS_VALUE]: ROOMS_CALENDAR_TOOLBAR_LABEL.allRooms,
-      ...Object.fromEntries(rooms.map((room) => [room.id, room.name])),
-    }),
+    () => Object.fromEntries(rooms.map((room) => [room.id, room.name])),
     [rooms],
   );
 
@@ -88,13 +85,12 @@ export function RoomsCalendarToolbar({
           //    원문 값(`room.id`)이 그대로 보인다(`search-filter-bar.tsx`와 같은 이유).
           items={roomItems}
           value={selectedRoomId}
-          onValueChange={(value) => onSelectedRoomChange(value ?? ALL_ROOMS_VALUE)}
+          onValueChange={(value) => value && onSelectedRoomChange(value)}
         >
           <SelectTrigger size="sm" aria-label={ROOMS_CALENDAR_TOOLBAR_LABEL.roomFilter}>
-            <SelectValue placeholder={ROOMS_CALENDAR_TOOLBAR_LABEL.allRooms} />
+            <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value={ALL_ROOMS_VALUE}>{ROOMS_CALENDAR_TOOLBAR_LABEL.allRooms}</SelectItem>
             {rooms.map((room) => (
               <SelectItem key={room.id} value={room.id}>
                 {room.name}
