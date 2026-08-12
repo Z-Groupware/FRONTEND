@@ -50,6 +50,8 @@ export const ep = {
   meeting: (id: number) => `/api/meetings/${id}`,
   meetingCapture: (id: number) => `/api/meetings/${id}/capture`,
   meetingSummary: (id: number) => `/api/meetings/${id}/summary`,
+  /** 내 예정 회의(MEET-03) — 대시보드 위젯용. `limit` 생략 시 서버 기본값(5, 최대 20). */
+  meetingsUpcoming: (params?: { limit?: number }) => `/api/meetings/upcoming${toQuery(params)}`,
 
   /*
    * 캡처 — [확인] BE 실코드 대조(2026-08-10)

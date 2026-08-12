@@ -25,8 +25,12 @@ export interface DashboardMeeting {
   room: string;
   scheduledAt: string;
   attendeeCount: number;
-  /** 소속·권한 라벨 — 오너 개설="Owner", 팀 회의=부서명("개발팀") */
-  originLabel: string;
+  /**
+   * 소속·권한 라벨 — 오너 개설="Owner", 팀 회의=부서명("개발팀").
+   * ⚠️ 선택 필드다 — MEET-03(`GET /api/meetings/upcoming`) 응답엔 개설자 소속 정보가 없어
+   *    이 값을 못 채우는 화면이 있다(마이 대시보드 "참석 회의"). 없으면 배지를 안 그린다.
+   */
+  originLabel?: string;
   /** 개설자 사람 — 팀장이면 "김서준(팀장)", 팀원이면 "이하윤". 오너 회의는 없음(undefined) */
   hostLabel?: string;
 }
@@ -119,10 +123,12 @@ export function DashboardMeetingItem({ meeting, showDivider }: DashboardMeetingI
               {meeting.projectTag}
             </span>
             <span className="truncate text-[13px] leading-5">{meeting.title}</span>
-            {/* 소속·권한 라벨(항상) + 개설자 라벨(비오너 회의만) */}
-            <Badge variant="secondary" className="shrink-0">
-              {meeting.originLabel}
-            </Badge>
+            {/* 소속·권한 라벨(값이 있을 때만) + 개설자 라벨(비오너 회의만) */}
+            {meeting.originLabel && (
+              <Badge variant="secondary" className="shrink-0">
+                {meeting.originLabel}
+              </Badge>
+            )}
             {meeting.hostLabel && (
               <Badge variant="outline" className="shrink-0">
                 {meeting.hostLabel}
