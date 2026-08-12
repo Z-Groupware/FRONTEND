@@ -54,15 +54,12 @@ import { buildTeamRoles, isRoleOfTeam } from "./team-roles";
 
 const NO_SESSION = "세션이 만료되었습니다. 다시 로그인해 주세요";
 /*
-  아직 못 붙인 것들이 쓰는 문구.
-
-  ⚠️ **"BE 협의 대기"가 아니다.** 각각 이유가 다르다(2026-08-10 BE 실코드 대조):
-    · 휴직·오프보딩 승인/반려 — `handover` 도메인 API(`PATCH /api/handovers/{id}/finalize`
-      ·`/complete`·`/reject`)가 있지만 **어느 것이 이 화면의 "승인"인지 확실하지 않고**,
-      그 도메인은 이 화면 담당이 아니다. 담당자와 맞춘 뒤 붙인다.
-    · 계정 삭제 — **BE에 경로가 없다.** `MemberController`·`ManageMemberController` 어디에도
-      `@DeleteMapping`이 없다. 만들어 달라고 요청해야 한다.
+  아직 못 붙인 것 — 계정 삭제. **BE에 경로가 없다.** `MemberController`·`ManageMemberController`
+  어디에도 `@DeleteMapping`이 없다. 만들어 달라고 요청해야 한다.
   화면에는 이 문구가 그대로 뜬다 — 되는 척하지 않는다(§정직성).
+
+  ⚠️ 휴직·오프보딩 승인/반려는 더는 여기 안 걸린다(2026-08-12 실 연동) — `PATCH
+     /api/handovers/{id}/finalize`·`/reject`로 확인 끝났다(아래 두 함수 참고).
 */
 const NOT_CONNECTED = "아직 연결되지 않은 기능입니다";
 
@@ -288,20 +285,36 @@ export async function approveHandoverAction(id: number): Promise<MemberActionRes
   const pass = await gate(canApproveFinal, "최종 승인은 대표만 할 수 있습니다");
   if ("denied" in pass) return { isSuccess: false, message: pass.denied };
 
-  if (!isMock) {
-    // TODO(BE 협의): `POST /companies/me/members/{id}/handover/approve`
-    return { isSuccess: false, message: NOT_CONNECTED };
+  if (isMock) {
+    const pendingHandover = findMockManagedMember(id)?.pendingHandover;
+    if (!pendingHandover) {
+      return { isSuccess: false, message: NO_PENDING };
+    }
+    if (pendingHandover.requesterAuthority !== AUTHORITY.LEADER && !pendingHandover.midApproval) {
+      return { isSuccess: false, message: NO_MID_APPROVAL };
+    }
+    approveMockHandover(id);
+  } else {
+    /*
+      ⚠️ **중간 승인 검사는 여기서 다시 안 한다.** BE `finalizeApproval`이 이미 그 규칙을
+         갖고 있다(`status !== REASSIGNED && !directOffboardingFinalizeAllowed`이면
+         `HO_FINALIZE_NOT_ALLOWED`) — 화면이 잘못 눌러도 서버가 막고, 그 메시지를
+         `toUserMessage`로 그대로 보여준다. 규칙을 여기서 다시 베끼면 BE가 바뀔 때 둘이 갈린다.
+    */
+    const pendingHandover = (await getManagedMember(id))?.pendingHandover;
+    if (!pendingHandover) return { isSuccess: false, message: NO_PENDING };
+
+    const accessToken = await requireAccessToken();
+    try {
+      await serverApi<unknown>(ep.handoverFinalize(Number(pendingHandover.id)), {
+        method: "PATCH",
+        accessToken,
+      });
+    } catch (error) {
+      return { isSuccess: false, message: toUserMessage(error) };
+    }
   }
 
-  const pendingHandover = findMockManagedMember(id)?.pendingHandover;
-  if (!pendingHandover) {
-    return { isSuccess: false, message: NO_PENDING };
-  }
-  if (pendingHandover.requesterAuthority !== AUTHORITY.LEADER && !pendingHandover.midApproval) {
-    return { isSuccess: false, message: NO_MID_APPROVAL };
-  }
-
-  approveMockHandover(id);
   revalidatePath(pathOf(id));
   revalidatePath("/manage/members");
   revalidatePath(PEOPLE_PATH);
@@ -322,25 +335,33 @@ export async function rejectHandoverAction(
 
   if (!reason.trim()) return { isSuccess: false, message: "반려 사유를 입력해 주세요" };
 
-  /*
-    ⚠️ **사유가 지금은 아무 데도 안 남는다.** 받아서 검사만 하고 버린다 — 저장할 자리도
-       (`PendingHandover`에 필드가 없다) 보여줄 화면도 없다. 그런데도 받는 이유는 BE가
-       이 값을 요구할 자리이고, 빈 사유로 되돌리는 걸 지금부터 막아 두는 편이 낫기
-       때문이다. 연결되면 아래 TODO에서 함께 보낸다.
-    ⚠️ 화면에도 "전달됩니다"라고 쓰지 않는다(§정직성) — `handover-approval-card` 주석 참고.
-  */
+  if (isMock) {
+    /*
+      ⚠️ **사유가 지금은 아무 데도 안 남는다**(mock) — 받아서 검사만 하고 버린다. 실 연동은
+         `reason`을 `PATCH .../reject` 본문에 그대로 싣는다(BE `RejectHandoverRequest.reason`).
+      ⚠️ **신청자가 사유를 어디서 보는지는 아직 안 정해졌다**(알림 화면이 없다) — 화면에도
+         "전달됩니다"라고 쓰지 않는다(§정직성, `handover-approval-card` 주석 참고).
+    */
+    if (!findMockManagedMember(id)?.pendingHandover) {
+      return { isSuccess: false, message: NO_PENDING };
+    }
+    rejectMockHandover(id);
+  } else {
+    const pendingHandover = (await getManagedMember(id))?.pendingHandover;
+    if (!pendingHandover) return { isSuccess: false, message: NO_PENDING };
 
-  if (!isMock) {
-    // TODO(BE 협의): `POST /companies/me/members/{id}/handover/reject` — `reason`을 함께 보낸다.
-    //   신청자가 그 사유를 **어디서 보는지**도 같이 정해야 한다(알림 화면이 없다).
-    return { isSuccess: false, message: NOT_CONNECTED };
+    const accessToken = await requireAccessToken();
+    try {
+      await serverApi<unknown>(ep.handoverReject(Number(pendingHandover.id)), {
+        method: "PATCH",
+        json: { reason },
+        accessToken,
+      });
+    } catch (error) {
+      return { isSuccess: false, message: toUserMessage(error) };
+    }
   }
 
-  if (!findMockManagedMember(id)?.pendingHandover) {
-    return { isSuccess: false, message: NO_PENDING };
-  }
-
-  rejectMockHandover(id);
   revalidatePath(pathOf(id));
   revalidatePath("/manage/members");
   revalidatePath(PEOPLE_PATH);
