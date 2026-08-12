@@ -1,6 +1,6 @@
 import "server-only";
 
-import { ACTION_STATUS, type MemberStatus } from "@/constants/domain";
+import { ACTION_STATUS, isVisibleMemberStatus, type MemberStatus } from "@/constants/domain";
 import { requireAccessToken } from "@/features/auth/session";
 import { getManagedMember, listManagedMembers } from "@/features/member/manage-server";
 import {
@@ -76,8 +76,9 @@ async function fetchTeammates(
   accessToken: string,
 ): Promise<TeamMemberOption[]> {
   const members = await serverApi<BeTeamMemberStatus[]>(ep.teamMembers(), { accessToken });
+  // ⚠️ 소프트 딜리트는 상태가 아니라 목록에서 빠지는 일이다 — 퇴사자는 남기고 그것만 거른다.
   return members
-    .filter((member) => member.memberId !== writerMemberId)
+    .filter((member) => member.memberId !== writerMemberId && isVisibleMemberStatus(member.status))
     .map((member) => ({ id: member.memberId, name: member.name, roleLabel: member.roleName }));
 }
 
