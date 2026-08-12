@@ -24,24 +24,26 @@ interface RoomAttendeePickerProps {
   viewerTeamName: string | null;
 }
 
-const FILTER_OPTIONS = Object.values(ROOM_ATTENDEE_FILTER);
-
 interface AttendeeFilterGroupProps {
+  options: readonly RoomAttendeeFilter[];
   value: RoomAttendeeFilter;
   onChange: (value: RoomAttendeeFilter) => void;
 }
 
 /**
- * 참석자 필터 3종 — 서로 배타적이라 체크박스 모양이어도 동작은 라디오다(`RoomPickerList`와 같은 패턴).
+ * 참석자 필터 2종 — 서로 배타적이라 체크박스 모양이어도 동작은 라디오다(`RoomPickerList`와 같은 패턴).
  * ⚠️ 네이티브 `<input type="radio">`로 짠다(2026-08-10 정리) — 같은 `name`을 공유하는 라디오는
  *    브라우저·jsdom 모두 방향키로 이동·선택을 공짜로 지원한다(roving tabindex를 직접 짜지 않아도 된다).
  *    입력은 `sr-only`로 시각적으로만 숨기고 라벨이 모양을 그린다 — `peer-focus-visible`로 포커스
  *    링을 라벨에 얹어서, 숨긴 입력에 포커스가 가도 키보드 사용자에게는 그대로 보인다.
+ * ⚠️ **옵션은 호출부가 정한다**(2026-08-12 사용자 확정) — Owner가 개설하면 "전체·팀장급만",
+ *    Leader/Member가 개설하면 "전체·내 부서만"이다. Owner는 팀이 없어 "내 부서만"이 뜻이 없고,
+ *    Leader/Member에게는 "팀장급만"이 굳이 필요한 필터가 아니다.
  */
-function AttendeeFilterGroup({ value, onChange }: AttendeeFilterGroupProps) {
+function AttendeeFilterGroup({ options, value, onChange }: AttendeeFilterGroupProps) {
   return (
     <div className="flex items-center gap-1" role="radiogroup" aria-label="참석자 필터">
-      {FILTER_OPTIONS.map((option) => {
+      {options.map((option) => {
         const selected = option === value;
         const inputId = `attendee-filter-${option}`;
         return (
@@ -116,6 +118,15 @@ export function RoomAttendeePicker({
   const [keyword, setKeyword] = useState("");
   const [filter, setFilter] = useState<RoomAttendeeFilter>(ROOM_ATTENDEE_FILTER.ALL);
 
+  /*
+    ⚠️ Owner는 팀이 없다(`viewerTeamName === null`, CLAUDE.md §조직 계층) — 그 경우 "내 부서만"
+    대신 "팀장급만"을 준다. Leader/Member는 반대다(2026-08-12 사용자 확정).
+  */
+  const filterOptions =
+    viewerTeamName === null
+      ? [ROOM_ATTENDEE_FILTER.ALL, ROOM_ATTENDEE_FILTER.LEADER]
+      : [ROOM_ATTENDEE_FILTER.ALL, ROOM_ATTENDEE_FILTER.MY_TEAM];
+
   const visible = useMemo(() => {
     const query = keyword.trim().toLowerCase();
     return members
@@ -139,7 +150,7 @@ export function RoomAttendeePicker({
     <div className="flex h-full flex-col gap-2">
       <div className="flex items-center justify-between">
         <Label>참석자</Label>
-        <AttendeeFilterGroup value={filter} onChange={setFilter} />
+        <AttendeeFilterGroup options={filterOptions} value={filter} onChange={setFilter} />
       </div>
 
       <div className="relative">

@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 
 import { MeetingDetailView } from "@/features/meeting/components/meeting-detail-view";
 import { getMeetingDetail } from "@/features/meeting/server";
+import { getReservableMembers } from "@/features/rooms/server";
 import { getViewer } from "@/features/shell/viewer";
 
 export const dynamic = "force-dynamic";
@@ -80,9 +81,22 @@ export default async function MeetingDetailPage({
     );
   }
 
+  /*
+    ⚠️ 참석자 후보 목록은 **host이고 아직 안 끝난 회의일 때만** 가져온다(MEET-09 편집 조건과
+    같다) — 그 외엔 다이얼로그 자체가 안 뜨는데 목록만 미리 불러오면 헛수고다.
+  */
+  const canEditAttendees =
+    result.detail.isHost &&
+    (result.detail.pendingReason === "SCHEDULED" || result.detail.pendingReason === "IN_PROGRESS");
+  const members = canEditAttendees ? await getReservableMembers() : [];
+
   return (
     <main className="min-h-0 flex-1 overflow-y-auto px-8 py-7">
-      <MeetingDetailView detail={result.detail} />
+      <MeetingDetailView
+        detail={result.detail}
+        members={members}
+        viewerTeamName={viewer.teamName ?? null}
+      />
     </main>
   );
 }
