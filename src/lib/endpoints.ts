@@ -70,6 +70,18 @@ export const ep = {
    * 자동 스코프한다(전 롤 호출 가능, 판정은 역할이 아니라 `hostMemberId` 일치).
    */
   meetingsPendingActionDistributions: () => "/api/meetings/pending-action-distributions",
+  /**
+   * 요약 중단 회의 목록(MEET-15, 구현 완료 — PR #345) — 마이페이지 "요약이 중단된 회의" 위젯용.
+   * [확인] D도메인 REST API 명세(2026-08-12) 대조. `page`는 0부터. host 본인 회의만 서버가
+   * 자동 스코프한다(MEET-10과 같은 이유 — 역할이 아니라 `hostMemberId` 일치).
+   */
+  meetingsStalledSummaries: (params?: {
+    page?: number;
+    size?: number;
+    projectId?: number;
+    from?: string;
+    to?: string;
+  }) => `/api/meetings/stalled-summaries${toQuery(params)}`,
 
   /*
    * 캡처 — [확인] BE 실코드 대조(2026-08-12, 커밋 `51b5482f` "회의·회의실·공지사항 API 경로 통일" 리팩터 반영)
