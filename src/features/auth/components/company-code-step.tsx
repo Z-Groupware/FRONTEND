@@ -26,7 +26,18 @@ const INITIAL: CompanyCodeState = { company: null };
 
 export function CompanyCodeStep() {
   const [state, formAction] = useActionState(async (prev: CompanyCodeState, formData: FormData) => {
-    const next = await findCompanyAction(prev, formData);
+    /*
+      ⚠️ **거절도 받아 낸다.** 액션은 실패를 `error` 문구로 돌려주지만, 브라우저에서 Next
+         서버까지 가는 길이 끊기면 `await` 자체가 던진다 — 안 잡으면 로그인 첫 화면이
+         통째로 `error.tsx`로 넘어가, 코드를 잘못 친 것과 구분할 수 없게 된다.
+    */
+    let next: CompanyCodeState;
+    try {
+      next = await findCompanyAction(prev, formData);
+    } catch {
+      return { company: null, error: "서버에 연결하지 못했습니다. 잠시 후 다시 시도해 주세요." };
+    }
+
     if (next.company) saveCompany(next.company);
     return next;
   }, INITIAL);

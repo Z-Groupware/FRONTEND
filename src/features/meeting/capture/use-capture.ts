@@ -411,9 +411,18 @@ export function useCapture(meetingId: string, initialSeq = 0): UseCaptureResult 
     setSpans((prev) => [...prev, { from: at, to: null }]);
     setPhase(CAPTURE_PHASE.RECORDING);
 
-    /* 오디오는 안 보내고 상태만 알린다(§3-3). 실패해도 녹음은 계속한다 — 이유만 남긴다 */
-    const session = await startCaptureSessionAction(Number(meetingId));
-    if (!session.ok) setError(session.error ?? "녹음 시작을 서버에 알리지 못했습니다.");
+    /*
+      오디오는 안 보내고 상태만 알린다(§3-3). 실패해도 녹음은 계속한다 — 이유만 남긴다.
+      ⚠️ **거절도 받아 낸다.** 액션은 BE 실패를 값으로 돌려주지만 브라우저→Next 구간이 끊기면
+         `await`가 던진다 — 안 잡으면 아무 말도 못 남긴 채 조용히 지나가고, 서버는 이 회의가
+         녹음 중인 줄 모른다(새로고침 복구·이어받기가 어긋난다).
+    */
+    try {
+      const session = await startCaptureSessionAction(Number(meetingId));
+      if (!session.ok) setError(session.error ?? "녹음 시작을 서버에 알리지 못했습니다.");
+    } catch {
+      setError("서버에 연결하지 못했습니다. 녹음은 계속되지만 서버는 아직 모릅니다.");
+    }
   }, [pushChunk, markPartial, meetingId]);
 
   const pause = useCallback(() => {
@@ -431,7 +440,9 @@ export function useCapture(meetingId: string, initialSeq = 0): UseCaptureResult 
       /* ⚠️ 조용히 삼키지 않는다 — 서버가 모르면 새로고침 복구·이어받기가 어긋난다 */
       .then((result) => {
         if (!result.ok) setError(result.error ?? "일시정지를 서버에 알리지 못했습니다.");
-      });
+      })
+      /* ⚠️ 전송 자체가 거부돼도 말은 남긴다 — 조용하면 서버가 아는 줄로 착각한다 */
+      .catch(() => setError("서버에 연결하지 못했습니다. 일시정지를 알리지 못했습니다."));
     const at = Date.now();
     setSpans((prev) => prev.map((span) => (span.to === null ? { ...span, to: at } : span)));
     setNow(at);
@@ -443,9 +454,11 @@ export function useCapture(meetingId: string, initialSeq = 0): UseCaptureResult 
     recorderRef.current?.resume();
     /* ⚠️ 쉬는 동안 마이크가 조용했으니 음량 창을 새로 연다 — 안 그러면 첫 문장이 무음으로 잡힌다 */
     levelRef.current?.mark();
-    void resumeCaptureSessionAction(Number(meetingId)).then((result) => {
-      if (!result.ok) setError(result.error ?? "재개를 서버에 알리지 못했습니다.");
-    });
+    void resumeCaptureSessionAction(Number(meetingId))
+      .then((result) => {
+        if (!result.ok) setError(result.error ?? "재개를 서버에 알리지 못했습니다.");
+      })
+      .catch(() => setError("서버에 연결하지 못했습니다. 재개를 알리지 못했습니다."));
     const at = Date.now();
     setNow(at);
     setSpans((prev) => [...prev, { from: at, to: null }]);
