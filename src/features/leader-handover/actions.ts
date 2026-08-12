@@ -3,11 +3,15 @@
 import { revalidatePath } from "next/cache";
 
 import { LEADER_HANDOVER_CUSTODY_STATUS } from "@/constants/domain";
+import { requireAccessToken } from "@/features/auth/session";
 import { getViewer } from "@/features/shell/viewer";
+import { serverApi, toUserMessage } from "@/lib/api";
+import { ep } from "@/lib/endpoints";
 import { canManageLeaderHandovers } from "@/lib/permission";
 import { isMock } from "@/mocks/config";
 
 import { findMockLeaderHandover, markMockLeaderHandoverAssigned } from "./mock/leader-handovers";
+import { getLeaderHandoverDetail } from "./server";
 
 /**
  * [OOO에게 귀속] — 이 인수인계서에 담긴 액션 전체의 담당자를 새 팀장에게 일괄 이전한다
@@ -23,24 +27,45 @@ import { findMockLeaderHandover, markMockLeaderHandoverAssigned } from "./mock/l
 export async function assignLeaderHandoverAction(
   handoverId: string,
   newLeaderId: string,
-): Promise<{ isSuccess: boolean }> {
+): Promise<{ isSuccess: boolean; message?: string }> {
   const viewer = await getViewer();
   if (!canManageLeaderHandovers(viewer)) return { isSuccess: false };
 
-  if (!isMock) {
-    throw new Error("서버 연동 미구현 — ERD·API 스펙 확정 후 매퍼 작성");
-  }
+  if (isMock) {
+    const handover = findMockLeaderHandover(handoverId);
+    if (!handover) return { isSuccess: false };
+    if (handover.custodyStatus !== LEADER_HANDOVER_CUSTODY_STATUS.PENDING) {
+      return { isSuccess: false };
+    }
+    if (!handover.candidates.some((candidate) => candidate.id === newLeaderId)) {
+      return { isSuccess: false };
+    }
+    markMockLeaderHandoverAssigned(handoverId);
+  } else {
+    /*
+      ⚠️ 후보 목록에 있는지는 여기서 다시 본다(§권한: 화면 숨김은 보안이 아니다) — 주소만
+         알면 이 액션을 직접 부를 수 있어, 화면이 안 보여준 값이라도 여기서 걸러야 한다.
+    */
+    const handover = await getLeaderHandoverDetail(handoverId);
+    if (!handover) return { isSuccess: false };
+    if (handover.custodyStatus !== LEADER_HANDOVER_CUSTODY_STATUS.PENDING) {
+      return { isSuccess: false };
+    }
+    if (!handover.candidates.some((candidate) => candidate.id === newLeaderId)) {
+      return { isSuccess: false };
+    }
 
-  const handover = findMockLeaderHandover(handoverId);
-  if (!handover) return { isSuccess: false };
-  if (handover.custodyStatus !== LEADER_HANDOVER_CUSTODY_STATUS.PENDING) {
-    return { isSuccess: false };
+    const accessToken = await requireAccessToken();
+    try {
+      await serverApi<unknown>(ep.handoverAttributeToLeader(Number(handoverId)), {
+        method: "PATCH",
+        json: { newLeaderId: Number(newLeaderId) },
+        accessToken,
+      });
+    } catch (error) {
+      return { isSuccess: false, message: toUserMessage(error) };
+    }
   }
-  if (!handover.candidates.some((candidate) => candidate.id === newLeaderId)) {
-    return { isSuccess: false };
-  }
-
-  markMockLeaderHandoverAssigned(handoverId);
 
   revalidatePath("/owner/leader-handovers");
   revalidatePath(`/owner/leader-handovers/${handoverId}`);

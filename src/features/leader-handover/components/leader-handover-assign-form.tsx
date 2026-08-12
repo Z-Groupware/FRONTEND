@@ -49,7 +49,7 @@ export function LeaderHandoverAssignForm({ handover }: LeaderHandoverAssignFormP
       try {
         const result = await assignLeaderHandoverAction(handover.id, selectedId);
         if (!result.isSuccess) {
-          setError("귀속 처리에 실패했습니다. 잠시 후 다시 시도해 주세요.");
+          setError(result.message ?? "귀속 처리에 실패했습니다. 잠시 후 다시 시도해 주세요.");
           return;
         }
         setConfirmOpen(false);
