@@ -2,12 +2,13 @@
 
 import { useState } from "react";
 
+import { toCalendarEventFromReservation } from "../mapper";
 import { getNextAvailableSlot } from "../next-available-slot";
 import type {
   MeetingRoom,
+  RoomCalendarEvent,
   RoomMember,
   RoomProjectOption,
-  RoomReservation,
   RoomTeamActionOption,
 } from "../types";
 import { RoomListPanel } from "./room-list-panel";
@@ -15,8 +16,10 @@ import { RoomReservationDialog } from "./room-reservation-dialog";
 import { WeeklyRoomCalendarLoader } from "./weekly-room-calendar-loader";
 
 interface RoomsBoardProps {
-  initialReservations: RoomReservation[];
+  initialEvents: RoomCalendarEvent[];
   rooms: MeetingRoom[];
+  /** 지금 그리드에 보이는 회의실 — 회의실이 하나도 없으면 `null`(그리드 대신 안내). */
+  selectedRoomId: string | null;
   members: RoomMember[];
   projects: RoomProjectOption[];
   /** "상위 팀 액션" 필드를 보여줄지 — 서버 컴포넌트(`page.tsx`)가 `requiresParentTeamAction`으로
@@ -26,24 +29,26 @@ interface RoomsBoardProps {
   teamActions: RoomTeamActionOption[];
   /** 참석자 "내 부서만" 필터 기준 — `RoomReservationDialog`로 그대로 흘려보낸다. */
   viewerTeamName: string | null;
-  /** "YYYY-MM-DD" — 이 주의 월요일. 서버 컴포넌트가 이 주 기준으로 `initialReservations`를 내려준다. */
+  /** "YYYY-MM-DD" — 이 주의 월요일. 서버 컴포넌트가 이 주 기준으로 `initialEvents`를 내려준다. */
   week: string;
 }
 
 /**
- * 회의실 화면 본체(client). 서버가 내려준 예약을 로컬 state로 들고 있다가, 예약 생성 성공 시
- * 재조회 없이 바로 얹는다(`calendar-board.tsx`와 같은 패턴, §최적화: action 리턴값으로 화면 반영).
+ * 회의실 화면 본체(client). 서버가 내려준 주간 그리드(현재 `selectedRoomId` 하나 기준)를 로컬
+ * state로 들고 있다가, 예약 생성 성공 시 재조회 없이 바로 얹는다(`calendar-board.tsx`와 같은
+ * 패턴, §최적화: action 리턴값으로 화면 반영).
+ * ⚠️ **회의실 전환은 `WeeklyRoomCalendarLoader`가 URL(`?roomId=`)로 한다** — 서버 컴포넌트가
+ *    그 회의실의 새 그리드를 내려주고, 이 컴포넌트는 `key`로 다시 마운트된다(주 이동과 같은 이유).
  * 주의: 30분 칸을 클릭하면 그 시작 시각을 `slotStart`에 담아 예약 모달을 연다 — 모달이 열려 있는지는
  *    `slotStart !== null`로만 판단한다(별도 `isOpen` state를 안 둔다).
- * 주의: 주를 옮기면(`?week=`) 서버가 새 `initialReservations`를 내려주는데, 이 컴포넌트는 그때마다
- *    호출부에서 `key={week}`로 다시 마운트된다(개인 캘린더와 같은 이유).
  * 주의: "회의 추가" 진입점은 `RoomListPanel` 상단(2026-08-11, 캘린더 툴바 안에서 이동)에
  *    있다 — 여는 시각은 `getNextAvailableSlot`이 "지금"을 30분 단위로 올려 계산하는
  *    로직은 그대로다.
  */
 export function RoomsBoard({
-  initialReservations,
+  initialEvents,
   rooms,
+  selectedRoomId,
   members,
   projects,
   showParentTeamAction,
@@ -51,16 +56,17 @@ export function RoomsBoard({
   viewerTeamName,
   week,
 }: RoomsBoardProps) {
-  const [reservations, setReservations] = useState(initialReservations);
+  const [events, setEvents] = useState(initialEvents);
   const [slotStart, setSlotStart] = useState<Date | null>(null);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-6 lg:flex-row lg:items-stretch">
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         <WeeklyRoomCalendarLoader
-          reservations={reservations}
+          events={events}
           members={members}
           rooms={rooms}
+          selectedRoomId={selectedRoomId}
           week={week}
           onSelectSlot={setSlotStart}
         />
@@ -80,7 +86,12 @@ export function RoomsBoard({
         showParentTeamAction={showParentTeamAction}
         teamActions={teamActions}
         viewerTeamName={viewerTeamName}
-        onCreated={(created) => setReservations((prev) => [...prev, created])}
+        onCreated={(created) => {
+          // ⚠️ 지금 보고 있는 회의실과 다른 회의실에 예약했으면 이 그리드엔 안 얹는다 — 다른
+          //    회의실의 예약을 이 화면에 섞으면 그 그리드가 거짓말을 하게 된다(§정직성).
+          if (created.roomId !== selectedRoomId) return;
+          setEvents((prev) => [...prev, toCalendarEventFromReservation(created)]);
+        }}
       />
     </div>
   );

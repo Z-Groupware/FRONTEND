@@ -177,6 +177,13 @@ export const ep = {
    *   붙일 때 컨트롤러로 재확인한다).
    */
   meetingRooms: () => "/api/meeting-rooms",
+  /**
+   * 회의실 주간(월~금) 슬롯 현황(ROOM-02). `meetingRoomId`는 필수, `date`는 생략하면 서버가
+   * KST 오늘 기준 주를 채운다(§연동 검증 — 요청 축이 "회의실 1개 × 5일"로, 하루 단위 전체
+   * 회의실 조회는 폐기됐다).
+   */
+  meetingRoomAvailability: (params: { meetingRoomId: number; date?: string }) =>
+    `/api/meeting-rooms/availability${toQuery(params)}`,
 
   /* 기타 */
   notifications: () => "/api/notifications",

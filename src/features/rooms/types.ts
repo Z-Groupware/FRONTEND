@@ -117,3 +117,57 @@ export interface RoomReservationDraft {
 }
 
 export type RoomReservationFormErrors = Partial<Record<keyof RoomReservationDraft, string>>;
+
+/** 회의실 주간 슬롯 그리드 한 칸의 상태(`GET /api/meeting-rooms/availability`, ROOM-02). */
+export type RoomSlotStatus = "AVAILABLE" | "RESERVED";
+
+/**
+ * 30분 슬롯 한 칸.
+ * ⚠️ `meetingId`·`title`은 BE가 숫자로 내려주지만, UI 계약은 다른 회의실 도메인 id와 같은
+ *    규칙으로 문자열로 든다(`MeetingRoom.id`·`RoomReservation.id`와 같은 관례).
+ * ⚠️ 요청자가 참석자가 아닌 회의는 `title`이 `null`로 마스킹돼 온다 — 지어내지 않는다(§정직성).
+ */
+export interface RoomAvailabilitySlot {
+  /** "HH:mm" */
+  startTime: string;
+  status: RoomSlotStatus;
+  meetingId: string | null;
+  title: string | null;
+}
+
+/** 하루치 슬롯 — 월~금 중 하루. */
+export interface RoomDayAvailability {
+  /** "YYYY-MM-DD" */
+  date: string;
+  slots: RoomAvailabilitySlot[];
+}
+
+/**
+ * 회의실 하나의 주간(월~금) 슬롯 그리드 — 축이 "회의실 하나 × 요일"이다(2026-08-10 전환,
+ * 기존 "하루 × 전체 회의실"은 폐기). `meetingRoom`은 이 응답 전용 경량 사본이라 `location`이
+ * 없다(BE가 이 엔드포인트에서 안 내려준다) — 회의실 관리 화면의 `MeetingRoom`과 헷갈리지 않도록
+ * `location`은 빈 문자열로 채운다.
+ */
+export interface RoomWeekAvailability {
+  /** "YYYY-MM-DD" — 이 주의 월요일 */
+  weekStart: string;
+  slotMinutes: number;
+  meetingRoom: MeetingRoom;
+  days: RoomDayAvailability[];
+}
+
+/**
+ * 캘린더에 그려지는 예약 막대 한 칸 — 주간 그리드(연속 RESERVED 슬롯 병합)와 방금 만든 예약이
+ * 함께 이 모양으로 합쳐져 `WeeklyRoomCalendar`에 올라간다.
+ * ⚠️ `attendeeIds`는 방금 만든 예약에만 채워진다 — 주간 그리드 API는 참석자 id를 안 내려준다
+ *    (열람 권한이 따로 있어서다, ROOM-02 규칙). 없으면 아바타를 안 그린다.
+ */
+export interface RoomCalendarEvent {
+  id: string;
+  title: string;
+  start: Date;
+  end: Date;
+  attendeeIds?: number[];
+  /** 방금 만든 예약에만 채워진다 — 주간 그리드 API는 프로젝트 태그를 안 내려준다(막대 색 계산용). */
+  projectTag?: string;
+}
