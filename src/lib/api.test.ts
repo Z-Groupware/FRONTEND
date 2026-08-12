@@ -134,14 +134,29 @@ describe("serverApi", () => {
     expect(toUserMessage(error)).toBe("서버가 응답하지 않습니다. 잠시 후 다시 시도해 주세요.");
   });
 
-  it("아무 말이 없어도 상한이 걸려 있다 — 부르는 쪽이 잊어도 굳지 않는다", async () => {
-    const fetchMock = mockNeverAnswers();
-    global.fetch = fetchMock as never;
+  /*
+    ⚠️ **기본값 자체를 잰다.** 전에는 `signal`이 `AbortSignal`인지만 봤는데, `serverApi`는 어떤
+       경우에도 신호를 넣으므로 그 단언은 **"끊기는 신호"가 아니라 "신호 객체"** 만 확인했다 —
+       기본값을 4시간으로 바꿔도 통과했다(적대적 리뷰 2026-08-12). 굳는 화면을 막으려고 넣은
+       값인데 정작 그 값이 사라져도 초록불이면, 이 테스트는 없느니만 못하다.
+    ⚠️ 반대 방향도 같이 막는다 — 1.5초 같은 오타로 **멀쩡한 요청을 끊는 회귀**도 잡아야 한다.
+  */
+  it("아무 말이 없어도 15초에 끊는다 — 그 전에는 기다리고, 넘기면 끊는다", async () => {
+    jest.useFakeTimers();
+    global.fetch = mockNeverAnswers() as never;
 
-    void serverApi("/api/x").catch(() => undefined);
+    let settled = false;
+    void serverApi("/api/x").catch(() => {
+      settled = true;
+    });
 
-    const init = fetchMock.mock.calls[0]?.[1] as { signal?: AbortSignal };
-    expect(init.signal).toBeInstanceOf(AbortSignal);
+    await jest.advanceTimersByTimeAsync(14_000);
+    expect(settled).toBe(false);
+
+    await jest.advanceTimersByTimeAsync(2_000);
+    expect(settled).toBe(true);
+
+    jest.useRealTimers();
   });
 
   it("부르는 쪽 신호도 살아 있다 — 타임아웃이 그것을 덮어쓰지 않는다", async () => {
