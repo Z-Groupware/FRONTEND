@@ -124,7 +124,7 @@ function buildShards(): Shard[] {
 type Tone = "dark" | "light";
 
 /** 매끈한 원본 Z의 몸 색 */
-function SOLID_COLOR(tone: Tone, isFeature: boolean): string {
+function solidColor(tone: Tone, isFeature: boolean): string {
   return isFeature ? "#78716c" : tone === "dark" ? "#232326" : "#ffffff";
 }
 
@@ -139,7 +139,7 @@ function SOLID_COLOR(tone: Tone, isFeature: boolean): string {
  * ⚠️ 한 단 더 내렸다(`#e7e5e4` → `#d6d3d1`, 2026-08-12). 흰 바탕에서는 조각이 **음영으로만**
  *    읽히는데 몸까지 거의 흰색이면 경계가 안 잡혀 아예 안 보인다.
  */
-function SHARD_COLOR(tone: Tone, isFeature: boolean): string {
+function shardColor(tone: Tone, isFeature: boolean): string {
   return isFeature ? "#78716c" : tone === "dark" ? "#232326" : "#c9c5c1";
 }
 
@@ -328,7 +328,7 @@ function ZModel({
                 if (material) solidMaterials.current[index] = material;
               }}
               transparent
-              color={SOLID_COLOR(tone, isFeature)}
+              color={solidColor(tone, isFeature)}
               metalness={isFeature ? 0.55 : tone === "dark" ? 0.85 : 0.4}
               roughness={isFeature ? 0.35 : tone === "dark" ? 0.28 : 0.3}
             />
@@ -355,7 +355,7 @@ function ZModel({
           ref={shardMaterial}
           transparent
           opacity={0}
-          color={SHARD_COLOR(tone, isFeature)}
+          color={shardColor(tone, isFeature)}
           metalness={isFeature ? 0.55 : tone === "dark" ? 0.3 : 0.15}
           roughness={isFeature ? 0.35 : tone === "dark" ? 0.6 : 0.72}
         />

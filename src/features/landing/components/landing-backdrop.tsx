@@ -97,9 +97,13 @@ export function LandingBackdrop() {
                조금 올려 둔다. 중심은 보이고 바깥은 없는 상태가 된다.
           */
           /*
-            ⚠️ 진하기는 **스크롤이 정한다**(`--hero-z-opacity`, `hero-scroll-driver.tsx`).
-               첫 화면에서 0.9로 서 있다가 내려가면 0.35까지 물러난다 — 변수가 아직 없을 때
-               (스크립트 전·모션 최소화)의 기본값을 함께 적어 둔다.
+            ⚠️ 진하기는 **스크롤이 정한다** — `hero-scroll-driver.tsx`가 `--hero-recede`(얼마나
+               내려왔나)와 `--hero-shatter`(얼마나 부서졌나) 두 값을 내보내고, 그걸 진하기로
+               푸는 일은 `globals.css`의 `.hero-z-dark`·`.hero-z-light`가 한다.
+            ⚠️ 두 무대의 범위가 다르다 — 어두운 쪽 0.9→0.28, 밝은 쪽 0.3→0.12. 흰 바탕에서는
+               같은 값이어도 덩어리가 글을 덮는다.
+            ⚠️ 변수가 아직 없을 때(스크립트 전)의 기본값은 CSS 쪽에 `0`으로 적어 둔다 —
+               그때는 첫 화면 상태로 서 있으면 된다.
           */
           isDark ? "hero-z-dark" : "landing-z-fade hero-z-light",
         )}

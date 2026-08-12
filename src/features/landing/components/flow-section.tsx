@@ -50,7 +50,6 @@ export function FlowSection() {
   */
   const track = useRef<HTMLDivElement>(null);
   const prefersReduced = useReducedMotion();
-  const isPinned = !prefersReduced;
 
   /*
     ⚠️ **붙은 뒤에 잰다.** 서버가 그린 HTML이 React에 붙기 전(하이드레이션 전)에 ref를 재려 들면
@@ -67,6 +66,17 @@ export function FlowSection() {
     () => true,
     () => false,
   );
+
+  /*
+    ⚠️ **붙기 전에는 무조건 붙박이로 그린다**(2026-08-12 적대적 검토). `useReducedMotion()`은
+       서버에서 `null`, 브라우저 첫 렌더에서 이미 `true`를 준다(framer-motion은 훅 몸통에서
+       `initPrefersReducedMotion()`을 먼저 돌린다) — 그대로 쓰면 모션 최소화 사용자에게
+       **서버 HTML과 첫 렌더가 어긋나** 하이드레이션 오류가 나고 이 구간이 통째로 버려졌다 그려진다.
+    ⚠️ 기본을 "붙박이 켬"으로 둔 건 **레이아웃이 안 흔들리게** 하기 위해서다. 반대로 두면
+       대다수(모션 최소화가 아닌 사람)에게 트랙 높이가 붙은 뒤 4화면으로 늘어나 화면이 튄다(CLS).
+       모션 최소화인 사람만 붙은 뒤 한 번 꺼진다.
+  */
+  const isPinned = !isMounted || !prefersReduced;
 
   useEffect(() => {
     container.current = document.getElementById("app-scroll");
@@ -161,7 +171,17 @@ export function FlowSection() {
            되어 **내용 폭만큼만 넓어진다** — 가운데 정렬(`mx-auto`)이 죽고 화면 왼쪽에 몰린다
            (2026-08-12에 실제로 그렇게 깨졌다).
       */}
-      <div className={cn(isPinned && "sticky top-0 flex min-h-screen flex-col justify-center")}>
+      {/*
+        ⚠️ 여기도 **배율로 나눈 `vh`** 다. 트랙만 고치고 이 줄을 `min-h-screen`으로 두면,
+           배율 125%에서 붙박이 패널이 스크롤 상자보다 25% 높아져 축소판 아래가 잘린다
+           (2026-08-12 적대적 검토에서 잡혔다 — 트랙과 같은 이유라 같은 식을 쓴다).
+      */}
+      <div
+        className={cn(
+          isPinned &&
+            "sticky top-0 flex min-h-[calc(100vh/var(--app-scale))] flex-col justify-center",
+        )}
+      >
         <DarkSection
           /*
         ⚠️ **고정 화면에서는 위아래 여백을 줄인다.** 원래 여백(py-20/28)은 페이지를 흘려보낼 때의
