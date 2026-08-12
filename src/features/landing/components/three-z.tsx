@@ -4,7 +4,7 @@ import { Canvas, useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 
-import { burstAt, finaleAt, heroProgress } from "../hero-progress";
+import { burstAt, finaleAt, heroProgress, shardMixAt } from "../hero-progress";
 
 /**
  * 진짜 3D Z — 로고 세 조각(윗줄·사선·아랫줄)을 **코드로 압출**해 만든다.
@@ -164,9 +164,11 @@ function ZModel({
   useFrame(() => {
     if (!group.current || !mesh.current) return;
 
-    const progress = reactsToScroll ? heroProgress.current : 0;
+    /* ⚠️ 짧은 페이지에서는 연출을 끈다 — 스크롤 몇 칸에 다 지나가면 정신없다(§hero-progress) */
+    const isChoreographed = reactsToScroll && heroProgress.active;
+    const progress = isChoreographed ? heroProgress.current : 0;
 
-    if (reactsToScroll) {
+    if (isChoreographed) {
       /*
         ⚠️ 두 바퀴까지만 돈다. 더 돌리면 스크롤 몇 칸에 팽이처럼 보여 뒤 글자를 못 읽는다.
         ⚠️ 내려갈수록 작아졌다가, **맨 밑에서 다시 커지며 완성**된다(§hero-progress `finaleAt`).
@@ -183,12 +185,11 @@ function ZModel({
     const finale = finaleAt(progress);
 
     /*
-      ⚠️ **거의 다 모였을 때 바꿔치기한다**(`burst * 24`). 5로 두었더니 조각이 아직 눈에 띄게
-         벌어진 상태(0.2)에서 원본이 튀어나와, 합쳐지는 순간 화면이 **툭 바뀌었다**
-         (2026-08-12 피드백). 24면 벌어짐이 0.04 아래일 때만 바뀌어 눈에 안 띈다.
+      ⚠️ 바꿔치기 구간은 `shardMixAt`이 정한다 — **한창 흩어져 있을 때** 섞어야 격자 실루엣과
+         매끈한 원본이 나란히 비교되지 않는다(§hero-progress).
       ⚠️ 다 사라진 쪽은 **아예 안 그린다**(`visible`). 투명도 0짜리도 그리기 비용은 그대로다.
     */
-    const shardMix = Math.min(1, burst * 24);
+    const shardMix = shardMixAt(burst);
     if (solidMaterial.current) solidMaterial.current.opacity = 1 - shardMix;
     if (shardMaterial.current) shardMaterial.current.opacity = shardMix;
     if (solid.current) solid.current.visible = shardMix < 0.99;

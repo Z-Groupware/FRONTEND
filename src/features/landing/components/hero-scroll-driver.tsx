@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 
-import { heroProgress, toHeroProgress } from "../hero-progress";
+import { heroProgress, isTrackLongEnough, toHeroProgress } from "../hero-progress";
 
 /**
  * 스크롤을 읽어 **첫 화면 진행도**를 채워 넣는다(그리는 일은 안 한다).
@@ -25,6 +25,14 @@ export function HeroScrollDriver() {
         scroller.scrollHeight - scroller.clientHeight,
       );
       heroProgress.current = progress;
+      /*
+        ⚠️ **짧은 페이지에서는 연출을 끈다.** 요금제·역할 안내·약관처럼 한두 화면짜리 페이지에서는
+           흩어짐→모임→완성이 스크롤 몇 칸에 다 지나가 어수선하다(2026-08-12 피드백).
+      */
+      heroProgress.active = isTrackLongEnough(
+        scroller.scrollHeight - scroller.clientHeight,
+        scroller.clientHeight,
+      );
 
       /*
         ⚠️ **진하기도 스크롤이 정한다.** 첫 화면에서는 Z가 주인공이라 진하게 서 있고, 내려갈수록
@@ -51,6 +59,7 @@ export function HeroScrollDriver() {
       scroller.removeEventListener("scroll", update);
       window.removeEventListener("resize", update);
       heroProgress.current = 0;
+      heroProgress.active = false;
       document.documentElement.style.removeProperty("--hero-recede");
     };
   }, []);

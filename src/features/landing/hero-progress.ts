@@ -7,7 +7,29 @@
  * ⚠️ 그래서 이 값은 **렌더를 유발하지 않는다.** 읽는 쪽은 반드시 `useFrame` 같은 루프 안에서
  *    읽어야 한다.
  */
-export const heroProgress = { current: 0 };
+export const heroProgress = {
+  current: 0,
+  /**
+   * 연출을 켤 만큼 **페이지가 긴가**.
+   *
+   * ⚠️ 짧은 페이지(요금제·역할 안내·약관)에서는 스크롤 몇 칸에 흩어짐→모임→완성이 다 지나가
+   *    정신없다 — 랜딩처럼 긴 페이지에서만 켜고, 짧으면 예전처럼 **조용히 자전만** 한다
+   *    (2026-08-12 피드백).
+   */
+  active: false,
+};
+
+/** 이 배수보다 짧은 페이지에서는 연출을 켜지 않는다 — 화면 두 개 반은 내려가야 이야기가 된다 */
+export const MIN_TRACK_SCREENS = 2.5;
+
+export function isTrackLongEnough(scrollableHeight: number, viewportHeight: number): boolean {
+  /*
+    ⚠️ 화면 높이를 아직 못 읽은 순간(0)이 있다 — 탭이 뒤에 있거나 첫 측정 전이다. 그때
+       `x >= 0`은 늘 참이라 짧은 페이지에서도 연출이 켜진다. 못 재면 켜지 않는다.
+  */
+  if (viewportHeight <= 0) return false;
+  return scrollableHeight >= viewportHeight * MIN_TRACK_SCREENS;
+}
 
 /** 0~1로 자른다 */
 function clamp01(value: number): number {
@@ -46,6 +68,22 @@ export function humpBetween(progress: number, from: number, to: number): number 
  */
 export function burstAt(progress: number): number {
   return Math.max(humpBetween(progress, 0, 0.26), humpBetween(progress, 0.5, 0.82));
+}
+
+/**
+ * 매끈한 원본 → 조각으로 **바꿔치기하는 정도**(0=원본, 1=조각).
+ *
+ * ⚠️ **한창 흩어져 있을 때 바꾼다.** 다 모인 뒤에 바꾸면, 바로 직전까지 보이던 격자 실루엣과
+ *    매끈한 원본이 나란히 비교되어 **띡 하고 바뀐 것처럼** 보인다(2026-08-12 피드백).
+ *    조각이 이미 흩어져 제 모양을 잃은 구간에서 섞으면 눈이 둘을 견주지 못한다.
+ * ⚠️ 그래서 구간이 넓다(0.12~0.45). 좁히면 그 자리가 다시 "바뀌는 순간"으로 보인다.
+ */
+export function shardMixAt(burst: number): number {
+  const from = 0.12;
+  const to = 0.45;
+  const t = Math.min(1, Math.max(0, (burst - from) / (to - from)));
+  /* 양 끝을 부드럽게 — 선형이면 시작·끝에서 각이 진다(smoothstep) */
+  return t * t * (3 - 2 * t);
 }
 
 /**
