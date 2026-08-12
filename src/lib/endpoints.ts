@@ -224,19 +224,23 @@ export const ep = {
   departments: () => "/api/departments",
 
   /**
-   * 회의실 — 도메인 문서(ROOM-01~05, 2026-08-12) 기준, **BE 실코드 미대조**(§연동 검증: 구현
-   *   붙일 때 컨트롤러로 재확인한다).
+   * 회의실 — [확인] `meetingroom/presentation/api/{MeetingRoomController,MeetingRoomCommandController}.java`
+   *   (2026-08-12 실코드 대조).
+   *
+   * ⚠️ **경로는 `/api/rooms`다.** 도메인 문서의 `/api/meeting-rooms`는 BE "회의·회의실·공지사항
+   *    API 경로 통일" 리팩터(2026-08-11, BE `d417f12b`)로 폐기됐다 — 옛 경로는 전부 404다.
+   *    문서와 코드가 다르면 코드가 맞다(§연동 검증).
    */
-  meetingRooms: () => "/api/meeting-rooms",
+  meetingRooms: () => "/api/rooms",
   /** 회의실 한 건 수정(`PATCH`, ROOM-04)·비활성화(`DELETE`, ROOM-05)가 같은 경로를 쓴다. */
-  meetingRoom: (id: number) => `/api/meeting-rooms/${id}`,
+  meetingRoom: (id: number) => `/api/rooms/${id}`,
   /**
    * 회의실 주간(월~금) 슬롯 현황(ROOM-02). `meetingRoomId`는 필수, `date`는 생략하면 서버가
    * KST 오늘 기준 주를 채운다(§연동 검증 — 요청 축이 "회의실 1개 × 5일"로, 하루 단위 전체
    * 회의실 조회는 폐기됐다).
    */
   meetingRoomAvailability: (params: { meetingRoomId: number; date?: string }) =>
-    `/api/meeting-rooms/availability${toQuery(params)}`,
+    `/api/rooms/availability${toQuery(params)}`,
 
   /* 기타 */
   notifications: () => "/api/notifications",
