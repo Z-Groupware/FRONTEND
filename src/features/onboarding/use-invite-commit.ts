@@ -43,6 +43,13 @@ export function useInviteCommit({
    *    알고 같은 버튼을 다시 누른다(§토스트는 보조다).
    */
   const [error, setError] = useState<string | null>(null);
+  /**
+   * 그 실패의 꼬리표(`Z-003 · 8f21c0…`) — 오류 줄 아래 작게 붙인다.
+   *
+   * ⚠️ **문구로는 원인을 못 찾는다.** 500은 "서버 내부 오류"만 오고, 이 호출은 Server Action이라
+   *    브라우저 네트워크 탭에도 안 잡힌다 — 백엔드에 물을 때 댈 근거가 이 값뿐이다.
+   */
+  const [errorTag, setErrorTag] = useState<string | null>(null);
 
   /**
    * 주소는 적었는데 **이번에 안 나가는** 줄 — 확인 창에서 알린다.
@@ -84,12 +91,14 @@ export function useInviteCommit({
     if (isCommitting) return;
     setCommitting(true);
     setError(null);
+    setErrorTag(null);
 
     const result = await commitOnboardingAction({ departments, positions, invites: sendable });
 
     if (!result.ok) {
       setCommitting(false);
       setError(result.error ?? "등록하지 못했습니다. 잠시 후 다시 시도해 주세요.");
+      setErrorTag(result.errorTag ?? null);
       return;
     }
 
@@ -121,5 +130,6 @@ export function useInviteCommit({
     commit,
     isCommitting,
     error,
+    errorTag,
   };
 }

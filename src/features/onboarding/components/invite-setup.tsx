@@ -86,6 +86,7 @@ export function InviteSetup({ departments, positions }: InviteSetupProps) {
     commit,
     isCommitting,
     error: commitError,
+    errorTag: commitErrorTag,
   } = useInviteCommit({
     invites: list.invites,
     sendable: list.sendable,
@@ -183,6 +184,7 @@ export function InviteSetup({ departments, positions }: InviteSetupProps) {
         onConfirm={commit}
         isPending={isCommitting}
         error={commitError}
+        errorTag={commitErrorTag}
       />
     </div>
   );

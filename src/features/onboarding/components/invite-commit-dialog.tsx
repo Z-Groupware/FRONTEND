@@ -28,6 +28,8 @@ interface InviteCommitDialogProps {
   isPending?: boolean;
   /** 저장 실패 사유 — 창을 **열어 둔 채** 버튼 위에 적는다 */
   error?: string | null;
+  /** 그 실패의 꼬리표 — 백엔드에 물을 때 댈 근거다(`Z-003 · 8f21c0…`) */
+  errorTag?: string | null;
 }
 
 /**
@@ -51,6 +53,7 @@ export function InviteCommitDialog({
   onConfirm,
   isPending,
   error,
+  errorTag,
 }: InviteCommitDialogProps) {
   return (
     <ConfirmDialog
@@ -67,6 +70,7 @@ export function InviteCommitDialog({
       isPending={isPending}
       pendingLabel="등록 중"
       error={error}
+      errorTag={errorTag}
     >
       {/*
         ⚠️ 칸을 나눠 상자 세 개로 그리지 않는다. 가운데 정렬 창 안에서 테두리 상자가 더 생기면

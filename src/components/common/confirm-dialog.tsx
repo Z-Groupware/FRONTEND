@@ -59,6 +59,16 @@ interface ConfirmDialogProps {
    */
   error?: string | null;
   /**
+   * 그 실패의 꼬리표(`Z-003 · 8f21c0…`) — 오류 줄 **아래 작게** 붙는다.
+   *
+   * ⚠️ 사람에게 하는 말이 아니라 **원인을 찾는 단서**다. 문구가 "서버 내부 오류"뿐인 실패는
+   *    이 값이 없으면 서버 로그에서 그 요청을 특정할 수 없다 — 특히 Server Action은
+   *    브라우저 네트워크 탭에도 안 잡힌다.
+   * ⚠️ 그래서 **눈에 띄지 않게** 둔다. 흐린 11px에 `tabular-nums` — 읽을 사람만 읽고,
+   *    나머지에게는 빨간 문장 하나가 그대로 주인공이다.
+   */
+  errorTag?: string | null;
+  /**
    * 실행 버튼만 잠근다 — `children`에 **채워야 할 칸**이 있을 때 쓴다(반려 사유).
    * ⚠️ 취소는 안 잠근다. 못 채워서 못 나가는 창이 되면 갇힌다.
    */
@@ -108,6 +118,7 @@ export function ConfirmDialog({
   pendingLabel,
   isConfirmDisabled,
   error,
+  errorTag,
   onConfirm,
 }: ConfirmDialogProps) {
   return (
@@ -159,6 +170,13 @@ export function ConfirmDialog({
               <CircleAlert className="size-3.5" aria-hidden />
             </span>
             <span>{error}</span>
+          </p>
+        )}
+
+        {/* ⚠️ 오류가 있을 때만 딸려 나온다 — 꼬리표만 홀로 뜨면 무슨 말인지 알 수 없다 */}
+        {error && errorTag && (
+          <p className="text-muted-foreground mt-1 text-center text-[11px] leading-4 tabular-nums">
+            오류 코드 {errorTag}
           </p>
         )}
 
