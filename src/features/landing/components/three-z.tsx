@@ -206,7 +206,11 @@ function ZModel({
       ⚠️ **밝은 무대에서는 빛을 훨씬 아낀다.** 몸체가 흰색이라 같은 세기를 주면 하얗게 타서
          형태가 사라진다 — 어두운 무대는 빛으로 조각을 드러내고, 밝은 무대는 음영으로 드러낸다.
     */
-    const boost = tone === "dark" ? burst * 90 + finale * 70 : burst * 26 + finale * 18;
+    /*
+      ⚠️ 빛을 **덜 올린다**(90 → 48). 조각이 정육면체라 같은 세기에도 원본보다 훨씬 밝게 뜨는데,
+         거기에 빛까지 세게 주니 흩어지는 순간 색이 바뀐 것처럼 보였다.
+    */
+    const boost = tone === "dark" ? burst * 48 + finale * 44 : burst * 16 + finale * 12;
     rim.current.forEach((light) => {
       if (light) light.intensity = isFeature ? 32 : 34 + boost;
     });
@@ -252,13 +256,20 @@ function ZModel({
 
       <instancedMesh ref={mesh} args={[undefined, undefined, shards.length]}>
         <boxGeometry args={[cell, cell, 0.14]} />
+        {/*
+          ⚠️ **조각은 원본보다 덜 번들거려야 한다**(2026-08-12 피드백). 원본은 판판해서 빛을
+             거의 안 받는데, 정육면체는 **옆면·모서리가 빛을 정면으로 받아** 하얗게 뜬다 —
+             같은 색을 줘도 딴 물건으로 보인다.
+          ⚠️ 그래서 금속기를 낮추고(0.85 → 0.3) 거칠기를 올린다(0.28 → 0.6). 거울처럼 비추지
+             않으니 조각도 원본과 같은 톤으로 앉는다.
+        */}
         <meshStandardMaterial
           ref={shardMaterial}
           transparent
           opacity={0}
           color={isFeature ? "#78716c" : tone === "dark" ? "#232326" : "#ffffff"}
-          metalness={isFeature ? 0.55 : tone === "dark" ? 0.85 : 0.4}
-          roughness={isFeature ? 0.35 : tone === "dark" ? 0.28 : 0.3}
+          metalness={isFeature ? 0.55 : tone === "dark" ? 0.3 : 0.15}
+          roughness={isFeature ? 0.35 : tone === "dark" ? 0.6 : 0.72}
         />
       </instancedMesh>
 
