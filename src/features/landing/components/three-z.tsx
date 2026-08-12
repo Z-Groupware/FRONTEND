@@ -46,15 +46,17 @@ const PIECES: [number, number][][] = [
 ];
 
 /**
- * 로고를 **작은 조각으로 쪼갠다** — 격자를 깔고 로고 안에 들어오는 칸만 남긴다.
+ * 로고를 **조각으로 쪼갠다** — 격자를 깔고 로고 안에 들어오는 칸만 남긴다.
  *
- * ⚠️ 세 덩이로는 "분해"가 아니라 "세 조각이 움직인다"로 보인다(2026-08-12 피드백). 칸을 잘게
- *    나눠야 흩어지는 게 읽힌다.
- * ⚠️ 칸 수를 키우면 그리는 양이 그만큼 는다 — 22면 로고 안에 200개 안팎이 남는다. 그 이상은
- *    저사양 노트북에서 프레임이 떨어진다.
+ * ⚠️ 세 덩이로는 "분해"가 아니라 "세 조각이 움직인다"로 보인다(2026-08-12 피드백). 나눠야
+ *    흩어지는 게 읽힌다.
+ * ⚠️ 그렇다고 **잘게 나누면 안 된다.** 22칸으로 쪼갰더니 크기가 똑같은 작은 사각형 200개가
+ *    흩뿌려져, 부서진 판이 아니라 **점이 박힌 것**으로 보였다(2026-08-12 반복 피드백:
+ *    "여드름 난 것 같다"). 깨진 유리는 조각이 크고 크기가 제각각이다.
+ * ⚠️ 칸 수를 키우면 그리는 양도 는다 — 9면 로고 안에 40개 안팎이 남는다.
  * ⚠️ 무작위를 쓰지 않는다. 같은 자리에 늘 같은 조각이 있어야 새로고침해도 같은 화면이다.
  */
-const GRID = 22;
+const GRID = 9;
 
 function isInsidePolygon(x: number, y: number, polygon: [number, number][]): boolean {
   let inside = false;
@@ -72,6 +74,8 @@ interface Shard {
   home: [number, number];
   direction: [number, number, number];
   spin: number;
+  /** 크기 배수 — 조각마다 달라야 "깨진 판"으로 보인다(다 같으면 타일이다) */
+  size: number;
 }
 
 function buildShards(): Shard[] {
@@ -92,11 +96,18 @@ function buildShards(): Shard[] {
         ⚠️ **자기 자리에서 바깥으로** 날아간다. 중심에서 먼 조각일수록 멀리 — 그래야 다시
            모일 때 "원래 모양으로 돌아왔다"가 읽힌다. 앞뒤(z)는 자리마다 갈라 층을 만든다.
       */
+      /*
+        ⚠️ **크기를 조각마다 흔든다.** 같은 크기로 두면 흩어져도 타일이 떨어져 나간 것처럼
+           규칙적이라 눈에 점으로 읽힌다 — 큰 판과 작은 파편이 섞여야 깨진 것으로 보인다.
+        ⚠️ 무작위가 아니라 자리로 정한다. 새로고침해도 같은 화면이어야 한다.
+      */
+      const index = row * GRID + column;
       const spread = 1.6;
       shards.push({
         home: [x, y],
         direction: [x * spread, y * spread, ((column % 3) - 1) * 0.5],
-        spin: ((row * GRID + column) % 7) - 3,
+        spin: (index % 7) - 3,
+        size: 0.72 + ((index * 5) % 7) * 0.08,
       });
     }
   }
@@ -105,6 +116,24 @@ function buildShards(): Shard[] {
 }
 
 type Tone = "dark" | "light";
+
+/** 매끈한 원본 Z의 몸 색 */
+function SOLID_COLOR(tone: Tone, isFeature: boolean): string {
+  return isFeature ? "#78716c" : tone === "dark" ? "#232326" : "#ffffff";
+}
+
+/**
+ * 조각의 몸 색 — **원본과 같은 색을 주면 오히려 더 밝게 뜬다.**
+ *
+ * ⚠️ 원본 Z는 판판해서 정면 빛만 받는데, 조각은 정육면체라 돌면서 **윗면·옆면이 조명을 정통으로**
+ *    받는다. 같은 흰색(`#ffffff`)을 줬더니 조각만 하얗게 튀어 딴 물건처럼 보였다
+ *    (2026-08-12 피드백). 색 값이 아니라 **화면에 찍히는 밝기**를 맞춰야 한다.
+ * ⚠️ 그래서 밝은 무대에서는 한 단 낮춰 칠한다(보더 토큰 `#e7e5e4`) — 빛을 더 받은 뒤에야
+ *    원본과 같은 흰색으로 앉는다. 어두운 무대는 반대로 몸이 이미 어두워 그럴 일이 없다.
+ */
+function SHARD_COLOR(tone: Tone, isFeature: boolean): string {
+  return isFeature ? "#78716c" : tone === "dark" ? "#232326" : "#e7e5e4";
+}
 
 /**
  * 로고 본체 — **격자로 쪼갠 조각들**이 흩어졌다 모인다.
@@ -126,7 +155,12 @@ function ZModel({
   const mesh = useRef<THREE.InstancedMesh>(null!);
   /** 매끈한 원본 Z — 모여 있을 때 보이는 쪽 */
   const solid = useRef<THREE.Group>(null!);
-  const solidMaterial = useRef<THREE.MeshStandardMaterial>(null!);
+  /*
+    ⚠️ **세 조각의 재질을 전부 들고 있어야 한다.** 예전엔 첫 조각 하나만 붙들고 투명도를 걸어서
+       **사선과 아랫줄이 영영 안 사라졌다** — 원본 Z가 남은 채 그 위로 조각이 떠다녀,
+       흩어질 때 흰 사각형이 얼룩처럼 박혀 보였다(2026-08-12 피드백: "여드름 난 것 같다").
+  */
+  const solidMaterials = useRef<THREE.MeshStandardMaterial[]>([]);
   const shardMaterial = useRef<THREE.MeshStandardMaterial>(null!);
   const rim = useRef<[THREE.PointLight | null, THREE.PointLight | null]>([null, null]);
   /** 자전 속도 — 배경이라 아주 느리게 돈다 */
@@ -163,10 +197,11 @@ function ZModel({
   const scratch = useMemo(() => new THREE.Object3D(), []);
 
   /*
-    ⚠️ 칸을 **거의 붙여 놓는다**(0.99). 벌려 두면 모여 있을 때도 픽셀처럼 보여 로고가 거칠어진다 —
-       조각임은 흩어질 때만 드러나면 된다(2026-08-12).
+    ⚠️ 기준 크기는 칸 하나다 — 실제 크기는 조각마다 흔들린다(`shard.size`).
+    ⚠️ 모여 있을 때 틈이 벌어져도 상관없다. 그 구간에서는 **매끈한 원본**이 보이고 조각은
+       투명하다(`shardMixAt`) — 조각임은 흩어질 때만 드러난다.
   */
-  const cell = (1 / GRID) * 0.99;
+  const cell = 1 / GRID;
 
   useFrame(() => {
     if (!group.current || !mesh.current) return;
@@ -201,7 +236,9 @@ function ZModel({
     const shardMix = shardMixAt(scatter);
     /* ⚠️ 멀어질수록 옅어진다 — 안 그러면 흰 사각형이 화면에 얼룩처럼 박힌다(§hero-progress) */
     const shardAlpha = shardMix * shardFadeAt(scatter);
-    if (solidMaterial.current) solidMaterial.current.opacity = 1 - shardMix;
+    solidMaterials.current.forEach((material) => {
+      material.opacity = 1 - shardMix;
+    });
     if (shardMaterial.current) shardMaterial.current.opacity = shardAlpha;
     if (solid.current) solid.current.visible = shardMix < 0.99;
     mesh.current.visible = shardAlpha > 0.01;
@@ -236,8 +273,11 @@ function ZModel({
         scatter * shard.spin * 0.4,
         scatter * shard.spin,
       );
-      /* 흩어질수록 조각이 조금 작아진다 — 멀어지는 느낌을 거리 없이 만든다 */
-      scratch.scale.setScalar(1 - scatter * 0.25);
+      /*
+        ⚠️ 조각마다 **크기가 다르다** — 다 같으면 타일처럼 규칙적이라 점으로 읽힌다(§buildShards).
+        ⚠️ 흩어질수록 조금 작아진다 — 멀어지는 느낌을 거리 없이 만든다.
+      */
+      scratch.scale.setScalar(shard.size * (1 - scatter * 0.25));
       scratch.updateMatrix();
       mesh.current.setMatrixAt(index, scratch.matrix);
     });
@@ -254,14 +294,16 @@ function ZModel({
         **밝은 무대(light):** 회색으로 칠하지 않는다 — 흰 바탕 위 회색 덩어리는 얼룩처럼
         보인다. 몸체를 **흰 종이처럼** 두고(무광·낮은 금속기) 형태는 **음영으로만** 읽히게 한다.
       */}
-      {/* 매끈한 원본 — 모여 있을 때 이쪽이 보인다 */}
+      {/* 매끈한 원본 — 모여 있을 때 이쪽이 보인다. 재질 셋을 다 붙들어야 다 같이 사라진다 */}
       <group ref={solid}>
         {geometries.map((geometry, index) => (
           <mesh key={index} geometry={geometry} position={[0, 0, -0.07]}>
             <meshStandardMaterial
-              ref={index === 0 ? solidMaterial : undefined}
+              ref={(material) => {
+                if (material) solidMaterials.current[index] = material;
+              }}
               transparent
-              color={isFeature ? "#78716c" : tone === "dark" ? "#232326" : "#ffffff"}
+              color={SOLID_COLOR(tone, isFeature)}
               metalness={isFeature ? 0.55 : tone === "dark" ? 0.85 : 0.4}
               roughness={isFeature ? 0.35 : tone === "dark" ? 0.28 : 0.3}
             />
@@ -282,7 +324,7 @@ function ZModel({
           ref={shardMaterial}
           transparent
           opacity={0}
-          color={isFeature ? "#78716c" : tone === "dark" ? "#232326" : "#ffffff"}
+          color={SHARD_COLOR(tone, isFeature)}
           metalness={isFeature ? 0.55 : tone === "dark" ? 0.3 : 0.15}
           roughness={isFeature ? 0.35 : tone === "dark" ? 0.6 : 0.72}
         />
