@@ -64,6 +64,12 @@ export const ep = {
   meetingsUpcoming: (params?: { limit?: number }) => `/api/meetings/upcoming${toQuery(params)}`,
   /** 참석자 명단 교체(MEET-09, 구현 완료) — 전체 명단 교체(부분 추가·삭제 아님). */
   meetingAttendees: (meetingId: number) => `/api/meetings/${meetingId}/attendees`,
+  /**
+   * 확정 대기 회의 목록(MEET-10, 구현 완료 — PR #233) — 마이페이지 "미확정 액션" 위젯용.
+   * [확인] D도메인 REST API 명세(2026-08-12) 대조. 파라미터 없음 — host 본인 회의만 서버가
+   * 자동 스코프한다(전 롤 호출 가능, 판정은 역할이 아니라 `hostMemberId` 일치).
+   */
+  meetingsPendingActionDistributions: () => "/api/meetings/pending-action-distributions",
 
   /*
    * 캡처 — [확인] BE 실코드 대조(2026-08-12, 커밋 `51b5482f` "회의·회의실·공지사항 API 경로 통일" 리팩터 반영)
