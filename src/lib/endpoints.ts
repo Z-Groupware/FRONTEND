@@ -152,7 +152,12 @@ export const ep = {
   todoComplete: (id: number) => `/api/todos/${id}/complete`,
 
   /* 인수인계 */
-  handovers: () => "/api/handovers",
+  /**
+   * 목록 — [확인] `HandoverController.list`. 조회 범위(본인/자기팀/회사 전체)는 **토큰이 정한다**,
+   * 파라미터로 안 받는다 — `status`만 클라이언트가 거른다.
+   */
+  handovers: (params?: { status?: "SUBMITTED" | "REASSIGNED" | "FINALIZED" | "REJECTED" }) =>
+    `/api/handovers${toQuery(params)}`,
   handover: (id: number) => `/api/handovers/${id}`,
   /** 상세 리치뷰(타임라인·회의맥락·수신자별 그룹) — BE 인수인계 문서(2026-08-10) §2. */
   handoverPackage: (id: number) => `/api/handovers/${id}/package`,
