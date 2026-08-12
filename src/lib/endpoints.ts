@@ -118,6 +118,8 @@ export const ep = {
    * 자체를 안 붙인다(서버 기본값을 그대로 쓰게).
    */
   projects: (params?: ProjectListParams) => `/api/projects${toQuery(params)}`,
+  /** 오너 대시보드 KPI(전체 프로젝트·마감 D-7) — [확인] PR #354 머지 완료, OWNER 전용 */
+  projectDashboardSummary: () => "/api/projects/dashboard-summary",
   project: (id: number) => `/api/projects/${id}`,
   projectStatusBulk: () => "/api/projects/status/bulk",
   projectTimeline: (id: number) => `/api/projects/${id}/timeline`,
@@ -169,6 +171,10 @@ export const ep = {
   member: (id: number) => `/api/members/${id}`,
   /** 조직도 — OWNER·ADMIN 전용 */
   memberOrgChart: () => "/api/members/org-chart",
+  /** 오너 대시보드 KPI(전체 사원·휴직자) — [확인] PR #385 머지 완료, OWNER 전용 */
+  memberDashboardSummary: () => "/api/members/dashboard-summary",
+  /** 팀장 현황(이름·이메일·팀·재직상태·휴직기간) — [확인] PR #385 머지 완료, OWNER 전용 */
+  teamLeadersStatus: () => "/api/members/leaders-status",
   /**
    * 관리자 겸직 토글 — **OWNER 전용**이고 경로가 따로다.
    *

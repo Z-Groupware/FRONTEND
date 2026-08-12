@@ -34,15 +34,3 @@ export const LEADER_BOX_SKELETON_HEIGHT =
 /** 로딩 뼈대 — 회의는 최대 수가 하드 캡이라 꽉 찬 높이로 그린다. */
 export const MEETING_BOX_SKELETON_HEIGHT =
   DASHBOARD_BOX_HEADER_HEIGHT + MEETING_MAX_ITEMS * MEETING_ITEM_HEIGHT;
-
-/**
- * 마감 경과와 같은 파생값 — 상태 필드에 저장하지 않고 항상 계산한다(CLAUDE.md §도메인 상수).
- * ⚠️ `dueDate`는 `"2026-08-05"` 같은 **날짜 전용** 값이다. `new Date("2026-08-05")`는 UTC 자정으로
- *    해석돼 음수 오프셋 타임존에서 하루 어긋난다 — `T00:00:00`을 붙여 **로컬 자정**으로 파싱한다.
- */
-export function getDaysUntilDue(dateIso: string): number {
-  const due = new Date(`${dateIso}T00:00:00`);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  return Math.round((due.getTime() - today.getTime()) / 86_400_000);
-}
