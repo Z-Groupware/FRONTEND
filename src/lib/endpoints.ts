@@ -178,7 +178,12 @@ export const ep = {
   jobPositions: () => "/api/job-positions",
   jobPosition: (id: number) => `/api/job-positions/${id}`,
   departments: () => "/api/departments",
-  rooms: () => "/api/rooms",
+
+  /**
+   * 회의실 — 도메인 문서(ROOM-01~05, 2026-08-12) 기준, **BE 실코드 미대조**(§연동 검증: 구현
+   *   붙일 때 컨트롤러로 재확인한다).
+   */
+  meetingRooms: () => "/api/meeting-rooms",
 
   /* 기타 */
   notifications: () => "/api/notifications",

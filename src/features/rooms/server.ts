@@ -2,11 +2,15 @@ import "server-only";
 
 import { endOfWeek, startOfWeek } from "date-fns";
 
+import { requireAccessToken } from "@/features/auth/session";
 import { TOP_LEVEL_PROJECTS } from "@/features/project/mock/projects";
 import { PROJECT_TEAM_ACTIONS_MOCK } from "@/features/project/mock/team-actions";
+import { serverApi } from "@/lib/api";
+import { ep } from "@/lib/endpoints";
 import { type Actor, requiresParentTeamAction } from "@/lib/permission";
 import { isMock } from "@/mocks/config";
 
+import { type BeMeetingRoom, toMeetingRoom } from "./mapper";
 import { listMockMembers } from "./mock/members";
 import { listMockReservations } from "./mock/reservations";
 import { listMockRooms } from "./mock/rooms";
@@ -36,9 +40,18 @@ export async function getWeekReservations(weekOf: Date): Promise<RoomReservation
   throw new Error("회의실 예약 조회 API가 아직 연결되지 않았습니다.");
 }
 
+/**
+ * 회의실 목록(`GET /api/meeting-rooms`, ROOM-01) — 비활성화되지 않은 회의실을 이름 오름차순으로.
+ * 예약 폼의 회의실 select와 `/manage/rooms` 관리 목록이 이 응답을 함께 쓴다.
+ */
 export async function getMeetingRooms(): Promise<MeetingRoom[]> {
   if (isMock) return listMockRooms();
-  throw new Error("회의실 목록 조회 API가 아직 연결되지 않았습니다.");
+
+  const accessToken = await requireAccessToken();
+  const { meetingRooms } = await serverApi<{ meetingRooms: BeMeetingRoom[] }>(ep.meetingRooms(), {
+    accessToken,
+  });
+  return meetingRooms.map(toMeetingRoom);
 }
 
 export async function getReservableMembers(): Promise<RoomMember[]> {
