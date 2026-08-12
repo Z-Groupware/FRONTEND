@@ -45,8 +45,17 @@ describe("burstAt — 두 번 흩어진다", () => {
   });
 
   it("첫 화면과 흐름 뒤, 두 번 벌어진다", () => {
-    expect(burstAt(0.13)).toBeGreaterThan(0.9);
+    expect(burstAt(0.2)).toBeGreaterThan(0.9);
     expect(burstAt(0.66)).toBeGreaterThan(0.9);
+  });
+
+  /*
+    ⚠️ **첫 화면을 읽는 동안에는 온전하다.** 0부터 부풀리면 스크롤 2%만에 다 부서져, 로고는
+       없고 부스러기만 떠 있는 화면을 한참 본다(2026-08-12 피드백).
+  */
+  it("첫 화면에서는 아직 안 부서진다", () => {
+    expect(burstAt(0.02)).toBe(0);
+    expect(burstAt(0.05)).toBe(0);
   });
 });
 

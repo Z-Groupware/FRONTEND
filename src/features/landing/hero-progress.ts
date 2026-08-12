@@ -64,10 +64,13 @@ export function humpBetween(progress: number, from: number, to: number): number 
  *
  * ⚠️ 첫 번째는 첫 화면을 지나며(문제 제기 구간), 두 번째는 흐름 섹션을 지난 뒤다. 사이에는
  *    반드시 **0으로 완전히 모인다** — 계속 흩어져 있으면 그냥 어수선한 배경이 된다.
+ * ⚠️ **0에서 시작하지 않는다**(2026-08-12 변경). 0부터 부풀리면 스크롤 2%만에 Z가 다 부서져,
+ *    첫 화면을 읽는 내내 로고는 없고 부스러기만 떠 있다 — 첫 화면에서는 **온전히 서 있다가**
+ *    화면을 벗어날 때 부서져야 "부서졌다"가 읽힌다.
  * ⚠️ 마지막 구간(0.86~)에는 산을 두지 않는다. 거기서는 **완성된 모습**으로 서 있어야 한다.
  */
 export function burstAt(progress: number): number {
-  return Math.max(humpBetween(progress, 0, 0.26), humpBetween(progress, 0.5, 0.82));
+  return Math.max(humpBetween(progress, 0.06, 0.34), humpBetween(progress, 0.5, 0.82));
 }
 
 /**
