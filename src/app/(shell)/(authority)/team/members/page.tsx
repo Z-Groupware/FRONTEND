@@ -30,7 +30,7 @@ export default async function TeamMembersPage({ searchParams }: TeamMembersPageP
   const params = await searchParams;
   const sort = parseTeamMemberSort(params.sort);
   const filter = parseTeamMemberFilter(params.filter);
-  const members = await getTeamMemberStatuses(sort, filter);
+  const members = await getTeamMemberStatuses(sort, filter, viewer);
 
   return (
     <main className="scrollbar-hidden min-h-0 flex-1 overflow-y-auto px-8 py-7">

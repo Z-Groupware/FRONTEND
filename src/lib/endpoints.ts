@@ -19,6 +19,11 @@ export interface ProjectListParams {
 /** 개인 액션 목록만 갖는 `overdue` 필터가 추가된다. */
 export interface ActionListParams extends ProjectListParams {
   overdue?: boolean;
+  /**
+   * 값을 주면 호출자 본인이 아니라 **그 팀원의** 목록을 대신 조회한다(2026-08-11 추가,
+   * 이홍근 요청 — 팀원 관리 화면). LEADER 전용, 같은 팀 소속만 — [확인] `ActionController.java`.
+   */
+  assigneeMemberId?: number;
 }
 
 /** `undefined`·`null` 값은 쿼리에서 빠진다 — 서버 기본값을 그대로 쓰게 둔다. */
@@ -46,34 +51,30 @@ export const ep = {
   companyOnboarding: () => "/api/companies/me/onboarding",
 
   /*
-   * 회의 — [확인] BE 실코드 대조(2026-08-11)
+   * 회의 — [확인] BE 실코드 대조(2026-08-12, "회의·회의실·공지사항 API 경로 통일" 리팩터 반영)
    *   `meeting/presentation/api/{MeetingController,MeetingListController,MeetingDetailController}.java`
    *
-   * ⚠️ **회의도 `/api/v1/`이다.** 전에 `/api/meetings`로 적어 뒀던 건 FE 제안 경로였고
-   *    실제 컨트롤러는 전부 `@RequestMapping("/api/v1/meetings")`다 — 그대로 부르면 404다.
-   * ⚠️ **캡처 전용 조회는 없다.** 캡처 화면도 상세(MEET-04)를 쓴다 — 있지도 않은
-   *    `/{id}/capture`를 지어내지 않는다(§환각 API 방지).
+   * ⚠️ **`/api/v1/` 접두사는 폐기됐다**(2026-08-12, 커밋 `51b5482f`) — 그 전에 붙였던 v1은
+   *    이제 전부 404다. 캡처 전용 조회는 없다 — 캡처 화면도 상세(MEET-04)를 쓴다(§환각 API 방지).
    */
-  meetings: () => "/api/v1/meetings",
+  meetings: () => "/api/meetings",
   /** 상세(MEET-04) — 캡처 진입도 이걸 쓴다. 없으면 404 `MT-001`, 열람 권한 없으면 403 `MT-011` */
-  meeting: (id: number) => `/api/v1/meetings/${id}`,
+  meeting: (id: number) => `/api/meetings/${id}`,
 
   /*
-   * 캡처 — [확인] BE 실코드 대조(2026-08-10)
+   * 캡처 — [확인] BE 실코드 대조(2026-08-12, "회의·회의실·공지사항 API 경로 통일" 리팩터 반영)
    *   `cap/presentation/api/{CaptureUploadController,CaptionController,CaptureQueryController}.java`
    *   `meeting/presentation/api/{CaptureSessionController,MeetingCompletionController}.java`
    *   `capture/presentation/api/AnalysisController.java`
    *
-   * ⚠️ **접두사가 두 갈래다.** 캡처 세션(CAP-01·02·03·10)과 회의 종료(MEET-08)는 `/api/v1/`,
-   *    자막·조각·분석은 `/api/`다. 보기 싫다고 통일하면 전부 404다 — BE의 컨트롤러
-   *    `@RequestMapping`이 실제로 그렇게 갈려 있다.
+   * ⚠️ **`/api/v1/` 접두사는 폐기됐다**(2026-08-12, 커밋 `51b5482f`). 캡처 세션(CAP-01·02·03)과
+   *    회의 종료(MEET-08)도 이제 자막·조각·분석과 똑같이 `/api/`만 쓴다 — v1을 되살리면 전부 404다.
    */
-  captureSession: (meetingId: number) => `/api/v1/meetings/${meetingId}/capture-session`,
-  captureSessionPause: (meetingId: number) => `/api/v1/meetings/${meetingId}/capture-session/pause`,
-  captureSessionResume: (meetingId: number) =>
-    `/api/v1/meetings/${meetingId}/capture-session/resume`,
+  captureSession: (meetingId: number) => `/api/meetings/${meetingId}/capture-session`,
+  captureSessionPause: (meetingId: number) => `/api/meetings/${meetingId}/capture-session/pause`,
+  captureSessionResume: (meetingId: number) => `/api/meetings/${meetingId}/capture-session/resume`,
   /** 회의 종료 + 분석 접수(MEET-08) — 분석은 **서버가** 큐에 건다, 프론트가 부르지 않는다 */
-  meetingComplete: (meetingId: number) => `/api/v1/meetings/${meetingId}/complete`,
+  meetingComplete: (meetingId: number) => `/api/meetings/${meetingId}/complete`,
 
   /** 자막 청크 **배치** 전송(CAP-11)·전체 조회(CAP-12) */
   captions: (meetingId: number) => `/api/meetings/${meetingId}/captions`,
@@ -130,6 +131,10 @@ export const ep = {
   teamActionTimeline: (id: number) => `/api/team/actions/${id}?tab=timeline`,
   teamActionAttachmentDownloadUrl: (teamActionId: number, attachmentId: number) =>
     `/api/team/actions/${teamActionId}/attachments/${attachmentId}/download-url`,
+  /** 팀 대시보드 KPI 4종(팀 액션·팀원 액션·내 액션·완료 액션) — [확인] PR #354 머지 완료(2026-08-11) */
+  teamDashboardSummary: () => "/api/team/actions/dashboard-summary",
+  /** 팀원 현황(이름·직급·역할·재직상태·담당 액션 수) — [확인] PR #354 머지 완료, LEADER 전용 */
+  teamMembers: () => "/api/team/members",
 
   /** `month` 생략 시 이번 달(서버 기본값) */
   calendar: (month?: string) => `/api/calendar${toQuery(month ? { month } : undefined)}`,

@@ -33,7 +33,7 @@ export default async function TeamDashboardPage() {
     doneActionCount,
     members,
     meetings,
-  } = await getTeamDashboardOverview();
+  } = await getTeamDashboardOverview(viewer);
 
   /* 상단 요약 — 오너 대시보드와 같은 공용 카드다(DESIGN §2). 색 강조는 두지 않는다(§5). */
   const summaryItems = [
