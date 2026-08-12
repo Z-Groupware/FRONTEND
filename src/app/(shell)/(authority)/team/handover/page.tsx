@@ -70,9 +70,9 @@ export default async function TeamHandoverPage() {
             ) : (
               <ul>
                 {items.map((item) => (
-                  <li key={item.id} className="border-border not-first:border-t">
+                  <li key={item.handoverId} className="border-border not-first:border-t">
                     <Link
-                      href={`/team/handover/${item.id}`}
+                      href={`/team/handover/${item.handoverId}`}
                       className="hover:bg-foreground/[0.04] flex min-w-[760px] items-center gap-4 px-7 py-3.5 text-[13px] leading-5 transition-colors"
                     >
                       <span className="min-w-0 flex-1 truncate font-medium">

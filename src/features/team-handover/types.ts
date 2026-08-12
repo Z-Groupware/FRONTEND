@@ -20,8 +20,8 @@ export interface TeamHandoverAction {
 
 /** 목록 한 줄. */
 export interface TeamHandoverListItem {
-  /** 신청자(팀원)의 사원 id를 문자열로 — 라우트 파라미터와 그대로 맞춘다. */
-  id: string;
+  /** 인수인계서 id — [확인] BE `HandoverSummaryResponse.id`. 상세 라우트(`/team/handover/[handoverId]`)로 그대로 쓴다. */
+  handoverId: number;
   memberId: number;
   memberName: string;
   type: HandoverType;
