@@ -3,7 +3,12 @@ import type { MemberAction } from "@/features/member/types";
 import { type BeAttachment, toProjectAttachment } from "@/features/project/mapper";
 import type { TeamActionDetail } from "@/features/project/types";
 
-import type { MyActionListItem, PersonalActionDetail, TeamActionProjectGroup } from "./types";
+import type {
+  MyActionListItem,
+  PersonalActionDetail,
+  TeamActionListItem,
+  TeamActionProjectGroup,
+} from "./types";
 
 /**
  * BE shape → UI 계약 (§Mock 격리막).
@@ -128,32 +133,90 @@ export function toMyActionListItem(be: BeActionSummary): MyActionListItem {
 }
 
 /**
- * 팀 액션 목록(`GET /api/team/actions`) → 프로젝트별 그룹.
- * ⚠️ 목록 순서를 유지한 채 `projectId`로 묶는다(첫 등장 순서가 그룹 순서다).
+ * 팀 액션 목록(`GET /api/team/actions`) 한 줄 → 평평한 UI 계약.
+ * ⚠️ 여기서 그룹을 만들지 않는다 — 페이지 단위로 이어 붙인 뒤 화면이
+ *    `groupTeamActionsByProject`로 매번 다시 묶는다(§목록·페이지네이션).
  */
-export function groupTeamActionsByProject(items: BeActionSummary[]): TeamActionProjectGroup[] {
+export function toTeamActionListItem(be: BeActionSummary): TeamActionListItem {
+  return {
+    id: be.id,
+    name: be.title,
+    /*
+      ⚠️ **BE 필드를 읽는 자리는 여기 하나다**(2026-08-13 병합). 그룹핑이 `BeActionSummary`가
+         아니라 UI 계약(`TeamActionListItem`)을 받게 바뀌면서, 예정 시작일 fallback도 진척
+         값도 이 매퍼가 한 번에 흡수한다 — 그룹핑 쪽에서 다시 BE 모양을 알 필요가 없다.
+    */
+    startDate: fallbackActionStartDate(be.startDate ?? be.plannedStartDate),
+    dueDate: be.dueDate,
+    status: be.status,
+    childDoneCount: be.childDoneCount,
+    childTotalCount: be.childTotalCount,
+    projectId: be.projectId,
+    projectName: be.projectName ?? "",
+    projectTag: be.projectTag ?? "",
+  };
+}
+
+/**
+ * 팀 액션 목록 → 프로젝트별 그룹 — **지금까지 이어 붙인 전체**를 대상으로 매번 다시 묶는다.
+ * ⚠️ 목록 순서를 유지한 채 `projectId`로 묶는다(첫 등장 순서가 그룹 순서다). 서버 정렬이
+ *    `sort=dueDate&order=asc`라 그룹 순서는 대체로 안정적이지만, 새 페이지가 오면 이미
+ *    그려진 그룹이 자랄 수 있다 — 그게 정직한 동작이다(전량을 받아 미리 묶지 않는다).
+ */
+export function groupTeamActionsByProject(items: TeamActionListItem[]): TeamActionProjectGroup[] {
   const groups = new Map<number, TeamActionProjectGroup>();
-  for (const be of items) {
-    let group = groups.get(be.projectId);
+  for (const item of items) {
+    let group = groups.get(item.projectId);
     if (!group) {
       group = {
-        projectId: be.projectId,
-        projectName: be.projectName ?? "",
-        projectTag: be.projectTag ?? "",
+        projectId: item.projectId,
+        projectName: item.projectName,
+        projectTag: item.projectTag,
         teamActions: [],
       };
-      groups.set(be.projectId, group);
+      groups.set(item.projectId, group);
     }
     group.teamActions.push({
-      id: be.id,
-      name: be.title,
-      startDate: fallbackActionStartDate(be.startDate ?? be.plannedStartDate),
-      dueDate: be.dueDate,
-      status: be.status,
-      /* 하위 진척 "3/5" — 값은 여기서 넘기고, 게이지 UI는 #421(화면 담당 몫) */
-      childDoneCount: be.childDoneCount,
-      childTotalCount: be.childTotalCount,
+      id: item.id,
+      name: item.name,
+      startDate: item.startDate,
+      dueDate: item.dueDate,
+      status: item.status,
+      /* 하위 진척 "3/5" — 값은 여기까지 나르고, 게이지 UI는 #421(화면 담당 몫) */
+      childDoneCount: item.childDoneCount,
+      childTotalCount: item.childTotalCount,
     });
+  }
+  return [...groups.values()];
+}
+
+/** 내 액션 목록(`/app/my/actions`)의 프로젝트별 그룹 — 팀 액션과 같은 규칙으로 다시 묶는다. */
+export interface MyActionProjectGroup {
+  projectId: number;
+  projectName: string;
+  projectTag: string;
+  actions: MyActionListItem[];
+}
+
+/**
+ * 내 액션 목록 → 프로젝트별 그룹 — 이어 붙인 전체를 대상으로 매번 다시 묶는다.
+ * ⚠️ 마감 임박순(`sort=dueDate&order=asc`)으로 이미 정렬된 목록이라 그룹 안 순서도 그대로다.
+ *    새 페이지가 도착하면 그룹이 자랄 수 있다(§목록·페이지네이션 — 위 함수와 같은 이유).
+ */
+export function groupMyActionsByProject(actions: MyActionListItem[]): MyActionProjectGroup[] {
+  const groups = new Map<number, MyActionProjectGroup>();
+  for (const action of actions) {
+    let group = groups.get(action.projectId);
+    if (!group) {
+      group = {
+        projectId: action.projectId,
+        projectName: action.projectName,
+        projectTag: action.projectTag,
+        actions: [],
+      };
+      groups.set(action.projectId, group);
+    }
+    group.actions.push(action);
   }
   return [...groups.values()];
 }
