@@ -1,13 +1,17 @@
 import "server-only";
 
+import { requireAccessToken } from "@/features/auth/session";
+import { serverApi } from "@/lib/api";
+import { ep } from "@/lib/endpoints";
 import { isMock } from "@/mocks/config";
 
+import { type BeNoticeSummary, toNoticeSummary } from "./mapper";
 import { countUnreadMockNotices, findMockNotice, listMockNotices } from "./mock/notices";
 import type { Notice, NoticeSummary } from "./types";
 
 /**
- * 워크벤치 공지 목록 — **격리막**(CLAUDE.md). 목록엔 본문이 필요 없어 요약만 내려준다.
- * 연동할 때 고칠 곳은 이 파일과 매퍼뿐이고 컴포넌트는 건드리지 않는다.
+ * 워크벤치 공지 목록(`GET /api/notices`, NOTI-01) — **격리막**(CLAUDE.md). 목록엔 본문이
+ * 필요 없어 요약만 내려준다(문서 규칙 — `content`를 안 담는다).
  */
 export async function getNotices(): Promise<NoticeSummary[]> {
   if (isMock) {
@@ -19,8 +23,11 @@ export async function getNotices(): Promise<NoticeSummary[]> {
     }));
   }
 
-  // ⚠️ 미구현 — API 스펙 확정 후 공지 목록 경로로 fetch하고 매퍼로 UI 계약에 맞춘다.
-  throw new Error("공지 목록 API가 아직 연결되지 않았습니다.");
+  const accessToken = await requireAccessToken();
+  const { notices } = await serverApi<{ notices: BeNoticeSummary[] }>(ep.notices(), {
+    accessToken,
+  });
+  return notices.map(toNoticeSummary);
 }
 
 /**
