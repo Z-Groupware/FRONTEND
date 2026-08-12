@@ -46,3 +46,15 @@ export const FLOW_STEPS: readonly FlowStep[] = [
 ] as const;
 
 export type FlowMock = FlowStep["mock"];
+
+/**
+ * 스크롤 진행도(0~1)를 **몇 번째 단계**로 바꾼다.
+ *
+ * ⚠️ `floor`만 쓰면 진행도가 정확히 1일 때 칸을 하나 넘어간다(네 칸인데 4번). 끝을 감싼다.
+ * ⚠️ 진행도는 음수로도 온다 — 구간 위쪽에서 스크롤을 되올릴 때다. 그때는 첫 칸이다.
+ */
+export function stepIndexFromProgress(progress: number, count: number): number {
+  if (count <= 0) return 0;
+  const index = Math.floor(progress * count);
+  return Math.min(count - 1, Math.max(0, index));
+}

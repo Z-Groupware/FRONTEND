@@ -15,6 +15,11 @@ const config: Config = {
          자세한 이유는 대역 파일 주석에 있다.
     */
     "^next/cache$": "<rootDir>/test/next-cache-stub.ts",
+    /*
+      ⚠️ `lenis`는 ESM만 내놓는데 `next/jest`가 `transformIgnorePatterns`를 덮어써서 변환 대상에
+         못 넣는다 — 대역으로 바꾼다. 부드러운 스크롤은 jsdom에서 잴 것이 없다(대역 주석 참고).
+    */
+    "^lenis$": "<rootDir>/test/lenis-stub.ts",
   },
   /*
     테스트는 전부 `src/` 안에 있다. 수집 범위를 여기로 못박아야 레포 안에 생기는 체크아웃
