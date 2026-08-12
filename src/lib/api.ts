@@ -163,5 +163,13 @@ function isTimeout(error: unknown): boolean {
  */
 export function toErrorTag(error: unknown): string | null {
   if (!(error instanceof ApiError) || error.status < 500) return null;
-  return [error.code, error.traceId].filter(Boolean).join(" · ") || null;
+
+  /*
+    ⚠️ **추적 번호는 앞 8자만 쓴다**(2026-08-12). BE가 주는 값은 UUID 36자라, 문장 뒤에 그대로
+       붙이면 오류 한 줄이 두 줄로 넘어가 화면이 지저분해진다 — 정작 읽어야 할 문장이 뒤로 밀린다.
+    ⚠️ 8자면 로그에서 찾기에 충분하다(git 짧은 해시와 같은 이유) — 한 회의 분량의 로그에서
+       32비트가 겹칠 일은 없다. 전체 값이 필요하면 그때 BE가 서로 앞자리로 좁혀 찾는다.
+  */
+  const shortTrace = error.traceId?.slice(0, 8);
+  return [error.code, shortTrace].filter(Boolean).join(" · ") || null;
 }
