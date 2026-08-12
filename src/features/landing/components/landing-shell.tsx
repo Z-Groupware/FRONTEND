@@ -4,6 +4,7 @@ import { createContext, type ReactNode, useContext, useSyncExternalStore } from 
 
 import { SupportWidget } from "@/features/support/components/support-widget";
 
+import { HeroScrollDriver } from "./hero-scroll-driver";
 import { LandingBackdrop } from "./landing-backdrop";
 import { LandingFooter } from "./landing-footer";
 import { LandingHeader } from "./landing-header";
@@ -115,6 +116,7 @@ export function LandingShell({ children }: { children: ReactNode }) {
              원하는 줄에 못 멈춘다.
         */}
         <SmoothScroll />
+        <HeroScrollDriver />
 
         <main className="relative z-10 flex-1">{children}</main>
 

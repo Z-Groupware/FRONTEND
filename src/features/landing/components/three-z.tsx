@@ -4,6 +4,8 @@ import { Canvas, useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 
+import { heroProgress } from "../hero-progress";
+
 /**
  * 진짜 3D Z — 로고 세 조각(윗줄·사선·아랫줄)을 **코드로 압출**해 만든다.
  *
@@ -38,8 +40,34 @@ const PIECES: [number, number][][] = [
 
 type Tone = "dark" | "light";
 
-function ZModel({ tone, isFeature }: { tone: Tone; isFeature: boolean }) {
+/**
+ * 조각이 흩어지는 **방향** — 로고를 이루는 세 조각이 제 위치에서 바깥으로 밀린다.
+ *
+ * ⚠️ 무작위가 아니라 **자기가 있던 쪽**이다. 윗줄은 위로, 사선은 앞으로, 아랫줄은 아래로 —
+ *    그래야 다시 모일 때 "제자리로 돌아왔다"가 읽힌다.
+ */
+const BURST: [number, number, number][] = [
+  [-0.55, 0.75, 0.35],
+  [0.1, 0, 0.85],
+  [0.55, -0.75, 0.35],
+];
+
+/** 흩어졌다 모이는 세기 — 중간(0.5)에서 가장 크고 양 끝에서 0이다 */
+function burstAt(progress: number): number {
+  return Math.sin(Math.min(1, Math.max(0, progress)) * Math.PI);
+}
+
+function ZModel({
+  tone,
+  isFeature,
+  reactsToScroll,
+}: {
+  tone: Tone;
+  isFeature: boolean;
+  reactsToScroll: boolean;
+}) {
   const group = useRef<THREE.Group>(null!);
+  const pieces = useRef<(THREE.Mesh | null)[]>([]);
   /** 자전 속도 — 배경이라 아주 느리게 돈다 */
   const velocity = useRef(0.003);
   // 정면 정자세는 간판처럼 밋밋하다 — 처음부터 비스듬히
@@ -69,13 +97,51 @@ function ZModel({ tone, isFeature }: { tone: Tone; isFeature: boolean }) {
 
   useFrame(() => {
     if (!group.current) return;
-    group.current.rotation.y += velocity.current;
+
+    /*
+      ⚠️ **스크롤을 여기서 읽는다.** 상태로 받으면 프레임마다 리렌더가 돈다 — 상자에서 값만
+         꺼내 쓴다(`hero-progress.ts`).
+      ⚠️ 스크롤에 반응하지 않는 자리(로그인 화면 배경)는 예전처럼 **자전만** 한다.
+    */
+    if (!reactsToScroll) {
+      group.current.rotation.y += velocity.current;
+      return;
+    }
+
+    const progress = heroProgress.current;
+
+    /*
+      ⚠️ 한 바퀴 반만 돈다. 여러 바퀴 돌리면 스크롤 몇 칸에 팽이처럼 보여 글자를 못 읽는다.
+      ⚠️ 내려갈수록 **작아지고 뒤로 물러난다** — 첫 화면에서는 주인공이지만, 아래 섹션에서는
+         내용 뒤로 빠져야 한다.
+    */
+    group.current.rotation.y = 0.4 + progress * Math.PI * 1.5;
+    group.current.rotation.x = -0.15 + progress * 0.35;
+
+    const shrink = 1 - progress * 0.32;
+    group.current.scale.setScalar(shrink);
+
+    /* 조각을 밀어냈다가 도로 붙인다 — 가운데에서 가장 벌어진다 */
+    const burst = burstAt(progress);
+    pieces.current.forEach((mesh, index) => {
+      const direction = BURST[index];
+      if (!mesh || !direction) return;
+      mesh.position.set(direction[0] * burst, direction[1] * burst, -0.07 + direction[2] * burst);
+      mesh.rotation.z = direction[0] * burst * 0.6;
+    });
   });
 
   return (
     <group ref={group} rotation={initialRotation}>
       {geometries.map((geometry, index) => (
-        <mesh key={index} geometry={geometry} position={[0, 0, -0.07]}>
+        <mesh
+          key={index}
+          ref={(mesh) => {
+            pieces.current[index] = mesh;
+          }}
+          geometry={geometry}
+          position={[0, 0, -0.07]}
+        >
           {/*
             ⚠️ 배경이다 — 글보다 밝으면 안 된다.
             **어두운 무대(dark):** 몸체는 검정에 가깝게 두고 파랑·보라 림라이트만 모서리에
@@ -104,10 +170,13 @@ export default function ThreeZ({
   tone = "dark",
   /** 배경이 아니라 **보여주는** 자리라면 켠다 — 몸체가 밝아지고 금속기를 낮춰 형태가 또렷해진다 */
   isFeature = false,
+  reactsToScroll = false,
 }: {
   size?: number;
   tone?: Tone;
   isFeature?: boolean;
+  /** 첫 화면 배경일 때만 켠다 — 스크롤에 따라 돌고 흩어졌다 모인다 */
+  reactsToScroll?: boolean;
 }) {
   /*
     ⚠️ **컨텍스트가 날아갈 수 있다.** 브라우저는 WebGL 컨텍스트를 몇 개까지만 들고 있어서,
@@ -151,7 +220,7 @@ export default function ThreeZ({
       {/* 액센트 축 그대로 — 파랑·보라 림라이트가 모서리만 물들인다 */}
       <pointLight position={[-3, 1, 3]} intensity={isFeature ? 32 : 34} color="#60a5fa" />
       <pointLight position={[3, -1, 3]} intensity={isFeature ? 32 : 34} color="#a78bfa" />
-      <ZModel tone={tone} isFeature={isFeature} />
+      <ZModel tone={tone} isFeature={isFeature} reactsToScroll={reactsToScroll} />
     </Canvas>
   );
 }

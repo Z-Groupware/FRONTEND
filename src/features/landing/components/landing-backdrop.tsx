@@ -88,10 +88,21 @@ export function LandingBackdrop() {
             ⚠️ 가장자리는 `landing-z-fade`가 지운다 — 그만큼 지워지므로 본체 투명도는
                조금 올려 둔다. 중심은 보이고 바깥은 없는 상태가 된다.
           */
-          isDark ? "opacity-50" : "landing-z-fade opacity-[0.22]",
+          /*
+            ⚠️ 진하기는 **스크롤이 정한다**(`--hero-z-opacity`, `hero-scroll-driver.tsx`).
+               첫 화면에서 0.9로 서 있다가 내려가면 0.35까지 물러난다 — 변수가 아직 없을 때
+               (스크립트 전·모션 최소화)의 기본값을 함께 적어 둔다.
+          */
+          isDark ? "opacity-(--hero-z-opacity,0.6)" : "landing-z-fade opacity-[0.24]",
         )}
       >
-        <ThreeZ size={760} tone={isDark ? "dark" : "light"} />
+        {/*
+          ⚠️ **첫 화면에서는 이 Z가 주인공이다**(2026-08-12). 스크롤에 따라 돌면서 세 조각이
+             흩어졌다 다시 붙는다 — "회의가 조직의 기억이 된다"는 말이 눈앞에서 일어나게 한다.
+          ⚠️ 크기를 키운다(760 → 980). 벽지처럼 깔려 있을 때는 이 정도면 됐지만, 주인공이
+             되려면 화면을 채워야 한다.
+        */}
+        <ThreeZ size={980} tone={isDark ? "dark" : "light"} reactsToScroll />
       </div>
     </div>
   );
