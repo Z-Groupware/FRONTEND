@@ -251,8 +251,17 @@ export function FlowSection() {
               className="flex h-full w-[400%] transition-transform duration-500 ease-out motion-reduce:transition-none"
               style={{ transform: `translateX(-${selected * 25}%)` }}
             >
-              {FLOW_STEPS.map((item) => (
-                <div key={item.step} className="flex h-full w-1/4 flex-col p-5">
+              {FLOW_STEPS.map((item, index) => (
+                /*
+                  ⚠️ **열린 칸만 조립한다.** 넷을 한꺼번에 조립하면 옆 칸에서 이미 다 끝나 있어
+                     정작 도착했을 때는 볼 게 없다.
+                  ⚠️ `key`에 열림 여부를 섞는다 — CSS 애니메이션은 클래스만 갈아 끼워서는 다시
+                     안 돈다. 열릴 때마다 새로 마운트돼야 조각이 처음부터 날아온다.
+                */
+                <div
+                  key={`${item.step}${index === selected ? "-on" : ""}`}
+                  className={cn("flex h-full w-1/4 flex-col p-5", index === selected && "assemble")}
+                >
                   <FlowMockView mock={item.mock} />
                 </div>
               ))}

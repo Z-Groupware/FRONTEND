@@ -1619,11 +1619,79 @@
    * 움직임을 줄여달라고 한 사람에게는 멈춘 그림을 준다.
    * ⚠️ `both`로 잡아둔 시작 상태(scale 0·투명)가 남으면 안 보인다 — 끝 상태를 직접 준다.
    */
+
+  /*
+   * 목업 조립 — 단계가 열리면 **조각이 하나씩 날아와 붙는다**(2026-08-12).
+   *
+   * ⚠️ 통째로 페이드하면 "바뀌었다"는 결과만 남는다. 머리 → 왼쪽 줄 → 오른쪽 줄 순으로
+   *    시차를 두면 **화면이 조립되는 과정**이 보이고, 그게 이 제품이 하는 일(말이 쌓여
+   *    액션이 된다)과 같은 모양이다.
+   * ⚠️ 계단은 두 층까지만 준다. 더 깊이 들어가면 한 화면에서 스무 개가 각자 놀아 어지럽다.
+   * ⚠️ `both`로 시작 상태를 잡으므로, 모션 최소화에서는 **반드시 꺼야 한다**(아래 블록).
+   *    안 끄면 투명한 채로 남아 아무것도 안 보인다.
+   */
+  @keyframes assemble-in {
+    from {
+      opacity: 0;
+      transform: translate3d(0, 14px, 0) scale(0.985);
+    }
+    to {
+      opacity: 1;
+      transform: translate3d(0, 0, 0) scale(1);
+    }
+  }
+
+  .assemble > * {
+    animation: assemble-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  /* 머리 다음에 본문이 온다 — 한 층 아래 조각은 자기 순서만큼 더 기다린다 */
+  .assemble > *:nth-child(2) {
+    animation-delay: 0.08s;
+  }
+
+  .assemble > * > * {
+    animation: assemble-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .assemble > * > *:nth-child(1) {
+    animation-delay: 0.14s;
+  }
+  .assemble > * > *:nth-child(2) {
+    animation-delay: 0.22s;
+  }
+
+  /* 줄 단위 — 자막·액션이 한 줄씩 내려앉는다 */
+  .assemble > * > * > * {
+    animation: assemble-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  .assemble > * > * > *:nth-child(1) {
+    animation-delay: 0.2s;
+  }
+  .assemble > * > * > *:nth-child(2) {
+    animation-delay: 0.26s;
+  }
+  .assemble > * > * > *:nth-child(3) {
+    animation-delay: 0.32s;
+  }
+  .assemble > * > * > *:nth-child(4) {
+    animation-delay: 0.38s;
+  }
+  .assemble > * > * > *:nth-child(5) {
+    animation-delay: 0.44s;
+  }
+  .assemble > * > * > *:nth-child(6) {
+    animation-delay: 0.5s;
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .animate-float,
     .animate-fill-in,
     .animate-mark-in,
     .animate-cycle-in,
+    .assemble > *,
+    .assemble > * > *,
+    .assemble > * > * > *,
     .animate-dash-march,
     .animate-eq,
     .animate-z-snap-top,
