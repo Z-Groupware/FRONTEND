@@ -4,7 +4,7 @@
 */
 jest.mock("server-only", () => ({}));
 
-import { ApiError, toErrorTag, toUserMessage } from "./api";
+import { ApiError, serverApi, toErrorTag, toUserMessage } from "./api";
 
 describe("toUserMessage", () => {
   it("BE가 준 문장을 그대로 쓴다 — 코드로 문구를 조립하지 않는다", () => {
@@ -43,5 +43,94 @@ describe("toErrorTag", () => {
   it("BE가 준 실패가 아니거나 단서가 없으면 아무것도 안 준다", () => {
     expect(toErrorTag(new ApiError(500, "서버 내부 오류가 발생했습니다."))).toBeNull();
     expect(toErrorTag(new TypeError("fetch failed"))).toBeNull();
+  });
+});
+
+/**
+ * `serverApi` 계약 — **무기한 대기를 막는 자리**라 문구 함수보다 이쪽이 더 중요하다(코드래빗 지적).
+ *
+ * ⚠️ `fetch`를 대역으로 세운다. 진짜 네트워크를 태우면 테스트가 BE 사정에 따라 흔들린다.
+ * ⚠️ 대역은 **신호를 존중해야** 한다 — 실제 `fetch`처럼 `signal`이 끊기면 그 이유로 거절한다.
+ *    안 그러면 타임아웃을 걸어 두고도 통과하는 가짜 초록불이 된다.
+ */
+describe("serverApi", () => {
+  const originalFetch = global.fetch;
+
+  function mockJson(status: number, body: unknown) {
+    return jest.fn(() =>
+      Promise.resolve({
+        ok: status < 400,
+        status,
+        text: () => Promise.resolve(JSON.stringify(body)),
+      }),
+    );
+  }
+
+  /**
+   * 신호가 끊길 때까지 답하지 않는 서버.
+   * ⚠️ **이미 끊긴 신호도 본다.** 진짜 `fetch`는 그 자리에서 바로 거절하는데, 이벤트만
+   *    기다리면 영영 안 온다 — 대역이 실제와 다르면 통과가 거짓말이 된다.
+   */
+  function mockNeverAnswers() {
+    return jest.fn((_url: string, init: { signal?: AbortSignal }) => {
+      const signal = init.signal;
+      if (signal?.aborted) return Promise.reject(signal.reason);
+      return new Promise((_resolve, reject) => {
+        signal?.addEventListener("abort", () => reject(signal.reason));
+      });
+    });
+  }
+
+  afterEach(() => {
+    global.fetch = originalFetch;
+  });
+
+  it("성공 봉투에서 `data`만 꺼내 준다 — 부르는 쪽은 봉투를 모른다", async () => {
+    global.fetch = mockJson(200, { httpStatus: 200, message: "ok", data: { id: 7 } }) as never;
+
+    await expect(serverApi<{ id: number }>("/api/x")).resolves.toEqual({ id: 7 });
+  });
+
+  it("실패 봉투의 `errorCode`·`traceId`를 그대로 들고 온다 — 로그를 찾을 열쇠다", async () => {
+    global.fetch = mockJson(500, {
+      errorCode: "Z-003",
+      message: "서버 내부 오류가 발생했습니다.",
+      traceId: "8f21c0",
+    }) as never;
+
+    await expect(serverApi("/api/x")).rejects.toMatchObject({
+      status: 500,
+      code: "Z-003",
+      traceId: "8f21c0",
+    });
+  });
+
+  it("답이 없으면 기다리다 끊는다 — 서버 액션이 영영 안 끝나면 화면이 굳는다", async () => {
+    global.fetch = mockNeverAnswers() as never;
+
+    const error = await serverApi("/api/x", { timeoutMs: 10 }).catch((e: unknown) => e);
+
+    expect((error as DOMException).name).toBe("TimeoutError");
+    expect(toUserMessage(error)).toBe("서버가 응답하지 않습니다. 잠시 후 다시 시도해 주세요.");
+  });
+
+  it("아무 말이 없어도 상한이 걸려 있다 — 부르는 쪽이 잊어도 굳지 않는다", async () => {
+    const fetchMock = mockNeverAnswers();
+    global.fetch = fetchMock as never;
+
+    void serverApi("/api/x").catch(() => undefined);
+
+    const init = fetchMock.mock.calls[0]?.[1] as { signal?: AbortSignal };
+    expect(init.signal).toBeInstanceOf(AbortSignal);
+  });
+
+  it("부르는 쪽 신호도 살아 있다 — 타임아웃이 그것을 덮어쓰지 않는다", async () => {
+    global.fetch = mockNeverAnswers() as never;
+    const controller = new AbortController();
+    controller.abort(new DOMException("사용자가 취소했습니다.", "AbortError"));
+
+    const error = await serverApi("/api/x", { signal: controller.signal }).catch((e: unknown) => e);
+
+    expect((error as DOMException).name).toBe("AbortError");
   });
 });
