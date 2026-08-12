@@ -4,10 +4,14 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { FLASH_TOAST_PARAM } from "@/constants/flash-toast";
+import { requireAccessToken } from "@/features/auth/session";
+import { ApiError, serverApi } from "@/lib/api";
+import { ep } from "@/lib/endpoints";
 import { getMockActor } from "@/lib/mock-actor";
 import { canManageNotice } from "@/lib/permission";
 import { isMock } from "@/mocks/config";
 
+import { type BeCreateNoticeResponse, toCreatedNotice, toCreateNoticePayload } from "./mapper";
 import {
   addMockNotice,
   deleteMockNotice,
@@ -16,6 +20,22 @@ import {
 } from "./mock/notices";
 import type { Notice, NoticeDraft, NoticeFormErrors } from "./types";
 import { validateNoticeDraft } from "./validate";
+
+/**
+ * 작성·수정 API 실패를 폼 필드 오류로 바꾼다(NOTI-03·04 공통).
+ * ⚠️ 이 폼엔 "전체 오류"를 보여줄 별도 자리가 없다 — `rooms`의 `toMeetingRoomFormErrors`와
+ *    같은 이유로 필드 슬롯이 없는 오류는 `title` 칸에 얹는다.
+ */
+function toNoticeFormErrors(error: unknown): NoticeFormErrors {
+  if (!(error instanceof ApiError)) throw error;
+
+  switch (error.code) {
+    case "NT-002":
+      return { title: "공지를 작성·수정할 권한이 없습니다" };
+    default:
+      return { title: error.message };
+  }
+}
 
 const LIST_PATH = "/app/notice";
 
@@ -72,8 +92,18 @@ export async function createNoticeAction(
   if (Object.keys(errors).length > 0) return { errors };
 
   if (!isMock) {
-    // ⚠️ 미구현 — API 스펙 확정 후 BFF 경로로 작성 요청을 보낸다.
-    throw new Error("공지 작성 API가 아직 연결되지 않았습니다.");
+    const accessToken = await requireAccessToken();
+    try {
+      const { noticeId } = await serverApi<BeCreateNoticeResponse>(ep.notices(), {
+        method: "POST",
+        accessToken,
+        json: toCreateNoticePayload(draft),
+      });
+      revalidatePath(LIST_PATH);
+      return { errors: {}, notice: toCreatedNotice(noticeId, draft) };
+    } catch (error) {
+      return { errors: toNoticeFormErrors(error) };
+    }
   }
 
   // "YYYY-MM-DD" — 발행일은 서버 기준으로 찍는다(목 데이터는 날짜를 만들지 않는다).
