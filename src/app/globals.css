@@ -418,6 +418,69 @@
     view-transition-name: auth-card;
   }
 
+  /*
+   * 두 칸은 **자기 자리 쪽에서** 들어온다 — 왼쪽 칸은 왼쪽에서, 오른쪽 칸은 오른쪽에서.
+   * 둘 다 아래에서 올라오면 같은 동작이 두 번 겹쳐 심심하다(2026-08-12).
+   */
+  @keyframes assemble-in-left {
+    0% {
+      opacity: 0;
+      transform: translate3d(-34px, 10px, 0) scale(0.94);
+      filter: blur(10px);
+    }
+    55% {
+      filter: blur(0);
+    }
+    100% {
+      opacity: 1;
+      transform: translate3d(0, 0, 0) scale(1);
+      filter: blur(0);
+    }
+  }
+
+  @keyframes assemble-in-right {
+    0% {
+      opacity: 0;
+      transform: translate3d(34px, 10px, 0) scale(0.94);
+      filter: blur(10px);
+    }
+    55% {
+      filter: blur(0);
+    }
+    100% {
+      opacity: 1;
+      transform: translate3d(0, 0, 0) scale(1);
+      filter: blur(0);
+    }
+  }
+
+  /*
+   * 판이 **살짝 누웠다가 선다** — 조각이 붙는 동안 판 자체가 자리를 잡는 느낌을 준다.
+   * ⚠️ 각도를 키우면 글자가 뭉갠다(부제·숫자가 12px이라 3도만 넘어도 흐려진다).
+   */
+  @keyframes assemble-settle {
+    0% {
+      opacity: 0.4;
+      transform: perspective(1200px) rotateX(6deg) translateY(10px);
+    }
+    100% {
+      opacity: 1;
+      transform: perspective(1200px) rotateX(0deg) translateY(0);
+    }
+  }
+
+  .assemble {
+    transform-origin: 50% 0%;
+    animation: assemble-settle 0.75s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .assemble > * > *:nth-child(1) {
+    animation-name: assemble-in-left;
+  }
+  .assemble > * > *:nth-child(2) {
+    animation-name: assemble-in-right;
+  }
+
   @media (prefers-reduced-motion: reduce) {
     ::view-transition-group(*),
     ::view-transition-old(*),
@@ -1734,6 +1797,7 @@
     .animate-fill-in,
     .animate-mark-in,
     .animate-cycle-in,
+    .assemble,
     .assemble::after,
     .assemble > *,
     .assemble > * > *,
