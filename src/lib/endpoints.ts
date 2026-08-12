@@ -19,6 +19,11 @@ export interface ProjectListParams {
 /** 개인 액션 목록만 갖는 `overdue` 필터가 추가된다. */
 export interface ActionListParams extends ProjectListParams {
   overdue?: boolean;
+  /**
+   * 값을 주면 호출자 본인이 아니라 **그 팀원의** 목록을 대신 조회한다(2026-08-11 추가,
+   * 이홍근 요청 — 팀원 관리 화면). LEADER 전용, 같은 팀 소속만 — [확인] `ActionController.java`.
+   */
+  assigneeMemberId?: number;
 }
 
 /** `undefined`·`null` 값은 쿼리에서 빠진다 — 서버 기본값을 그대로 쓰게 둔다. */
@@ -126,6 +131,10 @@ export const ep = {
   teamActionTimeline: (id: number) => `/api/team/actions/${id}?tab=timeline`,
   teamActionAttachmentDownloadUrl: (teamActionId: number, attachmentId: number) =>
     `/api/team/actions/${teamActionId}/attachments/${attachmentId}/download-url`,
+  /** 팀 대시보드 KPI 4종(팀 액션·팀원 액션·내 액션·완료 액션) — [확인] PR #354 머지 완료(2026-08-11) */
+  teamDashboardSummary: () => "/api/team/actions/dashboard-summary",
+  /** 팀원 현황(이름·직급·역할·재직상태·담당 액션 수) — [확인] PR #354 머지 완료, LEADER 전용 */
+  teamMembers: () => "/api/team/members",
 
   /** `month` 생략 시 이번 달(서버 기본값) */
   calendar: (month?: string) => `/api/calendar${toQuery(month ? { month } : undefined)}`,
