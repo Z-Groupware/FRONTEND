@@ -40,6 +40,8 @@ export function addMockMeeting(draft: MeetingDraft): Meeting {
     createdAt: new Date().toISOString(),
     // 방금 잡은 회의가 끝나 있을 리 없다 — 완료는 캡처의 [회의 종료 및 제출]만 만든다(§types)
     endedAt: null,
+    // 방금 잡은 회의가 취소돼 있을 리 없다(§types)
+    canceledAt: null,
     // 안 끝난 회의엔 분석이 없다(§types)
     aiSummaryStatus: null,
   };
@@ -66,6 +68,23 @@ export function endMockMeeting(id: string, endedAt: string): Meeting | null {
   const ended: Meeting = { ...found, endedAt, aiSummaryStatus: AI_SUMMARY_STATUS.PENDING };
   store.meetings = store.meetings.map((meeting) => (meeting.id === id ? ended : meeting));
   return ended;
+}
+
+/**
+ * 회의 취소(MEET-06) — **시작 전 회의만** 가능. 물리 삭제하지 않는다.
+ *
+ * ⚠️ 이미 시작(`endedAt`·진행중)했으면 취소가 아니라 종료(MEET-08)를 쓴다 — 상태 판정
+ *    (`meetingStatusOf`)은 호출부(`actions.ts`)가 먼저 하고 온다(참조 무결성 재확인과 같은
+ *    자리 나눔, `updateMockMeetingAttendees`와 같은 패턴).
+ * ⚠️ 한 번 취소되면 되돌리지 않는다 — 다시 열려면 새 회의를 개설해야 한다.
+ */
+export function cancelMockMeeting(id: string, canceledAt: string): Meeting | null {
+  const found = findMockMeeting(id);
+  if (!found || found.canceledAt !== null) return null;
+
+  const canceled: Meeting = { ...found, canceledAt };
+  store.meetings = store.meetings.map((meeting) => (meeting.id === id ? canceled : meeting));
+  return canceled;
 }
 
 /**

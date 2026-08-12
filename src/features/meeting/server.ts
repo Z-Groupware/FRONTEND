@@ -93,14 +93,18 @@ export async function getMeetingDirectory(viewerId: number): Promise<MeetingDire
     [MEETING_STATUS.IN_PROGRESS]: 0,
     [MEETING_STATUS.SCHEDULED]: 1,
     [MEETING_STATUS.DONE]: 2,
+    // ⚠️ 취소는 맨 뒤다(MEET-06) — 더 볼 일 없는 회의 중에서도 가장 뒤로 물러난다.
+    [MEETING_STATUS.CANCELED]: 3,
   } as const;
   const byId = new Map(listMockMeetings().map((meeting) => [meeting.id, meeting]));
   const startOf = (item: MeetingListItem) => byId.get(item.id)?.start.getTime() ?? 0;
 
   items.sort((a, b) => {
     if (rank[a.status] !== rank[b.status]) return rank[a.status] - rank[b.status];
-    // 예정은 가까운 회의부터, 완료는 최근 회의부터
-    return a.status === MEETING_STATUS.DONE ? startOf(b) - startOf(a) : startOf(a) - startOf(b);
+    // 예정은 가까운 회의부터, 완료·취소는 최근 회의부터
+    return a.status === MEETING_STATUS.SCHEDULED
+      ? startOf(a) - startOf(b)
+      : startOf(b) - startOf(a);
   });
 
   return {
@@ -185,16 +189,18 @@ export async function getMeetingDetail(id: string, viewer: Actor): Promise<Meeti
   */
   const status = meetingStatusOf(meeting, new Date());
   const pendingReason: MeetingContentPending | null =
-    status === MEETING_STATUS.SCHEDULED
-      ? "SCHEDULED"
-      : status === MEETING_STATUS.IN_PROGRESS
-        ? "IN_PROGRESS"
-        : meeting.aiSummaryStatus === AI_SUMMARY_STATUS.PENDING ||
-            meeting.aiSummaryStatus === AI_SUMMARY_STATUS.SUMMARIZING
-          ? "SUMMARIZING"
-          : meeting.aiSummaryStatus === AI_SUMMARY_STATUS.FAILED
-            ? "FAILED"
-            : null;
+    status === MEETING_STATUS.CANCELED
+      ? "CANCELED"
+      : status === MEETING_STATUS.SCHEDULED
+        ? "SCHEDULED"
+        : status === MEETING_STATUS.IN_PROGRESS
+          ? "IN_PROGRESS"
+          : meeting.aiSummaryStatus === AI_SUMMARY_STATUS.PENDING ||
+              meeting.aiSummaryStatus === AI_SUMMARY_STATUS.SUMMARIZING
+            ? "SUMMARIZING"
+            : meeting.aiSummaryStatus === AI_SUMMARY_STATUS.FAILED
+              ? "FAILED"
+              : null;
 
   /*
     참석자 이름은 사원 명부에서 id로 찾는다 — 같은 사람이 화면마다 같은 이름·같은 아바타 색이

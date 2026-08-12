@@ -70,6 +70,14 @@ export type Meeting = MeetingDraft & {
   /** 종료를 누른 시각(ISO). 안 눌렀으면 `null` */
   endedAt: string | null;
   /**
+   * 취소한 시각(ISO, MEET-06). 취소 안 했으면 `null`.
+   *
+   * ⚠️ **시작 전 회의만 취소할 수 있다** — 종료(`endedAt`)와 취소(`canceledAt`)는 동시에 채워질
+   *    수 없다(`meetingStatusOf`가 취소를 먼저 본다). 물리 삭제하지 않는다 — 인수인계서가
+   *    출처 회의를 나중에 다시 열람해야 한다(BE `V3.3.3`과 같은 이유).
+   */
+  canceledAt: string | null;
+  /**
    * 종료 뒤 서버가 돌리는 AI 분석이 어디까지 갔는지.
    *
    * ⚠️ **회의 상태와 다른 축이다.** 종료를 누르면 회의는 곧바로 완료지만 요약·액션 추출은

@@ -7,15 +7,15 @@ describe("meetingStatusOf", () => {
   const start = new Date("2026-08-11T13:00:00");
 
   it("시작 전이면 예정이다", () => {
-    expect(meetingStatusOf({ start, endedAt: null }, new Date("2026-08-11T12:59:00"))).toBe(
-      MEETING_STATUS.SCHEDULED,
-    );
+    expect(
+      meetingStatusOf({ start, endedAt: null, canceledAt: null }, new Date("2026-08-11T12:59:00")),
+    ).toBe(MEETING_STATUS.SCHEDULED);
   });
 
   it("시작 시각부터는 진행중이다", () => {
-    expect(meetingStatusOf({ start, endedAt: null }, new Date("2026-08-11T13:00:00"))).toBe(
-      MEETING_STATUS.IN_PROGRESS,
-    );
+    expect(
+      meetingStatusOf({ start, endedAt: null, canceledAt: null }, new Date("2026-08-11T13:00:00")),
+    ).toBe(MEETING_STATUS.IN_PROGRESS);
   });
 
   /*
@@ -23,18 +23,27 @@ describe("meetingStatusOf", () => {
        만들면 스크립트도 산출물도 없는 회의가 "완료 카드"로 열린다.
   */
   it("끝나는 시각이 지나도 종료를 안 눌렀으면 진행중이다", () => {
-    expect(meetingStatusOf({ start, endedAt: null }, new Date("2026-08-11T18:00:00"))).toBe(
-      MEETING_STATUS.IN_PROGRESS,
-    );
+    expect(
+      meetingStatusOf({ start, endedAt: null, canceledAt: null }, new Date("2026-08-11T18:00:00")),
+    ).toBe(MEETING_STATUS.IN_PROGRESS);
   });
 
   it("종료를 눌렀으면 시각과 무관하게 완료다", () => {
     expect(
       meetingStatusOf(
-        { start, endedAt: "2026-08-11T13:28:00.000Z" },
+        { start, endedAt: "2026-08-11T13:28:00.000Z", canceledAt: null },
         new Date("2026-08-11T13:10:00"),
       ),
     ).toBe(MEETING_STATUS.DONE);
+  });
+
+  it("취소됐으면 시작 전이었어도 취소다 — 종료보다 먼저 본다", () => {
+    expect(
+      meetingStatusOf(
+        { start, endedAt: null, canceledAt: "2026-08-11T12:00:00.000Z" },
+        new Date("2026-08-11T12:59:00"),
+      ),
+    ).toBe(MEETING_STATUS.CANCELED);
   });
 });
 
@@ -85,5 +94,11 @@ describe("meetingCardAffordanceOf", () => {
 
   it("분석 값이 빈 옛 완료 회의는 막지 않는다", () => {
     expect(meetingCardAffordanceOf({ ...base, aiSummaryStatus: null })).toBe("open");
+  });
+
+  it("취소된 회의는 host라도 live가 아니라 open이다 — [녹음하기]를 안 띄운다", () => {
+    expect(
+      meetingCardAffordanceOf({ ...base, status: MEETING_STATUS.CANCELED, aiSummaryStatus: null }),
+    ).toBe("open");
   });
 });
