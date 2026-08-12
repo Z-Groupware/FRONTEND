@@ -102,7 +102,12 @@ function buildShards(): Shard[] {
         ⚠️ 무작위가 아니라 자리로 정한다. 새로고침해도 같은 화면이어야 한다.
       */
       const index = row * GRID + column;
-      const spread = 1.6;
+      /*
+        ⚠️ **멀리 안 보낸다.** 1.6으로 두니 조각이 화면 끝까지 퍼져 본문 위를 덮었다 — Z가
+           부서진 게 아니라 배경이 어질러진 걸로 읽힌다(2026-08-12 피드백). 원래 자리 근처에
+           **뭉쳐 있어야** 부서진 로고로 보이고, 다시 모일 때도 어디로 돌아가는지 읽힌다.
+      */
+      const spread = 0.75;
       shards.push({
         home: [x, y],
         direction: [x * spread, y * spread, ((column % 3) - 1) * 0.5],
