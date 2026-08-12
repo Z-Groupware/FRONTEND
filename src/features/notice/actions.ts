@@ -161,21 +161,29 @@ export async function updateNoticeAction(
 }
 
 /**
- * 공지 삭제 — 격리막(CLAUDE.md §Mock 격리막).
+ * 공지 삭제(`DELETE /api/notices/{noticeId}`, NOTI-05) — 격리막(CLAUDE.md §Mock 격리막).
  * ⚠️ 되돌릴 수 없는 조작이라 화면(`NoticeDeleteButton`)에서 확인 Dialog를 먼저 띄운 뒤에만 이 폼이
  *    제출된다(§토스트: 파괴적 작업은 Dialog). 여기서도 **권한을 다시 본다**(§권한: 서버 재검사).
+ * ⚠️ **재호출을 성공으로 감싸지 않는다**(문서 규칙 — `rooms`의 `MR-001` 멱등 처리와 다르다).
+ *    이미 지운 공지를 다시 지우면 BE가 `NT-001`(404)을 그대로 준다 — 지워진 건지 애초에
+ *    없었는지 화면이 구분 못 하게 만들면 안 되므로, `ApiError`를 조용히 삼키지 않고
+ *    그대로 던져 가장 가까운 `error.tsx`가 받게 둔다. `NoticeDeleteButton`엔 오류 슬롯이
+ *    없어(파괴적 삭제라 재시도 UI가 필요 없다고 판단, ROOM-05와 다른 지점) 이 방식이 맞다.
  */
 export async function deleteNoticeAction(formData: FormData): Promise<void> {
   if (!canManageNotice(getMockActor())) {
     throw new Error("공지를 삭제할 권한이 없습니다");
   }
 
+  const id = String(formData.get("id") ?? "");
+
   if (!isMock) {
-    // ⚠️ 미구현 — API 스펙 확정 후 BFF 경로로 삭제 요청을 보낸다.
-    throw new Error("공지 삭제 API가 아직 연결되지 않았습니다.");
+    const accessToken = await requireAccessToken();
+    await serverApi<null>(ep.notice(Number(id)), { method: "DELETE", accessToken });
+    revalidatePath(LIST_PATH);
+    redirect(`${LIST_PATH}?${FLASH_TOAST_PARAM}=NOTICE_DELETED`);
   }
 
-  const id = String(formData.get("id") ?? "");
   deleteMockNotice(id);
 
   revalidatePath(LIST_PATH);
