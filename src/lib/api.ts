@@ -138,7 +138,10 @@ function toApiError(status: number, raw: unknown): ApiError {
  *    잠시 뒤가 맞다(§정직성: 되는 척도 안 되는 척도 안 한다).
  */
 export function toUserMessage(error: unknown): string {
-  if (error instanceof ApiError) return error.message;
+  if (error instanceof ApiError) {
+    const tag = toErrorTag(error);
+    return tag ? `${error.message} (${tag})` : error.message;
+  }
   if (isTimeout(error)) return "서버가 응답하지 않습니다. 잠시 후 다시 시도해 주세요.";
   return "서버에 연결하지 못했습니다. 잠시 후 다시 시도해 주세요.";
 }
@@ -152,9 +155,13 @@ function isTimeout(error: unknown): boolean {
  * 원인을 찾을 때 쓰는 꼬리표 — `Z-003 · 8f21c0…`.
  *
  * ⚠️ **문구가 아니라 단서다.** 500처럼 "서버 내부 오류"만 오는 실패는 이것 없이는 BE 로그에서
- *    그 요청을 못 찾는다. 없으면 `null`을 준다 — 화면이 빈 괄호를 그리지 않게.
+ *    그 요청을 못 찾는다. Server Action은 브라우저 네트워크 탭에도 안 잡혀서 더욱 그렇다.
+ * ⚠️ **5xx일 때만 붙인다**(2026-08-12). 4xx는 사람이 고칠 수 있는 실패라 문장이 이미 무엇을
+ *    해야 하는지 말한다 — `이미 있는 부서 이름입니다`에 `AU-016`을 붙여 봐야 도움이 안 되고
+ *    화면만 기술적으로 보인다. **나중에 걷어낼 것을 만들지 않으려고** 여기서 가른다.
+ * ⚠️ 없으면 `null`을 준다 — 화면이 빈 괄호를 그리지 않게.
  */
 export function toErrorTag(error: unknown): string | null {
-  if (!(error instanceof ApiError)) return null;
+  if (!(error instanceof ApiError) || error.status < 500) return null;
   return [error.code, error.traceId].filter(Boolean).join(" · ") || null;
 }

@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { requireAccessToken } from "@/features/auth/session";
-import { serverApi, toErrorTag, toUserMessage } from "@/lib/api";
+import { serverApi, toUserMessage } from "@/lib/api";
 import { ep } from "@/lib/endpoints";
 import { isMock } from "@/mocks/config";
 
@@ -26,14 +26,6 @@ export interface OnboardingCommitResult {
   ok: boolean;
   /** 실패했을 때 화면에 그대로 띄울 한 줄 */
   error?: string;
-  /**
-   * 원인을 찾을 꼬리표(`Z-003 · 8f21c0…`) — 있으면 오류 줄 아래 작게 붙인다.
-   *
-   * ⚠️ **문구가 아니라 단서다.** 500은 "서버 내부 오류"만 오는데, 이 호출은 Server Action이라
-   *    브라우저 네트워크 탭에도 안 잡힌다 — 이 값이 없으면 BE 로그에서 그 요청을 특정할 수
-   *    없다(2026-08-12 배포 서버에서 실제로 막혔다).
-   */
-  errorTag?: string;
   /** 실제로 계정이 나간 주소 — 이 줄에만 `isSent` 도장을 찍는다 */
   issuedEmails: string[];
   /** 빠진 주소와 사유 — 확인 창이 아니라 완료 화면에서 알린다 */
@@ -100,7 +92,6 @@ export async function commitOnboardingAction(input: {
     return {
       ok: false,
       error: toUserMessage(error),
-      errorTag: toErrorTag(error) ?? undefined,
       issuedEmails: [],
       skipped: [],
     };

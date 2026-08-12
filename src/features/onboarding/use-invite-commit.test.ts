@@ -42,11 +42,10 @@ beforeEach(() => {
 });
 
 describe("useInviteCommit — 실패했을 때 버튼을 되살린다", () => {
-  it("서버가 실패로 답하면 사유와 꼬리표를 함께 남긴다", async () => {
+  it("서버가 실패로 답하면 그 사유를 그대로 남긴다", async () => {
     commitOnboardingAction.mockResolvedValue({
       ok: false,
-      error: "서버 내부 오류가 발생했습니다.",
-      errorTag: "Z-003 · 8f21c0",
+      error: "서버 내부 오류가 발생했습니다. (Z-003 · 8f21c0)",
       issuedEmails: [],
       skipped: [],
     });
@@ -55,8 +54,8 @@ describe("useInviteCommit — 실패했을 때 버튼을 되살린다", () => {
     await act(async () => result.current.commit());
 
     await waitFor(() => expect(result.current.isCommitting).toBe(false));
-    expect(result.current.error).toBe("서버 내부 오류가 발생했습니다.");
-    expect(result.current.errorTag).toBe("Z-003 · 8f21c0");
+    /* ⚠️ 꼬리표는 `toUserMessage`가 이미 문장에 넣어 준다 — 화면이 따로 나르지 않는다 */
+    expect(result.current.error).toBe("서버 내부 오류가 발생했습니다. (Z-003 · 8f21c0)");
   });
 
   /*
