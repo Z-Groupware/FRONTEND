@@ -41,6 +41,18 @@ describe("Owner", () => {
     expect(items).toContain("인수인계서 관리");
   });
 
+  it("회의실 관리가 **없다** — 들어가도 아무것도 못 하는 목록이라 메뉴가 거짓말을 한다", () => {
+    expect(labels(navFor(actor(AUTHORITY.OWNER)), "회사 운영")).not.toContain("회의실 관리");
+  });
+
+  /*
+    ⚠️ Owner에게 `is_admin`을 켜도 마찬가지다 — **Owner는 Admin을 겸할 수 없어**
+       (`canGrantAdmin`) 값이 잘못 내려와도 `canManageRooms`가 걸러 낸다(§권한).
+  */
+  it("`is_admin`이 잘못 켜져 내려와도 회의실 관리는 안 붙는다", () => {
+    expect(labels(navFor(actor(AUTHORITY.OWNER, true)), "회사 운영")).not.toContain("회의실 관리");
+  });
+
   it("내 액션·인수인계가 **없다** — 액션을 받는 자리가 아니고 인수인계를 쓰는 쪽도 아니다", () => {
     const hrefs = allHrefs(navFor(actor(AUTHORITY.OWNER)));
     expect(hrefs).not.toContain("/app/my/actions");
@@ -94,6 +106,11 @@ describe("Admin 겸직", () => {
       "워크벤치",
       "회사 운영",
     ]);
+  });
+
+  it("회의실 관리는 **겸직자만** 본다 — 사원 관리 바로 뒤에 붙는다", () => {
+    const items = labels(navFor(actor(AUTHORITY.LEADER, true)), "회사 운영");
+    expect(items.slice(0, 2)).toEqual(["사원 관리", "회의실 관리"]);
   });
 
   it("겸직자는 대시보드가 **그대로다** — 관리 화면으로 첫 화면이 바뀌지 않는다", () => {

@@ -302,6 +302,17 @@ export function canCaptureMeeting(actor: Actor, meeting: { hostId: number }): bo
   return meeting.hostId === actor.id;
 }
 
+/**
+ * 회의 정보 수정·취소·종료·참석자 교체(MEET-05·06·08·09 공통 권한) — **host 또는 OWNER·Admin**.
+ *
+ * ⚠️ 캡처(`canCaptureMeeting`)와 **판정이 다르다.** 캡처(녹음)는 host 한 명뿐이지만, 회의
+ *    운영(정보 수정·참석자 교체 등)은 OWNER·Admin이 대신 처리할 수 있다 — 각 API 계약이
+ *    그렇게 정한다(예: MEET-09 "권한: host · OWNER · ADMIN"). 섞으면 안 된다.
+ */
+export function canManageMeeting(actor: Actor, meeting: { hostId: number }): boolean {
+  return meeting.hostId === actor.id || actor.role === AUTHORITY.OWNER || isAdmin(actor);
+}
+
 /* ───────── 가드 ───────── */
 
 /** 권한 없음. 호출부에서 잡아 403 화면(`/demo/permission`)이나 error.tsx로 보낸다. */

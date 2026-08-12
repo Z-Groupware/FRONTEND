@@ -69,6 +69,24 @@ export function endMockMeeting(id: string, endedAt: string): Meeting | null {
 }
 
 /**
+ * 참석자 명단 교체(MEET-09) — **전체 명단 교체**다(부분 추가·삭제가 아니다).
+ * ⚠️ **host는 자동 포함·제거 불가**다 — 넘어온 목록에 없어도 여기서 끼워 넣는다
+ *    (호출부가 이미 그렇게 보내더라도, 이 함수가 마지막 안전판이다).
+ * ⚠️ 중복은 여기서 한 번만 남긴다("서버에서 한 번만 저장", MEET-09 규칙).
+ * ⚠️ 끝난 회의는 여기서 막지 않는다 — 상태 판정(`meetingStatusOf`)은 호출부(`actions.ts`)가
+ *    이미 하고 온 뒤에만 이 함수를 부른다(참조 무결성 재확인과 같은 자리 나눔).
+ */
+export function updateMockMeetingAttendees(id: string, attendeeIds: number[]): Meeting | null {
+  const found = findMockMeeting(id);
+  if (!found) return null;
+
+  const merged = Array.from(new Set([...attendeeIds, found.hostId]));
+  const updated: Meeting = { ...found, attendeeIds: merged };
+  store.meetings = store.meetings.map((meeting) => (meeting.id === id ? updated : meeting));
+  return updated;
+}
+
+/**
  * 분석 진행도를 옮긴다 — **목 전용**이다.
  *
  * ⚠️ 실서비스에서는 이 값을 프론트가 못 옮긴다. 분석은 서버가 종료 처리 안에서 돌리고

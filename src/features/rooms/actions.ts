@@ -25,7 +25,6 @@ import {
 import { findMockMember } from "./mock/members";
 import { addMockReservation, listMockReservationsByRoom } from "./mock/reservations";
 import { addMockRoom, deleteMockRoom, findMockRoom, updateMockRoom } from "./mock/rooms";
-import { getMeetingRooms } from "./server";
 import type {
   MeetingRoom,
   MeetingRoomDraft,
@@ -158,15 +157,9 @@ export async function createRoomReservationAction(
         accessToken,
         json: toCreateMeetingPayload(draft, range),
       });
-      // ⚠️ 이름 조회는 이미 연동된 API(ROOM-01)만 쓴다 — 프로젝트 태그는 그 목록 API
-      //    (`getReservableProjects`)가 아직 미연동이라(다른 이슈) 비워 둔다(§mapper 주석).
-      const rooms = await getMeetingRooms();
-      const roomName = rooms.find((room) => room.id === draft.roomId)?.name ?? draft.roomId;
-      const created = toReservationFromCreatedMeeting(response, draft, range, {
-        roomName,
-        projectTag: "",
-        ownerId: actor.id,
-      });
+      // ⚠️ 응답의 중첩 구조가 확정본이라(§mapper) `roomName`·host를 응답에서 바로 읽는다 —
+      //    ROOM-01을 다시 불러 이름을 찾을 필요가 없다.
+      const created = toReservationFromCreatedMeeting(response, draft, range);
       revalidatePath(ROOMS_PATH);
       return { errors: {}, created };
     } catch (error) {

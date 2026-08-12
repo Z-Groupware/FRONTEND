@@ -45,30 +45,43 @@ export const ep = {
   companyMe: () => "/api/companies/me",
   companyOnboarding: () => "/api/companies/me/onboarding",
 
-  /* 회의 */
+  /*
+   * 회의 — [확인] D도메인 REST API 명세(2026-08-12, `/v1` 제거 이후 기준) 대조.
+   *
+   * ⚠️ **`/v1` 접두사는 없다.** develop에 한때 `/api/v1/meetings`로 BE 실코드 대조(2026-08-11)
+   *    했다는 주석이 있었는데, 그 하루 뒤 팀이 `/v1`을 전면 제거했다 — 이 명세 문서가 그 결정을
+   *    "이 명세는 /v1 제거 이후 기준"이라고 명시한다(MEET-01~10 전 엔드포인트가 `/api/meetings`).
+   *    문서가 코드보다 최신이면 문서가 맞다(§연동 검증 — "문서와 코드가 다르면 코드가 맞다"는
+   *    코드가 문서보다 최신일 때만 적용된다).
+   * ⚠️ **캡처 전용 조회는 없다.** 캡처 화면도 상세(MEET-04)를 쓴다 — 있지도 않은
+   *    `/{id}/capture`를 지어내지 않는다(§환각 API 방지).
+   */
   meetings: () => "/api/meetings",
+  /** 상세(MEET-04) — 캡처 진입도 이걸 쓴다. 없으면 404 `MT-001`, 열람 권한 없으면 403 `MT-011` */
   meeting: (id: number) => `/api/meetings/${id}`,
-  meetingCapture: (id: number) => `/api/meetings/${id}/capture`,
-  meetingSummary: (id: number) => `/api/meetings/${id}/summary`,
-  /** 내 예정 회의(MEET-03) — 대시보드 위젯용. `limit` 생략 시 서버 기본값(5, 최대 20). */
+  /** 내 예정 회의(MEET-03, 구현 완료) — 대시보드 위젯용. `limit` 생략 시 서버 기본값(5, 최대 20). */
   meetingsUpcoming: (params?: { limit?: number }) => `/api/meetings/upcoming${toQuery(params)}`,
+  /** 참석자 명단 교체(MEET-09, 구현 완료) — 전체 명단 교체(부분 추가·삭제 아님). */
+  meetingAttendees: (meetingId: number) => `/api/meetings/${meetingId}/attendees`,
 
   /*
-   * 캡처 — [확인] BE 실코드 대조(2026-08-10)
-   *   `cap/presentation/api/{CaptureUploadController,CaptionController,CaptureQueryController}.java`
-   *   `meeting/presentation/api/{CaptureSessionController,MeetingCompletionController}.java`
-   *   `capture/presentation/api/AnalysisController.java`
+   * 캡처 — [확인] D도메인 REST API 명세(2026-08-12, `/v1` 제거 이후 기준) 대조.
    *
-   * ⚠️ **접두사가 두 갈래다.** 캡처 세션(CAP-01·02·03·10)과 회의 종료(MEET-08)는 `/api/v1/`,
-   *    자막·조각·분석은 `/api/`다. 보기 싫다고 통일하면 전부 404다 — BE의 컨트롤러
-   *    `@RequestMapping`이 실제로 그렇게 갈려 있다.
+   * ⚠️ **접두사가 두 갈래이던 시절은 끝났다.** 캡처 세션·회의 종료가 `/api/v1/`, 자막·조각·
+   *    분석이 `/api/`였는데, 팀이 `/v1`을 전면 제거하면서 **전부 `/api/`로 통일**됐다. 이 파일에
+   *    `/api/v1/...`가 남아 있으면 그건 그 이전 스냅샷이다(§연동 검증).
+   * ⚠️ **CAP-01(녹음 시작)이 예전 MEET-07(입장)을 흡수했다**(2026-08-12 정합성 감사 P0) — 이
+   *    경로는 이제 `SCHEDULED → IN_PROGRESS` 전이와 캡처 세션 생성을 한 트랜잭션으로 한다.
+   *    ⚠️ **아직 `status: spec`이다**(이 명세 기준 미구현) — 경로만 갱신해 뒀고, 흡수된 흐름에
+   *    맞춘 호출부(`capture/actions.ts`) 재설계는 별도 이슈다.
+   * ⚠️ **CAP-09(이어받기)·CAP-10(세션 단독 조회)은 폐기됐다**(2026-08-12) — host 장애는
+   *    참석자 이어받기가 아니라 host 본인 재접속으로 복구한다. 아래 `activeCapture`를 지운다.
    */
-  captureSession: (meetingId: number) => `/api/v1/meetings/${meetingId}/capture-session`,
-  captureSessionPause: (meetingId: number) => `/api/v1/meetings/${meetingId}/capture-session/pause`,
-  captureSessionResume: (meetingId: number) =>
-    `/api/v1/meetings/${meetingId}/capture-session/resume`,
-  /** 회의 종료 + 분석 접수(MEET-08) — 분석은 **서버가** 큐에 건다, 프론트가 부르지 않는다 */
-  meetingComplete: (meetingId: number) => `/api/v1/meetings/${meetingId}/complete`,
+  captureSession: (meetingId: number) => `/api/meetings/${meetingId}/capture-session`,
+  captureSessionPause: (meetingId: number) => `/api/meetings/${meetingId}/capture-session/pause`,
+  captureSessionResume: (meetingId: number) => `/api/meetings/${meetingId}/capture-session/resume`,
+  /** 회의 종료 + 분석 접수(MEET-08, 구현 완료) — 분석은 **서버가** 큐에 건다, 프론트가 부르지 않는다 */
+  meetingComplete: (meetingId: number) => `/api/meetings/${meetingId}/complete`,
 
   /** 자막 청크 **배치** 전송(CAP-11)·전체 조회(CAP-12) */
   captions: (meetingId: number) => `/api/meetings/${meetingId}/captions`,
@@ -87,8 +100,6 @@ export const ep = {
     `/api/meetings/${meetingId}/parts/${seq}/complete`,
   /** 어디까지 올라갔는지(CAP-08) — 새로고침·크래시 뒤 이어 올리기 */
   partsStatus: (meetingId: number) => `/api/meetings/${meetingId}/parts/status`,
-  /** 진행 중 캡처(CAP-09) — 파라미터 없음, 토큰의 사람 기준으로 서버가 찾는다 */
-  activeCapture: () => "/api/captures/active",
   /** AI 처리 상태(CAP-06) — 종료 뒤 폴링 */
   processingStatus: (meetingId: number) => `/api/meetings/${meetingId}/processing-status`,
 
