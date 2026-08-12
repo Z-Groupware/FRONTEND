@@ -11,7 +11,13 @@ import { getMockActor } from "@/lib/mock-actor";
 import { canManageNotice } from "@/lib/permission";
 import { isMock } from "@/mocks/config";
 
-import { type BeCreateNoticeResponse, toCreatedNotice, toCreateNoticePayload } from "./mapper";
+import {
+  type BeCreateNoticeResponse,
+  type BeNotice,
+  toCreatedNotice,
+  toCreateNoticePayload,
+  toNotice,
+} from "./mapper";
 import {
   addMockNotice,
   deleteMockNotice,
@@ -30,6 +36,8 @@ function toNoticeFormErrors(error: unknown): NoticeFormErrors {
   if (!(error instanceof ApiError)) throw error;
 
   switch (error.code) {
+    case "NT-001":
+      return { title: "수정할 공지를 찾을 수 없습니다" };
     case "NT-002":
       return { title: "공지를 작성·수정할 권한이 없습니다" };
     default:
@@ -129,8 +137,19 @@ export async function updateNoticeAction(
   if (Object.keys(errors).length > 0) return { errors };
 
   if (!isMock) {
-    // ⚠️ 미구현 — API 스펙 확정 후 BFF 경로로 수정 요청을 보낸다.
-    throw new Error("공지 수정 API가 아직 연결되지 않았습니다.");
+    const accessToken = await requireAccessToken();
+    try {
+      const be = await serverApi<BeNotice>(ep.notice(Number(id)), {
+        method: "PUT",
+        accessToken,
+        json: toCreateNoticePayload(draft),
+      });
+      revalidatePath(LIST_PATH);
+      revalidatePath(`${LIST_PATH}/${id}`);
+      return { errors: {}, notice: toNotice(be) };
+    } catch (error) {
+      return { errors: toNoticeFormErrors(error) };
+    }
   }
 
   const updated = updateMockNotice(id, draft);
