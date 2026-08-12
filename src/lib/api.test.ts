@@ -5,6 +5,7 @@
 jest.mock("server-only", () => ({}));
 
 import { ApiError, serverApi, toErrorTag, toUserMessage } from "./api";
+import { splitErrorTag } from "./error-tag";
 
 describe("toUserMessage", () => {
   it("BE가 준 문장을 그대로 쓴다 — 코드로 문구를 조립하지 않는다", () => {
@@ -180,5 +181,40 @@ describe("serverApi", () => {
     const error = await serverApi("/api/x", { signal: controller.signal }).catch((e: unknown) => e);
 
     expect((error as DOMException).name).toBe("AbortError");
+  });
+});
+
+/**
+ * **붙인 것을 도로 가를 수 있는가** — 두 규칙이 한 벌인지 재는 자리(적대적 리뷰 2026-08-12).
+ *
+ * ⚠️ 손으로 쓴 문자열을 `splitErrorTag`에 넣는 테스트는 이 어긋남을 못 잡는다. 실제로 붙이는
+ *    쪽이 만든 문장을 그대로 되먹여야, 규칙이 갈리는 순간 여기서 빨간불이 난다 —
+ *    갈리면 꼬리표가 빨간 문장 안에 박힌 채 아무도 눈치채지 못한다.
+ */
+describe("꼬리표 왕복", () => {
+  it.each([
+    ["UUID를 준 5xx", "Z-003", "271d9bab-c5ca-4a2a-80a1-2d0e8a19cc94"],
+    ["짧은 추적 번호", "Z-003", "8f21c0"],
+    ["대문자로 준 추적 번호", "Z-003", "271D9BAB"],
+    ["코드 없이 번호만", undefined, "271d9bab-c5ca"],
+    ["번호 없이 코드만", "MT-001", undefined],
+  ])("%s — 붙인 꼬리표를 화면이 도로 가른다", (_label, code, traceId) => {
+    const error = new ApiError(500, "서버 내부 오류가 발생했습니다.", code, traceId);
+
+    const message = toUserMessage(error);
+    expect(splitErrorTag(message)).toEqual({
+      text: "서버 내부 오류가 발생했습니다.",
+      tag: toErrorTag(error),
+    });
+  });
+
+  /* ⚠️ 4xx엔 애초에 안 붙는다 — 문장이 그대로 나오고, 가를 것도 없다 */
+  it("사람이 고칠 수 있는 실패는 문장만 나온다", () => {
+    const error = new ApiError(409, "이미 있는 부서 이름입니다.", "AU-016", "271d9bab");
+
+    expect(splitErrorTag(toUserMessage(error))).toEqual({
+      text: "이미 있는 부서 이름입니다.",
+      tag: null,
+    });
   });
 });
