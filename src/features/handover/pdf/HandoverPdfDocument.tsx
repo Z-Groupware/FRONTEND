@@ -177,7 +177,7 @@ export function HandoverPdfDocument({ data }: HandoverPdfDocumentProps) {
             ))}
             {insights.orphanAlert.map((text, index) => (
               <Text key={`orphan-${index}`} style={styles.insightItem}>
-                ⚠ {text}
+                주의: {text}
               </Text>
             ))}
             {insights.askWhom.map((text, index) => (

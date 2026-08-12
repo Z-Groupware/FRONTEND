@@ -1,3 +1,5 @@
+import { ACTION_STATUS } from "@/constants/domain";
+
 import type { HandoverPdfData, HandoverPdfItem } from "./mapper";
 
 interface MockHandoverPdfInput {
@@ -15,7 +17,7 @@ interface MockHandoverPdfInput {
  */
 export function buildMockHandoverPdfData(input: MockHandoverPdfInput): HandoverPdfData {
   const { writerName, writerPosition, teamName, lastWorkingDay, items } = input;
-  const incompleteCount = items.length;
+  const incompleteCount = items.filter((item) => item.status !== ACTION_STATUS.DONE).length;
 
   return {
     teamNameSnap: teamName,
