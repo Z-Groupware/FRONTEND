@@ -33,7 +33,12 @@ export function StalledSummaryList({ summaries }: StalledSummaryListProps) {
         await retryMeetingSummaryAction(meetingId);
         toast("재분석을 요청했습니다");
       } catch {
-        toast.error("서버에 연결하지 못했습니다. 잠시 후 다시 시도해 주세요.");
+        /*
+          ⚠️ **원인을 단정하지 않는다.** 이 액션은 권한 없음·미연동도 `throw`로 알린다 —
+             "연결하지 못했습니다"는 서버가 멀쩡할 때 거짓말이 된다(§정직성).
+          ⚠️ 토스트는 한 줄(220px)이라 짧게 쓴다(`ui/sonner.tsx`).
+        */
+        toast.error("재분석을 요청하지 못했습니다");
       } finally {
         setPendingId(null);
       }

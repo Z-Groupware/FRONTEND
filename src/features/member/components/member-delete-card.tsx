@@ -23,6 +23,8 @@ import type { ManagedMember } from "../manage-types";
 export function MemberDeleteCard({ member }: { member: ManagedMember }) {
   const router = useRouter();
   const [isConfirming, setIsConfirming] = useState(false);
+  /* ⚠️ 실패는 창 안에 남긴다 — 토스트만 띄우면 창이 그대로라 같은 버튼을 다시 누른다 */
+  const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
   const handleDelete = () =>
@@ -36,12 +38,13 @@ export function MemberDeleteCard({ member }: { member: ManagedMember }) {
       try {
         result = await deleteMemberAccountAction(member.id);
       } catch {
-        toast.error("서버에 연결하지 못했습니다. 잠시 후 다시 시도해 주세요.");
+        /* ⚠️ 토스트는 한 줄(220px)이라 짧게 쓴다 — 길면 잘린다(`ui/sonner.tsx`) */
+        setError("탈퇴 처리하지 못했습니다. 잠시 후 다시 시도해 주세요.");
         return;
       }
 
       if (!result.isSuccess) {
-        toast.error(result.message ?? "탈퇴 처리하지 못했습니다");
+        setError(result.message ?? "탈퇴 처리하지 못했습니다");
         return;
       }
       setIsConfirming(false);
@@ -90,6 +93,7 @@ export function MemberDeleteCard({ member }: { member: ManagedMember }) {
         isDestructive
         mark="alert"
         isPending={isPending}
+        error={error}
         pendingLabel="처리 중…"
         onConfirm={handleDelete}
       />
