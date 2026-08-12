@@ -1,3 +1,4 @@
+import { MarkdownContent } from "@/components/common/markdown-content";
 import { formatDate } from "@/lib/date";
 
 import type { Notice } from "../types";
@@ -57,16 +58,12 @@ export function NoticeDetail({ notice, canManage }: { notice: Notice; canManage:
         ⚠️ **본문은 13px이다**(다섯 크기). 14px은 규격 밖이고, 이 글은 읽는 글이라 줄 간격을
            넉넉히(22px) 준다.
         ⚠️ 색을 본문색으로 올린다. 보조색으로 깔아 두니 **정작 읽으라고 띄운 글이 제일 흐렸다**.
-      */}
-      {/*
         ⚠️ **`break-words`가 필요하다**(2026-08-10 리뷰). 카드에 `overflow-hidden`이 걸려 있는데
-           `whitespace-pre-line`은 **띄어쓰기 없는 긴 문자열을 못 나눈다** — 붙여 넣은 URL 하나가
-           720px을 넘으면 넘친 만큼 조용히 잘려 나가고 스크롤도 안 생겨, 글자가 있었다는 것조차
-           안 보인다(§정직성). 공지 본문은 사용자가 쓰는 글이라 무엇이 들어올지 모른다.
+           마크다운도 **띄어쓰기 없는 긴 문자열을 못 나눈다** — 붙여 넣은 URL 하나가 720px을
+           넘으면 넘친 만큼 조용히 잘려 나가고 스크롤도 안 생겨, 글자가 있었다는 것조차 안 보인다
+           (§정직성). 공지 본문은 사용자가 쓰는 글이라 무엇이 들어올지 모른다.
       */}
-      <p className="text-foreground/85 max-w-[720px] px-7 py-6 text-[13px] leading-[22px] break-words whitespace-pre-line">
-        {notice.body}
-      </p>
+      <MarkdownContent content={notice.body} className="text-foreground/85 px-7 py-6" />
     </article>
   );
 }
