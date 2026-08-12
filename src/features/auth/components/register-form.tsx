@@ -4,6 +4,8 @@ import { ArrowRight, Building2, Mail, MapPin, Phone, ReceiptText, User } from "l
 import Link from "next/link";
 import { useActionState, useState } from "react";
 
+import { LegalDialog } from "@/features/legal/legal-dialog";
+
 import { type RegisterState, submitRegistrationAction } from "../actions";
 import { formatBusinessNumber } from "../business-number";
 import type { PickedPlace } from "../register-draft";
@@ -236,10 +238,7 @@ export function RegisterForm() {
             id="agreed-terms"
             required
           >
-            <Link href="/terms" target="_blank" className="text-foreground hover:underline">
-              이용약관
-            </Link>
-            에 동의합니다
+            <LegalDialog doc="terms">이용약관</LegalDialog>에 동의합니다
           </ConsentRow>
 
           <ConsentRow
@@ -249,10 +248,7 @@ export function RegisterForm() {
             id="agreed-privacy"
             required
           >
-            <Link href="/privacy" target="_blank" className="text-foreground hover:underline">
-              개인정보 처리방침
-            </Link>
-            에 동의합니다
+            <LegalDialog doc="privacy">개인정보 처리방침</LegalDialog>에 동의합니다
           </ConsentRow>
 
           <ConsentRow
