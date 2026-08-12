@@ -184,6 +184,8 @@ export const ep = {
    *   붙일 때 컨트롤러로 재확인한다).
    */
   meetingRooms: () => "/api/meeting-rooms",
+  /** 회의실 한 건 수정(`PATCH`, ROOM-04)·비활성화(`DELETE`, ROOM-05)가 같은 경로를 쓴다. */
+  meetingRoom: (id: number) => `/api/meeting-rooms/${id}`,
   /**
    * 회의실 주간(월~금) 슬롯 현황(ROOM-02). `meetingRoomId`는 필수, `date`는 생략하면 서버가
    * KST 오늘 기준 주를 채운다(§연동 검증 — 요청 축이 "회의실 1개 × 5일"로, 하루 단위 전체
