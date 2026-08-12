@@ -4,7 +4,7 @@ import { Canvas, useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 
-import { heroProgress } from "../hero-progress";
+import { burstAt, finaleAt, heroProgress } from "../hero-progress";
 
 /**
  * 진짜 3D Z — 로고 세 조각(윗줄·사선·아랫줄)을 **코드로 압출**해 만든다.
@@ -38,25 +38,74 @@ const PIECES: [number, number][][] = [
   ],
 ];
 
+/**
+ * 로고를 **작은 조각으로 쪼갠다** — 격자를 깔고 로고 안에 들어오는 칸만 남긴다.
+ *
+ * ⚠️ 세 덩이로는 "분해"가 아니라 "세 조각이 움직인다"로 보인다(2026-08-12 피드백). 칸을 잘게
+ *    나눠야 흩어지는 게 읽힌다.
+ * ⚠️ 칸 수를 키우면 그리는 양이 그만큼 는다 — 22면 로고 안에 200개 안팎이 남는다. 그 이상은
+ *    저사양 노트북에서 프레임이 떨어진다.
+ * ⚠️ 무작위를 쓰지 않는다. 같은 자리에 늘 같은 조각이 있어야 새로고침해도 같은 화면이다.
+ */
+const GRID = 22;
+
+function isInsidePolygon(x: number, y: number, polygon: [number, number][]): boolean {
+  let inside = false;
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    const [xi, yi] = polygon[i]!;
+    const [xj, yj] = polygon[j]!;
+    /* 반직선이 변을 몇 번 지나는가 — 홀수면 안이다(ray casting) */
+    if (yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) inside = !inside;
+  }
+  return inside;
+}
+
+/** 조각 하나 — 제자리와, 흩어질 때 날아갈 방향 */
+interface Shard {
+  home: [number, number];
+  direction: [number, number, number];
+  spin: number;
+}
+
+function buildShards(): Shard[] {
+  const shards: Shard[] = [];
+  const step = 100 / GRID;
+
+  for (let row = 0; row < GRID; row++) {
+    for (let column = 0; column < GRID; column++) {
+      const cx = (column + 0.5) * step;
+      const cy = (row + 0.5) * step;
+      if (!PIECES.some((polygon) => isInsidePolygon(cx, cy, polygon))) continue;
+
+      /* three 좌표로: x는 왼→오, y는 아래→위로 뒤집는다 */
+      const x = cx / 100 - 0.5;
+      const y = 0.5 - cy / 100;
+
+      /*
+        ⚠️ **자기 자리에서 바깥으로** 날아간다. 중심에서 먼 조각일수록 멀리 — 그래야 다시
+           모일 때 "원래 모양으로 돌아왔다"가 읽힌다. 앞뒤(z)는 자리마다 갈라 층을 만든다.
+      */
+      const spread = 1.6;
+      shards.push({
+        home: [x, y],
+        direction: [x * spread, y * spread, ((column % 3) - 1) * 0.5],
+        spin: ((row * GRID + column) % 7) - 3,
+      });
+    }
+  }
+
+  return shards;
+}
+
 type Tone = "dark" | "light";
 
 /**
- * 조각이 흩어지는 **방향** — 로고를 이루는 세 조각이 제 위치에서 바깥으로 밀린다.
+ * 로고 본체 — **격자로 쪼갠 조각들**이 흩어졌다 모인다.
  *
- * ⚠️ 무작위가 아니라 **자기가 있던 쪽**이다. 윗줄은 위로, 사선은 앞으로, 아랫줄은 아래로 —
- *    그래야 다시 모일 때 "제자리로 돌아왔다"가 읽힌다.
+ * ⚠️ 조각 하나하나를 mesh로 두지 않고 `instancedMesh` 하나로 그린다. 200개를 따로 그리면
+ *    그리기 명령이 200번 나가 저사양 기기에서 프레임이 떨어진다 — 인스턴스는 한 번이다.
+ * ⚠️ 위치·회전은 **프레임 루프에서 행렬로만** 바꾼다. 상태로 두면 초당 60번 리렌더가 돈다.
  */
-const BURST: [number, number, number][] = [
-  [-0.55, 0.75, 0.35],
-  [0.1, 0, 0.85],
-  [0.55, -0.75, 0.35],
-];
-
-/** 흩어졌다 모이는 세기 — 중간(0.5)에서 가장 크고 양 끝에서 0이다 */
-function burstAt(progress: number): number {
-  return Math.sin(Math.min(1, Math.max(0, progress)) * Math.PI);
-}
-
 function ZModel({
   tone,
   isFeature,
@@ -67,12 +116,24 @@ function ZModel({
   reactsToScroll: boolean;
 }) {
   const group = useRef<THREE.Group>(null!);
-  const pieces = useRef<(THREE.Mesh | null)[]>([]);
+  const mesh = useRef<THREE.InstancedMesh>(null!);
+  /** 매끈한 원본 Z — 모여 있을 때 보이는 쪽 */
+  const solid = useRef<THREE.Group>(null!);
+  const solidMaterial = useRef<THREE.MeshStandardMaterial>(null!);
+  const shardMaterial = useRef<THREE.MeshStandardMaterial>(null!);
+  const rim = useRef<[THREE.PointLight | null, THREE.PointLight | null]>([null, null]);
   /** 자전 속도 — 배경이라 아주 느리게 돈다 */
   const velocity = useRef(0.003);
   // 정면 정자세는 간판처럼 밋밋하다 — 처음부터 비스듬히
   const initialRotation: [number, number, number] = [-0.15, 0.4, 0];
 
+  const shards = useMemo(() => buildShards(), []);
+
+  /*
+    ⚠️ **모여 있을 때는 매끈한 원본을 보여준다**(2026-08-12 피드백). 격자 조각만 두면 붙어 있어도
+       계단처럼 각져서 로고가 거칠어진다 — 원본과 조각을 겹쳐 두고, 흩어지기 시작할 때만
+       조각으로 넘긴다. 사람 눈에는 **매끈한 Z가 부서졌다가 다시 매끈해지는** 것으로 보인다.
+  */
   const geometries = useMemo(
     () =>
       PIECES.map((points) => {
@@ -89,82 +150,133 @@ function ZModel({
     [],
   );
 
-  /*
-    ⚠️ **떠날 때 GPU 자원을 돌려준다.** `ExtrudeGeometry`는 브라우저가 알아서 안 치운다 —
-       화면을 오갈 때마다 쌓이면 컨텍스트가 통째로 날아간다(`WebGLRenderer: Context Lost`).
-  */
+  /* ⚠️ 떠날 때 GPU 자원을 돌려준다 — 안 치우면 오갈 때마다 쌓여 컨텍스트가 날아간다 */
   useEffect(() => () => geometries.forEach((geometry) => geometry.dispose()), [geometries]);
+  /** 행렬을 매 프레임 새로 만들지 않는다 — 하나를 돌려 쓴다 */
+  const scratch = useMemo(() => new THREE.Object3D(), []);
+
+  /*
+    ⚠️ 칸을 **거의 붙여 놓는다**(0.99). 벌려 두면 모여 있을 때도 픽셀처럼 보여 로고가 거칠어진다 —
+       조각임은 흩어질 때만 드러나면 된다(2026-08-12).
+  */
+  const cell = (1 / GRID) * 0.99;
 
   useFrame(() => {
-    if (!group.current) return;
+    if (!group.current || !mesh.current) return;
 
-    /*
-      ⚠️ **스크롤을 여기서 읽는다.** 상태로 받으면 프레임마다 리렌더가 돈다 — 상자에서 값만
-         꺼내 쓴다(`hero-progress.ts`).
-      ⚠️ 스크롤에 반응하지 않는 자리(로그인 화면 배경)는 예전처럼 **자전만** 한다.
-    */
-    if (!reactsToScroll) {
+    const progress = reactsToScroll ? heroProgress.current : 0;
+
+    if (reactsToScroll) {
+      /*
+        ⚠️ 두 바퀴까지만 돈다. 더 돌리면 스크롤 몇 칸에 팽이처럼 보여 뒤 글자를 못 읽는다.
+        ⚠️ 내려갈수록 작아졌다가, **맨 밑에서 다시 커지며 완성**된다(§hero-progress `finaleAt`).
+      */
+      const finale = finaleAt(progress);
+      group.current.rotation.y = 0.4 + progress * Math.PI * 2;
+      group.current.rotation.x = -0.15 + progress * 0.3 - finale * 0.15;
+      group.current.scale.setScalar(1 - progress * 0.3 + finale * 0.22);
+    } else {
       group.current.rotation.y += velocity.current;
-      return;
     }
 
-    const progress = heroProgress.current;
+    const burst = burstAt(progress);
+    const finale = finaleAt(progress);
 
     /*
-      ⚠️ 한 바퀴 반만 돈다. 여러 바퀴 돌리면 스크롤 몇 칸에 팽이처럼 보여 글자를 못 읽는다.
-      ⚠️ 내려갈수록 **작아지고 뒤로 물러난다** — 첫 화면에서는 주인공이지만, 아래 섹션에서는
-         내용 뒤로 빠져야 한다.
+      ⚠️ **아주 조금만 벌어져도 조각으로 넘긴다**(`burst * 5`). 천천히 섞으면 두 겹이 겹쳐 보이는
+         구간이 길어져 로고가 흐릿한 유령처럼 보인다 — 바꿔치기는 짧을수록 깔끔하다.
+      ⚠️ 다 사라진 쪽은 **아예 안 그린다**(`visible`). 투명도 0짜리도 그리기 비용은 그대로다.
     */
-    group.current.rotation.y = 0.4 + progress * Math.PI * 1.5;
-    group.current.rotation.x = -0.15 + progress * 0.35;
+    const shardMix = Math.min(1, burst * 5);
+    if (solidMaterial.current) solidMaterial.current.opacity = 1 - shardMix;
+    if (shardMaterial.current) shardMaterial.current.opacity = shardMix;
+    if (solid.current) solid.current.visible = shardMix < 0.99;
+    mesh.current.visible = shardMix > 0.01;
 
-    const shrink = 1 - progress * 0.32;
-    group.current.scale.setScalar(shrink);
+    if (shardMix < 0.01) return;
 
-    /* 조각을 밀어냈다가 도로 붙인다 — 가운데에서 가장 벌어진다 */
-    const burst = burstAt(progress);
-    pieces.current.forEach((mesh, index) => {
-      const direction = BURST[index];
-      if (!mesh || !direction) return;
-      mesh.position.set(direction[0] * burst, direction[1] * burst, -0.07 + direction[2] * burst);
-      mesh.rotation.z = direction[0] * burst * 0.6;
+    /*
+      ⚠️ **빛이 흩어짐을 따라간다**(2026-08-12). 어두운 금속이 어두운 배경에서 흩어지면
+         "검은 조각이 좀 움직이네"로 끝난다 — 벌어질수록 파랑·보라 림라이트를 올리고,
+         맨 밑에서 완성될 때 한 번 더 세게 준다. 빛이 있어야 조각이 눈에 잡힌다.
+    */
+    const glow = 34 + burst * 90 + finale * 70;
+    rim.current.forEach((light) => {
+      if (light) light.intensity = isFeature ? 32 : glow;
     });
+
+    shards.forEach((shard, index) => {
+      const [hx, hy] = shard.home;
+      const [dx, dy, dz] = shard.direction;
+
+      scratch.position.set(hx + dx * burst, hy + dy * burst, -0.07 + dz * burst);
+      scratch.rotation.set(burst * shard.spin * 0.5, burst * shard.spin * 0.4, burst * shard.spin);
+      /* 흩어질수록 조각이 조금 작아진다 — 멀어지는 느낌을 거리 없이 만든다 */
+      scratch.scale.setScalar(1 - burst * 0.25);
+      scratch.updateMatrix();
+      mesh.current.setMatrixAt(index, scratch.matrix);
+    });
+
+    mesh.current.instanceMatrix.needsUpdate = true;
   });
 
   return (
     <group ref={group} rotation={initialRotation}>
-      {geometries.map((geometry, index) => (
-        <mesh
-          key={index}
-          ref={(mesh) => {
-            pieces.current[index] = mesh;
-          }}
-          geometry={geometry}
-          position={[0, 0, -0.07]}
-        >
-          {/*
-            ⚠️ 배경이다 — 글보다 밝으면 안 된다.
-            **어두운 무대(dark):** 몸체는 검정에 가깝게 두고 파랑·보라 림라이트만 모서리에
-            감돌게 한다(어두운 금속).
-            **밝은 무대(light):** 회색으로 칠하지 않는다 — 흰 바탕 위 회색 덩어리는 얼룩처럼
-            보인다. 몸체를 **흰 종이처럼** 두고(무광·낮은 금속기) 형태는 **음영으로만** 읽히게
-            한다. 눌러 찍은 자국에 가깝다.
-          */}
-          <meshStandardMaterial
-            color={isFeature ? "#78716c" : tone === "dark" ? "#232326" : "#ffffff"}
-            metalness={isFeature ? 0.55 : tone === "dark" ? 0.85 : 0.4}
-            roughness={isFeature ? 0.35 : tone === "dark" ? 0.28 : 0.3}
-          />
-        </mesh>
-      ))}
+      {/*
+        ⚠️ 배경이다 — 글보다 밝으면 안 된다.
+        **어두운 무대(dark):** 몸체는 검정에 가깝게 두고 파랑·보라 림라이트만 모서리에
+        감돌게 한다(어두운 금속).
+        **밝은 무대(light):** 회색으로 칠하지 않는다 — 흰 바탕 위 회색 덩어리는 얼룩처럼
+        보인다. 몸체를 **흰 종이처럼** 두고(무광·낮은 금속기) 형태는 **음영으로만** 읽히게 한다.
+      */}
+      {/* 매끈한 원본 — 모여 있을 때 이쪽이 보인다 */}
+      <group ref={solid}>
+        {geometries.map((geometry, index) => (
+          <mesh key={index} geometry={geometry} position={[0, 0, -0.07]}>
+            <meshStandardMaterial
+              ref={index === 0 ? solidMaterial : undefined}
+              transparent
+              color={isFeature ? "#78716c" : tone === "dark" ? "#232326" : "#ffffff"}
+              metalness={isFeature ? 0.55 : tone === "dark" ? 0.85 : 0.4}
+              roughness={isFeature ? 0.35 : tone === "dark" ? 0.28 : 0.3}
+            />
+          </mesh>
+        ))}
+      </group>
+
+      <instancedMesh ref={mesh} args={[undefined, undefined, shards.length]}>
+        <boxGeometry args={[cell, cell, 0.14]} />
+        <meshStandardMaterial
+          ref={shardMaterial}
+          transparent
+          opacity={0}
+          color={isFeature ? "#78716c" : tone === "dark" ? "#232326" : "#ffffff"}
+          metalness={isFeature ? 0.55 : tone === "dark" ? 0.85 : 0.4}
+          roughness={isFeature ? 0.35 : tone === "dark" ? 0.28 : 0.3}
+        />
+      </instancedMesh>
+
+      {/* 액센트 축 — 파랑·보라가 모서리를 물들인다. 세기는 위 루프가 흩어짐에 맞춰 올린다 */}
+      <pointLight
+        ref={(light) => {
+          rim.current[0] = light;
+        }}
+        position={[-3, 1, 3]}
+        intensity={34}
+        color="#60a5fa"
+      />
+      <pointLight
+        ref={(light) => {
+          rim.current[1] = light;
+        }}
+        position={[3, -1, 3]}
+        intensity={34}
+        color="#a78bfa"
+      />
     </group>
   );
 }
 
-/**
- * tone: 어두운 섹션(dark)은 검정 금속에 림라이트, 밝은 섹션(light)은 밝은 금속에 같은 색 조명.
- * 같은 모델·같은 빛 축이라 어디에 두어도 한 몸으로 읽힌다.
- */
 export default function ThreeZ({
   size = 420,
   tone = "dark",
@@ -217,9 +329,6 @@ export default function ThreeZ({
         intensity={isFeature ? 1.1 : tone === "dark" ? 1 : 1.05}
         color="#ffffff"
       />
-      {/* 액센트 축 그대로 — 파랑·보라 림라이트가 모서리만 물들인다 */}
-      <pointLight position={[-3, 1, 3]} intensity={isFeature ? 32 : 34} color="#60a5fa" />
-      <pointLight position={[3, -1, 3]} intensity={isFeature ? 32 : 34} color="#a78bfa" />
       <ZModel tone={tone} isFeature={isFeature} reactsToScroll={reactsToScroll} />
     </Canvas>
   );

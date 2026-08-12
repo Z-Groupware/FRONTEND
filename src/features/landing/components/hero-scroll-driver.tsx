@@ -19,7 +19,11 @@ export function HeroScrollDriver() {
     if (!scroller) return;
 
     const update = () => {
-      const progress = toHeroProgress(scroller.scrollTop, scroller.clientHeight);
+      /* ⚠️ 문서 전체 기준이다 — 연출이 첫 화면을 넘어 맨 밑까지 이어진다(§hero-progress) */
+      const progress = toHeroProgress(
+        scroller.scrollTop,
+        scroller.scrollHeight - scroller.clientHeight,
+      );
       heroProgress.current = progress;
 
       /*
@@ -27,7 +31,10 @@ export function HeroScrollDriver() {
            물러나야 아래 섹션의 글이 먼저 읽힌다 — 고정 투명도로 두면 둘 중 하나를 포기하게 된다.
         ⚠️ CSS 변수로 쓴다. 상태로 두면 스크롤마다 랜딩 전체가 다시 그려진다.
       */
-      document.documentElement.style.setProperty("--hero-z-opacity", String(0.9 - progress * 0.55));
+      document.documentElement.style.setProperty(
+        "--hero-z-opacity",
+        String(0.9 - Math.min(progress, 0.5) * 1.1),
+      );
     };
 
     update();
