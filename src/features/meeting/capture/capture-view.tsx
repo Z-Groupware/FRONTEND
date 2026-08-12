@@ -9,6 +9,7 @@ import { ConfirmDialog } from "@/components/common/confirm-dialog";
 import { LeaveGuard } from "@/components/common/leave-guard";
 import { ProfileAvatar } from "@/components/common/profile-avatar";
 import { Button } from "@/components/ui/button";
+import { CAPTURE_FAILURE_MESSAGE } from "@/constants/meeting";
 import { pickPaletteColor } from "@/lib/palette";
 import { cn } from "@/lib/utils";
 
@@ -112,6 +113,53 @@ export function CaptureView({
   */
   const hasUnsaved = isRecording || isPaused;
 
+  /**
+   * 종료를 서버에 알리고, **받아들여졌을 때만** 목록으로 보낸다.
+   *
+   * ⚠️ 확인 창과 [다시 시도]가 **같은 함수**를 쓴다. 둘이 갈리면 재시도만 다른 일을 하게 된다.
+   */
+  const finishMeeting = async () => {
+    /*
+       ⚠️ **끄는 일이 실패해도 화면은 넘어가야 한다.** 로컬 정리(`teardown`)에서
+       `MediaRecorder.stop()`이 상태가 어긋나 던지는 경우가 있는데(`InvalidStateError`),
+       그걸로 흐름이 멈추면 종료를 눌렀는데 아무 일도 안 난 것처럼 보인다 —
+       되돌릴 수 없는 동작이라 다시 누르지도 못한다. 마이크 표시등은 화면을 떠날 때
+       정리 효과가 한 번 더 끈다.
+       ⚠️ **서버가 받았는지는 따로 본다**(2026-08-12). 종료 알림(MEET-08)이 붙은 뒤로는
+       실패를 삼키면 안 된다 — 마지막 세그먼트가 확정되지 않았는데 "요약 중"이라고
+       말하면, 서버는 회의가 끝난 줄도 모르는데 사람은 다 끝난 줄 안다(§정직성).
+       이 주석이 "연동 때 갈린다"고 적어 둔 그 자리를 이제 실제로 가른다.
+    */
+    let ended;
+    try {
+      ended = await capture.end();
+    } catch {
+      ended = { ok: false, error: CAPTURE_FAILURE_MESSAGE.MEETING_END };
+    }
+
+    /*
+       ⚠️ **실패하면 붙잡는다.** 목록으로 보내 버리면 사람이 할 수 있는 일이 사라진다 —
+       화면에 남겨야 다시 누를 수 있고, 남은 자막·세그먼트도 이 화면이 쥐고 있다.
+    */
+    if (!ended.ok) {
+      toast.error(CAPTURE_FAILURE_MESSAGE.MEETING_END_TOAST);
+      return;
+    }
+
+    /*
+       ⚠️ **바로 목록으로 돌려보낸다**(팀 확정). 요약 API는 응답이 오래 걸려서 서버가
+       백그라운드로 돌린다 — 여기서 기다리게 두면 아무것도 못 하는 화면을 몇 분씩
+       쳐다보게 된다. 창을 닫아도 안전한 일이라 붙잡을 이유가 없다(§3-3 4).
+       ⚠️ 토스트가 **"백그라운드"를 말한다**(팀 확정: 목록으로 보낸 뒤에 그렇게 전한다).
+       옮겨 간 화면에서 처음 보는 말이 이거라, 여기서 안 하면 왜 목록으로 튕겼는지
+       모른 채 요약을 기다리게 된다.
+       ⚠️ 한 줄(220px)이라 글자 자리가 **184px**뿐이다(DESIGN §7) — 이 문구는 153px다.
+       더 길게 쓰려면 잘린다.
+    */
+    toast.success("백그라운드에서 요약 중입니다");
+    router.push("/app/meeting");
+  };
+
   return (
     <>
       <LeaveGuard hasUnsaved={hasUnsaved} />
@@ -150,7 +198,14 @@ export function CaptureView({
             </div>
 
             <div className="flex shrink-0 items-center gap-2">
-              {capture.phase === CAPTURE_PHASE.READY ? (
+              {/*
+                ⚠️ **종료 뒤에는 아무 버튼도 안 둔다**(2026-08-12). 전에는 종료하자마자 화면을
+                   떠나서 이 상태를 볼 일이 없었는데, 이제 종료 알림이 실패하면 이 화면에
+                   머문다 — 그때 [일시정지]가 남아 있으면 이미 꺼진 녹음기를 가리키는
+                   버튼이 된다. 할 수 있는 일은 아래 [다시 시도]뿐이다.
+              */}
+              {capture.phase === CAPTURE_PHASE.ENDED ? null : capture.phase ===
+                CAPTURE_PHASE.READY ? (
                 <Button
                   type="button"
                   variant="ink"
@@ -205,7 +260,25 @@ export function CaptureView({
               <span className="flex h-[18px] shrink-0 items-center">
                 <CircleAlert className="size-3.5" aria-hidden />
               </span>
-              <span>{capture.error}</span>
+              <span className="min-w-0 flex-1">{capture.error}</span>
+
+              {/*
+                ⚠️ **막다른 길을 만들지 않는다**(2026-08-12). 종료 알림이 실패하면 이 화면에
+                   머무는데, 그 상태에서는 종료 버튼도 잠겨 있어 **다시 보낼 방법이 없었다** —
+                   서버는 회의가 끝난 줄 모르는 채로 사람만 갇힌다.
+                ⚠️ 녹음을 다시 켜는 게 아니라 **알림만 다시 보낸다.** 로컬 정리는 이미 끝났다.
+              */}
+              {capture.phase === CAPTURE_PHASE.ENDED && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="shrink-0"
+                  onClick={() => void finishMeeting()}
+                >
+                  다시 시도
+                </Button>
+              )}
             </p>
           )}
 
@@ -255,38 +328,7 @@ export function CaptureView({
         mark="alert"
         onConfirm={() => {
           setIsConfirming(false);
-
-          /*
-            ⚠️ **끄는 일이 실패해도 화면은 넘어가야 한다.** `capture.end()`는 지금 로컬 정리다
-               — 녹음기·STT를 멈추고 상태를 `ENDED`로 바꾼다. 그런데 `MediaRecorder.stop()`은
-               상태가 어긋나면 던지고(`InvalidStateError`), 여기서 던지면 **토스트도 이동도
-               안 일어난 채** 이미 닫힌 확인 창만 남는다 — 종료를 눌렀는데 아무 일도 안 난
-               것처럼 보이고, 되돌릴 수 없는 동작이라 다시 누르지도 못한다.
-            ⚠️ 그래서 잡고 넘어간다. 마이크 표시등이 남는 건 화면을 떠날 때 정리 효과가
-               한 번 더 끈다(`use-capture`의 unmount 정리).
-            ⚠️ **연동 때 여기가 갈린다.** 종료 알림 API(§3-3 4)가 붙으면 `end()`가 서버를
-               부르게 되고, 그때는 **실패를 삼키면 안 된다** — 마지막 세그먼트가 확정되지
-               않았는데 "요약을 시작했습니다"라고 말하게 된다. 그 시점에 이 자리를
-               `try { await ... } catch { toast.error(...) }`로 바꾸고 이동을 막아야 한다.
-          */
-          try {
-            capture.end();
-          } catch {
-            // 로컬 정리 실패는 사용자가 할 수 있는 일이 없다 — 흐름만 잇는다
-          }
-
-          /*
-            ⚠️ **바로 목록으로 돌려보낸다**(팀 확정). 요약 API는 응답이 오래 걸려서 서버가
-               백그라운드로 돌린다 — 여기서 기다리게 두면 아무것도 못 하는 화면을 몇 분씩
-               쳐다보게 된다. 창을 닫아도 안전한 일이라 붙잡을 이유가 없다(§3-3 4).
-            ⚠️ 토스트가 **"백그라운드"를 말한다**(팀 확정: 목록으로 보낸 뒤에 그렇게 전한다).
-               옮겨 간 화면에서 처음 보는 말이 이거라, 여기서 안 하면 왜 목록으로 튕겼는지
-               모른 채 요약을 기다리게 된다.
-            ⚠️ 한 줄(220px)이라 글자 자리가 **184px**뿐이다(DESIGN §7) — 이 문구는 153px다.
-               더 길게 쓰려면 잘린다.
-          */
-          toast.success("백그라운드에서 요약 중입니다");
-          router.push("/app/meeting");
+          void finishMeeting();
         }}
       />
     </>

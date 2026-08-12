@@ -33,6 +33,14 @@ export class ApiError extends Error {
     readonly status: number,
     message: string,
     readonly code?: string,
+    /**
+     * BE가 실패 봉투에 실어 준 추적 번호 — **BE 로그를 찾는 열쇠**다.
+     *
+     * ⚠️ 사람에게 보여 주는 값이 아니라 **원인을 찾는 값**이다. 500처럼 문구가
+     *    "서버 내부 오류"뿐인 실패는 이 번호가 없으면 어느 요청이었는지 특정할 수 없다 —
+     *    Server Action은 브라우저 네트워크 탭에도 안 잡혀서 더욱 그렇다(2026-08-12).
+     */
+    readonly traceId?: string,
   ) {
     super(message);
     this.name = "ApiError";
@@ -44,7 +52,20 @@ interface ApiInit extends Omit<RequestInit, "body"> {
   json?: unknown;
   /** 붙일 액세스 토큰. 로그인 전 화면(코드 조회·등록 신청·로그인)은 넘기지 않는다. */
   accessToken?: string;
+  /** 이 호출만 더/덜 기다린다. 안 넘기면 {@link DEFAULT_TIMEOUT_MS} */
+  timeoutMs?: number;
 }
+
+/**
+ * 기다리는 상한.
+ *
+ * ⚠️ **`fetch`는 기본 타임아웃이 없다.** BE가 답을 안 주면 서버 액션이 영영 안 끝나고,
+ *    화면은 [등록 중]에서 굳은 채 취소도 못 한다 — 새로고침 말고는 길이 없다
+ *    (2026-08-12 배포 서버에서 실제로 겪었다).
+ * ⚠️ 값이 짧으면 멀쩡한 요청을 끊고, 길면 사람이 굳은 화면을 오래 본다. 15초는
+ *    "느린 것"과 "안 오는 것"을 가르는 자리다 — 더 걸리는 호출은 `timeoutMs`로 따로 늘린다.
+ */
+const DEFAULT_TIMEOUT_MS = 15_000;
 
 /**
  * BE 호출 + 봉투 벗기기.
@@ -53,10 +74,17 @@ interface ApiInit extends Omit<RequestInit, "body"> {
  *    남의 화면이 다른 사람에게 보인다. 캐시가 필요한 자리에서 호출부가 `cache`를 넘긴다.
  */
 export async function serverApi<T>(path: string, init: ApiInit = {}): Promise<T> {
-  const { json, accessToken, headers, ...rest } = init;
+  const { json, accessToken, headers, timeoutMs, signal, ...rest } = init;
+
+  /*
+    ⚠️ 부르는 쪽이 준 `signal`이 있으면 **둘 다** 산다(`AbortSignal.any`) — 타임아웃으로
+       덮어쓰면 호출부가 직접 끊을 방법이 사라진다.
+  */
+  const timeout = AbortSignal.timeout(timeoutMs ?? DEFAULT_TIMEOUT_MS);
 
   const response = await fetch(`${BASE_URL}${path}`, {
     cache: "no-store",
+    signal: signal ? AbortSignal.any([signal, timeout]) : timeout,
     ...rest,
     headers: {
       ...(json === undefined ? {} : { "Content-Type": "application/json" }),
@@ -90,19 +118,50 @@ function toApiError(status: number, raw: unknown): ApiError {
     return new ApiError(status, "요청을 처리하지 못했습니다. 잠시 후 다시 시도해 주세요.");
   }
 
-  const envelope = raw as { message?: unknown; errorCode?: unknown };
+  const envelope = raw as { message?: unknown; errorCode?: unknown; traceId?: unknown };
   const message =
     typeof envelope.message === "string" && envelope.message.trim().length > 0
       ? envelope.message
       : "요청을 처리하지 못했습니다. 잠시 후 다시 시도해 주세요.";
 
   const code = typeof envelope.errorCode === "string" ? envelope.errorCode : undefined;
+  const traceId = typeof envelope.traceId === "string" ? envelope.traceId : undefined;
 
-  return new ApiError(status, message, code);
+  return new ApiError(status, message, code, traceId);
 }
 
-/** 화면에 띄울 한 줄 — `ApiError`면 BE 문장을 그대로, 아니면 통신 실패로 본다. */
+/**
+ * 화면에 띄울 한 줄 — `ApiError`면 BE 문장을 그대로, 아니면 통신 실패로 본다.
+ *
+ * ⚠️ **기다리다 끊긴 것과 못 붙은 것을 가른다.** 둘 다 `ApiError`가 아니지만 사람이 할 일이
+ *    다르다 — 못 붙었으면 다시 눌러 볼 만하고, 시간이 넘었으면 서버가 답을 안 하는 중이라
+ *    잠시 뒤가 맞다(§정직성: 되는 척도 안 되는 척도 안 한다).
+ */
 export function toUserMessage(error: unknown): string {
-  if (error instanceof ApiError) return error.message;
+  if (error instanceof ApiError) {
+    const tag = toErrorTag(error);
+    return tag ? `${error.message} (${tag})` : error.message;
+  }
+  if (isTimeout(error)) return "서버가 응답하지 않습니다. 잠시 후 다시 시도해 주세요.";
   return "서버에 연결하지 못했습니다. 잠시 후 다시 시도해 주세요.";
+}
+
+/** `AbortSignal.timeout`이 끊은 것인가 — `DOMException("TimeoutError")`로 온다 */
+function isTimeout(error: unknown): boolean {
+  return error instanceof DOMException && error.name === "TimeoutError";
+}
+
+/**
+ * 원인을 찾을 때 쓰는 꼬리표 — `Z-003 · 8f21c0…`.
+ *
+ * ⚠️ **문구가 아니라 단서다.** 500처럼 "서버 내부 오류"만 오는 실패는 이것 없이는 BE 로그에서
+ *    그 요청을 못 찾는다. Server Action은 브라우저 네트워크 탭에도 안 잡혀서 더욱 그렇다.
+ * ⚠️ **5xx일 때만 붙인다**(2026-08-12). 4xx는 사람이 고칠 수 있는 실패라 문장이 이미 무엇을
+ *    해야 하는지 말한다 — `이미 있는 부서 이름입니다`에 `AU-016`을 붙여 봐야 도움이 안 되고
+ *    화면만 기술적으로 보인다. **나중에 걷어낼 것을 만들지 않으려고** 여기서 가른다.
+ * ⚠️ 없으면 `null`을 준다 — 화면이 빈 괄호를 그리지 않게.
+ */
+export function toErrorTag(error: unknown): string | null {
+  if (!(error instanceof ApiError) || error.status < 500) return null;
+  return [error.code, error.traceId].filter(Boolean).join(" · ") || null;
 }

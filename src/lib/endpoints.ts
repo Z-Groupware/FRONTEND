@@ -19,6 +19,11 @@ export interface ProjectListParams {
 /** 개인 액션 목록만 갖는 `overdue` 필터가 추가된다. */
 export interface ActionListParams extends ProjectListParams {
   overdue?: boolean;
+  /**
+   * 값을 주면 호출자 본인이 아니라 **그 팀원의** 목록을 대신 조회한다(2026-08-11 추가,
+   * 이홍근 요청 — 팀원 관리 화면). LEADER 전용, 같은 팀 소속만 — [확인] `ActionController.java`.
+   */
+  assigneeMemberId?: number;
 }
 
 /** `undefined`·`null` 값은 쿼리에서 빠진다 — 서버 기본값을 그대로 쓰게 둔다. */
@@ -46,15 +51,11 @@ export const ep = {
   companyOnboarding: () => "/api/companies/me/onboarding",
 
   /*
-   * 회의 — [확인] D도메인 REST API 명세(2026-08-12, `/v1` 제거 이후 기준) 대조.
+   * 회의 — [확인] BE 실코드 대조(2026-08-12, 커밋 `51b5482f` "회의·회의실·공지사항 API 경로 통일" 리팩터 반영)
+   *   `meeting/presentation/api/{MeetingController,MeetingListController,MeetingDetailController}.java`
    *
-   * ⚠️ **`/v1` 접두사는 없다.** develop에 한때 `/api/v1/meetings`로 BE 실코드 대조(2026-08-11)
-   *    했다는 주석이 있었는데, 그 하루 뒤 팀이 `/v1`을 전면 제거했다 — 이 명세 문서가 그 결정을
-   *    "이 명세는 /v1 제거 이후 기준"이라고 명시한다(MEET-01~10 전 엔드포인트가 `/api/meetings`).
-   *    문서가 코드보다 최신이면 문서가 맞다(§연동 검증 — "문서와 코드가 다르면 코드가 맞다"는
-   *    코드가 문서보다 최신일 때만 적용된다).
-   * ⚠️ **캡처 전용 조회는 없다.** 캡처 화면도 상세(MEET-04)를 쓴다 — 있지도 않은
-   *    `/{id}/capture`를 지어내지 않는다(§환각 API 방지).
+   * ⚠️ **`/api/v1/` 접두사는 폐기됐다**(2026-08-12, 커밋 `51b5482f`) — 그 전에 붙였던 v1은
+   *    이제 전부 404다. 캡처 전용 조회는 없다 — 캡처 화면도 상세(MEET-04)를 쓴다(§환각 API 방지).
    */
   meetings: () => "/api/meetings",
   /** 상세(MEET-04) — 캡처 진입도 이걸 쓴다. 없으면 404 `MT-001`, 열람 권한 없으면 403 `MT-011` */
@@ -65,17 +66,19 @@ export const ep = {
   meetingAttendees: (meetingId: number) => `/api/meetings/${meetingId}/attendees`,
 
   /*
-   * 캡처 — [확인] D도메인 REST API 명세(2026-08-12, `/v1` 제거 이후 기준) 대조.
+   * 캡처 — [확인] BE 실코드 대조(2026-08-12, 커밋 `51b5482f` "회의·회의실·공지사항 API 경로 통일" 리팩터 반영)
+   *   `cap/presentation/api/{CaptureUploadController,CaptionController,CaptureQueryController}.java`
+   *   `meeting/presentation/api/{CaptureSessionController,MeetingCompletionController}.java`
+   *   `capture/presentation/api/AnalysisController.java`
    *
-   * ⚠️ **접두사가 두 갈래이던 시절은 끝났다.** 캡처 세션·회의 종료가 `/api/v1/`, 자막·조각·
-   *    분석이 `/api/`였는데, 팀이 `/v1`을 전면 제거하면서 **전부 `/api/`로 통일**됐다. 이 파일에
-   *    `/api/v1/...`가 남아 있으면 그건 그 이전 스냅샷이다(§연동 검증).
+   * ⚠️ **`/api/v1/` 접두사는 폐기됐다**(2026-08-12, 커밋 `51b5482f`). 캡처 세션(CAP-01·02·03)과
+   *    회의 종료(MEET-08)도 이제 자막·조각·분석과 똑같이 `/api/`만 쓴다 — v1을 되살리면 전부 404다.
    * ⚠️ **CAP-01(녹음 시작)이 예전 MEET-07(입장)을 흡수했다**(2026-08-12 정합성 감사 P0) — 이
    *    경로는 이제 `SCHEDULED → IN_PROGRESS` 전이와 캡처 세션 생성을 한 트랜잭션으로 한다.
-   *    ⚠️ **아직 `status: spec`이다**(이 명세 기준 미구현) — 경로만 갱신해 뒀고, 흡수된 흐름에
-   *    맞춘 호출부(`capture/actions.ts`) 재설계는 별도 이슈다.
+   *    ⚠️ **아직 `status: spec`이다**(D도메인 명세 기준 미구현) — 흡수된 흐름에 맞춘 호출부
+   *    (`capture/actions.ts`) 재설계는 별도 이슈다.
    * ⚠️ **CAP-09(이어받기)·CAP-10(세션 단독 조회)은 폐기됐다**(2026-08-12) — host 장애는
-   *    참석자 이어받기가 아니라 host 본인 재접속으로 복구한다. 아래 `activeCapture`를 지운다.
+   *    참석자 이어받기가 아니라 host 본인 재접속으로 복구한다.
    */
   captureSession: (meetingId: number) => `/api/meetings/${meetingId}/capture-session`,
   captureSessionPause: (meetingId: number) => `/api/meetings/${meetingId}/capture-session/pause`,
@@ -136,6 +139,10 @@ export const ep = {
   teamActionTimeline: (id: number) => `/api/team/actions/${id}?tab=timeline`,
   teamActionAttachmentDownloadUrl: (teamActionId: number, attachmentId: number) =>
     `/api/team/actions/${teamActionId}/attachments/${attachmentId}/download-url`,
+  /** 팀 대시보드 KPI 4종(팀 액션·팀원 액션·내 액션·완료 액션) — [확인] PR #354 머지 완료(2026-08-11) */
+  teamDashboardSummary: () => "/api/team/actions/dashboard-summary",
+  /** 팀원 현황(이름·직급·역할·재직상태·담당 액션 수) — [확인] PR #354 머지 완료, LEADER 전용 */
+  teamMembers: () => "/api/team/members",
 
   /** `month` 생략 시 이번 달(서버 기본값) */
   calendar: (month?: string) => `/api/calendar${toQuery(month ? { month } : undefined)}`,

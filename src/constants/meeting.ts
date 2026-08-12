@@ -128,3 +128,17 @@ export const MEETING_STATUS_BADGE_CLASS: Record<MeetingStatus, string> = {
   /** 끝난 것 — 테두리만. 더 볼 일이 없다는 뜻이라 일부러 물러나 있다 */
   DONE: "border-border text-muted-foreground font-medium",
 };
+
+/**
+ * 캡처 화면이 **막혔을 때 하는 말** — 화면에 흩어 두지 않는다(§도메인 상수: 라벨 하드코딩 금지).
+ *
+ * ⚠️ 종료는 되돌릴 수 없는 조작이라, 실패했을 때 **무엇이 안 됐는지**를 정확히 말해야 한다 —
+ *    "연결하지 못했습니다"처럼 원인을 단정하면 서버가 멀쩡할 때 거짓말이 된다(§정직성).
+ * ⚠️ 토스트로 쓰는 문구는 **한 줄(220px)**을 넘기지 않는다(`components/ui/sonner.tsx`).
+ */
+export const CAPTURE_FAILURE_MESSAGE = {
+  /** 화면에 남기는 줄 — 다음에 할 일까지 적는다 */
+  MEETING_END: "회의 종료를 서버에 알리지 못했습니다. 잠시 후 다시 시도해 주세요.",
+  /** 토스트로 쓰는 짧은 말 */
+  MEETING_END_TOAST: "회의를 종료하지 못했습니다",
+} as const;

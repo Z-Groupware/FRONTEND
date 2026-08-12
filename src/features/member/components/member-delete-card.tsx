@@ -23,13 +23,38 @@ import type { ManagedMember } from "../manage-types";
 export function MemberDeleteCard({ member }: { member: ManagedMember }) {
   const router = useRouter();
   const [isConfirming, setIsConfirming] = useState(false);
+  /* ⚠️ 실패는 창 안에 남긴다 — 토스트만 띄우면 창이 그대로라 같은 버튼을 다시 누른다 */
+  const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+
+  /*
+    ⚠️ **다시 열 때 지난 오류를 지운다**(코드래빗 지적 2026-08-12). 실패한 뒤 창을 닫았다가
+       다시 열면, 아직 아무것도 안 눌렀는데 지난번 실패 문구가 그대로 떠 있었다 — 방금 한 일에
+       대한 말이 아닌데 그렇게 읽힌다.
+  */
+  const openConfirm = () => {
+    setError(null);
+    setIsConfirming(true);
+  };
 
   const handleDelete = () =>
     startTransition(async () => {
-      const result = await deleteMemberAccountAction(member.id);
+      /*
+        ⚠️ **거절도 받아 낸다.** 액션은 BE 실패를 값으로 돌려주지만, 브라우저에서 Next 서버까지
+           가는 길이 끊기면(네트워크·서버 재시작·배포) `await` 자체가 던진다 — 안 잡으면 화면이
+           통째로 `error.tsx`로 넘어가거나 잠긴 채로 남는다(2026-08-12 전 화면 정리).
+      */
+      let result;
+      try {
+        result = await deleteMemberAccountAction(member.id);
+      } catch {
+        /* ⚠️ 토스트는 한 줄(220px)이라 짧게 쓴다 — 길면 잘린다(`ui/sonner.tsx`) */
+        setError("탈퇴 처리하지 못했습니다. 잠시 후 다시 시도해 주세요.");
+        return;
+      }
+
       if (!result.isSuccess) {
-        toast.error(result.message ?? "탈퇴 처리하지 못했습니다");
+        setError(result.message ?? "탈퇴 처리하지 못했습니다");
         return;
       }
       setIsConfirming(false);
@@ -57,7 +82,7 @@ export function MemberDeleteCard({ member }: { member: ManagedMember }) {
           variant="outline"
           className="text-destructive border-destructive/30 hover:bg-destructive/5 ml-auto"
           disabled={isPending}
-          onClick={() => setIsConfirming(true)}
+          onClick={openConfirm}
         >
           탈퇴 처리
         </Button>
@@ -78,6 +103,7 @@ export function MemberDeleteCard({ member }: { member: ManagedMember }) {
         isDestructive
         mark="alert"
         isPending={isPending}
+        error={error}
         pendingLabel="처리 중…"
         onConfirm={handleDelete}
       />
