@@ -4,7 +4,7 @@
  */
 
 import type { DashboardMeeting } from "@/components/common/dashboard-meeting-item";
-import type { MeetingStatus } from "@/constants/meeting";
+import { isMeetingStatus } from "@/constants/meeting";
 
 import { formatMeetingSchedule } from "./lib";
 import type { CaptureAttendee, MeetingCaptureInfo } from "./view-types";
@@ -42,11 +42,15 @@ export interface BeUpcomingMeetingsResponse {
  *    화면의 카드에만 있음) 쓰지 않는다 — 화면에 없는 기능을 새로 만들지 않는다(§명세).
  */
 export function toDashboardMeeting(be: BeUpcomingMeeting): DashboardMeeting {
+  if (!isMeetingStatus(be.status)) {
+    throw new Error(`알 수 없는 회의 상태입니다: ${be.status}`);
+  }
+
   return {
     id: String(be.meetingId),
     title: be.title,
     projectTag: be.project.tag,
-    status: be.status as MeetingStatus,
+    status: be.status,
     room: be.meetingRoom.name,
     scheduledAt: be.startAt,
     attendeeCount: be.attendeeCount,

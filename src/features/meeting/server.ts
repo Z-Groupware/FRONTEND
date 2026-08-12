@@ -101,8 +101,8 @@ export async function getMeetingDirectory(viewerId: number): Promise<MeetingDire
 
   items.sort((a, b) => {
     if (rank[a.status] !== rank[b.status]) return rank[a.status] - rank[b.status];
-    // 예정은 가까운 회의부터, 완료·취소는 최근 회의부터
-    return a.status === MEETING_STATUS.SCHEDULED
+    // 예정·진행중은 가까운 회의부터, 완료·취소는 최근 회의부터
+    return a.status === MEETING_STATUS.SCHEDULED || a.status === MEETING_STATUS.IN_PROGRESS
       ? startOf(a) - startOf(b)
       : startOf(b) - startOf(a);
   });

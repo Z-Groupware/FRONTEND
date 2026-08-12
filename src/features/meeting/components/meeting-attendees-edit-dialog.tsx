@@ -39,11 +39,11 @@ export function MeetingAttendeesEditDialog({
     updateMeetingAttendeesAction,
     INITIAL_STATE,
   );
-  const handledAt = useRef<number>(0);
+  const handled = useRef<number[] | null>(null);
 
   useEffect(() => {
-    if (state.attendeeIds && handledAt.current !== state.attendeeIds.length) {
-      handledAt.current = state.attendeeIds.length;
+    if (state.attendeeIds && handled.current !== state.attendeeIds) {
+      handled.current = state.attendeeIds;
       setOpen(false);
       toast.success("참석자 명단을 바꿨습니다");
     }

@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { requireAccessToken } from "@/features/auth/session";
 import { TOP_LEVEL_PROJECTS } from "@/features/project/mock/projects";
 import { PROJECT_TEAM_ACTIONS_MOCK } from "@/features/project/mock/team-actions";
+import { getViewer } from "@/features/shell/viewer";
 import { ApiError, serverApi } from "@/lib/api";
 import { ep } from "@/lib/endpoints";
 import { getMockActor } from "@/lib/mock-actor";
@@ -144,7 +145,7 @@ export async function createRoomReservationAction(
   formData: FormData,
 ): Promise<RoomReservationFormState> {
   const draft = readDraft(formData);
-  const actor = getMockActor();
+  const actor = isMock ? getMockActor() : await getViewer();
   const errors = validateRoomReservationDraft(draft, { role: actor.role });
   if (Object.keys(errors).length > 0) return { errors };
 
@@ -319,8 +320,7 @@ export async function deleteMeetingRoomAction(formData: FormData): Promise<void>
     try {
       await serverApi<null>(ep.meetingRoom(Number(id)), { method: "DELETE", accessToken });
     } catch (error) {
-      if (error instanceof ApiError && error.status === 404) return;
-      throw error;
+      if (!(error instanceof ApiError) || error.status !== 404) throw error;
     }
     revalidatePath(MANAGE_ROOMS_PATH);
     revalidatePath(ROOMS_PATH);
