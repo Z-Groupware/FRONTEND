@@ -1,5 +1,72 @@
+/**
+ * BE shape → UI 계약(§Mock 격리막). 컴포넌트는 이 파일을 모른다 — `server.ts`만 쓴다.
+ * [확인] D도메인 REST API 명세(2026-08-12) 대조.
+ */
+
+import type { DashboardMeeting } from "@/components/common/dashboard-meeting-item";
+import type { MeetingStatus } from "@/constants/meeting";
+
 import { formatMeetingSchedule } from "./lib";
 import type { CaptureAttendee, MeetingCaptureInfo } from "./view-types";
+
+/**
+ * `GET /api/meetings/upcoming`(MEET-03, 구현 완료) 목록 원소.
+ * ⚠️ `project`엔 `name`·`color`도 오지만 이 위젯이 안 쓴다 — 안 쓰는 필드는 안 적는다
+ *    (`BeMeetingDetail`과 같은 원칙).
+ * ⚠️ 개설자(host) 이름·소속 라벨은 이 계약에 없다 — `isHost`(보는 사람이 host인가)뿐이라
+ *    "누가 개설했는가"는 여기서 못 구한다(§mapper `toDashboardMeeting` 참고).
+ */
+export interface BeUpcomingMeeting {
+  meetingId: number;
+  title: string;
+  status: string;
+  startAt: string;
+  endAt: string;
+  attendeeCount: number;
+  isHost: boolean;
+  entryAvailable: boolean;
+  meetingRoom: { meetingRoomId: number; name: string };
+  project: { projectId: number; tag: string };
+}
+
+export interface BeUpcomingMeetingsResponse {
+  meetings: BeUpcomingMeeting[];
+}
+
+/**
+ * 대시보드 "참석 회의" 위젯(`DashboardMeetingItem`)이 받는 모양으로 바꾼다.
+ * ⚠️ `originLabel`을 안 채운다 — 이 계약엔 개설자 소속(Owner 개설/팀명) 정보가 없다. 없는 값을
+ *    지어내지 않는다(§정직성) — 화면은 그 값이 없으면 라벨을 그냥 안 그린다(`hostLabel`과
+ *    같은 선택 필드로 취급).
+ * ⚠️ `entryAvailable`·`isHost`는 지금 이 위젯에 [입장] 버튼이 없어(WORKFLOW.md §3-2, 목록
+ *    화면의 카드에만 있음) 쓰지 않는다 — 화면에 없는 기능을 새로 만들지 않는다(§명세).
+ */
+export function toDashboardMeeting(be: BeUpcomingMeeting): DashboardMeeting {
+  return {
+    id: String(be.meetingId),
+    title: be.title,
+    projectTag: be.project.tag,
+    status: be.status as MeetingStatus,
+    room: be.meetingRoom.name,
+    scheduledAt: be.startAt,
+    attendeeCount: be.attendeeCount,
+  };
+}
+
+/**
+ * `PUT /api/meetings/{meetingId}/attendees`(MEET-09, 구현 완료) 요청·응답.
+ * ⚠️ 응답에 참석자 명단이 실제로 온다 — 예전엔 "계약에 응답 shape이 없다"고 가정하고 방금
+ *    보낸 값을 그대로 echo했는데, 명세가 확정되면서 서버가 돌려준 명단(호스트 자동 포함·중복
+ *    제거가 이미 반영된 값)을 그대로 쓰는 쪽이 더 정확하다.
+ */
+export interface BeUpdateAttendeesResponse {
+  meetingId: number;
+  attendees: { memberId: number; name: string; teamName: string | null }[];
+}
+
+export function attendeeIdsFrom(response: BeUpdateAttendeesResponse): number[] {
+  return response.attendees.map((attendee) => attendee.memberId);
+}
 
 /**
  * BE shape → 화면 계약(§Mock 격리막).
@@ -12,7 +79,7 @@ import type { CaptureAttendee, MeetingCaptureInfo } from "./view-types";
  */
 
 /**
- * `GET /api/v1/meetings/{meetingId}` 응답(MEET-04).
+ * `GET /api/meetings/{meetingId}` 응답(MEET-04).
  *
  * ⚠️ **캡처 화면이 실제로 쓰는 필드만 적는다.** 응답에는 `recordingConsent`·`createdAt`·
  *    `project.name`·`project.color`·`meetingRoom.location`도 오지만, 안 쓰는 필드를 적어 두면

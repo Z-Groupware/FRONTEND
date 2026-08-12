@@ -51,7 +51,7 @@ export const ep = {
   companyOnboarding: () => "/api/companies/me/onboarding",
 
   /*
-   * 회의 — [확인] BE 실코드 대조(2026-08-12, "회의·회의실·공지사항 API 경로 통일" 리팩터 반영)
+   * 회의 — [확인] BE 실코드 대조(2026-08-12, 커밋 `51b5482f` "회의·회의실·공지사항 API 경로 통일" 리팩터 반영)
    *   `meeting/presentation/api/{MeetingController,MeetingListController,MeetingDetailController}.java`
    *
    * ⚠️ **`/api/v1/` 접두사는 폐기됐다**(2026-08-12, 커밋 `51b5482f`) — 그 전에 붙였던 v1은
@@ -60,20 +60,30 @@ export const ep = {
   meetings: () => "/api/meetings",
   /** 상세(MEET-04) — 캡처 진입도 이걸 쓴다. 없으면 404 `MT-001`, 열람 권한 없으면 403 `MT-011` */
   meeting: (id: number) => `/api/meetings/${id}`,
+  /** 내 예정 회의(MEET-03, 구현 완료) — 대시보드 위젯용. `limit` 생략 시 서버 기본값(5, 최대 20). */
+  meetingsUpcoming: (params?: { limit?: number }) => `/api/meetings/upcoming${toQuery(params)}`,
+  /** 참석자 명단 교체(MEET-09, 구현 완료) — 전체 명단 교체(부분 추가·삭제 아님). */
+  meetingAttendees: (meetingId: number) => `/api/meetings/${meetingId}/attendees`,
 
   /*
-   * 캡처 — [확인] BE 실코드 대조(2026-08-12, "회의·회의실·공지사항 API 경로 통일" 리팩터 반영)
+   * 캡처 — [확인] BE 실코드 대조(2026-08-12, 커밋 `51b5482f` "회의·회의실·공지사항 API 경로 통일" 리팩터 반영)
    *   `cap/presentation/api/{CaptureUploadController,CaptionController,CaptureQueryController}.java`
    *   `meeting/presentation/api/{CaptureSessionController,MeetingCompletionController}.java`
    *   `capture/presentation/api/AnalysisController.java`
    *
    * ⚠️ **`/api/v1/` 접두사는 폐기됐다**(2026-08-12, 커밋 `51b5482f`). 캡처 세션(CAP-01·02·03)과
    *    회의 종료(MEET-08)도 이제 자막·조각·분석과 똑같이 `/api/`만 쓴다 — v1을 되살리면 전부 404다.
+   * ⚠️ **CAP-01(녹음 시작)이 예전 MEET-07(입장)을 흡수했다**(2026-08-12 정합성 감사 P0) — 이
+   *    경로는 이제 `SCHEDULED → IN_PROGRESS` 전이와 캡처 세션 생성을 한 트랜잭션으로 한다.
+   *    ⚠️ **아직 `status: spec`이다**(D도메인 명세 기준 미구현) — 흡수된 흐름에 맞춘 호출부
+   *    (`capture/actions.ts`) 재설계는 별도 이슈다.
+   * ⚠️ **CAP-09(이어받기)·CAP-10(세션 단독 조회)은 폐기됐다**(2026-08-12) — host 장애는
+   *    참석자 이어받기가 아니라 host 본인 재접속으로 복구한다.
    */
   captureSession: (meetingId: number) => `/api/meetings/${meetingId}/capture-session`,
   captureSessionPause: (meetingId: number) => `/api/meetings/${meetingId}/capture-session/pause`,
   captureSessionResume: (meetingId: number) => `/api/meetings/${meetingId}/capture-session/resume`,
-  /** 회의 종료 + 분석 접수(MEET-08) — 분석은 **서버가** 큐에 건다, 프론트가 부르지 않는다 */
+  /** 회의 종료 + 분석 접수(MEET-08, 구현 완료) — 분석은 **서버가** 큐에 건다, 프론트가 부르지 않는다 */
   meetingComplete: (meetingId: number) => `/api/meetings/${meetingId}/complete`,
 
   /** 자막 청크 **배치** 전송(CAP-11)·전체 조회(CAP-12) */
@@ -93,8 +103,6 @@ export const ep = {
     `/api/meetings/${meetingId}/parts/${seq}/complete`,
   /** 어디까지 올라갔는지(CAP-08) — 새로고침·크래시 뒤 이어 올리기 */
   partsStatus: (meetingId: number) => `/api/meetings/${meetingId}/parts/status`,
-  /** 진행 중 캡처(CAP-09) — 파라미터 없음, 토큰의 사람 기준으로 서버가 찾는다 */
-  activeCapture: () => "/api/captures/active",
   /** AI 처리 상태(CAP-06) — 종료 뒤 폴링 */
   processingStatus: (meetingId: number) => `/api/meetings/${meetingId}/processing-status`,
 

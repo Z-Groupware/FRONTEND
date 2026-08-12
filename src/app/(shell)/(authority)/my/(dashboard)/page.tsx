@@ -62,17 +62,21 @@ export default async function MemberDashboardPage() {
           />
         </section>
 
-        {/* 참석 회의 — 최신 5건 고정 */}
+        {/*
+          참석 회의 — 예정·진행중 5건 고정(MEET-03, 가까운 시간부터).
+          ⚠️ 완료 회의는 여기 안 나온다 — "최신 5건"이 아니라 **다가올 회의**를 보여주는
+             자리라서다(entry 버튼 없이도 [입장]이 필요한 회의만 남긴다).
+        */}
         <section className="border-border bg-card flex shrink-0 flex-col overflow-hidden rounded-2xl border">
           <div className="border-border flex shrink-0 items-baseline justify-between gap-3 border-b px-7 pt-6 pb-3">
             <h2 className="text-[17px] leading-7 font-semibold tracking-[-0.3px]">참석 회의</h2>
-            <span className="text-muted-foreground text-[12px] leading-4">최신 5건</span>
+            <span className="text-muted-foreground text-[12px] leading-4">예정 5건</span>
           </div>
           {attendedMeetings.length === 0 ? (
             <EmptyState
               className="flex-1"
               icon={CalendarClock}
-              title="참석할 회의가 없습니다."
+              title="예정된 회의가 없습니다."
               description="회의에 참석자로 담기면 이 자리에 쌓입니다."
             />
           ) : (
