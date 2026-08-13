@@ -12,6 +12,7 @@ import { FieldError } from "@/components/common/field-error";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
+import type { AttendeeScopeViewer } from "../attendee-scope";
 import { RESERVATION_DURATION_MINUTES } from "../constants";
 import type {
   MeetingRoom,
@@ -37,8 +38,9 @@ interface RoomReservationDialogProps {
    *  직접 못 부른다. */
   showParentTeamAction: boolean;
   teamActions: RoomTeamActionOption[];
-  /** 참석자 "내 부서만" 필터 기준 — `RoomAttendeePicker`로 그대로 흘려보낸다. */
-  viewerTeamName: string | null;
+  /** 참석자 범위(Owner=팀장만 / Leader·Member=자기 팀만) 기준 — `RoomAttendeePicker`로
+   *  그대로 흘려보낸다(`attendee-scope.ts`, 2026-08-13 확정). */
+  viewer: AttendeeScopeViewer;
   /** 생성 성공 시 호출 — 재조회 없이 부모 화면에 바로 얹는다(§최적화: action 리턴값 그대로 반영). */
   onCreated: (created: RoomReservation) => void;
 }
@@ -134,7 +136,7 @@ export function RoomReservationDialog({
   projects,
   showParentTeamAction,
   teamActions,
-  viewerTeamName,
+  viewer,
   onCreated,
 }: RoomReservationDialogProps) {
   const { state, formAction, form, setForm, handleOpenChange } = useRoomReservationForm({
@@ -223,7 +225,7 @@ export function RoomReservationDialog({
                   members={members}
                   selectedIds={form.attendeeIds}
                   onChange={(attendeeIds) => setForm((prev) => ({ ...prev, attendeeIds }))}
-                  viewerTeamName={viewerTeamName}
+                  viewer={viewer}
                 />
                 <FieldError reserveSpace message={state.errors.attendeeIds} />
               </div>

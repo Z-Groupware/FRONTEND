@@ -1,6 +1,7 @@
-const START_HOUR = 8;
-const END_HOUR = 18;
-const HOURS_VISIBLE = END_HOUR - START_HOUR;
+import { GRID_END_HOUR, GRID_START_HOUR } from "./grid-slot";
+
+/** ⚠️ 시간대는 `grid-slot.ts`가 정본이다 — 여기서 8·18을 또 적으면 칸 높이와 칸 시각이 갈린다. */
+const HOURS_VISIBLE = GRID_END_HOUR - GRID_START_HOUR;
 /**
  * 요일 헤더 높이 — `weekly-room-calendar.css`의 `.rbc-time-header-content` 기준.
  * ⚠️ `.rbc-allday-cell`을 숨겨서 헤더는 이제 요일 행 하나뿐이다(예전엔 그 행까지 감안해 더 컸다).

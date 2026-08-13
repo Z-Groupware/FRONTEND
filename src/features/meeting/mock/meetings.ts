@@ -106,6 +106,24 @@ export function updateMockMeetingAttendees(id: string, attendeeIds: number[]): M
 }
 
 /**
+ * 회의 정보 수정(MEET-05) — **보낸 값만 갈아 끼운다**(부분 수정).
+ *
+ * ⚠️ 지금 화면이 보내는 건 제목뿐이다. BE는 프로젝트·회의실·시간·녹음 동의도 받지만
+ *    (`UpdateMeetingRequest`) 그쪽은 예약 슬롯을 다시 잡는 일이라 회의실 예약 화면의
+ *    슬롯 피커가 있어야 한다 — **안 붙인 필드를 받는 척하지 않는다**(§정직성).
+ * ⚠️ 상태 판정(`meetingStatusOf`)은 호출부(`actions.ts`)가 이미 하고 온다 —
+ *    `cancelMockMeeting`·`updateMockMeetingAttendees`와 같은 자리 나눔이다.
+ */
+export function updateMockMeeting(id: string, patch: { title: string }): Meeting | null {
+  const found = findMockMeeting(id);
+  if (!found) return null;
+
+  const updated: Meeting = { ...found, title: patch.title };
+  store.meetings = store.meetings.map((meeting) => (meeting.id === id ? updated : meeting));
+  return updated;
+}
+
+/**
  * 분석 진행도를 옮긴다 — **목 전용**이다.
  *
  * ⚠️ 실서비스에서는 이 값을 프론트가 못 옮긴다. 분석은 서버가 종료 처리 안에서 돌리고

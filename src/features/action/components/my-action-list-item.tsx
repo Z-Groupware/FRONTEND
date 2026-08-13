@@ -8,10 +8,19 @@ import { cn } from "@/lib/utils";
 
 import type { MyActionListItem } from "../types";
 
-/** 상태 배지 색 — `member/components/action-timeline`의 BAR_CLASS와 같은 결(할일·완료=무채색, 진행중=초록, 지연=빨강). */
+/**
+ * 상태 배지 색 — `member/components/action-timeline`의 BAR_CLASS와 같은 결
+ * (할일·완료=무채색, 진행중=초록, 지연=빨강).
+ *
+ * ⚠️ **진행중은 `--status-progress`다, `--success`가 아니다**(2026-08-13, #435).
+ *    두 토큰은 지금 값이 같을 뿐 **따로 선언된 별개 토큰**이라, 여기만 성공 토큰을 빌려 쓰면
+ *    한쪽만 조정되는 날 같은 "진행중"이 화면마다 다른 색이 된다 — `action-timeline.tsx`의
+ *    BAR_CLASS가 같은 함정에 경고를 달아 둔 자리다.
+ *    보이는 색은 그대로다(DESIGN §5 상태점: 진행중=초록).
+ */
 const STATUS_TONE: Record<"TODO" | "IN_PROGRESS" | "DONE" | "DELAYED", string> = {
   TODO: "bg-muted text-muted-foreground",
-  IN_PROGRESS: "bg-success/12 text-success",
+  IN_PROGRESS: "bg-status-progress/12 text-status-progress",
   DONE: "bg-muted text-muted-foreground",
   DELAYED: "bg-destructive/10 text-destructive",
 };

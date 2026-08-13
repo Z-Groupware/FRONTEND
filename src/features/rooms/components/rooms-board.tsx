@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import type { AttendeeScopeViewer } from "../attendee-scope";
 import { toCalendarEventFromReservation } from "../mapper";
 import { getNextAvailableSlot } from "../next-available-slot";
 import type {
@@ -27,8 +28,9 @@ interface RoomsBoardProps {
    *  못 부른다(여기·`RoomReservationDialog`가 전부 client). */
   showParentTeamAction: boolean;
   teamActions: RoomTeamActionOption[];
-  /** 참석자 "내 부서만" 필터 기준 — `RoomReservationDialog`로 그대로 흘려보낸다. */
-  viewerTeamName: string | null;
+  /** 참석자 범위(Owner=팀장만 / Leader·Member=자기 팀만) 기준 — `RoomReservationDialog`로
+   *  그대로 흘려보낸다(`attendee-scope.ts`, 2026-08-13 확정). */
+  viewer: AttendeeScopeViewer;
   /** "YYYY-MM-DD" — 이 주의 월요일. 서버 컴포넌트가 이 주 기준으로 `initialEvents`를 내려준다. */
   week: string;
 }
@@ -53,7 +55,7 @@ export function RoomsBoard({
   projects,
   showParentTeamAction,
   teamActions,
-  viewerTeamName,
+  viewer,
   week,
 }: RoomsBoardProps) {
   const [events, setEvents] = useState(initialEvents);
@@ -85,7 +87,7 @@ export function RoomsBoard({
         projects={projects}
         showParentTeamAction={showParentTeamAction}
         teamActions={teamActions}
-        viewerTeamName={viewerTeamName}
+        viewer={viewer}
         onCreated={(created) => {
           // ⚠️ 지금 보고 있는 회의실과 다른 회의실에 예약했으면 이 그리드엔 안 얹는다 — 다른
           //    회의실의 예약을 이 화면에 섞으면 그 그리드가 거짓말을 하게 된다(§정직성).

@@ -12,6 +12,10 @@ import { CALENDAR_ITEM_TAG, type CalendarItemTag } from "./types";
  *    `getTodoTitleColor` 참고) — 항목이 많아질 때 색만으로도 서로 다른 일임을 구분하기
  *    쉽게 하려는 것이다. `CALENDAR_TAG_BG`/`FG`의 `PERSONAL_TODO` 값은 그 함수를 못 쓰는
  *    자리(예: 아직 제목이 없는 자리)를 위한 **기본값**으로만 남는다.
+ * ⚠️ **PROJECT도 같은 이유로 프로젝트 태그마다 색이 갈린다**(`getProjectTagColor`) — 프로젝트
+ *    목록(`project-list-table.tsx`)과 **같은 팔레트·같은 해시 규칙**(`pickPaletteColor`)을 써서,
+ *    같은 프로젝트는 캘린더에서도 목록에서도 같은 색으로 보인다. `CALENDAR_TAG_BG`/`FG`/
+ *    `DOT_COLOR`의 `PROJECT` 값은 태그 문자열이 없는 자리를 위한 기본값이다.
  * ⚠️ 빨강 계열은 피한다 — 우리 빨강은 **에러 전용**이라 일정 색으로 쓰면 뜻이 섞인다.
  *    fuchsia는 분홍이되 빨강 쪽으로 넘어가지 않는 자리다.
  * ⚠️ **벌을 섞지 않는다**(§5). 글자가 얹히는 칩은 `bg`+`fg` 한 벌, 글자가 없는 점은 `solid`다.
@@ -22,12 +26,14 @@ import { CALENDAR_ITEM_TAG, type CalendarItemTag } from "./types";
 export const CALENDAR_TAG_BG: Record<CalendarItemTag, string> = {
   [CALENDAR_ITEM_TAG.PERSONAL_TODO]: "var(--tag-sky-bg)",
   [CALENDAR_ITEM_TAG.PERSONAL_ACTION]: "var(--tag-fuchsia-bg)",
+  [CALENDAR_ITEM_TAG.PROJECT]: "var(--tag-slate-bg)",
 };
 
 /** 그 칩 **위의 글자** — 같은 벌이라 대비가 보장된다 */
 export const CALENDAR_TAG_FG: Record<CalendarItemTag, string> = {
   [CALENDAR_ITEM_TAG.PERSONAL_TODO]: "var(--tag-sky-fg)",
   [CALENDAR_ITEM_TAG.PERSONAL_ACTION]: "var(--tag-fuchsia-fg)",
+  [CALENDAR_ITEM_TAG.PROJECT]: "var(--tag-slate-fg)",
 };
 
 /**
@@ -37,6 +43,7 @@ export const CALENDAR_TAG_FG: Record<CalendarItemTag, string> = {
 export const CALENDAR_TAG_DOT_COLOR: Record<CalendarItemTag, string> = {
   [CALENDAR_ITEM_TAG.PERSONAL_TODO]: "var(--tag-sky-solid)",
   [CALENDAR_ITEM_TAG.PERSONAL_ACTION]: "var(--tag-fuchsia-solid)",
+  [CALENDAR_ITEM_TAG.PROJECT]: "var(--tag-slate-solid)",
 };
 
 /**
@@ -49,6 +56,14 @@ export const CALENDAR_TAG_DOT_COLOR: Record<CalendarItemTag, string> = {
  */
 export function getTodoTitleColor(title: string): PaletteColor {
   return pickPaletteColor(title);
+}
+
+/**
+ * 프로젝트 태그에서 색을 뽑는다 — 프로젝트 목록(`project-list-table.tsx`)과 **같은 팔레트·
+ * 같은 해시 규칙**이라 캘린더와 목록 어디서 봐도 그 프로젝트는 같은 색이다.
+ */
+export function getProjectTagColor(tag: string): PaletteColor {
+  return pickPaletteColor(tag);
 }
 
 /**

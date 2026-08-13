@@ -122,6 +122,10 @@ export function findMockReservation(id: string): RoomReservation | null {
  *    같은 이유).
  * ⚠️ 참조 무결성(roomId/projectId/attendeeIds/parentTeamActionId 존재 여부)은 여기서 다시
  *    안 본다 — 호출부(`actions.ts`)가 먼저 확인한 뒤에만 이 함수를 부른다.
+ * ⚠️ **host는 명단 맨 앞에 자동으로 들어간다** — 피커가 host를 후보로 안 내주므로
+ *    (`attendee-scope.ts`) 제출값에는 host가 없다. 안 넣으면 MEMBER가 개설한 회의를 개설자
+ *    본인이 못 연다(`canViewMeetingDetail`은 참석자 명단으로 판정한다). 교체(MEET-09)의
+ *    `updateMockMeetingAttendees`·시드 데이터와 같은 규칙이다.
  */
 export function addMockReservation(draft: RoomReservationDraft, actor: Actor): RoomReservation {
   const room = findMockRoom(draft.roomId);
@@ -139,7 +143,7 @@ export function addMockReservation(draft: RoomReservationDraft, actor: Actor): R
     projectId: draft.projectId,
     projectTag: project?.tag ?? "",
     topics: draft.topics.map((topic) => ({ main: topic.main.trim(), sub: topic.sub.trim() })),
-    attendeeIds: draft.attendeeIds,
+    attendeeIds: Array.from(new Set([actor.id, ...draft.attendeeIds])),
     ownerId: actor.id,
   };
   store.reservations = [...store.reservations, reservation];
