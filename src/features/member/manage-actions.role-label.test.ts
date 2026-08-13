@@ -180,4 +180,29 @@ describe("changeMemberGradeAction — 실서버 요청 본문의 roleLabel", () 
     const [, options] = serverApiMock.mock.calls[0]!;
     expect(options.json).not.toHaveProperty("roleLabel");
   });
+
+  /*
+    ⚠️ 조회값이 `null`이 아니라 **문자열 `"없음"`으로 오는 경우**를 따로 검증한다 — 저장할 때
+       `toBeRoleLabel`이 빈 값을 `"없음"`으로 바꿔 보내므로, 이미 비워 둔 사람은 다음 조회에서
+       `roleLabel`이 `null`이 아니라 `"없음"` 문자열로 돌아온다(`manage-mapper.ts`는 빈 문자열만
+       `null`로 되돌리고 `"없음"`은 그대로 둔다). 요청 값 `""`과 비교할 때 이 정규화가 없으면
+       실제로는 안 바뀐 값을 바뀌었다고 오판해 불필요한 PATCH가 나간다(2026-08-14 회귀).
+  */
+  it("기존 값이 문자열 '없음'이고 빈 값을 다시 보내면(안 바뀜) 키 자체를 안 싣는다", async () => {
+    getManagedMemberMock.mockResolvedValue({
+      member: memberOf({ roleLabel: "없음" }),
+      actions: [],
+      pendingHandover: null,
+    });
+
+    await changeMemberGradeAction(4, {
+      position: "사원",
+      authority: AUTHORITY.MEMBER,
+      isAdmin: false,
+      roleLabel: "",
+    });
+
+    const [, options] = serverApiMock.mock.calls[0]!;
+    expect(options.json).not.toHaveProperty("roleLabel");
+  });
 });

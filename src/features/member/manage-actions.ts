@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 
 import type { Authority } from "@/constants/authority";
 import { AUTHORITY, POSITION_AUTHORITIES } from "@/constants/authority";
-import { MEMBER_STATUS } from "@/constants/member";
+import { MEMBER_STATUS, ROLE_NONE_LABEL } from "@/constants/member";
 import { requireAccessToken } from "@/features/auth/session";
 import { getCompanyOrg } from "@/features/company/server";
 import { getViewer } from "@/features/shell/viewer";
@@ -173,8 +173,18 @@ export async function changeMemberGradeAction(
     ⚠️ **대상을 읽은 뒤에 본다.** 기준이 그 사람이 지금 속한 팀이라, 조회 전에 두면
        무엇과 견줘야 할지 알 수 없다. 팀은 이 화면에서 안 바꾼다.
   */
-  const roleLabel = next.roleLabel?.trim();
-  const currentRoleLabel = target.member.roleLabel?.trim() ?? "";
+  /*
+    ⚠️ **`ROLE_NONE_LABEL`("없음")도 빈 값과 같이 본다.** 저장할 때 `toBeRoleLabel`이 빈
+       문자열을 시스템 행 `"없음"`으로 바꿔 보내므로, 이미 "없음"인 사람의 값은 조회에서도
+       "없음" 그대로 돌아온다 — 이 정규화 없이 요청 값 `""`과 그대로 비교하면 실제로는 안
+       바뀐 값을 "바뀌었다"고 오판해 불필요한 PATCH가 나간다.
+  */
+  const normalizeRoleLabel = (label: string | null | undefined) => {
+    const trimmed = label?.trim() ?? "";
+    return trimmed === ROLE_NONE_LABEL ? "" : trimmed;
+  };
+  const roleLabel = next.roleLabel !== undefined ? normalizeRoleLabel(next.roleLabel) : undefined;
+  const currentRoleLabel = normalizeRoleLabel(target.member.roleLabel);
   const changesRole = roleLabel !== undefined && roleLabel !== currentRoleLabel;
   if (
     changesRole &&
@@ -207,8 +217,9 @@ export async function changeMemberGradeAction(
          2026-08-13 develop `30952c10` — 칸은 있다). 빈 문자열은 `@Pattern`이 400으로 거절하고
          `null`(=필드 없음)은 "안 바꾼다"라, **안 고친 저장은 필드째 뺀다** — 늘 실어 보내면
          직급만 고쳐도 역할이 함께 써진다.
-      ⚠️ 나가는 값은 **회사에 실제로 있는 역할 이름**뿐이다. 화면 라벨 상수(`ROLE_NONE_LABEL`)를
-         요청 값으로 쓰지 않는다 — 한글 라벨은 화면 것이고 BE로 나갈 값이 아니다(§도메인 상수).
+      ⚠️ 나가는 값은 **회사에 실제로 있는 역할 이름 또는 `ROLE_NONE_LABEL`**("없음")이다.
+         "없음"은 화면이 지어낸 라벨이 아니라 역할 미부여를 뜻하는 **BE 시스템 값**이다
+         (BE V2.3.9, `toBeRoleLabel` 참고) — 비우기 요청은 실제로 이 값을 그대로 실어 보낸다.
     */
     const jobPosition = company.positions.find((item) => item.name === position);
     if (!jobPosition) return { isSuccess: false, message: "회사에 없는 직급입니다" };
