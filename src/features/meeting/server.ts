@@ -55,7 +55,14 @@ import type {
 /** Owner 개설 회의의 소속 라벨(WORKFLOW §2) — 옛 문구 "프로젝트 공통"은 폐기됐다 */
 const OWNER_ORIGIN_LABEL = "Owner 개설";
 
-/** 팀 액션 회의의 라벨 — 상위 팀 액션 이름. 목이 어긋나 못 찾으면 팀 액션임은 알린다 */
+/**
+ * 팀 액션 회의의 라벨 — 상위 팀 액션 이름. 목이 어긋나 못 찾으면 팀 액션임은 알린다.
+ *
+ * ⚠️ **이 함수는 목 전용이다.** 실 응답에는 상위 팀 액션 이름도, host 소속도 안 실린다 —
+ *    연동할 때 이 라벨을 채우려면 BE에 그 필드를 **요청해야 한다.** 기다리면 오는 값이
+ *    아니다(링크 자체는 BE 모델에 이미 있고 막힌 곳은 응답 DTO다 — 근거는 `mapper.ts`의
+ *    `toDashboardMeeting` 주석에 모아 뒀다).
+ */
 function originLabelOf(meeting: Meeting): string {
   if (meeting.hostAuthority === "OWNER") return OWNER_ORIGIN_LABEL;
 

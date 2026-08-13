@@ -84,6 +84,8 @@ function toAiSummaryStatus(be: string | null | undefined): AiSummaryStatus | nul
  *    (`BeMeetingDetail`과 같은 원칙).
  * ⚠️ 개설자(host) 이름·소속 라벨은 이 계약에 없다 — `isHost`(보는 사람이 host인가)뿐이라
  *    "누가 개설했는가"는 여기서 못 구한다(§mapper `toDashboardMeeting` 참고).
+ * ⚠️ **상위 팀 액션도 없다.** 기다리면 오는 값이 아니라 **요청해야 오는 값**이다 —
+ *    자세한 사정은 `toDashboardMeeting`의 `originLabel` 주석에 한 곳으로 모아 적었다.
  */
 export interface BeUpcomingMeeting {
   meetingId: number;
@@ -104,9 +106,24 @@ export interface BeUpcomingMeetingsResponse {
 
 /**
  * 대시보드 "참석 회의" 위젯(`DashboardMeetingItem`)이 받는 모양으로 바꾼다.
- * ⚠️ `originLabel`을 안 채운다 — 이 계약엔 개설자 소속(Owner 개설/팀명) 정보가 없다. 없는 값을
- *    지어내지 않는다(§정직성) — 화면은 그 값이 없으면 라벨을 그냥 안 그린다(`hostLabel`과
- *    같은 선택 필드로 취급).
+ * ⚠️ `originLabel`을 안 채운다 — 이 계약엔 개설자 소속(Owner 개설/팀명)도, 팀 액션 회의의
+ *    상위 팀 액션 이름도 없다. 없는 값을 지어내지 않는다(§정직성) — 화면은 그 값이 없으면
+ *    라벨을 그냥 안 그린다(`hostLabel`과 같은 선택 필드로 취급).
+ *
+ * ⚠️ **"곧 온다"고 적어 두지 않는다**(2026-08-13 정정). 예전 주석은 "아직 없다"로 읽혀
+ *    기다리면 오는 값처럼 보였는데, **아무도 요청하지 않으면 영영 안 온다.** 지금 확인한 사실은
+ *    이렇다([확인] BE 실코드 대조, 2026-08-13):
+ *      · 링크 자체는 **BE 모델에 있다** — `meeting.related_action_id`(action FK,
+ *        `V3.1.1`·`V3.1.2` 마이그레이션), 도메인 `Meeting.relatedActionId`. 예약할 때
+ *        정책 검증까지 한다(`MeetingService.validateRelatedActionPolicy` — OWNER는 못 넣고,
+ *        그 외 역할은 반드시 넣는다).
+ *      · 그런데 **어떤 응답 DTO에도 안 실린다** — `MeetingDetailResponse`·
+ *        `MeetingListResponse`·`UpcomingMeetingListResponse` 셋 다 `relatedActionId`도
+ *        `teamId`도 host `role`도 없다.
+ *    ⇒ 그러니 이건 "모델에 없어서 못 준다"가 아니라 **"모델엔 있는데 안 내보낸다"**이고,
+ *      막힌 곳은 응답 DTO 하나다. 필요해지면 그 필드를 실어 달라고 요청하면 된다.
+ * ⚠️ (팀 협의 기록에는 "회의↔액션 링크가 모델에 없어 영구 제공 불가"로 남아 있는데, 위
+ *    실코드와 어긋난다 — **코드가 맞다**(§연동 검증). 고치기 전에 담당자에게 한 번 확인한다.)
  * ⚠️ `entryAvailable`·`isHost`는 지금 이 위젯에 [입장] 버튼이 없어(WORKFLOW.md §3-2, 목록
  *    화면의 카드에만 있음) 쓰지 않는다 — 화면에 없는 기능을 새로 만들지 않는다(§명세).
  */

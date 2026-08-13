@@ -17,13 +17,45 @@
  *      §렌더링·데이터: "알림=SSE, BFF가 스트림을 중계"), 캡처 조각·검색·`todos` 등은 연동이
  *      진행 중이다. 지우기 전에 **그 도메인 담당자·이슈를 먼저 본다.**
  */
-/** 목록 3종(`GET /api/projects`·`/api/actions`·`/api/team/actions`)이 공유하는 쿼리 파라미터. */
-export interface ProjectListParams {
+/**
+ * 목록 3종(`GET /api/projects`·`/api/actions`·`/api/team/actions`)이 공유하는 쿼리 파라미터.
+ * ⚠️ **`sort`는 여기 없다.** 컨트롤러마다 화이트리스트가 달라서(프로젝트만 `name`을 받는다)
+ *    한 타입에 몰아 두면 액션 목록에 `sort=name`을 보내도 타입이 안 막는다 — BE는 모르는
+ *    값을 조용히 무시하므로 화면만 엉뚱한 차례로 서고 아무도 못 본다(§연동 검증).
+ */
+export interface ListPageParams {
   status?: "TODO" | "IN_PROGRESS" | "DONE";
-  sort?: "dueDate" | "createdAt";
   order?: "asc" | "desc";
   page?: number;
   size?: number;
+}
+
+/**
+ * 프로젝트 목록.
+ * ⚠️ `keyword`·`sort=name`은 **2026-08-13에 BE가 붙였다**(커밋 `9bd9c010` — [확인]
+ *    `ProjectController.list` 주석 "keyword 검색 추가 … 프로젝트명 대소문자 무시 부분일치",
+ *    `sort=dueDate|createdAt|name`). 이게 없어서 이 목록만 무한 스크롤을 못 얹고 전량을
+ *    받아 화면에서 거르고 있었다(#417 잔여분).
+ */
+export interface ProjectListParams extends ListPageParams {
+  keyword?: string;
+  sort?: "dueDate" | "createdAt" | "name";
+}
+
+/**
+ * 액션 목록 2종(`/api/actions`·`/api/team/actions`) — ⚠️ `sort`에 `name`이 **없다**.
+ * ⚠️ 프로젝트와 갈라 두는 이유: 컨트롤러마다 화이트리스트가 달라서 한 타입에 몰아 두면
+ *    액션 목록에 `sort=name`을 보내도 타입이 안 막는다 — BE는 모르는 값을 조용히 무시하므로
+ *    화면만 엉뚱한 차례로 서고 아무도 못 본다(§연동 검증).
+ */
+export interface ActionListParams extends ListPageParams {
+  sort?: "dueDate" | "createdAt";
+  overdue?: boolean;
+  /**
+   * 값을 주면 호출자 본인이 아니라 **그 팀원의** 목록을 대신 조회한다(2026-08-11 추가,
+   * 이홍근 요청 — 팀원 관리 화면). LEADER 전용, 같은 팀 소속만 — [확인] `ActionController.java`.
+   */
+  assigneeMemberId?: number;
 }
 
 /**
@@ -47,14 +79,21 @@ export interface MeetingListParams {
   size?: number;
 }
 
-/** 개인 액션 목록만 갖는 `overdue` 필터가 추가된다. */
-export interface ActionListParams extends ProjectListParams {
+/**
+ * 회사 전체 구성원 액션(`GET /api/company/actions`) — **OWNER‖admin 전용**(2026-08-13 신설,
+ * 커밋 `9646c7a2`). [확인] `CompanyActionController` — `@PreAuthorize("hasRole('OWNER') or
+ * principal.isAdmin()")`.
+ *
+ * ⚠️ **`assigneeMemberId`가 사실상 필수다.** 경로는 `required = false`지만 유스케이스 주석이
+ *    "이 화면은 항상 특정 구성원 한 명의 액션을 보는 용도라 null은 이번 스코프에 없다"고
+ *    못 박았다 — 안 넘기면 무엇이 오는지 계약에 없다. 타입에서도 필수로 둔다.
+ * ⚠️ `/api/actions`의 같은 이름 파라미터와 **의미는 같고 스코프만 다르다**(팀 vs 회사).
+ *    그래서 경로가 갈린다 — 한쪽에 `?scope=`를 붙이지 않는다.
+ */
+export interface CompanyActionListParams extends ListPageParams {
+  assigneeMemberId: number;
+  sort?: "dueDate" | "createdAt";
   overdue?: boolean;
-  /**
-   * 값을 주면 호출자 본인이 아니라 **그 팀원의** 목록을 대신 조회한다(2026-08-11 추가,
-   * 이홍근 요청 — 팀원 관리 화면). LEADER 전용, 같은 팀 소속만 — [확인] `ActionController.java`.
-   */
-  assigneeMemberId?: number;
 }
 
 /** `undefined`·`null` 값은 쿼리에서 빠진다 — 서버 기본값을 그대로 쓰게 둔다. */
@@ -256,8 +295,10 @@ export const ep = {
   action: (id: number) => `/api/actions/${id}`,
   actionCompleteBulk: () => "/api/actions/complete/bulk",
   meetingActions: (meetingId: number) => `/api/meetings/${meetingId}/actions`,
+  /** 회사 전체 구성원 액션 — OWNER‖admin 전용(사원 상세의 담당 액션 카드). */
+  companyActions: (params: CompanyActionListParams) => `/api/company/actions${toQuery(params)}`,
 
-  teamActions: (params?: ProjectListParams) => `/api/team/actions${toQuery(params)}`,
+  teamActions: (params?: ActionListParams) => `/api/team/actions${toQuery(params)}`,
   teamAction: (id: number) => `/api/team/actions/${id}`,
   teamActionTimeline: (id: number) => `/api/team/actions/${id}?tab=timeline`,
   teamActionAttachmentDownloadUrl: (teamActionId: number, attachmentId: number) =>
