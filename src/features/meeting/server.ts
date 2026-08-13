@@ -18,13 +18,16 @@ import { isMock } from "@/mocks/config";
 import { formatMeetingSchedule, meetingListRange } from "./lib";
 import {
   type BeMeetingListItem,
+  type BeUtterance,
   hostIdOf,
   isClosed,
   parseMeetingDetail,
   parseMeetingList,
+  parseTranscriptsResponse,
   toMeetingCaptureInfo,
   toMeetingDetailView,
   toMeetingListItem,
+  toScriptChunks,
 } from "./mapper";
 import { findMockMeeting, listMockMeetings } from "./mock/meetings";
 import { ensureMockMeetingsSeeded, findMockMeetingExtras } from "./mock/seed";
@@ -341,6 +344,36 @@ export async function getMeetingDetail(id: string, viewer: Actor): Promise<Meeti
  * ⚠️ 개설자 판정은 **목 경로와 같은 함수**(`canOperateMeeting`)다. 매퍼는 값이 어디 있는지만
  *    알려 주고(`hostIdOf`) 판정은 `lib/permission.ts` 한 곳이다(CLAUDE.md §권한).
  */
+/**
+ * 발화 기록 전체(ANLZ-05) — 커서를 서버가 `nextCursor`로 끊어 줄 때까지 이어 받는다.
+ *
+ * ⚠️ **왜 페이지를 그대로 안 보여주고 다 모아 온다.** 이 화면은 스크롤 목록이 아니라
+ *    상세의 고정 섹션이다 — "N건"이라는 건수를 보여주는데 첫 페이지만 세면 그 수가
+ *    거짓말이 된다(§정직성, §목록·페이지네이션과는 다른 자리 — 여기는 무한 스크롤 목록이
+ *    아니라 한 회의 분량이 유한하다).
+ * ⚠️ **그래도 무한 루프는 안 된다.** BE가 커서를 안 끊어 주는 결함이 나면 화면이 걸린 채
+ *    영영 안 끝난다 — 상한(50페이지, 회의 하나에 발화 수천 건이라는 BE 주석 기준 넉넉하다)
+ *    에 걸리면 그때까지 받은 것만 돌린다. `console`은 커밋하지 않는다(PR 체크리스트) —
+ *    상한에 걸리는 건 BE 결함(끝없는 커서)일 때뿐이라 서버 쪽에서 잡을 일이다.
+ */
+async function fetchAllTranscripts(meetingId: number, accessToken: string): Promise<BeUtterance[]> {
+  const TRANSCRIPT_PAGE_CAP = 50;
+  const utterances: BeUtterance[] = [];
+  let cursor: string | undefined;
+
+  for (let page = 0; page < TRANSCRIPT_PAGE_CAP; page++) {
+    const raw = await serverApi<unknown>(ep.meetingTranscripts(meetingId, { cursor }), {
+      accessToken,
+    });
+    const parsed = parseTranscriptsResponse(raw);
+    utterances.push(...parsed.utterances);
+    if (!parsed.nextCursor) return utterances;
+    cursor = parsed.nextCursor;
+  }
+
+  return utterances;
+}
+
 async function getLiveMeetingDetail(id: string, viewer: Actor): Promise<MeetingDetailResult> {
   const accessToken = await requireAccessToken();
 
@@ -355,12 +388,23 @@ async function getLiveMeetingDetail(id: string, viewer: Actor): Promise<MeetingD
 
   /* ⚠️ 단언이 아니라 **검사**다 — 모양이 어긋나면 화면을 그리기 전에 여기서 멈춘다 */
   const detail = parseMeetingDetail(raw);
+  const view = toMeetingDetailView(detail, {
+    isHost: canOperateMeeting(viewer, { ownerId: hostIdOf(detail) }),
+  });
 
+  /*
+    ⚠️ **`pendingReason`이 있으면 발화 기록을 안 물어본다.** 화면이 그 칸을 안 그리는데
+       (`meeting-detail-view.tsx` — 안내 카드만 뜬다) 조회부터 하면 헛수고다. 회의가 아직
+       안 끝났으면 발화 자체가 없을 수도 있다.
+  */
+  if (view.pendingReason !== null) {
+    return { kind: "ok", detail: view };
+  }
+
+  const utterances = await fetchAllTranscripts(Number(id), accessToken);
   return {
     kind: "ok",
-    detail: toMeetingDetailView(detail, {
-      isHost: canOperateMeeting(viewer, { ownerId: hostIdOf(detail) }),
-    }),
+    detail: { ...view, script: toScriptChunks(new Date(detail.startAt), utterances) },
   };
 }
 

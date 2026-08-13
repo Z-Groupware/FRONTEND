@@ -122,6 +122,17 @@ export const ep = {
   /** 참석자 명단 교체(MEET-09, 구현 완료) — 전체 명단 교체(부분 추가·삭제 아님). */
   meetingAttendees: (meetingId: number) => `/api/meetings/${meetingId}/attendees`,
   /**
+   * 정본 스크립트 조회(ANLZ-05) — 회의 발화를 시간순으로. [확인]
+   * `capture/presentation/api/AnalysisController.getTranscripts`(2026-08-14, BE 실코드 대조).
+   *
+   * ⚠️ **커서는 우리가 해석하지 않는다.** 불투명한 문자열이고 BE가 준 `nextCursor`를 다음
+   *    호출의 `cursor`로 그대로 돌려준다 — 안에 무엇이 들었는지는 BE만 안다.
+   * ⚠️ `ids`는 근거 발화 지름길(검토 화면이 액션 근거 몇 건만 볼 때)이라 여기서는 안 쓴다 —
+   *    상세 화면은 전체를 시간순으로 읽는다.
+   */
+  meetingTranscripts: (meetingId: number, params?: { cursor?: string }) =>
+    `/api/meetings/${meetingId}/transcripts${toQuery(params)}`,
+  /**
    * 확정 대기 회의 목록(MEET-10, 구현 완료 — PR #233) — 마이페이지 "미확정 액션" 위젯용.
    * [확인] D도메인 REST API 명세(2026-08-12) 대조. 파라미터 없음 — host 본인 회의만 서버가
    * 자동 스코프한다(전 롤 호출 가능, 판정은 역할이 아니라 `hostMemberId` 일치).

@@ -27,6 +27,16 @@ export function formatMeetingSchedule(start: Date, end: Date): string {
 }
 
 /**
+ * 시각만 `10:04` — 발화 기록(ANLZ-05)이 쓴다.
+ *
+ * ⚠️ **`formatMeetingSchedule`과 같은 `TIME_PART`를 쓴다**(한국 시간대) — 회의 시작·발화
+ *    시각이 다른 시계로 찍히면 "10:04에 한 말"이 회의 시작(10:00)보다 이르게 보일 수 있다.
+ */
+export function formatClockTime(at: Date): string {
+  return TIME_PART.format(at);
+}
+
+/**
  * 회의 목록(MEET-02)이 물어볼 기간 — 앞뒤로 3개월씩.
  *
  * ⚠️ **뒤를 열어 주는 게 핵심이다.** BE 기본값은 `오늘-3개월 ~ 오늘`이라
