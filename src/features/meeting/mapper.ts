@@ -11,7 +11,7 @@ import {
   MEETING_STATUS,
 } from "@/constants/meeting";
 
-import { formatMeetingSchedule } from "./lib";
+import { formatClockTime, formatMeetingSchedule } from "./lib";
 import type {
   CaptureAttendee,
   MeetingAgenda,
@@ -19,6 +19,7 @@ import type {
   MeetingContentPending,
   MeetingDetail,
   MeetingListItem,
+  ScriptChunk,
 } from "./view-types";
 
 /** Owner 개설 회의의 소속 라벨(WORKFLOW §2) — 옛 문구 "프로젝트 공통"은 폐기됐다 */
@@ -640,9 +641,14 @@ export function meetingPendingReasonOf(
  * ⚠️ **여전히 비는 칸**(§정직성 — 지어내지 않는다):
  *    - `parentTeamActionHref`: 상위 팀 액션 id가 **모델에 없어 영구 제공 불가**다(#461 회신).
  *      `teamId`는 팀이지 팀 액션이 아니라 링크를 못 만든다.
- *    - `outputs`·`script`: 다른 API(`GET /api/meetings/{id}/actions` · CAP-12 자막 조회)가
- *      줄 값이라 이 연동 범위 밖이다. **빈 배열이 아니라 `null`이다** — 빈 배열로 두면 화면이
- *      "하달된 액션이 없습니다"·"발화 기록이 없습니다"라고 **안 물어본 것을 단정한다**.
+ *    - `outputs`: 다른 API(`GET /api/meetings/{id}/actions`)가 줄 값이라 이 연동 범위 밖이다.
+ *      **빈 배열이 아니라 `null`이다** — 빈 배열로 두면 화면이 "하달된 액션이 없습니다"라고
+ *      **안 물어본 것을 단정한다**.
+ * ⚠️ **`script`는 여기서 안 채운다 — 다른 API다.** 발화 기록(ANLZ-05,
+ *    `GET /api/meetings/{id}/transcripts`)은 이 함수가 받는 `BeMeetingDetail`에 없다.
+ *    이 함수는 늘 `null`을 주고, 회의가 끝났으면(`pendingReason===null`) `server.ts`의
+ *    `getLiveMeetingDetail`이 따로 조회해 덮어쓴다(`toScriptChunks`) — outputs와 같은 이유로
+ *    비워 두지만, 그쪽과 달리 이 연동의 실제 범위 **안**이라 곧바로 채워진다.
  */
 export function toMeetingDetailView(
   be: BeMeetingDetail,
@@ -682,4 +688,81 @@ function outputKindLabelOf(teamId: number | null | undefined): string {
 function toMeetingAgenda(agenda: BeMeetingDetail["agenda"]): MeetingAgenda | null {
   if (agenda === undefined || agenda === null) return null;
   return { main: agenda.mainTopic, subs: agenda.subTopics };
+}
+
+/**
+ * 발화 기록(ANLZ-05) — `GET /api/meetings/{id}/transcripts`.
+ *
+ * ⚠️ **화자를 안 싣는다.** BE는 `speakerMemberId`·`speakerSource`도 주지만(오귀속 대비 근거),
+ *    화면 계약(`ScriptChunk`)은 시각·본문뿐이다 — 자막은 "화자 없는 청크"라는 게 팀이 정한
+ *    표시 방식이다(화자 귀속 단순화 작업과 같은 결). 근거가 필요해지면 그때 칸을 늘린다.
+ * ⚠️ `speakerMemberId === null`은 **정상**이다(BE 주석 — 판정 포기, 오류가 아니다). 화면이
+ *    안 쓰는 값이라 여기서 걸러 낼 것도 없다.
+ */
+export interface BeUtterance {
+  transcriptId: number;
+  seq: number;
+  speakerMemberId: number | null;
+  speakerSource: string | null;
+  startOffsetMs: number | null;
+  endOffsetMs: number | null;
+  content: string;
+}
+
+export interface BeTranscriptsResponse {
+  utterances: BeUtterance[];
+  nextCursor: string | null;
+}
+
+/**
+ * 응답이 읽는 모양인가 — `parseMeetingDetail`과 같은 이유로 여기서도 한 번 본다(§정직성).
+ * ⚠️ **화면이 쓰는 것만 본다.** `content`·`startOffsetMs`만 있으면 `at`·`text`를 만들 수
+ *    있다 — `speakerMemberId`·`speakerSource`는 화면이 안 쓰므로 모양을 안 따진다.
+ */
+function isBeUtterance(value: unknown): value is BeUtterance {
+  if (typeof value !== "object" || value === null) return false;
+  const utterance = value as Partial<BeUtterance>;
+  return (
+    typeof utterance.transcriptId === "number" &&
+    typeof utterance.content === "string" &&
+    (utterance.startOffsetMs === null || typeof utterance.startOffsetMs === "number")
+  );
+}
+
+function isBeTranscriptsResponse(value: unknown): value is BeTranscriptsResponse {
+  if (typeof value !== "object" || value === null) return false;
+  const response = value as Partial<BeTranscriptsResponse>;
+  return (
+    Array.isArray(response.utterances) &&
+    response.utterances.every(isBeUtterance) &&
+    (response.nextCursor === null ||
+      response.nextCursor === undefined ||
+      typeof response.nextCursor === "string")
+  );
+}
+
+/** 검사까지 마친 발화 페이지 — 호출부는 이걸 통과한 값만 만진다(§정직성, `parseMeetingDetail`과 같은 자리). */
+export function parseTranscriptsResponse(raw: unknown): BeTranscriptsResponse {
+  if (!isBeTranscriptsResponse(raw)) {
+    throw new Error("발화 기록 응답이 약속한 모양이 아닙니다.");
+  }
+  return { utterances: raw.utterances, nextCursor: raw.nextCursor ?? null };
+}
+
+/**
+ * BE 발화 → 화면 청크. **시각은 회의 시작 시각 + 오프셋**이다 — `startOffsetMs`가 없으면
+ * (화자 귀속과 무관한 결측) 회의 시작 시각으로 표시한다(0으로 둔다).
+ *
+ * ⚠️ **회의 로컬(한국) 시간대로 찍는다** — `formatClockTime`이 회의 시작 시각과 같은
+ *    `TIME_PART`를 쓴다(`lib.ts`). 시계가 갈리면 "10:04에 한 말"이 회의 시작(10:00)보다
+ *    이르게 보일 수 있다.
+ */
+export function toScriptChunks(meetingStart: Date, utterances: BeUtterance[]): ScriptChunk[] {
+  return utterances
+    .slice()
+    .sort((a, b) => a.seq - b.seq)
+    .map((utterance) => ({
+      at: formatClockTime(new Date(meetingStart.getTime() + (utterance.startOffsetMs ?? 0))),
+      text: utterance.content,
+    }));
 }
