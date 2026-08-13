@@ -129,6 +129,40 @@ describe("getMeetingDetail — 실서버, 발화 기록 조회", () => {
     expect(serverApiMock).toHaveBeenCalledTimes(1); // 회의 상세만
   });
 
+  /*
+    ⚠️ **커서 경계가 겹쳐도 같은 발화를 두 번 안 보여준다**(§목록·페이지네이션 — id 중복 제거).
+       BE가 커서 경계에서 같은 발화를 다시 주는 결함이 나도 "N건"이 거짓말을 하면 안 된다.
+  */
+  it("페이지 경계에서 transcriptId가 겹치면 중복을 거른다", async () => {
+    serverApiMock
+      .mockResolvedValueOnce(meetingDetail())
+      .mockResolvedValueOnce({
+        utterances: [
+          utterance({ transcriptId: 1, seq: 0, startOffsetMs: 0, content: "첫 페이지" }),
+          utterance({ transcriptId: 2, seq: 1, startOffsetMs: 1_000, content: "경계 발화" }),
+        ],
+        nextCursor: "page2",
+      })
+      .mockResolvedValueOnce({
+        utterances: [
+          // 경계 발화(transcriptId: 2)가 다음 페이지 첫머리에도 겹쳐 온다
+          utterance({ transcriptId: 2, seq: 1, startOffsetMs: 1_000, content: "경계 발화" }),
+          utterance({ transcriptId: 3, seq: 2, startOffsetMs: 60_000, content: "둘째 페이지" }),
+        ],
+        nextCursor: null,
+      });
+
+    const result = await getMeetingDetail("100", HOST);
+
+    expect(result.kind).toBe("ok");
+    if (result.kind !== "ok") return;
+    expect(result.detail.script).toEqual([
+      { at: "10:00", text: "첫 페이지" },
+      { at: "10:00", text: "경계 발화" },
+      { at: "10:01", text: "둘째 페이지" },
+    ]);
+  });
+
   /* ⚠️ 커서가 끝없이 이어지는 BE 결함이 나도 화면이 영원히 안 끝나면 안 된다 */
   it("커서가 안 끊기면 상한에서 멈춘다", async () => {
     serverApiMock.mockResolvedValueOnce(meetingDetail());

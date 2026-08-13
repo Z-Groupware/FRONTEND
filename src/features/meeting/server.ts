@@ -362,10 +362,13 @@ export async function getMeetingDetail(id: string, viewer: Actor): Promise<Meeti
  *    영영 안 끝난다 — 상한(50페이지, 회의 하나에 발화 수천 건이라는 BE 주석 기준 넉넉하다)
  *    에 걸리면 그때까지 받은 것만 돌린다. `console`은 커밋하지 않는다(PR 체크리스트) —
  *    상한에 걸리는 건 BE 결함(끝없는 커서)일 때뿐이라 서버 쪽에서 잡을 일이다.
+ * ⚠️ **`transcriptId`로 중복을 거른다**(§목록·페이지네이션 — 이어 붙일 때 id 중복 제거).
+ *    커서 경계가 겹치는 BE 결함이 나도 "N건"과 화면에 같은 발화가 두 번 찍히지 않는다.
  */
 async function fetchAllTranscripts(meetingId: number, accessToken: string): Promise<BeUtterance[]> {
   const TRANSCRIPT_PAGE_CAP = 50;
   const utterances: BeUtterance[] = [];
+  const seenTranscriptIds = new Set<number>();
   let cursor: string | undefined;
 
   for (let page = 0; page < TRANSCRIPT_PAGE_CAP; page++) {
@@ -373,7 +376,11 @@ async function fetchAllTranscripts(meetingId: number, accessToken: string): Prom
       accessToken,
     });
     const parsed = parseTranscriptsResponse(raw);
-    utterances.push(...parsed.utterances);
+    for (const utterance of parsed.utterances) {
+      if (seenTranscriptIds.has(utterance.transcriptId)) continue;
+      seenTranscriptIds.add(utterance.transcriptId);
+      utterances.push(utterance);
+    }
     if (!parsed.nextCursor) return utterances;
     cursor = parsed.nextCursor;
   }
