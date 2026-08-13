@@ -58,11 +58,11 @@ describe("RoomAttendeePicker — 범위 강제(2026-08-13)", () => {
     expect(screen.queryByText("이하윤")).not.toBeInTheDocument();
   });
 
-  it("Leader가 열면 자기 팀만 보인다(다른 팀 팀장도 안 보인다)", () => {
+  it("Leader가 열면 자기 팀만 보인다(다른 팀 팀장도, 본인도 안 보인다)", () => {
     renderPicker(LEADER_VIEWER);
 
-    expect(screen.getByText("김서준")).toBeInTheDocument();
     expect(screen.getByText("이하윤")).toBeInTheDocument();
+    expect(screen.queryByText("김서준")).not.toBeInTheDocument();
     expect(screen.queryByText("최유진")).not.toBeInTheDocument();
     expect(screen.queryByText("박대표")).not.toBeInTheDocument();
   });
@@ -71,8 +71,15 @@ describe("RoomAttendeePicker — 범위 강제(2026-08-13)", () => {
     renderPicker(MEMBER_VIEWER);
 
     expect(screen.getByText("김서준")).toBeInTheDocument();
-    expect(screen.getByText("이하윤")).toBeInTheDocument();
+    expect(screen.queryByText("이하윤")).not.toBeInTheDocument();
     expect(screen.queryByText("최유진")).not.toBeInTheDocument();
+  });
+
+  it("host 본인은 체크박스로 안 내준다 — 풀어도 서버가 다시 넣는다(§정직성)", () => {
+    renderPicker(LEADER_VIEWER, { selectedIds: [2, 3] });
+
+    expect(screen.queryByRole("checkbox", { name: "김서준" })).not.toBeInTheDocument();
+    expect(screen.getByRole("checkbox", { name: "이하윤" })).toBeChecked();
   });
 
   it("왜 목록이 짧은지 한 줄로 알린다(§정직성)", () => {
@@ -119,7 +126,9 @@ describe("RoomAttendeePicker — 범위 강제(2026-08-13)", () => {
 
   it("이름을 검색하면 그 이름만 남는다", async () => {
     const user = userEvent.setup();
-    renderPicker(LEADER_VIEWER);
+    /* ⚠️ 개발팀 Member(이하윤) 시점이다 — Leader(김서준) 시점으로 "김"을 치면 host 본인이라
+       애초에 후보가 아니라서, 검색이 되는지가 아니라 범위가 좁은지를 재게 된다. */
+    renderPicker(MEMBER_VIEWER);
 
     await user.type(screen.getByRole("textbox", { name: "참석자 검색" }), "김");
 

@@ -336,7 +336,8 @@ describe("회의실 예약 생성 (Owner 개설 = 프로젝트 회의)", () => {
     );
 
     expect(result.errors).toEqual({});
-    expect(result.created?.attendeeIds).toEqual([2, 5]);
+    // ⚠️ host(액터 id=1)는 피커가 후보로 안 내주는 대신 저장할 때 맨 앞에 자동으로 들어간다.
+    expect(result.created?.attendeeIds).toEqual([1, 2, 5]);
   });
 
   it("폼이 조작돼 참석자 값이 숫자가 아니면 막는다", async () => {
@@ -422,7 +423,8 @@ describe("회의실 예약 생성 (Leader 개설 = 팀 액션 회의)", () => {
     );
 
     expect(result.errors).toEqual({});
-    expect(result.created?.attendeeIds).toEqual([3]);
+    // host(액터 id=5)가 맨 앞에 자동으로 들어간다 — 개설자는 자기 회의 상세를 볼 수 있어야 한다.
+    expect(result.created?.attendeeIds).toEqual([5, 3]);
   });
 
   it("세션에 소속 팀이 없으면 통과시키지 않는다(범위를 잴 수 없다 — §정직성)", async () => {

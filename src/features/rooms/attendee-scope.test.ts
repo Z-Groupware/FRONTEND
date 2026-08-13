@@ -49,11 +49,17 @@ describe("filterAttendeeCandidates", () => {
   });
 
   it("Leader는 자기 팀만 — 다른 팀 팀장은 빠진다", () => {
-    expect(filterAttendeeCandidates(ALL, DEV_LEADER_VIEWER)).toEqual([DEV_LEADER, DEV_MEMBER]);
+    expect(filterAttendeeCandidates(ALL, DEV_LEADER_VIEWER)).toEqual([DEV_MEMBER]);
   });
 
   it("Member도 Leader와 같은 범위다", () => {
-    expect(filterAttendeeCandidates(ALL, DEV_MEMBER_VIEWER)).toEqual([DEV_LEADER, DEV_MEMBER]);
+    expect(filterAttendeeCandidates(ALL, DEV_MEMBER_VIEWER)).toEqual([DEV_LEADER]);
+  });
+
+  it("Leader·Member host도 자기 자신은 후보가 아니다(서버가 명단에 끼워 넣는다)", () => {
+    /* 체크를 풀어도 저장된 명단엔 host가 남는다 — 토글로 내주면 화면이 거짓말을 한다. */
+    expect(filterAttendeeCandidates(ALL, DEV_LEADER_VIEWER)).not.toContain(DEV_LEADER);
+    expect(filterAttendeeCandidates(ALL, DEV_MEMBER_VIEWER)).not.toContain(DEV_MEMBER);
   });
 
   it("팀을 모르는 Leader·Member에게는 아무도 안 열린다(조용히 전원 허용 금지)", () => {

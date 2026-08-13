@@ -42,6 +42,14 @@ describe("회의실 예약 mock 스토어", () => {
     expect(findMockReservation(created.id)).toEqual(created);
   });
 
+  it("host는 제출값에 없어도 명단 맨 앞에 들어간다(중복은 한 번만)", () => {
+    // 피커가 host를 후보로 안 내주므로(`attendee-scope.ts`) 제출값엔 host가 없다.
+    expect(addMockReservation(DRAFT, LEADER).attendeeIds).toEqual([5, 1, 2]);
+    expect(addMockReservation({ ...DRAFT, attendeeIds: [3, 1] }, OWNER).attendeeIds).toEqual([
+      3, 1,
+    ]);
+  });
+
   it("예약과 같이 회의(Meeting)도 만들어진다(WORKFLOW.md §3-1: 예약=회의 개설)", () => {
     const before = listMockMeetings().length;
 

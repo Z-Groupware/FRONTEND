@@ -51,10 +51,15 @@ function isOwnerHost(viewer: AttendeeScopeViewer): boolean {
 
 /**
  * 이 사람을 참석자로 지정할 수 있는가.
+ * ⚠️ **host 자신은 후보가 아니다**(`AttendeeScopeViewer.id` 주석). host는 고르는 사람이 아니라
+ *    서버가 명단에 끼워 넣는 사람이라, 체크박스로 내주면 풀어도 저장된 명단엔 그대로 남아
+ *    화면이 거짓말을 한다(§정직성). Owner는 `authority` 조건에 이미 걸려 안 나왔지만
+ *    Leader·Member는 자기 팀 조건에 자기가 걸려 스스로를 토글할 수 있었다.
  * ⚠️ Leader·Member인데 팀 정보가 없으면 **아무도 못 고른다**(`false`). 조용히 전원 허용으로
  *    넘어가면 규칙이 있으나 마나가 된다 — 막고 화면에 알린다(§정직성).
  */
 export function isAttendeeInScope(member: RoomMember, viewer: AttendeeScopeViewer): boolean {
+  if (member.id === viewer.id) return false;
   if (isOwnerHost(viewer)) return member.authority === AUTHORITY.LEADER;
   return viewer.teamName !== null && member.teamName === viewer.teamName;
 }
