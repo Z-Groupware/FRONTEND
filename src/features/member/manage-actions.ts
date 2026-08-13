@@ -54,15 +54,6 @@ import { buildTeamRoles, isRoleOfTeam } from "./team-roles";
  */
 
 const NO_SESSION = "세션이 만료되었습니다. 다시 로그인해 주세요";
-/*
-  아직 못 붙인 것 — 계정 삭제. **BE에 경로가 없다.** `MemberController`·`ManageMemberController`
-  어디에도 `@DeleteMapping`이 없다. 만들어 달라고 요청해야 한다.
-  화면에는 이 문구가 그대로 뜬다 — 되는 척하지 않는다(§정직성).
-
-  ⚠️ 휴직·오프보딩 승인/반려는 더는 여기 안 걸린다(2026-08-12 실 연동) — `PATCH
-     /api/handovers/{id}/finalize`·`/reject`로 확인 끝났다(아래 두 함수 참고).
-*/
-const NOT_CONNECTED = "아직 연결되지 않은 기능입니다";
 
 function pathOf(id: number) {
   return `/manage/members/${id}`;
@@ -555,17 +546,20 @@ export async function deleteMemberAccountAction(id: number): Promise<MemberActio
     return { isSuccess: false, message: "자기 계정은 탈퇴 처리할 수 없습니다" };
   }
 
-  if (!isMock) {
-    // TODO(BE 협의): `DELETE /companies/me/members/{id}`
-    return { isSuccess: false, message: NOT_CONNECTED };
+  /* ⚠️ 라이브의 상세 조회는 통신 장애로 던질 수 있다 — 던지면 화면이 통째로 갈린다(§위 주석) */
+  let target: Awaited<ReturnType<typeof getManagedMember>>;
+  try {
+    target = await getManagedMember(id);
+  } catch (error) {
+    return { isSuccess: false, message: toUserMessage(error) };
   }
-
-  const target = await getManagedMember(id);
   if (!target) return { isSuccess: false, message: "없는 사원입니다" };
 
   /*
     ⚠️ **퇴사 상태가 아니면 막는다**(WORKFLOW §7 "오프보딩 최종 승인 후에만 계정 탈퇴 가능").
        재직 중인 사람을 바로 지우면 그 사람이 들고 있던 액션이 인수인계 없이 사라진다.
+    ⚠️ **이 검사는 BE에 없다.** BE `delete`가 막는 건 오너(AU-026)·본인(AU-027)뿐이고
+       재직자도 그대로 지워진다 — 여기가 유일한 방벽이라 두 모드 다 지나기 전에 본다.
   */
   if (target.member.status !== MEMBER_STATUS.RESIGNED) {
     return {
@@ -574,7 +568,26 @@ export async function deleteMemberAccountAction(id: number): Promise<MemberActio
     };
   }
 
-  deleteMockManagedMember(id);
+  if (!isMock) {
+    /*
+      [확인] BE `ManageMemberController.delete` — `DELETE /api/manage/members/{memberId}`,
+      소프트 삭제(상태 `DELETED` + `deleted_at`, 행은 남는다). 응답에 `data`가 없다
+      (`successWithoutData`) — 받을 것도 없다.
+      ⚠️ BE `@PreAuthorize`는 **OWNER·ADMIN**으로 우리보다 넓다. FE는 `canDeleteMemberAccount`
+         (OWNER 전용)를 유지한다 — 탈퇴는 되돌릴 수 없는 인사 결정이라 최종 승인과 같은 줄에
+         둔다(WORKFLOW §7, 2026-08-06 Admin 제외와 같은 취지). 좁히는 쪽이라 BE와 충돌하지 않는다.
+      ⚠️ 되살리는 경로는 없다(BE `@Operation` 명시) — 화면의 Dialog 경고가 빈말이 아니다.
+    */
+    try {
+      const accessToken = await requireAccessToken();
+      await serverApi<unknown>(ep.manageMember(id), { method: "DELETE", accessToken });
+    } catch (error) {
+      return { isSuccess: false, message: toUserMessage(error) };
+    }
+  } else {
+    deleteMockManagedMember(id);
+  }
+
   revalidatePath(pathOf(id));
   revalidatePath("/manage/members");
   revalidatePath(PEOPLE_PATH);
