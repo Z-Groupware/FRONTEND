@@ -420,8 +420,10 @@ export interface BeMeetingDetail {
    */
   summaryStatus: string | null;
   /**
-   * **`null` = Owner 개설**, 숫자 = 개설 팀 — BE PR #461(F2/F5 회신) 확장 필드.
-   * ⚠️ 선택(`?`)이다 — **BE #461 배포 전 응답에는 이 필드들이 없다. 없으면 지금처럼 비운다.**
+   * 이 **회의**가 어느 팀 것인가(PR #461/#472, 2026-08-13 대조) — **`null` = Owner 개설**,
+   * 숫자 = 개설 팀. ⚠️ 참석자 한 명 한 명의 소속 팀(`BeMeetingAttendee.teamId`)과는 **다른
+   * 값**이다 — 이름이 같아 헷갈리기 쉽다.
+   * ⚠️ 선택(`?`)이다 — **BE #461 배포 전 응답에는 이 필드가 없다. 없으면 지금처럼 비운다.**
    */
   teamId?: number | null;
   /**
@@ -448,6 +450,12 @@ const BE_SUMMARY_STATUS = {
 export interface BeMeetingAttendee {
   memberId: number;
   name: string;
+  /**
+   * 이 **참석자**가 어느 팀 소속인가 — 팀 없는 대표는 `null`(PR #472, 2026-08-13 대조).
+   * ⚠️ 선택(`?`)이다 — 회의 자체의 `teamId`(위 `BeMeetingDetail.teamId`)와 같은 이유로,
+   *    BE #472 배포 전 응답에는 이 필드가 없다.
+   */
+  teamId?: number | null;
   /** 팀이 없는 사람(대표)은 `null`이다 */
   teamName: string | null;
   /** ⚠️ `position`이 아니라 `jobPosition`이다 */
@@ -477,7 +485,7 @@ function isBeMeetingDetail(value: unknown): value is BeMeetingDetail {
     typeof detail.endAt === "string" &&
     typeof detail.pendingActionCount === "number" &&
     (detail.summaryStatus === null || typeof detail.summaryStatus === "string") &&
-    /* ⚠️ #461 확장 필드 — 없어도 통과한다(BE #461 배포 전 응답에는 이 필드들이 없다) */
+    /* ⚠️ #461/#472 확장 필드 — 없어도 통과한다(배포 전 응답에는 이 필드들이 없다) */
     isOptionalNullableNumber(detail.teamId) &&
     isOptionalAgenda(detail.agenda) &&
     typeof detail.project?.projectId === "number" &&
@@ -503,6 +511,7 @@ function isBeMeetingAttendee(value: unknown): value is BeMeetingAttendee {
   return (
     typeof attendee.memberId === "number" &&
     typeof attendee.name === "string" &&
+    isOptionalNullableNumber(attendee.teamId) &&
     (attendee.teamName === null || typeof attendee.teamName === "string") &&
     (attendee.jobPosition === null || typeof attendee.jobPosition === "string")
   );

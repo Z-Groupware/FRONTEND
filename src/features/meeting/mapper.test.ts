@@ -26,12 +26,14 @@ const BASE: BeMeetingDetail = {
   pendingActionCount: 0,
   /* ⚠️ 안 끝난 회의는 `NONE`이다 — 요약을 시도조차 안 한 상태(BE `MeetingSummaryStatus`) */
   summaryStatus: "NONE",
+  /* ⚠️ 일부러 안 채운다 — #461 필드가 없는 기본 상태를 대표하는 게 이 BASE의 역할이다(아래
+     "안 물어본 칸" 테스트가 이 값에 기댄다). 필요한 테스트가 각자 override한다. */
   project: { projectId: 3, tag: "GOODS" },
   meetingRoom: { meetingRoomId: 2, name: "대회의실" },
   host: { memberId: 1, name: "대표 계정" },
   attendees: [
-    { memberId: 1, name: "대표 계정", teamName: null, jobPosition: "대표" },
-    { memberId: 2, name: "김서준", teamName: "개발팀", jobPosition: "팀장" },
+    { memberId: 1, name: "대표 계정", teamId: null, teamName: null, jobPosition: "대표" },
+    { memberId: 2, name: "김서준", teamId: 5, teamName: "개발팀", jobPosition: "팀장" },
   ],
 };
 
