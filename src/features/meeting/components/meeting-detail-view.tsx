@@ -17,13 +17,15 @@ import { ProfileAvatar } from "@/components/common/profile-avatar";
 import { ProjectTag } from "@/components/common/project-tag";
 import { StatusDot } from "@/components/common/status-dot";
 import { ACTION_STATUS_LABEL } from "@/constants/action";
+import type { AttendeeScopeViewer } from "@/features/rooms/attendee-scope";
 import type { RoomMember } from "@/features/rooms/types";
 import { formatDate } from "@/lib/date";
 
-import { canCancelMeeting, canEditMeetingAttendees } from "../status";
+import { canCancelMeeting, canEditMeeting, canEditMeetingAttendees } from "../status";
 import type { MeetingContentPending, MeetingDetail } from "../view-types";
 import { MeetingAttendeesEditDialog } from "./meeting-attendees-edit-dialog";
 import { MeetingCancelDialog } from "./meeting-cancel-dialog";
+import { MeetingEditDialog } from "./meeting-edit-dialog";
 import { ProjectAccent } from "./project-accent";
 
 /**
@@ -62,6 +64,41 @@ function OriginLine({ detail }: { detail: MeetingDetail }) {
         {detail.originLabel}
       </Link>
     </p>
+  );
+}
+
+/**
+ * 회의 안건 — 별도 섹션 유지(§3-2).
+ *
+ * ⚠️ 라벨-값 표로 두지 않는다. 대주제는 값의 이름이 아니라 **묶음 이름**이라
+ *    `프로젝트 | 킥오프`처럼 두 칸으로 벌려 두면 무엇이 라벨인지 안 읽힌다 —
+ *    대주제를 한 번 적고 소주제를 그 옆에 늘어놓는 편이 원래 뜻에 맞는다.
+ * ⚠️ **쌍이 아니다.** 예약 폼은 대주제·소주제를 쌍으로 받지만 BE 모델은 대주제 하나만
+ *    남긴다(§view-types `MeetingAgenda`) — 소주제마다 대주제를 붙여 그리면 없는 쌍을
+ *    지어내는 것이다(§정직성).
+ * ⚠️ **`null`이면 이 칸을 통째로 안 그린다.** 안건이 0건인지 아직 못 받은 것인지
+ *    (BE #461 배포 전) 구분할 방법이 없어서, 머리만 남기고 "없습니다"라고 단정하지 않는다.
+ */
+function AgendaSection({ agenda }: { agenda: MeetingDetail["agenda"] }) {
+  if (!agenda) return null;
+
+  return (
+    <div className="border-border mt-5 border-t pt-5">
+      <p className="text-muted-foreground text-[12px] leading-4">안건</p>
+      <div className="flex flex-wrap items-center gap-2 pt-2">
+        {agenda.main && <p className="text-[13px] leading-5 font-medium">{agenda.main}</p>}
+        <ul className="flex flex-wrap gap-2">
+          {agenda.subs.map((sub, index) => (
+            <li
+              key={`${index}-${sub}`}
+              className="border-border text-muted-foreground rounded-lg border px-2.5 py-1 text-[13px] leading-5"
+            >
+              {sub}
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
   );
 }
 
@@ -138,6 +175,8 @@ type ActionsSectionState =
   | { kind: "list" }
   | { kind: "pendingReview" }
   | { kind: "stalled" }
+  /** 안 물어봤다 — 회의별 액션 조회가 아직 안 붙었다(§view-types `outputs === null`) */
+  | { kind: "notLoaded" }
   | { kind: "empty" };
 
 function actionsSectionStateOf(detail: MeetingDetail): ActionsSectionState {
@@ -149,11 +188,19 @@ function actionsSectionStateOf(detail: MeetingDetail): ActionsSectionState {
   ) {
     return { kind: "notice", reason: detail.pendingReason };
   }
-  if (detail.outputs.length > 0) return { kind: "list" };
+  if (detail.outputs !== null && detail.outputs.length > 0) return { kind: "list" };
   if (detail.pendingActionCount > 0) return { kind: "pendingReview" };
   if (detail.pendingReason === "FAILED") {
     return detail.isStalled ? { kind: "stalled" } : { kind: "notice", reason: "FAILED" };
   }
+  /*
+    ⚠️ **못 불러온 칸이 "없음"으로 흘러가지 않게 막는다.** 실서버 상세는 회의별 액션 조회를
+       아직 안 붙여서 목록 자체를 안 물어본다 — 빈 배열과 같은 자리에 두면 화면이 "하달된
+       액션이 없습니다"라고 **단정**한다(§정직성).
+    ⚠️ **맨 아래다.** 위의 확정 대기·중단은 BE가 실제로 준 신호라 "못 불러왔다"보다 정확한
+       말이고, Host가 다음에 할 일까지 알려 준다 — 목록을 못 그리는 사정은 그 뒤의 이야기다.
+  */
+  if (detail.outputs === null) return { kind: "notLoaded" };
   return { kind: "empty" };
 }
 
@@ -198,14 +245,16 @@ interface MeetingDetailViewProps {
   detail: MeetingDetail;
   /** 참석자 명단 교체(MEET-09) 다이얼로그가 고를 전체 사원 목록. */
   members: RoomMember[];
-  /** "내 부서만"·"팀장급만" 필터 기준 — `RoomAttendeePicker`로 그대로 흘려보낸다. */
-  viewerTeamName: string | null;
+  /** 참석자 범위(Owner=팀장만 / Leader·Member=자기 팀만) 기준 — `RoomAttendeePicker`로
+   *  그대로 흘려보낸다(`attendee-scope.ts`, 2026-08-13 확정). */
+  viewer: AttendeeScopeViewer;
 }
 
-export function MeetingDetailView({ detail, members, viewerTeamName }: MeetingDetailViewProps) {
+export function MeetingDetailView({ detail, members, viewer }: MeetingDetailViewProps) {
   const actionsState = actionsSectionStateOf(detail);
   const canEditAttendees = canEditMeetingAttendees(detail);
   const canCancel = canCancelMeeting(detail);
+  const canEdit = canEditMeeting(detail);
 
   return (
     /*
@@ -238,33 +287,24 @@ export function MeetingDetailView({ detail, members, viewerTeamName }: MeetingDe
                 {detail.title}
               </h2>
             </div>
-            {canCancel && <MeetingCancelDialog meetingId={detail.id} />}
+            {/*
+              ⚠️ **수정이 취소보다 앞이다.** 되돌릴 수 없는 쪽(취소)을 오른쪽 끝에 둔다 —
+                 잘못 잡은 회의를 고치러 온 사람이 먼저 만나야 하는 건 [회의 수정]이다
+                 (그게 없어서 취소 후 재개설밖에 없었다, #419).
+              ⚠️ 둘 다 시작 전(SCHEDULED) 회의에만 뜬다 — BE가 그 뒤로는 409로 막는다.
+            */}
+            {(canEdit || canCancel) && (
+              <div className="flex shrink-0 items-center gap-2">
+                {canEdit && <MeetingEditDialog meetingId={detail.id} currentTitle={detail.title} />}
+                {canCancel && <MeetingCancelDialog meetingId={detail.id} />}
+              </div>
+            )}
           </div>
           <div className="pt-1.5">
             <OriginLine detail={detail} />
           </div>
 
-          {/*
-            회의 안건 — 별도 섹션 유지(§3-2).
-            ⚠️ 라벨-값 표로 두지 않는다. 대주제는 값의 이름이 아니라 **묶음 이름**이라
-               `프로젝트 | 킥오프`처럼 두 칸으로 벌려 두면 무엇이 라벨인지 안 읽힌다 —
-               `대주제 · 소주제` 한 줄이 원래 뜻에 맞는다.
-          */}
-          <div className="border-border mt-5 border-t pt-5">
-            <p className="text-muted-foreground text-[12px] leading-4">안건</p>
-            <ul className="flex flex-wrap gap-2 pt-2">
-              {detail.topics.map((topic) => (
-                <li
-                  key={`${topic.main}-${topic.sub}`}
-                  className="border-border rounded-lg border px-2.5 py-1 text-[13px] leading-5"
-                >
-                  <span className="text-muted-foreground">{topic.main}</span>
-                  <span className="text-muted-foreground/50 px-1.5">·</span>
-                  {topic.sub}
-                </li>
-              ))}
-            </ul>
-          </div>
+          <AgendaSection agenda={detail.agenda} />
 
           {/*
             참석자 — **머리 카드 안**이다(시안과 같다). 곁 컬럼에 떼어 두면 이름 몇 줄만
@@ -280,7 +320,7 @@ export function MeetingDetailView({ detail, members, viewerTeamName }: MeetingDe
                   meetingId={detail.id}
                   currentAttendeeIds={detail.attendees.map((attendee) => attendee.id)}
                   members={members}
-                  viewerTeamName={viewerTeamName}
+                  viewer={viewer}
                 />
               )}
             </div>
@@ -323,10 +363,10 @@ export function MeetingDetailView({ detail, members, viewerTeamName }: MeetingDe
             <h2 className="text-[17px] leading-7 font-semibold tracking-[-0.3px]">
               하달된 {detail.outputKindLabel}
             </h2>
-            {/* ⚠️ 아직 안 찬·확정 대기·중단된 회의에 `전체 0건`이라 적으면 하나도 안 나온 회의로 읽힌다 */}
+            {/* ⚠️ 아직 안 찬·확정 대기·중단·못 불러온 회의에 `전체 0건`이라 적으면 하나도 안 나온 회의로 읽힌다 */}
             {(actionsState.kind === "list" || actionsState.kind === "empty") && (
               <p className="text-muted-foreground text-[12px] leading-4 tabular-nums">
-                전체 {detail.outputs.length}건
+                전체 {detail.outputs?.length ?? 0}건
               </p>
             )}
           </div>
@@ -352,6 +392,16 @@ export function MeetingDetailView({ detail, members, viewerTeamName }: MeetingDe
                 detail.isHost ? { href: "/app/me", label: "마이페이지에서 다시 분석하기" } : null
               }
             />
+          ) : actionsState.kind === "notLoaded" ? (
+            /*
+              ⚠️ **"없다"고 하지 않는다.** 회의별 액션 조회가 아직 안 붙어 물어보지도 않은
+                 자리다 — 안 물어본 것을 없다고 말하지 않는다(§정직성).
+            */
+            <EmptyState
+              icon={ListChecks}
+              title={`하달된 ${detail.outputKindLabel}을 아직 표시할 수 없습니다.`}
+              description="회의별 액션 조회가 연동되면 여기에 표시됩니다."
+            />
           ) : actionsState.kind === "empty" ? (
             /* ⚠️ 확정은 했는데 남은 것이 없는 자리다 — "확정을 누르세요"는 위 `pendingReview`가 한다 */
             <EmptyState
@@ -360,7 +410,7 @@ export function MeetingDetailView({ detail, members, viewerTeamName }: MeetingDe
             />
           ) : (
             <ul className="border-border border-t">
-              {detail.outputs.map((output) => (
+              {(detail.outputs ?? []).map((output) => (
                 <li key={output.id} className="border-border not-first:border-t">
                   <Link
                     href={output.href}
@@ -397,7 +447,7 @@ export function MeetingDetailView({ detail, members, viewerTeamName }: MeetingDe
         <section className="border-border bg-card rounded-2xl border">
           <div className="flex items-baseline justify-between gap-3 px-7 pt-6 pb-3">
             <h2 className="text-[17px] leading-7 font-semibold tracking-[-0.3px]">발화 기록</h2>
-            {!detail.pendingReason && (
+            {!detail.pendingReason && detail.script !== null && (
               <p className="text-muted-foreground text-[12px] leading-4 tabular-nums">
                 {detail.script.length}건
               </p>
@@ -406,6 +456,13 @@ export function MeetingDetailView({ detail, members, viewerTeamName }: MeetingDe
 
           {detail.pendingReason ? (
             <SectionNotice reason={detail.pendingReason} />
+          ) : detail.script === null ? (
+            /* ⚠️ 산출물 칸의 `notLoaded`와 같은 자리다 — 자막 조회(CAP-12) 미연동이라 안 물어봤다 */
+            <EmptyState
+              icon={MessageSquareOff}
+              title="발화 기록을 아직 표시할 수 없습니다."
+              description="자막 조회가 연동되면 여기에 표시됩니다."
+            />
           ) : detail.script.length === 0 ? (
             <EmptyState icon={MessageSquareOff} title="남아 있는 발화 기록이 없습니다." />
           ) : (

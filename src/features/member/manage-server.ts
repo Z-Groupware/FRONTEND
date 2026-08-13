@@ -4,6 +4,8 @@ import type { Authority } from "@/constants/authority";
 import { HANDOVER_TYPE, type HandoverType } from "@/constants/handover";
 import { isVisibleMemberStatus } from "@/constants/member";
 import { requireAccessToken } from "@/features/auth/session";
+/** ⚠️ 목록 3종 공용 봉투(`PageResponse`)라 프로젝트 매퍼에 사는 타입을 그대로 쓴다 — 사원 목록의 `MemberPageResponse`와는 다른 봉투다. */
+import type { BePageResponse } from "@/features/project/mapper";
 import { ApiError, serverApi } from "@/lib/api";
 import { ep } from "@/lib/endpoints";
 import { paginate, type PaginatedResult } from "@/lib/paginate";
@@ -11,13 +13,16 @@ import { isMock } from "@/mocks/config";
 
 import { filterMembers, searchMembers } from "./manage-filter";
 import {
+  type BeCompanyAction,
   type BeMemberDetail,
   type BeMemberListItem,
   toBeFilter,
   toManagedMember,
+  toManagedMemberAction,
 } from "./manage-mapper";
 import type {
   ManagedMember,
+  ManagedMemberActions,
   ManagedMemberDetail,
   MemberQuery,
   PendingHandover,
@@ -194,6 +199,59 @@ export async function getManagedMembersPage(
 }
 
 /**
+ * 담당 액션 카드에 뜨는 줄 수 — BE 기본값(20)과 같게 둔다([확인] `CompanyActionController`).
+ * ⚠️ 이 카드는 **무한 스크롤이 아니다.** 승인 직전에 "이 사람이 뭘 들고 있나"를 훑는
+ *    자리라 한 화면이면 되고, 넘치면 몇 건만 보이는지 카드가 적는다(`member-action-list`).
+ */
+const MEMBER_ACTION_PAGE_SIZE = 20;
+
+/**
+ * 그 사원이 맡은 개인 액션 첫 페이지 — **`null`은 "못 읽었다"**(§manage-types).
+ *
+ * ⚠️ [확인] BE 실코드 대조(2026-08-13) — `action/presentation/api/CompanyActionController.java`
+ *    (`GET /api/company/actions`, 커밋 `9646c7a2`). `@PreAuthorize("hasRole('OWNER') or
+ *    principal.isAdmin()")`라 **사원 관리 화면 권한(`canManageMembers`)과 같은 문**이다 —
+ *    이 함수를 부르는 자리가 이미 그 판정을 통과한 뒤다(`page.tsx`).
+ * ⚠️ **`/api/actions`로는 못 채운다.** 거기의 `assigneeMemberId`는 LEADER 전용(같은 팀만)이라
+ *    Owner·Admin이 부르면 남의 팀 사람에서 막힌다 — 그래서 BE가 회사 스코프로 이 경로를
+ *    따로 냈다(같은 파라미터 이름, 다른 스코프).
+ * ⚠️ **실패를 빈 목록으로 뭉개지 않는다.** 여기서 `[]`를 돌려주면 화면이 `맡고 있는 액션이
+ *    없습니다`라고 말하는데, 그 말을 믿고 오프보딩을 승인하면 인수인계 없이 액션이 붕 뜬다.
+ *    그렇다고 던지지도 않는다 — 액션 조회 하나가 안 된다고 사원 상세 전체가 오류 화면이 되면
+ *    직급 변경·승인까지 막힌다. 못 읽었다는 사실만 `null`로 실어 보내고 카드가 말한다.
+ * ⚠️ 마감 임박순(`sort=dueDate&order=asc`)이다 — 카드가 잘라 보여 주므로, 잘려 나가는 건
+ *    **가장 급하지 않은 것**이어야 한다.
+ */
+async function findMemberActions(
+  memberId: number,
+  accessToken: string,
+): Promise<ManagedMemberActions | null> {
+  try {
+    const response = await serverApi<BePageResponse<BeCompanyAction>>(
+      ep.companyActions({
+        assigneeMemberId: memberId,
+        sort: "dueDate",
+        order: "asc",
+        page: 0,
+        size: MEMBER_ACTION_PAGE_SIZE,
+      }),
+      { accessToken },
+    );
+
+    return {
+      items: response.content.map(toManagedMemberAction),
+      /*
+        ⚠️ **`totalElements`다**(`totalCount` 아님 — 목록 3종 공용 봉투 `PageResponse`).
+           이름을 잘못 읽으면 머리의 `전체 N건`이 비고, 잘렸는지 아닌지도 알 수 없게 된다.
+      */
+      totalCount: response.totalElements,
+    };
+  } catch {
+    return null;
+  }
+}
+
+/**
  * 없는 사람이면 `null` — 화면이 `notFound()`를 부른다.
  *
  * ⚠️ **탈퇴 처리된 계정도 없는 사람이다.** 목록만 거르고 상세를 안 거르면 비대칭이 생긴다 —
@@ -209,9 +267,10 @@ export async function getManagedMember(id: number): Promise<ManagedMemberDetail 
 
   /*
     [확인] BE `MemberController.detail` — `GET /api/members/{memberId}`.
-    ⚠️ **담당 액션은 아직 이 응답에 없다.** BE `MemberDetailResponse`가 주는 건 사람 정보뿐이라,
-       지금은 빈 값으로 둔다 — 지어내지 않는다(§정직성). 액션 목록 API가 붙으면 여기서 함께
-       읽어 채운다. (인수인계 대기 신청은 `findPendingHandoverForMember`가 채운다, 2026-08-12.)
+    ⚠️ **담당 액션은 이 응답에 없다** — `MemberDetailResponse`가 주는 건 사람 정보뿐이다.
+       2026-08-13부터 별도 엔드포인트(`GET /api/company/actions`)로 따로 읽는다
+       (`findMemberActions`). (인수인계 대기 신청도 마찬가지로 `findPendingHandoverForMember`가
+       따로 채운다, 2026-08-12.)
   */
   const accessToken = await requireAccessToken();
   let detail: BeMemberDetail;
@@ -231,8 +290,16 @@ export async function getManagedMember(id: number): Promise<ManagedMemberDetail 
   const member = toManagedMember(detail);
   if (!isVisibleMemberStatus(member.status)) return null;
 
-  const pendingHandover = await findPendingHandoverForMember(id, member.authority, accessToken);
-  return { member, actions: [], pendingHandover };
+  /*
+    ⚠️ **나란히 부른다.** 담당 액션과 대기 신청은 서로를 안 보므로 차례로 부를 이유가 없다 —
+       줄 세우면 이 화면이 두 번의 왕복만큼 늦게 뜬다.
+  */
+  const [pendingHandover, actions] = await Promise.all([
+    findPendingHandoverForMember(id, member.authority, accessToken),
+    findMemberActions(id, accessToken),
+  ]);
+
+  return { member, actions, pendingHandover };
 }
 
 /** 이미 쓰고 있는 메일 주소 — 중복 발급을 막는다 */

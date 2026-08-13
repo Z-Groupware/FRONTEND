@@ -2,8 +2,12 @@
 
 import { revalidatePath } from "next/cache";
 
+import { requireAccessToken } from "@/features/auth/session";
+import { serverApi } from "@/lib/api";
+import { ep } from "@/lib/endpoints";
 import { isMock } from "@/mocks/config";
 
+import { type BeTodoResponse, toPersonalCalendarEventFromTodo } from "./mapper";
 import { addMockTodo, findMockEvent, toggleMockCompletion } from "./mock/events";
 import {
   CALENDAR_ITEM_TAG,
@@ -23,12 +27,10 @@ export interface PersonalTodoFormState {
 }
 
 function readDraft(formData: FormData): PersonalTodoDraft {
-  const color = formData.get("color");
   return {
     title: String(formData.get("title") ?? ""),
     date: String(formData.get("date") ?? ""),
     endDate: String(formData.get("endDate") ?? ""),
-    color: color ? String(color) : undefined,
   };
 }
 
@@ -48,8 +50,14 @@ export async function createPersonalTodoAction(
   if (Object.keys(errors).length > 0) return { errors };
 
   if (!isMock) {
-    // ⚠️ 미구현 — API 스펙 확정 후 BFF 경로로 Todo 작성 요청을 보낸다.
-    throw new Error("개인 Todo 작성 API가 아직 연결되지 않았습니다.");
+    const accessToken = await requireAccessToken();
+    const be = await serverApi<BeTodoResponse>(ep.todos(), {
+      method: "POST",
+      accessToken,
+      json: { title: draft.title.trim(), date: draft.date, endDate: draft.endDate },
+    });
+    revalidatePath(CALENDAR_PATH);
+    return { errors: {}, created: toPersonalCalendarEventFromTodo(be) };
   }
 
   const created = addMockTodo(draft);
@@ -64,8 +72,23 @@ export async function createPersonalTodoAction(
  */
 export async function toggleTodoCompletionAction(id: string): Promise<void> {
   if (!isMock) {
-    // ⚠️ 미구현 — API 스펙 확정 후 BFF 경로로 완료 처리 요청을 보낸다(같은 태그 검증을 거기서도 한다).
-    throw new Error("완료 처리 API가 아직 연결되지 않았습니다.");
+    /*
+      ⚠️ 여기서 태그를 다시 검증하지 않는다 — 이 화면에서 넘어오는 id는 항상 TODO다(ACTION은
+      이 피드에서 id 자체가 없다, `mapper.ts`). BE도 본인 소유 TODO가 아니면 CAL-001(404)로
+      거부한다([확인] BE PL 가이드).
+    */
+    const numericId = id.trim() === "" ? NaN : Number(id);
+    if (!Number.isSafeInteger(numericId) || numericId <= 0) {
+      throw new Error("id가 올바르지 않습니다");
+    }
+
+    const accessToken = await requireAccessToken();
+    await serverApi<unknown>(ep.todoComplete(numericId), {
+      method: "PATCH",
+      accessToken,
+    });
+    revalidatePath(CALENDAR_PATH);
+    return;
   }
 
   const target = findMockEvent(id);

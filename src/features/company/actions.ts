@@ -9,6 +9,7 @@ import { ep } from "@/lib/endpoints";
 import { canManageCompany } from "@/lib/permission";
 import { isMock } from "@/mocks/config";
 
+import { toCompanyUpdateBody } from "./mapper";
 import {
   updateMockCompanyProfile,
   updateMockDepartments,
@@ -121,31 +122,20 @@ export async function saveCompanyProfileAction(
       [확인] BE `CompanyController.updateProfile` — `PATCH /api/companies/me`.
       ⚠️ **보낸 필드만 바뀐다**(부분 수정). `code`는 대상이 아니다 — 사원 로그인 키라 바뀌면
          기존 사원이 전부 못 들어온다.
-      ⚠️ **좌표는 못 보낸다.** BE가 `address` 문자열만 받는다 — 지도에서 고른 자리는
-         주소 글자만 남고 핀은 저장되지 않는다(§mapper).
+      ⚠️ **좌표도 보낸다**([확인] `UpdateCompanyRequest.latitude/longitude` 2026-08-13 develop
+         `30952c10` — "좌표는 못 보낸다"는 옛말이다). 본문 조립 규칙(빈 주소 생략 = PR #423 ·
+         좌표는 주소를 따라감 · `0,0`은 지도 못 쓴 표기라 생략)은 `toCompanyUpdateBody`(§mapper)에
+         있다 — 봉투·shape을 아는 곳은 매퍼 한 곳이다(§연동 검증).
+      ⚠️ **한 번 넣은 주소를 지우는 길은 지금 없다**(`validateCompanyProfile`이 `place`를
+         필수로 막고, BE도 빈 값을 거절한다). 지우기가 필요해지면 검증 완화 + BE 계약이 함께
+         필요하다 — BE PR #449(주소 지우기 계약)가 머지되면 다시 본다(§정직성).
     */
     try {
       const accessToken = await requireAccessToken();
       await serverApi<unknown>(ep.companyMe(), {
         method: "PATCH",
         accessToken,
-        json: {
-          name: draft.name,
-          businessNumber: draft.businessNumber,
-          /*
-            ⚠️ **빈 문자열을 보내지 않는다.** BE가 `@Pattern`(NOT_BLANK_IF_PRESENT)으로 빈 값을
-               400으로 거절한다 — 부분 수정이라 필드가 없으면 "건드리지 말라"로 읽는다.
-            ⚠️ **지금은 이 생략이 실제로 일어나지 않는다**(2026-08-13 정정, 코드래빗 지적).
-               `validateCompanyProfile`이 `place`를 **필수로 막아**(register-draft.ts의
-               `.refine(place !== null)`) 주소가 빈 채로 여기까지 오지 않는다 — 즉 화면 정책은
-               "주소는 필수"다. 그래도 생략 형태로 두는 건, 검증이 완화되는 날 곧바로 400이
-               나지 않게 하기 위한 것이다.
-            ⚠️ 따라서 **한 번 넣은 주소를 지우는 길은 지금 없다**(검증이 빈 값을 막고, BE도
-               빈 값을 거절한다). 지우기가 필요해지면 검증 완화 + BE 계약이 함께 필요하다
-               (요청 문서에 적어 둠, §정직성: 되는 척하지 않는다).
-          */
-          ...(draft.place?.address ? { address: draft.place.address } : {}),
-        },
+        json: toCompanyUpdateBody(draft),
       });
     } catch (error) {
       return { errors: {}, message: toUserMessage(error) };
@@ -230,9 +220,11 @@ export async function saveDepartmentsAction(
          **숫자로 읽히지 않는 것**을 새 팀으로 본다.
     */
     /*
-      ⚠️ **팀 안 '역할' 라벨은 저장할 곳이 없다.** BE에 그걸 다루는 API가 없다(전 레포에
-         `roleLabel` 관리 경로 0건) — 팀만 저장하고 성공이라고 말하면 **역할을 고친 사람이
-         저장됐다고 믿는다**(§정직성). 바뀐 게 있으면 그 사실을 말하고 멈춘다.
+      ⚠️ **팀 안 '역할' 목록은 저장할 곳이 여전히 없다.** 구성원에게 역할을 **붙이는** 길은
+         생겼지만([확인] `UpdateMemberRoleRequest.roleLabel` 2026-08-13 develop `30952c10`,
+         §member/manage-actions), 역할 자체를 만들고 지우는 CRUD는 BE에 없다 — identity 밑
+         컨트롤러는 auth·company·member·position·team뿐이다. 팀만 저장하고 성공이라고 말하면
+         **역할을 고친 사람이 저장됐다고 믿는다**(§정직성). 바뀐 게 있으면 그 사실을 말하고 멈춘다.
     */
     /*
       ⚠️ **이름 변경 여부와 무관하게 막는다.** 처음엔 "이름도 같이 바뀌었으면 통과"로 뒀는데,

@@ -1,7 +1,7 @@
 import { AUTHORITY } from "@/constants/authority";
 import type { Actor } from "@/lib/permission";
 
-import { getMeetingCapture } from "./server";
+import { getMeetingCapture, getMeetingDirectory } from "./server";
 
 /**
  * 캡처 진입 판정 — **접근 제어라 값으로 고정해 둔다**(CLAUDE.md §테스트: 로직은 짜자마자).
@@ -68,5 +68,36 @@ describe("getMeetingCapture — 캡처 진입", () => {
       const teamMember = result.meeting.attendees.find((attendee) => attendee.id === 2);
       expect(teamMember?.subtitle).toContain("팀");
     });
+  });
+});
+
+/**
+ * 목록 차례 — 목·실서버가 **같은 함수**로 세운다(`sortMeetingListItems`).
+ *
+ * ⚠️ 값을 콕 집지 않고 **차례의 규칙**을 검증한다. 시드가 늘거나 줄어도 안 깨지고,
+ *    정렬이 뒤집히는 것만 잡는다(WORKFLOW §3-2: 지금 다뤄야 하는 회의가 위로 온다).
+ */
+describe("getMeetingDirectory — 목록 차례", () => {
+  const RANK: Record<string, number> = {
+    IN_PROGRESS: 0,
+    SCHEDULED: 1,
+    DONE: 2,
+    CANCELED: 3,
+  };
+
+  it("진행중 → 예정 → 완료 → 취소 순이다", async () => {
+    const directory = await getMeetingDirectory(OWNER.id);
+    const ranks = directory.hosted.map((item) => RANK[item.status] ?? 0);
+
+    expect(ranks.length).toBeGreaterThan(0);
+    expect(ranks).toEqual([...ranks].sort((a, b) => a - b));
+  });
+
+  /* ⚠️ 두 탭은 겹치지 않는다 — 참여해야 할 탭에서 내가 연 회의는 빠진다(§3-2) */
+  it("내가 개설한 회의는 «참여해야 할»에 안 뜬다", async () => {
+    const directory = await getMeetingDirectory(OWNER.id);
+
+    expect(directory.hosted.every((item) => item.isHost)).toBe(true);
+    expect(directory.invited.every((item) => !item.isHost)).toBe(true);
   });
 });

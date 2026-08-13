@@ -15,22 +15,13 @@ export const RESERVATION_DURATION_MINUTES = 30;
 export const ROOM_OPERATING_START_MINUTES = 9 * 60;
 export const ROOM_OPERATING_END_MINUTES = 18 * 60;
 
-/**
- * 참석자 피커 필터 3종 — `RoomAttendeePicker`가 쓴다.
- * ⚠️ 세 값은 서로 배타적이라 라디오그룹으로 짠다(`role="radiogroup"`, `RoomPickerList`와 같은 패턴).
- */
-export const ROOM_ATTENDEE_FILTER = {
-  ALL: "all",
-  LEADER: "leader",
-  MY_TEAM: "myTeam",
-} as const;
-export type RoomAttendeeFilter = (typeof ROOM_ATTENDEE_FILTER)[keyof typeof ROOM_ATTENDEE_FILTER];
-
-export const ROOM_ATTENDEE_FILTER_LABEL: Record<RoomAttendeeFilter, string> = {
-  all: "전체",
-  leader: "팀장급만",
-  myTeam: "내 부서만",
-};
+/*
+  ⚠️ **참석자 피커 필터 상수(`ROOM_ATTENDEE_FILTER`·`ROOM_ATTENDEE_FILTER_LABEL`)는 지웠다**
+     (2026-08-13 — 2026-08-12에 넣었던 "전체 · 팀장급만"/"전체 · 내 부서만" 토글을 뒤집었다).
+     참석자 범위가 개설자의 권한으로 **고정**돼(Owner=팀장만, Leader·Member=자기 팀만) 고를
+     것이 남지 않았고, 규칙은 `attendee-scope.ts` 한 곳으로 옮겼다.
+     안 쓰는 값을 남겨 두면 나중에 누가 되살린다(§도메인 상수) — 그래서 여기 문장만 남긴다.
+*/
 
 /** 회의실 캘린더 툴바(`rooms-calendar-toolbar.tsx`)·회의실 목록(`room-list-panel.tsx`) 카피
  * — 라벨 하드코딩 금지 원칙에 맞춰 뺐다. */

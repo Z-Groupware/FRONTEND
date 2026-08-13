@@ -35,6 +35,14 @@ export interface TimelineActionInput {
   tone: StatusTone;
   /** 클릭 시 이동할 상세 경로. 상세 라우트가 아직 없으면 비워서 클릭 불가로 둔다. */
   href?: string;
+  /**
+   * 하위 액션 진척(`3/5`) — **`null`·필드 없음과 `0/0`은 뜻이 다르다**(BE #355, #421).
+   * `null`(또는 아예 안 넘김) = 하위라는 개념 자체가 없는 줄(개인 액션·인수인계 등),
+   * `0/0` = 하위를 가질 수 있는데 아직 비어 있음.
+   * ⚠️ 이 계층은 **값을 나르기만 한다** — 그릴지 말지는 컴포넌트(`hasChildProgress`)가 정한다.
+   */
+  childDoneCount?: number | null;
+  childTotalCount?: number | null;
 }
 
 /** 축의 하루 칸. */

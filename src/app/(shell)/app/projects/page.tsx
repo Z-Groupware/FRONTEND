@@ -1,17 +1,15 @@
-import { FolderOpen, SearchX } from "lucide-react";
 import { Plus } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 
-import { EmptyState } from "@/components/common/empty-state";
 import { FlashToast } from "@/components/common/flash-toast";
 import { buttonVariants } from "@/components/ui/button";
 import { ProjectFilterTabs } from "@/features/project/components/project-filter-tabs";
-import { ProjectListTable } from "@/features/project/components/project-list-table";
+import { ProjectListView } from "@/features/project/components/project-list-view";
 import { ProjectToolbar } from "@/features/project/components/project-toolbar";
 import { parseProjectSort, parseProjectStatus } from "@/features/project/lib";
-import { getProjectList, getProjectStatusCounts } from "@/features/project/server";
+import { getProjectsPage, getProjectStatusCounts } from "@/features/project/server";
 import { getViewer } from "@/features/shell/viewer";
 import { canCreateProject } from "@/lib/permission";
 import { cn } from "@/lib/utils";
@@ -35,8 +33,18 @@ export default async function ProjectsPage({ searchParams }: ProjectsPageProps) 
   const activeStatus = parseProjectStatus(first(params.status));
   const activeSort = parseProjectSort(first(params.sort));
 
-  const [projects, counts, viewer] = await Promise.all([
-    getProjectList({ status: activeStatus, keyword, sort: activeSort }),
+  /*
+    ⚠️ **첫 페이지만 받는다**(2026-08-13, #443). 전에는 이 화면 한 번에 `size: 9999`로
+       전체 목록을 **두 번**(목록 + 탭 배지) 받아 왔다 — 화면만 잘릴 뿐 10만 건이 다 왔고,
+       탭 배지 하나 때문에 같은 응답을 한 벌 더 받았다(§목록·페이지네이션).
+       지금 목록은 20건 한 페이지이고, 배지는 상태별 `size=1` 탐침 셋이 `totalElements`만
+       읽는다(`getProjectStatusCounts`).
+    ⚠️ 2페이지부터는 `ProjectListView`가 스크롤 끝에서 이어 붙인다(§핵심 4원칙 ①: 첫 화면은
+       서버가 렌더한다).
+  */
+  const query = { status: activeStatus, keyword, sort: activeSort };
+  const [firstPage, counts, viewer] = await Promise.all([
+    getProjectsPage(query, 0),
     getProjectStatusCounts(keyword),
     getViewer(),
   ]);
@@ -73,9 +81,13 @@ export default async function ProjectsPage({ searchParams }: ProjectsPageProps) 
               ⚠️ **`전체`라고 쓰지 않는다**(2026-08-11 고침). 이 숫자는 지금 거른 결과의 수인데
                  `전체 4개`라고 적으니, 탭이 `할 일 2 · 진행중 4 · 완료 2`(합 8)를 보여 주는
                  옆에서 **거짓말이 됐다.** 거른 결과임을 말하는 `결과 N개`로 적는다.
+              ⚠️ **지금 그려진 줄 수가 아니라 서버가 센 전체다**(2026-08-13). 무한 스크롤로
+                 바뀌면서 화면엔 20건만 있는데, 여기까지 20이라고 적으면 아직 안 내려온
+                 나머지가 없는 것처럼 보인다(§목록·페이지네이션: 끝이 안 보이는 목록은
+                 얼마나 남았는지 알 수 없다).
             */}
             <span className="text-muted-foreground shrink-0 text-[12px] leading-4 tabular-nums">
-              결과 {projects.length}개
+              결과 {firstPage.totalCount}개
             </span>
             {canCreateProject(viewer) && (
               /*
@@ -92,21 +104,21 @@ export default async function ProjectsPage({ searchParams }: ProjectsPageProps) 
             )}
           </div>
 
-          {projects.length === 0 ? (
-            /* 빈 상태 — 무엇이 없는지 적는다(§3상태) */
-            <EmptyState
-              bordered
-              icon={keyword?.trim() ? SearchX : FolderOpen}
-              title={keyword?.trim() ? "검색 결과가 없습니다." : "해당 상태의 프로젝트가 없습니다."}
-              description={
-                keyword?.trim()
-                  ? "다른 이름이나 태그로 찾아 주세요."
-                  : "위 필터를 바꾸면 다른 상태의 프로젝트를 볼 수 있습니다."
-              }
-            />
-          ) : (
-            <ProjectListTable projects={projects} />
-          )}
+          {/*
+            ⚠️ 빈 상태도 `ProjectListView` 안에 있다 — 이어 붙이다가 목록이 비는 일은 없지만,
+               "표냐 빈 상태냐"를 두 곳에서 정하면 조건이 갈릴 때 둘 다 그려지거나 둘 다 안
+               그려진다. 무엇을 그릴지는 목록을 들고 있는 쪽이 정한다.
+            ⚠️ `key`로 조건을 묶는다 — 탭·검색어·정렬이 바뀌면 새 목록이라 이어 붙이던 상태를
+               통째로 버려야 한다(안 버리면 옛 페이지 커서로 다음 장을 부른다).
+          */}
+          <ProjectListView
+            key={`${activeStatus}|${activeSort}|${keyword ?? ""}`}
+            initialItems={firstPage.items}
+            initialPage={firstPage.page}
+            initialTotalPages={firstPage.totalPages}
+            initialTotalCount={firstPage.totalCount}
+            query={query}
+          />
         </section>
       </div>
     </main>

@@ -30,12 +30,34 @@ export function StalledSummaryList({ summaries }: StalledSummaryListProps) {
            다른 회의도 같이 못 누른다.
       */
       try {
-        await retryMeetingSummaryAction(meetingId);
-        toast("재분석을 요청했습니다");
+        const result = await retryMeetingSummaryAction(meetingId);
+
+        /*
+          ⚠️ **결과 네 갈래를 한 문구로 뭉치지 않는다**(ANLZ-02, 2026-08-13 연동).
+             ① 재개할 계층이 없다(409 `ANLZ-008`) — 이 버튼으로는 끝난 이야기다. "다시
+                시도"라고 하면 몇 번을 눌러도 같은 409를 만난다.
+             ② 그 밖의 실패 — BE 문장을 그대로 띄운다(§lib/api: 문구를 새로 짓지 않는다).
+             ③ 요청은 갔는데 요약이 아직 없다 — 성공으로 알리면 생기지도 않은 요약을
+                보러 가게 된다(§정직성).
+             ④ 진짜로 채워졌다.
+        */
+        if (result.needsFullRerun) {
+          toast.error(result.error ?? "재개할 계층이 없습니다");
+          return;
+        }
+        if (result.error) {
+          toast.error(result.error);
+          return;
+        }
+        if (result.pendingNote) {
+          toast(result.pendingNote);
+          return;
+        }
+        toast.success("재분석을 요청했습니다");
       } catch {
         /*
-          ⚠️ **원인을 단정하지 않는다.** 이 액션은 권한 없음·미연동도 `throw`로 알린다 —
-             "연결하지 못했습니다"는 서버가 멀쩡할 때 거짓말이 된다(§정직성).
+          ⚠️ **원인을 단정하지 않는다.** 여기까지 오는 건 액션이 값으로 못 접은 실패
+             (네트워크·서버 다운 등)뿐이다 — 아는 실패는 전부 위에서 문장을 갖고 온다.
           ⚠️ 토스트는 한 줄(220px)이라 짧게 쓴다(`ui/sonner.tsx`).
         */
         toast.error("재분석을 요청하지 못했습니다");

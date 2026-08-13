@@ -1,3 +1,4 @@
+import { ROLE_NONE_LABEL } from "@/constants/member";
 import type { DepartmentNode } from "@/features/company/types";
 
 /**
@@ -20,12 +21,30 @@ export function buildTeamRoles(departments: DepartmentNode[]): Record<string, st
  *
  * ⚠️ **`없음`(빈 값)은 늘 통과한다.** 역할은 안 붙여도 되는 값이라(WORKFLOW §9),
  *    역할이 하나도 없는 팀도 있고 붙이지 않은 사람도 있다.
+ * ⚠️ **글자 `없음`도 빈 값과 같이 본다**(`toBeRoleLabel`이 보내는 값이다). 우리가 저장한
+ *    값을 우리가 되받아 막으면, 역할을 비운 사람은 그 뒤로 직급·권한을 **영영 못 고친다** —
+ *    화면 셀렉트는 팀 역할이 없으면 잠겨 있어(`roleOptions.length === 0`) 다른 값으로
+ *    바꿀 길도 없다. 보내는 값과 받는 값은 같은 규칙을 써야 한다.
  */
 export function isRoleOfTeam(
   teamRoles: Record<string, string[]>,
   teamName: string,
   roleLabel: string,
 ): boolean {
-  if (!roleLabel) return true;
+  if (!roleLabel || roleLabel.trim() === ROLE_NONE_LABEL) return true;
   return (teamRoles[teamName] ?? []).includes(roleLabel);
+}
+
+/**
+ * 화면의 역할 값 → BE `roleLabel` 요청 값.
+ *
+ * ⚠️ **빈 문자열을 그대로 보내면 400이다.** BE가 `@Pattern("(?s).*\S.*")`로 빈 값을 거절한다 —
+ *    `null`은 "안 바꾼다"는 뜻이라 비우기에 못 쓴다. **비우기는 문자열 `"없음"`이다** —
+ *    역할 미부여를 뜻하는 시스템 행이 실제로 있다(BE V2.3.9).
+ *    [확인] BE `UpdateMemberRoleRequest.roleLabel` 2026-08-13 develop(`30952c10`).
+ * ⚠️ 값이 있으면 회사에 실제로 있는 이름이어야 한다(없으면 BE가 404 `AU-039`) —
+ *    그건 `isRoleOfTeam`이 먼저 거른다. 여기는 빈 값 변환만 맡는다.
+ */
+export function toBeRoleLabel(roleLabel: string): string {
+  return roleLabel.trim() || ROLE_NONE_LABEL;
 }

@@ -65,6 +65,21 @@ export interface ManagedMemberAction {
 }
 
 /**
+ * 담당 액션 카드가 받는 것 — **첫 페이지 + 서버가 센 전체 건수.**
+ *
+ * ⚠️ `items.length`와 `totalCount`가 **다를 수 있다.** BE가 페이지 단위로 주는데
+ *    ([확인] `CompanyActionController` — `page`/`size`, 기본 20) 이 카드는 무한 스크롤이
+ *    아니라 한 장만 보여 준다. 머리에 `items.length`를 적으면 21건 든 사람이 20건으로
+ *    읽히므로 **머리는 `totalCount`**로 적고, 그러고도 남으면 아래에 몇 건만 보이는지 적는다.
+ * ⚠️ 이 값이 `null`이면 그건 **"못 읽었다"**이지 "없다"가 아니다
+ *    (`ManagedMemberDetail.actions` 주석 참고).
+ */
+export interface ManagedMemberActions {
+  items: ManagedMemberAction[];
+  totalCount: number;
+}
+
+/**
  * 최종 승인을 기다리는 신청.
  *
  * ⚠️ **인수인계 내용은 담지 않는다.** 중간 단계에서 이미 끝나 올라온 것이라 대표가 실무
@@ -98,7 +113,16 @@ export interface ManagedMemberDetail {
        화면에 목이 지어낸 번호가 떠 있었다 — 타입에 남겨 두면 "받는 값"으로 오해된다.
        마이페이지가 본인에게 받게 되면 그때 여기부터 되살린다.
   */
-  actions: ManagedMemberAction[];
+  /**
+   * 그 사람이 맡고 있는 액션 — **`null`은 "못 읽었다"이지 "없다"가 아니다.**
+   *
+   * ⚠️ 둘을 가르는 이유(§정직성 — `meeting/view-types.ts`의 `MeetingContentPending`과 같은
+   *    idiom). 이 카드는 **승인 직전에 "이 사람이 뭘 들고 있나"를 보는 자리**다. 조회가
+   *    실패했을 때 빈 배열로 뭉개면 화면은 `맡고 있는 액션이 없습니다`라고 말하는데,
+   *    그 말을 믿고 오프보딩을 승인하면 인수인계 없이 액션이 붕 뜬다.
+   * ⚠️ 값이 있어도 `items`는 **첫 페이지뿐**이다(`ManagedMemberActions` 주석).
+   */
+  actions: ManagedMemberActions | null;
   /** 승인을 기다리는 신청. 없으면 `null` */
   pendingHandover: PendingHandover | null;
 }
