@@ -181,28 +181,29 @@ describe("findFaqCandidates", () => {
   });
 
   /*
-    ⚠️ **요금 답변에는 "무료 요금제"·"결제하셔야" 문구가 들어가면 안 된다**(CLAUDE.md §요금제).
-       한 곳만 남아도 돈을 안 받는 것처럼 읽힌다 — 구독 상태(ACTIVE·CANCELING·UNPAID·EXPIRED)
-       용어로만 답한다. 토끼 PR #458 지적을 다시 들어와도 잡히게 여기서 못 박는다.
-  */
-  it("가격 관련 답변은 '무료 요금제'·'결제하셔야' 문구를 쓰지 않고 구독 상태 용어로 답한다", () => {
-    const freeEntry = FAQ_ENTRIES.find((entry) => entry.id === "free");
-
-    expect(freeEntry).toBeDefined();
-    expect(freeEntry?.answer).not.toMatch(/무료\s*요금제/);
-    expect(freeEntry?.answer).not.toMatch(/결제하셔야/);
-    expect(freeEntry?.answer).toMatch(/ACTIVE/);
-  });
-
-  /*
     ⚠️ **"무료"는 화면 전체 답변에서 금지다**(CLAUDE.md §요금제 — "화면에 '무료'·'결제 없이'라고
        쓰지 않는다"). 부정형("무료 요금제는 없습니다")이어도 "무료"라는 글자가 남으면 훑어보는
-       사람은 맥락 없이 그 단어만 본다 — id="free" 하나만 검사하면 다른 항목(trial 등)에서
+       사람은 맥락 없이 그 단어만 본다(§정직성) — id="free" 하나만 검사하면 다른 항목(trial 등)에서
        같은 위반이 새로 생겨도 안 잡힌다. **모든 답변**을 훑는다(2026-08-13 적대적 검증에서
-       trial 항목이 이 검사 없이 빠져나간 걸 잡았다).
+       "free"·"trial" 두 항목이 이 검사 없이 빠져나간 걸 잡았다).
   */
   it("어느 답변에도 화면에 '무료'라는 글자가 남지 않는다", () => {
     const violations = FAQ_ENTRIES.filter((entry) => entry.answer.includes("무료"));
+
+    expect(violations.map((entry) => entry.id)).toEqual([]);
+  });
+
+  /*
+    ⚠️ **BE 코드값을 답변에 그대로 쓰지 않는다**(CLAUDE.md §도메인 상수 — "코드엔 영문 상수,
+       화면엔 한글 라벨"). "무료"를 피하려다 `ACTIVE`·`UNPAID`로 바꿔 쓴 답변이 한 번 들어왔다
+       (2026-08-13) — 위젯은 로그인 전에도 열려서 내부 어휘가 그대로 밖으로 나간다.
+       상태를 말해야 하면 `SUBSCRIPTION_STATUS_LABEL`의 한글(이용 중·해지 예정·결제 전·만료)을 쓴다.
+  */
+  it("어느 답변에도 구독 상태 코드값이 그대로 나오지 않는다", () => {
+    const codes = ["ACTIVE", "CANCELING", "UNPAID", "EXPIRED"];
+    const violations = FAQ_ENTRIES.filter((entry) =>
+      codes.some((code) => entry.answer.includes(code)),
+    );
 
     expect(violations.map((entry) => entry.id)).toEqual([]);
   });
