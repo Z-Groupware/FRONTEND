@@ -180,6 +180,23 @@ export const ep = {
   partsStatus: (meetingId: number) => `/api/meetings/${meetingId}/parts/status`,
   /** AI 처리 상태(CAP-06) — 종료 뒤 폴링 */
   processingStatus: (meetingId: number) => `/api/meetings/${meetingId}/processing-status`,
+  /**
+   * 요약 재시도 · 계층 재개(ANLZ-02) — 마이페이지 "요약이 중단된 회의"의 [다시 분석].
+   * [확인] `capture/presentation/api/AnalysisController.java#resumeAnalysis`(2026-08-13).
+   *
+   * ⚠️ **ANLZ-01(`POST /analysis`)과 다르다.** 저쪽은 처음부터 다시 돌려 **재과금**이 나고,
+   *    이쪽은 **실패한 계층부터 이어** 돌려 앞 계층 토큰이 다시 안 나간다.
+   * ⚠️ **본문을 안 보낸다**(`@RequestBody(required = false)`). 화면은 어느 계층이 깨졌는지
+   *    모르고, 알려면 CAP-06을 먼저 부르는 왕복이 생긴다 — 생략하면 **서버가 처음 깨진
+   *    계층을 고른다**(BE `ResumeAnalysisRequest` 주석). 빈 문자열을 보내면 400 `ANLZ-003`이라
+   *    "안 보내는 것"과 "빈 값"이 다르다.
+   * ⚠️ 409 둘을 일반 실패로 뭉치지 않는다 — `ANLZ-008`은 **재개할 계층이 없다**(전부 성공했거나
+   *    한 번도 안 돌았다)는 뜻이라 처음부터(ANLZ-01) 돌려야 하고, `ANLZ-004`는 앞 계층이
+   *    안 끝나 지금은 못 잇는다는 뜻이다.
+   * ⚠️ **200이 성공을 뜻하지 않는다.** 큐가 없어 요청 스레드에서 그대로 돌기 때문에 응답
+   *    `status`에 실제 결과(`DONE`·`FAILED`·`SKIPPED`·`ALREADY_RUNNING`·`SUPERSEDED`)가 실려 온다.
+   */
+  meetingAnalysisRetry: (meetingId: number) => `/api/meetings/${meetingId}/analysis/retry`,
 
   /*
    * AI 액션 분배 검토(RVW) — [확인] BE 실코드 대조(2026-08-12)
