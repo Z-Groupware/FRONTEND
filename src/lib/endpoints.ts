@@ -267,7 +267,10 @@ export const ep = {
   /** 팀원 현황(이름·직급·역할·재직상태·담당 액션 수) — [확인] PR #354 머지 완료, LEADER 전용 */
   teamMembers: () => "/api/team/members",
 
-  /** `month` 생략 시 이번 달(서버 기본값) */
+  /**
+   * [확인] BE PL 캘린더/Todo 연동 가이드(2026-08-13, PR #457 머지 완료) — `CalendarItemResponse`·
+   *   `TodoResponse`·`CreateTodoRequest` 소스·테스트 대조. `month` 생략 시 이번 달(서버 기본값).
+   */
   calendar: (month?: string) => `/api/calendar${toQuery(month ? { month } : undefined)}`,
   todos: () => "/api/todos",
   todoComplete: (id: number) => `/api/todos/${id}/complete`,

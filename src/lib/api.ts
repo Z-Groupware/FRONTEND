@@ -1,6 +1,7 @@
 import "server-only";
 
 import { isErrorTag } from "./error-tag";
+import { pushLokiLog } from "./loki";
 
 /**
  * BE 호출 창구 — **Next 서버에서만** 돈다(§핵심 4원칙 ②).
@@ -124,7 +125,21 @@ export async function serverApi<T>(path: string, init: ApiInit = {}): Promise<T>
     }
   });
 
-  if (!response.ok) throw toApiError(response.status, raw);
+  if (!response.ok) {
+    const apiError = toApiError(response.status, raw);
+    /*
+      ⚠️ **5xx만 쏜다.** `toErrorTag`와 같은 경계다 — 4xx는 사람이 고칠 수 있는 실패라
+         문장이 이미 원인을 말한다. 5xx는 화면 문구만으론 BE 로그를 못 찾으니 Loki에 남긴다.
+    */
+    if (response.status >= 500) {
+      pushLokiLog("error", `BE 호출 실패: ${path}`, {
+        status: response.status,
+        code: apiError.code,
+        traceId: apiError.traceId,
+      });
+    }
+    throw apiError;
+  }
 
   /*
     ⚠️ **실패 봉투는 위에서 이미 갈렸다.** 여기 오는 건 성공뿐이라 `isEnveloped`는

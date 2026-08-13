@@ -92,3 +92,53 @@ describe("개인 Todo 완료 토글", () => {
     await expect(toggleTodoCompletionAction("존재하지-않음")).rejects.toThrow();
   });
 });
+
+// 실서버 분기에서 id를 그대로 `Number()`로 밀면 빈 문자열이 0이 되고 잘못된 요청이 나간다.
+// mock 모드에선 이 검증이 걸리면 안 된다(Mock ID는 `todo-*` 문자열이라 항상 다른 실패로 걸린다).
+describe("Todo 완료 토글 — 실서버 분기 id 검증", () => {
+  const originalIsMock = process.env.NEXT_PUBLIC_USE_MOCK;
+
+  beforeEach(() => {
+    jest.resetModules();
+    process.env.NEXT_PUBLIC_USE_MOCK = "false";
+  });
+
+  afterAll(() => {
+    process.env.NEXT_PUBLIC_USE_MOCK = originalIsMock;
+  });
+
+  it.each([
+    ["빈 문자열", ""],
+    ["공백", "   "],
+    ["비수치", "abc"],
+    ["소수", "1.5"],
+    ["0", "0"],
+    ["음수", "-1"],
+  ])("%s id는 BE로 나가지 않고 거부된다", async (_label, badId) => {
+    jest.doMock("@/features/auth/session", () => ({
+      requireAccessToken: jest.fn(async () => "token"),
+    }));
+    const serverApiSpy = jest.fn();
+    jest.doMock("@/lib/api", () => ({ serverApi: serverApiSpy }));
+
+    const { toggleTodoCompletionAction: liveToggle } = await import("./actions");
+    await expect(liveToggle(badId)).rejects.toThrow(/올바르지 않습니다/);
+    expect(serverApiSpy).not.toHaveBeenCalled();
+  });
+
+  it("숫자 문자열 id는 그대로 정수로 변환해 BE에 넘긴다", async () => {
+    jest.doMock("@/features/auth/session", () => ({
+      requireAccessToken: jest.fn(async () => "token"),
+    }));
+    const serverApiSpy = jest.fn(async () => undefined);
+    jest.doMock("@/lib/api", () => ({ serverApi: serverApiSpy }));
+
+    const { toggleTodoCompletionAction: liveToggle } = await import("./actions");
+    await liveToggle("42");
+
+    expect(serverApiSpy).toHaveBeenCalledWith(
+      "/api/todos/42/complete",
+      expect.objectContaining({ method: "PATCH", accessToken: "token" }),
+    );
+  });
+});
