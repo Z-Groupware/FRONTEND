@@ -18,6 +18,13 @@ export interface MeetingTopic {
 
 interface MeetingCommon {
   title: string;
+  /**
+   * ⚠️ 비대면 회의(`isOnline`)는 WORKFLOW.md §3-1-A 확정대로 실제 일정이 없다("`startAt`·
+   *    `endAt`은 사용자가 입력하지 않고 DB에도 저장하지 않는다") — 여기서는 **제출 시각**을
+   *    담아 목록 정렬 키로만 쓴다(그 문서도 "시간 없는 회의를 어디에 둘지는 BE가 정한다"고
+   *    남겨 둔 채라 FE 임시값이다). 화면은 `isOnline`이면 이 값을 절대 읽지 않는다
+   *    (`schedule`이 빈 문자열로 비워진다) — 지어낸 일정이 화면에 보이는 일은 없다.
+   */
   start: Date;
   end: Date;
   /** ⚠️ 비대면 회의(`isOnline`)는 회의실이 없다 — `null`이다(이슈 #473). */
