@@ -13,6 +13,7 @@ import {
   type FaqEntry,
   SUPPORT_EMAIL,
 } from "../faq";
+import { useStreamedMarkdown } from "../use-streamed-markdown";
 
 /**
  * 오간 말 한 마디.
@@ -39,6 +40,14 @@ interface SupportTurnProps {
 
 /** 말풍선 하나 */
 export function SupportTurn({ turn, isOpening, onPickCategory, onPickEntry }: SupportTurnProps) {
+  /*
+    ⚠️ 훅은 분기 밖에서 부른다(Rules of Hooks) — 답이 아닌 말은 빈 문자열을 넘겨
+       스트리밍할 게 없게 만든다.
+  */
+  const { text: streamedAnswer, isStreaming } = useStreamedMarkdown(
+    turn.kind === "answer" ? turn.entry.answer : "",
+  );
+
   // 사람이 한 말 — 오른쪽에 붙여 누가 한 말인지 모양으로 구분한다
   if (turn.kind === "said") {
     return (
@@ -58,12 +67,15 @@ export function SupportTurn({ turn, isOpening, onPickCategory, onPickEntry }: Su
         ⚠️ **답만 마크다운을 렌더한다**(공지 본문과 같은 `MarkdownContent`, §AI 기능:
            XSS 방어는 `rehype-sanitize`가 맡는다). 우리가 미리 써 둔 답이라 안전하지만,
            같은 컴포넌트를 쓰는 게 방어를 두 벌로 안 만든다.
+        ⚠️ **서버에서 오는 척 조각조각 흘린다**(`useStreamedMarkdown`) — 답은 이미
+           번들 안에 있지만, 한 번에 툭 뜨지 않고 흘러오는 느낌을 낸다. 흐르는 동안
+           끝에 커서(▌)를 붙인다 — 다음 조각이 오면 그대로 갈린다.
         ⚠️ 되묻는 말(갈래·질문 목록 위 안내 문구)은 짧은 고정 문구라 그대로 평문 +
            `whitespace-pre-line`을 쓴다 — 빈 줄이 그대로 문단이 된다.
       */}
       {turn.kind === "answer" ? (
         <MarkdownContent
-          content={turn.entry.answer}
+          content={isStreaming ? `${streamedAnswer}▌` : streamedAnswer}
           className="text-popover-foreground max-w-none text-[12px] leading-[20px] break-keep"
         />
       ) : (
@@ -105,7 +117,8 @@ export function SupportTurn({ turn, isOpening, onPickCategory, onPickEntry }: Su
         </ul>
       )}
 
-      {turn.kind === "answer" && turn.entry.links && (
+      {/* ⚠️ 흐르는 중엔 안 보인다 — 답이 다 오기 전에 버튼이 먼저 뜨면 어수선하다 */}
+      {turn.kind === "answer" && !isStreaming && turn.entry.links && (
         <div className="flex flex-wrap gap-1.5 pt-3">
           {turn.entry.links.map((link) => (
             <Link

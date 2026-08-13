@@ -27,11 +27,14 @@ interface SupportThreadProps {
  */
 export function SupportThread({ turns, onPickCategory, onPickEntry }: SupportThreadProps) {
   const boxRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
 
   /*
-    말이 하나 늘 때마다 **맨 아래로 붙인다.**
-    ⚠️ `ref` 콜백이 아니라 효과다 — 콜백은 붙는 시점이 레이아웃보다 일러 자리를 못 잡는다.
-       상태를 바꾸는 게 아니라 **DOM을 굴리는** 일이라 효과가 제자리다.
+    말이 늘거나 자랄 때마다 **맨 아래로 붙인다.**
+    ⚠️ `turns.length`가 아니라 **콘텐츠 높이를 감시**한다(`ResizeObserver`). 답이
+       스트리밍처럼 조각조각 흘러 들어오면(`useStreamedMarkdown`) 말 수는 안 늘어도
+       한 말풍선의 키가 계속 자란다 — 그때마다도 바닥에 붙어 있어야 방금 온 조각이
+       가려지지 않는다.
     ⚠️ `behavior: "smooth"`를 쓰지 않는다. 등장 애니메이션과 겹치면 부드러운 스크롤이
        중간에 취소돼 아예 안 움직인다.
     ⚠️ 말이 아래에서부터 쌓이므로(`mt-auto`) 맨 아래가 곧 방금 온 답이다 —
@@ -39,8 +42,18 @@ export function SupportThread({ turns, onPickCategory, onPickEntry }: SupportThr
   */
   useEffect(() => {
     const box = boxRef.current;
-    if (box) box.scrollTop = box.scrollHeight;
-  }, [turns.length]);
+    const content = contentRef.current;
+    if (!box || !content) return;
+
+    const scrollToBottom = () => {
+      box.scrollTop = box.scrollHeight;
+    };
+
+    scrollToBottom();
+    const observer = new ResizeObserver(scrollToBottom);
+    observer.observe(content);
+    return () => observer.disconnect();
+  }, []);
 
   return (
     <div
@@ -60,7 +73,7 @@ export function SupportThread({ turns, onPickCategory, onPickEntry }: SupportThr
         ⚠️ `justify-end`가 아니라 `mt-auto`다. 내용이 넘칠 때 `justify-end`는 **위쪽을
            스크롤 시작점 밖으로** 밀어내 첫 줄에 닿을 수 없게 만든다.
       */}
-      <div className="mt-auto flex shrink-0 flex-col gap-2.5">
+      <div ref={contentRef} className="mt-auto flex shrink-0 flex-col gap-2.5">
         {turns.map((turn, index) => (
           <SupportTurn
             key={index}
