@@ -10,8 +10,9 @@
  *   `domain/model/{BillingSubscriptionStatus,BillingPaymentStatus}.java`
  *
  * ⚠️ **봉투는 여기서 안 벗긴다.** `serverApi`가 벗기고(`lib/api.ts`), 이 파일은 벗겨진
- *    알맹이만 본다 — 다만 `pay`·`payment-methods`는 BE가 봉투를 안 씌워서 호출부가
- *    `isEnveloped: false`로 부른다(§엔드포인트 주석).
+ *    알맹이만 본다 — 다만 `pay`·`payment-methods`는 **과도기**라 호출부가 `isEnveloped: false`로
+ *    원문을 받고, 이 파일의 `unwrapTransitionalEnvelope`가 봉투 유무를 감지해 가른다
+ *    (BE PR #461 — 아래 주석).
  * ⚠️ **금액은 숫자, 날짜는 ISO 문자열**로 넘긴다(`subscription.ts` 계약 주석). BE가
  *    `BigDecimal`로 들고 있는 값(`amount`·`overageAmount`)도 JSON에선 number라 그대로 받는다 —
  *    ⚠️ 단 자바 `BigDecimal`은 자릿수가 크면 **문자열로 직렬화되는 설정**도 있어서,
@@ -127,7 +128,9 @@ export interface BePaymentRecord {
 /**
  * `POST /api/companies/me/subscription/pay` → `BillingPaymentActionResult`.
  *
- * ⚠️ **봉투가 없다.** 컨트롤러가 DTO를 그대로 리턴한다 — 호출부가 `isEnveloped: false`로 부른다.
+ * ⚠️ **봉투가 과도기다**(BE PR #461). 지금 배포본은 DTO 맨몸이고, #461부터는
+ *    `ApiResponse<T>`로 온다 — 호출부는 `isEnveloped: false`로 원문을 받고
+ *    `unwrapTransitionalEnvelope`가 가른다(아래).
  * ⚠️ **실패도 HTTP 200이다.** 결제 실패는 예외가 아니라 값으로 온다(`{ isSuccess:false, ... }`) —
  *    상태 코드로 가르면 실패를 성공으로 읽는다.
  * ⚠️ `failureCode`는 **성공일 때 아예 빠진다**(`@JsonInclude(NON_NULL)`) — `null`이 아니라
@@ -146,8 +149,9 @@ export interface BePaymentAction {
   ⚠️ `serverApi<T>`는 **단언일 뿐 검사가 아니다**(회의 매퍼 `parseMeetingDetail`과 같은 이유).
      봉투가 어긋나거나 BE가 부분 응답을 주면 `overview.subscription.usage.tokens`에서
      `undefined`를 파고들어 터지는데, 그때 뜨는 건 원인을 알 수 없는 `TypeError`다.
-  ⚠️ **여기는 특히 필요하다.** `pay`·`payment-methods`는 봉투가 없어서, `isEnveloped`를
-     잘못 주면 통째로 `undefined`가 온다 — 그걸 잡아내는 게 이 검사다(§연동 검증).
+  ⚠️ **여기는 특히 필요하다.** `pay`·`payment-methods`는 봉투가 과도기라(BE PR #461),
+     감지가 어긋나거나 벗긴 결과가 `undefined`면 결제 실패가 성공으로 읽힌다 —
+     그걸 잡아내는 게 이 검사다(§연동 검증).
   ⚠️ **화면이 실제로 읽는 것만 본다.** 안 쓰는 필드까지 검사하면 BE가 무관한 필드를 바꿀 때마다
      멀쩡한 화면이 막힌다.
 */
@@ -263,8 +267,7 @@ function isBePaymentAction(value: unknown): value is BePaymentAction {
 
   /*
     ⚠️ `failureCode`는 성공이면 **키가 없다**(`@JsonInclude(NON_NULL)`) — `undefined`가 정상이다.
-       반대로 `isSuccess`는 늘 온다. 이게 `undefined`면 봉투를 잘못 벗긴 것이다
-       (`isEnveloped`를 안 내린 경우) — 그때 여기서 걸린다.
+       반대로 `isSuccess`는 늘 온다. 이게 `undefined`면 봉투를 잘못 벗긴 것이다 — 그때 여기서 걸린다.
   */
   return (
     typeof action.isSuccess === "boolean" &&
@@ -272,6 +275,28 @@ function isBePaymentAction(value: unknown): value is BePaymentAction {
       action.failureCode === null ||
       typeof action.failureCode === "string")
   );
+}
+
+/* ───────── ⚠️ 과도기 봉투 감지 (BE PR #461) — 배포 확정 후 걷어낸다 ───────── */
+
+/**
+ * ⚠️ **과도기 허용 — [확인] BE PR #461(`BillingController.pay`/`registerPaymentMethod`).**
+ *    `pay`·`payment-methods`는 지금 배포본이 DTO를 맨몸으로 리턴하고, BE #461부터
+ *    `ApiResponse<T>` 봉투로 온다. FE·BE가 **어느 순서로 머지·배포돼도** 안전해야 하므로
+ *    호출부는 계속 `isEnveloped: false`(원문 그대로)로 받고, 여기서 모양을 보고 가른다 —
+ *    공용 봉투(`httpStatus` 숫자 + `data` 키, `lib/api.ts`의 `ApiEnvelope`)면 `data`를 꺼내고,
+ *    아니면 맨몸 DTO로 본다.
+ * ⚠️ **감지가 안전한 이유:** 여기 오는 두 DTO(`{ isSuccess, failureCode? }` ·
+ *    `{ id, brand, last4, expiry }`)에는 `httpStatus`·`data` 키가 없어서 봉투와 혼동될 수 없다.
+ *    다른 응답에 일반화하지 않는다 — DTO에 `data` 필드가 있는 순간 이 감지는 거짓말을 한다.
+ * ⚠️ **걷어낼 코드다.** BE #461 배포가 전 환경에 확정되면 호출부(`actions.ts`)를
+ *    `isEnveloped` 기본값 경로로 되돌리고 이 함수와 감지 갈래 테스트를 지운다.
+ */
+function unwrapTransitionalEnvelope(raw: unknown): unknown {
+  if (typeof raw !== "object" || raw === null) return raw;
+  const candidate = raw as { httpStatus?: unknown; data?: unknown };
+  if (typeof candidate.httpStatus === "number" && "data" in candidate) return candidate.data;
+  return raw;
 }
 
 /* ───────── 검사까지 마친 값 ───────── */
@@ -296,17 +321,19 @@ export function parseBillingOverview(raw: unknown): BeBillingOverview {
 }
 
 export function parsePaymentMethod(raw: unknown): BePaymentMethod {
-  if (!isBePaymentMethod(raw)) {
+  const bare = unwrapTransitionalEnvelope(raw);
+  if (!isBePaymentMethod(bare)) {
     throw new Error("결제 수단 응답이 약속한 모양이 아닙니다.");
   }
-  return raw;
+  return bare;
 }
 
 export function parsePaymentAction(raw: unknown): BePaymentAction {
-  if (!isBePaymentAction(raw)) {
+  const bare = unwrapTransitionalEnvelope(raw);
+  if (!isBePaymentAction(bare)) {
     throw new Error("결제 결과 응답이 약속한 모양이 아닙니다.");
   }
-  return raw;
+  return bare;
 }
 
 /* ───────── UI 계약으로 옮기기 ───────── */

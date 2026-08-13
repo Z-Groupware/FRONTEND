@@ -249,12 +249,14 @@ describe("구독 상태 옮기기", () => {
 });
 
 /*
-  ⚠️ 여기가 이번 연동에서 **가장 잘 깨지는 자리**다. `pay`·`payment-methods`는 BE가 봉투를
-     안 씌우는데(`ApiResponse`가 아니라 DTO를 그대로 리턴한다), 호출부가 `isEnveloped: false`를
-     빠뜨리면 `serverApi`가 `raw.data`를 찾다가 `undefined`를 돌려준다 — 그러면 결제가
-     실패해도 화면이 성공으로 읽는다. 그 사고를 매퍼가 잡는지 확인한다.
+  ⚠️ 여기가 이번 연동에서 **가장 잘 깨지는 자리**다. `pay`·`payment-methods`는 봉투가
+     **과도기**다 — 지금 배포본은 DTO 맨몸, **BE PR #461**부터 `ApiResponse<T>` 봉투.
+     호출부는 `isEnveloped: false`로 원문을 받고 매퍼(`unwrapTransitionalEnvelope`)가
+     감지해 가른다. 어느 배포본과 만나도(맨몸·봉투) 같은 결과가 나와야 하고, 감지가
+     어긋나 `undefined`가 흐르면 결제 실패가 성공으로 읽힌다 — 그 사고를 매퍼가 잡는지
+     확인한다. BE #461 배포 확정 후 감지를 걷어내면 봉투 갈래 테스트도 같이 지운다.
 */
-describe("결제 결과 매퍼 — 봉투 없는 응답", () => {
+describe("결제 결과 매퍼 — 과도기 봉투 감지(BE PR #461)", () => {
   it("성공이면 `failureCode`가 아예 없다(`@JsonInclude(NON_NULL)`)", () => {
     expect(parsePaymentAction({ isSuccess: true })).toEqual({ isSuccess: true });
   });
@@ -266,20 +268,46 @@ describe("결제 결과 매퍼 — 봉투 없는 응답", () => {
     });
   });
 
+  /* ⚠️ BE #461 배포 후의 모양 — 봉투를 감지해 `data`를 꺼낸다(성공·실패 둘 다) */
+  it("봉투째 와도 알맹이를 꺼낸다 — BE #461 배포 후 모양", () => {
+    expect(
+      parsePaymentAction({
+        httpStatus: 200,
+        message: "Billing payment processed.",
+        data: { isSuccess: true },
+      }),
+    ).toEqual({ isSuccess: true });
+
+    expect(
+      parsePaymentAction({
+        httpStatus: 200,
+        message: "Billing payment processed.",
+        data: { isSuccess: false, failureCode: "NO_PAYMENT_METHOD" },
+      }),
+    ).toEqual({ isSuccess: false, failureCode: "NO_PAYMENT_METHOD" });
+  });
+
   it("봉투를 잘못 벗겨 `undefined`가 오면 막는다 — 성공으로 읽히면 안 된다", () => {
     expect(() => parsePaymentAction(undefined)).toThrow(/결제 결과/);
   });
 
-  it("봉투째 오면 막는다 — `isEnveloped`를 안 내린 경우다", () => {
-    const enveloped = { httpStatus: 200, message: "ok", data: { isSuccess: true } };
-    expect(() => parsePaymentAction(enveloped)).toThrow(/결제 결과/);
+  it("봉투 안이 비어 있으면 막는다 — `data: null`을 성공으로 읽지 않는다", () => {
+    const empty = { httpStatus: 200, message: "ok", data: null };
+    expect(() => parsePaymentAction(empty)).toThrow(/결제 결과/);
   });
 });
 
-describe("결제 수단 매퍼 — 봉투 없는 응답", () => {
-  it("BE 응답을 UI 계약으로 옮긴다", () => {
+describe("결제 수단 매퍼 — 과도기 봉투 감지(BE PR #461)", () => {
+  it("맨몸 응답(BE #461 배포 전)을 UI 계약으로 옮긴다", () => {
     const be = { id: "pm_9", brand: "MASTER", last4: "1234", expiry: "12/29" };
     expect(parsePaymentMethod(be)).toEqual(be);
+  });
+
+  it("봉투째 와도 알맹이를 꺼낸다 — BE #461 배포 후 모양", () => {
+    const be = { id: "pm_9", brand: "MASTER", last4: "1234", expiry: "12/29" };
+    expect(
+      parsePaymentMethod({ httpStatus: 200, message: "Payment method registered.", data: be }),
+    ).toEqual(be);
   });
 
   it("봉투를 잘못 벗겨 `undefined`가 오면 막는다", () => {

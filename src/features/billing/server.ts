@@ -185,22 +185,37 @@ const MOCK_CONFIG: BillingConfig = {
 /**
  * 요금 설정.
  *
- * ⚠️ **로그아웃 화면에서도 불린다.** 공개 요금제 페이지(`/plans`)가 이 함수를 쓰는데,
- *    BE `GET /billing-config`는 `isAuthenticated()`라 토큰 없이는 401이다 —
- *    **BE에 공개 경로를 요청해 둔 상태**이고, 그때까지는 토큰이 없으면 v0 가정값을 그대로 쓴다.
- * ⚠️ **이 되돌림은 값이 어긋나지 않는다.** BE도 회사별 설정 행이 없으면 같은 숫자를 내려준다
+ * ⚠️ **로그아웃 화면에서도 불린다.** 공개 요금제 페이지(`/plans`)가 이 함수를 쓴다 —
+ *    토큰이 없으면 공개 경로 `GET /api/billing-config`를 부른다
+ *    ([확인] `PublicBillingConfigController` — **BE PR #461**, permitAll · 같은
+ *    `BillingConfigResponse`를 봉투에 담아 준다). 로그인 상태면 기존 인증 경로를 그대로 쓴다.
+ * ⚠️ **v0 가정값은 최후 폴백으로 남긴다** — 공개 config가 없을 때(BE #461이 아직 배포되지
+ *    않아 404가 나는 과도기, 또는 BE가 안 닿을 때)의 자리다. FE·BE가 어느 순서로 머지·배포돼도
+ *    이 폴백 덕에 `/plans`가 안 죽는다. BE #461 배포가 전 환경에 확정되면 "미배포 404" 사유는
+ *    사라지지만, **통신 실패 폴백으로는 계속 필요하다**(아래 던지지 않는 이유).
+ * ⚠️ **이 폴백은 값이 어긋나지 않는다.** BE도 같은 숫자를 내려준다
  *    (`metering/domain/model/BillingDefaults.java` — 주석에 `v0 assumption, FE mock parity`라고
- *    적혀 있고 여섯 값이 아래와 전부 같다, 2026-08-13 대조). 그래서 로그인 전 화면이
+ *    적혀 있고 여섯 값이 아래와 전부 같다, 2026-08-13 대조). 그래서 폴백 화면이
  *    **거짓 금액을 보여 주지는 않는다** — 다만 회사별로 요금을 달리 받기 시작하면
- *    그날부터는 어긋나므로, 공개 경로가 생기기 전에 요금을 커스터마이즈하면 안 된다.
- * ⚠️ 던지지 않는다. 여기서 던지면 **랜딩에서 들어오는 소개 페이지가 통째로 죽는다** —
- *    로그인도 안 한 사람에게 보여 줄 오류가 아니다.
+ *    그날부터는 어긋나므로, 그 전에 공개 경로 배포가 먼저여야 한다.
+ * ⚠️ 공개 경로는 던지지 않는다. 여기서 던지면 **랜딩에서 들어오는 소개 페이지가 통째로
+ *    죽는다** — 로그인도 안 한 사람에게 보여 줄 오류가 아니다. 로그인 경로는 기존대로
+ *    올린다(사내 화면은 error.tsx가 받는다).
  */
 export async function getBillingConfig(): Promise<BillingConfig> {
   if (isMock) return MOCK_CONFIG;
 
   const accessToken = await getAccessToken();
-  if (!accessToken) return MOCK_CONFIG;
+
+  if (!accessToken) {
+    try {
+      const raw = await serverApi<unknown>(ep.publicBillingConfig(), {});
+      return toBillingConfig(parseBillingConfig(raw));
+    } catch {
+      // 공개 config가 없을 때의 최후 폴백 — BE #461 미배포 404 포함(위 주석)
+      return MOCK_CONFIG;
+    }
+  }
 
   const raw = await serverApi<unknown>(ep.billingConfig(), { accessToken });
   return toBillingConfig(parseBillingConfig(raw));
@@ -211,11 +226,16 @@ export async function getBillingConfig(): Promise<BillingConfig> {
  *
  * ⚠️ **`GET /billing`을 그대로 쓴다.** 결제 전용 조회가 BE에 따로 없다 — 없는 경로를 지어내지
  *    않는다(§환각 API 방지). 상태(`UNPAID`)는 그 응답이 말해 준다.
- * ⚠️ **구독 행이 없으면 404(`BIL-001`)가 온다.** BE에 구독 행을 만드는 코드가 아직 없어서
- *    (`BillingSubscription.create`를 부르는 곳이 없다, 2026-08-13 대조) 갓 온보딩한 회사는
- *    반드시 이 갈래로 떨어진다 — 그 404는 **오류가 아니라 "아직 결제 전"이라는 뜻**이라
- *    결제 전 모습으로 낮춘다. BE도 같은 판정을 한다(`CompanyController.subscriptionStatusOf`가
- *    행이 없으면 `UNPAID`를 내려준다) — 두 곳이 같은 뜻으로 읽는다.
+ * ⚠️ **구독 행이 없으면 404(`BIL-001`)가 온다.** BE는 **결제(`pay`) 시점에만** 행을 만든다
+ *    ([확인] **BE PR #461** — `BillingCommandService.getOrCreateSubscription`이 없으면
+ *    `UNPAID` 행을 만든다. 조회(`GET /billing`)에는 그 코드가 없어서, 갓 온보딩해 아직
+ *    [결제하기]를 누르지 않은 회사는 여전히 이 갈래로 떨어진다) — 그 404는 **오류가 아니라
+ *    "아직 결제 전"이라는 뜻**이라 결제 전 모습으로 낮춘다. BE도 같은 판정을 한다
+ *    (`CompanyController.subscriptionStatusOf`가 행이 없으면 `UNPAID`를 내려준다) —
+ *    두 곳이 같은 뜻으로 읽는다.
+ * ⚠️ 예전에 적어 둔 **"온보딩 직후 결제가 404(`BIL-001`)로 막힌다"는 블로커는 BE #461로
+ *    풀렸다** — `pay`가 행을 만들고 결제까지 이어진다. 여기 404 해석은 조회 쪽 이야기라
+ *    그대로 맞다.
  * ⚠️ **여기서 던지면 흐름이 끊긴다.** 온보딩 [완료]는 되돌릴 수 없고 그 다음 화면이 곧바로
  *    4단계(결제)다 — 커밋은 성공했는데 결제 화면이 에러로 뜨면 사용자는 조직이 저장됐는지조차
  *    알 수 없고, 돌아갈 단계도 없다. 404 말고 다른 실패는 그대로 올린다(진짜 고장이다).
