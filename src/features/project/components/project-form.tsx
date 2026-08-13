@@ -91,10 +91,20 @@ export function ProjectForm({ action, teamOptions, cancelHref }: ProjectFormProp
   const uploadStartedRef = useRef(false);
   const createdProjectId = state.createdProjectId;
   useEffect(() => {
-    if (createdProjectId === undefined || !attachment || uploadStartedRef.current) return;
+    if (createdProjectId === undefined || uploadStartedRef.current) return;
     uploadStartedRef.current = true;
+    /*
+      ⚠️ **첨부가 사라졌으면 그냥 목록으로 간다**(2026-08-13 고침). 액션은 `hasAttachment=1`을
+         보고 `redirect` 대신 id만 돌려주는데, 응답이 오기 전에 사람이 [첨부 선택 해제]를
+         누르면 여기서 올릴 파일이 없어진다 — 전에는 아무것도 안 하고 끝나서 **프로젝트는
+         만들어졌는데 화면이 제출 버튼만 잠긴 채 멈췄다.** 만들어진 건 사실이므로 이동은 한다.
+    */
+    if (!attachment) {
+      goToList();
+      return;
+    }
     void upload(createdProjectId, attachment);
-  }, [createdProjectId, attachment, upload]);
+  }, [createdProjectId, attachment, upload, goToList]);
 
   const isUploading = uploadPhase.kind === "uploading";
   /* 프로젝트가 이미 만들어진 뒤다 — 제출을 또 받으면 같은 프로젝트가 두 개 생긴다. */
@@ -414,7 +424,14 @@ export function ProjectForm({ action, teamOptions, cancelHref }: ProjectFormProp
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="project-attachment">첨부파일</Label>
+            {/*
+              ⚠️ **`htmlFor`를 안 쓴다**(2026-08-13 고침). 실제 조작은 아래 [파일 첨부] 버튼이
+                 하고 `input`은 `hidden`이라 포커스를 못 받는다 — 라벨이 포커스 불가 요소를
+                 가리키면 라벨을 눌러도 아무 일이 없다. 라벨·오류를 **버튼**에 건다(§a11y).
+            */}
+            <span id="project-attachment-label" className="text-[13px] leading-5 font-medium">
+              첨부파일
+            </span>
             {/*
               ⚠️ 파일 자체는 폼으로 안 보낸다 — BE는 바이너리를 안 받고, 액션이 만든 프로젝트
                  id로 화면이 presigned PUT을 잇는다(`use-attachment-upload.ts`). 폼에는
@@ -434,17 +451,27 @@ export function ProjectForm({ action, teamOptions, cancelHref }: ProjectFormProp
                 size="sm"
                 className="w-full min-w-0 justify-start"
                 disabled={isUploading || isCreated}
+                aria-labelledby="project-attachment-label"
+                aria-describedby={attachmentError ? "project-attachment-error" : undefined}
                 onClick={() => fileInputRef.current?.click()}
               >
                 <Paperclip />
                 <span className="truncate">{attachment?.name ?? "파일 첨부 (선택)"}</span>
               </Button>
-              {attachment && !isCreated && (
+              {/*
+                ⚠️ **제출 중에도 잠근다** — 응답을 기다리는 사이 해제하면 올릴 파일이 사라진다.
+                   위 effect가 그 경우에도 목록으로 보내 주지만, 애초에 못 누르게 하는 편이
+                   "눌렀는데 첨부만 조용히 없어지는" 일을 안 만든다.
+                ⚠️ 파일이 검증에 걸려 `attachment`가 비었어도 **오류 문구가 남아 있으면** 지울
+                   자리가 있어야 한다 — 전에는 이 버튼이 안 그려져 오류를 치울 길이 없었다.
+              */}
+              {(attachment || attachmentError) && !isCreated && (
                 <Button
                   type="button"
                   variant="ghost"
                   size="icon-sm"
                   aria-label="첨부파일 선택 해제"
+                  disabled={isPending}
                   onClick={clearAttachment}
                 >
                   <X />
