@@ -215,6 +215,17 @@ export const ep = {
   member: (id: number) => `/api/members/${id}`,
   /** 조직도 — OWNER·ADMIN 전용 */
   memberOrgChart: () => "/api/members/org-chart",
+  /**
+   * 내 팀 로스터 — 회의 참석자 픽커 전용(`/api/members`와 다르다, 그건 관리 화면용).
+   * 응답은 `{memberId, name}[]`, ACTIVE만, 본인도 포함(제외는 FE 몫) — 팀은 **토큰의 teamId**로
+   * 정해져 파라미터로 안 보낸다. 팀이 없으면(OWNER) 빈 배열이지 오류가 아니다.
+   * [확인] BE `MemberController.myTeamRoster` / `MemberDirectoryService.getTeamRoster`
+   * (identity/member 도메인) — 2026-08-13 BE 레포 실코드 대조.
+   * ⚠️ 역할 게이트는 `hasAnyRole('OWNER','ADMIN','LEADER','MEMBER')`로 전부 열려 있지만,
+   *    OWNER는 토큰에 teamId가 없어 호출해도 빈 배열만 온다 — 그래서 Owner 쪽 참석자 후보는
+   *    이 API가 아니라 팀별 리더 조회(`getTeamLeaders`, `ep.teams()`)로 따로 구한다.
+   */
+  membersMyTeam: () => "/api/members/my-team",
   /** 오너 대시보드 KPI(전체 사원·휴직자) — [확인] PR #385 머지 완료, OWNER 전용 */
   memberDashboardSummary: () => "/api/members/dashboard-summary",
   /** 팀장 현황(이름·이메일·팀·재직상태·휴직기간) — [확인] PR #385 머지 완료, OWNER 전용 */

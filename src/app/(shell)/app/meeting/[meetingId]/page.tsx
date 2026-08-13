@@ -85,9 +85,11 @@ export default async function MeetingDetailPage({
   /*
     ⚠️ 참석자 후보 목록은 **host이고 아직 안 끝난 회의일 때만** 가져온다(MEET-09 편집 조건과
     같다) — 그 외엔 다이얼로그 자체가 안 뜨는데 목록만 미리 불러오면 헛수고다.
+    ⚠️ `viewer`를 그대로 넘긴다 — `canEditMeetingAttendees`가 `isHost`를 요구하므로 이 자리에
+       도달했다면 `viewer`가 곧 이 회의의 host다(개설자 다른 사람의 회의는 여기 안 온다).
   */
   const canEditAttendees = canEditMeetingAttendees(result.detail);
-  const members = canEditAttendees ? await getReservableMembers() : [];
+  const members = canEditAttendees ? await getReservableMembers(viewer) : [];
 
   return (
     <main className="min-h-0 flex-1 overflow-y-auto px-8 py-7">
