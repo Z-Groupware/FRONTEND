@@ -29,6 +29,14 @@ export interface TeamDashboardOverview {
   /** 팀 누적 완료 액션 수 */
   doneActionCount: number;
   members: TeamDashboardMember[];
-  /** 이 팀의 회의만 — 개설 라벨은 부서명(예: "개발팀"). 팀 액션 회의는 여기 안 나온다 */
-  meetings: DashboardMeeting[];
+  /**
+   * 이 팀의 회의만 — 개설 라벨은 부서명(예: "개발팀"). 팀 액션 회의는 여기 안 나온다.
+   *
+   * ⚠️ **빈 배열과 `null`은 다른 말이다**(2026-08-13). `[]`는 "물어봤는데 없다",
+   *    `null`은 **"못 물어봤다"**(조회 실패)다 — 회의 조회가 넘어졌을 때 `[]`로 뭉치면
+   *    화면이 "예정된 팀 회의가 없습니다"라고 **없는 사실을 단정**한다(§정직성). 팀장이
+   *    다섯 건을 두고도 없다고 믿고 새 회의를 잡으러 간다. 회의 상세의 산출물 칸이
+   *    같은 이유로 `outputs`를 `null`로 연다(§meeting/view-types).
+   */
+  meetings: DashboardMeeting[] | null;
 }
