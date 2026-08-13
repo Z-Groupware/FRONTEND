@@ -1,3 +1,4 @@
+import { ROLE_NONE_LABEL } from "@/constants/member";
 import type { DepartmentNode } from "@/features/company/types";
 
 /**
@@ -28,4 +29,18 @@ export function isRoleOfTeam(
 ): boolean {
   if (!roleLabel) return true;
   return (teamRoles[teamName] ?? []).includes(roleLabel);
+}
+
+/**
+ * 화면의 역할 값 → BE `roleLabel` 요청 값.
+ *
+ * ⚠️ **빈 문자열을 그대로 보내면 400이다.** BE가 `@Pattern("(?s).*\S.*")`로 빈 값을 거절한다 —
+ *    `null`은 "안 바꾼다"는 뜻이라 비우기에 못 쓴다. **비우기는 문자열 `"없음"`이다** —
+ *    역할 미부여를 뜻하는 시스템 행이 실제로 있다(BE V2.3.9).
+ *    [확인] BE `UpdateMemberRoleRequest.roleLabel` 2026-08-13 develop(`30952c10`).
+ * ⚠️ 값이 있으면 회사에 실제로 있는 이름이어야 한다(없으면 BE가 404 `AU-039`) —
+ *    그건 `isRoleOfTeam`이 먼저 거른다. 여기는 빈 값 변환만 맡는다.
+ */
+export function toBeRoleLabel(roleLabel: string): string {
+  return roleLabel.trim() || ROLE_NONE_LABEL;
 }

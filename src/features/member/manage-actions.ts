@@ -41,7 +41,7 @@ import {
   rejectMockHandover,
   updateMockMemberGrade,
 } from "./mock/managed";
-import { buildTeamRoles, isRoleOfTeam } from "./team-roles";
+import { buildTeamRoles, isRoleOfTeam, toBeRoleLabel } from "./team-roles";
 
 /**
  * 사원 관리의 **변경 작업**. 전부 서버에서 돈다(핵심 4원칙 ②).
@@ -173,9 +173,10 @@ export async function changeMemberGradeAction(
          관리자 토글만 **OWNER 전용** 경로로 떼어 둔 것이다.
       ⚠️ **직급은 이름이 아니라 id로 보낸다.** 화면은 이름을 다루므로 회사 목록에서 되찾는다 —
          못 찾으면 보내지 않는다(없는 직급으로 바뀌느니 실패가 낫다).
-      ⚠️ **`roleLabel`(팀 안 세부 역할)을 보낼 곳이 없다.** BE `UpdateMemberRoleRequest`는
-         `role`·`jobPositionId`만 받는다 — 그 값은 지금 서버에 안 남는다. 되는 척하지 않으려고
-         적어 둔다(§정직성). API가 생기면 여기서 함께 보낸다.
+      ⚠️ **`roleLabel`도 같이 보낸다**([확인] BE `UpdateMemberRoleRequest.roleLabel`
+         2026-08-13 develop `30952c10` — "보낼 곳이 없다"는 옛말이다). 단 **빈 문자열은 400**
+         (`@Pattern`)이고 `null`은 "안 바꾼다"라, 비우기는 `"없음"`으로 바꿔 보낸다
+         (`toBeRoleLabel`). 이 폼은 역할 칸을 늘 들고 있으므로 생략(null) 경로는 안 쓴다.
     */
     const jobPosition = company.positions.find((item) => item.name === position);
     if (!jobPosition) return { isSuccess: false, message: "회사에 없는 직급입니다" };
@@ -195,7 +196,11 @@ export async function changeMemberGradeAction(
       await serverApi<unknown>(ep.member(id), {
         method: "PATCH",
         accessToken,
-        json: { role: next.authority, jobPositionId: Number(jobPosition.id) },
+        json: {
+          role: next.authority,
+          jobPositionId: Number(jobPosition.id),
+          roleLabel: toBeRoleLabel(roleLabel),
+        },
       });
 
       /* ⚠️ 실제로 달라질 때만 부른다 — 같은 값이면 괜히 왕복을 만들 이유가 없다 */
