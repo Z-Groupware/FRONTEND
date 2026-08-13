@@ -124,7 +124,29 @@ describe("updateMeetingAttendeesAction — 실서버, OWNER·ADMIN이 남의 회
     getViewerMock.mockResolvedValue({ id: 1, role: AUTHORITY.OWNER });
   });
 
-  it("host 정보를 getManagedMember로 따로 구해 그 범위로 검증한다", async () => {
+  it("host가 OWNER면 회사 전체 팀장 명부로 검증한다(호출자 무관, 안전한 축)", async () => {
+    serverApiMock
+      .mockResolvedValueOnce(meetingDetail({ host: { memberId: 9, name: "대표" } }))
+      .mockResolvedValueOnce({ meetingId: 100, attendees: [] });
+    getManagedMemberMock.mockResolvedValue({
+      member: { id: 9, authority: AUTHORITY.OWNER, teamName: null },
+    });
+
+    const result = await updateMeetingAttendeesAction(INITIAL, form(100, [3]));
+
+    expect(getManagedMemberMock).toHaveBeenCalledWith(9);
+    expect(getReservableMembersMock).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 9, role: AUTHORITY.OWNER }),
+    );
+    expect(result.error).toBeNull();
+  });
+
+  /*
+    ⚠️ **딱 한 칸** — host가 LEADER·MEMBER면 `GET /api/members/my-team`이 host가 아니라
+       actor(호출자)의 팀을 돌려줘 범위를 잘못 잰다(§정직성, 본 척하지 않는다). 그래서 이
+       축에서는 `getReservableMembers`를 부르지 않고 FE 검증을 건너뛴다 — BE가 최종 방어다.
+  */
+  it("host가 LEADER·MEMBER면 FE 검증을 건너뛰고 BE에 맡긴다(actor 팀으로 잘못 재는 것 방지)", async () => {
     serverApiMock
       .mockResolvedValueOnce(meetingDetail())
       .mockResolvedValueOnce({ meetingId: 100, attendees: [] });
@@ -135,16 +157,11 @@ describe("updateMeetingAttendeesAction — 실서버, OWNER·ADMIN이 남의 회
     const result = await updateMeetingAttendeesAction(INITIAL, form(100, [3]));
 
     expect(getManagedMemberMock).toHaveBeenCalledWith(HOST_LEADER.id);
-    expect(getReservableMembersMock).toHaveBeenCalledWith(
-      expect.objectContaining({ id: HOST_LEADER.id, role: AUTHORITY.LEADER, teamName: "개발팀" }),
-    );
+    expect(getReservableMembersMock).not.toHaveBeenCalled();
     expect(result.error).toBeNull();
+    expect(serverApiMock).toHaveBeenCalledTimes(2);
   });
 
-  /*
-    ⚠️ **딱 한 칸** — host 정보 자체를 못 구하면(탈퇴 등) FE 검증을 건너뛴다(§정직성, 본 척
-       하지 않는다). BE가 최종 방어다 — 여기서 막지 않았다고 뚫리는 게 아니다.
-  */
   it("host 정보를 못 구하면 FE 검증을 건너뛰고 BE에 맡긴다", async () => {
     serverApiMock
       .mockResolvedValueOnce(meetingDetail())

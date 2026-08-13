@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 
+import { AUTHORITY } from "@/constants/authority";
 import { MEETING_STATUS } from "@/constants/meeting";
 import { requireAccessToken } from "@/features/auth/session";
 import { getManagedMember } from "@/features/member/manage-server";
@@ -170,34 +171,36 @@ export async function updateMeetingAttendeesAction(
     ⚠️ **범위 기준은 지금 보는 사람이 아니라 host다**(위 함수 주석). 두 경로로 갈린다:
        - **host 자신이 고치는 보통 경로**: 세션에 이미 host의 role·team이 있다 — 그대로 쓴다.
        - **OWNER·ADMIN이 남의 회의를 고치는 드문 경로**: `canManageMeeting`이 그걸 허용해서
-         생기는 경우다. 이 분기에 오려면 actor가 반드시 OWNER 아니면 ADMIN이므로,
-         OWNER·ADMIN 전용 API(`GET /api/members/{id}`, `getManagedMember`)로 host의
-         role·team을 따로 구해도 안전하다(actor 자신은 그 API를 부를 권한이 있다).
-    ⚠️ **딱 한 칸은 여기서도 못 본다 — 본 척하지 않는다**(§정직성). "OWNER·ADMIN이 다른
-       LEADER·MEMBER의 회의를 고치는" 경우, `GET /api/members/my-team`은 **호출자의 토큰**
-       으로 팀을 정하지 host의 팀이 아니다 — host의 팀 로스터를 이 API로는 구할 수 없다.
-       이 한 칸만 FE 검증을 건너뛰고 BE(`PUT /api/meetings/{id}/attendees`)가 최종 방어한다
-       — **아직 BE 요청 문서에 못 올렸다**, 다음 라운드에 올릴 것. UI는 애초에 이 경로로 못
-       들어온다(`canEditMeetingAttendees`가 `isHost`를 요구한다) — 직접 요청을 조작해야만
-       닿는 자리라 영향은 방어 심도 문제다.
+         생기는 경우다. host가 **OWNER**면 `getReservableMembers`가 회사 전체 팀장 명부
+         (`getTeamLeaders`, 호출자 무관)를 보므로 OWNER·ADMIN 전용 API(`GET /api/members/{id}`,
+         `getManagedMember`)로 host가 OWNER인지만 확인하면 그대로 검증해도 안전하다.
+    ⚠️ **host가 LEADER·MEMBER면 여기서도 못 본다 — 본 척하지 않는다**(§정직성). "OWNER·ADMIN이
+       다른 LEADER·MEMBER의 회의를 고치는" 경우 `GET /api/members/my-team`은 **호출자(actor)의
+       토큰**으로 팀을 정하지 host의 팀이 아니다 — `getReservableMembers`를 그대로 부르면
+       actor 자신의 팀 로스터가 와서 host 팀 기준 검증이 아니게 된다(범위를 잘못 잰다). 그래서
+       이 경우는 **FE 검증 자체를 건너뛰고** BE(`PUT /api/meetings/{id}/attendees`)가 최종
+       방어한다 — **아직 BE 요청 문서에 못 올렸다**, 다음 라운드에 올릴 것. UI는 애초에 이
+       경로로 못 들어온다(`canEditMeetingAttendees`가 `isHost`를 요구한다) — 직접 요청을
+       조작해야만 닿는 자리라 영향은 방어 심도 문제다.
   */
   let scopeActor: Actor | null;
   if (actor.id === hostId) {
     scopeActor = actor;
   } else {
     const hostDetail = await getManagedMember(hostId);
-    scopeActor = hostDetail
-      ? {
-          id: hostId,
-          role: hostDetail.member.authority,
-          teamName: hostDetail.member.teamName ?? undefined,
-        }
-      : null;
+    scopeActor =
+      hostDetail && hostDetail.member.authority === AUTHORITY.OWNER
+        ? {
+            id: hostId,
+            role: hostDetail.member.authority,
+            teamName: hostDetail.member.teamName ?? undefined,
+          }
+        : null;
   }
 
   /*
-    ⚠️ Owner-호스트냐 아니냐는 `getReservableMembers`가 안에서 이미 가른다(`rooms/server.ts`)
-       — 여기서 또 나누지 않는다.
+    ⚠️ scopeActor가 `null`인 건 "actor가 host가 아니고 host가 LEADER·MEMBER인" 경우다(host
+       정보를 못 구한 경우 포함) — 위 주석의 "한 칸", BE가 마저 본다.
   */
   if (scopeActor) {
     const roster = await getReservableMembers(scopeActor);
@@ -206,7 +209,6 @@ export async function updateMeetingAttendeesAction(
       return { error: "지정할 수 없는 참석자가 있습니다", attendeeIds: null };
     }
   }
-  // scopeActor가 null인 건 위 주석의 "한 칸"뿐이다 — BE가 마저 본다.
 
   try {
     /*
