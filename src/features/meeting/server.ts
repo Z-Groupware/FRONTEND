@@ -32,6 +32,7 @@ import { findMockMeetingReview } from "./review/mock/review";
 import { meetingStatusOf } from "./status";
 import type { Meeting } from "./types";
 import type {
+  MeetingAgenda,
   MeetingCaptureResult,
   MeetingContentPending,
   MeetingDetailResult,
@@ -62,6 +63,17 @@ function originLabelOf(meeting: Meeting): string {
     (action) => action.id === meeting.parentTeamActionId,
   );
   return parent ? parent.name : "팀 액션 회의";
+}
+
+/**
+ * 목 안건(쌍 목록) → 화면 계약(`MeetingAgenda` — 대주제 하나 + 소주제 목록).
+ *
+ * ⚠️ **BE가 하는 것과 같은 방식으로 접는다**(BE PR #461 `resolveAgenda` — 대주제는
+ *    `findFirst`, 소주제는 전부). 목만 쌍을 그대로 보여 주면 실서버로 넘어가는 날 상세의
+ *    안건 칸이 조용히 줄어든다 — 목은 실서버가 내줄 모양을 미리 보여야 한다(§정직한 목업).
+ */
+function toMockAgenda(topics: Meeting["topics"]): MeetingAgenda {
+  return { main: topics[0].main, subs: topics.map((topic) => topic.sub) };
 }
 
 function toListItem(meeting: Meeting, viewerId: number, now: Date): MeetingListItem {
@@ -297,7 +309,7 @@ export async function getMeetingDetail(id: string, viewer: Actor): Promise<Meeti
         meeting.hostAuthority === "OWNER"
           ? null
           : `/app/projects/${meeting.projectId}/team/${meeting.parentTeamActionId}`,
-      topics: meeting.topics,
+      agenda: toMockAgenda(meeting.topics),
       schedule: formatMeetingSchedule(meeting.start, meeting.end),
       roomName: meeting.roomName,
       attendees: meeting.attendeeIds.map((attendeeId) => ({

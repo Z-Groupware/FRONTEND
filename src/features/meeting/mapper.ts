@@ -4,16 +4,79 @@
  */
 
 import type { DashboardMeeting } from "@/components/common/dashboard-meeting-item";
-import { isMeetingStatus, MEETING_STATUS } from "@/constants/meeting";
+import {
+  AI_SUMMARY_STATUS,
+  type AiSummaryStatus,
+  isMeetingStatus,
+  MEETING_STATUS,
+} from "@/constants/meeting";
 
 import { formatMeetingSchedule } from "./lib";
 import type {
   CaptureAttendee,
+  MeetingAgenda,
   MeetingCaptureInfo,
   MeetingContentPending,
   MeetingDetail,
   MeetingListItem,
 } from "./view-types";
+
+/** Owner 개설 회의의 소속 라벨(WORKFLOW §2) — 옛 문구 "프로젝트 공통"은 폐기됐다 */
+export const OWNER_ORIGIN_LABEL = "Owner 개설";
+
+/**
+ * 팀 개설 회의의 소속 라벨 — 실서버는 **영구히 이 일반 문구**다.
+ *
+ * ⚠️ 원래 계약(§view-types)은 "상위 팀 액션 이름"인데, BE 모델에 회의→상위 팀 액션 연결이
+ *    없어 **영구 제공 불가**다(BE PR #461 F2/F5 회신 — 목록·상세 모두 `teamId`까지만 준다).
+ *    목 경로는 목 데이터에 그 연결이 있어 이름을 채우지만, 실서버는 팀 액션 회의라는
+ *    사실까지만 말한다 — 없는 이름을 지어내지 않는다(§정직성).
+ */
+export const TEAM_ORIGIN_LABEL = "팀 액션 회의";
+
+/**
+ * `teamId` → 소속 라벨.
+ *
+ * [확인] BE PR #461 F2/F5 회신(2026-08-13) — **`teamId`가 판정의 정본**이다.
+ *   `teamId === null` = Owner 개설(회사 직속), 숫자 = 팀 개설.
+ * ⚠️ 응답의 `originLabel`("OWNER"/"TEAM")은 같은 판정의 **코드값**이라 안 읽는다
+ *    (`MeetingListQueryService.originLabel` — `teamId`에서 파생). 코드값을 화면에 그대로
+ *    내보내지 않고(§도메인 상수: 코드엔 영문, 화면엔 한글) 여기서 라벨을 만든다.
+ * ⚠️ **BE #461 배포 전 응답에는 이 필드가 없다 — 없으면 지금처럼 비운다**(`undefined` ≠ `null`.
+ *    `null`은 "Owner 개설"이라는 값이고, `undefined`는 "아직 안 준다"다 — 뭉치면 미배포
+ *    서버의 모든 회의가 Owner 개설로 읽힌다).
+ */
+function originLabelFromTeamId(teamId: number | null | undefined): string {
+  if (teamId === undefined) return "";
+  return teamId === null ? OWNER_ORIGIN_LABEL : TEAM_ORIGIN_LABEL;
+}
+
+/**
+ * BE `MeetingSummaryStatus` → 화면 상수(`AI_SUMMARY_STATUS`) — 어휘가 달라 여기서 흡수한다.
+ *
+ * [확인] BE PR #461 `MeetingListQueryService.resolveSummaryStatus`(2026-08-13):
+ *   목록은 `NONE`(안 끝남)·`STALLED`(중단)·`null`(끝났지만 A가 안 갈라 줘서 모름)만 실제로
+ *   보낸다. `PROCESSING`·`DONE`은 enum에 있지만 A가 구분값을 주기 전까지 미사용이다.
+ *
+ * - `NONE` → `null` — 화면 계약도 "안 끝난 회의는 `null`"이라 뜻이 같다(§view-types).
+ * - `PROCESSING` → `SUMMARIZING`, `STALLED` → `FAILED` — 이름만 다르고 뜻이 같다.
+ * - `DONE` → `REVIEWED` — 요약(초안)이 끝나 Host가 검토할 차례라는 뜻이 같다.
+ *   ⚠️ BE `DONE`은 확정 전·후(`REVIEWED`/`DISTRIBUTED`)를 아직 안 가른다 — 구분값이
+ *      생기면 여기서 갈라야 확정 끝난 회의에 [액션 검토]가 계속 뜨는 일을 막는다.
+ * - 모르는 값·`null`·미배포(`undefined`) → `null` — 지어내지 않는다(§정직성).
+ */
+function toAiSummaryStatus(be: string | null | undefined): AiSummaryStatus | null {
+  switch (be) {
+    case "PROCESSING":
+      return AI_SUMMARY_STATUS.SUMMARIZING;
+    case "DONE":
+      return AI_SUMMARY_STATUS.REVIEWED;
+    case "STALLED":
+      return AI_SUMMARY_STATUS.FAILED;
+    default:
+      return null;
+  }
+}
 
 /**
  * `GET /api/meetings/upcoming`(MEET-03, 구현 완료) 목록 원소.
@@ -162,8 +225,11 @@ export function attendeeIdsFrom(response: BeUpdateAttendeesResponse): number[] {
  *    목록 카드가 그리지 않는다 — 적어 두면 화면이 의존하는 값처럼 읽힌다.
  * ⚠️ **`isHost`가 이 연동의 핵심이다.** 보는 사람이 개설자인지 알 방법이 없어 두 탭
  *    (내가 개설한 / 참여해야 할)이 막혀 있었다(백엔드 요청 §10-A → `isHost`로 도착).
- * ⚠️ **`summaryStatus`가 없다.** 상세(MEET-04)에만 있어서 Host 카드의 [액션 검토] 노출을
- *    목록에서 판정할 수 없다 — 지어내지 않는다(`toMeetingListItem` 참고).
+ * ⚠️ **`teamId`·`summaryStatus`·`agendaPreview`는 BE PR #461(3차 F 회신)이 더한 확장 필드다.**
+ *    전부 선택(`?`)으로 둔다 — **BE #461 배포 전 응답에는 이 필드들이 없다. 없으면 지금처럼
+ *    비운다**(FE #432가 먼저 머지돼도 파서가 응답을 거절하지 않는다).
+ * ⚠️ 응답에는 `originLabel`("OWNER"/"TEAM")도 오지만 안 읽는다 — `teamId`에서 파생된 코드값이라
+ *    화면 라벨은 `originLabelFromTeamId`가 만든다(안 쓰는 필드는 안 적는다).
  */
 export interface BeMeetingListItem {
   meetingId: number;
@@ -176,6 +242,15 @@ export interface BeMeetingListItem {
   attendeeCount: number;
   /** 보는 사람이 이 회의의 개설자인가 — 탭을 가르는 값이다 */
   isHost: boolean;
+  /** **`null` = Owner 개설**(F2/F5 회신), 숫자 = 개설 팀 — `originLabelFromTeamId` 참고 */
+  teamId?: number | null;
+  /**
+   * 요약 진행 신호(BE `MeetingSummaryStatus`) — 목록은 실제로 `NONE`·`STALLED`·`null`만 온다
+   * (`toAiSummaryStatus` 참고).
+   */
+  summaryStatus?: string | null;
+  /** 안건 첫 줄 — 안건이 하나도 없는 회의는 `null`이다(BE `indexAgendaPreviews`) */
+  agendaPreview?: { mainTopic: string | null; firstSubTopic: string | null } | null;
   meetingRoom: { meetingRoomId: number; name: string };
   project: { projectId: number; tag: string };
 }
@@ -210,21 +285,50 @@ function isBeMeetingListItem(value: unknown): value is BeMeetingListItem {
     typeof meeting.endAt === "string" &&
     typeof meeting.attendeeCount === "number" &&
     typeof meeting.isHost === "boolean" &&
+    /*
+      ⚠️ #461 확장 필드는 **없어도 통과**한다(`undefined` 허용) — BE #461 배포 전 응답에는
+         이 필드들이 없다. 없으면 지금처럼 비운다(파서가 멀쩡한 응답을 거절하면 어느 쪽이
+         먼저 머지되느냐에 따라 목록 전체가 죽는다).
+    */
+    isOptionalNullableNumber(meeting.teamId) &&
+    isOptionalNullableString(meeting.summaryStatus) &&
+    isOptionalAgendaPreview(meeting.agendaPreview) &&
     typeof meeting.meetingRoom?.name === "string" &&
     typeof meeting.project?.tag === "string"
+  );
+}
+
+function isOptionalNullableNumber(value: unknown): value is number | null | undefined {
+  return value === undefined || value === null || typeof value === "number";
+}
+
+function isOptionalNullableString(value: unknown): value is string | null | undefined {
+  return value === undefined || value === null || typeof value === "string";
+}
+
+/* 있는데 모양이 다른 것만 거른다 — `[null]`형 오염이 카드 그릴 때 터지는 걸 막는 자리다 */
+function isOptionalAgendaPreview(value: unknown): value is BeMeetingListItem["agendaPreview"] {
+  if (value === undefined || value === null) return true;
+  if (typeof value !== "object") return false;
+  const preview = value as { mainTopic?: unknown; firstSubTopic?: unknown };
+  return (
+    (preview.mainTopic === null || typeof preview.mainTopic === "string") &&
+    (preview.firstSubTopic === null || typeof preview.firstSubTopic === "string")
   );
 }
 
 /**
  * 목록 카드 한 장으로 바꾼다.
  *
- * ⚠️ **`aiSummaryStatus`를 `null`로 둔다.** MEET-02 응답에 요약 상태가 없다 — 지어내면
- *    Host 카드에 [액션 검토]가 잘못 뜨거나 사라진다(§정직성). `null`이면 완료 카드가
- *    [회의록]으로만 열린다(`meetingCardAffordanceOf` — `review`는 `REVIEWED`일 때만).
- *    **BE가 목록에 `summaryStatus`를 실어 주면 그때 이 한 줄만 고친다.**
- * ⚠️ **`originLabel`·`topicSummary`도 비운다.** 소속 라벨(Owner 개설 / 상위 팀 액션 이름)과
- *    안건은 목록 응답에 없다 — 프로젝트 이름 같은 다른 값으로 메우면 뜻이 다른 말이 된다.
- *    카드는 빈 조각을 가운뎃점째 빼고 그린다(`meeting-card.tsx`).
+ * BE PR #461(3차 F 회신)이 이 매퍼가 비워 두던 세 칸을 채웠다:
+ * - `aiSummaryStatus` ← `summaryStatus` — Host의 완료 카드에 [액션 검토]가 다시 살아난다
+ *   (`meetingCardAffordanceOf` — `review`는 `REVIEWED`일 때만). 어휘 흡수는 `toAiSummaryStatus`.
+ * - `originLabel` ← `teamId` 판정(F2/F5 회신: **`null` = Owner 개설**) — `originLabelFromTeamId`.
+ * - `topicSummary` ← `agendaPreview` — 목 경로와 같은 `대주제 · 소주제` 표기로 잇되,
+ *   **빈 조각은 가운뎃점째 버린다**(대주제 없이 소주제만 남은 회의가 ` · 소주제`로 보이면 안 된다).
+ *
+ * ⚠️ **BE #461 배포 전 응답에는 이 필드들이 없다 — 없으면 지금처럼 비운다**(어느 쪽이 먼저
+ *    머지돼도 안전). 카드는 빈 조각을 가운뎃점째 빼고 그린다(`meeting-card.tsx`).
  */
 export function toMeetingListItem(be: BeMeetingListItem): MeetingListItem {
   if (!isMeetingStatus(be.status)) {
@@ -236,14 +340,20 @@ export function toMeetingListItem(be: BeMeetingListItem): MeetingListItem {
     title: be.title,
     status: be.status,
     projectTag: be.project.tag,
-    originLabel: "",
-    topicSummary: "",
+    originLabel: originLabelFromTeamId(be.teamId),
+    topicSummary: topicSummaryOf(be.agendaPreview),
     schedule: formatMeetingSchedule(new Date(be.startAt), new Date(be.endAt)),
     roomName: be.meetingRoom.name,
     attendeeCount: be.attendeeCount,
     isHost: be.isHost,
-    aiSummaryStatus: null,
+    aiSummaryStatus: toAiSummaryStatus(be.summaryStatus),
   };
+}
+
+/** 안건 첫 줄 — 목 표기(`server.ts` `toListItem`)와 같은 `대주제 · 소주제` 조합이다 */
+function topicSummaryOf(preview: BeMeetingListItem["agendaPreview"]): string {
+  if (preview === undefined || preview === null) return "";
+  return [preview.mainTopic, preview.firstSubTopic].filter(Boolean).join(" · ");
 }
 
 /**
@@ -292,6 +402,18 @@ export interface BeMeetingDetail {
    *    우리도 그 `null`을 "다 됐다"로 읽지 않는다(`meetingPendingReasonOf` 참고).
    */
   summaryStatus: string | null;
+  /**
+   * **`null` = Owner 개설**, 숫자 = 개설 팀 — BE PR #461(F2/F5 회신) 확장 필드.
+   * ⚠️ 선택(`?`)이다 — **BE #461 배포 전 응답에는 이 필드들이 없다. 없으면 지금처럼 비운다.**
+   */
+  teamId?: number | null;
+  /**
+   * 안건 — **대주제 하나 + 소주제 목록**이다(BE PR #461 `resolveAgenda`). 예약 때 쌍으로
+   * 입력해도 BE 모델이 둘째 쌍부터의 대주제를 안 남긴다(3차 F 회신의 알려진 한계) —
+   * 없는 쌍을 지어 붙이지 않고 이 모양 그대로 화면 계약(`MeetingAgenda`)에 싣는다.
+   * 안건이 하나도 없으면 `null`이다.
+   */
+  agenda?: { mainTopic: string | null; subTopics: string[] } | null;
   project: { projectId: number; tag: string };
   meetingRoom: { meetingRoomId: number; name: string };
   host: { memberId: number; name: string };
@@ -338,6 +460,9 @@ function isBeMeetingDetail(value: unknown): value is BeMeetingDetail {
     typeof detail.endAt === "string" &&
     typeof detail.pendingActionCount === "number" &&
     (detail.summaryStatus === null || typeof detail.summaryStatus === "string") &&
+    /* ⚠️ #461 확장 필드 — 없어도 통과한다(BE #461 배포 전 응답에는 이 필드들이 없다) */
+    isOptionalNullableNumber(detail.teamId) &&
+    isOptionalAgenda(detail.agenda) &&
     typeof detail.project?.projectId === "number" &&
     typeof detail.project?.tag === "string" &&
     typeof detail.meetingRoom?.name === "string" &&
@@ -363,6 +488,18 @@ function isBeMeetingAttendee(value: unknown): value is BeMeetingAttendee {
     typeof attendee.name === "string" &&
     (attendee.teamName === null || typeof attendee.teamName === "string") &&
     (attendee.jobPosition === null || typeof attendee.jobPosition === "string")
+  );
+}
+
+/* 안건 검사 — `isOptionalAgendaPreview`와 같은 원칙(없음·null은 정상, 모양이 다르면 거절) */
+function isOptionalAgenda(value: unknown): value is BeMeetingDetail["agenda"] {
+  if (value === undefined || value === null) return true;
+  if (typeof value !== "object") return false;
+  const agenda = value as { mainTopic?: unknown; subTopics?: unknown };
+  return (
+    (agenda.mainTopic === null || typeof agenda.mainTopic === "string") &&
+    Array.isArray(agenda.subTopics) &&
+    agenda.subTopics.every((sub) => typeof sub === "string")
   );
 }
 
@@ -467,16 +604,19 @@ export function meetingPendingReasonOf(
  * 회의 상세 화면이 받을 값 — **권한 판정은 여기서 하지 않는다**(`hostIdOf`와 같은 이유).
  * 개설자인지는 `lib/permission.ts`의 `canOperateMeeting`이 정하고 결과만 `isHost`로 받는다.
  *
- * ⚠️ **MEET-04가 안 주는 칸은 비워 둔다**(§정직성 — 지어내지 않는다). 각각 왜 비는지:
- *    - `originLabel`·`parentTeamActionHref`: 응답에 개설자의 권한(Owner 개설인가)도 상위 팀
- *      액션도 없다. `host.name`으로 메우면 **뜻이 다른 값**이 그 자리에 앉는다(그건 소속
- *      라벨이 아니라 사람 이름이다).
- *    - `topics`: 안건이 응답에 아예 없다. 회의 예약 때 입력받은 값인데 상세로 안 나온다.
+ * BE PR #461(3차 F 회신)이 비워 두던 칸 중 **소속 라벨·안건·산출물 머리말**을 채웠다:
+ *    - `originLabel` ← `teamId` 판정(F2/F5 회신: **`null` = Owner 개설**) — `originLabelFromTeamId`.
+ *    - `agenda` ← `agenda`(대주제 하나 + 소주제 목록 — `BeMeetingDetail.agenda` 주석 참고).
+ *    - `outputKindLabel` ← `teamId` 판정 — WORKFLOW 원 규칙(Owner 회의=팀 액션, 팀 회의=개인
+ *      액션, §view-types 주석)과 같은 축이라 `teamId`만으로 가를 수 있다. 단 **미배포
+ *      (`undefined`)면 상위어 `액션` 그대로**다 — 모르는 걸 둘 중 하나로 찍지 않는다.
+ *
+ * ⚠️ **여전히 비는 칸**(§정직성 — 지어내지 않는다):
+ *    - `parentTeamActionHref`: 상위 팀 액션 id가 **모델에 없어 영구 제공 불가**다(#461 회신).
+ *      `teamId`는 팀이지 팀 액션이 아니라 링크를 못 만든다.
  *    - `outputs`·`script`: 다른 API(`GET /api/meetings/{id}/actions` · CAP-12 자막 조회)가
  *      줄 값이라 이 연동 범위 밖이다. **빈 배열이 아니라 `null`이다** — 빈 배열로 두면 화면이
  *      "하달된 액션이 없습니다"·"발화 기록이 없습니다"라고 **안 물어본 것을 단정한다**.
- *    - `outputKindLabel`: 팀 액션인지 개인 액션인지는 개설자 권한에서 갈리는데 그 값이 없다 —
- *      둘 중 하나로 찍지 않고 상위어인 `액션`으로 둔다.
  */
 export function toMeetingDetailView(
   be: BeMeetingDetail,
@@ -487,13 +627,13 @@ export function toMeetingDetailView(
     title: be.title,
     projectId: be.project.projectId,
     projectTag: be.project.tag,
-    originLabel: "",
+    originLabel: originLabelFromTeamId(be.teamId),
     parentTeamActionHref: null,
-    topics: [],
+    agenda: toMeetingAgenda(be.agenda),
     schedule: formatMeetingSchedule(new Date(be.startAt), new Date(be.endAt)),
     roomName: be.meetingRoom.name,
     attendees: be.attendees.map((attendee) => ({ id: attendee.memberId, name: attendee.name })),
-    outputKindLabel: "액션",
+    outputKindLabel: outputKindLabelOf(be.teamId),
     outputs: null,
     script: null,
     pendingReason: meetingPendingReasonOf(be),
@@ -501,4 +641,19 @@ export function toMeetingDetailView(
     isStalled: be.summaryStatus === BE_SUMMARY_STATUS.STALLED,
     isHost: options.isHost,
   };
+}
+
+/**
+ * 산출물 머리말 — Owner 회의는 팀 액션을, 팀 회의는 개인 액션을 하달한다(WORKFLOW §2·§5,
+ * 목 경로 `outputsOf`와 같은 판정). **BE #461 배포 전(`undefined`)엔 상위어 `액션`이다.**
+ */
+function outputKindLabelOf(teamId: number | null | undefined): string {
+  if (teamId === undefined) return "액션";
+  return teamId === null ? "팀 액션" : "개인 액션";
+}
+
+/** BE 안건 → 화면 계약 — 이름만 옮긴다. `null`(안건 없음·미배포)은 그대로 `null`이다. */
+function toMeetingAgenda(agenda: BeMeetingDetail["agenda"]): MeetingAgenda | null {
+  if (agenda === undefined || agenda === null) return null;
+  return { main: agenda.mainTopic, subs: agenda.subTopics };
 }

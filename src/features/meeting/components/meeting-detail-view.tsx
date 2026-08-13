@@ -67,6 +67,41 @@ function OriginLine({ detail }: { detail: MeetingDetail }) {
 }
 
 /**
+ * 회의 안건 — 별도 섹션 유지(§3-2).
+ *
+ * ⚠️ 라벨-값 표로 두지 않는다. 대주제는 값의 이름이 아니라 **묶음 이름**이라
+ *    `프로젝트 | 킥오프`처럼 두 칸으로 벌려 두면 무엇이 라벨인지 안 읽힌다 —
+ *    대주제를 한 번 적고 소주제를 그 옆에 늘어놓는 편이 원래 뜻에 맞는다.
+ * ⚠️ **쌍이 아니다.** 예약 폼은 대주제·소주제를 쌍으로 받지만 BE 모델은 대주제 하나만
+ *    남긴다(§view-types `MeetingAgenda`) — 소주제마다 대주제를 붙여 그리면 없는 쌍을
+ *    지어내는 것이다(§정직성).
+ * ⚠️ **`null`이면 이 칸을 통째로 안 그린다.** 안건이 0건인지 아직 못 받은 것인지
+ *    (BE #461 배포 전) 구분할 방법이 없어서, 머리만 남기고 "없습니다"라고 단정하지 않는다.
+ */
+function AgendaSection({ agenda }: { agenda: MeetingDetail["agenda"] }) {
+  if (!agenda) return null;
+
+  return (
+    <div className="border-border mt-5 border-t pt-5">
+      <p className="text-muted-foreground text-[12px] leading-4">안건</p>
+      <div className="flex flex-wrap items-center gap-2 pt-2">
+        {agenda.main && <p className="text-[13px] leading-5 font-medium">{agenda.main}</p>}
+        <ul className="flex flex-wrap gap-2">
+          {agenda.subs.map((sub, index) => (
+            <li
+              key={`${index}-${sub}`}
+              className="border-border text-muted-foreground rounded-lg border px-2.5 py-1 text-[13px] leading-5"
+            >
+              {sub}
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
+}
+
+/**
  * 아직 안 찬 섹션에 넣는 한 줄.
  *
  * ⚠️ **빈 칸으로 두지 않는다.** 예정·진행중 회의의 기록·산출물은 "없는" 게 아니라 "아직"인데,
@@ -267,27 +302,7 @@ export function MeetingDetailView({ detail, members, viewerTeamName }: MeetingDe
             <OriginLine detail={detail} />
           </div>
 
-          {/*
-            회의 안건 — 별도 섹션 유지(§3-2).
-            ⚠️ 라벨-값 표로 두지 않는다. 대주제는 값의 이름이 아니라 **묶음 이름**이라
-               `프로젝트 | 킥오프`처럼 두 칸으로 벌려 두면 무엇이 라벨인지 안 읽힌다 —
-               `대주제 · 소주제` 한 줄이 원래 뜻에 맞는다.
-          */}
-          <div className="border-border mt-5 border-t pt-5">
-            <p className="text-muted-foreground text-[12px] leading-4">안건</p>
-            <ul className="flex flex-wrap gap-2 pt-2">
-              {detail.topics.map((topic) => (
-                <li
-                  key={`${topic.main}-${topic.sub}`}
-                  className="border-border rounded-lg border px-2.5 py-1 text-[13px] leading-5"
-                >
-                  <span className="text-muted-foreground">{topic.main}</span>
-                  <span className="text-muted-foreground/50 px-1.5">·</span>
-                  {topic.sub}
-                </li>
-              ))}
-            </ul>
-          </div>
+          <AgendaSection agenda={detail.agenda} />
 
           {/*
             참석자 — **머리 카드 안**이다(시안과 같다). 곁 컬럼에 떼어 두면 이름 몇 줄만

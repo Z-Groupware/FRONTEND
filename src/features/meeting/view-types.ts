@@ -1,8 +1,6 @@
 import type { ActionStatus } from "@/constants/action";
 import type { AiSummaryStatus, MeetingStatus } from "@/constants/meeting";
 
-import type { MeetingTopic } from "./types";
-
 /**
  * 회의 화면의 **UI 계약**(`/app/meeting`).
  *
@@ -21,13 +19,16 @@ export interface MeetingListItem {
    * 소속 라벨 — Owner 개설이면 `Owner 개설`(WORKFLOW §2 — 옛 문구 "프로젝트 공통"은 폐기),
    * 팀 액션 회의면 상위 팀 액션 이름이다.
    *
-   * ⚠️ **빈 문자열이면 "모른다"는 뜻이다.** 실서버 목록(MEET-02)엔 개설자의 권한도 상위 팀
-   *    액션도 안 와서 채울 수 없다 — 카드는 빈 조각을 가운뎃점째 뺀다(§정직성).
+   * ⚠️ 실서버는 `teamId` 판정으로 채운다(BE PR #461, F2/F5 회신: `teamId` NULL = Owner 개설).
+   *    단 **상위 팀 액션 이름은 모델에 없어 영구 제공 불가**라 팀 회의는 일반 문구
+   *    `팀 액션 회의`다(매퍼 `TEAM_ORIGIN_LABEL`) — 이름까지 나오는 건 목 경로뿐이다.
+   * ⚠️ **빈 문자열이면 "모른다"는 뜻이다**(BE #461 배포 전 응답엔 `teamId`가 없다) —
+   *    카드는 빈 조각을 가운뎃점째 뺀다(§정직성).
    */
   originLabel: string;
   /**
-   * 안건 첫 쌍 요약(`대주제 · 소주제`) — 카드에서 무슨 회의인지 한 줄로 알린다.
-   * ⚠️ `originLabel`과 같다 — 실서버 목록엔 안건이 없어 빈 문자열이다.
+   * 안건 첫 줄 요약(`대주제 · 소주제`) — 카드에서 무슨 회의인지 한 줄로 알린다.
+   * 실서버는 `agendaPreview`(BE PR #461)로 채운다 — 없으면(미배포·안건 0건) 빈 문자열이다.
    */
   topicSummary: string;
   /** `7월 14일(화) 10:00 – 10:30` — 서버가 우리 표기로 만들어 보낸다(§lib) */
@@ -90,6 +91,19 @@ export interface MeetingOutput {
   href: string;
 }
 
+/**
+ * 회의 안건 — **대주제 하나 + 소주제 목록**이다(쌍이 아니다).
+ *
+ * ⚠️ 예약 폼은 대주제·소주제를 쌍으로 입력받지만 BE 모델이 둘째 쌍부터의 대주제를 안 남긴다
+ *    (BE PR #461 `resolveAgenda`, 3차 F 회신의 알려진 한계). 화면 계약을 쌍으로 두면 매퍼가
+ *    **없는 쌍을 지어 붙여야** 해서(§정직성) BE가 실제로 주는 모양을 그대로 계약으로 삼는다.
+ */
+export interface MeetingAgenda {
+  /** 첫 대주제 — 안건이 소주제로만 남은 회의는 `null`이다 */
+  main: string | null;
+  subs: string[];
+}
+
 /** 상세 참석자 한 명 — 아바타 색은 id에서 나온다(§DESIGN 5) */
 export interface MeetingAttendee {
   id: number;
@@ -116,9 +130,14 @@ export interface MeetingDetail {
   projectId: number;
   projectTag: string;
   originLabel: string;
-  /** 팀 액션 회의면 그 팀 액션 상세로 가는 링크 — Owner 개설이면 없다 */
+  /**
+   * 팀 액션 회의면 그 팀 액션 상세로 가는 링크 — Owner 개설이면 없다.
+   * ⚠️ 실서버는 **항상 `null`이다** — 상위 팀 액션 id가 모델에 없어 영구 제공 불가다
+   *    (BE PR #461 회신, `teamId`는 팀이지 팀 액션이 아니다). 링크가 걸리는 건 목 경로뿐이다.
+   */
   parentTeamActionHref: string | null;
-  topics: MeetingTopic[];
+  /** 안건 — `null`이면 보여줄 안건이 없다(미배포 BE거나 안건 0건 — 왜인지는 모른다) */
+  agenda: MeetingAgenda | null;
   schedule: string;
   roomName: string;
   attendees: MeetingAttendee[];

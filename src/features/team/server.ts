@@ -47,8 +47,12 @@ function toTeamDashboardMember(be: BeTeamMemberStatus): TeamDashboardMember {
  * ⚠️ **`scope=team`은 토큰에 `teamId`가 있어야 통과한다**(403 Z-001, BE
  *    `DashboardMeetingQueryService.validateRoleScope`). 화면 가드(`canAccessTeamScope`)는
  *    LEADER인지만 보므로 **팀이 없는 팀장은 여기까지 온다** — 받을 수 없는 걸 물어보지 않는다.
- * ⚠️ 못 받아 온 자리는 **빈 목록**이다. 화면 계약에 "미조회"를 새로 만들지 않는다 —
- *    이 카드에는 빈 상태 문구가 이미 있다.
+ * ⚠️ **못 받아 온 자리는 `null`이다 — 빈 목록이 아니다**(2026-08-13 고침). 빈 목록으로
+ *    뭉치면 화면이 "예정된 팀 회의가 없습니다"라고 **없는 사실을 단정**한다(§정직성):
+ *    다섯 건이 잡혀 있는 팀장이 없다고 믿고 새 회의를 잡으러 간다. 화면이 실패를 실패라고
+ *    말할 수 있게 계약에 "미조회"를 연다(§types `meetings`).
+ * ⚠️ 팀이 없는 팀장은 `[]`다 — 그건 실패가 아니라 **정말로 없는 것**이다(팀이 없으면 팀
+ *    회의도 없다). 물어보지 않았을 뿐 답을 아는 경우라 미조회와 섞지 않는다.
  */
 async function listRecentTeamMeetings(
   teamId: number | undefined,
@@ -63,7 +67,12 @@ async function listRecentTeamMeetings(
     );
     return parseDashboardMeetings(raw).map(toDashboardMeetingCard);
   } catch {
-    return [];
+    /*
+      ⚠️ **삼키되 없던 일로 하지 않는다.** 여기서 잡는 건 통신 실패(`ApiError`)만이 아니라
+         `parseDashboardMeetings`의 shape 오류도 마찬가지인데, 둘 다 화면엔 "못 불러왔다"로
+         같은 얼굴이다 — 사라지는 건 대시보드가 아니라 이 카드 하나뿐이다.
+    */
+    return null;
   }
 }
 
@@ -75,7 +84,7 @@ export async function getTeamDashboardOverview(viewer: {
     return {
       ...TEAM_DASHBOARD_MOCK,
       // 최신순(내림차순)으로 위에서부터. 박스가 이 수에 딱 맞춰 그려지므로 서버도 같은 수로 자른다.
-      meetings: [...TEAM_DASHBOARD_MOCK.meetings]
+      meetings: [...(TEAM_DASHBOARD_MOCK.meetings ?? [])]
         .sort((a, b) => new Date(b.scheduledAt).getTime() - new Date(a.scheduledAt).getTime())
         .slice(0, MEETING_MAX_ITEMS),
     };
