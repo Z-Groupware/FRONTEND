@@ -21,12 +21,28 @@ const DETAIL: BeMeetingDetail = {
   status: "DONE",
   startAt: "2026-08-14T10:00:00",
   endAt: "2026-08-14T10:30:00",
+  /* 팀 액션 회의(Leader/Member 개설) — Owner 개설이 아니므로 teamId가 있다 */
+  teamId: 3,
   project: { projectId: 3, tag: "GOODSFLOW" },
   meetingRoom: { meetingRoomId: 1, name: "회의실 A" },
   host: { memberId: 2, name: "김서준" },
   attendees: [
-    { memberId: 2, name: "김서준", teamName: "개발팀", jobPosition: "팀장" },
-    { memberId: 5, name: "박지호", teamName: null, jobPosition: null },
+    { memberId: 2, name: "김서준", teamId: 3, teamName: "개발팀", jobPosition: "팀장" },
+    { memberId: 5, name: "박지호", teamId: null, teamName: null, jobPosition: null },
+  ],
+};
+
+/** 오너 개설 회의 — 참석자 전원 팀장, `teamId`는 회의·참석자 모두 각자 소속 팀을 가리킨다 */
+const OWNER_DETAIL: BeMeetingDetail = {
+  ...DETAIL,
+  teamId: null,
+  host: { memberId: 1, name: "대표 계정" },
+  attendees: [
+    { memberId: 1, name: "대표 계정", teamId: null, teamName: null, jobPosition: "대표" },
+    { memberId: 2, name: "김서준", teamId: 3, teamName: "개발팀", jobPosition: "팀장" },
+    { memberId: 9, name: "이하윤", teamId: 4, teamName: "디자인팀", jobPosition: "팀장" },
+    /* 같은 팀 팀장이 중복 참석자로 잡히는 일은 없지만, dedupe 로직 검증용으로 같은 teamId를 하나 더 */
+    { memberId: 10, name: "최유진", teamId: 4, teamName: "디자인팀", jobPosition: "팀장" },
   ],
 };
 
@@ -131,6 +147,22 @@ describe("toMeetingReviewInfo", () => {
     expect(info.assigneeOptions).toEqual([
       { id: 2, name: "김서준", roleLabel: "개발팀 · 팀장" },
       { id: 5, name: "박지호", roleLabel: "" },
+    ]);
+    // 회의 자체에 teamId가 있으면(Leader/Member 개설) Owner 회의가 아니다
+    expect(info.isOwnerMeeting).toBe(false);
+  });
+
+  it("Owner 개설 회의는 teamId===null로 판정하고, 부서 옵션을 참석자에서 만든다", () => {
+    const info = toMeetingReviewInfo({ detail: OWNER_DETAIL, review: makeReview() });
+
+    expect(info.isOwnerMeeting).toBe(true);
+    /*
+      ⚠️ 호스트(대표 계정, teamId null)는 제외 · teamId 기준 dedupe(같은 팀 팀장이 둘 잡히면
+         하나만) · teamName이 null인 항목은 애초에 옵션이 될 수 없다(호스트 케이스와 같은 이유).
+    */
+    expect(info.teamOptions).toEqual([
+      { teamId: 3, teamName: "개발팀" },
+      { teamId: 4, teamName: "디자인팀" },
     ]);
   });
 

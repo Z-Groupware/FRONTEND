@@ -2,7 +2,13 @@ import { AI_CONFIDENCE } from "@/constants/meeting";
 
 import { formatMeetingSchedule } from "../lib";
 import { type BeMeetingDetail, hostIdOf } from "../mapper";
-import type { AiActionDraft, AssigneeOption, MeetingReviewInfo, PendingReviewSummary } from "./types";
+import type {
+  AiActionDraft,
+  AssigneeOption,
+  MeetingReviewInfo,
+  PendingReviewSummary,
+  TeamOption,
+} from "./types";
 
 /**
  * 검토 화면(RVW-01) BE 응답 → UI 계약 매퍼.
@@ -124,6 +130,11 @@ function toDraft(action: BeReviewAction, needsReviewIds: ReadonlySet<number>): A
     description: action.detail ?? "",
     assigneeId: action.assigneeMemberId,
     /*
+      ⚠️ RVW-01은 부서를 안 내려준다 — AI가 부서를 추론하지 않기로 했다(2026-08-13). Owner
+         회의라도 항상 null로 시작하고, 리뷰어가 이 화면에서 처음 정한다.
+    */
+    teamId: null,
+    /*
       묶음 판정은 BE `needsReview.actionIds`가 정본이다 — 게이트 신호를 여기서 다시 조합하면
       BE 판정과 갈릴 수 있다. 수동 추가 건은 게이트가 없어 목록에 안 실리지만, AI 배지를
       붙일 데이터가 없는 쪽이므로 "요약 불확실" 묶음에 둔다(기존 화면 배치 그대로).
@@ -161,6 +172,30 @@ export function toAssigneeOptions(detail: BeMeetingDetail): AssigneeOption[] {
 }
 
 /**
+ * 참석자 → 부서 드롭다운 선택지(Owner 회의 전용, 2026-08-13).
+ *
+ * ⚠️ **참석자에서 만든다 — 별도 팀 조회 API를 안 부른다.** Owner 회의 참석자는 팀장으로만
+ *    제한되니(FE #452), 참석자 목록 자체가 팀별 대표 목록이다.
+ * ⚠️ **host는 뺀다.** Owner 본인은 팀이 없어(`teamId: null`) 애초에 걸러지지만, 자기 팀
+ *    참석자를 부르는 Leader/Member 개설 회의였다면 host도 팀이 있어 걸러야 한다 —
+ *    `attendee-scope.ts`가 참석자 지정에서 host를 빼는 것과 같은 이유(host는 고르는 사람이지
+ *    배정 후보가 아니다).
+ * ⚠️ **`teamId` 기준으로 dedupe한다** — `teamName`은 같은 이름이 둘일 수 있어 키로 못 쓴다.
+ */
+export function toTeamOptions(detail: BeMeetingDetail): TeamOption[] {
+  const hostMemberId = hostIdOf(detail);
+  const seen = new Map<number, string>();
+
+  for (const attendee of detail.attendees) {
+    if (attendee.memberId === hostMemberId) continue;
+    if (attendee.teamId === null || attendee.teamName === null) continue;
+    if (!seen.has(attendee.teamId)) seen.set(attendee.teamId, attendee.teamName);
+  }
+
+  return Array.from(seen, ([teamId, teamName]) => ({ teamId, teamName }));
+}
+
+/**
  * 회의 상세(MEET-04) + 검토(RVW-01) → 화면 한 판.
  *
  * ⚠️ **`REJECTED`는 거른다.** 지난 확정 시도가 중간에 끊긴 회의를 다시 열면 반려해 둔
@@ -181,6 +216,9 @@ export function toMeetingReviewInfo(params: {
     projectTag: detail.project.tag,
     scheduleLabel: formatMeetingSchedule(new Date(detail.startAt), new Date(detail.endAt)),
     assigneeOptions: toAssigneeOptions(detail),
+    /* ⚠️ Owner 개설 회의만 teamId가 null이다(PR #461/#472 대조) — 이 하나로 화면 모드가 갈린다 */
+    isOwnerMeeting: detail.teamId === null,
+    teamOptions: toTeamOptions(detail),
     drafts: review.actionsByPerson
       .flatMap((person) => person.actions)
       .filter((action) => action.reviewStatus !== "REJECTED")

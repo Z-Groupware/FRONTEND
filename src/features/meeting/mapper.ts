@@ -105,6 +105,12 @@ export interface BeMeetingDetail {
    */
   startAt: string;
   endAt: string;
+  /**
+   * 이 **회의**가 어느 팀 것인가(PR #461/#472, 2026-08-13 대조) — `null`이면 Owner 개설.
+   * ⚠️ 참석자 한 명 한 명의 소속 팀(`BeMeetingAttendee.teamId`)과는 **다른 값**이다 —
+   *    이름이 같아 헷갈리기 쉽다.
+   */
+  teamId: number | null;
   project: { projectId: number; tag: string };
   meetingRoom: { meetingRoomId: number; name: string };
   host: { memberId: number; name: string };
@@ -114,6 +120,8 @@ export interface BeMeetingDetail {
 export interface BeMeetingAttendee {
   memberId: number;
   name: string;
+  /** 이 **참석자**가 어느 팀 소속인가 — 팀 없는 대표는 `null`(PR #472, 2026-08-13 대조) */
+  teamId: number | null;
   /** 팀이 없는 사람(대표)은 `null`이다 */
   teamName: string | null;
   /** ⚠️ `position`이 아니라 `jobPosition`이다 */
@@ -141,6 +149,7 @@ function isBeMeetingDetail(value: unknown): value is BeMeetingDetail {
     typeof detail.status === "string" &&
     typeof detail.startAt === "string" &&
     typeof detail.endAt === "string" &&
+    (detail.teamId === null || typeof detail.teamId === "number") &&
     typeof detail.project?.tag === "string" &&
     typeof detail.meetingRoom?.name === "string" &&
     typeof detail.host?.memberId === "number" &&
@@ -163,6 +172,7 @@ function isBeMeetingAttendee(value: unknown): value is BeMeetingAttendee {
   return (
     typeof attendee.memberId === "number" &&
     typeof attendee.name === "string" &&
+    (attendee.teamId === null || typeof attendee.teamId === "number") &&
     (attendee.teamName === null || typeof attendee.teamName === "string") &&
     (attendee.jobPosition === null || typeof attendee.jobPosition === "string")
   );

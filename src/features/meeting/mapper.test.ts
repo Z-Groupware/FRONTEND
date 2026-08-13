@@ -13,12 +13,13 @@ const BASE: BeMeetingDetail = {
   status: "SCHEDULED",
   startAt: "2026-08-14T10:00:00",
   endAt: "2026-08-14T10:30:00",
+  teamId: 5,
   project: { projectId: 3, tag: "GOODS" },
   meetingRoom: { meetingRoomId: 2, name: "대회의실" },
   host: { memberId: 1, name: "대표 계정" },
   attendees: [
-    { memberId: 1, name: "대표 계정", teamName: null, jobPosition: "대표" },
-    { memberId: 2, name: "김서준", teamName: "개발팀", jobPosition: "팀장" },
+    { memberId: 1, name: "대표 계정", teamId: null, teamName: null, jobPosition: "대표" },
+    { memberId: 2, name: "김서준", teamId: 5, teamName: "개발팀", jobPosition: "팀장" },
   ],
 };
 

@@ -33,6 +33,11 @@ export interface ReviewedDraftInput {
     title?: string;
     description?: string;
     assigneeId?: number;
+    /**
+     * 부서(팀) — Owner 회의 전용, `assigneeId`와 상호 배타다(2026-08-13, BE
+     * `REVIEW_ASSIGNEE_TEAM_CONFLICT` 422). 화면이 모드로 갈라 보내므로 둘 다 오는 일은 없다.
+     */
+    teamId?: number;
     dueDate?: string;
   };
 }
@@ -152,6 +157,7 @@ export async function confirmActionDistributionAction(
       const changes = draft.changes ?? {};
       const value = {
         ...(changes.assigneeId !== undefined ? { assigneeMemberId: changes.assigneeId } : {}),
+        ...(changes.teamId !== undefined ? { teamId: changes.teamId } : {}),
         ...(changes.dueDate !== undefined ? { dueDate: changes.dueDate } : {}),
         ...(changes.title !== undefined ? { title: changes.title } : {}),
         ...(changes.description !== undefined ? { detail: changes.description } : {}),

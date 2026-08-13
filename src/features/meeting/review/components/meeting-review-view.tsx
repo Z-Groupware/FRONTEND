@@ -64,7 +64,14 @@ export function MeetingReviewView({ review }: MeetingReviewViewProps) {
        미정"으로 온다(매퍼 주석) — BE도 그 항목을 `NO_ASSIGNEE`로 걸러 분배하지 않으므로,
        여기서 안 잠그면 확정이 끝난 줄 알았는데 몇 건이 조용히 남는다(§정직성).
   */
-  const hasUnassigned = visibleDrafts.some((draft) => draft.assigneeId === null);
+  /*
+    ⚠️ **Owner 회의는 `teamId`가 미정 기준이다**(2026-08-13). 그 외엔 그대로 `assigneeId` —
+       회의 하나가 두 모드를 섞지 않으므로 검사도 회의 전체 기준(`review.isOwnerMeeting`)으로
+       한 번만 가른다.
+  */
+  const hasUnassigned = review.isOwnerMeeting
+    ? visibleDrafts.some((draft) => draft.teamId === null)
+    : visibleDrafts.some((draft) => draft.assigneeId === null);
   function updateDraft(id: string, patch: Partial<AiActionDraft>) {
     setDrafts((prev) => prev.map((draft) => (draft.id === id ? { ...draft, ...patch } : draft)));
   }
@@ -91,6 +98,8 @@ export function MeetingReviewView({ review }: MeetingReviewViewProps) {
         title: input.title,
         description: input.description,
         assigneeId: input.assigneeId,
+        /* ⚠️ 오너 회의는 [액션 직접 추가] 자체를 막아뒀으니(BE #476 대기) 여기로 안 옴 */
+        teamId: null,
         confidence: AI_CONFIDENCE.NEEDS_REVIEW,
         startDate: input.startDate,
         dueDate: input.dueDate,
@@ -131,11 +140,20 @@ export function MeetingReviewView({ review }: MeetingReviewViewProps) {
                   ...(initial && draft.description !== initial.description
                     ? { description: draft.description }
                     : {}),
-                  ...(initial &&
-                  draft.assigneeId !== initial.assigneeId &&
-                  draft.assigneeId !== null
-                    ? { assigneeId: draft.assigneeId }
-                    : {}),
+                  /*
+                    ⚠️ **`teamId`와 `assigneeId`는 상호 배타다**(BE `REVIEW_ASSIGNEE_TEAM_CONFLICT`
+                       422, 2026-08-13). Owner 회의는 부서만, 그 외엔 담당자만 보낸다 — 화면이
+                       둘 다 채운 상태를 만들 수 없게 모드로 갈라 둔다.
+                  */
+                  ...(review.isOwnerMeeting
+                    ? draft.teamId !== null
+                      ? { teamId: draft.teamId }
+                      : {}
+                    : initial &&
+                        draft.assigneeId !== initial.assigneeId &&
+                        draft.assigneeId !== null
+                      ? { assigneeId: draft.assigneeId }
+                      : {}),
                   ...(initial && draft.dueDate !== initial.dueDate
                     ? { dueDate: draft.dueDate }
                     : {}),
@@ -268,10 +286,21 @@ export function MeetingReviewView({ review }: MeetingReviewViewProps) {
             {review.meetingTitle} · {review.scheduleLabel}
           </p>
           <p className="text-muted-foreground text-[12px] leading-4">
-            두 그룹 모두 확정 전까지 내용·담당자·시작일·마감일을 수정할 수 있습니다.
+            두 그룹 모두 확정 전까지 내용·{review.isOwnerMeeting ? "부서" : "담당자"}
+            ·시작일·마감일을 수정할 수 있습니다.
           </p>
         </div>
       </div>
+
+      {/*
+        ⚠️ **배너는 화면에 한 번만**(2026-08-13) — 행마다 "이건 팀 액션입니다"를 반복하지 않는다.
+           회의 전체가 같은 모드라 한 번 알리면 충분하다.
+      */}
+      {review.isOwnerMeeting && (
+        <p className="border-border bg-muted/30 text-muted-foreground rounded-lg border px-4 py-2.5 text-[13px] leading-5">
+          이 회의는 오너 회의입니다 — 여기서 확정하는 액션은 담당자가 아니라 부서에 하달됩니다.
+        </p>
+      )}
 
       <ActionReviewGroup confidence={AI_CONFIDENCE.HIGH} count={highConfidence.length}>
         {highConfidence.map((draft) => (
@@ -285,6 +314,8 @@ export function MeetingReviewView({ review }: MeetingReviewViewProps) {
             onStartDateChange={(startDate) => updateDraft(draft.id, { startDate })}
             onDueDateChange={(dueDate) => updateDraft(draft.id, { dueDate })}
             onReject={() => openRejectDialog(draft.id)}
+            teamOptions={review.isOwnerMeeting ? review.teamOptions : undefined}
+            onTeamChange={(teamId) => updateDraft(draft.id, { teamId })}
           />
         ))}
       </ActionReviewGroup>
@@ -301,10 +332,21 @@ export function MeetingReviewView({ review }: MeetingReviewViewProps) {
             onStartDateChange={(startDate) => updateDraft(draft.id, { startDate })}
             onDueDateChange={(dueDate) => updateDraft(draft.id, { dueDate })}
             onReject={() => openRejectDialog(draft.id)}
+            teamOptions={review.isOwnerMeeting ? review.teamOptions : undefined}
+            onTeamChange={(teamId) => updateDraft(draft.id, { teamId })}
           />
         ))}
 
-        {isAddingManual ? (
+        {/*
+          ⚠️ **오너 회의는 [액션 직접 추가]를 잠깐 막는다**(BE 이슈 #476 대기 — RVW-03에
+             `teamId`가 아직 없어, 직접 추가한 액션은 팀 액션으로 만들 방법이 없다). 버튼을
+             숨기지 않고 이유를 적어 안내한다(§정직성) — 잠긴 이유 없는 빈 자리는 고장으로 읽힌다.
+        */}
+        {review.isOwnerMeeting ? (
+          <p className="border-border text-muted-foreground border-t px-7 py-4 text-[12px] leading-4">
+            오너 회의는 [액션 직접 추가]를 아직 지원하지 않습니다 — 부서 지정 기능이 곧 열립니다.
+          </p>
+        ) : isAddingManual ? (
           <ManualDraftForm
             assigneeOptions={review.assigneeOptions}
             defaultDueDate={needsReview[0]?.dueDate ?? highConfidence[0]?.dueDate ?? ""}

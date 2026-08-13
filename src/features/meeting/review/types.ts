@@ -20,6 +20,18 @@ export interface AssigneeOption {
   roleLabel: string;
 }
 
+/**
+ * 부서 드롭다운 선택지 — Owner 개설 회의 전용(2026-08-13 팀 확정, 오너 회의 → 팀 액션 배분).
+ * ⚠️ **AI가 부서를 추론하지 않는다.** 오너 회의의 참석자는 팀장으로만 제한되므로(FE #452),
+ *    참석자 목록 자체가 팀별 대표 목록이다 — 그래서 옵션도 참석자에서 만든다(별도 팀 조회 API 없음).
+ * ⚠️ 담당자(사람)가 아니라 **부서**가 확정 대상이다 — 팀장 이름은 화면에 안 보여준다
+ *    (팀장이 바뀌어도 팀 액션은 그대로이므로, 담당 팀장은 팀 액션 화면에서 그때그때 조회한다).
+ */
+export interface TeamOption {
+  teamId: number;
+  teamName: string;
+}
+
 /** 근거 발화 — 수정 판단의 근거이므로 AI가 뽑은 항목엔 반드시 있다(WORKFLOW.md §3-4). */
 export interface DraftEvidence {
   speaker: string;
@@ -48,6 +60,12 @@ export interface AiActionDraft {
    *    미정이 남아 있으면 [액션 분배 확정]이 잠긴다(BE도 `NO_ASSIGNEE`로 거른다).
    */
   assigneeId: number | null;
+  /**
+   * 부서(팀) — Owner 개설 회의에서만 쓰인다. `assigneeId`와 **상호 배타**다(BE
+   * `REVIEW_ASSIGNEE_TEAM_CONFLICT` 422, 2026-08-13) — 확정 시 둘 중 하나만 실어 보낸다.
+   * AI는 부서를 추론하지 않으므로 항상 `null`로 시작하고, 리뷰어가 이 화면에서 처음 정한다.
+   */
+  teamId: number | null;
   confidence: AiConfidence;
   /** ⚠️ BE가 안 내려주는 값이다 — 사람이 이 화면에서 처음 정한다(비었으면 빈 문자열). */
   startDate: string;
@@ -71,6 +89,14 @@ export interface MeetingReviewInfo {
   /** `8월 14일(목)` — 서버가 표기까지 만들어 보낸다(다른 화면과 동일 패턴). */
   scheduleLabel: string;
   assigneeOptions: AssigneeOption[];
+  /**
+   * ⚠️ **회의의 `teamId === null`로 판정한다**(BE 대조, 2026-08-13) — Owner가 개설한 회의만
+   *    true. 이 값 하나로 화면 전체가 "부서 선택" 모드로 갈린다(행마다 갈리지 않는다 — 한
+   *    회의 안에 팀 액션과 개인 액션이 섞이는 일은 없다).
+   */
+  isOwnerMeeting: boolean;
+  /** Owner 회의일 때만 쓰는 부서 옵션 — 그 외엔 빈 배열. */
+  teamOptions: TeamOption[];
   drafts: AiActionDraft[];
   /**
    * ⚠️ **1회성 화면 정책**(WORKFLOW.md §3-4): 이미 확정된 회의면 true — 화면이 이 값을 보고
