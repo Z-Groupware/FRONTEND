@@ -125,6 +125,25 @@ export const ep = {
   processingStatus: (meetingId: number) => `/api/meetings/${meetingId}/processing-status`,
 
   /*
+   * AI 액션 분배 검토(RVW) — [확인] BE 실코드 대조(2026-08-12)
+   *   `capture/presentation/api/AnalysisController.java` (`@RequestMapping("/api/meetings/{meetingId}")`)
+   *
+   * ⚠️ 검토(조회·판정·직접 추가)는 참석자 전원 가능, **확정(RVW-05)만 Host 1명**이다(403은 BE가 재검사).
+   * ⚠️ RVW-04(직접 추가 취소 `DELETE /review/actions/{id}`)는 **일부러 안 등록한다** — 우리 화면은
+   *    확정 전까지 전부 로컬 상태라(WORKFLOW §3-4), 서버에 만든 적 없는 항목을 지울 일이 없다.
+   */
+  /** 검토 조회(RVW-01) — 담당자별 묶음 + `needsReview` + `dispatchedAt`(확정 전이면 null) */
+  meetingReview: (meetingId: number) => `/api/meetings/${meetingId}/review`,
+  /** 항목 판정(RVW-02) — `CONFIRM`(값 실으면 422) · `MODIFY`(고친 칸만) · `REJECT`(사유 5종 필수) */
+  meetingReviewDecision: (meetingId: number, actionId: number) =>
+    `/api/meetings/${meetingId}/review/${actionId}`,
+  /** 액션 직접 추가(RVW-03) — 담당자·기한 필수(422). ⚠️ `plannedStartDate`는 못 실어 RVW-02 MODIFY로 뒤따라 보낸다 */
+  meetingReviewAddAction: (meetingId: number) => `/api/meetings/${meetingId}/review/actions`,
+  /** 분배 확정(RVW-05) — 미검토·미확인 구간 남으면 409, `confirm=true`로만 강행. `skipped`가 응답의 절반이다 */
+  meetingReviewConfirm: (meetingId: number, force = false) =>
+    `/api/meetings/${meetingId}/review/confirm${force ? "?confirm=true" : ""}`,
+
+  /*
    * 액션 · 프로젝트 · 캘린더 — [확인] BE 실코드 대조(2026-08-10, 잇다 REST API 연동 가이드 최종본)
    *   `project/presentation/api/{ProjectController,ProjectAttachmentController}.java`
    *   `action/presentation/api/{ActionController,TeamActionController,MeetingActionController}.java`

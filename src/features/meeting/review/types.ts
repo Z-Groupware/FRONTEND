@@ -42,10 +42,21 @@ export interface AiActionDraft {
   title: string;
   /** 다른 액션 화면과 같은 필드(features/action/types.ts `description`) — 제목 아래 한 줄 요약. */
   description: string;
-  assigneeId: number;
+  /**
+   * ⚠️ **미정이면 null**(2026-08-12, BE RVW-01 대조). AI가 담당자를 못 짚었거나 명단 밖을
+   *    가리킨 액션은 "담당자 미정"으로 온다 — 숨기지 말고 사람이 고르게 보여준다(BE 주석).
+   *    미정이 남아 있으면 [액션 분배 확정]이 잠긴다(BE도 `NO_ASSIGNEE`로 거른다).
+   */
+  assigneeId: number | null;
   confidence: AiConfidence;
+  /** ⚠️ BE가 안 내려주는 값이다 — 사람이 이 화면에서 처음 정한다(비었으면 빈 문자열). */
   startDate: string;
   dueDate: string;
+  /**
+   * 이 기한이 회의에서 나온 게 아니라 **프로젝트 마감일로 채워진 것**인지(BE `dueDateDefaulted`).
+   * true면 "회의에서 정해지지 않음"을 함께 보여준다 — 없으면 AI가 판단한 날짜처럼 읽힌다.
+   */
+  isDueDateDefaulted?: boolean;
   evidence: DraftEvidence | null;
   isManual: boolean;
 }
