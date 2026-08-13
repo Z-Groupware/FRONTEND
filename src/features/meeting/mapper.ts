@@ -364,6 +364,8 @@ export function toMeetingListItem(be: BeMeetingListItem): MeetingListItem {
     attendeeCount: be.attendeeCount,
     isHost: be.isHost,
     aiSummaryStatus: toAiSummaryStatus(be.summaryStatus),
+    // 실서버는 아직 비대면 회의를 모른다 — BE가 필드를 주면 그때 매퍼가 읽는다(이슈 #473).
+    isOnline: false,
   };
 }
 
@@ -666,6 +668,8 @@ export function toMeetingDetailView(
     pendingActionCount: be.pendingActionCount,
     isStalled: be.summaryStatus === BE_SUMMARY_STATUS.STALLED,
     isHost: options.isHost,
+    // 실서버는 아직 비대면 회의를 모른다 — BE가 필드를 주면 그때 매퍼가 읽는다(이슈 #473).
+    isOnline: false,
   };
 }
 

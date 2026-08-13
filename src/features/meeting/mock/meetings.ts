@@ -50,6 +50,34 @@ export function addMockMeeting(draft: MeetingDraft): Meeting {
 }
 
 /**
+ * 비대면 회의 생성(이슈 #473) — **만들어지는 순간 이미 완료다**("제출하면 그 자리에서 완료
+ * 처리 — 캡처 화면으로 안 넘어갑니다", 팀 명세). `addMockMeeting`과 인자 모양은 같지만
+ * (판별식 유니언 조립은 호출부인 `actions.ts`가 한다, `rooms/mock/reservations.ts`와 같은
+ * 자리 나눔) 저장 직전에 "이미 끝났다"는 사실을 덧씌운다.
+ * ⚠️ **`start`·`end`가 없다.** 비대면 회의는 잡을 시간 자체가 없어(`OnlineMeetingDraft`에
+ *    `date`·`startTime`이 없다) 방금 완료된 시각을 그대로 쓴다 — 예정·진행중을 거치지 않는다.
+ * ⚠️ `roomId`·`roomName`·`roomReservationId`는 draft에서부터 이미 `null`이다(회의실이 없다) —
+ *    여기서 다시 지우지 않는다.
+ */
+export function addMockOnlineMeeting(draft: MeetingDraft): Meeting {
+  const now = new Date();
+  const meeting: Meeting = {
+    ...draft,
+    start: now,
+    end: now,
+    id: `meeting-${++store.sequence}`,
+    createdAt: now.toISOString(),
+    // 캡처를 거치지 않고 제출과 동시에 끝난다 — endMockMeeting을 따로 부르지 않는다.
+    endedAt: now.toISOString(),
+    canceledAt: null,
+    // 종료와 동시에 대기로 들어간다 — endMockMeeting과 같은 이유(§types).
+    aiSummaryStatus: AI_SUMMARY_STATUS.PENDING,
+  };
+  store.meetings = [...store.meetings, meeting];
+  return meeting;
+}
+
+/**
  * 회의 종료 — **완료를 만드는 유일한 길**이다.
  *
  * ⚠️ 완료는 시간이 지나서 되는 게 아니라 Host가 [회의 종료 및 제출]을 눌러야 된다

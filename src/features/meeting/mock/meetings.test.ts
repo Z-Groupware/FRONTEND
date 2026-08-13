@@ -1,7 +1,13 @@
 import { AUTHORITY } from "@/constants/authority";
+import { AI_SUMMARY_STATUS } from "@/constants/meeting";
 
 import type { MeetingDraft } from "../types";
-import { addMockMeeting, findMockMeeting, listMockMeetings } from "./meetings";
+import {
+  addMockMeeting,
+  addMockOnlineMeeting,
+  findMockMeeting,
+  listMockMeetings,
+} from "./meetings";
 
 const DRAFT: MeetingDraft = {
   title: "8월 킥오프 미팅",
@@ -16,6 +22,8 @@ const DRAFT: MeetingDraft = {
   hostId: 1,
   hostAuthority: AUTHORITY.OWNER,
   roomReservationId: "reservation-1",
+  isOnline: false,
+  recordingFileName: null,
 };
 
 describe("회의 mock 스토어", () => {
@@ -54,5 +62,50 @@ describe("회의 mock 스토어", () => {
 
   it("없는 id는 조회 시 null을 돌려준다", () => {
     expect(findMockMeeting("존재하지-않음")).toBeNull();
+  });
+});
+
+describe("비대면 회의 생성(이슈 #473) — addMockOnlineMeeting", () => {
+  const ONLINE_DRAFT: MeetingDraft = {
+    ...DRAFT,
+    isOnline: true,
+    roomId: null,
+    roomName: null,
+    roomReservationId: null,
+    recordingFileName: "회의록.m4a",
+  };
+
+  it("만들자마자 종료 처리된다 — endedAt이 즉시 채워진다", () => {
+    const created = addMockOnlineMeeting(ONLINE_DRAFT);
+
+    expect(created.isOnline).toBe(true);
+    expect(created.endedAt).not.toBeNull();
+    expect(created.endedAt).toBe(new Date(created.endedAt!).toISOString());
+  });
+
+  it("종료와 동시에 AI 분석 대기 상태로 들어간다 — endMockMeeting과 같은 규칙", () => {
+    const created = addMockOnlineMeeting(ONLINE_DRAFT);
+
+    expect(created.aiSummaryStatus).toBe(AI_SUMMARY_STATUS.PENDING);
+  });
+
+  it("회의실이 없다 — roomId·roomName·roomReservationId가 그대로 null이다", () => {
+    const created = addMockOnlineMeeting(ONLINE_DRAFT);
+
+    expect(created.roomId).toBeNull();
+    expect(created.roomName).toBeNull();
+    expect(created.roomReservationId).toBeNull();
+  });
+
+  it("첨부한 녹음 파일 이름을 그대로 담는다(§정직한 목업 — 바이트는 안 든다)", () => {
+    const created = addMockOnlineMeeting(ONLINE_DRAFT);
+
+    expect(created.recordingFileName).toBe("회의록.m4a");
+  });
+
+  it("취소되지 않은 채로 만들어진다", () => {
+    const created = addMockOnlineMeeting(ONLINE_DRAFT);
+
+    expect(created.canceledAt).toBeNull();
   });
 });

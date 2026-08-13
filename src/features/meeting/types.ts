@@ -8,6 +8,8 @@
 import type { Authority } from "@/constants/authority";
 import type { AiSummaryStatus } from "@/constants/meeting";
 
+import type { MeetingTopicInput } from "../rooms/types";
+
 /** 회의 안건 대주제/소주제 한 쌍 — 자유 입력 텍스트다(고정 enum 아님, WORKFLOW.md §3-1). */
 export interface MeetingTopic {
   main: string;
@@ -18,8 +20,10 @@ interface MeetingCommon {
   title: string;
   start: Date;
   end: Date;
-  roomId: string;
-  roomName: string;
+  /** ⚠️ 비대면 회의(`isOnline`)는 회의실이 없다 — `null`이다(이슈 #473). */
+  roomId: string | null;
+  /** ⚠️ 비대면 회의는 `null`이다 — `roomId`와 같은 이유. */
+  roomName: string | null;
   /** ⚠️ 프로젝트 태그는 항상 필수다(WORKFLOW.md §3-1) — 프로젝트에 안 묶인 회의는 없다. */
   projectId: number;
   projectTag: string;
@@ -28,8 +32,21 @@ interface MeetingCommon {
   attendeeIds: number[];
   /** 개설자 — 회의 조작 권한의 기준(권한 ②축, `lib/permission.ts`의 `canOperateMeeting`). */
   hostId: number;
-  /** 이 회의를 만든 예약 — 같은 동작이라 항상 있다(WORKFLOW.md §3-1). */
-  roomReservationId: string;
+  /** 이 회의를 만든 예약 — 회의실 예약이 만든 회의라야 있다. 비대면 회의는 예약 자체가 없어
+   *  `null`이다(이슈 #473 — "회의실·시간 없이 예약"). */
+  roomReservationId: string | null;
+  /**
+   * 비대면(원격) 회의인가(이슈 #473). `true`면 회의실·시간이 없고, 제출 즉시 완료 처리된다
+   * (캡처 화면을 거치지 않는다) — 대면 회의(`false`)와 상태 흐름 자체가 다르다.
+   */
+  isOnline: boolean;
+  /**
+   * 첨부한 녹음 파일의 원래 이름 — **목에서만 쓰는 겉치레 값이다.** BE에 파일을 실제로
+   * 올리는 자리가 없어(이슈 #473, BE API 미확정) 바이트를 저장하지 않는다 — 파일명만
+   * 기억해 화면에 "첨부했다"는 사실만 보여준다(§정직한 목업: 실제 업로드인 척하지 않는다).
+   * 첨부 안 했으면 `null`이다.
+   */
+  recordingFileName: string | null;
 }
 
 /**
@@ -89,3 +106,25 @@ export type Meeting = MeetingDraft & {
    */
   aiSummaryStatus: AiSummaryStatus | null;
 };
+
+/**
+ * 비대면 회의 만들기 폼 입력(이슈 #473) — `RoomReservationDraft`와 같은 필드를 쓰되
+ * **회의실·시간대가 없다**(`roomId`·`date`·`startTime` 없음). 제출하면 그 자리에서 완료
+ * 처리되므로 잡을 시간 자체가 없다.
+ * ⚠️ `topics`는 `rooms/types.ts`의 `MeetingTopicInput`을 그대로 쓴다 — 회의 주제 입력은
+ *    대면·비대면이 같은 모양이라 타입을 새로 만들지 않는다(교차 도메인 재사용은
+ *    `rooms/mock/reservations.ts`가 `features/meeting`을 참조하는 것과 같은 전례다).
+ */
+export interface OnlineMeetingDraft {
+  title: string;
+  /** 항상 필수다(WORKFLOW.md §3-1과 같은 규칙) — 프로젝트에 안 묶인 회의는 없다. */
+  projectId: string;
+  topics: MeetingTopicInput[];
+  attendeeIds: number[];
+  /** Host가 Leader/Member일 때만 필수 — `RoomReservationDraft`와 같은 규칙. */
+  parentTeamActionId?: number;
+  /** 첨부한 녹음 파일 이름 — `Meeting.recordingFileName`과 같다(§정직한 목업). */
+  recordingFileName: string | null;
+}
+
+export type OnlineMeetingFormErrors = Partial<Record<keyof OnlineMeetingDraft, string>>;

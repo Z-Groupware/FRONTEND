@@ -2,16 +2,20 @@ import { Video } from "lucide-react";
 import Link from "next/link";
 
 import { EmptyState } from "@/components/common/empty-state";
+import type { AttendeeScopeViewer } from "@/features/rooms/attendee-scope";
+import type { RoomMember, RoomProjectOption, RoomTeamActionOption } from "@/features/rooms/types";
 import { cn } from "@/lib/utils";
 
 import type { MeetingDirectory, MeetingListItem } from "../view-types";
 import { MeetingCard } from "./meeting-card";
+import { OnlineMeetingDialog } from "./online-meeting-dialog";
 
 /**
- * 회의 목록 — 탭 두 개가 전부다(WORKFLOW §3-2).
+ * 회의 목록 — 탭 두 개 + 비대면 회의 진입점(WORKFLOW §3-2, 이슈 #473).
  *
- * ⚠️ **"새 회의 만들기" 버튼이 없다.** 회의 생성 진입점은 `/app/rooms` 예약 모달 하나뿐이다
- *    (§3-1) — 여기 버튼을 두면 진입점이 두 개가 된다.
+ * ⚠️ **대면 회의는 여기 만드는 버튼이 없다.** 생성 진입점은 `/app/rooms` 예약 모달 하나뿐이다
+ *    (§3-1) — 여기 또 두면 진입점이 두 개가 된다. 다만 **비대면 회의는 회의실·시간이 없어
+ *    예약이 필요 없다**(이슈 #473)라 이 목록 화면이 그 하나뿐인 진입점이다.
  * ⚠️ 탭은 **주소로** 오간다(`?tab=`). 화면 상태로 두면 새로고침·뒤로 가기에서 탭이 날아간다.
  *    서버 컴포넌트라 클릭은 `Link`다 — 프로젝트 목록의 `?status=`와 같은 패턴.
  */
@@ -76,28 +80,57 @@ function MeetingEmptyState({ tab }: { tab: MeetingTab }) {
   );
 }
 
+interface MeetingListViewProps {
+  directory: MeetingDirectory;
+  tab: MeetingTab;
+  /** 비대면 회의 다이얼로그로 그대로 흘려보낸다(`/app/rooms/page.tsx`와 같은 데이터 원천). */
+  members: RoomMember[];
+  projects: RoomProjectOption[];
+  showParentTeamAction: boolean;
+  teamActions: RoomTeamActionOption[];
+  viewer: AttendeeScopeViewer;
+}
+
 export function MeetingListView({
   directory,
   tab,
-}: {
-  directory: MeetingDirectory;
-  tab: MeetingTab;
-}) {
+  members,
+  projects,
+  showParentTeamAction,
+  teamActions,
+  viewer,
+}: MeetingListViewProps) {
   const items: MeetingListItem[] =
     tab === MEETING_TAB.HOSTED ? directory.hosted : directory.invited;
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="border-border flex gap-1 border-b" role="group" aria-label="회의 거르기">
-        <TabLink
-          tab={MEETING_TAB.HOSTED}
-          isActive={tab === MEETING_TAB.HOSTED}
-          count={directory.hosted.length}
-        />
-        <TabLink
-          tab={MEETING_TAB.INVITED}
-          isActive={tab === MEETING_TAB.INVITED}
-          count={directory.invited.length}
+      {/*
+        ⚠️ 선(`border-b`)을 **이 바깥 줄**에 건다(2026-08-14, 비대면 회의 버튼을 더하며 옮김).
+           탭 두 개만 있을 때는 탭 상자에 걸어도 됐지만, 오른쪽에 버튼을 나란히 두면 탭 상자
+           너비만큼만 선이 그어져 버튼 아래는 선이 끊긴다 — 줄 전체 폭으로 선을 그어야
+           헤더 한 줄로 읽힌다. `TabLink`의 `-mb-px`는 가장 가까운 `border-b` 조상을 기준으로
+           겹치므로 옮겨도 밑줄 탭 모양은 그대로다.
+      */}
+      <div className="border-border flex items-center justify-between gap-3 border-b">
+        <div className="flex gap-1" role="group" aria-label="회의 거르기">
+          <TabLink
+            tab={MEETING_TAB.HOSTED}
+            isActive={tab === MEETING_TAB.HOSTED}
+            count={directory.hosted.length}
+          />
+          <TabLink
+            tab={MEETING_TAB.INVITED}
+            isActive={tab === MEETING_TAB.INVITED}
+            count={directory.invited.length}
+          />
+        </div>
+        <OnlineMeetingDialog
+          members={members}
+          projects={projects}
+          showParentTeamAction={showParentTeamAction}
+          teamActions={teamActions}
+          viewer={viewer}
         />
       </div>
 

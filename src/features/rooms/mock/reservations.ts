@@ -165,6 +165,10 @@ export function addMockReservation(draft: RoomReservationDraft, actor: Actor): R
     attendeeIds: reservation.attendeeIds,
     hostId: actor.id,
     roomReservationId: reservation.id,
+    // ⚠️ 회의실 예약이 만드는 회의는 대면이다 — 비대면(이슈 #473)은 `createOnlineMeetingAction`
+    //    (`features/meeting/actions.ts`)이 회의실 없이 따로 만든다.
+    isOnline: false,
+    recordingFileName: null,
   };
 
   // ⚠️ `Meeting`은 Owner 개설/팀 액션 개설을 판별식 유니언으로 나눠 둔다(hostTeamId·
