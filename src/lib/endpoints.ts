@@ -6,6 +6,16 @@
  *
  * ⚠️ 아래 **[확인]** 표시가 붙은 경로는 BE 레포 실코드로 대조했다(2026-08-10).
  *   나머지는 아직 **FE 제안 경로**다 — 쓰기 전에 컨트롤러를 먼저 본다(§연동 검증).
+ *
+ * ⚠️ **부르는 곳이 없는 채로 남겨 두지 않는다**(2026-08-13, #433). 검증 안 된 빈 경로가 실제
+ *   경로 옆에 서 있으면 위 규칙이 거꾸로 작동한다 — 다음 사람이 "여기 있으니 합의된 경로"라고
+ *   읽고 집는다. 이때 `subscription`(`/api/subscription` — BE 컨트롤러 없음, 실 결제 경로는
+ *   `/api/companies/me/billing*`)과 `departments`(`/api/departments` — 조직이 부서에서
+ *   **플랫한 팀**으로 확정되며 `teams`로 대체됐다, CLAUDE.md §권한 ③)를 지웠다.
+ *   ⚠️ 반대로 **호출부가 없어도 남기는 것**이 있다 — 지금 화면이 없을 뿐 쓰기로 정해진 경로다.
+ *      `notifications`·`notificationStream`은 알림 SSE 배너가 예정돼 있고(CLAUDE.md
+ *      §렌더링·데이터: "알림=SSE, BFF가 스트림을 중계"), 캡처 조각·검색·`todos` 등은 연동이
+ *      진행 중이다. 지우기 전에 **그 도메인 담당자·이슈를 먼저 본다.**
  */
 /** 목록 3종(`GET /api/projects`·`/api/actions`·`/api/team/actions`)이 공유하는 쿼리 파라미터. */
 export interface ProjectListParams {
@@ -240,7 +250,6 @@ export const ep = {
   /** 직급 — [확인] identity/position/presentation/api/PositionController.java */
   jobPositions: () => "/api/job-positions",
   jobPosition: (id: number) => `/api/job-positions/${id}`,
-  departments: () => "/api/departments",
 
   /**
    * 회의실 — [확인] `meetingroom/presentation/api/{MeetingRoomController,MeetingRoomCommandController}.java`
@@ -268,7 +277,6 @@ export const ep = {
   notices: () => "/api/notices",
   /** 공지 상세(`GET`, NOTI-02)·수정(`PUT`, NOTI-04)·삭제(`DELETE`, NOTI-05)가 같은 경로를 쓴다. */
   notice: (noticeId: number) => `/api/notices/${noticeId}`,
-  subscription: () => "/api/subscription",
 
   /**
    * 검색 — API 스펙 전달받음(2026-08-11), **BE 실코드 미대조**(§연동 검증: 문서와 코드가
