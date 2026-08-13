@@ -5,6 +5,7 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import type { AttendeeScopeViewer } from "@/features/rooms/attendee-scope";
 import { RoomAttendeePicker } from "@/features/rooms/components/room-attendee-picker";
 import type { RoomMember } from "@/features/rooms/types";
 
@@ -16,8 +17,9 @@ interface MeetingAttendeesEditDialogProps {
   meetingId: string;
   currentAttendeeIds: number[];
   members: RoomMember[];
-  /** "내 부서만"·"팀장급만" 필터 기준 — `RoomAttendeePicker`로 그대로 흘려보낸다. */
-  viewerTeamName: string | null;
+  /** 참석자 범위(Owner=팀장만 / Leader·Member=자기 팀만) 기준 — `RoomAttendeePicker`로
+   *  그대로 흘려보낸다(`attendee-scope.ts`, 2026-08-13 확정). */
+  viewer: AttendeeScopeViewer;
 }
 
 /**
@@ -31,7 +33,7 @@ export function MeetingAttendeesEditDialog({
   meetingId,
   currentAttendeeIds,
   members,
-  viewerTeamName,
+  viewer,
 }: MeetingAttendeesEditDialogProps) {
   const [open, setOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState(currentAttendeeIds);
@@ -82,7 +84,7 @@ export function MeetingAttendeesEditDialog({
                 members={members}
                 selectedIds={selectedIds}
                 onChange={setSelectedIds}
-                viewerTeamName={viewerTeamName}
+                viewer={viewer}
               />
               {state.error && <p className="text-destructive pt-2 text-[12px]">{state.error}</p>}
             </div>

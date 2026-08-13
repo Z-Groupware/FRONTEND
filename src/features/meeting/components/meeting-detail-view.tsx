@@ -17,6 +17,7 @@ import { ProfileAvatar } from "@/components/common/profile-avatar";
 import { ProjectTag } from "@/components/common/project-tag";
 import { StatusDot } from "@/components/common/status-dot";
 import { ACTION_STATUS_LABEL } from "@/constants/action";
+import type { AttendeeScopeViewer } from "@/features/rooms/attendee-scope";
 import type { RoomMember } from "@/features/rooms/types";
 import { formatDate } from "@/lib/date";
 
@@ -198,11 +199,12 @@ interface MeetingDetailViewProps {
   detail: MeetingDetail;
   /** 참석자 명단 교체(MEET-09) 다이얼로그가 고를 전체 사원 목록. */
   members: RoomMember[];
-  /** "내 부서만"·"팀장급만" 필터 기준 — `RoomAttendeePicker`로 그대로 흘려보낸다. */
-  viewerTeamName: string | null;
+  /** 참석자 범위(Owner=팀장만 / Leader·Member=자기 팀만) 기준 — `RoomAttendeePicker`로
+   *  그대로 흘려보낸다(`attendee-scope.ts`, 2026-08-13 확정). */
+  viewer: AttendeeScopeViewer;
 }
 
-export function MeetingDetailView({ detail, members, viewerTeamName }: MeetingDetailViewProps) {
+export function MeetingDetailView({ detail, members, viewer }: MeetingDetailViewProps) {
   const actionsState = actionsSectionStateOf(detail);
   const canEditAttendees = canEditMeetingAttendees(detail);
   const canCancel = canCancelMeeting(detail);
@@ -280,7 +282,7 @@ export function MeetingDetailView({ detail, members, viewerTeamName }: MeetingDe
                   meetingId={detail.id}
                   currentAttendeeIds={detail.attendees.map((attendee) => attendee.id)}
                   members={members}
-                  viewerTeamName={viewerTeamName}
+                  viewer={viewer}
                 />
               )}
             </div>

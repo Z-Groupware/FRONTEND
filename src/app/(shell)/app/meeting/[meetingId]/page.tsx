@@ -94,7 +94,9 @@ export default async function MeetingDetailPage({
       <MeetingDetailView
         detail={result.detail}
         members={members}
-        viewerTeamName={viewer.teamName ?? null}
+        /* ⚠️ 참석자 교체(MEET-09)도 개설과 **같은 범위 규칙**을 받는다(2026-08-13) — 개설만
+           막고 교체를 열어 두면 나중에 규칙을 깨서 넣을 수 있다(`attendee-scope.ts`). */
+        viewer={{ id: viewer.id, role: viewer.role, teamName: viewer.teamName ?? null }}
       />
     </main>
   );
