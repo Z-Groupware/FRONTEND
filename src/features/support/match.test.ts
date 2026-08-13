@@ -179,4 +179,18 @@ describe("findFaqCandidates", () => {
   ])("`%s`는 인수인계 절차 항목에 닿는다", (question) => {
     expect(findFaqCandidates(question).map((found) => found.id)).toContain("handover-flow");
   });
+
+  /*
+    ⚠️ **요금 답변에는 "무료 요금제"·"결제하셔야" 문구가 들어가면 안 된다**(CLAUDE.md §요금제).
+       한 곳만 남아도 돈을 안 받는 것처럼 읽힌다 — 구독 상태(ACTIVE·CANCELING·UNPAID·EXPIRED)
+       용어로만 답한다. 토끼 PR #458 지적을 다시 들어와도 잡히게 여기서 못 박는다.
+  */
+  it("가격 관련 답변은 '무료 요금제'·'결제하셔야' 문구를 쓰지 않고 구독 상태 용어로 답한다", () => {
+    const freeEntry = FAQ_ENTRIES.find((entry) => entry.id === "free");
+
+    expect(freeEntry).toBeDefined();
+    expect(freeEntry?.answer).not.toMatch(/무료\s*요금제/);
+    expect(freeEntry?.answer).not.toMatch(/결제하셔야/);
+    expect(freeEntry?.answer).toMatch(/ACTIVE/);
+  });
 });
