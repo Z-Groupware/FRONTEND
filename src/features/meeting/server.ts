@@ -18,13 +18,16 @@ import { isMock } from "@/mocks/config";
 import { formatMeetingSchedule, meetingListRange } from "./lib";
 import {
   type BeMeetingListItem,
+  type BeUtterance,
   hostIdOf,
   isClosed,
   parseMeetingDetail,
   parseMeetingList,
+  parseTranscriptsResponse,
   toMeetingCaptureInfo,
   toMeetingDetailView,
   toMeetingListItem,
+  toScriptChunks,
 } from "./mapper";
 import { findMockMeeting, listMockMeetings } from "./mock/meetings";
 import { ensureMockMeetingsSeeded, findMockMeetingExtras } from "./mock/seed";
@@ -55,7 +58,14 @@ import type {
 /** Owner 개설 회의의 소속 라벨(WORKFLOW §2) — 옛 문구 "프로젝트 공통"은 폐기됐다 */
 const OWNER_ORIGIN_LABEL = "Owner 개설";
 
-/** 팀 액션 회의의 라벨 — 상위 팀 액션 이름. 목이 어긋나 못 찾으면 팀 액션임은 알린다 */
+/**
+ * 팀 액션 회의의 라벨 — 상위 팀 액션 이름. 목이 어긋나 못 찾으면 팀 액션임은 알린다.
+ *
+ * ⚠️ **이 함수는 목 전용이다.** 실 응답에는 상위 팀 액션 이름도, host 소속도 안 실린다 —
+ *    연동할 때 이 라벨을 채우려면 BE에 그 필드를 **요청해야 한다.** 기다리면 오는 값이
+ *    아니다(링크 자체는 BE 모델에 이미 있고 막힌 곳은 응답 DTO다 — 근거는 `mapper.ts`의
+ *    `toDashboardMeeting` 주석에 모아 뒀다).
+ */
 function originLabelOf(meeting: Meeting): string {
   if (meeting.hostAuthority === "OWNER") return OWNER_ORIGIN_LABEL;
 
@@ -86,11 +96,14 @@ function toListItem(meeting: Meeting, viewerId: number, now: Date): MeetingListI
     projectTag: meeting.projectTag,
     originLabel: originLabelOf(meeting),
     topicSummary: `${firstTopic.main} · ${firstTopic.sub}`,
-    schedule: formatMeetingSchedule(meeting.start, meeting.end),
-    roomName: meeting.roomName,
+    // ⚠️ 비대면 회의는 회의실·시간이 없다(이슈 #473) — 카드는 `isOnline`을 보고 이 자리에
+    //    안내 한 줄을 그린다(`meeting-card.tsx`).
+    schedule: meeting.isOnline ? "" : formatMeetingSchedule(meeting.start, meeting.end),
+    roomName: meeting.roomName ?? "",
     attendeeCount: meeting.attendeeIds.length,
     isHost: meeting.hostId === viewerId,
     aiSummaryStatus: meeting.aiSummaryStatus,
+    isOnline: meeting.isOnline,
   };
 }
 
@@ -310,8 +323,9 @@ export async function getMeetingDetail(id: string, viewer: Actor): Promise<Meeti
           ? null
           : `/app/projects/${meeting.projectId}/team/${meeting.parentTeamActionId}`,
       agenda: toMockAgenda(meeting.topics),
-      schedule: formatMeetingSchedule(meeting.start, meeting.end),
-      roomName: meeting.roomName,
+      // ⚠️ 비대면 회의는 회의실·시간이 없다(이슈 #473) — 상세도 목록 카드와 같은 규칙이다.
+      schedule: meeting.isOnline ? "" : formatMeetingSchedule(meeting.start, meeting.end),
+      roomName: meeting.roomName ?? "",
       attendees: meeting.attendeeIds.map((attendeeId) => ({
         id: attendeeId,
         name: roster.get(attendeeId) ?? "알 수 없음",
@@ -323,6 +337,7 @@ export async function getMeetingDetail(id: string, viewer: Actor): Promise<Meeti
       pendingActionCount,
       isStalled,
       isHost: canOperateMeeting(viewer, { ownerId: meeting.hostId }),
+      isOnline: meeting.isOnline,
     },
   };
 }
@@ -341,6 +356,43 @@ export async function getMeetingDetail(id: string, viewer: Actor): Promise<Meeti
  * ⚠️ 개설자 판정은 **목 경로와 같은 함수**(`canOperateMeeting`)다. 매퍼는 값이 어디 있는지만
  *    알려 주고(`hostIdOf`) 판정은 `lib/permission.ts` 한 곳이다(CLAUDE.md §권한).
  */
+/**
+ * 발화 기록 전체(ANLZ-05) — 커서를 서버가 `nextCursor`로 끊어 줄 때까지 이어 받는다.
+ *
+ * ⚠️ **왜 페이지를 그대로 안 보여주고 다 모아 온다.** 이 화면은 스크롤 목록이 아니라
+ *    상세의 고정 섹션이다 — "N건"이라는 건수를 보여주는데 첫 페이지만 세면 그 수가
+ *    거짓말이 된다(§정직성, §목록·페이지네이션과는 다른 자리 — 여기는 무한 스크롤 목록이
+ *    아니라 한 회의 분량이 유한하다).
+ * ⚠️ **그래도 무한 루프는 안 된다.** BE가 커서를 안 끊어 주는 결함이 나면 화면이 걸린 채
+ *    영영 안 끝난다 — 상한(50페이지, 회의 하나에 발화 수천 건이라는 BE 주석 기준 넉넉하다)
+ *    에 걸리면 그때까지 받은 것만 돌린다. `console`은 커밋하지 않는다(PR 체크리스트) —
+ *    상한에 걸리는 건 BE 결함(끝없는 커서)일 때뿐이라 서버 쪽에서 잡을 일이다.
+ * ⚠️ **`transcriptId`로 중복을 거른다**(§목록·페이지네이션 — 이어 붙일 때 id 중복 제거).
+ *    커서 경계가 겹치는 BE 결함이 나도 "N건"과 화면에 같은 발화가 두 번 찍히지 않는다.
+ */
+async function fetchAllTranscripts(meetingId: number, accessToken: string): Promise<BeUtterance[]> {
+  const TRANSCRIPT_PAGE_CAP = 50;
+  const utterances: BeUtterance[] = [];
+  const seenTranscriptIds = new Set<number>();
+  let cursor: string | undefined;
+
+  for (let page = 0; page < TRANSCRIPT_PAGE_CAP; page++) {
+    const raw = await serverApi<unknown>(ep.meetingTranscripts(meetingId, { cursor }), {
+      accessToken,
+    });
+    const parsed = parseTranscriptsResponse(raw);
+    for (const utterance of parsed.utterances) {
+      if (seenTranscriptIds.has(utterance.transcriptId)) continue;
+      seenTranscriptIds.add(utterance.transcriptId);
+      utterances.push(utterance);
+    }
+    if (!parsed.nextCursor) return utterances;
+    cursor = parsed.nextCursor;
+  }
+
+  return utterances;
+}
+
 async function getLiveMeetingDetail(id: string, viewer: Actor): Promise<MeetingDetailResult> {
   const accessToken = await requireAccessToken();
 
@@ -355,12 +407,23 @@ async function getLiveMeetingDetail(id: string, viewer: Actor): Promise<MeetingD
 
   /* ⚠️ 단언이 아니라 **검사**다 — 모양이 어긋나면 화면을 그리기 전에 여기서 멈춘다 */
   const detail = parseMeetingDetail(raw);
+  const view = toMeetingDetailView(detail, {
+    isHost: canOperateMeeting(viewer, { ownerId: hostIdOf(detail) }),
+  });
 
+  /*
+    ⚠️ **`pendingReason`이 있으면 발화 기록을 안 물어본다.** 화면이 그 칸을 안 그리는데
+       (`meeting-detail-view.tsx` — 안내 카드만 뜬다) 조회부터 하면 헛수고다. 회의가 아직
+       안 끝났으면 발화 자체가 없을 수도 있다.
+  */
+  if (view.pendingReason !== null) {
+    return { kind: "ok", detail: view };
+  }
+
+  const utterances = await fetchAllTranscripts(Number(id), accessToken);
   return {
     kind: "ok",
-    detail: toMeetingDetailView(detail, {
-      isHost: canOperateMeeting(viewer, { ownerId: hostIdOf(detail) }),
-    }),
+    detail: { ...view, script: toScriptChunks(new Date(detail.startAt), utterances) },
   };
 }
 
@@ -401,7 +464,10 @@ export async function getMeetingCapture(id: string, viewer: Actor): Promise<Meet
       title: meeting.title,
       projectTag: meeting.projectTag,
       schedule: formatMeetingSchedule(meeting.start, meeting.end),
-      roomName: meeting.roomName,
+      // ⚠️ 비대면 회의(`roomName === null`)는 이 자리에 올 일이 없다 — 만들어지자마자 완료
+      //    상태라 위의 "이미 끝난 회의" 분기가 먼저 걸린다(캡처는 시작 전·진행중만 연다).
+      //    타입만 맞춘다(`meeting.roomName`이 `string | null`이 됐다, 이슈 #473).
+      roomName: meeting.roomName ?? "",
       attendees: meeting.attendeeIds.map((attendeeId) => {
         const member = roster.get(attendeeId);
         return {

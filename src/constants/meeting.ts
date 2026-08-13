@@ -136,6 +136,24 @@ export const ACTION_REJECT_REASON = {
 } as const;
 export type ActionRejectReason = (typeof ACTION_REJECT_REASON)[keyof typeof ACTION_REJECT_REASON];
 
+/**
+ * 액션 분배 검토 화면이 배정 대상을 부르는 말 — Owner 회의는 "부서", 그 외엔 "담당자"
+ * (WORKFLOW.md §2/§3-4, 2026-08-13 확정). ⚠️ CodeRabbit 지적으로 분리 — 화면 곳곳(셀렉트
+ * aria-label·미정 안내·배너·확정 대상 표시)에 "부서"/"담당자"를 직접 하드코딩하지 않고
+ * 여기서만 고른다. 판정 기준은 `MeetingReviewInfo.isOwnerMeeting` 하나다.
+ */
+export const REVIEW_ASSIGNMENT_TARGET = {
+  TEAM: "TEAM",
+  PERSONAL: "PERSONAL",
+} as const;
+export type ReviewAssignmentTarget =
+  (typeof REVIEW_ASSIGNMENT_TARGET)[keyof typeof REVIEW_ASSIGNMENT_TARGET];
+
+export const REVIEW_ASSIGNMENT_TARGET_LABEL: Record<ReviewAssignmentTarget, string> = {
+  TEAM: "부서",
+  PERSONAL: "담당자",
+};
+
 export const ACTION_REJECT_REASON_LABEL: Record<ActionRejectReason, string> = {
   HALLUCINATION: "그런 말을 한 적 없음",
   DUPLICATE: "다른 액션과 중복",

@@ -31,10 +31,17 @@ export interface MeetingListItem {
    * 실서버는 `agendaPreview`(BE PR #461)로 채운다 — 없으면(미배포·안건 0건) 빈 문자열이다.
    */
   topicSummary: string;
-  /** `7월 14일(화) 10:00 – 10:30` — 서버가 우리 표기로 만들어 보낸다(§lib) */
+  /**
+   * `7월 14일(화) 10:00 – 10:30` — 서버가 우리 표기로 만들어 보낸다(§lib).
+   * ⚠️ **비대면 회의(`isOnline`)는 빈 문자열이다** — 회의실·시간이 없다(이슈 #473). 컴포넌트는
+   *    `isOnline`을 먼저 보고, `true`면 이 값을 그대로 그리지 않는다.
+   */
   schedule: string;
+  /** ⚠️ 비대면 회의는 빈 문자열이다 — `schedule`과 같은 이유. */
   roomName: string;
   attendeeCount: number;
+  /** 비대면(원격) 회의인가(이슈 #473) — `schedule`·`roomName` 대신 안내 한 줄을 그린다. */
+  isOnline: boolean;
   /**
    * 보는 사람이 이 회의의 Host인가.
    *
@@ -138,9 +145,13 @@ export interface MeetingDetail {
   parentTeamActionHref: string | null;
   /** 안건 — `null`이면 보여줄 안건이 없다(미배포 BE거나 안건 0건 — 왜인지는 모른다) */
   agenda: MeetingAgenda | null;
+  /** ⚠️ 비대면 회의(`isOnline`)는 빈 문자열이다 — `MeetingListItem.schedule`과 같은 이유. */
   schedule: string;
+  /** ⚠️ 비대면 회의는 빈 문자열이다. */
   roomName: string;
   attendees: MeetingAttendee[];
+  /** 비대면(원격) 회의인가(이슈 #473) — 발치 레일과 발화 기록 칸의 렌더가 이 값으로 갈린다. */
+  isOnline: boolean;
   /**
    * 산출물 머리말 — Owner 개설이면 `팀 액션`, 팀 액션 회의면 `개인 액션`.
    * ⚠️ 실서버 상세(MEET-04)엔 개설자 권한이 없어 둘을 못 가른다 — 그때는 상위어 `액션`이다.

@@ -1,6 +1,7 @@
+import { hasPinnedCoords } from "@/features/auth/register-draft";
 import type { AssignableRole } from "@/features/onboarding/types";
 
-import type { CompanyProfile, DepartmentNode, Position } from "./types";
+import type { CompanyProfile, CompanyProfileDraft, DepartmentNode, Position } from "./types";
 
 /**
  * BE shape → UI 계약 (§Mock 격리막 — 흡수하는 곳은 여기 하나다).
@@ -9,7 +10,7 @@ import type { CompanyProfile, DepartmentNode, Position } from "./types";
  *    한 번에 주는 엔드포인트가 BE에 없어서다 — 그 사실을 화면이 알 필요는 없다.
  */
 
-/** [확인] BE `CompanyProfileResponse` */
+/** [확인] BE `CompanyProfileResponse` 2026-08-13 develop(`30952c10` — 좌표 추가) */
 export interface BeCompanyProfile {
   companyId: number;
   code: string;
@@ -17,8 +18,12 @@ export interface BeCompanyProfile {
   businessNumber: string | null;
   representativeName: string | null;
   address: string | null;
+  /** 지도로 고른 적이 없으면 `null` — 위도 -90~90 */
+  latitude: number | null;
+  /** 지도로 고른 적이 없으면 `null` — 경도 -180~180 */
+  longitude: number | null;
   phone: string | null;
-  plan: string;
+  subscriptionStatus: string;
   onboardedAt: string | null;
 }
 
@@ -46,13 +51,14 @@ export interface BePosition {
 /**
  * 기업 기본 정보.
  *
- * ⚠️ **좌표가 없다.** BE는 `address` 문자열만 들고 우리 계약은 `PickedPlace`(위도·경도)다 —
- *    지도에서 고른 자리가 **저장도 복원도 안 된다.** 주소는 남으므로 글자는 그대로 보이지만,
- *    다시 열면 핀이 사라진다. 좌표 칸이 생기기 전까지 `lat`·`lng`를 0으로 둔다
- *    (기업 등록 신청이 지도를 못 쓸 때 쓰는 것과 같은 규칙).
- * ⚠️ **`plan`을 안 쓴다.** BE가 `"FREE"`를 고정으로 내려주는데(결제 연동 전), 우리 규칙은
- *    **무료 요금제가 없다**는 것이다 — 그 값을 화면에 올리면 돈을 안 받는 것처럼 읽힌다
- *    (CLAUDE.md §요금제).
+ * ⚠️ **좌표가 생겼다**([확인] `CompanyProfileResponse.latitude/longitude` 2026-08-13 develop
+ *    `30952c10` — "좌표 칸이 생기기 전까지 0"의 그 칸이다). 지도로 고른 적이 없으면 `null`이
+ *    오고, 그때는 `0`으로 접는다 — 기업 등록 신청이 지도를 못 쓸 때 쓰는 것과 같은 표기다
+ *    (`register-draft`의 `PickedPlace` 규칙).
+ * ⚠️ **주소 없는 좌표는 버린다.** BE는 짝을 강제하지 않지만 우리 계약의 `place`는
+ *    주소+좌표 **한 몸**이다 — 주소 없이 핀만 꽂으면 카드가 무엇을 가리키는지 말할 수 없다.
+ * ⚠️ **`subscriptionStatus`를 여기선 안 쓴다.** 쓸 수 있는지는 `canUseWorkspace()` 한 곳에서
+ *    판정한다(CLAUDE.md §요금제) — 이 카드는 회사 정보만 그린다.
  * ⚠️ **`representativeName`·`phone`도 안 쓴다.** 우리 `CompanyProfile`에 자리가 없다 —
  *    지금 화면이 안 보여 주는 값이라 버리는 게 아니라 **아직 안 받는 것**이다.
  */
@@ -60,8 +66,48 @@ export function toCompanyProfile(profile: BeCompanyProfile): CompanyProfile {
   return {
     name: profile.name,
     businessNumber: profile.businessNumber ?? "",
-    place: profile.address ? { address: profile.address, lat: 0, lng: 0 } : null,
+    place: profile.address
+      ? {
+          address: profile.address,
+          lat: profile.latitude ?? 0,
+          lng: profile.longitude ?? 0,
+        }
+      : null,
     code: profile.code,
+  };
+}
+
+/** UI 초안 → BE `UpdateCompanyRequest` 본문 — 매퍼가 왕복 양쪽을 다 흡수한다(§Mock 격리막) */
+export interface BeCompanyUpdateBody {
+  name: string;
+  businessNumber: string;
+  address?: string;
+  latitude?: number;
+  longitude?: number;
+}
+
+/**
+ * 저장 본문.
+ *
+ * ⚠️ **부분 수정 계약이다** — 필드가 없으면 "건드리지 말라"다. 빈 문자열은 BE `@Pattern`
+ *    (NOT_BLANK_IF_PRESENT)이 400으로 거절하므로 주소가 비면 **필드째 생략**한다(PR #423).
+ * ⚠️ **좌표는 주소를 따라간다**(2026-08-13 결정). `place`는 주소+좌표 한 몸이라 주소를
+ *    생략하면 좌표도 생략한다 — BE는 좌표 단독 수정도 받지만, 주소 없는 요청에 좌표만 실으면
+ *    옛 주소 글자에 새 핀이 붙는 반쪽 위치가 저장된다.
+ * ⚠️ **`0,0`은 좌표가 아니라 "지도를 못 썼다"는 표기다**(`register-draft`의 `PickedPlace`
+ *    규칙 — 키 없음·SDK 차단). 그대로 보내면 기니만 바다에 핀이 저장되므로 생략한다 —
+ *    없는 값은 안 보내는 게 부분 수정 계약과도 맞는다.
+ *    [확인] BE `UpdateCompanyRequest.latitude/longitude` 2026-08-13 develop(`30952c10`).
+ */
+export function toCompanyUpdateBody(draft: CompanyProfileDraft): BeCompanyUpdateBody {
+  const place = draft.place?.address ? draft.place : null;
+  /* ⚠️ 판정은 `hasPinnedCoords` 한 곳이다 — 그리는 쪽(`AddressPicker`)과 같은 규칙을 써야 한다 */
+  const hasPin = hasPinnedCoords(place);
+  return {
+    name: draft.name,
+    businessNumber: draft.businessNumber,
+    ...(place ? { address: place.address } : {}),
+    ...(hasPin ? { latitude: place.lat, longitude: place.lng } : {}),
   };
 }
 

@@ -11,7 +11,7 @@ import {
   MEETING_STATUS,
 } from "@/constants/meeting";
 
-import { formatMeetingSchedule } from "./lib";
+import { formatClockTime, formatMeetingSchedule } from "./lib";
 import type {
   CaptureAttendee,
   MeetingAgenda,
@@ -19,6 +19,7 @@ import type {
   MeetingContentPending,
   MeetingDetail,
   MeetingListItem,
+  ScriptChunk,
 } from "./view-types";
 
 /** Owner 개설 회의의 소속 라벨(WORKFLOW §2) — 옛 문구 "프로젝트 공통"은 폐기됐다 */
@@ -84,6 +85,8 @@ function toAiSummaryStatus(be: string | null | undefined): AiSummaryStatus | nul
  *    (`BeMeetingDetail`과 같은 원칙).
  * ⚠️ 개설자(host) 이름·소속 라벨은 이 계약에 없다 — `isHost`(보는 사람이 host인가)뿐이라
  *    "누가 개설했는가"는 여기서 못 구한다(§mapper `toDashboardMeeting` 참고).
+ * ⚠️ **상위 팀 액션도 없다.** 기다리면 오는 값이 아니라 **요청해야 오는 값**이다 —
+ *    자세한 사정은 `toDashboardMeeting`의 `originLabel` 주석에 한 곳으로 모아 적었다.
  */
 export interface BeUpcomingMeeting {
   meetingId: number;
@@ -104,9 +107,24 @@ export interface BeUpcomingMeetingsResponse {
 
 /**
  * 대시보드 "참석 회의" 위젯(`DashboardMeetingItem`)이 받는 모양으로 바꾼다.
- * ⚠️ `originLabel`을 안 채운다 — 이 계약엔 개설자 소속(Owner 개설/팀명) 정보가 없다. 없는 값을
- *    지어내지 않는다(§정직성) — 화면은 그 값이 없으면 라벨을 그냥 안 그린다(`hostLabel`과
- *    같은 선택 필드로 취급).
+ * ⚠️ `originLabel`을 안 채운다 — 이 계약엔 개설자 소속(Owner 개설/팀명)도, 팀 액션 회의의
+ *    상위 팀 액션 이름도 없다. 없는 값을 지어내지 않는다(§정직성) — 화면은 그 값이 없으면
+ *    라벨을 그냥 안 그린다(`hostLabel`과 같은 선택 필드로 취급).
+ *
+ * ⚠️ **"곧 온다"고 적어 두지 않는다**(2026-08-13 정정). 예전 주석은 "아직 없다"로 읽혀
+ *    기다리면 오는 값처럼 보였는데, **아무도 요청하지 않으면 영영 안 온다.** 지금 확인한 사실은
+ *    이렇다([확인] BE 실코드 대조, 2026-08-13):
+ *      · 링크 자체는 **BE 모델에 있다** — `meeting.related_action_id`(action FK,
+ *        `V3.1.1`·`V3.1.2` 마이그레이션), 도메인 `Meeting.relatedActionId`. 예약할 때
+ *        정책 검증까지 한다(`MeetingService.validateRelatedActionPolicy` — OWNER는 못 넣고,
+ *        그 외 역할은 반드시 넣는다).
+ *      · 그런데 **어떤 응답 DTO에도 안 실린다** — `MeetingDetailResponse`·
+ *        `MeetingListResponse`·`UpcomingMeetingListResponse` 셋 다 `relatedActionId`도
+ *        `teamId`도 host `role`도 없다.
+ *    ⇒ 그러니 이건 "모델에 없어서 못 준다"가 아니라 **"모델엔 있는데 안 내보낸다"**이고,
+ *      막힌 곳은 응답 DTO 하나다. 필요해지면 그 필드를 실어 달라고 요청하면 된다.
+ * ⚠️ (팀 협의 기록에는 "회의↔액션 링크가 모델에 없어 영구 제공 불가"로 남아 있는데, 위
+ *    실코드와 어긋난다 — **코드가 맞다**(§연동 검증). 고치기 전에 담당자에게 한 번 확인한다.)
  * ⚠️ `entryAvailable`·`isHost`는 지금 이 위젯에 [입장] 버튼이 없어(WORKFLOW.md §3-2, 목록
  *    화면의 카드에만 있음) 쓰지 않는다 — 화면에 없는 기능을 새로 만들지 않는다(§명세).
  */
@@ -347,6 +365,8 @@ export function toMeetingListItem(be: BeMeetingListItem): MeetingListItem {
     attendeeCount: be.attendeeCount,
     isHost: be.isHost,
     aiSummaryStatus: toAiSummaryStatus(be.summaryStatus),
+    // 실서버는 아직 비대면 회의를 모른다 — BE가 필드를 주면 그때 매퍼가 읽는다(이슈 #473).
+    isOnline: false,
   };
 }
 
@@ -403,8 +423,10 @@ export interface BeMeetingDetail {
    */
   summaryStatus: string | null;
   /**
-   * **`null` = Owner 개설**, 숫자 = 개설 팀 — BE PR #461(F2/F5 회신) 확장 필드.
-   * ⚠️ 선택(`?`)이다 — **BE #461 배포 전 응답에는 이 필드들이 없다. 없으면 지금처럼 비운다.**
+   * 이 **회의**가 어느 팀 것인가(PR #461/#472, 2026-08-13 대조) — **`null` = Owner 개설**,
+   * 숫자 = 개설 팀. ⚠️ 참석자 한 명 한 명의 소속 팀(`BeMeetingAttendee.teamId`)과는 **다른
+   * 값**이다 — 이름이 같아 헷갈리기 쉽다.
+   * ⚠️ 선택(`?`)이다 — **BE #461 배포 전 응답에는 이 필드가 없다. 없으면 지금처럼 비운다.**
    */
   teamId?: number | null;
   /**
@@ -431,6 +453,12 @@ const BE_SUMMARY_STATUS = {
 export interface BeMeetingAttendee {
   memberId: number;
   name: string;
+  /**
+   * 이 **참석자**가 어느 팀 소속인가 — 팀 없는 대표는 `null`(PR #472, 2026-08-13 대조).
+   * ⚠️ 선택(`?`)이다 — 회의 자체의 `teamId`(위 `BeMeetingDetail.teamId`)와 같은 이유로,
+   *    BE #472 배포 전 응답에는 이 필드가 없다.
+   */
+  teamId?: number | null;
   /** 팀이 없는 사람(대표)은 `null`이다 */
   teamName: string | null;
   /** ⚠️ `position`이 아니라 `jobPosition`이다 */
@@ -460,7 +488,7 @@ function isBeMeetingDetail(value: unknown): value is BeMeetingDetail {
     typeof detail.endAt === "string" &&
     typeof detail.pendingActionCount === "number" &&
     (detail.summaryStatus === null || typeof detail.summaryStatus === "string") &&
-    /* ⚠️ #461 확장 필드 — 없어도 통과한다(BE #461 배포 전 응답에는 이 필드들이 없다) */
+    /* ⚠️ #461/#472 확장 필드 — 없어도 통과한다(배포 전 응답에는 이 필드들이 없다) */
     isOptionalNullableNumber(detail.teamId) &&
     isOptionalAgenda(detail.agenda) &&
     typeof detail.project?.projectId === "number" &&
@@ -486,6 +514,7 @@ function isBeMeetingAttendee(value: unknown): value is BeMeetingAttendee {
   return (
     typeof attendee.memberId === "number" &&
     typeof attendee.name === "string" &&
+    isOptionalNullableNumber(attendee.teamId) &&
     (attendee.teamName === null || typeof attendee.teamName === "string") &&
     (attendee.jobPosition === null || typeof attendee.jobPosition === "string")
   );
@@ -614,9 +643,14 @@ export function meetingPendingReasonOf(
  * ⚠️ **여전히 비는 칸**(§정직성 — 지어내지 않는다):
  *    - `parentTeamActionHref`: 상위 팀 액션 id가 **모델에 없어 영구 제공 불가**다(#461 회신).
  *      `teamId`는 팀이지 팀 액션이 아니라 링크를 못 만든다.
- *    - `outputs`·`script`: 다른 API(`GET /api/meetings/{id}/actions` · CAP-12 자막 조회)가
- *      줄 값이라 이 연동 범위 밖이다. **빈 배열이 아니라 `null`이다** — 빈 배열로 두면 화면이
- *      "하달된 액션이 없습니다"·"발화 기록이 없습니다"라고 **안 물어본 것을 단정한다**.
+ *    - `outputs`: 다른 API(`GET /api/meetings/{id}/actions`)가 줄 값이라 이 연동 범위 밖이다.
+ *      **빈 배열이 아니라 `null`이다** — 빈 배열로 두면 화면이 "하달된 액션이 없습니다"라고
+ *      **안 물어본 것을 단정한다**.
+ * ⚠️ **`script`는 여기서 안 채운다 — 다른 API다.** 발화 기록(ANLZ-05,
+ *    `GET /api/meetings/{id}/transcripts`)은 이 함수가 받는 `BeMeetingDetail`에 없다.
+ *    이 함수는 늘 `null`을 주고, 회의가 끝났으면(`pendingReason===null`) `server.ts`의
+ *    `getLiveMeetingDetail`이 따로 조회해 덮어쓴다(`toScriptChunks`) — outputs와 같은 이유로
+ *    비워 두지만, 그쪽과 달리 이 연동의 실제 범위 **안**이라 곧바로 채워진다.
  */
 export function toMeetingDetailView(
   be: BeMeetingDetail,
@@ -640,6 +674,8 @@ export function toMeetingDetailView(
     pendingActionCount: be.pendingActionCount,
     isStalled: be.summaryStatus === BE_SUMMARY_STATUS.STALLED,
     isHost: options.isHost,
+    // 실서버는 아직 비대면 회의를 모른다 — BE가 필드를 주면 그때 매퍼가 읽는다(이슈 #473).
+    isOnline: false,
   };
 }
 
@@ -656,4 +692,81 @@ function outputKindLabelOf(teamId: number | null | undefined): string {
 function toMeetingAgenda(agenda: BeMeetingDetail["agenda"]): MeetingAgenda | null {
   if (agenda === undefined || agenda === null) return null;
   return { main: agenda.mainTopic, subs: agenda.subTopics };
+}
+
+/**
+ * 발화 기록(ANLZ-05) — `GET /api/meetings/{id}/transcripts`.
+ *
+ * ⚠️ **화자를 안 싣는다.** BE는 `speakerMemberId`·`speakerSource`도 주지만(오귀속 대비 근거),
+ *    화면 계약(`ScriptChunk`)은 시각·본문뿐이다 — 자막은 "화자 없는 청크"라는 게 팀이 정한
+ *    표시 방식이다(화자 귀속 단순화 작업과 같은 결). 근거가 필요해지면 그때 칸을 늘린다.
+ * ⚠️ `speakerMemberId === null`은 **정상**이다(BE 주석 — 판정 포기, 오류가 아니다). 화면이
+ *    안 쓰는 값이라 여기서 걸러 낼 것도 없다.
+ */
+export interface BeUtterance {
+  transcriptId: number;
+  seq: number;
+  speakerMemberId: number | null;
+  speakerSource: string | null;
+  startOffsetMs: number | null;
+  endOffsetMs: number | null;
+  content: string;
+}
+
+export interface BeTranscriptsResponse {
+  utterances: BeUtterance[];
+  nextCursor: string | null;
+}
+
+/**
+ * 응답이 읽는 모양인가 — `parseMeetingDetail`과 같은 이유로 여기서도 한 번 본다(§정직성).
+ * ⚠️ **화면이 쓰는 것만 본다.** `content`·`startOffsetMs`만 있으면 `at`·`text`를 만들 수
+ *    있다 — `speakerMemberId`·`speakerSource`는 화면이 안 쓰므로 모양을 안 따진다.
+ */
+function isBeUtterance(value: unknown): value is BeUtterance {
+  if (typeof value !== "object" || value === null) return false;
+  const utterance = value as Partial<BeUtterance>;
+  return (
+    typeof utterance.transcriptId === "number" &&
+    typeof utterance.content === "string" &&
+    (utterance.startOffsetMs === null || typeof utterance.startOffsetMs === "number")
+  );
+}
+
+function isBeTranscriptsResponse(value: unknown): value is BeTranscriptsResponse {
+  if (typeof value !== "object" || value === null) return false;
+  const response = value as Partial<BeTranscriptsResponse>;
+  return (
+    Array.isArray(response.utterances) &&
+    response.utterances.every(isBeUtterance) &&
+    (response.nextCursor === null ||
+      response.nextCursor === undefined ||
+      typeof response.nextCursor === "string")
+  );
+}
+
+/** 검사까지 마친 발화 페이지 — 호출부는 이걸 통과한 값만 만진다(§정직성, `parseMeetingDetail`과 같은 자리). */
+export function parseTranscriptsResponse(raw: unknown): BeTranscriptsResponse {
+  if (!isBeTranscriptsResponse(raw)) {
+    throw new Error("발화 기록 응답이 약속한 모양이 아닙니다.");
+  }
+  return { utterances: raw.utterances, nextCursor: raw.nextCursor ?? null };
+}
+
+/**
+ * BE 발화 → 화면 청크. **시각은 회의 시작 시각 + 오프셋**이다 — `startOffsetMs`가 없으면
+ * (화자 귀속과 무관한 결측) 회의 시작 시각으로 표시한다(0으로 둔다).
+ *
+ * ⚠️ **회의 로컬(한국) 시간대로 찍는다** — `formatClockTime`이 회의 시작 시각과 같은
+ *    `TIME_PART`를 쓴다(`lib.ts`). 시계가 갈리면 "10:04에 한 말"이 회의 시작(10:00)보다
+ *    이르게 보일 수 있다.
+ */
+export function toScriptChunks(meetingStart: Date, utterances: BeUtterance[]): ScriptChunk[] {
+  return utterances
+    .slice()
+    .sort((a, b) => a.seq - b.seq)
+    .map((utterance) => ({
+      at: formatClockTime(new Date(meetingStart.getTime() + (utterance.startOffsetMs ?? 0))),
+      text: utterance.content,
+    }));
 }

@@ -2,25 +2,49 @@
 
 import { revalidatePath } from "next/cache";
 
+import { AUTHORITY, type Authority } from "@/constants/authority";
 import { MEETING_STATUS } from "@/constants/meeting";
 import { requireAccessToken } from "@/features/auth/session";
-import { findAttendeeScopeViolation } from "@/features/rooms/attendee-scope";
+import { getManagedMember } from "@/features/member/manage-server";
+import { TOP_LEVEL_PROJECTS } from "@/features/project/mock/projects";
+import { PROJECT_TEAM_ACTIONS_MOCK } from "@/features/project/mock/team-actions";
+import {
+  type AttendeeScopeViewer,
+  findAttendeeScopeViolation,
+} from "@/features/rooms/attendee-scope";
 import { findMockMember } from "@/features/rooms/mock/members";
+import { getReservableMembers } from "@/features/rooms/server";
+import { getViewer } from "@/features/shell/viewer";
 import { ApiError, serverApi } from "@/lib/api";
 import { ep } from "@/lib/endpoints";
 import { getMockActor } from "@/lib/mock-actor";
-import { canManageMeeting } from "@/lib/permission";
+import { type Actor, canManageMeeting, requiresParentTeamAction } from "@/lib/permission";
 import { isMock } from "@/mocks/config";
 
 import { checkMeetingTitle } from "./lib";
-import { attendeeIdsFrom, type BeUpdateAttendeesResponse } from "./mapper";
 import {
+  attendeeIdsFrom,
+  type BeMeetingDetail,
+  type BeUpdateAttendeesResponse,
+  hostIdOf,
+  isClosed,
+  parseMeetingDetail,
+} from "./mapper";
+import {
+  addMockOnlineMeeting,
   cancelMockMeeting,
   findMockMeeting,
   updateMockMeeting,
   updateMockMeetingAttendees,
 } from "./mock/meetings";
 import { meetingStatusOf } from "./status";
+import type {
+  MeetingDraft,
+  MeetingTopic,
+  OnlineMeetingDraft,
+  OnlineMeetingFormErrors,
+} from "./types";
+import { validateOnlineMeetingDraft } from "./validate";
 
 const MEETING_LIST_PATH = "/app/meeting";
 
@@ -40,6 +64,36 @@ function toAttendeesErrorMessage(error: unknown): string {
   return error.message;
 }
 
+/** 재검증 실패 문구 — **목·실서버가 같은 문장을 쓴다**(두 경로가 갈리면 화면이 다른 말을 한다). */
+const ATTENDEES_EDIT_ERROR = {
+  notFound: "회의를 찾을 수 없습니다",
+  forbidden: "참석자를 바꿀 권한이 없습니다",
+  closed: "끝난 회의는 참석자를 바꿀 수 없습니다",
+  unknownMember: "존재하지 않는 참석자가 있습니다",
+} as const;
+
+/**
+ * 재검증에 필요한 **그 회의의 사실**(host·상태)을 실서버에서 가져온다 — `GET /api/meetings/{id}`
+ * (MEET-04, 이미 연동된 엔드포인트다. 캡처 진입 `getLiveMeetingCapture`가 같은 값을 같은 식으로 읽는다).
+ *
+ * ⚠️ **없는 회의는 값(`null`)으로 돌린다** — 던지면 다이얼로그 대신 `error.tsx`가 뜨는데, 없는
+ *    회의는 고장이 아니라 "그런 회의가 없습니다"라고 말해 줄 일이다(캡처 경로와 같은 판단).
+ * ⚠️ 나머지 오류(403·500)는 그대로 던져 호출부의 `catch`가 BE 문구로 옮긴다.
+ */
+async function fetchMeetingFacts(
+  meetingId: string,
+  accessToken: string,
+): Promise<BeMeetingDetail | null> {
+  try {
+    return parseMeetingDetail(
+      await serverApi<unknown>(ep.meeting(Number(meetingId)), { accessToken }),
+    );
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) return null;
+    throw error;
+  }
+}
+
 /**
  * 참석자 명단 교체(MEET-09) — **전체 명단 교체**다. `RoomReservation`의 참석자 피커를 그대로
  * 재사용하는 다이얼로그(`MeetingAttendeesEditDialog`)가 이 액션을 부른다.
@@ -52,7 +106,9 @@ function toAttendeesErrorMessage(error: unknown): string {
  *    AI 팀 액션 판단 근거가 똑같이 무너진다. 규칙은 `rooms/attendee-scope.ts` 한 곳이다.
  * ⚠️ 범위 기준은 **지금 보는 사람이 아니라 그 회의의 host**다 — `canManageMeeting`이 OWNER·Admin
  *    에게도 남의 회의 교체를 허용해서, actor로 재면 Owner가 남의 팀 회의를 열었을 때 규칙이
- *    "팀장만"으로 뒤바뀐다. 회의에 적힌 `hostAuthority`가 그 회의가 만들어질 때의 사실이다.
+ *    "팀장만"으로 뒤바뀐다. mock은 회의 레코드가 `hostAuthority`를 직접 들고 있어 그걸 쓰고,
+ *    실서버는 MEET-04 응답에 host의 role·team이 없어 actor===host면 세션 값을, 아니면
+ *    `getManagedMember`로 따로 구한다(아래 실서버 분기 주석).
  */
 export async function updateMeetingAttendeesAction(
   _prev: UpdateMeetingAttendeesState,
@@ -60,16 +116,27 @@ export async function updateMeetingAttendeesAction(
 ): Promise<UpdateMeetingAttendeesState> {
   const meetingId = String(formData.get("meetingId") ?? "");
   const attendeeIds = formData.getAll("attendeeIds").map(Number);
-  const actor = getMockActor();
+  /*
+    ⚠️ **실서버에서는 목 액터를 쓰지 않는다.** `getMockActor()`는 고정 OWNER를 돌려주는 목이라
+       실연동에서 그걸로 권한을 재면 "언제나 통과"가 된다 — 세션에서 읽는다(`rooms/actions.ts`와
+       같은 자리, CLAUDE.md §권한: 판정은 서버에서).
+  */
+  const actor = isMock ? getMockActor() : await getViewer();
 
   if (isMock) {
     const meeting = findMockMeeting(meetingId);
-    if (!meeting) return { error: "회의를 찾을 수 없습니다", attendeeIds: null };
+    if (!meeting) return { error: ATTENDEES_EDIT_ERROR.notFound, attendeeIds: null };
     if (!canManageMeeting(actor, { hostId: meeting.hostId })) {
-      return { error: "참석자를 바꿀 권한이 없습니다", attendeeIds: null };
+      return { error: ATTENDEES_EDIT_ERROR.forbidden, attendeeIds: null };
     }
-    if (meetingStatusOf(meeting, new Date()) === MEETING_STATUS.DONE) {
-      return { error: "끝난 회의는 참석자를 바꿀 수 없습니다", attendeeIds: null };
+    /*
+      ⚠️ 취소된 회의도 여기서 걸린다 — 명단을 고칠 자리가 아닌데 화면 계약에 아직 취소 문구가
+         없어서 "이미 끝난 회의"와 같은 자리로 보낸다(매퍼 `isClosed`와 같은 판단·같은 결과).
+         실서버 경로가 `isClosed`로 둘을 함께 막으므로, 목만 취소를 통과시키면 두 모드가 갈린다.
+    */
+    const status = meetingStatusOf(meeting, new Date());
+    if (status === MEETING_STATUS.DONE || status === MEETING_STATUS.CANCELED) {
+      return { error: ATTENDEES_EDIT_ERROR.closed, attendeeIds: null };
     }
 
     /*
@@ -100,19 +167,67 @@ export async function updateMeetingAttendeesAction(
   }
 
   const accessToken = await requireAccessToken();
+
+  const meeting = await fetchMeetingFacts(meetingId, accessToken);
+  if (!meeting) return { error: ATTENDEES_EDIT_ERROR.notFound, attendeeIds: null };
+  const hostId = hostIdOf(meeting);
+  if (!canManageMeeting(actor, { hostId })) {
+    return { error: ATTENDEES_EDIT_ERROR.forbidden, attendeeIds: null };
+  }
+  if (isClosed(meeting)) {
+    return { error: ATTENDEES_EDIT_ERROR.closed, attendeeIds: null };
+  }
+
+  /*
+    ⚠️ **참석자 서버 재검증** — `GET /api/members/my-team`이 붙으면서 대부분의 경로는 이제
+       실서버에서도 볼 수 있다(2026-08-13, `rooms/server.ts`의 `getReservableMembers`).
+    ⚠️ **범위 기준은 지금 보는 사람이 아니라 host다**(위 함수 주석). 두 경로로 갈린다:
+       - **host 자신이 고치는 보통 경로**: 세션에 이미 host의 role·team이 있다 — 그대로 쓴다.
+       - **OWNER·ADMIN이 남의 회의를 고치는 드문 경로**: `canManageMeeting`이 그걸 허용해서
+         생기는 경우다. host가 **OWNER**면 `getReservableMembers`가 회사 전체 팀장 명부
+         (`getTeamLeaders`, 호출자 무관)를 보므로 OWNER·ADMIN 전용 API(`GET /api/members/{id}`,
+         `getManagedMember`)로 host가 OWNER인지만 확인하면 그대로 검증해도 안전하다.
+    ⚠️ **host가 LEADER·MEMBER면 여기서도 못 본다 — 본 척하지 않는다**(§정직성). "OWNER·ADMIN이
+       다른 LEADER·MEMBER의 회의를 고치는" 경우 `GET /api/members/my-team`은 **호출자(actor)의
+       토큰**으로 팀을 정하지 host의 팀이 아니다 — `getReservableMembers`를 그대로 부르면
+       actor 자신의 팀 로스터가 와서 host 팀 기준 검증이 아니게 된다(범위를 잘못 잰다). 그래서
+       이 경우는 **FE 검증 자체를 건너뛰고** BE(`PUT /api/meetings/{id}/attendees`)가 최종
+       방어한다 — **아직 BE 요청 문서에 못 올렸다**, 다음 라운드에 올릴 것. UI는 애초에 이
+       경로로 못 들어온다(`canEditMeetingAttendees`가 `isHost`를 요구한다) — 직접 요청을
+       조작해야만 닿는 자리라 영향은 방어 심도 문제다.
+  */
+  let scopeActor: Actor | null;
+  if (actor.id === hostId) {
+    scopeActor = actor;
+  } else {
+    const hostDetail = await getManagedMember(hostId);
+    scopeActor =
+      hostDetail && hostDetail.member.authority === AUTHORITY.OWNER
+        ? {
+            id: hostId,
+            role: hostDetail.member.authority,
+            teamName: hostDetail.member.teamName ?? undefined,
+          }
+        : null;
+  }
+
+  /*
+    ⚠️ scopeActor가 `null`인 건 "actor가 host가 아니고 host가 LEADER·MEMBER인" 경우다(host
+       정보를 못 구한 경우 포함) — 위 주석의 "한 칸", BE가 마저 본다.
+  */
+  if (scopeActor) {
+    const roster = await getReservableMembers(scopeActor);
+    const rosterIds = new Set(roster.map((member) => member.id));
+    if (attendeeIds.some((id) => id !== hostId && !rosterIds.has(id))) {
+      return { error: "지정할 수 없는 참석자가 있습니다", attendeeIds: null };
+    }
+  }
+
   try {
     /*
-      ⚠️ **참석자 범위는 여기서 못 본다 — 본 척하지 않는다**(§정직성). 명부(`getReservableMembers`)가
-         실연동에서 그대로 던지고, 명부 API도 권한별로 갈려 MEMBER는 자기 팀 명단을 볼 길이 없다
-         (`rooms/actions.ts`의 같은 자리 주석에 근거를 적어 뒀다). **최종 방어는 BE다** —
-         `PUT /api/meetings/{id}/attendees`는 [확인] 현재 존재·같은 회사만 보고 권한·팀은 전혀
-         안 본다(`MeetingAttendeeCommandService#findAndValidateMembers`). BE 요청 문서에 올린다.
-    */
-    /*
-      ⚠️ **여기서 host를 끼워 넣지 않는다.** 이 액션은 지금 보는 사람(`actor`)이 host인지
-      모른다(OWNER·Admin이 남의 회의를 고치는 경우도 있다, `canManageMeeting`) — "host 자동
-      포함·제거 불가"는 계약이 **서버 책임**이라고 명시한 규칙이라(MEET-09), FE가 잘못된
-      사람(지금 보는 사람)을 host로 끼워 넣으면 오히려 명단을 틀리게 만든다.
+      ⚠️ **여기서 host를 끼워 넣지 않는다.** "host 자동 포함·제거 불가"는 계약이 **서버 책임**
+         이라고 명시한 규칙이라(MEET-09), FE가 host를 직접 끼워 넣으면 오히려 명단을 틀리게
+         만든다 — 서버가 대신 채운다.
     */
     const response = await serverApi<BeUpdateAttendeesResponse>(
       ep.meetingAttendees(Number(meetingId)),
@@ -259,4 +374,144 @@ export async function updateMeetingAction(
   } catch (error) {
     return { error: toUpdateErrorMessage(error), saved: null };
   }
+}
+
+/**
+ * 참석자 범위 판정에 필요한 최소 정보만 `Actor`에서 뽑는다(`attendee-scope.ts`).
+ * ⚠️ `rooms/actions.ts`에 같은 이름의 헬퍼가 있지만 export되지 않아 여기서 다시 만든다 —
+ *    로직은 한 줄이라 두 벌이어도 어긋날 여지가 없다(`updateMeetingAttendeesAction`도 같은
+ *    모양을 인라인으로 쓴다).
+ */
+function toAttendeeScopeViewer(actor: Actor): AttendeeScopeViewer {
+  return { id: actor.id, role: actor.role, teamName: actor.teamName ?? null };
+}
+
+/** 비대면 회의 만들기 폼 결과 — `useActionState`가 그대로 들고 있는 모양. */
+export interface OnlineMeetingFormState {
+  errors: OnlineMeetingFormErrors;
+  /** 성공 시 방금 만든 회의 id — 다이얼로그가 이 값으로 상세로 이동한다(재조회 없이). */
+  created?: { id: string };
+}
+
+function readOnlineMeetingDraft(formData: FormData): OnlineMeetingDraft {
+  const parentTeamActionId = formData.get("parentTeamActionId");
+  const recordingFileName = formData.get("recordingFileName");
+  const mains = formData.getAll("topicMain");
+  const subs = formData.getAll("topicSub");
+
+  return {
+    title: String(formData.get("title") ?? ""),
+    projectId: String(formData.get("projectId") ?? ""),
+    topics: mains.map((main, index) => ({ main: String(main), sub: String(subs[index] ?? "") })),
+    attendeeIds: formData.getAll("attendeeIds").map(Number),
+    parentTeamActionId: parentTeamActionId ? Number(parentTeamActionId) : undefined,
+    recordingFileName: recordingFileName ? String(recordingFileName) : null,
+  };
+}
+
+/**
+ * 비대면 회의 만들기(이슈 #473) — `/app/meeting` 목록의 [비대면 회의] 버튼이 부른다.
+ *
+ * ⚠️ **BE API가 아직 안 정해졌다**(1안/2안 논의 중, 팀원 회신 — 이슈 #473). 추측 요청을 보내지
+ *    않는다(CLAUDE.md §연동 검증: Swagger·구두 추측 금지) — 실서버 분기는 확정될 때까지
+ *    "아직 준비 중"이라고 정직하게 말한다(§정직성). 확정되면 이 분기만 실서버 호출로 바꾼다
+ *    (§Mock 격리막).
+ * ⚠️ **제출하면 그 자리에서 완료 처리된다** — 회의실 예약(`createRoomReservationAction`)과
+ *    달리 캡처 화면으로 안 넘어간다(팀 명세). 그래서 회의실·시간을 아예 안 받는다.
+ * ⚠️ mock 분기의 검증 순서는 `createRoomReservationAction`과 맞춘다(프로젝트 → 참석자 범위 →
+ *    상위 팀 액션) — 같은 도메인의 두 생성 경로가 다른 순서로 막히면 같은 실수가 화면마다
+ *    다른 첫 오류로 보인다.
+ */
+export async function createOnlineMeetingAction(
+  _prev: OnlineMeetingFormState,
+  formData: FormData,
+): Promise<OnlineMeetingFormState> {
+  const draft = readOnlineMeetingDraft(formData);
+  const actor = isMock ? getMockActor() : await getViewer();
+  const errors = validateOnlineMeetingDraft(draft, { role: actor.role });
+  if (Object.keys(errors).length > 0) return { errors };
+
+  if (!isMock) {
+    // ⚠️ BE API가 아직 안 정해졌다(1안/2안 논의 중, 이슈 #473) — 추측 요청을 보내지 않는다
+    //    (CLAUDE.md §연동 검증: Swagger·구두 추측 금지). 확정되면 이 분기를 실서버 호출로 바꾼다.
+    return { errors: { title: "비대면 회의는 아직 준비 중입니다 — 곧 지원됩니다" } };
+  }
+
+  // ⚠️ 화면 select·피커가 이미 실제 목록에서만 고르게 해도, 폼은 조작될 수 있다
+  //    (§권한: 화면 숨김은 UX일 뿐 보안이 아니다) — 참조값이 실제로 존재하는지 서버에서 다시 본다.
+  const project = TOP_LEVEL_PROJECTS.find((item) => String(item.id) === draft.projectId);
+  if (!project) {
+    return { errors: { projectId: "존재하지 않는 프로젝트입니다" } };
+  }
+
+  /*
+    ⚠️ **참석자 서버 재검증**(`createRoomReservationAction`과 같은 규칙, 2026-08-13 확정).
+       화면 피커가 후보를 좁혀 보여줘도 Server Action은 주소만 알면 직접 부를 수 있어, 제출된
+       id가 **실존하는지**와 **범위 안인지**를 여기서 다시 본다. 규칙 자체는 `attendee-scope.ts`
+       한 곳이다 — 화면과 서버가 갈리면 안 된다.
+  */
+  const attendees = draft.attendeeIds.map(findMockMember);
+  if (attendees.some((member) => member === null)) {
+    return { errors: { attendeeIds: "존재하지 않는 참석자가 있습니다" } };
+  }
+  const scopeViolation = findAttendeeScopeViolation(
+    attendees.filter((member) => member !== null),
+    toAttendeeScopeViewer(actor),
+  );
+  if (scopeViolation) return { errors: { attendeeIds: scopeViolation } };
+
+  // ⚠️ Owner가 아니면 "상위 팀 액션"이 필수인데, 그 값이 진짜 이 프로젝트 소속이고 **자기
+  //    팀**에 하달된 게 맞는지까지 다시 본다 — `createRoomReservationAction`과 같은 검사다.
+  if (requiresParentTeamAction(actor) && draft.parentTeamActionId !== undefined) {
+    const teamAction = PROJECT_TEAM_ACTIONS_MOCK[project.tag]?.find(
+      (item) => item.id === draft.parentTeamActionId,
+    );
+    if (!teamAction || teamAction.team !== actor.teamName) {
+      return { errors: { parentTeamActionId: "존재하지 않는 상위 팀 액션입니다" } };
+    }
+  }
+
+  // ⚠️ `Meeting.topics`는 최소 1개짜리 튜플 타입이다 — 위 검증이 이미 최소 1쌍을 보장했다
+  //    (`rooms/mock/reservations.ts`의 `addMockReservation`과 같은 처리).
+  const trimmedTopics = draft.topics.map((topic) => ({
+    main: topic.main.trim(),
+    sub: topic.sub.trim(),
+  }));
+  const [firstTopic, ...restTopics] = trimmedTopics;
+  const topics: [MeetingTopic, ...MeetingTopic[]] = [firstTopic!, ...restTopics];
+  const attendeeIds = Array.from(new Set([actor.id, ...draft.attendeeIds]));
+
+  const meetingCommon = {
+    title: draft.title.trim(),
+    // ⚠️ 비대면 회의는 회의실·시간이 없다(이슈 #473) — mock 스토어(`addMockOnlineMeeting`)가
+    //    저장 직전에 실제 시각(제출 시각)을 채운다. 여기서는 판별식 유니언 조립에 필요한
+    //    최소값만 넣는다.
+    start: new Date(0),
+    end: new Date(0),
+    roomId: null,
+    roomName: null,
+    roomReservationId: null,
+    isOnline: true,
+    recordingFileName: draft.recordingFileName,
+    projectId: project.id,
+    projectTag: project.tag,
+    topics,
+    attendeeIds,
+    hostId: actor.id,
+  };
+
+  // ⚠️ `Meeting`은 Owner 개설/팀 액션 개설을 판별식 유니언으로 나눠 둔다 — 같은 분기를
+  //    `rooms/mock/reservations.ts`의 `addMockReservation`이 쓴다(같은 규칙, 다른 생성 경로).
+  const meetingDraft: MeetingDraft = requiresParentTeamAction(actor)
+    ? {
+        ...meetingCommon,
+        hostAuthority: actor.role as Extract<Authority, "LEADER" | "MEMBER">,
+        hostTeamId: actor.teamId!,
+        parentTeamActionId: draft.parentTeamActionId!,
+      }
+    : { ...meetingCommon, hostAuthority: AUTHORITY.OWNER };
+
+  const meeting = addMockOnlineMeeting(meetingDraft);
+  revalidatePath(MEETING_LIST_PATH);
+  return { errors: {}, created: { id: meeting.id } };
 }

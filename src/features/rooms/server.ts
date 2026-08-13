@@ -2,7 +2,9 @@ import "server-only";
 
 import { addDays, format, startOfWeek } from "date-fns";
 
+import { AUTHORITY } from "@/constants/authority";
 import { requireAccessToken } from "@/features/auth/session";
+import { getTeamLeaders } from "@/features/member/manage-server";
 import { TOP_LEVEL_PROJECTS } from "@/features/project/mock/projects";
 import { PROJECT_TEAM_ACTIONS_MOCK } from "@/features/project/mock/team-actions";
 import { ApiError, serverApi } from "@/lib/api";
@@ -135,9 +137,49 @@ export async function getMeetingRooms(): Promise<MeetingRoom[]> {
   return meetingRooms.map(toMeetingRoom);
 }
 
-export async function getReservableMembers(): Promise<RoomMember[]> {
+/**
+ * 참석자 후보 명부 — **범위가 회사 전체가 아니라 개설자 권한별로 갈린다**(`attendee-scope.ts`).
+ * 화면(피커)이 `filterAttendeeCandidates`로 다시 거르므로 여기서는 "그 축을 채울 수 있는
+ * 명부"만 구하면 된다.
+ *
+ * ⚠️ **Owner와 Leader·Member는 API가 다르다.**
+ *    - Leader·Member: `GET /api/members/my-team`(자기 팀 로스터, ACTIVE만) — 토큰의
+ *      `teamId`로 범위가 자동으로 잡힌다.
+ *    - Owner: 이 엔드포인트는 팀이 없는 Owner에게 **빈 배열**을 돌려준다(BE 확인) — 대신
+ *      팀마다 리더 한 명을 세는 `getTeamLeaders()`(`ep.teams()`)를 그대로 쓴다. Owner가
+ *      고를 수 있는 후보가 정확히 "팀별 리더"라, 이미 있는 함수와 목적이 같다.
+ * ⚠️ **`authority` 필드는 두 갈래 다 정확하지 않을 수 있다.** `isAttendeeInScope`가 Leader·
+ *    Member 분기에서는 `teamName`만 보고 `authority`를 안 읽으므로(코드 참고) 문제가 안 된다 —
+ *    Owner 분기에서만 `authority===LEADER`가 실제로 걸리는데, `getTeamLeaders()`가 주는
+ *    사람은 정의상 전부 리더라 항상 참이다.
+ */
+export async function getReservableMembers(actor: Actor): Promise<RoomMember[]> {
   if (isMock) return listMockMembers();
-  throw new Error("사원 목록 조회 API가 아직 연결되지 않았습니다.");
+
+  if (actor.role === AUTHORITY.OWNER) {
+    const leaders = await getTeamLeaders();
+    return Array.from(leaders.entries()).map(([teamName, leader]) => ({
+      id: leader.id,
+      name: leader.name,
+      teamName,
+      authority: AUTHORITY.LEADER,
+    }));
+  }
+
+  const accessToken = await requireAccessToken();
+  const roster = await serverApi<{ memberId: number; name: string }[]>(ep.membersMyTeam(), {
+    accessToken,
+  });
+  return roster.map((row) => ({
+    id: row.memberId,
+    name: row.name,
+    teamName: actor.teamName ?? null,
+    /*
+      ⚠️ 실제 값이 아니다 — 이 분기(Leader·Member)의 범위 판정은 `teamName`만 보고 이 필드는
+         읽지 않는다(`attendee-scope.ts`). 타입을 채우기 위한 자리표시자다.
+    */
+    authority: AUTHORITY.MEMBER,
+  }));
 }
 
 /** 예약 폼의 "프로젝트" select용 — 프로젝트 도메인의 전체 목록에서 경량 필드만 골라 낸다. */

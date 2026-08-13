@@ -33,6 +33,11 @@ export interface ReviewedDraftInput {
     title?: string;
     description?: string;
     assigneeId?: number;
+    /**
+     * 부서(팀) — Owner 회의 전용, `assigneeId`와 상호 배타다(2026-08-13, BE
+     * `REVIEW_ASSIGNEE_TEAM_CONFLICT` 422). 화면이 모드로 갈라 보내므로 둘 다 오는 일은 없다.
+     */
+    teamId?: number;
     dueDate?: string;
   };
 }
@@ -152,6 +157,7 @@ export async function confirmActionDistributionAction(
       const changes = draft.changes ?? {};
       const value = {
         ...(changes.assigneeId !== undefined ? { assigneeMemberId: changes.assigneeId } : {}),
+        ...(changes.teamId !== undefined ? { teamId: changes.teamId } : {}),
         ...(changes.dueDate !== undefined ? { dueDate: changes.dueDate } : {}),
         ...(changes.title !== undefined ? { title: changes.title } : {}),
         ...(changes.description !== undefined ? { detail: changes.description } : {}),
@@ -175,11 +181,17 @@ export async function confirmActionDistributionAction(
 
     /* ③ 직접 추가 — RVW-03에는 시작일 칸이 없어, 만들어진 id로 MODIFY를 뒤따라 보낸다 */
     for (const manual of payload.manuallyAdded) {
+      /*
+        ⚠️ **`assigneeMemberId`·`teamId` 상호 배타**(2026-08-13, BE #476/PR #477) — 폼이 모드별로
+           둘 중 하나만 채워 보내므로 여기서도 그대로 하나만 싣는다(ManualDraftInput 주석).
+      */
       const added = await serverApi<{ actionId: number }>(ep.meetingReviewAddAction(id), {
         method: "POST",
         accessToken,
         json: {
-          assigneeMemberId: manual.assigneeId,
+          ...(manual.teamId !== undefined
+            ? { teamId: manual.teamId }
+            : { assigneeMemberId: manual.assigneeId }),
           title: manual.title,
           detail: manual.description,
           dueDate: manual.dueDate,

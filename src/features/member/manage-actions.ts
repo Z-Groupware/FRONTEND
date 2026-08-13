@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 
 import type { Authority } from "@/constants/authority";
 import { AUTHORITY, POSITION_AUTHORITIES } from "@/constants/authority";
-import { MEMBER_STATUS } from "@/constants/member";
+import { MEMBER_STATUS, ROLE_NONE_LABEL } from "@/constants/member";
 import { requireAccessToken } from "@/features/auth/session";
 import { getCompanyOrg } from "@/features/company/server";
 import { getViewer } from "@/features/shell/viewer";
@@ -41,7 +41,7 @@ import {
   rejectMockHandover,
   updateMockMemberGrade,
 } from "./mock/managed";
-import { buildTeamRoles, isRoleOfTeam } from "./team-roles";
+import { buildTeamRoles, isRoleOfTeam, toBeRoleLabel } from "./team-roles";
 
 /**
  * 사원 관리의 **변경 작업**. 전부 서버에서 돈다(핵심 4원칙 ②).
@@ -54,15 +54,6 @@ import { buildTeamRoles, isRoleOfTeam } from "./team-roles";
  */
 
 const NO_SESSION = "세션이 만료되었습니다. 다시 로그인해 주세요";
-/*
-  아직 못 붙인 것 — 계정 삭제. **BE에 경로가 없다.** `MemberController`·`ManageMemberController`
-  어디에도 `@DeleteMapping`이 없다. 만들어 달라고 요청해야 한다.
-  화면에는 이 문구가 그대로 뜬다 — 되는 척하지 않는다(§정직성).
-
-  ⚠️ 휴직·오프보딩 승인/반려는 더는 여기 안 걸린다(2026-08-12 실 연동) — `PATCH
-     /api/handovers/{id}/finalize`·`/reject`로 확인 끝났다(아래 두 함수 참고).
-*/
-const NOT_CONNECTED = "아직 연결되지 않은 기능입니다";
 
 function pathOf(id: number) {
   return `/manage/members/${id}`;
@@ -105,9 +96,23 @@ async function gate(
  */
 const PEOPLE_PATH = "/app/people";
 
+/**
+ * 직급·권한(·역할) 변경.
+ *
+ * ⚠️ **`roleLabel`은 안 보내면 "안 바꾼다"다**(부분 수정). 화면이 늘 값을 실어 보내던 때는
+ *    직급 하나만 고쳐도 역할이 함께 써졌다 — 게다가 라이브에서는 팀 역할 목록이 비어 있어
+ *    셀렉트가 잠기므로, 실어 보낼 수 있는 값이 **사용자가 건드린 적도 없는 빈 값** 하나였다.
+ *    사용자가 고르지 않은 값을 저장하지 않는다.
+ */
 export async function changeMemberGradeAction(
   id: number,
-  next: { position: string; authority: Authority; isAdmin: boolean; roleLabel: string },
+  next: {
+    position: string;
+    authority: Authority;
+    isAdmin: boolean;
+    /** 사용자가 **실제로 바꿨을 때만** 넘긴다. `undefined`면 요청에서 빠진다 */
+    roleLabel?: string;
+  },
 ): Promise<MemberActionResult> {
   const pass = await gate(canChangeMemberGrade, "사원 정보를 바꿀 권한이 없습니다");
   if ("denied" in pass) return { isSuccess: false, message: pass.denied };
@@ -156,13 +161,39 @@ export async function changeMemberGradeAction(
   if (lock) return { isSuccess: false, message: GRADE_LOCK_NOTE[lock] };
 
   /*
+    ⚠️ **바꾼 게 아니면 역할을 건드리지 않는다.** 화면이 안 넘겼거나(=안 고쳤다) 지금 값과
+       같으면 요청에서 빼서, 직급만 고친 저장이 역할을 덮어쓰지 않게 한다(부분 수정).
+    ⚠️ **비우는 건 막지 않는다.** `roleLabel`이 빈 값이어도 `isRoleOfTeam`은 통과시킨다
+       (`team-roles.ts` — "없음(빈 값)은 늘 통과한다"). BE로 나갈 때는 `toBeRoleLabel`이
+       빈 값을 시스템 행 `"없음"`으로 바꿔 보낸다(BE V2.3.9, 실제로 있는 값이다) — 비우기가
+       안 된다며 여기서 막으면, **이미 해결된 길을 다시 막는** 셈이다(2026-08-13 정정 —
+       이전 수정이 이 경로를 잘못 읽고 통째로 잠갔었다).
     ⚠️ 역할은 **그 사람 팀의 것만** 붙는다. 화면은 그 팀 역할만 주지만 Server Action은
        직접 부를 수 있다 — 남의 팀 역할이 붙으면 조직도가 거짓말을 한다.
     ⚠️ **대상을 읽은 뒤에 본다.** 기준이 그 사람이 지금 속한 팀이라, 조회 전에 두면
        무엇과 견줘야 할지 알 수 없다. 팀은 이 화면에서 안 바꾼다.
   */
-  const roleLabel = next.roleLabel.trim();
-  if (!isRoleOfTeam(buildTeamRoles(company.departments), target.member.teamName ?? "", roleLabel)) {
+  /*
+    ⚠️ **`ROLE_NONE_LABEL`("없음")도 빈 값과 같이 본다.** 저장할 때 `toBeRoleLabel`이 빈
+       문자열을 시스템 행 `"없음"`으로 바꿔 보내므로, 이미 "없음"인 사람의 값은 조회에서도
+       "없음" 그대로 돌아온다 — 이 정규화 없이 요청 값 `""`과 그대로 비교하면 실제로는 안
+       바뀐 값을 "바뀌었다"고 오판해 불필요한 PATCH가 나간다.
+  */
+  const normalizeRoleLabel = (label: string | null | undefined) => {
+    const trimmed = label?.trim() ?? "";
+    return trimmed === ROLE_NONE_LABEL ? "" : trimmed;
+  };
+  const roleLabel = next.roleLabel !== undefined ? normalizeRoleLabel(next.roleLabel) : undefined;
+  const currentRoleLabel = normalizeRoleLabel(target.member.roleLabel);
+  const changesRole = roleLabel !== undefined && roleLabel !== currentRoleLabel;
+  if (
+    changesRole &&
+    !isRoleOfTeam(
+      buildTeamRoles(company.departments),
+      target.member.teamName ?? "",
+      roleLabel ?? "",
+    )
+  ) {
     return { isSuccess: false, message: "그 팀에 없는 역할입니다" };
   }
 
@@ -182,9 +213,13 @@ export async function changeMemberGradeAction(
          관리자 토글만 **OWNER 전용** 경로로 떼어 둔 것이다.
       ⚠️ **직급은 이름이 아니라 id로 보낸다.** 화면은 이름을 다루므로 회사 목록에서 되찾는다 —
          못 찾으면 보내지 않는다(없는 직급으로 바뀌느니 실패가 낫다).
-      ⚠️ **`roleLabel`(팀 안 세부 역할)을 보낼 곳이 없다.** BE `UpdateMemberRoleRequest`는
-         `role`·`jobPositionId`만 받는다 — 그 값은 지금 서버에 안 남는다. 되는 척하지 않으려고
-         적어 둔다(§정직성). API가 생기면 여기서 함께 보낸다.
+      ⚠️ **`roleLabel`은 바뀔 때만 싣는다**([확인] BE `UpdateMemberRoleRequest.roleLabel`
+         2026-08-13 develop `30952c10` — 칸은 있다). 빈 문자열은 `@Pattern`이 400으로 거절하고
+         `null`(=필드 없음)은 "안 바꾼다"라, **안 고친 저장은 필드째 뺀다** — 늘 실어 보내면
+         직급만 고쳐도 역할이 함께 써진다.
+      ⚠️ 나가는 값은 **회사에 실제로 있는 역할 이름 또는 `ROLE_NONE_LABEL`**("없음")이다.
+         "없음"은 화면이 지어낸 라벨이 아니라 역할 미부여를 뜻하는 **BE 시스템 값**이다
+         (BE V2.3.9, `toBeRoleLabel` 참고) — 비우기 요청은 실제로 이 값을 그대로 실어 보낸다.
     */
     const jobPosition = company.positions.find((item) => item.name === position);
     if (!jobPosition) return { isSuccess: false, message: "회사에 없는 직급입니다" };
@@ -204,7 +239,20 @@ export async function changeMemberGradeAction(
       await serverApi<unknown>(ep.member(id), {
         method: "PATCH",
         accessToken,
-        json: { role: next.authority, jobPositionId: Number(jobPosition.id) },
+        /*
+          ⚠️ **`roleLabel`은 바뀔 때만 키째 싣는다.** `changesRole`이 거짓이면 필드를 아예
+             안 넣는다 — BE는 `null`(=필드 없음)을 "안 바꾼다"로 읽는다. 매 요청에 값을 실으면
+             직급만 고쳐도 역할이 함께 써진다(위 §바꾼 게 아니면 역할을 건드리지 않는다).
+          ⚠️ **`roleLabel &&`가 아니라 `changesRole`만 본다.** 비우기(빈 문자열)도
+             `changesRole`이 참인 정당한 변경이다 — `roleLabel &&`를 같이 걸면 자바스크립트가
+             빈 문자열을 거짓으로 봐서, 역할을 지우려는 요청이 **조용히 빠진다**. `toBeRoleLabel`
+             이 빈 값을 알아서 `"없음"`으로 바꿔 보내므로 여기서 따로 거를 이유가 없다.
+        */
+        json: {
+          role: next.authority,
+          jobPositionId: Number(jobPosition.id),
+          ...(changesRole ? { roleLabel: toBeRoleLabel(roleLabel ?? "") } : {}),
+        },
       });
 
       /* ⚠️ 실제로 달라질 때만 부른다 — 같은 값이면 괜히 왕복을 만들 이유가 없다 */
@@ -555,17 +603,20 @@ export async function deleteMemberAccountAction(id: number): Promise<MemberActio
     return { isSuccess: false, message: "자기 계정은 탈퇴 처리할 수 없습니다" };
   }
 
-  if (!isMock) {
-    // TODO(BE 협의): `DELETE /companies/me/members/{id}`
-    return { isSuccess: false, message: NOT_CONNECTED };
+  /* ⚠️ 라이브의 상세 조회는 통신 장애로 던질 수 있다 — 던지면 화면이 통째로 갈린다(§위 주석) */
+  let target: Awaited<ReturnType<typeof getManagedMember>>;
+  try {
+    target = await getManagedMember(id);
+  } catch (error) {
+    return { isSuccess: false, message: toUserMessage(error) };
   }
-
-  const target = await getManagedMember(id);
   if (!target) return { isSuccess: false, message: "없는 사원입니다" };
 
   /*
     ⚠️ **퇴사 상태가 아니면 막는다**(WORKFLOW §7 "오프보딩 최종 승인 후에만 계정 탈퇴 가능").
        재직 중인 사람을 바로 지우면 그 사람이 들고 있던 액션이 인수인계 없이 사라진다.
+    ⚠️ **이 검사는 BE에 없다.** BE `delete`가 막는 건 오너(AU-026)·본인(AU-027)뿐이고
+       재직자도 그대로 지워진다 — 여기가 유일한 방벽이라 두 모드 다 지나기 전에 본다.
   */
   if (target.member.status !== MEMBER_STATUS.RESIGNED) {
     return {
@@ -574,7 +625,26 @@ export async function deleteMemberAccountAction(id: number): Promise<MemberActio
     };
   }
 
-  deleteMockManagedMember(id);
+  if (!isMock) {
+    /*
+      [확인] BE `ManageMemberController.delete` — `DELETE /api/manage/members/{memberId}`,
+      소프트 삭제(상태 `DELETED` + `deleted_at`, 행은 남는다). 응답에 `data`가 없다
+      (`successWithoutData`) — 받을 것도 없다.
+      ⚠️ BE `@PreAuthorize`는 **OWNER·ADMIN**으로 우리보다 넓다. FE는 `canDeleteMemberAccount`
+         (OWNER 전용)를 유지한다 — 탈퇴는 되돌릴 수 없는 인사 결정이라 최종 승인과 같은 줄에
+         둔다(WORKFLOW §7, 2026-08-06 Admin 제외와 같은 취지). 좁히는 쪽이라 BE와 충돌하지 않는다.
+      ⚠️ 되살리는 경로는 없다(BE `@Operation` 명시) — 화면의 Dialog 경고가 빈말이 아니다.
+    */
+    try {
+      const accessToken = await requireAccessToken();
+      await serverApi<unknown>(ep.manageMember(id), { method: "DELETE", accessToken });
+    } catch (error) {
+      return { isSuccess: false, message: toUserMessage(error) };
+    }
+  } else {
+    deleteMockManagedMember(id);
+  }
+
   revalidatePath(pathOf(id));
   revalidatePath("/manage/members");
   revalidatePath(PEOPLE_PATH);

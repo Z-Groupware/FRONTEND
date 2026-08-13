@@ -17,13 +17,45 @@
  *      §렌더링·데이터: "알림=SSE, BFF가 스트림을 중계"), 캡처 조각·검색·`todos` 등은 연동이
  *      진행 중이다. 지우기 전에 **그 도메인 담당자·이슈를 먼저 본다.**
  */
-/** 목록 3종(`GET /api/projects`·`/api/actions`·`/api/team/actions`)이 공유하는 쿼리 파라미터. */
-export interface ProjectListParams {
+/**
+ * 목록 3종(`GET /api/projects`·`/api/actions`·`/api/team/actions`)이 공유하는 쿼리 파라미터.
+ * ⚠️ **`sort`는 여기 없다.** 컨트롤러마다 화이트리스트가 달라서(프로젝트만 `name`을 받는다)
+ *    한 타입에 몰아 두면 액션 목록에 `sort=name`을 보내도 타입이 안 막는다 — BE는 모르는
+ *    값을 조용히 무시하므로 화면만 엉뚱한 차례로 서고 아무도 못 본다(§연동 검증).
+ */
+export interface ListPageParams {
   status?: "TODO" | "IN_PROGRESS" | "DONE";
-  sort?: "dueDate" | "createdAt";
   order?: "asc" | "desc";
   page?: number;
   size?: number;
+}
+
+/**
+ * 프로젝트 목록.
+ * ⚠️ `keyword`·`sort=name`은 **2026-08-13에 BE가 붙였다**(커밋 `9bd9c010` — [확인]
+ *    `ProjectController.list` 주석 "keyword 검색 추가 … 프로젝트명 대소문자 무시 부분일치",
+ *    `sort=dueDate|createdAt|name`). 이게 없어서 이 목록만 무한 스크롤을 못 얹고 전량을
+ *    받아 화면에서 거르고 있었다(#417 잔여분).
+ */
+export interface ProjectListParams extends ListPageParams {
+  keyword?: string;
+  sort?: "dueDate" | "createdAt" | "name";
+}
+
+/**
+ * 액션 목록 2종(`/api/actions`·`/api/team/actions`) — ⚠️ `sort`에 `name`이 **없다**.
+ * ⚠️ 프로젝트와 갈라 두는 이유: 컨트롤러마다 화이트리스트가 달라서 한 타입에 몰아 두면
+ *    액션 목록에 `sort=name`을 보내도 타입이 안 막는다 — BE는 모르는 값을 조용히 무시하므로
+ *    화면만 엉뚱한 차례로 서고 아무도 못 본다(§연동 검증).
+ */
+export interface ActionListParams extends ListPageParams {
+  sort?: "dueDate" | "createdAt";
+  overdue?: boolean;
+  /**
+   * 값을 주면 호출자 본인이 아니라 **그 팀원의** 목록을 대신 조회한다(2026-08-11 추가,
+   * 이홍근 요청 — 팀원 관리 화면). LEADER 전용, 같은 팀 소속만 — [확인] `ActionController.java`.
+   */
+  assigneeMemberId?: number;
 }
 
 /**
@@ -47,14 +79,21 @@ export interface MeetingListParams {
   size?: number;
 }
 
-/** 개인 액션 목록만 갖는 `overdue` 필터가 추가된다. */
-export interface ActionListParams extends ProjectListParams {
+/**
+ * 회사 전체 구성원 액션(`GET /api/company/actions`) — **OWNER‖admin 전용**(2026-08-13 신설,
+ * 커밋 `9646c7a2`). [확인] `CompanyActionController` — `@PreAuthorize("hasRole('OWNER') or
+ * principal.isAdmin()")`.
+ *
+ * ⚠️ **`assigneeMemberId`가 사실상 필수다.** 경로는 `required = false`지만 유스케이스 주석이
+ *    "이 화면은 항상 특정 구성원 한 명의 액션을 보는 용도라 null은 이번 스코프에 없다"고
+ *    못 박았다 — 안 넘기면 무엇이 오는지 계약에 없다. 타입에서도 필수로 둔다.
+ * ⚠️ `/api/actions`의 같은 이름 파라미터와 **의미는 같고 스코프만 다르다**(팀 vs 회사).
+ *    그래서 경로가 갈린다 — 한쪽에 `?scope=`를 붙이지 않는다.
+ */
+export interface CompanyActionListParams extends ListPageParams {
+  assigneeMemberId: number;
+  sort?: "dueDate" | "createdAt";
   overdue?: boolean;
-  /**
-   * 값을 주면 호출자 본인이 아니라 **그 팀원의** 목록을 대신 조회한다(2026-08-11 추가,
-   * 이홍근 요청 — 팀원 관리 화면). LEADER 전용, 같은 팀 소속만 — [확인] `ActionController.java`.
-   */
-  assigneeMemberId?: number;
 }
 
 /** `undefined`·`null` 값은 쿼리에서 빠진다 — 서버 기본값을 그대로 쓰게 둔다. */
@@ -131,6 +170,17 @@ export const ep = {
   meetingsUpcoming: (params?: { limit?: number }) => `/api/meetings/upcoming${toQuery(params)}`,
   /** 참석자 명단 교체(MEET-09, 구현 완료) — 전체 명단 교체(부분 추가·삭제 아님). */
   meetingAttendees: (meetingId: number) => `/api/meetings/${meetingId}/attendees`,
+  /**
+   * 정본 스크립트 조회(ANLZ-05) — 회의 발화를 시간순으로. [확인]
+   * `capture/presentation/api/AnalysisController.getTranscripts`(2026-08-14, BE 실코드 대조).
+   *
+   * ⚠️ **커서는 우리가 해석하지 않는다.** 불투명한 문자열이고 BE가 준 `nextCursor`를 다음
+   *    호출의 `cursor`로 그대로 돌려준다 — 안에 무엇이 들었는지는 BE만 안다.
+   * ⚠️ `ids`는 근거 발화 지름길(검토 화면이 액션 근거 몇 건만 볼 때)이라 여기서는 안 쓴다 —
+   *    상세 화면은 전체를 시간순으로 읽는다.
+   */
+  meetingTranscripts: (meetingId: number, params?: { cursor?: string }) =>
+    `/api/meetings/${meetingId}/transcripts${toQuery(params)}`,
   /**
    * 확정 대기 회의 목록(MEET-10, 구현 완료 — PR #233) — 마이페이지 "미확정 액션" 위젯용.
    * [확인] D도메인 REST API 명세(2026-08-12) 대조. 파라미터 없음 — host 본인 회의만 서버가
@@ -256,8 +306,10 @@ export const ep = {
   action: (id: number) => `/api/actions/${id}`,
   actionCompleteBulk: () => "/api/actions/complete/bulk",
   meetingActions: (meetingId: number) => `/api/meetings/${meetingId}/actions`,
+  /** 회사 전체 구성원 액션 — OWNER‖admin 전용(사원 상세의 담당 액션 카드). */
+  companyActions: (params: CompanyActionListParams) => `/api/company/actions${toQuery(params)}`,
 
-  teamActions: (params?: ProjectListParams) => `/api/team/actions${toQuery(params)}`,
+  teamActions: (params?: ActionListParams) => `/api/team/actions${toQuery(params)}`,
   teamAction: (id: number) => `/api/team/actions/${id}`,
   teamActionTimeline: (id: number) => `/api/team/actions/${id}?tab=timeline`,
   teamActionAttachmentDownloadUrl: (teamActionId: number, attachmentId: number) =>
@@ -302,6 +354,17 @@ export const ep = {
   member: (id: number) => `/api/members/${id}`,
   /** 조직도 — OWNER·ADMIN 전용 */
   memberOrgChart: () => "/api/members/org-chart",
+  /**
+   * 내 팀 로스터 — 회의 참석자 픽커 전용(`/api/members`와 다르다, 그건 관리 화면용).
+   * 응답은 `{memberId, name}[]`, ACTIVE만, 본인도 포함(제외는 FE 몫) — 팀은 **토큰의 teamId**로
+   * 정해져 파라미터로 안 보낸다. 팀이 없으면(OWNER) 빈 배열이지 오류가 아니다.
+   * [확인] BE `MemberController.myTeamRoster` / `MemberDirectoryService.getTeamRoster`
+   * (identity/member 도메인) — 2026-08-13 BE 레포 실코드 대조.
+   * ⚠️ 역할 게이트는 `hasAnyRole('OWNER','ADMIN','LEADER','MEMBER')`로 전부 열려 있지만,
+   *    OWNER는 토큰에 teamId가 없어 호출해도 빈 배열만 온다 — 그래서 Owner 쪽 참석자 후보는
+   *    이 API가 아니라 팀별 리더 조회(`getTeamLeaders`, `ep.teams()`)로 따로 구한다.
+   */
+  membersMyTeam: () => "/api/members/my-team",
   /** 오너 대시보드 KPI(전체 사원·휴직자) — [확인] PR #385 머지 완료, OWNER 전용 */
   memberDashboardSummary: () => "/api/members/dashboard-summary",
   /** 팀장 현황(이름·이메일·팀·재직상태·휴직기간) — [확인] PR #385 머지 완료, OWNER 전용 */
@@ -315,6 +378,12 @@ export const ep = {
   memberAdmin: (id: number) => `/api/members/${id}/admin`,
   /** 계정 발급 — 첫 비밀번호는 서버가 메일로 보낸다 */
   manageMembers: () => "/api/manage/members",
+  /**
+   * 사원 삭제(`DELETE`) — **소프트**다(상태 `DELETED` + `deleted_at`, 행은 남는다).
+   * 응답에 `data`가 없다(`successWithoutData`) — 닫은 계정의 정보를 되돌려 줄 이유가 없다.
+   * [확인] BE `ManageMemberController.delete` 2026-08-13 develop(`30952c10`).
+   */
+  manageMember: (id: number) => `/api/manage/members/${id}`,
   /**
    * 팀 — [확인] identity/team/presentation/api/TeamController.java
    *
