@@ -33,10 +33,17 @@ export interface Viewer extends Actor {
  *    팀 화면으로 옮기면 팀장이다 — 목에서 역할별 화면을 확인하려면 이 편이 맞다.
  * ⚠️ `/app/*`은 **전원이 쓰는 공용 워크벤치**라 여기서 가르지 않는다(기본은 대표).
  */
-const MOCK_PEOPLE: Record<Authority, { id: number; name: string }> = {
+/*
+  ⚠️ `teamName`은 **지어낸 값이 아니다** — 같은 id의 사원 목(`features/rooms/mock/members.ts`,
+     `features/member/mock/managed.ts`)과 같은 팀이다(§정직한 목업: 화면을 오가는 동안 같은
+     사람의 소속이 달라 보이면 안 된다). Owner·System은 팀이 없다(CLAUDE.md §조직 계층).
+  ⚠️ 비워 두면 **팀 범위로 도는 화면이 목에서 통째로 빈다**(2026-08-13 채움) — 참석자 피커의
+     "자기 팀만"과 예약 폼의 "상위 팀 액션" 목록이 둘 다 `teamName`으로 걸러서다.
+*/
+const MOCK_PEOPLE: Record<Authority, { id: number; name: string; teamName?: string }> = {
   [AUTHORITY.OWNER]: { id: 1, name: "대표 계정" },
-  [AUTHORITY.LEADER]: { id: 2, name: "김서준" },
-  [AUTHORITY.MEMBER]: { id: 3, name: "이하윤" },
+  [AUTHORITY.LEADER]: { id: 2, name: "김서준", teamName: "개발팀" },
+  [AUTHORITY.MEMBER]: { id: 3, name: "이하윤", teamName: "개발팀" },
   [AUTHORITY.SYSTEM]: { id: 0, name: "Z 운영자" },
 };
 
@@ -77,7 +84,7 @@ export async function getViewer(): Promise<Viewer> {
     const role = previewRoleFrom(search) ?? mockRoleFor(pathname);
     const person = MOCK_PEOPLE[role];
 
-    return { id: person.id, name: person.name, role, isAdmin: false };
+    return { id: person.id, name: person.name, role, isAdmin: false, teamName: person.teamName };
   }
 
   /*

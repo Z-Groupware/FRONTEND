@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 
 import { MEETING_STATUS } from "@/constants/meeting";
 import { requireAccessToken } from "@/features/auth/session";
+import { findAttendeeScopeViolation } from "@/features/rooms/attendee-scope";
+import { findMockMember } from "@/features/rooms/mock/members";
 import { ApiError, serverApi } from "@/lib/api";
 import { ep } from "@/lib/endpoints";
 import { getMockActor } from "@/lib/mock-actor";
@@ -45,6 +47,12 @@ function toAttendeesErrorMessage(error: unknown): string {
  *    여기서 다시 확인한다(§권한).
  * ⚠️ **host는 자동 포함·제거 불가**다 — 이 액션이 직접 끼워 넣지는 않는다. mock 분기는
  *    `updateMockMeetingAttendees`가, 실연동은 서버(BE)가 그 규칙을 보장한다.
+ * ⚠️ **참석자 범위 규칙(2026-08-13 확정)이 여기에도 걸린다** — 개설(회의실 예약)만 막고 교체를
+ *    열어 두면 만든 뒤에 규칙을 깨서 넣을 수 있고, "Owner 개설 회의의 참석자는 전부 팀장"이라는
+ *    AI 팀 액션 판단 근거가 똑같이 무너진다. 규칙은 `rooms/attendee-scope.ts` 한 곳이다.
+ * ⚠️ 범위 기준은 **지금 보는 사람이 아니라 그 회의의 host**다 — `canManageMeeting`이 OWNER·Admin
+ *    에게도 남의 회의 교체를 허용해서, actor로 재면 Owner가 남의 팀 회의를 열었을 때 규칙이
+ *    "팀장만"으로 뒤바뀐다. 회의에 적힌 `hostAuthority`가 그 회의가 만들어질 때의 사실이다.
  */
 export async function updateMeetingAttendeesAction(
   _prev: UpdateMeetingAttendeesState,
@@ -64,6 +72,28 @@ export async function updateMeetingAttendeesAction(
       return { error: "끝난 회의는 참석자를 바꿀 수 없습니다", attendeeIds: null };
     }
 
+    /*
+      ⚠️ **참석자 서버 재검증**(§권한: 화면 숨김은 UX일 뿐 보안이 아니다). 다이얼로그가 후보를
+         좁혀 보여줘도 이 액션은 주소만 알면 직접 부를 수 있다.
+      ⚠️ host의 팀 이름은 **명부에서 찾는다** — 회의 레코드에는 `hostTeamId`(숫자)만 있고 범위
+         비교는 팀 **이름**으로 도는데(`RoomMember.teamName`), 팀 registry(id↔이름)가 아직
+         없어서다(`lib/permission.ts` `Actor.teamName` 주석과 같은 사정). host가 명부에 없으면
+         범위를 못 재므로 통과시키지 않는다(§정직성).
+    */
+    const attendees = attendeeIds.map(findMockMember);
+    if (attendees.some((member) => member === null)) {
+      return { error: "존재하지 않는 참석자가 있습니다", attendeeIds: null };
+    }
+    const scopeViolation = findAttendeeScopeViolation(
+      attendees.filter((member) => member !== null),
+      {
+        id: meeting.hostId,
+        role: meeting.hostAuthority,
+        teamName: findMockMember(meeting.hostId)?.teamName ?? null,
+      },
+    );
+    if (scopeViolation) return { error: scopeViolation, attendeeIds: null };
+
     const updated = updateMockMeetingAttendees(meetingId, attendeeIds);
     revalidatePath(`/app/meeting/${meetingId}`);
     return { error: null, attendeeIds: updated?.attendeeIds ?? null };
@@ -71,6 +101,13 @@ export async function updateMeetingAttendeesAction(
 
   const accessToken = await requireAccessToken();
   try {
+    /*
+      ⚠️ **참석자 범위는 여기서 못 본다 — 본 척하지 않는다**(§정직성). 명부(`getReservableMembers`)가
+         실연동에서 그대로 던지고, 명부 API도 권한별로 갈려 MEMBER는 자기 팀 명단을 볼 길이 없다
+         (`rooms/actions.ts`의 같은 자리 주석에 근거를 적어 뒀다). **최종 방어는 BE다** —
+         `PUT /api/meetings/{id}/attendees`는 [확인] 현재 존재·같은 회사만 보고 권한·팀은 전혀
+         안 본다(`MeetingAttendeeCommandService#findAndValidateMembers`). BE 요청 문서에 올린다.
+    */
     /*
       ⚠️ **여기서 host를 끼워 넣지 않는다.** 이 액션은 지금 보는 사람(`actor`)이 host인지
       모른다(OWNER·Admin이 남의 회의를 고치는 경우도 있다, `canManageMeeting`) — "host 자동
