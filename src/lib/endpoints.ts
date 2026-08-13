@@ -357,6 +357,12 @@ export const ep = {
   /** 계정 발급 — 첫 비밀번호는 서버가 메일로 보낸다 */
   manageMembers: () => "/api/manage/members",
   /**
+   * 사원 삭제(`DELETE`) — **소프트**다(상태 `DELETED` + `deleted_at`, 행은 남는다).
+   * 응답에 `data`가 없다(`successWithoutData`) — 닫은 계정의 정보를 되돌려 줄 이유가 없다.
+   * [확인] BE `ManageMemberController.delete` 2026-08-13 develop(`30952c10`).
+   */
+  manageMember: (id: number) => `/api/manage/members/${id}`,
+  /**
    * 팀 — [확인] identity/team/presentation/api/TeamController.java
    *
    * ⚠️ **한 건씩 다룬다**(`POST`·`PATCH /{id}`·`DELETE /{id}`). 트리를 통째로 넣는
