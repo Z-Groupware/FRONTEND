@@ -7,6 +7,7 @@ import { serverApi } from "@/lib/api";
 import { ep } from "@/lib/endpoints";
 import { isMock } from "@/mocks/config";
 
+import { type BeTodoResponse, toPersonalCalendarEventFromTodo } from "./mapper";
 import { addMockTodo, findMockEvent, toggleMockCompletion } from "./mock/events";
 import {
   CALENDAR_ITEM_TAG,
@@ -49,8 +50,14 @@ export async function createPersonalTodoAction(
   if (Object.keys(errors).length > 0) return { errors };
 
   if (!isMock) {
-    // ⚠️ 미구현 — API 스펙 확정 후 BFF 경로로 Todo 작성 요청을 보낸다.
-    throw new Error("개인 Todo 작성 API가 아직 연결되지 않았습니다.");
+    const accessToken = await requireAccessToken();
+    const be = await serverApi<BeTodoResponse>(ep.todos(), {
+      method: "POST",
+      accessToken,
+      json: { title: draft.title.trim(), date: draft.date, endDate: draft.endDate },
+    });
+    revalidatePath(CALENDAR_PATH);
+    return { errors: {}, created: toPersonalCalendarEventFromTodo(be) };
   }
 
   const created = addMockTodo(draft);
