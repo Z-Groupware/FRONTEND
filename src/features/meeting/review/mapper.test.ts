@@ -150,6 +150,9 @@ describe("toMeetingReviewInfo", () => {
     ]);
     // 회의 자체에 teamId가 있으면(Leader/Member 개설) Owner 회의가 아니다
     expect(info.isOwnerMeeting).toBe(false);
+    // ⚠️ 비Owner 회의는 부서 옵션이 빈 배열이다(CodeRabbit 지적) — 다른 소비자가
+    // isOwnerMeeting을 안 보고 teamOptions만 봐도 부서 UI가 안 켜져야 한다
+    expect(info.teamOptions).toEqual([]);
   });
 
   it("Owner 개설 회의는 teamId===null로 판정하고, 부서 옵션을 참석자에서 만든다", () => {

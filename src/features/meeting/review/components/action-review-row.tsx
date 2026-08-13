@@ -12,6 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { REVIEW_ASSIGNMENT_TARGET_LABEL } from "@/constants/meeting";
 
 import { formatAssigneeLabel } from "../lib";
 import type { AiActionDraft, AssigneeOption, TeamOption } from "../types";
@@ -130,13 +131,21 @@ export function ActionReviewRow({
               value={draft.teamId === null ? "" : String(draft.teamId)}
               onValueChange={(value) => value && onTeamChange?.(Number(value))}
             >
-              <SelectTrigger aria-label="부서 선택" className="w-[180px]">
+              <SelectTrigger
+                aria-label={`${REVIEW_ASSIGNMENT_TARGET_LABEL.TEAM} 선택`}
+                className="w-[180px]"
+              >
                 <SelectValue>
                   {(value) => {
                     const option = teamOptions?.find(
                       (candidate) => String(candidate.teamId) === value,
                     );
-                    if (!option) return <span className="text-muted-foreground">부서 미정</span>;
+                    if (!option)
+                      return (
+                        <span className="text-muted-foreground">
+                          {REVIEW_ASSIGNMENT_TARGET_LABEL.TEAM} 미정
+                        </span>
+                      );
                     return (
                       <>
                         <Users className="size-4 shrink-0" aria-hidden />
@@ -161,7 +170,10 @@ export function ActionReviewRow({
               value={draft.assigneeId === null ? "" : String(draft.assigneeId)}
               onValueChange={(value) => value && onAssigneeChange(Number(value))}
             >
-              <SelectTrigger aria-label="담당자 선택" className="w-[180px]">
+              <SelectTrigger
+                aria-label={`${REVIEW_ASSIGNMENT_TARGET_LABEL.PERSONAL} 선택`}
+                className="w-[180px]"
+              >
                 {/*
                   ⚠️ **아바타를 붙인다**(2026-08-11). 이름만 늘어놓으니 다섯 줄이 회색 글자
                      덩어리였다 — 아바타는 색을 써도 되는 자리이고(§DESIGN 5), 그 사람 id에서
@@ -173,7 +185,12 @@ export function ActionReviewRow({
                       (candidate) => String(candidate.id) === value,
                     );
                     /* AI가 못 짚었거나 명단 밖을 가리킨 액션 — 숨기지 말고 미정으로 보여준다(매퍼 주석) */
-                    if (!option) return <span className="text-muted-foreground">담당자 미정</span>;
+                    if (!option)
+                      return (
+                        <span className="text-muted-foreground">
+                          {REVIEW_ASSIGNMENT_TARGET_LABEL.PERSONAL} 미정
+                        </span>
+                      );
                     return (
                       <>
                         <ProfileAvatar userId={option.id} size={18} />

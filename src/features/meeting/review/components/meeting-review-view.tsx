@@ -7,7 +7,11 @@ import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/common/confirm-dialog";
 import { EmptyState } from "@/components/common/empty-state";
 import { Button } from "@/components/ui/button";
-import { type ActionRejectReason, AI_CONFIDENCE } from "@/constants/meeting";
+import {
+  type ActionRejectReason,
+  AI_CONFIDENCE,
+  REVIEW_ASSIGNMENT_TARGET_LABEL,
+} from "@/constants/meeting";
 
 import { confirmActionDistributionAction } from "../actions";
 import type { AiActionDraft, ManualDraftInput, MeetingReviewInfo } from "../types";
@@ -59,6 +63,10 @@ export function MeetingReviewView({ review }: MeetingReviewViewProps) {
   const visibleDrafts = drafts.filter((draft) => !(draft.id in rejectedReasons));
   const highConfidence = visibleDrafts.filter((d) => d.confidence === AI_CONFIDENCE.HIGH);
   const needsReview = visibleDrafts.filter((d) => d.confidence === AI_CONFIDENCE.NEEDS_REVIEW);
+  /* ⚠️ 이 화면이 "부서"·"담당자" 중 뭐라고 부를지는 이 한 곳에서만 고른다(CodeRabbit 지적) */
+  const assignmentTargetLabel = review.isOwnerMeeting
+    ? REVIEW_ASSIGNMENT_TARGET_LABEL.TEAM
+    : REVIEW_ASSIGNMENT_TARGET_LABEL.PERSONAL;
   /*
     ⚠️ **담당자 미정이 남아 있으면 확정을 잠근다.** AI가 담당자를 못 짚은 액션은 "담당자
        미정"으로 온다(매퍼 주석) — BE도 그 항목을 `NO_ASSIGNEE`로 걸러 분배하지 않으므로,
@@ -291,8 +299,8 @@ export function MeetingReviewView({ review }: MeetingReviewViewProps) {
             {review.meetingTitle} · {review.scheduleLabel}
           </p>
           <p className="text-muted-foreground text-[12px] leading-4">
-            두 그룹 모두 확정 전까지 내용·{review.isOwnerMeeting ? "부서" : "담당자"}
-            ·시작일·마감일을 수정할 수 있습니다.
+            두 그룹 모두 확정 전까지 내용·{assignmentTargetLabel}·시작일·마감일을 수정할 수
+            있습니다.
           </p>
         </div>
       </div>
@@ -303,7 +311,9 @@ export function MeetingReviewView({ review }: MeetingReviewViewProps) {
       */}
       {review.isOwnerMeeting && (
         <p className="border-border bg-muted/30 text-muted-foreground rounded-lg border px-4 py-2.5 text-[13px] leading-5">
-          이 회의는 오너 회의입니다 — 여기서 확정하는 액션은 담당자가 아니라 부서에 하달됩니다.
+          이 회의는 오너 회의입니다 — 여기서 확정하는 액션은{" "}
+          {REVIEW_ASSIGNMENT_TARGET_LABEL.PERSONAL}가 아니라 {REVIEW_ASSIGNMENT_TARGET_LABEL.TEAM}에
+          하달됩니다.
         </p>
       )}
 
@@ -369,7 +379,7 @@ export function MeetingReviewView({ review }: MeetingReviewViewProps) {
         {/* 왜 잠겼는지 버튼 옆에서 말한다 — 눌리지 않는 버튼만 두면 고장으로 읽힌다(§정직성) */}
         {hasUnassigned && (
           <p className="text-muted-foreground text-[12px] leading-4">
-            담당자 미정인 액션이 있습니다. 담당자를 지정해 주세요.
+            {assignmentTargetLabel} 미정인 액션이 있습니다. {assignmentTargetLabel}를 지정해 주세요.
           </p>
         )}
         <Button
@@ -403,7 +413,8 @@ export function MeetingReviewView({ review }: MeetingReviewViewProps) {
         title="액션 분배를 확정할까요?"
         description={
           <>
-            총 {visibleDrafts.length}건의 액션이 지금 화면에 보이는 담당자·일정 그대로 생성됩니다.
+            총 {visibleDrafts.length}건의 액션이 지금 화면에 보이는 {assignmentTargetLabel}·일정
+            그대로 생성됩니다.
             <br />
             확정 뒤에는 이 화면을 다시 열 수 없습니다.
           </>

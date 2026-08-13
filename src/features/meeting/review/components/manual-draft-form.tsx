@@ -13,6 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { REVIEW_ASSIGNMENT_TARGET_LABEL } from "@/constants/meeting";
 
 import { formatAssigneeLabel } from "../lib";
 import type { AssigneeOption, ManualDraftInput, TeamOption } from "../types";
@@ -69,7 +70,10 @@ export function ManualDraftForm({
             value={String(teamId)}
             onValueChange={(value) => value && setTeamId(Number(value))}
           >
-            <SelectTrigger aria-label="부서 선택" className="w-36">
+            <SelectTrigger
+              aria-label={`${REVIEW_ASSIGNMENT_TARGET_LABEL.TEAM} 선택`}
+              className="w-36"
+            >
               <SelectValue>
                 {(value) => {
                   const option = teamOptions?.find(
@@ -100,7 +104,10 @@ export function ManualDraftForm({
             value={String(assigneeId)}
             onValueChange={(value) => value && setAssigneeId(Number(value))}
           >
-            <SelectTrigger aria-label="담당자 선택" className="w-36">
+            <SelectTrigger
+              aria-label={`${REVIEW_ASSIGNMENT_TARGET_LABEL.PERSONAL} 선택`}
+              className="w-36"
+            >
               <SelectValue>
                 {(value) => {
                   const option = assigneeOptions.find(

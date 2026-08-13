@@ -218,7 +218,9 @@ export function toMeetingReviewInfo(params: {
     assigneeOptions: toAssigneeOptions(detail),
     /* ⚠️ Owner 개설 회의만 teamId가 null이다(PR #461/#472 대조) — 이 하나로 화면 모드가 갈린다 */
     isOwnerMeeting: detail.teamId === null,
-    teamOptions: toTeamOptions(detail),
+    /* ⚠️ 비Owner 회의는 빈 배열이 계약이다(타입 주석) — CodeRabbit 지적, 다른 소비자가
+       `isOwnerMeeting` 확인 없이 `teamOptions`만 보고 부서 UI를 켤 수 있어 방어적으로 가른다 */
+    teamOptions: detail.teamId === null ? toTeamOptions(detail) : [],
     drafts: review.actionsByPerson
       .flatMap((person) => person.actions)
       .filter((action) => action.reviewStatus !== "REJECTED")
