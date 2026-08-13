@@ -77,18 +77,30 @@ export function RoomAttendeePicker({
 }: RoomAttendeePickerProps) {
   const [keyword, setKeyword] = useState("");
 
+  const candidates = useMemo(() => filterAttendeeCandidates(members, viewer), [members, viewer]);
+
   const visible = useMemo(() => {
     const query = keyword.trim().toLowerCase();
-    return filterAttendeeCandidates(members, viewer).filter(
-      (member) => !query || member.name.toLowerCase().includes(query),
-    );
-  }, [members, keyword, viewer]);
+    return candidates.filter((member) => !query || member.name.toLowerCase().includes(query));
+  }, [candidates, keyword]);
 
   /* 후보가 아예 없는 것과 검색어에 안 걸리는 것은 원인이 달라 문구를 가른다(§정직성). */
-  const hasCandidate = useMemo(
-    () => filterAttendeeCandidates(members, viewer).length > 0,
-    [members, viewer],
-  );
+  const hasCandidate = candidates.length > 0;
+
+  /*
+    ⚠️ **검색으로 가려진 선택은 hidden input으로 같이 보낸다.** 제출값은 지금 그려진 체크박스가
+       만드는데, 검색어를 남긴 채 [예약]·[저장]을 누르면 걸러진 줄의 체크박스가 DOM에 없어
+       **골라 둔 사람이 조용히 빠진 채** 저장된다 — 바로 아래 "선택 N명"은 그대로라 화면이
+       거짓말을 한다(§정직성).
+    ⚠️ 범위 밖(`filterAttendeeCandidates`가 걸러 낸) 사람은 여기 안 넣는다 — 그건 규칙이 일부러
+       뺀 사람이고, host는 서버가 명단에 다시 끼워 넣는다(`attendee-scope.ts`).
+  */
+  const hiddenSelectedIds = useMemo(() => {
+    const shown = new Set(visible.map((member) => member.id));
+    return candidates
+      .filter((member) => selectedIds.includes(member.id) && !shown.has(member.id))
+      .map((member) => member.id);
+  }, [candidates, visible, selectedIds]);
 
   function toggle(id: number) {
     onChange(
@@ -133,6 +145,10 @@ export function RoomAttendeePicker({
           ))
         )}
       </div>
+
+      {hiddenSelectedIds.map((id) => (
+        <input key={id} type="hidden" name="attendeeIds" value={id} />
+      ))}
 
       <p className="text-muted-foreground text-[11px]">선택 {selectedIds.length}명</p>
     </div>

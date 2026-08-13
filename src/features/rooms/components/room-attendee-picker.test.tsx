@@ -159,4 +159,61 @@ describe("RoomAttendeePicker — 범위 강제(2026-08-13)", () => {
 
     expect(screen.getByText("선택 2명")).toBeInTheDocument();
   });
+
+  it("검색어를 남긴 채 제출해도 가려진 선택이 빠지지 않는다(§정직성)", async () => {
+    const user = userEvent.setup();
+    const submitted: string[] = [];
+    render(
+      <form
+        onSubmit={(event) => {
+          event.preventDefault();
+          submitted.push(
+            ...new FormData(event.currentTarget).getAll("attendeeIds").map((id) => String(id)),
+          );
+        }}
+      >
+        <RoomAttendeePicker
+          members={MEMBERS}
+          selectedIds={[2, 5]}
+          onChange={jest.fn()}
+          viewer={OWNER_VIEWER}
+        />
+        <button type="submit">예약</button>
+      </form>,
+    );
+
+    /* "김"으로 좁히면 최유진 줄이 사라진다 — 체크박스가 DOM에서 빠져도 제출값엔 남아야 한다. */
+    await user.type(screen.getByRole("textbox", { name: "참석자 검색" }), "김");
+    await user.click(screen.getByRole("button", { name: "예약" }));
+
+    expect(submitted.sort()).toEqual(["2", "5"]);
+  });
+
+  it("범위 밖 사람은 선택돼 있어도 제출값에 안 넣는다(규칙이 뺀 사람이다)", async () => {
+    const user = userEvent.setup();
+    const submitted: string[] = [];
+    render(
+      <form
+        onSubmit={(event) => {
+          event.preventDefault();
+          submitted.push(
+            ...new FormData(event.currentTarget).getAll("attendeeIds").map((id) => String(id)),
+          );
+        }}
+      >
+        {/* 3(사원)·1(host 본인)은 Owner 범위 밖이다. */}
+        <RoomAttendeePicker
+          members={MEMBERS}
+          selectedIds={[1, 2, 3]}
+          onChange={jest.fn()}
+          viewer={OWNER_VIEWER}
+        />
+        <button type="submit">저장</button>
+      </form>,
+    );
+
+    await user.click(screen.getByRole("button", { name: "저장" }));
+
+    expect(submitted).toEqual(["2"]);
+  });
 });
