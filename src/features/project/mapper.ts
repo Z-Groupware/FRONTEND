@@ -140,6 +140,25 @@ export function toProjectTeamAction(be: BeProjectTimelineItem): ProjectTeamActio
   };
 }
 
+/**
+ * [확인] `ProjectAttachmentStoragePort.IssuedUploadUrl` — 업로드 3단계 중 1단계(발급) 응답.
+ * ⚠️ `fileUrl`은 브라우저로 열리는 URL이 아니라 **S3 오브젝트 키**다(BE Port 주석) —
+ *    confirm에 이 값을 그대로 되돌려 준다.
+ */
+export interface BeIssuedUploadUrl {
+  /** presigned PUT URL(15분 만료 — [확인] `ProjectAttachmentS3StorageAdapter.UPLOAD_URL_TTL`). */
+  uploadUrl: string;
+  fileUrl: string;
+}
+
+/** [확인] `ConfirmAttachmentRequest` — 업로드 3단계 중 3단계(확정) 요청 바디. */
+export interface ConfirmAttachmentRequestBody {
+  fileName: string;
+  /** 발급 응답의 `fileUrl`(S3 키) 그대로 — 다른 값이면 BE가 `ATTACHMENT_KEY_MISMATCH`로 거부한다. */
+  fileUrl: string;
+  fileSize: number;
+}
+
 /** 프로젝트 생성/수정 요청 바디. */
 export interface CreateProjectRequestBody {
   name: string;
