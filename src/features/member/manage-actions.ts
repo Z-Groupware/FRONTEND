@@ -96,9 +96,23 @@ async function gate(
  */
 const PEOPLE_PATH = "/app/people";
 
+/**
+ * 직급·권한(·역할) 변경.
+ *
+ * ⚠️ **`roleLabel`은 안 보내면 "안 바꾼다"다**(부분 수정). 화면이 늘 값을 실어 보내던 때는
+ *    직급 하나만 고쳐도 역할이 함께 써졌다 — 게다가 라이브에서는 팀 역할 목록이 비어 있어
+ *    셀렉트가 잠기므로, 실어 보낼 수 있는 값이 **사용자가 건드린 적도 없는 빈 값** 하나였다.
+ *    사용자가 고르지 않은 값을 저장하지 않는다.
+ */
 export async function changeMemberGradeAction(
   id: number,
-  next: { position: string; authority: Authority; isAdmin: boolean; roleLabel: string },
+  next: {
+    position: string;
+    authority: Authority;
+    isAdmin: boolean;
+    /** 사용자가 **실제로 바꿨을 때만** 넘긴다. `undefined`면 요청에서 빠진다 */
+    roleLabel?: string;
+  },
 ): Promise<MemberActionResult> {
   const pass = await gate(canChangeMemberGrade, "사원 정보를 바꿀 권한이 없습니다");
   if ("denied" in pass) return { isSuccess: false, message: pass.denied };
@@ -147,13 +161,29 @@ export async function changeMemberGradeAction(
   if (lock) return { isSuccess: false, message: GRADE_LOCK_NOTE[lock] };
 
   /*
+    ⚠️ **바꾼 게 아니면 역할을 건드리지 않는다.** 화면이 안 넘겼거나(=안 고쳤다) 지금 값과
+       같으면 요청에서 빼서, 직급만 고친 저장이 역할을 덮어쓰지 않게 한다(부분 수정).
+    ⚠️ **비우는 건 막지 않는다.** `roleLabel`이 빈 값이어도 `isRoleOfTeam`은 통과시킨다
+       (`team-roles.ts` — "없음(빈 값)은 늘 통과한다"). BE로 나갈 때는 `toBeRoleLabel`이
+       빈 값을 시스템 행 `"없음"`으로 바꿔 보낸다(BE V2.3.9, 실제로 있는 값이다) — 비우기가
+       안 된다며 여기서 막으면, **이미 해결된 길을 다시 막는** 셈이다(2026-08-13 정정 —
+       이전 수정이 이 경로를 잘못 읽고 통째로 잠갔었다).
     ⚠️ 역할은 **그 사람 팀의 것만** 붙는다. 화면은 그 팀 역할만 주지만 Server Action은
        직접 부를 수 있다 — 남의 팀 역할이 붙으면 조직도가 거짓말을 한다.
     ⚠️ **대상을 읽은 뒤에 본다.** 기준이 그 사람이 지금 속한 팀이라, 조회 전에 두면
        무엇과 견줘야 할지 알 수 없다. 팀은 이 화면에서 안 바꾼다.
   */
-  const roleLabel = next.roleLabel.trim();
-  if (!isRoleOfTeam(buildTeamRoles(company.departments), target.member.teamName ?? "", roleLabel)) {
+  const roleLabel = next.roleLabel?.trim();
+  const currentRoleLabel = target.member.roleLabel?.trim() ?? "";
+  const changesRole = roleLabel !== undefined && roleLabel !== currentRoleLabel;
+  if (
+    changesRole &&
+    !isRoleOfTeam(
+      buildTeamRoles(company.departments),
+      target.member.teamName ?? "",
+      roleLabel ?? "",
+    )
+  ) {
     return { isSuccess: false, message: "그 팀에 없는 역할입니다" };
   }
 
@@ -173,10 +203,12 @@ export async function changeMemberGradeAction(
          관리자 토글만 **OWNER 전용** 경로로 떼어 둔 것이다.
       ⚠️ **직급은 이름이 아니라 id로 보낸다.** 화면은 이름을 다루므로 회사 목록에서 되찾는다 —
          못 찾으면 보내지 않는다(없는 직급으로 바뀌느니 실패가 낫다).
-      ⚠️ **`roleLabel`도 같이 보낸다**([확인] BE `UpdateMemberRoleRequest.roleLabel`
-         2026-08-13 develop `30952c10` — "보낼 곳이 없다"는 옛말이다). 단 **빈 문자열은 400**
-         (`@Pattern`)이고 `null`은 "안 바꾼다"라, 비우기는 `"없음"`으로 바꿔 보낸다
-         (`toBeRoleLabel`). 이 폼은 역할 칸을 늘 들고 있으므로 생략(null) 경로는 안 쓴다.
+      ⚠️ **`roleLabel`은 바뀔 때만 싣는다**([확인] BE `UpdateMemberRoleRequest.roleLabel`
+         2026-08-13 develop `30952c10` — 칸은 있다). 빈 문자열은 `@Pattern`이 400으로 거절하고
+         `null`(=필드 없음)은 "안 바꾼다"라, **안 고친 저장은 필드째 뺀다** — 늘 실어 보내면
+         직급만 고쳐도 역할이 함께 써진다.
+      ⚠️ 나가는 값은 **회사에 실제로 있는 역할 이름**뿐이다. 화면 라벨 상수(`ROLE_NONE_LABEL`)를
+         요청 값으로 쓰지 않는다 — 한글 라벨은 화면 것이고 BE로 나갈 값이 아니다(§도메인 상수).
     */
     const jobPosition = company.positions.find((item) => item.name === position);
     if (!jobPosition) return { isSuccess: false, message: "회사에 없는 직급입니다" };
@@ -196,10 +228,19 @@ export async function changeMemberGradeAction(
       await serverApi<unknown>(ep.member(id), {
         method: "PATCH",
         accessToken,
+        /*
+          ⚠️ **`roleLabel`은 바뀔 때만 키째 싣는다.** `changesRole`이 거짓이면 필드를 아예
+             안 넣는다 — BE는 `null`(=필드 없음)을 "안 바꾼다"로 읽는다. 매 요청에 값을 실으면
+             직급만 고쳐도 역할이 함께 써진다(위 §바꾼 게 아니면 역할을 건드리지 않는다).
+          ⚠️ **`roleLabel &&`가 아니라 `changesRole`만 본다.** 비우기(빈 문자열)도
+             `changesRole`이 참인 정당한 변경이다 — `roleLabel &&`를 같이 걸면 자바스크립트가
+             빈 문자열을 거짓으로 봐서, 역할을 지우려는 요청이 **조용히 빠진다**. `toBeRoleLabel`
+             이 빈 값을 알아서 `"없음"`으로 바꿔 보내므로 여기서 따로 거를 이유가 없다.
+        */
         json: {
           role: next.authority,
           jobPositionId: Number(jobPosition.id),
-          roleLabel: toBeRoleLabel(roleLabel),
+          ...(changesRole ? { roleLabel: toBeRoleLabel(roleLabel ?? "") } : {}),
         },
       });
 
