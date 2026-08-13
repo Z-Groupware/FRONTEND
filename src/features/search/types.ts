@@ -100,6 +100,22 @@ export interface SearchCategoryCounts {
   person: number;
 }
 
+/**
+ * 결과가 **잘려서 왔다**는 사실 — 안 잘렸으면 `null`이다.
+ *
+ * ⚠️ **조용히 자르지 않으려고 값으로 들고 다닌다**(§정직성). 실서버 `GET /api/v1/search`는
+ *    `limit`(최대 50)까지만 주고 **page 파라미터가 없다** — 21건째, 51건째를 볼 방법이 서버에
+ *    없으므로 화면은 "여기까지가 전부"인 척하는 대신 **얼마 중 얼마인지**를 밝힌다.
+ * ⚠️ 무한 스크롤(§목록·페이지네이션)은 **못 만든다.** 이어 붙일 다음 페이지를 서버가 못 준다 —
+ *    없는 페이지네이션을 지어내면 [다시 시도]만 도는 화면이 된다.
+ */
+export interface SearchResultCap {
+  /** 이 조건에 실제로 있는 건수 — 서버가 상한과 무관하게 센 값(`counts`) */
+  total: number;
+  /** 그중 화면이 실제로 받은 건수 */
+  shown: number;
+}
+
 /** 검색 결과 화면이 한 번에 받는 것 */
 export interface SearchResults {
   keyword: string;
@@ -110,6 +126,18 @@ export interface SearchResults {
   counts: SearchCategoryCounts;
   /** 지금 고른 탭·필터로 걸러진 목록 */
   items: SearchResultItem[];
+  /** 서버가 상한까지만 줘서 잘린 상태 — 다 받았으면 `null` */
+  cap: SearchResultCap | null;
+  /**
+   * 프로젝트·기간 필터를 **서버가 실제로 걸렀는가**.
+   *
+   * ⚠️ 실서버는 지금 `tags`·`from`·`to`를 **받기만 하고 안 건다**(SR-1 — [확인] BE
+   *    `SearchService` 주석과 `SearchJdbcQueryAdapter`의 WHERE 절, 2026-08-13 실코드 대조).
+   *    그러면 필터를 골라도 결과가 그대로인데, 화면이 아무 말도 안 하면 **필터가 고장 난 것처럼
+   *    보인다** — 값으로 받아 화면이 "아직 반영되지 않는다"고 밝힌다(§정직성).
+   * ⚠️ 목은 직접 거르므로 항상 `true`다. SR-2가 붙으면 `mapper.ts`의 상수 한 줄만 바꾼다.
+   */
+  filtersApplied: boolean;
 }
 
 export interface ProjectBrowseItem {
@@ -137,6 +165,23 @@ export interface SearchRecentViewItem {
   meta: string | null;
 }
 
+/**
+ * 랜딩의 칸 — **비어 있는 것과 못 받은 것을 가르려고** 이름을 붙여 둔다.
+ * (`features/meeting/view-types.ts`의 `MeetingContentPending`과 같은 결: 왜 비었는지를 값으로 준다)
+ */
+export const SEARCH_HOME_SECTION = {
+  RECENT_SEARCHES: "RECENT_SEARCHES",
+  RECENTLY_VIEWED: "RECENTLY_VIEWED",
+  PEOPLE: "PEOPLE",
+} as const;
+export type SearchHomeSection = (typeof SEARCH_HOME_SECTION)[keyof typeof SEARCH_HOME_SECTION];
+
+export const SEARCH_HOME_SECTION_LABEL: Record<SearchHomeSection, string> = {
+  RECENT_SEARCHES: "최근 검색어",
+  RECENTLY_VIEWED: "최근 본 항목",
+  PEOPLE: "사람으로 찾기",
+};
+
 /** 검색어가 없을 때(랜딩) 보여줄 것 */
 export interface SearchHome {
   /** 최신순 — 최대 10개 */
@@ -144,6 +189,14 @@ export interface SearchHome {
   recentlyViewed: SearchRecentViewItem[];
   projects: ProjectBrowseItem[];
   people: PersonBrowseItem[];
+  /**
+   * **서버가 아직 못 채우는 칸** — 목에서는 늘 빈 배열이다.
+   *
+   * ⚠️ 빈 배열과 뜻이 다르다: `recentlyViewed: []`는 "본 게 없다"이고, 여기에
+   *    `RECENTLY_VIEWED`가 들어 있으면 "물어볼 API가 없다"다. 둘을 같은 빈 화면으로 보여주면
+   *    사용자는 자기가 아무것도 안 본 줄 안다(§정직성 — 조용히 안 되는 척 금지).
+   */
+  unavailable: SearchHomeSection[];
 }
 
 export const SEARCH_CATEGORY = {
