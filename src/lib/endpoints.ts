@@ -261,6 +261,35 @@ export const ep = {
   meetingRoomAvailability: (params: { meetingRoomId: number; date?: string }) =>
     `/api/rooms/availability${toQuery(params)}`,
 
+  /**
+   * 결제·구독 — [확인] `metering/presentation/api/BillingController.java`
+   *   (2026-08-13 BE 실코드 대조, BIL-0~4 커밋). 전부 `@RequestMapping("/api/companies/me")` 아래다.
+   *
+   * ⚠️ **봉투가 메서드마다 다르다.** 전역으로 감싸 주는 `ResponseBodyAdvice`가 BE에 없어서,
+   *    컨트롤러가 `ApiResponse<T>`를 리턴한 것만 봉투가 씌워진다 — 아래 각 항목에 적어 뒀고,
+   *    맨몸인 둘은 호출부가 `serverApi(..., { isEnveloped: false })`로 부른다.
+   *    기본값으로 부르면 `raw.data`가 없어 **조용히 `undefined`가 흘러간다**(§정직성).
+   * ⚠️ **조회 둘도 로그인이 필요하다**(`isAuthenticated()`). 공개 요금제 화면(`/plans`)은
+   *    토큰이 없어 부를 수 없다 — `server.ts`의 주석을 본다(BE에 공개 경로를 요청해 둔 상태).
+   */
+  /** `GET` · `isAuthenticated()` · **봉투 있음**(`ApiResponse<BillingConfigResponse>`) */
+  billingConfig: () => "/api/companies/me/billing-config",
+  /** `GET` · `isAuthenticated()` · **봉투 있음**(`ApiResponse<BillingOverviewResponse>`) */
+  billing: () => "/api/companies/me/billing",
+  /**
+   * `POST` · OWNER‖admin · ⚠️ **봉투 없음** — `BillingPaymentActionResult`가 맨몸으로 온다.
+   * 실패도 200 + `{ isSuccess:false, failureCode }`로 오므로 **HTTP 상태로 가르면 안 된다.**
+   */
+  subscriptionPay: () => "/api/companies/me/subscription/pay",
+  /**
+   * `POST` · OWNER‖admin · ⚠️ **봉투 없음** — `PaymentMethodResponse`가 맨몸으로 온다.
+   * ⚠️ **경로가 복수형(`/payment-methods`)이다.** 우리가 보낸 스펙은 단수였는데 BE가 복수로
+   *    구현했다 — 문서와 코드가 다르면 코드가 맞다(§연동 검증). 단수로 부르면 404다.
+   */
+  paymentMethods: () => "/api/companies/me/payment-methods",
+  /** `POST` · OWNER‖admin · 본문 `{ isCanceling }` · **봉투 있음**(`ApiResponse<Void>` — `data`가 없다) */
+  subscriptionCancel: () => "/api/companies/me/subscription/cancel",
+
   /* 기타 */
   notifications: () => "/api/notifications",
   /** SSE 스트림 — BFF가 중계하며 토큰을 주입한다 */
