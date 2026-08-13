@@ -43,3 +43,21 @@ export function validateProjectDraft(draft: ProjectDraft): ProjectFormErrors {
 
   return errors;
 }
+
+/**
+ * 첨부파일 검증 — 화면(파일 고른 직후)과 서버 액션(발급·확정 직전)이 **이 함수 하나**로 본다.
+ * BE가 실제로 거부하는 것만 여기서 미리 막는다 — 없는 정책(용량 상한·확장자)을 지어내지 않는다
+ * (최대 용량·확장자는 storage 팀 소관으로 미정 — [확인] BE `ProjectAttachmentStoragePort` 주석).
+ *
+ * - 0바이트: [확인] BE `IssueUploadUrlRequest`·`ConfirmAttachmentRequest`의 `@Positive fileSize`
+ * - `..` 포함 파일명: [확인] BE `ProjectAttachmentService.issueUploadUrl` — s3Key 경로 조작
+ *   오탐 방지로 발급 자체를 거부한다
+ *
+ * @returns 통과하면 `null`, 아니면 칸에 그대로 띄울 문장.
+ */
+export function validateAttachmentFile(fileName: string, fileSize: number): string | null {
+  if (!fileName.trim()) return "파일 이름이 비어 있습니다";
+  if (fileName.includes("..")) return "파일 이름에 '..'를 포함할 수 없습니다";
+  if (fileSize <= 0) return "빈 파일(0바이트)은 첨부할 수 없습니다";
+  return null;
+}
