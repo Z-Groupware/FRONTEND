@@ -261,6 +261,45 @@ export const ep = {
   meetingRoomAvailability: (params: { meetingRoomId: number; date?: string }) =>
     `/api/rooms/availability${toQuery(params)}`,
 
+  /**
+   * 결제·구독 — [확인] `metering/presentation/api/BillingController.java`
+   *   (2026-08-13 BE 실코드 대조, BIL-0~4 커밋). 전부 `@RequestMapping("/api/companies/me")` 아래다.
+   *
+   * ⚠️ **봉투가 메서드마다 다르다.** 전역으로 감싸 주는 `ResponseBodyAdvice`가 BE에 없어서,
+   *    컨트롤러가 `ApiResponse<T>`를 리턴한 것만 봉투가 씌워진다 — 아래 각 항목에 적어 뒀다.
+   *    맨몸 응답을 기본값으로 부르면 `raw.data`가 없어 **조용히 `undefined`가 흘러간다**(§정직성).
+   * ⚠️ **조회 둘은 로그인이 필요하다**(`isAuthenticated()`). 공개 요금제 화면(`/plans`)은
+   *    아래 `publicBillingConfig`(BE PR #461)를 쓴다 — `server.ts`의 주석을 본다.
+   */
+  /** `GET` · `isAuthenticated()` · **봉투 있음**(`ApiResponse<BillingConfigResponse>`) */
+  billingConfig: () => "/api/companies/me/billing-config",
+  /**
+   * `GET` · **permitAll(비로그인 공개)** · **봉투 있음**(`ApiResponse<BillingConfigResponse>` —
+   * 응답 shape은 위 `billingConfig`와 동일하다).
+   * [확인] `PublicBillingConfigController` — **BE PR #461**(계약 동결, 미머지).
+   * ⚠️ BE #461이 배포되기 전에는 이 경로가 404다 — 호출부(`server.ts`)가 v0 가정값으로
+   *    폴백하므로 화면은 안 죽는다(머지·배포 순서 무관).
+   */
+  publicBillingConfig: () => "/api/billing-config",
+  /** `GET` · `isAuthenticated()` · **봉투 있음**(`ApiResponse<BillingOverviewResponse>`) */
+  billing: () => "/api/companies/me/billing",
+  /**
+   * `POST` · OWNER‖admin · ⚠️ **봉투 과도기** — 지금 배포본은 `BillingPaymentActionResult`
+   * 맨몸이고, **BE PR #461**부터 `ApiResponse<T>`로 온다. 호출부가 `isEnveloped: false`로
+   * 원문을 받고 매퍼(`unwrapTransitionalEnvelope`)가 감지한다 — 배포 확정 후 기본값 경로로 되돌린다.
+   * 실패도 200 + `{ isSuccess:false, failureCode }`로 오므로 **HTTP 상태로 가르면 안 된다.**
+   */
+  subscriptionPay: () => "/api/companies/me/subscription/pay",
+  /**
+   * `POST` · OWNER‖admin · ⚠️ **봉투 과도기** — 지금 배포본은 `PaymentMethodResponse` 맨몸이고,
+   * **BE PR #461**부터 `ApiResponse<T>`로 온다(위 `subscriptionPay`와 같은 처리).
+   * ⚠️ **경로가 복수형(`/payment-methods`)이다.** 우리가 보낸 스펙은 단수였는데 BE가 복수로
+   *    구현했다 — 문서와 코드가 다르면 코드가 맞다(§연동 검증). 단수로 부르면 404다.
+   */
+  paymentMethods: () => "/api/companies/me/payment-methods",
+  /** `POST` · OWNER‖admin · 본문 `{ isCanceling }` · **봉투 있음**(`ApiResponse<Void>` — `data`가 없다) */
+  subscriptionCancel: () => "/api/companies/me/subscription/cancel",
+
   /* 기타 */
   notifications: () => "/api/notifications",
   /** SSE 스트림 — BFF가 중계하며 토큰을 주입한다 */

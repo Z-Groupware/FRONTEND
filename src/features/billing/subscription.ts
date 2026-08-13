@@ -28,6 +28,23 @@ export const SUBSCRIPTION_STATUS = {
   UNPAID: "UNPAID",
   /** 기간이 끝났다 — 다시 결제하기 전엔 들어올 수 없다 */
   EXPIRED: "EXPIRED",
+  /**
+   * 해지가 끝났다 — ⚠️ **레거시 값이고, 지금 BE는 이걸 내보내지 않는다.**
+   *
+   * ⚠️ **왜 두는가.** BE `BillingSubscriptionStatus`에는 값이 5개인데(2026-08-13 실코드 대조),
+   *    나가는 두 자리에서 **전부 `EXPIRED`로 바꿔** 내보낸다 —
+   *    `BillingOverviewService.displayStatus()`(`GET /billing`)와
+   *    `CompanyController.subscriptionStatusOf()`(`GET /api/companies/me`) 둘 다 그렇다.
+   *    그래서 화면까지 오는 일이 **지금은 없다.**
+   * ⚠️ **그래도 받는 쪽은 열어 둔다.** 최초 스키마(`V1__init_schema.sql`)의 상태가
+   *    `ACTIVE`·`CANCELED` 둘뿐이라 **DB에 옛 `CANCELED` 행이 남아 있고**
+   *    (`V7.15` 마이그레이션 주석: "preserving legacy CANCELED rows"), BE가 언젠가 정규화를
+   *    걷어내면 그날 이 값이 그대로 올라온다. 그때 매퍼가 던져 화면이 통째로 죽는 것보다
+   *    **못 쓰는 상태로 알아듣고 결제 화면으로 보내는 편**이 낫다(§정직성).
+   * ⚠️ 새 코드는 이 값을 **쓰지 않는다.** 해지 신청은 `CANCELING`이다(BE `cancelAtPeriodEnd()`도
+   *    `CANCELING`을 쓴다) — 둘을 헷갈리면 이번 주기까지 쓸 수 있는 사람을 즉시 잠근다.
+   */
+  CANCELED: "CANCELED",
 } as const;
 
 export type SubscriptionStatus = (typeof SUBSCRIPTION_STATUS)[keyof typeof SUBSCRIPTION_STATUS];
@@ -37,13 +54,25 @@ export const SUBSCRIPTION_STATUS_LABEL: Record<SubscriptionStatus, string> = {
   CANCELING: "해지 예정",
   UNPAID: "결제 전",
   EXPIRED: "만료",
+  /*
+    ⚠️ `만료`와 **다른 말로 적는다.** 지금 BE가 `CANCELED`를 `EXPIRED`로 바꿔 내보내므로 이
+       라벨은 화면에 안 뜨지만, 뜨는 날이 오면 "기간이 끝난 것"과 "해지한 것"은 사람이 할 일이
+       다르다 — 앞은 결제하면 그만이고 뒤는 다시 구독하는 일이다.
+  */
+  CANCELED: "해지 완료",
 };
 
 /**
  * 워크스페이스를 쓸 수 있는 상태인지.
  *
- * ⚠️ **해지 예정도 쓸 수 있다.** 이미 낸 기간이라 그 안에서는 아무것도 막지 않는다 —
+ * ⚠️ **해지 예정(`CANCELING`)은 쓸 수 있다.** 이미 낸 기간이라 그 안에서는 아무것도 막지 않는다 —
  *    해지를 눌렀다고 바로 잠그면 낸 돈만큼을 못 쓰게 된다.
+ * ⚠️ **해지 완료(`CANCELED`)는 못 쓴다.** 신청(`CANCELING`)과 완료(`CANCELED`)는 글자만 비슷하고
+ *    정반대다 — 앞은 낸 기간이 남았고 뒤는 끝났다. BE도 완료를 `EXPIRED`로 바꿔 내보내
+ *    "못 쓰는 쪽"으로 취급한다(2026-08-13 실코드 대조) — 우리 판정도 거기에 맞춘다.
+ * ⚠️ **쓸 수 있는 쪽을 나열한다**(허용 목록). 못 쓰는 쪽을 나열하면 상태가 늘 때마다 빠뜨린
+ *    값이 **워크스페이스를 여는 쪽**으로 기울지만, 이렇게 두면 모르는 값은 막히는 쪽으로 떨어진다 —
+ *    돈이 걸린 판정은 틀릴 때 잠기는 편이 안전하다.
  * ⚠️ 화면에서 이걸로 감추더라도 **판정은 서버가 다시 한다**(CLAUDE.md §권한).
  */
 export function canUseWorkspace(status: SubscriptionStatus): boolean {
