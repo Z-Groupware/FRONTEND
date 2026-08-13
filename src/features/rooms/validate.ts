@@ -17,8 +17,13 @@ import type {
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const TIME_PATTERN = /^([01]\d|2[0-3]):(00|30)$/;
-/** 회의실 운영 시작·종료 시각용 — 예약 슬롯(`TIME_PATTERN`)과 달리 30분 단위 제약이 없다. */
-const GENERAL_TIME_PATTERN = /^([01]\d|2[0-3]):[0-5]\d$/;
+/**
+ * 회의실 운영 시작·종료 시각용 — **예약 슬롯과 똑같이 30분 단위다**(2026-08-12 고침).
+ * ⚠️ 전에는 임의 분(09:15)을 허용했는데 BE `@Pattern`([확인] `CreateMeetingRoomRequest`)이
+ *    30분 단위만 받아, FE 검증을 통과한 값이 400으로 튕기고 그 오류가 매핑 default 분기라
+ *    **엉뚱한 이름 칸에** 붙었다 — 검증 규칙은 BE와 한 벌이어야 한다.
+ */
+const GENERAL_TIME_PATTERN = /^([01]\d|2[0-3]):(00|30)$/;
 
 function isValidCalendarDate(value: string): boolean {
   if (!DATE_PATTERN.test(value)) return false;
@@ -96,8 +101,8 @@ export function validateRoomReservationDraft(
 
 /**
  * 회의실 추가·수정 폼 검증(`/manage/rooms`) — 화면과 서버(Server Action)가 이 함수 하나로 본다.
- * ⚠️ 이용 가능 시간은 예약 슬롯과 달리 30분 단위 제약이 없다 — 회의실 자체의 운영시간일 뿐,
- *    그 안에서 예약은 여전히 30분 단위로만 잡힌다(`validateRoomReservationDraft`가 맡는다).
+ * ⚠️ 이용 가능 시간도 **예약 슬롯과 같은 30분 단위**다(2026-08-13 정정 — 전에는 "제약이 없다"고
+ *    적혀 있었으나 BE `@Pattern`이 30분 단위만 받는다). 검증 규칙은 BE와 한 벌이어야 한다.
  */
 export function validateMeetingRoomDraft(draft: MeetingRoomDraft): MeetingRoomFormErrors {
   const errors: MeetingRoomFormErrors = {};
@@ -108,13 +113,13 @@ export function validateMeetingRoomDraft(draft: MeetingRoomDraft): MeetingRoomFo
   if (!draft.openTime.trim()) {
     errors.openTime = "이용 시작 시간을 입력해 주세요";
   } else if (!GENERAL_TIME_PATTERN.test(draft.openTime)) {
-    errors.openTime = "올바른 시간 형식이 아니에요";
+    errors.openTime = "30분 단위로 입력해 주세요 (예: 09:00, 09:30)";
   }
 
   if (!draft.closeTime.trim()) {
     errors.closeTime = "이용 종료 시간을 입력해 주세요";
   } else if (!GENERAL_TIME_PATTERN.test(draft.closeTime)) {
-    errors.closeTime = "올바른 시간 형식이 아니에요";
+    errors.closeTime = "30분 단위로 입력해 주세요 (예: 18:00, 18:30)";
   }
 
   if (

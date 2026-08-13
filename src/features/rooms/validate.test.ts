@@ -175,12 +175,17 @@ describe("회의실 추가·수정 검증", () => {
 
   it("시간 형식이 아니면 막는다", () => {
     const errors = validateMeetingRoomDraft({ ...VALID_ROOM_DRAFT, openTime: "9:00" });
-    expect(errors.openTime).toBe("올바른 시간 형식이 아니에요");
+    expect(errors.openTime).toBe("30분 단위로 입력해 주세요 (예: 09:00, 09:30)");
   });
 
-  it("30분 단위가 아니어도 통과한다(예약 슬롯과 달리 제약 없음)", () => {
+  /*
+    ⚠️ 뒤집힌 계약이다(2026-08-12) — 전에는 "30분 단위 제약 없음"이 FE 설계였지만, BE
+       `@Pattern`([확인] CreateMeetingRoomRequest)이 30분 단위만 받아 09:15는 FE를 통과하고
+       BE 400으로 튕겼다. 검증 규칙은 BE와 한 벌이어야 한다.
+  */
+  it("30분 단위가 아니면 막는다 — BE @Pattern과 같은 규칙", () => {
     const errors = validateMeetingRoomDraft({ ...VALID_ROOM_DRAFT, openTime: "09:15" });
-    expect(errors.openTime).toBeUndefined();
+    expect(errors.openTime).toBe("30분 단위로 입력해 주세요 (예: 09:00, 09:30)");
   });
 
   it("종료 시간이 시작 시간보다 이르면 막는다", () => {
