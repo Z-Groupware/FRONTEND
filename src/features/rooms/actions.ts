@@ -27,6 +27,7 @@ import {
 import { findMockMember } from "./mock/members";
 import { addMockReservation, listMockReservationsByRoom } from "./mock/reservations";
 import { addMockRoom, deleteMockRoom, findMockRoom, updateMockRoom } from "./mock/rooms";
+import { getReservableMembers } from "./server";
 import type {
   MeetingRoom,
   MeetingRoomDraft,
@@ -161,22 +162,24 @@ export async function createRoomReservationAction(
 
   if (!isMock) {
     /*
-      ⚠️ **여기서는 참석자 범위를 검증하지 못한다 — 검증한 척하지 않는다**(§정직성, 2026-08-13).
-         규칙(Owner=팀장만 / Leader·Member=자기 팀만)을 서버에서 다시 보려면 **명부**가 있어야
-         하는데, 실서버 경로에는 명부를 가져올 길이 없다:
-           · `getReservableMembers()`(server.ts)가 실연동에서 그대로 던진다 — 사원 목록 API가
-             아직 이 화면에 안 붙었다.
-           · 붙는다 해도 명부 API가 권한별로 갈린다([확인] BE 실코드, §연동 검증):
-             `GET /api/members`는 `hasAnyRole('OWNER','ADMIN')`, `GET /api/team/members`는
-             `hasRole('LEADER')`다 — **MEMBER가 개설할 때 자기 팀 명단을 볼 엔드포인트가
-             아예 없다**(프로젝트·검색·회의 참석자 조회까지 훑어도 없다).
-           · `GET /api/team/members` 응답의 `roleName`은 **권한이 아니라 팀 안 역할 라벨**이라
-             "전원 팀장인가"를 그걸로 판정할 수 없다(§도메인 상수: 이름이 어긋나면 조용히 틀린다).
-      ⚠️ 그래서 **최종 방어는 BE(`POST /api/meetings`)다.** 참석자 범위 강제는 BE 요청 문서에
-         올린다 — FE 화면 필터·아래 목 검증은 어디까지나 그 앞단이다(§권한: 화면 숨김은 보안이
-         아니다 / §연동 검증). 명부를 구할 길이 생기면 목 분기와 **같은 함수**
-         (`findAttendeeScopeViolation`)를 여기서도 부른다.
+      ⚠️ **참석자 서버 재검증** — `GET /api/members/my-team`이 붙으면서 실서버에도 명부가
+         생겼다(2026-08-13, `getReservableMembers`). 화면 피커가 후보를 좁혀 보여줘도 Server
+         Action은 주소만 알면 직접 부를 수 있어, 제출된 id가 이 개설자 범위 안인지 여기서
+         다시 본다(§권한: 화면 숨김은 UX일 뿐).
+      ⚠️ **"존재하지 않음"과 "범위 밖"을 갈라 말하지 않는다**(§정직성). `getReservableMembers`가
+         돌려주는 명부는 **이미 이 개설자 범위로 걸러져 있다**(Owner=팀별 리더, Leader·Member=
+         자기 팀) — 거기 없는 id는 다른 회사 사람이든 범위 밖 동료든 이 요청에서는 똑같이
+         못 쓰는 값이라, 원인을 지어내 나누지 않고 한 문장으로 막는다.
+      ⚠️ **최종 방어는 여전히 BE(`POST /api/meetings`)다.** 여기서 걸러도 폼을 안 거치고
+         API를 직접 호출하면 이 검사 자체가 안 돈다 — BE `MeetingAttendeeCommandService`가
+         스스로 다시 봐야 한다(아직 BE 요청 문서에 못 올렸다, 다음 라운드에 올릴 것).
     */
+    const roster = await getReservableMembers(actor);
+    const rosterIds = new Set(roster.map((member) => member.id));
+    if (draft.attendeeIds.some((id) => id !== actor.id && !rosterIds.has(id))) {
+      return { errors: { attendeeIds: "지정할 수 없는 참석자가 있습니다" } };
+    }
+
     const range = toReservedRange(draft);
     const accessToken = await requireAccessToken();
     try {
