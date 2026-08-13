@@ -75,3 +75,23 @@ jobs:
               $IMAGE:$SHA
 
             docker image prune -f
+
+            # ⚠️ `docker run -d`는 컨테이너가 뜨기만 하면 성공이다 — 그 안의 Next.js가
+            #    BACKEND_API_URL을 잘못 읽어 매 요청마다 실패해도 이 워크플로는 초록으로
+            #    끝난다. 배포 뒤 상태를 여기서 직접 찍어서, AWS 콘솔 접근 없이 Actions 로그
+            #    만으로 원인을 좁힐 수 있게 한다.
+            echo "=== 배포 진단 ==="
+            echo "BACKEND_API_URL(FE 컨테이너가 실제로 읽는 값): $BACKEND_API_URL"
+
+            sleep 3
+
+            echo "--- FE 컨테이너 응답 확인 (localhost:3000) ---"
+            curl -m 5 -sS -o /dev/null -w "HTTP %{http_code}\n" http://localhost:3000 \
+              || echo "FE 컨테이너가 응답하지 않습니다 — docker logs 확인 필요"
+
+            echo "--- EC2에서 BE로 직접 도달 가능한지 확인 (BE actuator health) ---"
+            curl -m 5 -sS -o /dev/null -w "HTTP %{http_code}\n" "$BACKEND_API_URL/actuator/health" \
+              || echo "EC2에서 BE로 연결할 수 없습니다 — BACKEND_API_URL 오타이거나 BE가 안 떠 있거나 방화벽 차단"
+
+            echo "--- FE 컨테이너 최근 로그 50줄 ---"
+            docker logs --tail 50 zebra-fe
