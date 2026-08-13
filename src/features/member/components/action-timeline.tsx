@@ -324,7 +324,14 @@ export function ActionTimeline({
               bar.href && "transition-colors hover:bg-foreground/[0.03]",
             );
 
-            // ⚠️ 상세 라우트가 없으면(`href` 없음) 클릭 안 되는 행으로만 표시
+            /*
+              ⚠️ 상세 라우트가 없으면(`href` 없음) 클릭 안 되는 행으로만 표시한다.
+              ⚠️ 이때도 `role="group"`을 준다 — 맨 `div`는 암묵 역할이 `generic`이라
+                 **`aria-label`이 접근 가능한 이름으로 안 나간다**(ARIA: generic은 이름을
+                 못 가진다). 막대는 `aria-hidden`이라, 이름이 날아가면 상태·D-day·기간·하위
+                 진척이 스크린리더에 통째로 안 들린다 — 링크 행은 들리고 이 행만 안 들리면
+                 같은 표가 줄마다 다른 말을 한다(§a11y).
+            */
             return bar.href ? (
               <Link
                 key={bar.id}
@@ -338,6 +345,7 @@ export function ActionTimeline({
             ) : (
               <div
                 key={bar.id}
+                role="group"
                 aria-label={barAriaLabel(bar)}
                 className={rowClassName}
                 style={{ height: ROW_HEIGHT_PX }}

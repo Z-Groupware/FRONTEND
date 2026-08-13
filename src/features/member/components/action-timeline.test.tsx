@@ -71,4 +71,24 @@ describe("ActionTimeline — 하위 진척", () => {
 
     expect(screen.queryByRole("link", { name: /하위 액션/ })).not.toBeInTheDocument();
   });
+
+  /*
+    ⚠️ 상세 라우트가 없는 행(인수인계 보드·팀 액션 상세)은 `div`로 그려진다. 맨 `div`는
+       암묵 역할이 `generic`이라 `aria-label`이 이름으로 안 나가서, 막대(`aria-hidden`)까지
+       더하면 이 줄만 통째로 안 들렸다 — `role="group"`으로 이름을 되살린다.
+  */
+  it("href 없는 행도 하위 진척을 행 이름으로 전한다", () => {
+    render(
+      <ActionTimeline
+        items={[buildItem({ href: undefined, childDoneCount: 2, childTotalCount: 4 })]}
+        today={TODAY}
+      />,
+    );
+
+    const row = screen.getByRole("group", { name: /하위 액션 4개 중 2개 완료/ });
+    expect(row).toHaveTextContent("2/4");
+    /* 이름이 살아 있으니 상태·D-day·기간도 같이 들린다(막대는 aria-hidden이다) */
+    expect(row).toHaveAccessibleName(/진행중/);
+    expect(screen.queryByRole("link")).not.toBeInTheDocument();
+  });
 });
