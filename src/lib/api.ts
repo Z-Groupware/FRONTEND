@@ -117,11 +117,19 @@ export async function serverApi<T>(path: string, init: ApiInit = {}): Promise<T>
          문장이 이미 원인을 말한다. 5xx는 화면 문구만으론 BE 로그를 못 찾으니 Loki에 남긴다.
     */
     if (response.status >= 500) {
-      pushLokiLog("error", `BE 호출 실패: ${path}`, {
-        status: response.status,
-        code: apiError.code,
-        traceId: apiError.traceId,
-      });
+      /*
+        ⚠️ **로그 전송이 원래 실패를 가리면 안 된다.** `pushLokiLog`가 (설정 오류 등으로)
+           동기적으로 던지더라도 화면은 원래의 `apiError`를 받아야 한다.
+      */
+      try {
+        pushLokiLog("error", `BE 호출 실패: ${path}`, {
+          status: response.status,
+          code: apiError.code,
+          traceId: apiError.traceId,
+        });
+      } catch {
+        // 로그는 부가 기능이다 — 전송 실패가 본 요청의 실패 사유를 바꾸지 않는다.
+      }
     }
     throw apiError;
   }

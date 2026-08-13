@@ -77,8 +77,13 @@ export async function toggleTodoCompletionAction(id: string): Promise<void> {
       이 피드에서 id 자체가 없다, `mapper.ts`). BE도 본인 소유 TODO가 아니면 CAL-001(404)로
       거부한다([확인] BE PL 가이드).
     */
+    const numericId = id.trim() === "" ? NaN : Number(id);
+    if (!Number.isSafeInteger(numericId)) {
+      throw new Error("개인 Todo만 완료 처리할 수 있습니다");
+    }
+
     const accessToken = await requireAccessToken();
-    await serverApi<unknown>(ep.todoComplete(Number(id)), {
+    await serverApi<unknown>(ep.todoComplete(numericId), {
       method: "PATCH",
       accessToken,
     });

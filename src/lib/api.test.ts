@@ -3,9 +3,11 @@
      검사 대상은 서버 자원을 안 만지는 두 순수 함수(`toUserMessage`·`toErrorTag`)다.
 */
 jest.mock("server-only", () => ({}));
+jest.mock("./loki", () => ({ pushLokiLog: jest.fn() }));
 
 import { ApiError, serverApi, toErrorTag, toUserMessage } from "./api";
 import { splitErrorTag } from "./error-tag";
+import { pushLokiLog } from "./loki";
 
 describe("toUserMessage", () => {
   it("BE가 준 문장을 그대로 쓴다 — 코드로 문구를 조립하지 않는다", () => {
@@ -117,12 +119,14 @@ describe("serverApi", () => {
 
   afterEach(() => {
     global.fetch = originalFetch;
+    jest.clearAllMocks();
   });
 
   it("성공 봉투에서 `data`만 꺼내 준다 — 부르는 쪽은 봉투를 모른다", async () => {
     global.fetch = mockJson(200, { httpStatus: 200, message: "ok", data: { id: 7 } }) as never;
 
     await expect(serverApi<{ id: number }>("/api/x")).resolves.toEqual({ id: 7 });
+    expect(pushLokiLog).not.toHaveBeenCalled();
   });
 
   it("실패 봉투의 `errorCode`·`traceId`를 그대로 들고 온다 — 로그를 찾을 열쇠다", async () => {
@@ -137,6 +141,85 @@ describe("serverApi", () => {
       code: "Z-003",
       traceId: "8f21c0",
     });
+  });
+
+  it("5xx는 Loki에 status·code·traceId를 남기고 같은 ApiError를 던진다", async () => {
+    global.fetch = mockJson(500, {
+      errorCode: "Z-003",
+      message: "서버 내부 오류가 발생했습니다.",
+      traceId: "8f21c0",
+    }) as never;
+
+    const error = await serverApi("/api/x").catch((e: unknown) => e);
+
+    expect(error).toBeInstanceOf(ApiError);
+    expect(error).toMatchObject({ status: 500, code: "Z-003", traceId: "8f21c0" });
+    expect(pushLokiLog).toHaveBeenCalledWith(
+      "error",
+      expect.stringContaining("/api/x"),
+      expect.objectContaining({ status: 500, code: "Z-003", traceId: "8f21c0" }),
+    );
+  });
+
+  it("4xx는 Loki를 남기지 않지만 여전히 ApiError를 던진다", async () => {
+    global.fetch = mockJson(409, {
+      errorCode: "AU-016",
+      message: "이미 있는 부서 이름입니다.",
+    }) as never;
+
+    const error = await serverApi("/api/x").catch((e: unknown) => e);
+
+    expect(error).toBeInstanceOf(ApiError);
+    expect((error as ApiError).status).toBe(409);
+    expect(pushLokiLog).not.toHaveBeenCalled();
+  });
+
+  it("본문이 빈 5xx도 원래 상태 코드를 지키며 Loki에 남긴다", async () => {
+    global.fetch = jest.fn(() =>
+      Promise.resolve({ ok: false, status: 503, text: () => Promise.resolve("") }),
+    ) as never;
+
+    const error = await serverApi("/api/x").catch((e: unknown) => e);
+
+    expect(error).toBeInstanceOf(ApiError);
+    expect((error as ApiError).status).toBe(503);
+    expect(pushLokiLog).toHaveBeenCalledWith(
+      "error",
+      expect.stringContaining("/api/x"),
+      expect.objectContaining({ status: 503 }),
+    );
+  });
+
+  it("본문이 JSON이 아닌 5xx도 상태 코드를 지키며 Loki에 남긴다", async () => {
+    global.fetch = jest.fn(() =>
+      Promise.resolve({
+        ok: false,
+        status: 502,
+        text: () => Promise.resolve("<html>bad gateway</html>"),
+      }),
+    ) as never;
+
+    const error = await serverApi("/api/x").catch((e: unknown) => e);
+
+    expect(error).toBeInstanceOf(ApiError);
+    expect((error as ApiError).status).toBe(502);
+    expect(pushLokiLog).toHaveBeenCalledWith(
+      "error",
+      expect.stringContaining("/api/x"),
+      expect.objectContaining({ status: 502 }),
+    );
+  });
+
+  it("Loki 전송 실패가 원래 에러 전파를 막지 않는다", async () => {
+    (pushLokiLog as jest.Mock).mockImplementation(() => {
+      throw new Error("loki down");
+    });
+    global.fetch = mockJson(500, {
+      errorCode: "Z-003",
+      message: "서버 내부 오류가 발생했습니다.",
+    }) as never;
+
+    await expect(serverApi("/api/x")).rejects.toMatchObject({ status: 500, code: "Z-003" });
   });
 
   it("답이 없으면 기다리다 끊는다 — 서버 액션이 영영 안 끝나면 화면이 굳는다", async () => {
