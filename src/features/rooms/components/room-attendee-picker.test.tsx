@@ -216,4 +216,38 @@ describe("RoomAttendeePicker — 범위 강제(2026-08-13)", () => {
 
     expect(submitted).toEqual(["2"]);
   });
+
+  /*
+    ⚠️ **참석자 교체(MEET-09) 회귀** — 2026-08-13 적대적 검증에서 잡혔다.
+       이 PR이 규칙을 강제하기 전에 만든 회의에는 지금 규칙으로는 못 고르는 참석자가 그대로
+       남아 있는데(예: Owner 회의에 일반 사원이 들어가 있음), 그 사람을 **화면에 알리지 않으면**
+       host가 아무것도 안 건드리고 [저장]만 눌러도 명단에서 사라진 채 성공 토스트가 뜬다.
+       빠질 사람을 이름으로 먼저 보여준다(§정직성).
+  */
+  it("교체 화면에서 규칙 밖 기존 참석자를 이름으로 알린다", () => {
+    renderPicker(OWNER_VIEWER, {
+      selectedIds: [2],
+      /* 3(사원 이하윤)은 예전 회의 때는 참석자였지만 지금 규칙(Owner=팀장만)으로는 못 고른다. */
+      currentAttendeeIds: [2, 3],
+    });
+
+    expect(screen.getByText("이하윤", { exact: false })).toBeInTheDocument();
+  });
+
+  /* ⚠️ 범위 안이면 안내가 뜨지 않아야 한다 — 매번 뜨면 문구가 배경이 된다 */
+  it("범위 안인 기존 참석자에는 안내가 뜨지 않는다", () => {
+    renderPicker(OWNER_VIEWER, { selectedIds: [2], currentAttendeeIds: [2] });
+
+    expect(screen.queryByText(/저장하면 명단에서 빠집니다/)).not.toBeInTheDocument();
+  });
+
+  /*
+    ⚠️ **예약 화면에는 안 뜬다.** `currentAttendeeIds`를 안 넘기면(기본값) 참석자 교체가 아니라
+       처음 만드는 화면이라, 알릴 "예전 명단"이 없다. 오탐을 막는다.
+  */
+  it("currentAttendeeIds를 안 넘기면(예약 화면) 안내가 뜨지 않는다", () => {
+    renderPicker(OWNER_VIEWER, { selectedIds: [2, 3] });
+
+    expect(screen.queryByText(/저장하면 명단에서 빠집니다/)).not.toBeInTheDocument();
+  });
 });

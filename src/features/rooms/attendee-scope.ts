@@ -89,6 +89,33 @@ export function attendeeScopeGuideOf(viewer: AttendeeScopeViewer): string {
 /** 후보가 한 명도 없을 때의 안내 — "검색 결과가 없습니다"와 원인이 다르다(§정직성). */
 export const ATTENDEE_SCOPE_EMPTY = "지정할 수 있는 참석자가 없습니다";
 
+/**
+ * **이미 명단에 있는데 지금 규칙으로는 못 고르는 사람**을 골라낸다(참석자 교체 화면 전용).
+ *
+ * ⚠️ 이런 사람이 생긴다: 규칙이 없던 때 만든 회의, 초대 뒤에 팀을 옮긴 사람, 팀장에서 내려온 사람.
+ * ⚠️ **살려 보낼 수도 없고 몰래 뺄 수도 없다.** 살려 보내면 서버 재검증
+ *    (`findAttendeeScopeViolation`)이 통째로 거부해 저장 자체가 막히고, 몰래 빼면 아무것도
+ *    안 건드린 host가 [저장]만 눌러도 그 사람들이 명단에서 사라진 채 성공 토스트가 뜬다
+ *    (2026-08-13 적대적 검증에서 잡혔다 — 이 PR이 만든 회귀다).
+ * ⚠️ 그래서 **이름으로 보여주고 저장하게 한다**(§정직성). 화면이 "이 사람들은 빠집니다"라고
+ *    먼저 말하면, 명단이 바뀌는 건 사고가 아니라 host가 내린 결정이 된다.
+ * ⚠️ host 자신은 여기 안 낀다 — 규칙 대상이 아니고 서버가 다시 끼워 넣는다.
+ */
+export function findAttendeesDroppedByScope(
+  members: RoomMember[],
+  viewer: AttendeeScopeViewer,
+  currentAttendeeIds: number[],
+): RoomMember[] {
+  const current = new Set(currentAttendeeIds);
+  return members.filter(
+    (member) =>
+      current.has(member.id) && member.id !== viewer.id && !isAttendeeInScope(member, viewer),
+  );
+}
+
+/** 빠질 사람을 알리는 머리말 — 명단은 화면이 이름으로 잇는다(라벨 하드코딩 금지). */
+export const ATTENDEE_SCOPE_DROPPED = "지금 규칙으로는 지정할 수 없어, 저장하면 명단에서 빠집니다";
+
 /** 서버 재검증 실패 문구 — 폼 오류 칸(`attendeeIds`)에 그대로 붙는다. */
 export const ATTENDEE_SCOPE_ERROR = {
   owner: "Owner가 개설하는 회의에는 팀장만 참석자로 지정할 수 있습니다",

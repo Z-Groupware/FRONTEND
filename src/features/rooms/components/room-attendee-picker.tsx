@@ -8,10 +8,12 @@ import { Label } from "@/components/ui/label";
 import { useProfileAvatar } from "@/hooks/use-profile-avatar";
 
 import {
+  ATTENDEE_SCOPE_DROPPED,
   ATTENDEE_SCOPE_EMPTY,
   attendeeScopeGuideOf,
   type AttendeeScopeViewer,
   filterAttendeeCandidates,
+  findAttendeesDroppedByScope,
 } from "../attendee-scope";
 import type { RoomMember } from "../types";
 
@@ -26,6 +28,12 @@ interface RoomAttendeePickerProps {
    *    Owner로 읽는다 — 권한은 직급(`role`)에서 온다(CLAUDE.md §조직 계층).
    */
   viewer: AttendeeScopeViewer;
+  /**
+   * **이미 명단에 있던 사람들** — 참석자 교체(MEET-09)에서만 넘긴다(예약 화면은 명단이 없다).
+   * ⚠️ 이 값이 있어야 "규칙 밖이라 저장하면 빠질 사람"을 이름으로 알릴 수 있다
+   *    (`findAttendeesDroppedByScope`). 안 넘기면 예전처럼 조용히 사라진다.
+   */
+  currentAttendeeIds?: number[];
 }
 
 const AVATAR_SIZE = 20;
@@ -74,10 +82,22 @@ export function RoomAttendeePicker({
   selectedIds,
   onChange,
   viewer,
+  currentAttendeeIds,
 }: RoomAttendeePickerProps) {
   const [keyword, setKeyword] = useState("");
 
   const candidates = useMemo(() => filterAttendeeCandidates(members, viewer), [members, viewer]);
+
+  /*
+    ⚠️ **명단에 있는데 규칙 밖인 사람은 이름으로 알린다**(§정직성 — `attendee-scope.ts` 주석).
+       체크박스로 안 내주는 건 같지만, 안 내주기만 하면 host가 아무것도 안 건드리고 [저장]만
+       눌러도 그 사람들이 사라진 채 성공 토스트가 뜬다.
+  */
+  const droppedByScope = useMemo(
+    () =>
+      currentAttendeeIds ? findAttendeesDroppedByScope(members, viewer, currentAttendeeIds) : [],
+    [members, viewer, currentAttendeeIds],
+  );
 
   const visible = useMemo(() => {
     const query = keyword.trim().toLowerCase();
@@ -149,6 +169,15 @@ export function RoomAttendeePicker({
       {hiddenSelectedIds.map((id) => (
         <input key={id} type="hidden" name="attendeeIds" value={id} />
       ))}
+
+      {droppedByScope.length > 0 && (
+        <p className="text-muted-foreground text-[11px] leading-4">
+          <span className="text-destructive">
+            {droppedByScope.map((member) => member.name).join(" · ")}
+          </span>
+          {` — ${ATTENDEE_SCOPE_DROPPED}`}
+        </p>
+      )}
 
       <p className="text-muted-foreground text-[11px]">선택 {selectedIds.length}명</p>
     </div>
