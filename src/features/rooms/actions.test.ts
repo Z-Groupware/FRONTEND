@@ -34,9 +34,14 @@ const VALID_ENTRIES: Record<string, string> = {
 
 const DEFAULT_TOPICS = [{ main: "제품", sub: "로드맵 검토" }];
 
+/*
+  ⚠️ 기본 참석자를 **김서준(id=2, 개발팀 LEADER)** 으로 둔다(2026-08-13). 전에는 박대표(id=1,
+     OWNER)였는데, 참석자 범위가 강제되면서 Owner 명단에 팀장 아닌 사람이 못 들어간다
+     (`attendee-scope.ts`) — 기본 액터(OWNER)와 아래 LEADER(개발팀) 둘 다에서 통과하는 값이다.
+*/
 const form = (
   entries: Record<string, string>,
-  attendeeIds: number[] = [1],
+  attendeeIds: number[] = [2],
   topics: { main: string; sub: string }[] = DEFAULT_TOPICS,
 ) => {
   const data = new FormData();
@@ -237,7 +242,7 @@ describe("회의실 예약 생성 (Owner 개설 = 프로젝트 회의)", () => {
       { errors: {} },
       form(
         { ...VALID_ENTRIES, date: "2026-08-14" },
-        [1],
+        [2],
         [
           { main: "제품", sub: "로드맵 검토" },
           { main: "마케팅", sub: "캠페인 리뷰" },
@@ -302,6 +307,39 @@ describe("회의실 예약 생성 (Owner 개설 = 프로젝트 회의)", () => {
     expect(result.created).toBeUndefined();
   });
 
+  it("Owner 명단에 팀장 아닌 사람이 섞이면 막는다(2026-08-13 범위 강제)", async () => {
+    // id=3 이하윤은 개발팀 MEMBER다 — 화면 피커엔 애초에 안 뜨지만 폼은 조작될 수 있다.
+    const result = await createRoomReservationAction({ errors: {} }, form(VALID_ENTRIES, [2, 3]));
+
+    expect(result.errors.attendeeIds).toBe(
+      "Owner가 개설하는 회의에는 팀장만 참석자로 지정할 수 있습니다",
+    );
+    expect(result.created).toBeUndefined();
+  });
+
+  it("host 자신(=액터)은 규칙에서 빠진다 — 명단에 끼어 있어도 통과한다", async () => {
+    // ⚠️ host는 고르는 사람이 아니라 서버가 명단에 넣는 사람이다(`attendee-scope.ts`).
+    const result = await createRoomReservationAction(
+      { errors: {} },
+      form({ ...VALID_ENTRIES, date: "2026-08-20" }, [1, 2]),
+    );
+
+    expect(result.errors).toEqual({});
+    expect(result.created).toBeDefined();
+  });
+
+  it("팀이 다른 팀장끼리는 함께 넣을 수 있다(Owner 회의는 전사 팀장 회의다)", async () => {
+    // id=2 김서준(개발팀 LEADER) · id=5 최유진(마케팅팀 LEADER)
+    const result = await createRoomReservationAction(
+      { errors: {} },
+      form({ ...VALID_ENTRIES, date: "2026-08-17" }, [2, 5]),
+    );
+
+    expect(result.errors).toEqual({});
+    // ⚠️ host(액터 id=1)는 피커가 후보로 안 내주는 대신 저장할 때 맨 앞에 자동으로 들어간다.
+    expect(result.created?.attendeeIds).toEqual([1, 2, 5]);
+  });
+
   it("폼이 조작돼 참석자 값이 숫자가 아니면 막는다", async () => {
     const data = new FormData();
     for (const [key, value] of Object.entries({ ...VALID_ENTRIES, date: "2026-08-15" })) {
@@ -363,6 +401,43 @@ describe("회의실 예약 생성 (Leader 개설 = 팀 액션 회의)", () => {
 
     expect(result.errors.parentTeamActionId).toBe("존재하지 않는 상위 팀 액션입니다");
     expect(result.created).toBeUndefined();
+  });
+
+  it("자기 팀이 아닌 사람을 참석자로 끼워 넣으면 막는다(2026-08-13 범위 강제)", async () => {
+    /* id=7 강서연은 디자인팀 LEADER다 — 개발팀 Leader의 회의엔 못 들어간다.
+       ⚠️ id=5는 안 쓴다 — 이 블록의 액터가 id=5라 host 예외에 걸려 검사에서 빠진다. */
+    const result = await createRoomReservationAction(
+      { errors: {} },
+      form({ ...VALID_ENTRIES, date: "2026-08-16", parentTeamActionId: "1" }, [2, 7]),
+    );
+
+    expect(result.errors.attendeeIds).toBe("자기 팀 소속만 참석자로 지정할 수 있습니다");
+    expect(result.created).toBeUndefined();
+  });
+
+  it("자기 팀 사원은 팀장이 아니어도 넣을 수 있다(Owner 규칙과 다른 축이다)", async () => {
+    // id=3 이하윤은 개발팀 MEMBER — 같은 팀이면 권한을 보지 않는다.
+    const result = await createRoomReservationAction(
+      { errors: {} },
+      form({ ...VALID_ENTRIES, date: "2026-08-18", parentTeamActionId: "1" }, [3]),
+    );
+
+    expect(result.errors).toEqual({});
+    // host(액터 id=5)가 맨 앞에 자동으로 들어간다 — 개설자는 자기 회의 상세를 볼 수 있어야 한다.
+    expect(result.created?.attendeeIds).toEqual([5, 3]);
+  });
+
+  it("세션에 소속 팀이 없으면 통과시키지 않는다(범위를 잴 수 없다 — §정직성)", async () => {
+    getMockActorMock.mockReturnValue({ id: 5, role: "LEADER", teamId: 7 });
+
+    const result = await createRoomReservationAction(
+      { errors: {} },
+      form({ ...VALID_ENTRIES, date: "2026-08-19", parentTeamActionId: "1" }, [2]),
+    );
+
+    // ⚠️ 팀 이름이 없으면 "상위 팀 액션"도 못 찾는다 — 둘 중 어느 칸에 걸리든 통과하면 안 된다.
+    expect(result.created).toBeUndefined();
+    expect(result.errors.attendeeIds ?? result.errors.parentTeamActionId).toBeDefined();
   });
 
   it("다른 프로젝트 소속 팀 액션 id를 끼워 넣으면 막는다", async () => {

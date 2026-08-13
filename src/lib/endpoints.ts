@@ -6,24 +6,94 @@
  *
  * ⚠️ 아래 **[확인]** 표시가 붙은 경로는 BE 레포 실코드로 대조했다(2026-08-10).
  *   나머지는 아직 **FE 제안 경로**다 — 쓰기 전에 컨트롤러를 먼저 본다(§연동 검증).
+ *
+ * ⚠️ **부르는 곳이 없는 채로 남겨 두지 않는다**(2026-08-13, #433). 검증 안 된 빈 경로가 실제
+ *   경로 옆에 서 있으면 위 규칙이 거꾸로 작동한다 — 다음 사람이 "여기 있으니 합의된 경로"라고
+ *   읽고 집는다. 이때 `subscription`(`/api/subscription` — BE 컨트롤러 없음, 실 결제 경로는
+ *   `/api/companies/me/billing*`)과 `departments`(`/api/departments` — 조직이 부서에서
+ *   **플랫한 팀**으로 확정되며 `teams`로 대체됐다, CLAUDE.md §권한 ③)를 지웠다.
+ *   ⚠️ 반대로 **호출부가 없어도 남기는 것**이 있다 — 지금 화면이 없을 뿐 쓰기로 정해진 경로다.
+ *      `notifications`·`notificationStream`은 알림 SSE 배너가 예정돼 있고(CLAUDE.md
+ *      §렌더링·데이터: "알림=SSE, BFF가 스트림을 중계"), 캡처 조각·검색·`todos` 등은 연동이
+ *      진행 중이다. 지우기 전에 **그 도메인 담당자·이슈를 먼저 본다.**
  */
-/** 목록 3종(`GET /api/projects`·`/api/actions`·`/api/team/actions`)이 공유하는 쿼리 파라미터. */
-export interface ProjectListParams {
+/**
+ * 목록 3종(`GET /api/projects`·`/api/actions`·`/api/team/actions`)이 공유하는 쿼리 파라미터.
+ * ⚠️ **`sort`는 여기 없다.** 컨트롤러마다 화이트리스트가 달라서(프로젝트만 `name`을 받는다)
+ *    한 타입에 몰아 두면 액션 목록에 `sort=name`을 보내도 타입이 안 막는다 — BE는 모르는
+ *    값을 조용히 무시하므로 화면만 엉뚱한 차례로 서고 아무도 못 본다(§연동 검증).
+ */
+export interface ListPageParams {
   status?: "TODO" | "IN_PROGRESS" | "DONE";
-  sort?: "dueDate" | "createdAt";
   order?: "asc" | "desc";
   page?: number;
   size?: number;
 }
 
-/** 개인 액션 목록만 갖는 `overdue` 필터가 추가된다. */
-export interface ActionListParams extends ProjectListParams {
+/**
+ * 프로젝트 목록.
+ * ⚠️ `keyword`·`sort=name`은 **2026-08-13에 BE가 붙였다**(커밋 `9bd9c010` — [확인]
+ *    `ProjectController.list` 주석 "keyword 검색 추가 … 프로젝트명 대소문자 무시 부분일치",
+ *    `sort=dueDate|createdAt|name`). 이게 없어서 이 목록만 무한 스크롤을 못 얹고 전량을
+ *    받아 화면에서 거르고 있었다(#417 잔여분).
+ */
+export interface ProjectListParams extends ListPageParams {
+  keyword?: string;
+  sort?: "dueDate" | "createdAt" | "name";
+}
+
+/**
+ * 액션 목록 2종(`/api/actions`·`/api/team/actions`) — ⚠️ `sort`에 `name`이 **없다**.
+ * ⚠️ 프로젝트와 갈라 두는 이유: 컨트롤러마다 화이트리스트가 달라서 한 타입에 몰아 두면
+ *    액션 목록에 `sort=name`을 보내도 타입이 안 막는다 — BE는 모르는 값을 조용히 무시하므로
+ *    화면만 엉뚱한 차례로 서고 아무도 못 본다(§연동 검증).
+ */
+export interface ActionListParams extends ListPageParams {
+  sort?: "dueDate" | "createdAt";
   overdue?: boolean;
   /**
    * 값을 주면 호출자 본인이 아니라 **그 팀원의** 목록을 대신 조회한다(2026-08-11 추가,
    * 이홍근 요청 — 팀원 관리 화면). LEADER 전용, 같은 팀 소속만 — [확인] `ActionController.java`.
    */
   assigneeMemberId?: number;
+}
+
+/**
+ * 회의 목록(MEET-02)이 받는 쿼리 파라미터 — [확인] `meeting/presentation/api/MeetingListController.java`.
+ *
+ * ⚠️ **`from`·`to`를 생략하면 안 된다.** 서버 기본값이 `오늘-3개월 ~ 오늘`이라
+ *    (`MeetingListQueryService.validateAndResolve`) **예정 회의가 통째로 빠진다** — 이 화면의
+ *    첫 탭이 "내가 개설한(예정 포함)"이라 앞쪽을 열어 주지 않으면 빈 목록으로 보인다.
+ * ⚠️ `page`는 **0-base**(CLAUDE.md §목록), `size`는 1~100이고 벗어나면 Z-001로 거절된다.
+ */
+export interface MeetingListParams {
+  projectId?: number;
+  meetingRoomId?: number;
+  /** `YYYY-MM-DD` */
+  from?: string;
+  to?: string;
+  status?: "SCHEDULED" | "IN_PROGRESS" | "DONE" | "CANCELED";
+  /** 두 탭을 가르는 값 — `HOSTED`=내가 개설한 · `ATTENDING`=참여해야 할(host 제외) */
+  scope?: "HOSTED" | "ATTENDING";
+  page?: number;
+  size?: number;
+}
+
+/**
+ * 회사 전체 구성원 액션(`GET /api/company/actions`) — **OWNER‖admin 전용**(2026-08-13 신설,
+ * 커밋 `9646c7a2`). [확인] `CompanyActionController` — `@PreAuthorize("hasRole('OWNER') or
+ * principal.isAdmin()")`.
+ *
+ * ⚠️ **`assigneeMemberId`가 사실상 필수다.** 경로는 `required = false`지만 유스케이스 주석이
+ *    "이 화면은 항상 특정 구성원 한 명의 액션을 보는 용도라 null은 이번 스코프에 없다"고
+ *    못 박았다 — 안 넘기면 무엇이 오는지 계약에 없다. 타입에서도 필수로 둔다.
+ * ⚠️ `/api/actions`의 같은 이름 파라미터와 **의미는 같고 스코프만 다르다**(팀 vs 회사).
+ *    그래서 경로가 갈린다 — 한쪽에 `?scope=`를 붙이지 않는다.
+ */
+export interface CompanyActionListParams extends ListPageParams {
+  assigneeMemberId: number;
+  sort?: "dueDate" | "createdAt";
+  overdue?: boolean;
 }
 
 /** `undefined`·`null` 값은 쿼리에서 빠진다 — 서버 기본값을 그대로 쓰게 둔다. */
@@ -56,10 +126,46 @@ export const ep = {
    *
    * ⚠️ **`/api/v1/` 접두사는 폐기됐다**(2026-08-12, 커밋 `51b5482f`) — 그 전에 붙였던 v1은
    *    이제 전부 404다. 캡처 전용 조회는 없다 — 캡처 화면도 상세(MEET-04)를 쓴다(§환각 API 방지).
+   *
+   * [확인] 목록(MEET-02)·대시보드(MEET-17) 실코드 재대조(2026-08-13) — `MeetingListController.java`
+   *   `MeetingListResponse.java` · `DashboardMeetingController.java` `DashboardMeetingListResponse.java`.
    */
-  meetings: () => "/api/meetings",
-  /** 상세(MEET-04) — 캡처 진입도 이걸 쓴다. 없으면 404 `MT-001`, 열람 권한 없으면 403 `MT-011` */
+  /**
+   * 예약 생성(`POST`, MEET-01)과 목록 조회(`GET`, MEET-02)가 같은 경로를 쓴다.
+   * ⚠️ 파라미터 뜻·주의는 {@link MeetingListParams} — 특히 `from`·`to`를 비우면 예정 회의가 빠진다.
+   */
+  meetings: (params?: MeetingListParams) => `/api/meetings${toQuery(params)}`,
+  /**
+   * 한 회의의 세 갈래가 **같은 경로**를 쓴다 — `GET` 상세(MEET-04, 캡처 진입도 이걸 쓴다) ·
+   * `PATCH` 수정(MEET-05) · `DELETE` 취소(MEET-06). 없으면 404 `MT-001`, 열람 권한 없으면 403 `MT-011`.
+   *
+   * ⚠️ **MEET-05용 `meetingUpdate`를 따로 만들지 않는다.** 경로 문자열이 같은데 함수를 둘로
+   *    두면 BE가 경로를 옮길 때 한쪽만 고쳐진다(§도메인 상수: 값은 한 곳) — 이미 DELETE(MEET-06)가
+   *    같은 자리를 쓰고 있다. 명세 번호로 찾는 사람을 위해 셋을 여기 다 적어 둔다.
+   * ⚠️ **PATCH는 시작 전(`SCHEDULED`) 회의만 받는다.** 진행중·완료·취소는 409 `MT-014`
+   *    ("이미 시작된 회의는 수정·취소할 수 없습니다") — 확정된 캡처 시간축 때문이다.
+   * ⚠️ PATCH 본문은 **보낸 키만** 바뀐다(BE가 `@JsonSetter`로 미전달과 명시적 null을 가른다) —
+   *    `title`·`projectId`·`meetingRoomId`·`startAt`·`endAt`·`recordingConsent` 6개가 대상이고,
+   *    보낸 키에 `null`을 실으면 400이다(필수 컬럼을 지우는 요청으로 본다).
+   * ⚠️ 시간·회의실을 바꾸면 예약 규칙을 다시 탄다 — 30분 그리드(400 `MT-005`)·회의실 운영시간
+   *    (400 `MT-004`)·과거 시각(400 `MT-012`)·중복 예약(409 `MT-002`).
+   *
+   * [확인] `meeting/presentation/api/{MeetingUpdateController,request/UpdateMeetingRequest}.java` ·
+   *   `application/service/MeetingUpdateService.java`(2026-08-13).
+   */
   meeting: (id: number) => `/api/meetings/${id}`,
+  /**
+   * 대시보드 최근 회의(MEET-17, 구현 완료) — [확인] `meeting/presentation/api/DashboardMeetingController.java`
+   * · `application/service/DashboardMeetingQueryService.java`(2026-08-13).
+   *
+   * ⚠️ **`scope`는 필수다**(생략하면 Z-001). 역할로 추론하지 않고 부르는 쪽이 명시한다 —
+   *    `owner`는 OWNER만, `team`은 LEADER만(게다가 토큰에 `teamId`가 있어야 한다), `me`는 전원.
+   *    맞지 않으면 403이라 **역할 가드가 있는 화면에서만** 부른다.
+   * ⚠️ `limit`은 1~20(기본 5). 벗어나면 Z-001이다.
+   * ⚠️ 경로가 `/api/meetings/{meetingId}`와 겹쳐 보이지만 리터럴이 먼저 잡힌다(Spring 매핑 규칙).
+   */
+  meetingsDashboard: (params: { scope: "owner" | "team" | "me"; limit?: number }) =>
+    `/api/meetings/dashboard${toQuery(params)}`,
   /** 내 예정 회의(MEET-03, 구현 완료) — 대시보드 위젯용. `limit` 생략 시 서버 기본값(5, 최대 20). */
   meetingsUpcoming: (params?: { limit?: number }) => `/api/meetings/upcoming${toQuery(params)}`,
   /** 참석자 명단 교체(MEET-09, 구현 완료) — 전체 명단 교체(부분 추가·삭제 아님). */
@@ -123,6 +229,23 @@ export const ep = {
   partsStatus: (meetingId: number) => `/api/meetings/${meetingId}/parts/status`,
   /** AI 처리 상태(CAP-06) — 종료 뒤 폴링 */
   processingStatus: (meetingId: number) => `/api/meetings/${meetingId}/processing-status`,
+  /**
+   * 요약 재시도 · 계층 재개(ANLZ-02) — 마이페이지 "요약이 중단된 회의"의 [다시 분석].
+   * [확인] `capture/presentation/api/AnalysisController.java#resumeAnalysis`(2026-08-13).
+   *
+   * ⚠️ **ANLZ-01(`POST /analysis`)과 다르다.** 저쪽은 처음부터 다시 돌려 **재과금**이 나고,
+   *    이쪽은 **실패한 계층부터 이어** 돌려 앞 계층 토큰이 다시 안 나간다.
+   * ⚠️ **본문을 안 보낸다**(`@RequestBody(required = false)`). 화면은 어느 계층이 깨졌는지
+   *    모르고, 알려면 CAP-06을 먼저 부르는 왕복이 생긴다 — 생략하면 **서버가 처음 깨진
+   *    계층을 고른다**(BE `ResumeAnalysisRequest` 주석). 빈 문자열을 보내면 400 `ANLZ-003`이라
+   *    "안 보내는 것"과 "빈 값"이 다르다.
+   * ⚠️ 409 둘을 일반 실패로 뭉치지 않는다 — `ANLZ-008`은 **재개할 계층이 없다**(전부 성공했거나
+   *    한 번도 안 돌았다)는 뜻이라 처음부터(ANLZ-01) 돌려야 하고, `ANLZ-004`는 앞 계층이
+   *    안 끝나 지금은 못 잇는다는 뜻이다.
+   * ⚠️ **200이 성공을 뜻하지 않는다.** 큐가 없어 요청 스레드에서 그대로 돌기 때문에 응답
+   *    `status`에 실제 결과(`DONE`·`FAILED`·`SKIPPED`·`ALREADY_RUNNING`·`SUPERSEDED`)가 실려 온다.
+   */
+  meetingAnalysisRetry: (meetingId: number) => `/api/meetings/${meetingId}/analysis/retry`,
 
   /*
    * AI 액션 분배 검토(RVW) — [확인] BE 실코드 대조(2026-08-12)
@@ -172,8 +295,10 @@ export const ep = {
   action: (id: number) => `/api/actions/${id}`,
   actionCompleteBulk: () => "/api/actions/complete/bulk",
   meetingActions: (meetingId: number) => `/api/meetings/${meetingId}/actions`,
+  /** 회사 전체 구성원 액션 — OWNER‖admin 전용(사원 상세의 담당 액션 카드). */
+  companyActions: (params: CompanyActionListParams) => `/api/company/actions${toQuery(params)}`,
 
-  teamActions: (params?: ProjectListParams) => `/api/team/actions${toQuery(params)}`,
+  teamActions: (params?: ActionListParams) => `/api/team/actions${toQuery(params)}`,
   teamAction: (id: number) => `/api/team/actions/${id}`,
   teamActionTimeline: (id: number) => `/api/team/actions/${id}?tab=timeline`,
   teamActionAttachmentDownloadUrl: (teamActionId: number, attachmentId: number) =>
@@ -183,7 +308,10 @@ export const ep = {
   /** 팀원 현황(이름·직급·역할·재직상태·담당 액션 수) — [확인] PR #354 머지 완료, LEADER 전용 */
   teamMembers: () => "/api/team/members",
 
-  /** `month` 생략 시 이번 달(서버 기본값) */
+  /**
+   * [확인] BE PL 캘린더/Todo 연동 가이드(2026-08-13, PR #457 머지 완료) — `CalendarItemResponse`·
+   *   `TodoResponse`·`CreateTodoRequest` 소스·테스트 대조. `month` 생략 시 이번 달(서버 기본값).
+   */
   calendar: (month?: string) => `/api/calendar${toQuery(month ? { month } : undefined)}`,
   todos: () => "/api/todos",
   todoComplete: (id: number) => `/api/todos/${id}/complete`,
@@ -229,6 +357,12 @@ export const ep = {
   /** 계정 발급 — 첫 비밀번호는 서버가 메일로 보낸다 */
   manageMembers: () => "/api/manage/members",
   /**
+   * 사원 삭제(`DELETE`) — **소프트**다(상태 `DELETED` + `deleted_at`, 행은 남는다).
+   * 응답에 `data`가 없다(`successWithoutData`) — 닫은 계정의 정보를 되돌려 줄 이유가 없다.
+   * [확인] BE `ManageMemberController.delete` 2026-08-13 develop(`30952c10`).
+   */
+  manageMember: (id: number) => `/api/manage/members/${id}`,
+  /**
    * 팀 — [확인] identity/team/presentation/api/TeamController.java
    *
    * ⚠️ **한 건씩 다룬다**(`POST`·`PATCH /{id}`·`DELETE /{id}`). 트리를 통째로 넣는
@@ -240,7 +374,6 @@ export const ep = {
   /** 직급 — [확인] identity/position/presentation/api/PositionController.java */
   jobPositions: () => "/api/job-positions",
   jobPosition: (id: number) => `/api/job-positions/${id}`,
-  departments: () => "/api/departments",
 
   /**
    * 회의실 — [확인] `meetingroom/presentation/api/{MeetingRoomController,MeetingRoomCommandController}.java`
@@ -261,20 +394,85 @@ export const ep = {
   meetingRoomAvailability: (params: { meetingRoomId: number; date?: string }) =>
     `/api/rooms/availability${toQuery(params)}`,
 
+  /**
+   * 결제·구독 — [확인] `metering/presentation/api/BillingController.java`
+   *   (2026-08-13 BE 실코드 대조, BIL-0~4 커밋). 전부 `@RequestMapping("/api/companies/me")` 아래다.
+   *
+   * ⚠️ **봉투가 메서드마다 다르다.** 전역으로 감싸 주는 `ResponseBodyAdvice`가 BE에 없어서,
+   *    컨트롤러가 `ApiResponse<T>`를 리턴한 것만 봉투가 씌워진다 — 아래 각 항목에 적어 뒀다.
+   *    맨몸 응답을 기본값으로 부르면 `raw.data`가 없어 **조용히 `undefined`가 흘러간다**(§정직성).
+   * ⚠️ **조회 둘은 로그인이 필요하다**(`isAuthenticated()`). 공개 요금제 화면(`/plans`)은
+   *    아래 `publicBillingConfig`(BE PR #461)를 쓴다 — `server.ts`의 주석을 본다.
+   */
+  /** `GET` · `isAuthenticated()` · **봉투 있음**(`ApiResponse<BillingConfigResponse>`) */
+  billingConfig: () => "/api/companies/me/billing-config",
+  /**
+   * `GET` · **permitAll(비로그인 공개)** · **봉투 있음**(`ApiResponse<BillingConfigResponse>` —
+   * 응답 shape은 위 `billingConfig`와 동일하다).
+   * [확인] `PublicBillingConfigController` — **BE PR #461**(계약 동결, 미머지).
+   * ⚠️ BE #461이 배포되기 전에는 이 경로가 404다 — 호출부(`server.ts`)가 v0 가정값으로
+   *    폴백하므로 화면은 안 죽는다(머지·배포 순서 무관).
+   */
+  publicBillingConfig: () => "/api/billing-config",
+  /** `GET` · `isAuthenticated()` · **봉투 있음**(`ApiResponse<BillingOverviewResponse>`) */
+  billing: () => "/api/companies/me/billing",
+  /**
+   * `POST` · OWNER‖admin · ⚠️ **봉투 과도기** — 지금 배포본은 `BillingPaymentActionResult`
+   * 맨몸이고, **BE PR #461**부터 `ApiResponse<T>`로 온다. 호출부가 `isEnveloped: false`로
+   * 원문을 받고 매퍼(`unwrapTransitionalEnvelope`)가 감지한다 — 배포 확정 후 기본값 경로로 되돌린다.
+   * 실패도 200 + `{ isSuccess:false, failureCode }`로 오므로 **HTTP 상태로 가르면 안 된다.**
+   */
+  subscriptionPay: () => "/api/companies/me/subscription/pay",
+  /**
+   * `POST` · OWNER‖admin · ⚠️ **봉투 과도기** — 지금 배포본은 `PaymentMethodResponse` 맨몸이고,
+   * **BE PR #461**부터 `ApiResponse<T>`로 온다(위 `subscriptionPay`와 같은 처리).
+   * ⚠️ **경로가 복수형(`/payment-methods`)이다.** 우리가 보낸 스펙은 단수였는데 BE가 복수로
+   *    구현했다 — 문서와 코드가 다르면 코드가 맞다(§연동 검증). 단수로 부르면 404다.
+   */
+  paymentMethods: () => "/api/companies/me/payment-methods",
+  /** `POST` · OWNER‖admin · 본문 `{ isCanceling }` · **봉투 있음**(`ApiResponse<Void>` — `data`가 없다) */
+  subscriptionCancel: () => "/api/companies/me/subscription/cancel",
+
   /* 기타 */
   notifications: () => "/api/notifications",
-  /** SSE 스트림 — BFF가 중계하며 토큰을 주입한다 */
+  /**
+   * 개인 알림 실시간 구독(SSE) — BFF가 중계하며 토큰을 주입한다.
+   * [확인] BE 실코드 대조(2026-08-13) — `notification/presentation/api/NotificationController.java`
+   *
+   * ⚠️ **수신자를 URL로 안 보낸다.** BE가 토큰의 `memberId`로 스코프를 정한다
+   *    (`@AuthenticationPrincipal(expression = "memberId")`) — 쿼리로 받으면 남의 알림을 본다.
+   * ⚠️ 이벤트 두 종류: `notification` · `heartbeat`(20초, `{ t }`).
+   *    `notification`의 data는 `{ type, payload }`다(`NotificationEvent` 레코드).
+   * ⚠️ `type`은 지금 **4종뿐**이다 — `MEETING_CREATED`·`MEETING_REMINDER`·`MEETING_CANCELED`·
+   *    `NOTICE_CREATED`(`NotificationType.java`). **분석 완료·실패 이벤트는 아직 없다** —
+   *    그래서 요약 진행 카드는 CAP-06(`processingStatus`) 폴링으로 돈다.
+   */
   notificationStream: () => "/api/notifications/stream",
   notices: () => "/api/notices",
   /** 공지 상세(`GET`, NOTI-02)·수정(`PUT`, NOTI-04)·삭제(`DELETE`, NOTI-05)가 같은 경로를 쓴다. */
   notice: (noticeId: number) => `/api/notices/${noticeId}`,
-  subscription: () => "/api/subscription",
 
-  /**
-   * 검색 — API 스펙 전달받음(2026-08-11), **BE 실코드 미대조**(§연동 검증: 문서와 코드가
-   * 다르면 코드가 맞다 — 구현 붙일 때 컨트롤러로 재확인한다).
+  /*
+   * 검색 — [확인] `search/presentation/api/SearchController.java` 실코드 대조(2026-08-13).
+   *
+   * ⚠️ **컨트롤러에 있는 건 `GET /api/v1/search` 하나뿐이다.** 아래 셋(overview·recent-queries·
+   *    recent-views)은 2026-08-11에 스펙만 받아 적어 둔 **FE 제안 경로**이고 BE에 매핑이 없다 —
+   *    부르면 404다. 지우지 않고 남기는 건 "합의는 있었고 구현이 없다"는 사실까지 잃지 않으려는
+   *    것이고, **생기기 전까지 호출하지 않는다**(§환각 API 방지). 호출부는 이 주석을 근거로
+   *    비워 뒀다(`features/search/{server,actions}.ts`).
+   * ⚠️ `/api/v1/` 접두사는 회의·캡처에서는 폐기됐지만 **검색은 아직 v1이 맞다**
+   *    (`@RequestMapping("/api/v1/search")`). 다른 도메인을 따라 떼면 404다.
    */
   searchOverview: () => "/api/v1/search/overview",
+  /**
+   * 통합 검색(SR-1) — `q`(필수) · `type`(ALL·MEETING·ACTION·PROJECT·PERSON) · `tags` · `from` ·
+   * `to` · `limit`. **page는 없다** — 21건째부터 보는 수단이 아직 서버에 없다.
+   *
+   * ⚠️ **`limit`은 1~50이고 벗어나면 400**(`SearchService.MAX_LIMIT`) — 크게 부르면 결과가
+   *    아니라 에러가 온다. 그리고 그 상한은 **종류마다** 걸린다(`type=ALL`이면 4종 × limit).
+   * ⚠️ **`tags`·`from`·`to`는 받기만 하고 WHERE에 안 건다**(SR-1 — `SearchJdbcQueryAdapter`에
+   *    태그·기간 조건이 아예 없다). 보내도 결과가 안 좁혀진다, SR-2 대기(§연동 검증).
+   */
   search: () => "/api/v1/search",
   searchRecentQueries: () => "/api/v1/search/recent-queries",
   searchRecentViews: () => "/api/v1/search/recent-views",

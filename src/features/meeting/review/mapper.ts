@@ -188,7 +188,8 @@ export function toTeamOptions(detail: BeMeetingDetail): TeamOption[] {
 
   for (const attendee of detail.attendees) {
     if (attendee.memberId === hostMemberId) continue;
-    if (attendee.teamId === null || attendee.teamName === null) continue;
+    /* ⚠️ `teamId`가 `undefined`인 것(#472 배포 전)도 여기서 같이 거른다 — 없는 팀을 옵션으로 못 만든다 */
+    if (attendee.teamId == null || attendee.teamName === null) continue;
     if (!seen.has(attendee.teamId)) seen.set(attendee.teamId, attendee.teamName);
   }
 

@@ -1,6 +1,9 @@
 import type { ReactNode } from "react";
 
 import { getUnreadNoticeCount } from "@/features/notice/server";
+import { AnalysisProgressCard } from "@/features/notification/components/analysis-progress-card";
+import { NotificationBanner } from "@/features/notification/components/notification-banner";
+import { NotificationProvider } from "@/features/notification/notification-provider";
 import { guardWorkspaceEntry } from "@/features/onboarding/guard";
 import { RoleSidebar } from "@/features/shell/components/role-sidebar";
 import type { NavSection } from "@/features/shell/nav";
@@ -68,6 +71,15 @@ export default async function ShellLayout({ children }: { children: ReactNode })
 
   return (
     // ⚠️ `h-screen-z` — 화면 배율이 걸려도 셸이 아래에서 안 잘린다(DECISIONS §화면 배율)
+    /*
+      ⚠️ **알림은 셸이 쥔다**(#442). 회의를 끝내고 화면을 옮겨도 요약 진행 카드가 따라오려면
+         상태가 화면이 아니라 여기 있어야 한다 — 캡처 화면이 들고 있으면 목록으로 가는 순간
+         언마운트돼 사라져서, 몇 초 만에 사라지던 예전 토스트와 똑같아진다.
+      ⚠️ SSE 연결도 **여기 하나뿐**이다(`useNotificationStream`). 화면마다 열면 같은 알림이
+         배너에 여러 줄 뜬다 — BE가 회원당 emitter 전부에 복사해 보내기 때문이다.
+      ⚠️ 클라이언트 프로바이더가 **`children`을 감싼다**(§렌더링·데이터 — client가 server를
+         import하지 않고 `children`으로 받는다). 안쪽 화면은 그대로 서버 컴포넌트다.
+    */
     <div className="app-shell bg-background h-screen-z flex overflow-hidden">
       <RoleSidebar sections={sections} home={dashboardFor(viewer.role)} user={viewer} />
 
@@ -83,7 +95,15 @@ export default async function ShellLayout({ children }: { children: ReactNode })
            화면이 셋으로 조각나 보인다(DECISIONS §셸 표면에 적힌 첫 실패). 넷을 한 색으로
            두고, 나누는 건 **선 하나**(사이드바 오른쪽·상단바 아래)에 맡긴다.
       */}
-      <div className="bg-background flex min-w-0 flex-1 flex-col overflow-hidden">{children}</div>
+      <NotificationProvider>
+        <div className="bg-background flex min-w-0 flex-1 flex-col overflow-hidden">
+          {/* 회의 개설·리마인더·취소·공지 — 본문 맨 위 줄로 들어간다(떠 있는 판이 아니다) */}
+          <NotificationBanner />
+          {children}
+        </div>
+        {/* 요약 진행 — 우하단 고정이라 어느 화면에 있든 같은 자리에 남는다 */}
+        <AnalysisProgressCard />
+      </NotificationProvider>
     </div>
   );
 }

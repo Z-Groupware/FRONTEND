@@ -123,7 +123,12 @@ function buildMockPdfData(handoverId: string) {
     writerPosition: detail.member.position,
     teamName: detail.member.teamName ?? "",
     lastWorkingDay: pendingHandover.midApproval?.approvedAt ?? "",
-    items: detail.actions.map((action) => ({
+    /*
+      ⚠️ 목 분기라 `actions`는 항상 채워져 온다(`findMockManagedMember`). 그래도 `?? []`로
+         받는다 — 실서버에서 이 값은 `null`일 수 있고(못 읽었다는 뜻, §manage-types),
+         그때 여기서 터지면 인수인계서 PDF가 통째로 안 나온다.
+    */
+    items: (detail.actions?.items ?? []).map((action) => ({
       title: action.title,
       status: action.status,
       deadline: action.dueDate,

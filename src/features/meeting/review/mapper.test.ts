@@ -21,6 +21,9 @@ const DETAIL: BeMeetingDetail = {
   status: "DONE",
   startAt: "2026-08-14T10:00:00",
   endAt: "2026-08-14T10:30:00",
+  pendingActionCount: 0,
+  /* ⚠️ 끝난 회의인데 `null`인 게 정상이다 — BE가 PROCESSING·DONE을 아직 못 가른다 */
+  summaryStatus: null,
   /* 팀 액션 회의(Leader/Member 개설) — Owner 개설이 아니므로 teamId가 있다 */
   teamId: 3,
   project: { projectId: 3, tag: "GOODSFLOW" },

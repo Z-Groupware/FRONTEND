@@ -1,7 +1,24 @@
 import { AUTHORITY, type Authority } from "@/constants/authority";
+import type { ActionStatus } from "@/constants/domain";
 import type { MemberStatus } from "@/constants/member";
 
-import type { ManagedMember, MemberFilter } from "./manage-types";
+import type { ManagedMember, ManagedMemberAction, MemberFilter } from "./manage-types";
+
+/**
+ * `GET /api/company/actions` 응답 원소 중 **이 화면이 실제로 읽는 것만** 적는다.
+ *
+ * ⚠️ 액션 도메인의 `BeActionSummary`(`features/action/mapper.ts`)와 **같은 BE DTO**를
+ *    가리키지만 일부러 재사용하지 않는다 — 그쪽은 스무 개 필드를 다 적어 두었고, 이 카드가
+ *    거기 얹히면 액션 목록 계약이 바뀔 때마다 사원 관리 화면까지 끌려간다(§Mock 격리막:
+ *    도메인마다 자기 계약을 갖는다).
+ */
+export interface BeCompanyAction {
+  id: number;
+  title: string;
+  status: ActionStatus;
+  /** 마감일 `YYYY-MM-DD` — BE `Action.dueDate`는 필수값이라 `null`이 안 온다. */
+  dueDate: string;
+}
 
 /**
  * BE shape → UI 계약 (§Mock 격리막 — **shape을 흡수하는 곳은 여기 하나다**).
@@ -108,5 +125,29 @@ export function toManagedMember(item: BeMemberListItem | BeMemberDetail): Manage
          화면이 이 값을 볼 일이 없다 — 목으로 돌 때만 채워진다.
     */
     pendingHandoverType: null,
+  };
+}
+
+/**
+ * `GET /api/company/actions` 한 줄 → 사원 상세의 담당 액션 한 줄.
+ *
+ * [확인] BE 실코드 대조(2026-08-13) — `action/presentation/api/CompanyActionController.java`,
+ * 응답 원소는 `ActionSummaryResponse`(개인 액션 목록과 **같은 DTO를 재사용**한다).
+ *
+ * ⚠️ **이 카드가 쓰는 네 값만 옮긴다.** 응답엔 `projectTag`·`teamName`·`sourceMeetingTitle`·
+ *    `parentActionTitle`까지 오지만, 카드는 `액션 · 상태 · 마감` 세 열뿐이다(§명세: 화면에
+ *    없는 걸 새로 만들지 않는다). 안 쓰는 필드를 옮겨 두면 화면이 의존하는 값처럼 읽힌다.
+ * ⚠️ **`isDelayed`를 안 가져온다.** BE도 저장값이 아니라 조회 시점에 계산해 주는 값인데
+ *    (`ActionSummaryResponse` 주석), 우리 카드는 이미 `isDelayed(action)`으로 마감일에서
+ *    계산한다(§도메인 상수: 파생값은 상태 필드에 안 넣는다). 두 벌이 되면 서버 시각과
+ *    브라우저 시각이 갈리는 자정 무렵에 배지가 서로 다른 말을 한다.
+ * ⚠️ `id`를 문자열로 바꾼다 — 화면 계약(`ManagedMemberAction.id`)이 문자열이다.
+ */
+export function toManagedMemberAction(be: BeCompanyAction): ManagedMemberAction {
+  return {
+    id: String(be.id),
+    title: be.title,
+    status: be.status,
+    dueDate: be.dueDate,
   };
 }

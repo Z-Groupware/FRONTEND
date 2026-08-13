@@ -34,7 +34,7 @@ const ROOMS: MeetingRoom[] = [
     closeTime: "18:00",
   },
 ];
-const MEMBERS = [{ id: 1, name: "박대표", teamName: null, authority: AUTHORITY.OWNER }];
+const MEMBERS = [{ id: 2, name: "김서준", teamName: "개발팀", authority: AUTHORITY.LEADER }];
 const PROJECTS: RoomProjectOption[] = [{ id: "1", name: "굿즈 프로젝트", tag: "GOODS" }];
 const TEAM_ACTIONS: RoomTeamActionOption[] = [];
 
@@ -50,7 +50,7 @@ describe("RoomsBoard", () => {
         projects={PROJECTS}
         showParentTeamAction={false}
         teamActions={TEAM_ACTIONS}
-        viewerTeamName={null}
+        viewer={{ id: 1, role: AUTHORITY.OWNER, teamName: null }}
         week="2026-08-10"
       />,
     );

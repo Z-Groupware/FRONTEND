@@ -1,9 +1,19 @@
+import { AI_SUMMARY_STATUS } from "@/constants/meeting";
+
 import {
+  type BeDashboardMeeting,
   type BeMeetingDetail,
+  type BeMeetingListItem,
   hostIdOf,
   isClosed,
+  meetingPendingReasonOf,
+  parseDashboardMeetings,
   parseMeetingDetail,
+  parseMeetingList,
+  toDashboardMeetingCard,
   toMeetingCaptureInfo,
+  toMeetingDetailView,
+  toMeetingListItem,
 } from "./mapper";
 
 /** MEET-04 응답 그대로 — 중첩·필드 이름을 BE 실코드에 맞춰 둔다 */
@@ -13,6 +23,9 @@ const BASE: BeMeetingDetail = {
   status: "SCHEDULED",
   startAt: "2026-08-14T10:00:00",
   endAt: "2026-08-14T10:30:00",
+  pendingActionCount: 0,
+  /* ⚠️ 안 끝난 회의는 `NONE`이다 — 요약을 시도조차 안 한 상태(BE `MeetingSummaryStatus`) */
+  summaryStatus: "NONE",
   teamId: 5,
   project: { projectId: 3, tag: "GOODS" },
   meetingRoom: { meetingRoomId: 2, name: "대회의실" },
@@ -89,7 +102,336 @@ describe("parseMeetingDetail", () => {
       "참석자 직급이 문자열도 null도 아니면",
       { ...BASE, attendees: [{ memberId: 2, name: "김서준", teamName: null, jobPosition: 3 }] },
     ],
+    ["소속 팀이 숫자도 null도 아니면", { ...BASE, teamId: "3" }],
+    ["안건 소주제가 배열이 아니면", { ...BASE, agenda: { mainTopic: "운영", subTopics: null } }],
+    [
+      "안건 소주제에 문자열이 아닌 게 섞이면",
+      { ...BASE, agenda: { mainTopic: null, subTopics: [3] } },
+    ],
   ])("%s 판정 전에 멈춘다", (_label, broken) => {
     expect(() => parseMeetingDetail(broken)).toThrow("약속한 모양");
+  });
+
+  /* ⚠️ #461이 늦게 배포돼도 상세가 통째로 막히면 안 된다(목록 파서와 같은 이유) */
+  it("#461 확장 필드가 없거나 null인 응답도 통과시킨다", () => {
+    expect(parseMeetingDetail(BASE)).toBe(BASE);
+
+    const nulled = { ...BASE, teamId: null, agenda: null };
+    expect(parseMeetingDetail(nulled)).toBe(nulled);
+  });
+});
+
+/**
+ * 목록(MEET-02) — **BE 실코드에서 옮겨 적은 shape**으로 검증한다(§연동 검증).
+ * [확인] `meeting/presentation/api/response/MeetingListResponse.java`(2026-08-13).
+ */
+const LIST_ITEM: BeMeetingListItem = {
+  meetingId: 91,
+  title: "굿즈 앱 주간 운영 점검",
+  status: "DONE",
+  startAt: "2026-08-14T10:00:00",
+  endAt: "2026-08-14T10:30:00",
+  attendeeCount: 4,
+  isHost: true,
+  meetingRoom: { meetingRoomId: 2, name: "대회의실" },
+  project: { projectId: 3, tag: "GOODS" },
+};
+
+describe("parseMeetingList", () => {
+  it("봉투 안의 회의 배열만 꺼낸다 — `page`는 안 본다", () => {
+    const raw = {
+      meetings: [LIST_ITEM],
+      page: { page: 0, size: 20, totalElements: 1, totalPages: 1 },
+    };
+
+    expect(parseMeetingList(raw)).toEqual([LIST_ITEM]);
+  });
+
+  it("결과가 없어도 빈 배열로 통과한다 — BE가 null을 안 준다", () => {
+    expect(parseMeetingList({ meetings: [], page: {} })).toEqual([]);
+  });
+
+  it.each([
+    ["응답이 비면", null],
+    ["회의가 배열이 아니면", { meetings: null }],
+    ["행에 null이 섞이면", { meetings: [null] }],
+    ["개설자 여부가 없으면", { meetings: [{ ...LIST_ITEM, isHost: undefined }] }],
+    ["중첩 회의실이 통째로 없으면", { meetings: [{ ...LIST_ITEM, meetingRoom: undefined }] }],
+    ["소속 팀이 숫자도 null도 아니면", { meetings: [{ ...LIST_ITEM, teamId: "3" }] }],
+    ["안건 미리보기 모양이 다르면", { meetings: [{ ...LIST_ITEM, agendaPreview: [null] }] }],
+  ])("%s 그리기 전에 멈춘다", (_label, broken) => {
+    expect(() => parseMeetingList(broken)).toThrow("약속한 모양");
+  });
+
+  /*
+    ⚠️ **머지 순서에 안전해야 한다.** #461 확장 필드는 BE가 아직 안 줄 수 있다 — 필수로
+       검사하면 FE가 먼저 배포됐을 때 **목록 전체가 통째로 막힌다**(§Mock 격리막).
+  */
+  it("#461 확장 필드가 통째로 없는 구버전 응답도 통과시킨다", () => {
+    expect(parseMeetingList({ meetings: [LIST_ITEM] })).toEqual([LIST_ITEM]);
+  });
+
+  it("#461 확장 필드가 null로 와도 통과시킨다 — Owner 개설·안건 0건이 그 모양이다", () => {
+    const row = { ...LIST_ITEM, teamId: null, summaryStatus: null, agendaPreview: null };
+
+    expect(parseMeetingList({ meetings: [row] })).toEqual([row]);
+  });
+});
+
+describe("toMeetingListItem", () => {
+  it("중첩된 태그·회의실을 꺼내고 시각을 우리 표기로 굳힌다", () => {
+    const item = toMeetingListItem(LIST_ITEM);
+
+    expect(item.id).toBe("91");
+    expect(item.projectTag).toBe("GOODS");
+    expect(item.roomName).toBe("대회의실");
+    expect(item.schedule).toBe("8월 14일(금) 10:00 – 10:30");
+  });
+
+  /* ⚠️ 이 값이 두 탭을 가른다 — 백엔드 §10-A 요청의 핵심이라 값으로 고정해 둔다 */
+  it("개설자 여부를 그대로 싣는다", () => {
+    expect(toMeetingListItem(LIST_ITEM).isHost).toBe(true);
+    expect(toMeetingListItem({ ...LIST_ITEM, isHost: false }).isHost).toBe(false);
+  });
+
+  /*
+    ⚠️ **없는 값을 지어내지 않는다**(§정직성). BE #461 배포 전 응답엔 요약 상태·소속 팀·안건이
+       없다 — 채우면 완료 카드에 [액션 검토]가 잘못 뜨거나 안 뜬다.
+    ⚠️ 특히 `teamId`는 **없는 것(`undefined`)과 `null`이 다른 뜻**이다. 뭉치면 미배포 서버의
+       모든 회의가 "Owner 개설"로 읽힌다.
+  */
+  it("#461 확장 필드가 없으면 요약 상태·소속 라벨·안건을 비운다", () => {
+    const item = toMeetingListItem(LIST_ITEM);
+
+    expect(item.aiSummaryStatus).toBeNull();
+    expect(item.originLabel).toBe("");
+    expect(item.topicSummary).toBe("");
+  });
+
+  /* [확인] BE PR #461 `MeetingListQueryService.originLabel` — `teamId == null`이 Owner다 */
+  it("소속 팀이 null이면 Owner 개설, 숫자면 팀 액션 회의로 읽는다", () => {
+    expect(toMeetingListItem({ ...LIST_ITEM, teamId: null }).originLabel).toBe("Owner 개설");
+    expect(toMeetingListItem({ ...LIST_ITEM, teamId: 7 }).originLabel).toBe("팀 액션 회의");
+  });
+
+  it("안건 미리보기를 `대주제 · 소주제` 한 줄로 잇는다", () => {
+    const preview = { mainTopic: "운영", firstSubTopic: "주간 점검" };
+
+    expect(toMeetingListItem({ ...LIST_ITEM, agendaPreview: preview }).topicSummary).toBe(
+      "운영 · 주간 점검",
+    );
+  });
+
+  /* ⚠️ 한쪽만 있는 안건에 가운뎃점을 남기면 카드가 ` · 주간 점검`으로 읽힌다 */
+  it.each([
+    [{ mainTopic: "운영", firstSubTopic: null }, "운영"],
+    [{ mainTopic: null, firstSubTopic: "주간 점검" }, "주간 점검"],
+    [{ mainTopic: null, firstSubTopic: null }, ""],
+  ])("한쪽만 있는 안건은 가운뎃점째 뺀다 (%p)", (agendaPreview, expected) => {
+    expect(toMeetingListItem({ ...LIST_ITEM, agendaPreview }).topicSummary).toBe(expected);
+  });
+
+  /*
+    ⚠️ 목록이 실제로 주는 값은 `NONE`·`STALLED`·`null`뿐이다(BE `resolveSummaryStatus`) —
+       나머지는 어휘만 맞춰 두고, 모르는 값은 지어내지 않는다.
+  */
+  it.each([
+    ["NONE", null],
+    ["STALLED", AI_SUMMARY_STATUS.FAILED],
+    ["PROCESSING", AI_SUMMARY_STATUS.SUMMARIZING],
+    ["DONE", AI_SUMMARY_STATUS.REVIEWED],
+    ["WHAT", null],
+  ])("요약 상태 %s를 화면 어휘로 옮긴다", (summaryStatus, expected) => {
+    expect(toMeetingListItem({ ...LIST_ITEM, summaryStatus }).aiSummaryStatus).toBe(expected);
+  });
+
+  it("모르는 상태는 그냥 넘기지 않는다", () => {
+    expect(() => toMeetingListItem({ ...LIST_ITEM, status: "PAUSED" })).toThrow(
+      "알 수 없는 회의 상태",
+    );
+  });
+});
+
+/**
+ * 상세의 요약 신호(MEET-04) → 화면이 «아직 못 보여주는 이유».
+ * [확인] `meeting/domain/model/MeetingSummaryStatus.java` ·
+ *   `application/service/MeetingDetailQueryService.resolveSummaryStatus`(2026-08-13).
+ */
+describe("meetingPendingReasonOf", () => {
+  const done = { status: "DONE", summaryStatus: null, pendingActionCount: 0 };
+
+  it("회의 상태를 먼저 본다 — 안 끝난 회의는 요약을 시작조차 안 했다", () => {
+    expect(meetingPendingReasonOf({ ...done, status: "SCHEDULED" })).toBe("SCHEDULED");
+    expect(meetingPendingReasonOf({ ...done, status: "IN_PROGRESS" })).toBe("IN_PROGRESS");
+    expect(meetingPendingReasonOf({ ...done, status: "CANCELED" })).toBe("CANCELED");
+  });
+
+  it("중단은 실패로, 완료는 다 찬 것으로 읽는다", () => {
+    expect(meetingPendingReasonOf({ ...done, summaryStatus: "STALLED" })).toBe("FAILED");
+    expect(meetingPendingReasonOf({ ...done, summaryStatus: "DONE" })).toBeNull();
+  });
+
+  /*
+    ⚠️ BE는 `null`을 "끝났지만 PROCESSING인지 DONE인지 모른다"는 뜻으로 준다 — 그걸 완료로
+       읽으면 화면이 "하달된 액션이 없습니다"라고 단정한다(§정직성).
+  */
+  it("모르는 값(null)을 완료로 읽지 않는다", () => {
+    expect(meetingPendingReasonOf(done)).toBe("SUMMARIZING");
+  });
+
+  /* ⚠️ 초안이 나왔다는 건 요약이 끝났다는 증거다 — 그때는 검토 대기 안내가 맞는 말이다 */
+  it("확정 대기 건수가 있으면 요약은 끝난 것으로 본다", () => {
+    expect(meetingPendingReasonOf({ ...done, pendingActionCount: 3 })).toBeNull();
+  });
+
+  /* ⚠️ 상태값이 뭐라 하든 초안이 있으면 검토 대기다 — 상태만 보면 "요약 중"이 뜬다 */
+  it("상태가 PROCESSING이어도 초안이 있으면 요약 중이라 하지 않는다", () => {
+    expect(
+      meetingPendingReasonOf({ ...done, summaryStatus: "PROCESSING", pendingActionCount: 2 }),
+    ).toBeNull();
+  });
+
+  /* ⚠️ 중단만은 초안보다 앞이다 — 뒤 계층이 깨진 회의는 [다시 분석]부터 안내한다 */
+  it("중단은 초안이 있어도 실패로 읽는다", () => {
+    expect(
+      meetingPendingReasonOf({ ...done, summaryStatus: "STALLED", pendingActionCount: 2 }),
+    ).toBe("FAILED");
+  });
+});
+
+describe("toMeetingDetailView", () => {
+  const DONE_DETAIL: BeMeetingDetail = {
+    ...BASE,
+    status: "DONE",
+    summaryStatus: null,
+    pendingActionCount: 2,
+  };
+
+  it("중첩된 프로젝트·회의실·참석자를 화면 계약으로 편다", () => {
+    const detail = toMeetingDetailView(DONE_DETAIL, { isHost: true });
+
+    expect(detail.id).toBe("12");
+    expect(detail.projectId).toBe(3);
+    expect(detail.roomName).toBe("대회의실");
+    expect(detail.attendees).toEqual([
+      { id: 1, name: "대표 계정" },
+      { id: 2, name: "김서준" },
+    ]);
+  });
+
+  it("확정 대기 건수와 중단 여부를 그대로 싣는다", () => {
+    expect(toMeetingDetailView(DONE_DETAIL, { isHost: true }).pendingActionCount).toBe(2);
+    expect(toMeetingDetailView(DONE_DETAIL, { isHost: true }).isStalled).toBe(false);
+    expect(
+      toMeetingDetailView({ ...DONE_DETAIL, summaryStatus: "STALLED" }, { isHost: true }).isStalled,
+    ).toBe(true);
+  });
+
+  /*
+    ⚠️ **빈 배열이 아니라 `null`이다.** 빈 배열은 "물어봤는데 없다"는 뜻이라 화면이 "없습니다"라고
+       단정하는데, 산출물·발화 기록은 다른 API가 줄 값이라 **묻지도 않았다**(§정직성).
+  */
+  it("안 물어본 칸(산출물·발화 기록)은 null, #461 전 응답의 안건·소속 라벨은 비운다", () => {
+    const detail = toMeetingDetailView(DONE_DETAIL, { isHost: false });
+
+    expect(detail.outputs).toBeNull();
+    expect(detail.script).toBeNull();
+    expect(detail.agenda).toBeNull();
+    expect(detail.originLabel).toBe("");
+    expect(detail.parentTeamActionHref).toBeNull();
+    /* 팀 액션인지 개인 액션인지는 `teamId`가 없으면 못 가른다 — 둘 중 하나로 찍지 않는다 */
+    expect(detail.outputKindLabel).toBe("액션");
+  });
+
+  /* [확인] BE PR #461 `MeetingDetailQueryService`(2026-08-13) — `teamId == null`이 Owner다 */
+  it("소속 팀이 null이면 Owner 개설·팀 액션, 숫자면 팀 회의·개인 액션으로 읽는다", () => {
+    const owner = toMeetingDetailView({ ...DONE_DETAIL, teamId: null }, { isHost: false });
+    const team = toMeetingDetailView({ ...DONE_DETAIL, teamId: 7 }, { isHost: false });
+
+    expect(owner.originLabel).toBe("Owner 개설");
+    expect(owner.outputKindLabel).toBe("팀 액션");
+    expect(team.originLabel).toBe("팀 액션 회의");
+    expect(team.outputKindLabel).toBe("개인 액션");
+  });
+
+  /*
+    ⚠️ 상위 팀 액션 링크는 **`teamId`가 와도 못 만든다** — 팀은 팀 액션이 아니다(#461 회신).
+       팀 회의라는 걸 안다고 링크를 지어 붙이면 존재하지 않는 주소로 보낸다(§정직성).
+  */
+  it("팀 회의여도 상위 팀 액션 링크는 안 만든다 — 팀 액션 id가 응답에 없다", () => {
+    expect(
+      toMeetingDetailView({ ...DONE_DETAIL, teamId: 7 }, { isHost: false }).parentTeamActionHref,
+    ).toBeNull();
+  });
+
+  it("안건을 대주제 하나 + 소주제 목록 그대로 싣는다 — 쌍으로 지어 붙이지 않는다", () => {
+    const detail = toMeetingDetailView(
+      { ...DONE_DETAIL, agenda: { mainTopic: "운영", subTopics: ["주간 점검", "배송 정책"] } },
+      { isHost: false },
+    );
+
+    expect(detail.agenda).toEqual({ main: "운영", subs: ["주간 점검", "배송 정책"] });
+  });
+
+  /* ⚠️ 판정은 `lib/permission.ts`가 한다 — 매퍼는 결과만 받는다(§권한) */
+  it("개설자 여부는 부르는 쪽이 판정한 값을 그대로 쓴다", () => {
+    expect(toMeetingDetailView(DONE_DETAIL, { isHost: false }).isHost).toBe(false);
+  });
+});
+
+/**
+ * 대시보드 최근 회의(MEET-17).
+ * [확인] `meeting/presentation/api/response/DashboardMeetingListResponse.java`(2026-08-13).
+ */
+const DASHBOARD_MEETING: BeDashboardMeeting = {
+  meetingId: 91,
+  title: "8월 스프린트 계획",
+  projectTag: "GOODS",
+  status: "DONE",
+  room: "회의실 A",
+  scheduledAt: "2026-08-12T14:00:00",
+  attendeeCount: 4,
+  /* ⚠️ 둘 다 `null`이 정상이다 — `scope=team`의 소속 라벨은 명세에 없고, 개설자 라벨은 미구현 */
+  originLabel: null,
+  hostLabel: null,
+};
+
+describe("parseDashboardMeetings", () => {
+  it("결과가 없어도 빈 배열로 통과한다", () => {
+    expect(parseDashboardMeetings({ meetings: [] })).toEqual([]);
+  });
+
+  it.each([
+    ["응답이 비면", null],
+    ["회의가 배열이 아니면", { meetings: {} }],
+    ["라벨이 문자열도 null도 아니면", { meetings: [{ ...DASHBOARD_MEETING, hostLabel: 3 }] }],
+  ])("%s 그리기 전에 멈춘다", (_label, broken) => {
+    expect(() => parseDashboardMeetings(broken)).toThrow("약속한 모양");
+  });
+});
+
+describe("toDashboardMeetingCard", () => {
+  it("평평한 카드 값을 그대로 옮긴다", () => {
+    expect(toDashboardMeetingCard(DASHBOARD_MEETING)).toEqual({
+      id: "91",
+      title: "8월 스프린트 계획",
+      projectTag: "GOODS",
+      status: "DONE",
+      room: "회의실 A",
+      scheduledAt: "2026-08-12T14:00:00",
+      attendeeCount: 4,
+    });
+  });
+
+  /* ⚠️ `null`은 키째로 뺀다 — 선택 필드라 없으면 화면이 배지를 안 그린다(§정직성) */
+  it("서버가 준 라벨이 있으면 싣는다", () => {
+    const card = toDashboardMeetingCard({
+      ...DASHBOARD_MEETING,
+      originLabel: "개발팀",
+      hostLabel: "김서준(팀장)",
+    });
+
+    expect(card.originLabel).toBe("개발팀");
+    expect(card.hostLabel).toBe("김서준(팀장)");
   });
 });

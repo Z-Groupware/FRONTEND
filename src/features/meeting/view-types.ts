@@ -1,8 +1,6 @@
 import type { ActionStatus } from "@/constants/action";
 import type { AiSummaryStatus, MeetingStatus } from "@/constants/meeting";
 
-import type { MeetingTopic } from "./types";
-
 /**
  * 회의 화면의 **UI 계약**(`/app/meeting`).
  *
@@ -20,9 +18,18 @@ export interface MeetingListItem {
   /**
    * 소속 라벨 — Owner 개설이면 `Owner 개설`(WORKFLOW §2 — 옛 문구 "프로젝트 공통"은 폐기),
    * 팀 액션 회의면 상위 팀 액션 이름이다.
+   *
+   * ⚠️ 실서버는 `teamId` 판정으로 채운다(BE PR #461, F2/F5 회신: `teamId` NULL = Owner 개설).
+   *    단 **상위 팀 액션 이름은 모델에 없어 영구 제공 불가**라 팀 회의는 일반 문구
+   *    `팀 액션 회의`다(매퍼 `TEAM_ORIGIN_LABEL`) — 이름까지 나오는 건 목 경로뿐이다.
+   * ⚠️ **빈 문자열이면 "모른다"는 뜻이다**(BE #461 배포 전 응답엔 `teamId`가 없다) —
+   *    카드는 빈 조각을 가운뎃점째 뺀다(§정직성).
    */
   originLabel: string;
-  /** 안건 첫 쌍 요약(`대주제 · 소주제`) — 카드에서 무슨 회의인지 한 줄로 알린다 */
+  /**
+   * 안건 첫 줄 요약(`대주제 · 소주제`) — 카드에서 무슨 회의인지 한 줄로 알린다.
+   * 실서버는 `agendaPreview`(BE PR #461)로 채운다 — 없으면(미배포·안건 0건) 빈 문자열이다.
+   */
   topicSummary: string;
   /** `7월 14일(화) 10:00 – 10:30` — 서버가 우리 표기로 만들어 보낸다(§lib) */
   schedule: string;
@@ -84,6 +91,19 @@ export interface MeetingOutput {
   href: string;
 }
 
+/**
+ * 회의 안건 — **대주제 하나 + 소주제 목록**이다(쌍이 아니다).
+ *
+ * ⚠️ 예약 폼은 대주제·소주제를 쌍으로 입력받지만 BE 모델이 둘째 쌍부터의 대주제를 안 남긴다
+ *    (BE PR #461 `resolveAgenda`, 3차 F 회신의 알려진 한계). 화면 계약을 쌍으로 두면 매퍼가
+ *    **없는 쌍을 지어 붙여야** 해서(§정직성) BE가 실제로 주는 모양을 그대로 계약으로 삼는다.
+ */
+export interface MeetingAgenda {
+  /** 첫 대주제 — 안건이 소주제로만 남은 회의는 `null`이다 */
+  main: string | null;
+  subs: string[];
+}
+
 /** 상세 참석자 한 명 — 아바타 색은 id에서 나온다(§DESIGN 5) */
 export interface MeetingAttendee {
   id: number;
@@ -110,16 +130,32 @@ export interface MeetingDetail {
   projectId: number;
   projectTag: string;
   originLabel: string;
-  /** 팀 액션 회의면 그 팀 액션 상세로 가는 링크 — Owner 개설이면 없다 */
+  /**
+   * 팀 액션 회의면 그 팀 액션 상세로 가는 링크 — Owner 개설이면 없다.
+   * ⚠️ 실서버는 **항상 `null`이다** — 상위 팀 액션 id가 모델에 없어 영구 제공 불가다
+   *    (BE PR #461 회신, `teamId`는 팀이지 팀 액션이 아니다). 링크가 걸리는 건 목 경로뿐이다.
+   */
   parentTeamActionHref: string | null;
-  topics: MeetingTopic[];
+  /** 안건 — `null`이면 보여줄 안건이 없다(미배포 BE거나 안건 0건 — 왜인지는 모른다) */
+  agenda: MeetingAgenda | null;
   schedule: string;
   roomName: string;
   attendees: MeetingAttendee[];
-  /** 산출물 머리말 — Owner 개설이면 `팀 액션`, 팀 액션 회의면 `개인 액션` */
+  /**
+   * 산출물 머리말 — Owner 개설이면 `팀 액션`, 팀 액션 회의면 `개인 액션`.
+   * ⚠️ 실서버 상세(MEET-04)엔 개설자 권한이 없어 둘을 못 가른다 — 그때는 상위어 `액션`이다.
+   */
   outputKindLabel: string;
-  outputs: MeetingOutput[];
-  script: ScriptChunk[];
+  /**
+   * 이 회의가 하달한 액션 — **`null`은 "없다"가 아니라 "아직 안 불러왔다"**이다.
+   *
+   * ⚠️ 두 경우를 가르지 않으면 화면이 거짓말을 한다(§정직성). 빈 배열은 **물어봤는데 없는 것**
+   *    이라 "하달된 액션이 없습니다"라고 말해도 되지만, 실서버 상세는 아직 회의별 액션 조회
+   *    (`GET /api/meetings/{id}/actions`)를 안 붙여서 **묻지도 않았다** — 그 상태를 `null`로 둔다.
+   */
+  outputs: MeetingOutput[] | null;
+  /** 발화 기록 — `outputs`와 같다. `null`은 자막 조회(CAP-12) 미연동이라 안 물어봤다는 뜻이다. */
+  script: ScriptChunk[] | null;
   /** 산출물·발화 기록이 아직 없는 이유 — 다 찼으면 `null` */
   pendingReason: MeetingContentPending | null;
   /**
@@ -145,7 +181,15 @@ export interface MeetingDetail {
  *    `detail.pendingReason`으로 들어간다(2026-08-10 팀 협의).
  */
 export type MeetingDetailResult =
-  { kind: "ok"; detail: MeetingDetail } | { kind: "locked"; title: string } | { kind: "notFound" };
+  | { kind: "ok"; detail: MeetingDetail }
+  /**
+   * 열람 권한 없음.
+   * ⚠️ **제목이 `null`일 수 있다.** BE가 막을 때(403 `MT-011`) 실패 봉투에 회의 제목을 안 싣는다 —
+   *    메타는 공개라 보여도 되는 값이지만 **손에 없는 것을 지어내지 않는다**(§정직성).
+   *    화면이 제목 자리를 다른 말로 채운다.
+   */
+  | { kind: "locked"; title: string | null }
+  | { kind: "notFound" };
 
 /**
  * 캡처 화면이 받는 것 — **Host가 회의를 진행하는 데 필요한 만큼만**(WORKFLOW §3-3).

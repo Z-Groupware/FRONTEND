@@ -5,6 +5,7 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { type AttendeeScopeViewer, isAttendeeInScope } from "@/features/rooms/attendee-scope";
 import { RoomAttendeePicker } from "@/features/rooms/components/room-attendee-picker";
 import type { RoomMember } from "@/features/rooms/types";
 
@@ -16,8 +17,9 @@ interface MeetingAttendeesEditDialogProps {
   meetingId: string;
   currentAttendeeIds: number[];
   members: RoomMember[];
-  /** "내 부서만"·"팀장급만" 필터 기준 — `RoomAttendeePicker`로 그대로 흘려보낸다. */
-  viewerTeamName: string | null;
+  /** 참석자 범위(Owner=팀장만 / Leader·Member=자기 팀만) 기준 — `RoomAttendeePicker`로
+   *  그대로 흘려보낸다(`attendee-scope.ts`, 2026-08-13 확정). */
+  viewer: AttendeeScopeViewer;
 }
 
 /**
@@ -27,14 +29,34 @@ interface MeetingAttendeesEditDialogProps {
  * ⚠️ 트리거·노출 조건(host·SCHEDULED/IN_PROGRESS)은 `MeetingDetailView`가 정한다 — 이 컴포넌트는
  *    "지금 열렸는지"만 안다.
  */
+/**
+ * 저장될 명단으로 시작한다 — **규칙 밖 참석자는 빼고 연다.**
+ *
+ * ⚠️ 현재 명단을 그대로 초기값으로 두면 "선택 N명"이 저장되지도 않을 사람까지 세어 화면이
+ *    거짓말을 한다(§정직성). 규칙 밖인 사람은 서버가 어차피 거부하므로, 세는 수와 저장되는
+ *    명단을 처음부터 일치시킨다 — 누가 빠지는지는 피커가 이름으로 알린다.
+ */
+function toSelectableIds(
+  currentAttendeeIds: number[],
+  members: RoomMember[],
+  viewer: AttendeeScopeViewer,
+): number[] {
+  const inScope = new Set(
+    members.filter((member) => isAttendeeInScope(member, viewer)).map((member) => member.id),
+  );
+  return currentAttendeeIds.filter((id) => inScope.has(id));
+}
+
 export function MeetingAttendeesEditDialog({
   meetingId,
   currentAttendeeIds,
   members,
-  viewerTeamName,
+  viewer,
 }: MeetingAttendeesEditDialogProps) {
   const [open, setOpen] = useState(false);
-  const [selectedIds, setSelectedIds] = useState(currentAttendeeIds);
+  const [selectedIds, setSelectedIds] = useState(() =>
+    toSelectableIds(currentAttendeeIds, members, viewer),
+  );
   const [state, formAction, isPending] = useActionState(
     updateMeetingAttendeesAction,
     INITIAL_STATE,
@@ -54,7 +76,7 @@ export function MeetingAttendeesEditDialog({
       <button
         type="button"
         onClick={() => {
-          setSelectedIds(currentAttendeeIds);
+          setSelectedIds(toSelectableIds(currentAttendeeIds, members, viewer));
           setOpen(true);
         }}
         className="text-muted-foreground hover:text-foreground focus-visible:ring-ring rounded-md text-[12px] leading-4 underline underline-offset-2 transition-colors focus-visible:ring-2 focus-visible:outline-hidden"
@@ -82,7 +104,8 @@ export function MeetingAttendeesEditDialog({
                 members={members}
                 selectedIds={selectedIds}
                 onChange={setSelectedIds}
-                viewerTeamName={viewerTeamName}
+                viewer={viewer}
+                currentAttendeeIds={currentAttendeeIds}
               />
               {state.error && <p className="text-destructive pt-2 text-[12px]">{state.error}</p>}
             </div>

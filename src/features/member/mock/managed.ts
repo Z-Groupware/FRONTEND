@@ -3,7 +3,26 @@ import { ACTION_STATUS } from "@/constants/domain";
 import { HANDOVER_TYPE } from "@/constants/handover";
 import { DELETED_MEMBER_STATUS, isVisibleMemberStatus, MEMBER_STATUS } from "@/constants/member";
 
-import type { ManagedMember, ManagedMemberDetail } from "../manage-types";
+import type {
+  ManagedMember,
+  ManagedMemberAction,
+  ManagedMemberDetail,
+  PendingHandover,
+} from "../manage-types";
+
+/**
+ * 목 스토어 한 칸 — **화면 계약(`ManagedMemberDetail`)과 일부러 다르다.**
+ *
+ * ⚠️ 화면은 담당 액션을 `{ items, totalCount } | null`로 받는다(`null` = 못 읽었다).
+ *    목 데이터에까지 그 껍데기를 씌우면 사람 열한 명 자리에 `{ items: [], totalCount: 0 }`이
+ *    반복될 뿐이라, **읽는 자리(`findMockManagedMember`)에서 한 번에 씌운다** — 목은
+ *    "이 사람이 무슨 액션을 들고 있나"만 적는다.
+ */
+interface MockManagedMemberEntry {
+  member: ManagedMember;
+  actions: ManagedMemberAction[];
+  pendingHandover: PendingHandover | null;
+}
 
 /**
  * 목 — WORKFLOW §0의 **페르소나 그대로**다.
@@ -14,7 +33,7 @@ import type { ManagedMember, ManagedMemberDetail } from "../manage-types";
  *    반영된다 — 눌러도 아무 일 없는 목은 "승인했습니다"가 거짓말이 된다(§정직한 목업).
  */
 
-const INITIAL: ManagedMemberDetail[] = [
+const INITIAL: MockManagedMemberEntry[] = [
   {
     // ⚠️ Owner는 팀이 없다 — 화면에 `-`로 적힌다(WORKFLOW §9)
     member: {
@@ -263,7 +282,7 @@ function clone<T>(value: T): T {
   return JSON.parse(JSON.stringify(value)) as T;
 }
 
-let store: ManagedMemberDetail[] = clone(INITIAL);
+let store: MockManagedMemberEntry[] = clone(INITIAL);
 
 /**
  * 화면에 내보낼 사원들.
@@ -281,9 +300,20 @@ export function listMockManagedMembers(): ManagedMember[] {
     }));
 }
 
+/**
+ * ⚠️ 담당 액션에 껍데기를 씌워 내보낸다 — 목은 **항상 다 읽은 상태**라 `null`이 아니고,
+ *    `totalCount`는 목이 가진 전부다(실서버는 첫 페이지만 오고 전체는 서버가 센다).
+ */
 export function findMockManagedMember(id: number): ManagedMemberDetail | null {
   const found = store.find((entry) => entry.member.id === id);
-  return found ? clone(found) : null;
+  if (!found) return null;
+
+  const entry = clone(found);
+  return {
+    member: entry.member,
+    actions: { items: entry.actions, totalCount: entry.actions.length },
+    pendingHandover: entry.pendingHandover,
+  };
 }
 
 /** 직급·권한·Admin 겸직 변경 */

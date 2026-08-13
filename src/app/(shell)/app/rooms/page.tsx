@@ -73,7 +73,9 @@ export default async function RoomsPage({ searchParams }: RoomsPageProps) {
           projects={projects}
           showParentTeamAction={requiresParentTeamAction(viewer)}
           teamActions={teamActions}
-          viewerTeamName={viewer.teamName ?? null}
+          /* ⚠️ 참석자 범위는 **권한이 정한다**(2026-08-13 확정) — 팀 이름만 넘겨 "팀이 없으면
+             Owner"로 읽던 간접 추론을 걷어냈다(CLAUDE.md §조직 계층: 권한은 직급에서 온다). */
+          viewer={{ id: viewer.id, role: viewer.role, teamName: viewer.teamName ?? null }}
           week={format(week, "yyyy-MM-dd")}
         />
       </div>
