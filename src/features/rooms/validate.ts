@@ -101,8 +101,8 @@ export function validateRoomReservationDraft(
 
 /**
  * 회의실 추가·수정 폼 검증(`/manage/rooms`) — 화면과 서버(Server Action)가 이 함수 하나로 본다.
- * ⚠️ 이용 가능 시간은 예약 슬롯과 달리 30분 단위 제약이 없다 — 회의실 자체의 운영시간일 뿐,
- *    그 안에서 예약은 여전히 30분 단위로만 잡힌다(`validateRoomReservationDraft`가 맡는다).
+ * ⚠️ 이용 가능 시간도 **예약 슬롯과 같은 30분 단위**다(2026-08-13 정정 — 전에는 "제약이 없다"고
+ *    적혀 있었으나 BE `@Pattern`이 30분 단위만 받는다). 검증 규칙은 BE와 한 벌이어야 한다.
  */
 export function validateMeetingRoomDraft(draft: MeetingRoomDraft): MeetingRoomFormErrors {
   const errors: MeetingRoomFormErrors = {};
