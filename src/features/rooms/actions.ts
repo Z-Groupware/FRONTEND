@@ -9,9 +9,10 @@ import { getViewer } from "@/features/shell/viewer";
 import { ApiError, serverApi } from "@/lib/api";
 import { ep } from "@/lib/endpoints";
 import { getMockActor } from "@/lib/mock-actor";
-import { canManageRooms, requiresParentTeamAction } from "@/lib/permission";
+import { type Actor, canManageRooms, requiresParentTeamAction } from "@/lib/permission";
 import { isMock } from "@/mocks/config";
 
+import { type AttendeeScopeViewer, findAttendeeScopeViolation } from "./attendee-scope";
 import { RESERVATION_DURATION_MINUTES } from "./constants";
 import {
   type BeCreateMeetingResponse,
@@ -125,6 +126,15 @@ function readDraft(formData: FormData): RoomReservationDraft {
   };
 }
 
+/**
+ * 참석자 범위 판정에 필요한 최소 정보만 `Actor`에서 뽑는다(`attendee-scope.ts`).
+ * ⚠️ `Actor.teamName`은 "없음"을 `undefined`로 적고(`lib/permission.ts`), 규칙 쪽은 `null`로
+ *    적는다 — 옮기는 자리를 여기 하나로 두지 않으면 호출부마다 `?? null`이 흩어진다.
+ */
+function toAttendeeScopeViewer(actor: Actor): AttendeeScopeViewer {
+  return { id: actor.id, role: actor.role, teamName: actor.teamName ?? null };
+}
+
 function toReservedRange(draft: RoomReservationDraft): { start: Date; end: Date } {
   const start = new Date(`${draft.date}T${draft.startTime}:00`);
   const end = new Date(start.getTime() + RESERVATION_DURATION_MINUTES * 60_000);
@@ -150,6 +160,23 @@ export async function createRoomReservationAction(
   if (Object.keys(errors).length > 0) return { errors };
 
   if (!isMock) {
+    /*
+      ⚠️ **여기서는 참석자 범위를 검증하지 못한다 — 검증한 척하지 않는다**(§정직성, 2026-08-13).
+         규칙(Owner=팀장만 / Leader·Member=자기 팀만)을 서버에서 다시 보려면 **명부**가 있어야
+         하는데, 실서버 경로에는 명부를 가져올 길이 없다:
+           · `getReservableMembers()`(server.ts)가 실연동에서 그대로 던진다 — 사원 목록 API가
+             아직 이 화면에 안 붙었다.
+           · 붙는다 해도 명부 API가 권한별로 갈린다([확인] BE 실코드, §연동 검증):
+             `GET /api/members`는 `hasAnyRole('OWNER','ADMIN')`, `GET /api/team/members`는
+             `hasRole('LEADER')`다 — **MEMBER가 개설할 때 자기 팀 명단을 볼 엔드포인트가
+             아예 없다**(프로젝트·검색·회의 참석자 조회까지 훑어도 없다).
+           · `GET /api/team/members` 응답의 `roleName`은 **권한이 아니라 팀 안 역할 라벨**이라
+             "전원 팀장인가"를 그걸로 판정할 수 없다(§도메인 상수: 이름이 어긋나면 조용히 틀린다).
+      ⚠️ 그래서 **최종 방어는 BE(`POST /api/meetings`)다.** 참석자 범위 강제는 BE 요청 문서에
+         올린다 — FE 화면 필터·아래 목 검증은 어디까지나 그 앞단이다(§권한: 화면 숨김은 보안이
+         아니다 / §연동 검증). 명부를 구할 길이 생기면 목 분기와 **같은 함수**
+         (`findAttendeeScopeViolation`)를 여기서도 부른다.
+    */
     const range = toReservedRange(draft);
     const accessToken = await requireAccessToken();
     try {
@@ -177,9 +204,21 @@ export async function createRoomReservationAction(
   if (!project) {
     return { errors: { projectId: "존재하지 않는 프로젝트입니다" } };
   }
-  if (draft.attendeeIds.some((id) => !findMockMember(id))) {
+  /*
+    ⚠️ **참석자 서버 재검증**(2026-08-13 확정 — 2026-08-12의 "선택 토글"을 뒤집은 규칙).
+       화면 피커가 후보를 좁혀 보여줘도 Server Action은 주소만 알면 직접 부를 수 있어, 제출된
+       id가 **실존하는지**와 **범위 안인지**를 여기서 다시 본다(§권한: 화면 숨김은 UX일 뿐).
+       규칙 자체는 `attendee-scope.ts` 한 곳에 있다 — 화면과 서버가 갈리면 안 된다.
+  */
+  const attendees = draft.attendeeIds.map(findMockMember);
+  if (attendees.some((member) => member === null)) {
     return { errors: { attendeeIds: "존재하지 않는 참석자가 있습니다" } };
   }
+  const scopeViolation = findAttendeeScopeViolation(
+    attendees.filter((member) => member !== null),
+    toAttendeeScopeViewer(actor),
+  );
+  if (scopeViolation) return { errors: { attendeeIds: scopeViolation } };
   // ⚠️ Owner가 아니면 "상위 팀 액션"이 필수인데, 그 값이 진짜 이 프로젝트 소속이고 **자기
   //    팀**에 하달된 게 맞는지까지 다시 본다 — 화면이 이미 걸러 보여줘도, 폼은 조작될 수 있어서
   //    다른 팀의 팀 액션 id를 끼워 넣으면 그 팀 몫으로 회의가 잡히는 걸 여기서 막는다.

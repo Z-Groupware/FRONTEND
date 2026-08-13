@@ -68,3 +68,48 @@ describe("MeetingCard — 발치 버튼", () => {
     );
   });
 });
+
+/**
+ * 둘째 줄(소속 라벨 · 안건) — **빈 조각은 가운뎃점째 뺀다.**
+ *
+ * ⚠️ BE #461 배포 전 목록엔 소속 팀도 안건도 없어 **둘 다 빈 문자열**로 온다(§mapper) —
+ *    그대로 이으면 이 줄에 홀로 남은 `·` 하나만 그려진다. 배포 뒤에는 값이 실제로 차므로
+ *    **두 경우를 다 고정해 둔다** — 한쪽만 보면 나중에 조건이 뒤집혀도 안 걸린다.
+ */
+describe("MeetingCard — 둘째 줄", () => {
+  it("소속 라벨과 안건이 다 있으면 가운뎃점으로 잇는다", () => {
+    renderCard();
+
+    /* ⚠️ 가운뎃점 양옆은 글자가 아니라 여백(`px-1.5`)이라 텍스트로는 붙어 나온다 */
+    expect(screen.getByText(/Owner 개설/)).toHaveTextContent("Owner 개설·운영 · 주간 점검");
+  });
+
+  it.each([
+    ["소속 라벨만 있으면", { originLabel: "Owner 개설", topicSummary: "" }],
+    ["안건만 있으면", { originLabel: "", topicSummary: "운영 · 주간 점검" }],
+  ])("%s 앞뒤에 가운뎃점을 안 붙인다", (_label, patch) => {
+    renderCard(patch);
+
+    const line = screen.getByText(patch.originLabel || patch.topicSummary);
+    expect(line.textContent?.trim()).toBe(patch.originLabel || patch.topicSummary);
+  });
+
+  it("둘 다 없으면 가운뎃점만 남기지 않는다 — #461 배포 전 목록이 이 모양이다", () => {
+    renderCard({ originLabel: "", topicSummary: "" });
+
+    expect(screen.queryByText("·")).not.toBeInTheDocument();
+  });
+
+  /*
+    ⚠️ **빈 `<p>`도 남기지 않는다**(2026-08-13, 코드래빗 지적). 예전엔 조건 없이 `<p>`를
+       그려서 `pt-1.5 pb-6`이 살아 있었는데, 카드 발치와의 간격이 늘어 밑에 침묵의 여백이
+       생겼다 — 픽셀도 없는 것을 말하면 안 된다.
+  */
+  it("둘 다 없으면 소속·안건 줄 자체를 안 그린다", () => {
+    const { container } = render(
+      <MeetingCard meeting={{ ...BASE, originLabel: "", topicSummary: "" }} />,
+    );
+
+    expect(container.querySelector("p.text-muted-foreground")).toBeNull();
+  });
+});

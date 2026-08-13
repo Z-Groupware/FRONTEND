@@ -79,8 +79,54 @@ function barClassName(tone: StatusTone): string {
   );
 }
 
+/**
+ * 하위 진척을 그릴 줄인지 판정 — **`null`과 `0/0`은 다른 뜻이다**(BE #355 주석, #421).
+ *
+ * - `null` / 필드 없음 = **하위라는 개념 자체가 없는 줄**(개인 액션·인수인계 보드 등)
+ *   → 아무것도 안 그린다. 이 타임라인은 여러 화면이 같이 쓰는데, 팀 액션 말고는
+ *   값을 안 넘기므로 그쪽은 자동으로 조용하다.
+ * - `0/0` = **하위를 가질 수 있는데 아직 비어 있음**(아직 안 쪼갠 팀 액션) → `0/0`으로 그린다.
+ *
+ * ⚠️ 둘을 `!count`로 한데 묶어 거르면 "아직 안 쪼갠 팀 액션"이 "하위가 없는 줄"처럼
+ *    사라져 화면이 사실을 덜 말하게 된다(DESIGN §9 — 화면은 사실만 말한다).
+ * ⚠️ `0/0`에 `없음` 같은 말을 따로 붙이지 않는다. 문구를 만들면 **안 그리는 `null`과
+ *    화면에서 구분이 안 되고**, 숫자 자리에 글자가 섞여 줄 폭도 흔들린다.
+ */
+function hasChildProgress(
+  bar: TimelineBar,
+): bar is TimelineBar & { childDoneCount: number; childTotalCount: number } {
+  return typeof bar.childDoneCount === "number" && typeof bar.childTotalCount === "number";
+}
+
 function barAriaLabel(bar: TimelineBar): string {
-  return `${bar.title}, ${bar.tag}, ${TONE_LABEL[bar.tone]}, ${bar.ddayLabel}, ${bar.periodLabel}`;
+  const base = `${bar.title}, ${bar.tag}, ${TONE_LABEL[bar.tone]}, ${bar.ddayLabel}, ${bar.periodLabel}`;
+  /*
+    ⚠️ 행이 `Link`면 `aria-label`이 **안쪽 글자를 통째로 덮는다** — 진척 숫자를 span으로만
+       두면 스크린리더는 영영 못 듣는다. 뜻을 폭·명도에 담지 않고 여기에도 적는다(§a11y).
+  */
+  return hasChildProgress(bar)
+    ? `${base}, 하위 액션 ${bar.childTotalCount}개 중 ${bar.childDoneCount}개 완료`
+    : base;
+}
+
+/**
+ * 하위 개인 액션 진척 — **막대가 아니라 숫자다**(`3/5`).
+ *
+ * ⚠️ 왼쪽 열은 200px(`LABEL_COL_PX`)뿐인데 점·액션명·태그 칩이 이미 서 있다. 막대를 더
+ *    얹으면 액션명 자리가 50px대로 눌려 정작 무슨 액션인지가 안 읽힌다. 행 높이(44px)를
+ *    안 늘리기로 했으니 아래로 쌓을 수도 없다 — DESIGN §10이 "얼마나 찼나"에 막대를
+ *    허용하긴 하지만, **이 칸이 그걸 감당 못 한다**. 숫자는 20px 남짓이고 값 자체가 정확하다.
+ * ⚠️ 색을 안 쓴다 — 완료 수만 `foreground`, 나머지는 `muted-foreground`로 **명도**가 가른다
+ *    (DESIGN §5: 색으로 알리는 건 에러뿐 / §10: 조각은 색이 아니라 명도로).
+ * ⚠️ 숫자라 `tabular-nums`다(DESIGN §4) — 없으면 `9/10`으로 넘어갈 때 칩이 좌우로 흔들린다.
+ */
+function ChildProgress({ done, total }: { done: number; total: number }) {
+  return (
+    <span className="shrink-0 text-[11px] leading-4 tabular-nums">
+      <span className="text-foreground font-semibold">{done}</span>
+      <span className="text-muted-foreground">/{total}</span>
+    </span>
+  );
 }
 
 /** 마감 지점 캡 — Link·div 양쪽에서 같이 쓴다. */
@@ -101,8 +147,17 @@ function dayToneClass(day: TimelineDay): string {
   return "text-muted-foreground";
 }
 
-/** 왼쪽 아이템 열 폭 — 축 머리·그리드·행이 같은 값을 공유한다. 스크롤 중에도 고정(sticky). */
-const LABEL_COL_PX = 200;
+/**
+ * 왼쪽 아이템 열 폭 — 축 머리·그리드·행이 같은 값을 공유한다. 스크롤 중에도 고정(sticky).
+ *
+ * ⚠️ **200 → 224로 넓혔다**(#421). 하위 진척(`3/5`)이 칩 뒤에 붙으면서 200px에서는 액션명
+ *    자리가 72px밖에 안 남아 `협업툴 리뉴얼 착수`가 `협업툴 리뉴...`로 잘렸다 — 이 열의
+ *    요점은 **무슨 액션인지**라, 보조 숫자를 넣겠다고 이름을 깎으면 앞뒤가 바뀐다.
+ *    24px(8의 배수)면 목의 액션명이 전부 들어간다. 타임라인 쪽은 어차피 가로 스크롤이라
+ *    잃는 게 없고, 이 열을 함께 쓰는 다른 화면(대시보드·프로젝트 상세·인수인계 보드)도
+ *    이름이 더 보일 뿐 손해가 없다.
+ */
+const LABEL_COL_PX = 224;
 const LABEL_COL_STYLE = { width: LABEL_COL_PX, minWidth: LABEL_COL_PX };
 /** 행 높이(px) — 그리드 오버레이 높이 계산에 쓴다(행 수 × 이 값). */
 const ROW_HEIGHT_PX = 44;
@@ -239,6 +294,14 @@ export function ActionTimeline({
                   >
                     {bar.tag}
                   </span>
+                  {/*
+                    하위 진척은 **칩 뒤 맨 끝**에 붙인다 — 줄마다 같은 자리에 서야 여러 줄을
+                    세로로 훑을 때 눈이 안 흔들린다. 없는 줄은 그 자리가 비고, 액션명이
+                    그만큼 더 보인다(자리를 비워 두지 않는다 — 빈 칸을 남기면 200px이 더 준다).
+                  */}
+                  {hasChildProgress(bar) ? (
+                    <ChildProgress done={bar.childDoneCount} total={bar.childTotalCount} />
+                  ) : null}
                 </div>
 
                 {/* 우: 기간 바 */}
@@ -261,7 +324,14 @@ export function ActionTimeline({
               bar.href && "transition-colors hover:bg-foreground/[0.03]",
             );
 
-            // ⚠️ 상세 라우트가 없으면(`href` 없음) 클릭 안 되는 행으로만 표시
+            /*
+              ⚠️ 상세 라우트가 없으면(`href` 없음) 클릭 안 되는 행으로만 표시한다.
+              ⚠️ 이때도 `role="group"`을 준다 — 맨 `div`는 암묵 역할이 `generic`이라
+                 **`aria-label`이 접근 가능한 이름으로 안 나간다**(ARIA: generic은 이름을
+                 못 가진다). 막대는 `aria-hidden`이라, 이름이 날아가면 상태·D-day·기간·하위
+                 진척이 스크린리더에 통째로 안 들린다 — 링크 행은 들리고 이 행만 안 들리면
+                 같은 표가 줄마다 다른 말을 한다(§a11y).
+            */
             return bar.href ? (
               <Link
                 key={bar.id}
@@ -275,6 +345,7 @@ export function ActionTimeline({
             ) : (
               <div
                 key={bar.id}
+                role="group"
                 aria-label={barAriaLabel(bar)}
                 className={rowClassName}
                 style={{ height: ROW_HEIGHT_PX }}

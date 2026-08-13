@@ -1,4 +1,9 @@
-import { DEFAULT_PROJECT_SORT, type ProjectSort, type ProjectStatus } from "@/constants/domain";
+import {
+  DEFAULT_PROJECT_SORT,
+  PROJECT_STATUS,
+  type ProjectSort,
+  type ProjectStatus,
+} from "@/constants/domain";
 import { COMPANY_TEAM_NAMES } from "@/constants/project";
 import {
   type BeActionSummary,
@@ -9,6 +14,7 @@ import {
 import { requireAccessToken } from "@/features/auth/session";
 import { ApiError, serverApi } from "@/lib/api";
 import { ep } from "@/lib/endpoints";
+import { paginate, type PaginatedResult } from "@/lib/paginate";
 import { isMock } from "@/mocks/config";
 
 import { sortProjects } from "./lib";
@@ -49,22 +55,36 @@ async function getTeamOptions(accessToken: string): Promise<BeTeamOption[]> {
   return serverApi<BeTeamOption[]>(ep.teams(), { accessToken });
 }
 
-/** 목록 API가 페이지네이션이 생겼지만, 이 화면은 아직 전체를 한 번에 받아 클라에서 거른다
- *  (§목록·페이지네이션 무한스크롤은 별도 작업 — 지금은 기존 화면 동작과 동등하게만 맞춘다).
- *  `size`를 크게 잡으면 사실상 전체가 온다(문서 안내 그대로). */
-async function fetchAllProjects(accessToken: string): Promise<BeProjectSummary[]> {
-  const page = await serverApi<BePageResponse<BeProjectSummary>>(ep.projects({ size: 9999 }), {
-    accessToken,
-  });
-  return page.content;
-}
-
-/** 이름에 검색어가 들어가는지(대소문자·공백 무시). 검색어가 없으면 항상 통과. */
+/**
+ * 이름에 검색어가 들어가는지(대소문자·공백 무시). 검색어가 없으면 항상 통과.
+ * ⚠️ **목 전용이다.** 실연동에선 BE가 거른다(`keyword` 파라미터 — 프로젝트명 대소문자 무시
+ *    부분일치, [확인] `ProjectController.list`). 규칙을 같은 뜻으로 맞춰 둬야 목으로 본
+ *    화면과 연동한 화면이 다르지 않다.
+ */
 function matchesKeyword(project: ProjectListItem, keyword?: string): boolean {
   const q = keyword?.trim().toLowerCase();
   if (!q) return true;
   return project.name.toLowerCase().includes(q);
 }
+
+/** 한 화면에 그리는 줄 수 — BE 목록 기본값과 같다([확인] `ProjectController.list`의 `size` 기본 20). */
+export const PROJECT_PAGE_SIZE = 20;
+
+/**
+ * UI 정렬 상수 → BE `sort`/`order` 한 쌍.
+ *
+ * ⚠️ [확인] `ProjectController.list` — `sort=dueDate|createdAt|name`, `order=asc|desc`.
+ *    `name`은 2026-08-13에 붙었다(커밋 `9bd9c010`) — 그 전엔 이름순을 서버가 못 해서
+ *    이 화면만 전량을 받아 화면에서 정렬하고 있었다.
+ * ⚠️ **받아 와서 다시 정렬하지 않는다.** 페이지 단위로 오는 목록을 화면이 또 정렬하면
+ *    페이지 경계에서 차례가 어긋난다(`action/server.ts`와 같은 규칙).
+ * ⚠️ 그래서 **한글 정렬이 BE의 DB 콜레이션을 따른다** — `localeCompare("ko")`와 미세하게
+ *    다를 수 있다. 두 벌로 맞추려 들면 반드시 어긋나므로 서버 한쪽에 맡긴다.
+ */
+const BE_PROJECT_SORT: Record<ProjectSort, { sort: "dueDate" | "name"; order: "asc" | "desc" }> = {
+  DUE_ASC: { sort: "dueDate", order: "asc" },
+  NAME: { sort: "name", order: "asc" },
+};
 
 /** URL 세그먼트(문자열)로 온 id를 정수로 바꿔 찾는다 — 숫자가 아니면 못 찾은 것과 같다. */
 function findProjectById(id: string): ProjectListItem | undefined {
@@ -80,27 +100,54 @@ export interface ProjectListQuery {
 }
 
 /**
- * 프로젝트 전체 조회 — 상태 탭·검색어로 거르고 정렬(기본 마감 임박순).
- * ⚠️ 실연동 시 이 분기와 매퍼만 고친다(격리막). 페이지네이션은 BE가 페이지 단위로 주면 그때 얹는다.
+ * 프로젝트 목록(`/app/projects`) 한 페이지 — **자르기·거르기·정렬을 전부 서버가 한다.**
+ *
+ * ⚠️ `size: 9999` 전량 수신을 걷어냈다(2026-08-13, #443). 화면만 잘릴 뿐 10만 건을 다
+ *    받아 오는 모양이었다(CLAUDE.md §목록·페이지네이션). BE가 `keyword`·`sort=name`을
+ *    받게 되면서(커밋 `9bd9c010`) 마지막으로 막고 있던 자리가 풀렸다 — 내 액션·팀 액션은
+ *    #417에서 이미 같은 모양으로 옮겼고, 여기도 **같은 훅·같은 계약**(`PaginatedResult`)을 쓴다.
+ * ⚠️ 첫 페이지는 서버 컴포넌트가 렌더하고, 2페이지부터 화면이 이어 붙인다(§핵심 4원칙 ①).
+ * ⚠️ `page`는 0-base다(BE 표준 확정, 2026-08-10).
  */
-export async function getProjectList({
-  status,
-  keyword,
-  sort = DEFAULT_PROJECT_SORT,
-}: ProjectListQuery): Promise<ProjectListItem[]> {
+export async function getProjectsPage(
+  { status, keyword, sort = DEFAULT_PROJECT_SORT }: ProjectListQuery,
+  page: number,
+  pageSize: number = PROJECT_PAGE_SIZE,
+): Promise<PaginatedResult<ProjectListItem>> {
   if (isMock) {
     const filtered = TOP_LEVEL_PROJECTS.filter(
       (project) => project.status === status && matchesKeyword(project, keyword),
     );
-    return sortProjects(filtered, sort);
+    // 서버가 정렬한 차례로 굳힌 뒤 자른다 — 연동해도 화면이 안 바뀐다.
+    return paginate(sortProjects(filtered, sort), page, pageSize);
   }
 
+  /*
+    [확인] BE `global/response/PageResponse.java` — `content`·`page`·`size`·`totalElements`·
+    `totalPages`·`hasNext`. 목록 3종 공용 봉투라 사원 목록의 `MemberPageResponse`와 필드명이
+    같지 않다(그쪽은 `totalCount`가 아니라 `totalElements`인 것까지 같지만 타입이 따로다).
+    ⚠️ `keyword`는 **빈 문자열을 안 보낸다** — 보내면 BE가 "빈 문자열로 검색"을 하러 갈지
+       무시할지가 계약에 없다. 값이 없으면 파라미터 자체를 빼는 게 `toQuery`의 규칙이다.
+  */
   const accessToken = await requireAccessToken();
-  const all = (await fetchAllProjects(accessToken)).map(toProjectListItem);
-  const filtered = all.filter(
-    (project) => project.status === status && matchesKeyword(project, keyword),
+  const trimmed = keyword?.trim();
+  const response = await serverApi<BePageResponse<BeProjectSummary>>(
+    ep.projects({
+      keyword: trimmed ? trimmed : undefined,
+      status,
+      ...BE_PROJECT_SORT[sort],
+      page: Math.max(0, page),
+      size: pageSize,
+    }),
+    { accessToken },
   );
-  return sortProjects(filtered, sort);
+
+  return {
+    items: response.content.map(toProjectListItem),
+    page: response.page,
+    totalPages: response.totalPages,
+    totalCount: response.totalElements,
+  };
 }
 
 /**
@@ -216,6 +263,15 @@ export async function getCompanyTeamOptions(): Promise<string[]> {
 
 /**
  * 상태별 프로젝트 수 — 필터 탭에 붙는 배지. 검색어가 있으면 그 결과 안에서 센다(탭·목록이 같은 기준).
+ *
+ * ⚠️ **전체 목록을 다시 받아 세지 않는다**(2026-08-13 고침). 전에는 이 화면이 렌더될 때마다
+ *    `size: 9999`로 **전체 목록을 두 번** 받았다 — 한 번은 목록, 한 번은 이 배지. BE엔 상태별
+ *    집계 엔드포인트가 없으므로, 상태마다 `size=1`로 불러 **`totalElements`만** 읽는다.
+ *    돌아오는 본문은 세 번 합쳐도 한 줄뿐이다.
+ * ⚠️ 세 번을 **병렬로** 보낸다 — 차례로 보내면 이 배지 하나가 화면 전체를 세 번의 왕복만큼
+ *    늦춘다.
+ * ⚠️ 배지 숫자와 목록이 **같은 조건**을 봐야 한다(같은 `keyword`) — 한쪽만 검색어를 빼면
+ *    `진행중 4`라고 적힌 탭을 눌렀는데 2건이 나온다.
  */
 export async function getProjectStatusCounts(
   keyword?: string,
@@ -229,11 +285,21 @@ export async function getProjectStatusCounts(
   }
 
   const accessToken = await requireAccessToken();
-  const all = (await fetchAllProjects(accessToken)).map(toProjectListItem);
+  const trimmed = keyword?.trim();
+  const statuses = [PROJECT_STATUS.TODO, PROJECT_STATUS.IN_PROGRESS, PROJECT_STATUS.DONE] as const;
+
+  const totals = await Promise.all(
+    statuses.map(async (status) => {
+      const response = await serverApi<BePageResponse<BeProjectSummary>>(
+        ep.projects({ keyword: trimmed ? trimmed : undefined, status, page: 0, size: 1 }),
+        { accessToken },
+      );
+      return [status, response.totalElements] as const;
+    }),
+  );
+
   const counts: Record<ProjectStatus, number> = { TODO: 0, IN_PROGRESS: 0, DONE: 0 };
-  for (const project of all) {
-    if (matchesKeyword(project, keyword)) counts[project.status] += 1;
-  }
+  for (const [status, total] of totals) counts[status] = total;
   return counts;
 }
 

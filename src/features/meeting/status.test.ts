@@ -1,6 +1,11 @@
 import { AI_SUMMARY_STATUS, MEETING_STATUS } from "@/constants/meeting";
 
-import { meetingCardAffordanceOf, meetingStatusOf } from "./status";
+import {
+  canEditMeeting,
+  canEditMeetingAttendees,
+  meetingCardAffordanceOf,
+  meetingStatusOf,
+} from "./status";
 
 /** 상태가 틀리면 "완료 카드만 상세 진입" 규칙(WORKFLOW §3-2)이 통째로 틀린다 */
 describe("meetingStatusOf", () => {
@@ -100,5 +105,33 @@ describe("meetingCardAffordanceOf", () => {
     expect(
       meetingCardAffordanceOf({ ...base, status: MEETING_STATUS.CANCELED, aiSummaryStatus: null }),
     ).toBe("open");
+  });
+});
+
+/**
+ * 수정 관문이 느슨하면 BE가 409 `MT-014`로 되돌리는 자리에 버튼이 뜬다(§정직성).
+ * ⚠️ `pendingReason`이 상태를 대신한다 — `"SCHEDULED"`만 아직 시작 전이라는 뜻이다(§view-types).
+ */
+describe("canEditMeeting", () => {
+  it("host의 시작 전 회의만 고칠 수 있다", () => {
+    expect(canEditMeeting({ isHost: true, pendingReason: "SCHEDULED" })).toBe(true);
+  });
+
+  it("참석자는 시작 전이어도 못 고친다 — 조작은 Host의 일이다", () => {
+    expect(canEditMeeting({ isHost: false, pendingReason: "SCHEDULED" })).toBe(false);
+  });
+
+  /* ⚠️ 진행중·요약중·실패·취소·완료(null)는 전부 BE가 409로 막는 자리다 */
+  it("시작한 뒤로는 host라도 못 고친다", () => {
+    for (const reason of ["IN_PROGRESS", "SUMMARIZING", "FAILED", "CANCELED", null] as const) {
+      expect(canEditMeeting({ isHost: true, pendingReason: reason })).toBe(false);
+    }
+  });
+
+  /* ⚠️ 참석자 교체(MEET-09)는 진행중도 되지만 수정(MEET-05)은 아니다 — 관문이 다르다 */
+  it("참석자 교체보다 좁다 — 진행중 회의에서 갈린다", () => {
+    const inProgress = { isHost: true, pendingReason: "IN_PROGRESS" } as const;
+    expect(canEditMeetingAttendees(inProgress)).toBe(true);
+    expect(canEditMeeting(inProgress)).toBe(false);
   });
 });
