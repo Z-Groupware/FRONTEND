@@ -57,6 +57,21 @@ interface ApiInit extends Omit<RequestInit, "body"> {
   accessToken?: string;
   /** 이 호출만 더/덜 기다린다. 안 넘기면 {@link DEFAULT_TIMEOUT_MS} */
   timeoutMs?: number;
+  /**
+   * 성공 응답이 **공용 봉투**(`{ httpStatus, message, data }`)에 담겨 오는가. 기본 `true`.
+   *
+   * ⚠️ **BE가 전부 봉투를 씌우지는 않는다**(2026-08-13 실코드 대조). 컨트롤러가 `ApiResponse<T>`를
+   *    리턴하면 봉투가 씌워지고, DTO를 그대로 리턴하면 **맨몸으로 나간다** — 전역으로 감싸 주는
+   *    `ResponseBodyAdvice`가 BE에 없어서 메서드마다 다르다. 실제로 `BillingController`는
+   *    `GET /billing-config`·`GET /billing`·`POST /subscription/cancel`은 씌우고,
+   *    **`POST /subscription/pay`·`POST /payment-methods`는 안 씌운다.**
+   * ⚠️ 맨몸 응답에 기본값(`true`)을 쓰면 `raw.data`가 없어 **조용히 `undefined`가 흘러간다** —
+   *    호출부는 성공한 줄 알고 빈 값을 그린다(§정직성: 되는 척 금지). 그래서 `false`를
+   *    넘기는 자리는 **반드시 컨트롤러 실코드를 보고** 정한다(§연동 검증).
+   * ⚠️ 벗기는 규칙 자체는 여전히 **이 파일 한 곳**에 있다. 호출부는 "봉투가 있냐 없냐"만
+   *    선언하고, 봉투 모양은 모른다 — 모양이 바뀌면 고칠 곳은 여기다.
+   */
+  isEnveloped?: boolean;
 }
 
 /**
@@ -77,7 +92,7 @@ const DEFAULT_TIMEOUT_MS = 15_000;
  *    남의 화면이 다른 사람에게 보인다. 캐시가 필요한 자리에서 호출부가 `cache`를 넘긴다.
  */
 export async function serverApi<T>(path: string, init: ApiInit = {}): Promise<T> {
-  const { json, accessToken, headers, timeoutMs, signal, ...rest } = init;
+  const { json, accessToken, headers, timeoutMs, signal, isEnveloped = true, ...rest } = init;
 
   /*
     ⚠️ 부르는 쪽이 준 `signal`이 있으면 **둘 다** 산다(`AbortSignal.any`) — 타임아웃으로
@@ -125,6 +140,13 @@ export async function serverApi<T>(path: string, init: ApiInit = {}): Promise<T>
     }
     throw apiError;
   }
+
+  /*
+    ⚠️ **실패 봉투는 위에서 이미 갈렸다.** 여기 오는 건 성공뿐이라 `isEnveloped`는
+       성공 응답 모양만 가른다 — 실패는 `isEnveloped`와 무관하게 늘 같은 모양이다
+       (BE `GlobalExceptionHandler`가 전역으로 찍는다).
+  */
+  if (!isEnveloped) return raw as T;
 
   return (raw as ApiEnvelope<T> | null)?.data as T;
 }

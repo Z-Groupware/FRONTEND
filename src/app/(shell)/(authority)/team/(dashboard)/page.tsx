@@ -1,15 +1,14 @@
-import { CalendarClock } from "lucide-react";
 import { Users } from "lucide-react";
 import type { Metadata } from "next";
 
 import { AccessDenied } from "@/components/common/access-denied";
-import { DashboardMeetingItem } from "@/components/common/dashboard-meeting-item";
 import { EmptyState } from "@/components/common/empty-state";
 import { SummaryCard } from "@/components/common/summary-card";
 import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { roleHome } from "@/features/shell/home";
 import { getViewer } from "@/features/shell/viewer";
 import { MemberStatusRow } from "@/features/team/components/member-status-row";
+import { RecentTeamMeetings } from "@/features/team/components/recent-team-meetings";
 import { MEMBER_BOX_MAX_HEIGHT } from "@/features/team/lib";
 import { getTeamDashboardOverview } from "@/features/team/server";
 import { canAccessTeamScope } from "@/lib/permission";
@@ -98,27 +97,7 @@ export default async function TeamDashboardPage() {
           )}
         </section>
 
-        {/* 높이를 고정하지 않는다 — 다섯 건이 하드 캡이라 자라 봐야 다섯 줄이다(`lib.ts` 참고) */}
-        <section className="border-border bg-card flex flex-col overflow-hidden rounded-2xl border">
-          <div className="border-border flex shrink-0 items-baseline justify-between gap-3 border-b px-7 pt-6 pb-3">
-            <h2 className="text-[17px] leading-7 font-semibold tracking-[-0.3px]">최근 팀 회의</h2>
-            <span className="text-muted-foreground text-[12px] leading-4">최신 5건</span>
-          </div>
-          {meetings.length === 0 ? (
-            <EmptyState
-              className="flex-1"
-              icon={CalendarClock}
-              title="예정된 팀 회의가 없습니다."
-              description="회의실을 예약하면 그 자리에서 회의가 열립니다."
-            />
-          ) : (
-            <ul>
-              {meetings.map((meeting, index) => (
-                <DashboardMeetingItem key={meeting.id} meeting={meeting} showDivider={index > 0} />
-              ))}
-            </ul>
-          )}
-        </section>
+        <RecentTeamMeetings meetings={meetings} />
       </div>
     </main>
   );

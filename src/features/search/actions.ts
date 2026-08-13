@@ -2,9 +2,6 @@
 
 import { revalidatePath } from "next/cache";
 
-import { requireAccessToken } from "@/features/auth/session";
-import { serverApi } from "@/lib/api";
-import { ep } from "@/lib/endpoints";
 import { isMock } from "@/mocks/config";
 
 import { addMockRecentSearch } from "./mock/recent-searches";
@@ -17,6 +14,7 @@ import type { SearchKind } from "./types";
  *    들어왔을 때와 화면이 갈린다.
  * ⚠️ **호출부가 `void`로 던지고 결과를 안 본다**(`search-input.tsx`). 검색 기록 실패가
  *    검색 자체를 막을 이유는 없어 — 실패해도 조용히 넘어간다(최근 검색어 한 줄이 안 남을 뿐).
+ * ⚠️ **실서버에서는 지금 아무 일도 안 한다** — 아래 주석 참고(BE에 기록 API가 없다, #422).
  */
 export async function recordSearchAction(keyword: string): Promise<void> {
   const trimmed = keyword.trim();
@@ -29,18 +27,14 @@ export async function recordSearchAction(keyword: string): Promise<void> {
     return;
   }
 
-  /* [스펙 전달, BE 실코드 미대조] `POST /api/v1/search/recent-queries` — 몸통은 `{ query }` */
-  try {
-    const accessToken = await requireAccessToken();
-    await serverApi<unknown>(ep.searchRecentQueries(), {
-      method: "POST",
-      accessToken,
-      json: { query: trimmed },
-    });
-    revalidatePath("/app/search");
-  } catch {
-    // 위 주석대로 — 기록 실패를 검색 흐름에 되돌리지 않는다.
-  }
+  /*
+    ⚠️ **실서버에는 적을 곳이 없다**(2026-08-13 실코드 대조, #422). `SearchController`의 매핑은
+       `GET /api/v1/search` 하나뿐이라 `POST .../recent-queries`는 404다 — 매번 404를 내고
+       조용히 삼키면 남는 건 "기록되고 있다"는 착각뿐이라 **부르지 않는다**.
+    ⚠️ 대신 랜딩이 "최근 검색어는 아직 서버가 제공하지 않습니다"라고 밝힌다
+       (`SearchHome.unavailable`) — 못 하는 걸 아무 말 없이 안 하는 것과는 다르다(§정직성).
+    ⚠️ BE가 기록 API를 열면 이 함수 안만 되살린다(`ep.searchRecentQueries`는 남겨 뒀다).
+  */
 }
 
 /**
@@ -51,19 +45,12 @@ export async function recordSearchAction(keyword: string): Promise<void> {
  * ⚠️ 목엔 대응하는 저장소가 없다 — `SearchHome.recentlyViewed`가 정적 목이라 클릭해도
  *    안 바뀐다(§정직한 목업: 없는 걸 있는 척 안 한다).
  */
-export async function recordRecentViewAction(kind: SearchKind, id: number): Promise<void> {
-  if (isMock) return;
-
-  /* [스펙 전달, BE 실코드 미대조] `POST /api/v1/search/recent-views` — 몸통은 `{ type, id }` */
-  try {
-    const accessToken = await requireAccessToken();
-    await serverApi<unknown>(ep.searchRecentViews(), {
-      method: "POST",
-      accessToken,
-      json: { type: kind, id },
-    });
-    revalidatePath("/app/search");
-  } catch {
-    // 위 주석대로 — 기록 실패를 이동 흐름에 되돌리지 않는다.
-  }
-}
+/*
+  ⚠️ **`POST /api/v1/search/recent-views`도 BE에 없다**(`recordSearchAction`과 같은 이유).
+     링크를 누를 때마다 404를 한 번씩 내고 삼키느니 아무것도 안 보낸다.
+  ⚠️ **호출부(`record-view-link.tsx`)와 인자는 그대로 둔다.** 기록이 되살아나는 날 이 함수 안만
+     채우면 되고, 지금 링크 쪽을 걷어내면 나중에 클릭 지점을 화면마다 다시 찾아 심어야 한다 —
+     그래서 지금은 안 쓰는 인자다(아래 규칙 해제는 그 뜻).
+*/
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export async function recordRecentViewAction(kind: SearchKind, id: number): Promise<void> {}
