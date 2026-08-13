@@ -63,6 +63,33 @@ export const AI_SUMMARY_STATUS_LABEL: Record<AiSummaryStatus, string> = {
   FAILED: "실패",
 };
 
+/**
+ * AI 처리 상태(CAP-06 `GET /api/meetings/:id/processing-status`)의 `status`.
+ * [확인] BE 실코드 대조(2026-08-13) — `capture/application/result/ProcessingStatus.java`
+ * (`OverallStatus`) · 응답은 `ProcessingStatusResponse`가 `status().name()`으로 문자열화한다.
+ *
+ * ⚠️ **`AI_SUMMARY_STATUS`와 다른 값이다.** 저쪽은 회의 카드에 붙는 요약 진행 라벨이고,
+ *    이건 **계층 실행 상태를 회의 하나로 접은 값**이다. 이름이 비슷해 섞어 쓰기 쉬운데,
+ *    섞으면 매퍼에서 조용히 틀린다(§도메인 상수 — BE enum과 이름이 어긋나면 조용히 틀린다).
+ * ⚠️ **`NOT_STARTED`는 "안 한다"가 아니라 "아직 계층 기록이 없다"**는 뜻이다. 회의 종료
+ *    직후 서버가 큐에 걸기 전까지 이 값이 온다 — 완료로 읽으면 요약이 없는데 다 됐다고
+ *    말하게 된다(§정직성).
+ * ⚠️ **멈춘 RUNNING은 BE가 `FAILED`로 접어 준다**(BE #177 · `stalled`). 화면이 따로
+ *    계산하지 않아도 실패로 보인다 — 안 접으면 「요약 중」이 영원히 끝나지 않는다.
+ */
+export const PROCESSING_STATUS = {
+  NOT_STARTED: "NOT_STARTED",
+  RUNNING: "RUNNING",
+  DONE: "DONE",
+  FAILED: "FAILED",
+} as const;
+export type ProcessingStatus = (typeof PROCESSING_STATUS)[keyof typeof PROCESSING_STATUS];
+
+/** 스트림·응답으로 들어온 문자열이 우리가 아는 값인지(`isMeetingStatus`와 같은 패턴). */
+export function isProcessingStatus(value: string): value is ProcessingStatus {
+  return (Object.values(PROCESSING_STATUS) as string[]).includes(value);
+}
+
 /*
   ⚠️ **초대 수락·거절 상수는 두지 않는다**(2026-08-07 제거). `MEETING_INVITE_STATUS`
      (미응답·참석·불참)가 정의만 되고 아무 데서도 안 쓰이고 있었는데, WORKFLOW 어디에도
