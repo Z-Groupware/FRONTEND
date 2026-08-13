@@ -107,8 +107,14 @@ export function ProjectForm({ action, teamOptions, cancelHref }: ProjectFormProp
     startDate.trim().length > 0 &&
     dueDate.trim().length > 0 &&
     teamRows.length > 0 &&
-    teamRows.every((row) => row.team.trim().length > 0) &&
-    !attachmentError;
+    teamRows.every((row) => row.team.trim().length > 0);
+  /*
+    ⚠️ **첨부 오류가 제출을 막지 않는다**(2026-08-13 고침). 전에는 `!attachmentError`가
+       `canSubmit`에 있었는데, 파일이 검증에 걸리면 `attachment`는 `null`이 되고 오류만 남아
+       **제출 버튼이 영영 잠겼다** — 그 상태를 풀 [첨부 제거] 버튼은 `attachment`가 있을 때만
+       그려져서 누를 수도 없었다. 첨부는 선택이고 걸린 파일은 붙지 않으므로, 오류 문구는
+       그대로 두고(왜 안 붙는지 말해 준다) 프로젝트 생성은 막지 않는다.
+  */
   const mainColor = paletteColorByName(tagColor);
   const usedTeams = new Set(teamRows.map((row) => row.team).filter(Boolean));
   const canAddTeamRow = teamRows.length < teamOptions.length;
