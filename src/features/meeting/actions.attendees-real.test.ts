@@ -45,6 +45,8 @@ function meetingDetail(overrides: Partial<Record<string, unknown>> = {}) {
     status: "SCHEDULED",
     startAt: "2026-08-14T10:00:00",
     endAt: "2026-08-14T10:30:00",
+    pendingActionCount: 0,
+    summaryStatus: null,
     project: { projectId: 1, tag: "GOODS" },
     meetingRoom: { meetingRoomId: 1, name: "소회의실 B" },
     host: { memberId: HOST_LEADER.id, name: "김서준" },
