@@ -95,11 +95,10 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
 
   const handleEvent = useCallback((envelope: NotificationEnvelope) => {
     /*
-      ⚠️ **여기가 소스 교체의 이음매다.** 오늘 `toAnalysisSignal`은 언제나 `null`이다 —
-         BE `NotificationType`에 분석 이벤트가 없기 때문이다(2026-08-13 실코드 확인).
-         BE가 타입을 배포하고 `event.ts`의 `ANALYSIS_EVENT_STATE`에 이름만 적으면, 그
-         순간부터 스트림이 카드를 직접 움직이고 폴링은 늦게 도착하는 보조가 된다 —
-         **카드·배너 컴포넌트는 한 줄도 안 바뀐다.**
+      ⚠️ **여기가 소스 교체의 이음매였다.** `event.ts`의 `ANALYSIS_EVENT_STATE`가 채워지면서
+         (2026-08-13, BE #460) `toAnalysisSignal`이 이제 실제 신호를 낸다 — 스트림이 카드를
+         직접 움직이고, 폴링(`use-analysis-tracker`)은 스트림이 놓친 걸 늦게 잡는 보조가
+         됐다. **카드·배너 컴포넌트는 한 줄도 안 바뀌었다.**
     */
     const signal = toAnalysisSignal(envelope);
     if (signal) {

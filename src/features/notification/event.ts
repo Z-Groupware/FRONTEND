@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { type ProcessingStatus } from "@/constants/meeting";
+import { PROCESSING_STATUS, type ProcessingStatus } from "@/constants/meeting";
 import { isNotificationType, NOTIFICATION_TYPE } from "@/constants/notification";
 
 import type { BannerNotification } from "./types";
@@ -100,20 +100,23 @@ export function toBannerNotification(envelope: NotificationEnvelope): BannerNoti
   };
 }
 
-/* ─────────────────────── 분석 이벤트 이음매 (BE 미배포) ─────────────────────── */
+/* ─────────────────────── 분석 이벤트 이음매 ─────────────────────── */
 
 /**
  * 분석 이벤트 `type` → CAP-06 상태값.
  *
- * ⚠️ **지금은 비어 있다.** BE `NotificationType`에 분석 이벤트가 없다(2026-08-13 실코드
- *    확인 — `MEETING_CREATED`·`MEETING_REMINDER`·`MEETING_CANCELED`·`NOTICE_CREATED` 4종뿐).
- *    이름을 미리 지어 넣으면 오지 않는 이벤트를 기다리는 코드가 된다(§연동 검증 — 추측 금지).
- * ⚠️ **BE에 이름이 확정되면 여기 한 줄씩만 적으면 된다.** 예를 들어 `ANALYSIS_DONE: "DONE"`,
- *    `ANALYSIS_FAILED: "FAILED"`를 넣는 순간 스트림이 카드를 직접 움직이고, 폴링은
- *    `use-analysis-tracker`에서 보조로 내려간다 — **카드·배너 컴포넌트는 안 고친다.**
- *    payload에서 `meetingId`를 꺼내는 규칙은 아래 `analysisPayloadSchema` 하나뿐이다.
+ * ⚠️ **채웠다**(2026-08-13, BE 실코드 대조 — `notification/domain/model/NotificationType.java`
+ *    에 `ANALYSIS_COMPLETED`·`ANALYSIS_FAILED`가 있다, BE #460). 이 한 줄이 채워진 순간
+ *    스트림이 카드를 직접 움직이고, 폴링(`use-analysis-tracker`)은 보조로 내려간다 —
+ *    **카드·배너 컴포넌트는 안 고쳤다.**
+ * ⚠️ payload는 `{meetingId, title, message, topicCount|errorCode}`인데(트리거 클래스
+ *    `AnalysisCompletedPayload`·`AnalysisFailedPayload`), 여기서 꺼내는 건 `meetingId`
+ *    하나뿐이다 — 아래 `analysisPayloadSchema`가 정한다(zod가 남는 칸은 그냥 통과시킨다).
  */
-export const ANALYSIS_EVENT_STATE: Readonly<Record<string, ProcessingStatus>> = {};
+export const ANALYSIS_EVENT_STATE: Readonly<Record<string, ProcessingStatus>> = {
+  ANALYSIS_COMPLETED: PROCESSING_STATUS.DONE,
+  ANALYSIS_FAILED: PROCESSING_STATUS.FAILED,
+};
 
 const analysisPayloadSchema = z.object({ meetingId: z.number() });
 

@@ -80,14 +80,52 @@ describe("배너 매핑", () => {
 
 describe("분석 이벤트 이음매", () => {
   /*
-    ⚠️ BE `NotificationType`에 분석 이벤트가 아직 없다(2026-08-13 실코드 확인).
-       그래서 오늘 스트림으로 오는 건 전부 배너감이고, 카드는 CAP-06 폴링이 움직인다.
+    ⚠️ 배너 4종(`NOTIFICATION_TYPE`)과 분석 신호는 **다른 표**다 — 배너 종류가 분석 신호로
+       잘못 읽히면 안 된다. `ANALYSIS_EVENT_STATE`가 채워진 뒤에도(2026-08-13, BE #460)
+       이 경계는 그대로 지켜야 한다.
   */
-  it("오늘 BE가 보내는 4종은 분석 신호가 아니다", () => {
-    expect(ANALYSIS_EVENT_STATE).toEqual({});
+  it("배너용 4종은 분석 신호가 아니다", () => {
     for (const type of Object.values(NOTIFICATION_TYPE)) {
       expect(toAnalysisSignal({ type, payload: { meetingId: 1 } })).toBeNull();
     }
+  });
+
+  /*
+    ⚠️ BE `NotificationType.ANALYSIS_COMPLETED`·`ANALYSIS_FAILED`(2026-08-13 실코드 대조,
+       BE #460)를 CAP-06 상태값으로 잇는다 — 이 표가 비면 스트림이 조용히 아무것도 안
+       움직이는 회귀라 값을 직접 잠근다.
+  */
+  it("ANALYSIS_COMPLETED·ANALYSIS_FAILED가 표에 채워져 있다", () => {
+    expect(ANALYSIS_EVENT_STATE).toEqual({
+      ANALYSIS_COMPLETED: PROCESSING_STATUS.DONE,
+      ANALYSIS_FAILED: PROCESSING_STATUS.FAILED,
+    });
+  });
+
+  it("실제 이벤트가 오면 분석 신호로 옮긴다", () => {
+    expect(
+      toAnalysisSignal({
+        type: "ANALYSIS_COMPLETED",
+        payload: {
+          meetingId: 11,
+          title: "스프린트 회의",
+          message: "요약이 완료되었습니다",
+          topicCount: 3,
+        },
+      }),
+    ).toEqual({ meetingId: "11", status: PROCESSING_STATUS.DONE });
+
+    expect(
+      toAnalysisSignal({
+        type: "ANALYSIS_FAILED",
+        payload: {
+          meetingId: 12,
+          title: "회고",
+          message: "요약이 실패했습니다",
+          errorCode: "AI-001",
+        },
+      }),
+    ).toEqual({ meetingId: "12", status: PROCESSING_STATUS.FAILED });
   });
 
   /*
