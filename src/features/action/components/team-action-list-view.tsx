@@ -43,6 +43,14 @@ function toTimelineItems(
     dueDate: action.dueDate,
     tone: isDelayed(action) ? "DELAYED" : action.status,
     href: `/app/projects/${group.projectId}/team/${action.id}`,
+    /*
+      하위 개인 액션 진척(`3/5`) — BE가 이미 주는 값이라 그대로 넘긴다(#355 · 매퍼 수신 #416).
+      ⚠️ `null`을 `0`으로 바꾸지 않는다. 계약상 `null`은 "하위 개념 자체가 없음"이고
+         `0/0`은 "하위가 아직 비어 있음"이라 뜻이 갈린다 — 여기서 뭉개면 타임라인이
+         없는 사실을 지어낸다(DESIGN §9 — 화면은 사실만 말한다).
+    */
+    childDoneCount: action.childDoneCount,
+    childTotalCount: action.childTotalCount,
   }));
 }
 
