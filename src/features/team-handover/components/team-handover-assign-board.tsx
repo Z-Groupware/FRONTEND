@@ -69,7 +69,10 @@ export function TeamHandoverAssignBoard({ handover, todayIso }: TeamHandoverAssi
       */
       let result;
       try {
-        result = await completeTeamHandoverAction(handover.memberId, toAssignmentList(assignments));
+        result = await completeTeamHandoverAction(
+          handover.handoverId,
+          toAssignmentList(assignments),
+        );
       } catch {
         setError("서버에 연결하지 못했습니다. 잠시 후 다시 시도해 주세요.");
         return;
@@ -97,7 +100,7 @@ export function TeamHandoverAssignBoard({ handover, todayIso }: TeamHandoverAssi
       /* ⚠️ 확정과 같은 이유로 거절도 받아 낸다 — 위 주석 참고 */
       let result;
       try {
-        result = await rejectTeamHandoverAction(handover.memberId, reason);
+        result = await rejectTeamHandoverAction(handover.handoverId, reason);
       } catch {
         setError("서버에 연결하지 못했습니다. 잠시 후 다시 시도해 주세요.");
         return;
@@ -128,7 +131,13 @@ export function TeamHandoverAssignBoard({ handover, todayIso }: TeamHandoverAssi
             type="button"
             size="sm"
             variant="outline"
-            onClick={() => toast("PDF 생성은 아직 연동되지 않았습니다")}
+            onClick={() =>
+              window.open(
+                `/api/handovers/${handover.handoverId}/pdf`,
+                "_blank",
+                "noopener,noreferrer",
+              )
+            }
           >
             <Download />
             인수인계서 PDF 다운로드

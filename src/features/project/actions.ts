@@ -6,16 +6,22 @@ import { redirect } from "next/navigation";
 import { FLASH_TOAST_PARAM } from "@/constants/flash-toast";
 import { requireAccessToken } from "@/features/auth/session";
 import { getViewer } from "@/features/shell/viewer";
-import { ApiError, serverApi } from "@/lib/api";
+import { ApiError, serverApi, toUserMessage } from "@/lib/api";
 import { ep } from "@/lib/endpoints";
 import { canCreateProject } from "@/lib/permission";
 import { isMock } from "@/mocks/config";
 
+import type { BeIssuedUploadUrl, BeProjectSummary, ConfirmAttachmentRequestBody } from "./mapper";
 import { toCreateProjectRequestBody } from "./mapper";
 import { addMockProject } from "./mock/projects";
 import { resolveTeamIds } from "./server";
-import type { ProjectDraft, ProjectFormErrors } from "./types";
-import { validateProjectDraft } from "./validate";
+import type {
+  AttachmentConfirmResult,
+  AttachmentIssueResult,
+  ProjectDraft,
+  ProjectFormErrors,
+} from "./types";
+import { validateAttachmentFile, validateProjectDraft } from "./validate";
 
 const LIST_PATH = "/app/projects";
 /*
@@ -24,9 +30,16 @@ const LIST_PATH = "/app/projects";
 */
 const CREATED_PATH = `${LIST_PATH}?${FLASH_TOAST_PARAM}=PROJECT_CREATED`;
 
-/** 생성 폼 결과 — `useActionState`가 그대로 들고 있는 모양. */
+/**
+ * 생성 폼 결과 — `useActionState`가 그대로 들고 있는 모양.
+ * ⚠️ `createdProjectId`는 **첨부파일이 있을 때만** 실려 온다. 파일은 브라우저가 S3에 직접
+ *    PUT해야 해서(BE는 바이너리를 안 받는다 — [확인] `ProjectAttachmentController` 주석)
+ *    액션이 `redirect`로 끝나 버리면 화면이 업로드를 이어갈 프로젝트 id를 못 받는다.
+ *    파일이 없으면 기존처럼 `redirect`한다 — 이 값이 있다 = "만들어졌고, 업로드는 네 차례".
+ */
 export interface ProjectFormState {
   errors: ProjectFormErrors;
+  createdProjectId?: number;
 }
 
 function readDraft(formData: FormData): ProjectDraft {
@@ -59,29 +72,116 @@ export async function createProjectAction(
   const errors = validateProjectDraft(draft);
   if (Object.keys(errors).length > 0) return { errors };
 
+  /*
+    ⚠️ 첨부파일이 있으면 `redirect` 대신 **만들어진 id를 화면에 되돌린다** — 업로드 3단계
+       (발급→브라우저 PUT→확정)는 화면이 이어서 돈다(`use-attachment-upload.ts`).
+       redirect로 끝내면 업로드를 걸 프로젝트 id가 사라진다(§ProjectFormState 주석).
+  */
+  const hasAttachment = formData.get("hasAttachment") === "1";
+  let createdProjectId: number;
+
   if (!isMock) {
-    // ⚠️ 첨부파일은 아직 안 보낸다 — 생성 폼에 실제 파일 선택 UI가 없다(`attachmentName`은
-    //    지금도 목 단계 자리표시자다). 업로드 3단계(발급→업로드→확정)는 화면이 생기면 잇는다.
     const accessToken = await requireAccessToken();
     const teamIds = await resolveTeamIds(accessToken, draft.teamNames);
     const body = toCreateProjectRequestBody(draft, teamIds);
 
     try {
-      await serverApi(ep.projects(), { method: "POST", json: body, accessToken });
+      // [확인] BE `ProjectController.create` — `ApiResponse<ProjectSummaryResponse>`로 방금
+      // 만든 프로젝트를 되돌려 준다(`id` 포함). 첨부 업로드가 이 id에 걸린다.
+      const created = await serverApi<BeProjectSummary>(ep.projects(), {
+        method: "POST",
+        json: body,
+        accessToken,
+      });
+      createdProjectId = created.id;
     } catch (error) {
       if (error instanceof ApiError) return { errors: { name: error.message } };
       throw error;
     }
-
-    revalidatePath(LIST_PATH);
-    redirect(CREATED_PATH);
+  } else {
+    createdProjectId = addMockProject(draft).id;
   }
 
-  addMockProject(draft);
-
   revalidatePath(LIST_PATH);
+  if (hasAttachment) return { errors: {}, createdProjectId };
+
   // ⚠️ `redirect`는 내부적으로 예외를 던진다 — try/catch 밖에 둔다(§렌더링·데이터)
   redirect(CREATED_PATH);
+}
+
+/**
+ * 첨부 업로드 1단계 — presigned PUT URL 발급(격리막 §Mock 격리막).
+ * [확인] BE `POST /api/projects/{projectId}/attachments/upload-url`
+ *   (`ProjectAttachmentController.issueUploadUrl`) — 요청 `{fileName, fileSize}`
+ *   (`IssueUploadUrlRequest`), 응답 `{uploadUrl, fileUrl}`(`IssuedUploadUrl`, 15분 만료).
+ * ⚠️ **권한을 서버에서 다시 본다**(§권한) — BE도 OWNER/ADMIN만 받지만(`@PreAuthorize`),
+ *    목 단계에는 BE가 없으니 여기서도 같은 판정을 세운다.
+ * ⚠️ 실패는 던지지 않고 `message`로 돌려준다 — 던지면 error.tsx로 화면이 통째로 넘어가는데,
+ *    프로젝트는 이미 만들어진 뒤라 "파일만 실패했다"를 그 자리에서 말해야 한다(§정직성).
+ */
+export async function issueProjectAttachmentUploadUrlAction(
+  projectId: number,
+  fileName: string,
+  fileSize: number,
+): Promise<AttachmentIssueResult> {
+  const viewer = await getViewer();
+  if (!canCreateProject(viewer)) return { ok: false, message: "첨부파일을 올릴 권한이 없습니다" };
+
+  // ⚠️ 화면과 **같은 함수**로 다시 검증한다 — 화면 처리는 UX일 뿐 검증이 아니다(§권한).
+  const invalid = validateAttachmentFile(fileName, fileSize);
+  if (invalid) return { ok: false, message: invalid };
+
+  if (isMock) {
+    // 목 단계 — 올릴 S3가 없다. `uploadUrl: null`이 "PUT 건너뛰어라"는 신호다(UI 계약 주석).
+    return { ok: true, ticket: { uploadUrl: null, fileUrl: `mock/${fileName}` } };
+  }
+
+  try {
+    const accessToken = await requireAccessToken();
+    const issued = await serverApi<BeIssuedUploadUrl>(ep.projectAttachmentUploadUrl(projectId), {
+      method: "POST",
+      json: { fileName, fileSize },
+      accessToken,
+    });
+    return { ok: true, ticket: issued };
+  } catch (error) {
+    return { ok: false, message: toUserMessage(error) };
+  }
+}
+
+/**
+ * 첨부 업로드 3단계 — 업로드 확정(메타데이터 저장).
+ * [확인] BE `POST /api/projects/{projectId}/attachments/confirm`
+ *   (`ProjectAttachmentController.confirm`) — 요청 `{fileName, fileUrl, fileSize}`
+ *   (`ConfirmAttachmentRequest`), 같은 `fileUrl` 재확정은 기존 레코드 반환(idempotent)이라
+ *   재시도로 두 번 불러도 안전하다.
+ */
+export async function confirmProjectAttachmentAction(
+  projectId: number,
+  body: ConfirmAttachmentRequestBody,
+): Promise<AttachmentConfirmResult> {
+  const viewer = await getViewer();
+  if (!canCreateProject(viewer)) return { ok: false, message: "첨부파일을 올릴 권한이 없습니다" };
+
+  const invalid = validateAttachmentFile(body.fileName, body.fileSize);
+  if (invalid) return { ok: false, message: invalid };
+
+  if (isMock) return { ok: true }; // 목 단계 — 저장할 곳이 없다. 성공만 흉내낸다(발급 쪽 주석 참고).
+
+  try {
+    const accessToken = await requireAccessToken();
+    await serverApi(ep.projectAttachmentConfirm(projectId), {
+      method: "POST",
+      json: body,
+      accessToken,
+    });
+  } catch (error) {
+    return { ok: false, message: toUserMessage(error) };
+  }
+
+  // 확정돼야 상세(기획 탭)의 첨부 목록에 나타난다 — 그 화면의 캐시를 지운다.
+  revalidatePath(`/app/projects/${projectId}`);
+  return { ok: true };
 }
 
 /**

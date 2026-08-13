@@ -19,6 +19,11 @@ export interface ProjectListParams {
 /** 개인 액션 목록만 갖는 `overdue` 필터가 추가된다. */
 export interface ActionListParams extends ProjectListParams {
   overdue?: boolean;
+  /**
+   * 값을 주면 호출자 본인이 아니라 **그 팀원의** 목록을 대신 조회한다(2026-08-11 추가,
+   * 이홍근 요청 — 팀원 관리 화면). LEADER 전용, 같은 팀 소속만 — [확인] `ActionController.java`.
+   */
+  assigneeMemberId?: number;
 }
 
 /** `undefined`·`null` 값은 쿼리에서 빠진다 — 서버 기본값을 그대로 쓰게 둔다. */
@@ -46,34 +51,58 @@ export const ep = {
   companyOnboarding: () => "/api/companies/me/onboarding",
 
   /*
-   * 회의 — [확인] BE 실코드 대조(2026-08-11)
+   * 회의 — [확인] BE 실코드 대조(2026-08-12, 커밋 `51b5482f` "회의·회의실·공지사항 API 경로 통일" 리팩터 반영)
    *   `meeting/presentation/api/{MeetingController,MeetingListController,MeetingDetailController}.java`
    *
-   * ⚠️ **회의도 `/api/v1/`이다.** 전에 `/api/meetings`로 적어 뒀던 건 FE 제안 경로였고
-   *    실제 컨트롤러는 전부 `@RequestMapping("/api/v1/meetings")`다 — 그대로 부르면 404다.
-   * ⚠️ **캡처 전용 조회는 없다.** 캡처 화면도 상세(MEET-04)를 쓴다 — 있지도 않은
-   *    `/{id}/capture`를 지어내지 않는다(§환각 API 방지).
+   * ⚠️ **`/api/v1/` 접두사는 폐기됐다**(2026-08-12, 커밋 `51b5482f`) — 그 전에 붙였던 v1은
+   *    이제 전부 404다. 캡처 전용 조회는 없다 — 캡처 화면도 상세(MEET-04)를 쓴다(§환각 API 방지).
    */
-  meetings: () => "/api/v1/meetings",
+  meetings: () => "/api/meetings",
   /** 상세(MEET-04) — 캡처 진입도 이걸 쓴다. 없으면 404 `MT-001`, 열람 권한 없으면 403 `MT-011` */
-  meeting: (id: number) => `/api/v1/meetings/${id}`,
+  meeting: (id: number) => `/api/meetings/${id}`,
+  /** 내 예정 회의(MEET-03, 구현 완료) — 대시보드 위젯용. `limit` 생략 시 서버 기본값(5, 최대 20). */
+  meetingsUpcoming: (params?: { limit?: number }) => `/api/meetings/upcoming${toQuery(params)}`,
+  /** 참석자 명단 교체(MEET-09, 구현 완료) — 전체 명단 교체(부분 추가·삭제 아님). */
+  meetingAttendees: (meetingId: number) => `/api/meetings/${meetingId}/attendees`,
+  /**
+   * 확정 대기 회의 목록(MEET-10, 구현 완료 — PR #233) — 마이페이지 "미확정 액션" 위젯용.
+   * [확인] D도메인 REST API 명세(2026-08-12) 대조. 파라미터 없음 — host 본인 회의만 서버가
+   * 자동 스코프한다(전 롤 호출 가능, 판정은 역할이 아니라 `hostMemberId` 일치).
+   */
+  meetingsPendingActionDistributions: () => "/api/meetings/pending-action-distributions",
+  /**
+   * 요약 중단 회의 목록(MEET-15, 구현 완료 — PR #345) — 마이페이지 "요약이 중단된 회의" 위젯용.
+   * [확인] D도메인 REST API 명세(2026-08-12) 대조. `page`는 0부터. host 본인 회의만 서버가
+   * 자동 스코프한다(MEET-10과 같은 이유 — 역할이 아니라 `hostMemberId` 일치).
+   */
+  meetingsStalledSummaries: (params?: {
+    page?: number;
+    size?: number;
+    projectId?: number;
+    from?: string;
+    to?: string;
+  }) => `/api/meetings/stalled-summaries${toQuery(params)}`,
 
   /*
-   * 캡처 — [확인] BE 실코드 대조(2026-08-10)
+   * 캡처 — [확인] BE 실코드 대조(2026-08-12, 커밋 `51b5482f` "회의·회의실·공지사항 API 경로 통일" 리팩터 반영)
    *   `cap/presentation/api/{CaptureUploadController,CaptionController,CaptureQueryController}.java`
    *   `meeting/presentation/api/{CaptureSessionController,MeetingCompletionController}.java`
    *   `capture/presentation/api/AnalysisController.java`
    *
-   * ⚠️ **접두사가 두 갈래다.** 캡처 세션(CAP-01·02·03·10)과 회의 종료(MEET-08)는 `/api/v1/`,
-   *    자막·조각·분석은 `/api/`다. 보기 싫다고 통일하면 전부 404다 — BE의 컨트롤러
-   *    `@RequestMapping`이 실제로 그렇게 갈려 있다.
+   * ⚠️ **`/api/v1/` 접두사는 폐기됐다**(2026-08-12, 커밋 `51b5482f`). 캡처 세션(CAP-01·02·03)과
+   *    회의 종료(MEET-08)도 이제 자막·조각·분석과 똑같이 `/api/`만 쓴다 — v1을 되살리면 전부 404다.
+   * ⚠️ **CAP-01(녹음 시작)이 예전 MEET-07(입장)을 흡수했다**(2026-08-12 정합성 감사 P0) — 이
+   *    경로는 이제 `SCHEDULED → IN_PROGRESS` 전이와 캡처 세션 생성을 한 트랜잭션으로 한다.
+   *    ⚠️ **아직 `status: spec`이다**(D도메인 명세 기준 미구현) — 흡수된 흐름에 맞춘 호출부
+   *    (`capture/actions.ts`) 재설계는 별도 이슈다.
+   * ⚠️ **CAP-09(이어받기)·CAP-10(세션 단독 조회)은 폐기됐다**(2026-08-12) — host 장애는
+   *    참석자 이어받기가 아니라 host 본인 재접속으로 복구한다.
    */
-  captureSession: (meetingId: number) => `/api/v1/meetings/${meetingId}/capture-session`,
-  captureSessionPause: (meetingId: number) => `/api/v1/meetings/${meetingId}/capture-session/pause`,
-  captureSessionResume: (meetingId: number) =>
-    `/api/v1/meetings/${meetingId}/capture-session/resume`,
-  /** 회의 종료 + 분석 접수(MEET-08) — 분석은 **서버가** 큐에 건다, 프론트가 부르지 않는다 */
-  meetingComplete: (meetingId: number) => `/api/v1/meetings/${meetingId}/complete`,
+  captureSession: (meetingId: number) => `/api/meetings/${meetingId}/capture-session`,
+  captureSessionPause: (meetingId: number) => `/api/meetings/${meetingId}/capture-session/pause`,
+  captureSessionResume: (meetingId: number) => `/api/meetings/${meetingId}/capture-session/resume`,
+  /** 회의 종료 + 분석 접수(MEET-08, 구현 완료) — 분석은 **서버가** 큐에 건다, 프론트가 부르지 않는다 */
+  meetingComplete: (meetingId: number) => `/api/meetings/${meetingId}/complete`,
 
   /** 자막 청크 **배치** 전송(CAP-11)·전체 조회(CAP-12) */
   captions: (meetingId: number) => `/api/meetings/${meetingId}/captions`,
@@ -92,10 +121,27 @@ export const ep = {
     `/api/meetings/${meetingId}/parts/${seq}/complete`,
   /** 어디까지 올라갔는지(CAP-08) — 새로고침·크래시 뒤 이어 올리기 */
   partsStatus: (meetingId: number) => `/api/meetings/${meetingId}/parts/status`,
-  /** 진행 중 캡처(CAP-09) — 파라미터 없음, 토큰의 사람 기준으로 서버가 찾는다 */
-  activeCapture: () => "/api/captures/active",
   /** AI 처리 상태(CAP-06) — 종료 뒤 폴링 */
   processingStatus: (meetingId: number) => `/api/meetings/${meetingId}/processing-status`,
+
+  /*
+   * AI 액션 분배 검토(RVW) — [확인] BE 실코드 대조(2026-08-12)
+   *   `capture/presentation/api/AnalysisController.java` (`@RequestMapping("/api/meetings/{meetingId}")`)
+   *
+   * ⚠️ 검토(조회·판정·직접 추가)는 참석자 전원 가능, **확정(RVW-05)만 Host 1명**이다(403은 BE가 재검사).
+   * ⚠️ RVW-04(직접 추가 취소 `DELETE /review/actions/{id}`)는 **일부러 안 등록한다** — 우리 화면은
+   *    확정 전까지 전부 로컬 상태라(WORKFLOW §3-4), 서버에 만든 적 없는 항목을 지울 일이 없다.
+   */
+  /** 검토 조회(RVW-01) — 담당자별 묶음 + `needsReview` + `dispatchedAt`(확정 전이면 null) */
+  meetingReview: (meetingId: number) => `/api/meetings/${meetingId}/review`,
+  /** 항목 판정(RVW-02) — `CONFIRM`(값 실으면 422) · `MODIFY`(고친 칸만) · `REJECT`(사유 5종 필수) */
+  meetingReviewDecision: (meetingId: number, actionId: number) =>
+    `/api/meetings/${meetingId}/review/${actionId}`,
+  /** 액션 직접 추가(RVW-03) — 담당자·기한 필수(422). ⚠️ `plannedStartDate`는 못 실어 RVW-02 MODIFY로 뒤따라 보낸다 */
+  meetingReviewAddAction: (meetingId: number) => `/api/meetings/${meetingId}/review/actions`,
+  /** 분배 확정(RVW-05) — 미검토·미확인 구간 남으면 409, `confirm=true`로만 강행. `skipped`가 응답의 절반이다 */
+  meetingReviewConfirm: (meetingId: number, force = false) =>
+    `/api/meetings/${meetingId}/review/confirm${force ? "?confirm=true" : ""}`,
 
   /*
    * 액션 · 프로젝트 · 캘린더 — [확인] BE 실코드 대조(2026-08-10, 잇다 REST API 연동 가이드 최종본)
@@ -109,6 +155,8 @@ export const ep = {
    * 자체를 안 붙인다(서버 기본값을 그대로 쓰게).
    */
   projects: (params?: ProjectListParams) => `/api/projects${toQuery(params)}`,
+  /** 오너 대시보드 KPI(전체 프로젝트·마감 D-7) — [확인] PR #354 머지 완료, OWNER 전용 */
+  projectDashboardSummary: () => "/api/projects/dashboard-summary",
   project: (id: number) => `/api/projects/${id}`,
   projectStatusBulk: () => "/api/projects/status/bulk",
   projectTimeline: (id: number) => `/api/projects/${id}/timeline`,
@@ -130,6 +178,10 @@ export const ep = {
   teamActionTimeline: (id: number) => `/api/team/actions/${id}?tab=timeline`,
   teamActionAttachmentDownloadUrl: (teamActionId: number, attachmentId: number) =>
     `/api/team/actions/${teamActionId}/attachments/${attachmentId}/download-url`,
+  /** 팀 대시보드 KPI 4종(팀 액션·팀원 액션·내 액션·완료 액션) — [확인] PR #354 머지 완료(2026-08-11) */
+  teamDashboardSummary: () => "/api/team/actions/dashboard-summary",
+  /** 팀원 현황(이름·직급·역할·재직상태·담당 액션 수) — [확인] PR #354 머지 완료, LEADER 전용 */
+  teamMembers: () => "/api/team/members",
 
   /** `month` 생략 시 이번 달(서버 기본값) */
   calendar: (month?: string) => `/api/calendar${toQuery(month ? { month } : undefined)}`,
@@ -137,7 +189,12 @@ export const ep = {
   todoComplete: (id: number) => `/api/todos/${id}/complete`,
 
   /* 인수인계 */
-  handovers: () => "/api/handovers",
+  /**
+   * 목록 — [확인] `HandoverController.list`. 조회 범위(본인/자기팀/회사 전체)는 **토큰이 정한다**,
+   * 파라미터로 안 받는다 — `status`만 클라이언트가 거른다.
+   */
+  handovers: (params?: { status?: "SUBMITTED" | "REASSIGNED" | "FINALIZED" | "REJECTED" }) =>
+    `/api/handovers${toQuery(params)}`,
   handover: (id: number) => `/api/handovers/${id}`,
   /** 상세 리치뷰(타임라인·회의맥락·수신자별 그룹) — BE 인수인계 문서(2026-08-10) §2. */
   handoverPackage: (id: number) => `/api/handovers/${id}/package`,
@@ -149,6 +206,8 @@ export const ep = {
   handoverComplete: (id: number) => `/api/handovers/${id}/complete`,
   handoverFinalize: (id: number) => `/api/handovers/${id}/finalize`,
   handoverReject: (id: number) => `/api/handovers/${id}/reject`,
+  /** 팀장 오프보딩 귀속 대기 일괄 이전 — OWNER·ADMIN 전용. */
+  handoverAttributeToLeader: (id: number) => `/api/handovers/${id}/attribute-to-leader`,
 
   /* 조직 */
   /* 조직 — [확인] identity/member/presentation/api/{Member,ManageMember}Controller.java */
@@ -156,6 +215,10 @@ export const ep = {
   member: (id: number) => `/api/members/${id}`,
   /** 조직도 — OWNER·ADMIN 전용 */
   memberOrgChart: () => "/api/members/org-chart",
+  /** 오너 대시보드 KPI(전체 사원·휴직자) — [확인] PR #385 머지 완료, OWNER 전용 */
+  memberDashboardSummary: () => "/api/members/dashboard-summary",
+  /** 팀장 현황(이름·이메일·팀·재직상태·휴직기간) — [확인] PR #385 머지 완료, OWNER 전용 */
+  teamLeadersStatus: () => "/api/members/leaders-status",
   /**
    * 관리자 겸직 토글 — **OWNER 전용**이고 경로가 따로다.
    *
@@ -180,25 +243,31 @@ export const ep = {
   departments: () => "/api/departments",
 
   /**
-   * 회의실 — 도메인 문서(ROOM-01~05, 2026-08-12) 기준, **BE 실코드 미대조**(§연동 검증: 구현
-   *   붙일 때 컨트롤러로 재확인한다).
+   * 회의실 — [확인] `meetingroom/presentation/api/{MeetingRoomController,MeetingRoomCommandController}.java`
+   *   (2026-08-12 실코드 대조).
+   *
+   * ⚠️ **경로는 `/api/rooms`다.** 도메인 문서의 `/api/meeting-rooms`는 BE "회의·회의실·공지사항
+   *    API 경로 통일" 리팩터(2026-08-11, BE `d417f12b`)로 폐기됐다 — 옛 경로는 전부 404다.
+   *    문서와 코드가 다르면 코드가 맞다(§연동 검증).
    */
-  meetingRooms: () => "/api/meeting-rooms",
+  meetingRooms: () => "/api/rooms",
   /** 회의실 한 건 수정(`PATCH`, ROOM-04)·비활성화(`DELETE`, ROOM-05)가 같은 경로를 쓴다. */
-  meetingRoom: (id: number) => `/api/meeting-rooms/${id}`,
+  meetingRoom: (id: number) => `/api/rooms/${id}`,
   /**
    * 회의실 주간(월~금) 슬롯 현황(ROOM-02). `meetingRoomId`는 필수, `date`는 생략하면 서버가
    * KST 오늘 기준 주를 채운다(§연동 검증 — 요청 축이 "회의실 1개 × 5일"로, 하루 단위 전체
    * 회의실 조회는 폐기됐다).
    */
   meetingRoomAvailability: (params: { meetingRoomId: number; date?: string }) =>
-    `/api/meeting-rooms/availability${toQuery(params)}`,
+    `/api/rooms/availability${toQuery(params)}`,
 
   /* 기타 */
   notifications: () => "/api/notifications",
   /** SSE 스트림 — BFF가 중계하며 토큰을 주입한다 */
   notificationStream: () => "/api/notifications/stream",
   notices: () => "/api/notices",
+  /** 공지 상세(`GET`, NOTI-02)·수정(`PUT`, NOTI-04)·삭제(`DELETE`, NOTI-05)가 같은 경로를 쓴다. */
+  notice: (noticeId: number) => `/api/notices/${noticeId}`,
   subscription: () => "/api/subscription",
 
   /**

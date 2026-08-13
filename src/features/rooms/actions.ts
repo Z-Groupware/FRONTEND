@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { requireAccessToken } from "@/features/auth/session";
 import { TOP_LEVEL_PROJECTS } from "@/features/project/mock/projects";
 import { PROJECT_TEAM_ACTIONS_MOCK } from "@/features/project/mock/team-actions";
+import { getViewer } from "@/features/shell/viewer";
 import { ApiError, serverApi } from "@/lib/api";
 import { ep } from "@/lib/endpoints";
 import { getMockActor } from "@/lib/mock-actor";
@@ -13,11 +14,14 @@ import { isMock } from "@/mocks/config";
 
 import { RESERVATION_DURATION_MINUTES } from "./constants";
 import {
+  type BeCreateMeetingResponse,
   type BeCreateMeetingRoomResponse,
   type BeMeetingRoom,
   toCreatedMeetingRoom,
+  toCreateMeetingPayload,
   toCreateMeetingRoomPayload,
   toMeetingRoom,
+  toReservationFromCreatedMeeting,
 } from "./mapper";
 import { findMockMember } from "./mock/members";
 import { addMockReservation, listMockReservationsByRoom } from "./mock/reservations";
@@ -63,6 +67,36 @@ function toMeetingRoomFormErrors(error: unknown): MeetingRoomFormErrors {
 
 const ROOMS_PATH = "/app/rooms";
 const MANAGE_ROOMS_PATH = "/manage/rooms";
+
+/**
+ * 회의 개설(`POST /api/meetings`, MEET-01) 실패를 폼 필드 오류로 바꾼다.
+ * ⚠️ 필드 슬롯이 없는 오류(`PJ-001` 등)는 `title` 칸에 얹는다(회의실 도메인의 `toMeetingRoomFormErrors`
+ *    와 같은 자리 — 이 폼도 "전체 오류"를 보여줄 별도 자리가 없다).
+ */
+function toMeetingCreateFormErrors(error: unknown): RoomReservationFormErrors {
+  if (!(error instanceof ApiError)) throw error;
+
+  switch (error.code) {
+    case "MT-002":
+      return { roomId: "그 시간에는 이미 예약된 회의실입니다" };
+    case "MT-004":
+      return { startTime: "회의실 이용 가능 시간 안에서 선택해 주세요" };
+    case "MT-005":
+      return { startTime: "예약은 30분 단위로만 가능합니다" };
+    case "MT-010":
+      return { attendeeIds: "존재하지 않는 참석자가 있습니다" };
+    case "MT-012":
+      return { startTime: "지난 시간은 선택할 수 없습니다" };
+    case "MT-003":
+      return { startTime: error.message };
+    case "MR-001":
+      return { roomId: "존재하지 않는 회의실입니다" };
+    case "PJ-001":
+      return { projectId: "존재하지 않는 프로젝트입니다" };
+    default:
+      return { title: error.message };
+  }
+}
 
 /** 예약 폼 결과 — `useActionState`가 그대로 들고 있는 모양. */
 export interface RoomReservationFormState {
@@ -111,13 +145,27 @@ export async function createRoomReservationAction(
   formData: FormData,
 ): Promise<RoomReservationFormState> {
   const draft = readDraft(formData);
-  const actor = getMockActor();
+  const actor = isMock ? getMockActor() : await getViewer();
   const errors = validateRoomReservationDraft(draft, { role: actor.role });
   if (Object.keys(errors).length > 0) return { errors };
 
   if (!isMock) {
-    // ⚠️ 미구현 — API 스펙 확정 후 BFF 경로로 예약 생성 요청을 보낸다.
-    throw new Error("회의실 예약 API가 아직 연결되지 않았습니다.");
+    const range = toReservedRange(draft);
+    const accessToken = await requireAccessToken();
+    try {
+      const response = await serverApi<BeCreateMeetingResponse>(ep.meetings(), {
+        method: "POST",
+        accessToken,
+        json: toCreateMeetingPayload(draft, range),
+      });
+      // ⚠️ 응답의 중첩 구조가 확정본이라(§mapper) `roomName`·host를 응답에서 바로 읽는다 —
+      //    ROOM-01을 다시 불러 이름을 찾을 필요가 없다.
+      const created = toReservationFromCreatedMeeting(response, draft, range);
+      revalidatePath(ROOMS_PATH);
+      return { errors: {}, created };
+    } catch (error) {
+      return { errors: toMeetingCreateFormErrors(error) };
+    }
   }
 
   // ⚠️ 화면 select·피커가 이미 실제 목록에서만 고르게 해도, 폼은 조작될 수 있다
@@ -272,8 +320,7 @@ export async function deleteMeetingRoomAction(formData: FormData): Promise<void>
     try {
       await serverApi<null>(ep.meetingRoom(Number(id)), { method: "DELETE", accessToken });
     } catch (error) {
-      if (error instanceof ApiError && error.status === 404) return;
-      throw error;
+      if (!(error instanceof ApiError) || error.status !== 404) throw error;
     }
     revalidatePath(MANAGE_ROOMS_PATH);
     revalidatePath(ROOMS_PATH);

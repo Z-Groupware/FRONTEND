@@ -10,6 +10,7 @@ import { ep } from "@/lib/endpoints";
 import { type Actor, requiresParentTeamAction } from "@/lib/permission";
 import { isMock } from "@/mocks/config";
 
+import { RESERVATION_DURATION_MINUTES } from "./constants";
 import {
   type BeMeetingRoom,
   type BeRoomWeekAvailability,
@@ -30,7 +31,6 @@ import type {
 } from "./types";
 
 const WEEKDAYS_PER_WEEK = 5;
-const SLOT_MINUTES = 30;
 
 function toMinutesOfDay(hhmm: string): number {
   const [hours, minutes] = hhmm.split(":").map(Number);
@@ -51,11 +51,11 @@ function buildMockDaySlots(date: Date, room: MeetingRoom): RoomDayAvailability {
   for (
     let minutesOfDay = toMinutesOfDay(room.openTime);
     minutesOfDay < toMinutesOfDay(room.closeTime);
-    minutesOfDay += SLOT_MINUTES
+    minutesOfDay += RESERVATION_DURATION_MINUTES
   ) {
     const startTime = toHHMM(minutesOfDay);
     const slotStart = new Date(`${format(date, "yyyy-MM-dd")}T${startTime}:00`);
-    const slotEnd = new Date(slotStart.getTime() + SLOT_MINUTES * 60_000);
+    const slotEnd = new Date(slotStart.getTime() + RESERVATION_DURATION_MINUTES * 60_000);
     const overlapping = reservations.find(
       (reservation) => reservation.start < slotEnd && reservation.end > slotStart,
     );
@@ -91,7 +91,7 @@ export async function getRoomWeekAvailability(
 
     return {
       weekStart: format(weekStart, "yyyy-MM-dd"),
-      slotMinutes: SLOT_MINUTES,
+      slotMinutes: RESERVATION_DURATION_MINUTES,
       meetingRoom: room,
       days,
     };
@@ -102,7 +102,15 @@ export async function getRoomWeekAvailability(
     const be = await serverApi<BeRoomWeekAvailability>(
       ep.meetingRoomAvailability({
         meetingRoomId: Number(roomId),
-        date: format(weekOf, "yyyy-MM-dd"),
+        /*
+          ⚠️ **월요일로 맞춰 보낸다**(2026-08-13 고침). 그냥 넘기면 **주말에 열었을 때 화면과
+             서버가 다른 주를 본다** — BE `resolveWeekStart`는 토·일이면 **다음 주 월요일**로
+             넘기는데(`with(next(MONDAY))`), 캘린더는 같은 날짜를 `startOfWeek(…, {weekStartsOn: 1})`
+             = **지난 월요일**로 읽어 격자를 그린다. 그러면 예약이 꽉 찬 주가 통째로 비어 보이고,
+             지난 주 칸을 눌러 예약 창이 열린다.
+          ⚠️ 목 분기도 같은 정규화를 한다(위 `weekStart`) — 두 경로가 갈리면 목에서만 맞는다.
+        */
+        date: format(startOfWeek(weekOf, { weekStartsOn: 1 }), "yyyy-MM-dd"),
       }),
       { accessToken },
     );

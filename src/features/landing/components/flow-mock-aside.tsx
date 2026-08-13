@@ -1,6 +1,8 @@
 import { Bell, Check, FileText, type LucideIcon, PenLine } from "lucide-react";
 import type { ReactNode } from "react";
 
+import { CountUp } from "./count-up";
+
 /**
  * 흐름 축소판의 **오른쪽 칸** — 왼쪽 목록만으로는 넓은 패널이 헐거워서 한 칸을 더 둔다.
  *
@@ -84,9 +86,9 @@ export function CaptureAside() {
  *    `3줄 요약 · 결정 2건 · 액션 3건`과 같은 회의, 같은 숫자다.
  */
 const ANALYZED_COUNTS = [
-  { label: "결정", value: "2건" },
-  { label: "액션", value: "3건" },
-  { label: "다음 안건", value: "1건" },
+  { label: "결정", value: 2, unit: "건" },
+  { label: "액션", value: 3, unit: "건" },
+  { label: "다음 안건", value: 1, unit: "건" },
 ] as const;
 
 export function AnalyzeAside() {
@@ -111,7 +113,8 @@ export function AnalyzeAside() {
           <div key={item.label}>
             <p className="text-landing-dark-muted text-[11px] leading-[14px]">{item.label}</p>
             <p className="pt-0.5 text-[15px] leading-[21px] font-semibold tabular-nums">
-              {item.value}
+              <CountUp value={item.value} />
+              {item.unit}
             </p>
           </div>
         ))}

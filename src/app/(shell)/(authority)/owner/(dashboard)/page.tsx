@@ -10,7 +10,7 @@ import { EmptyState } from "@/components/common/empty-state";
 import { SummaryCard } from "@/components/common/summary-card";
 import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { LEADER_NAME_WIDTH, LeaderStatusRow } from "@/features/owner/components/leader-status-row";
-import { getDaysUntilDue, LEADER_BOX_MAX_HEIGHT } from "@/features/owner/lib";
+import { LEADER_BOX_MAX_HEIGHT } from "@/features/owner/lib";
 import { getOwnerDashboardOverview } from "@/features/owner/server";
 import { roleHome } from "@/features/shell/home";
 import { getViewer } from "@/features/shell/viewer";
@@ -27,13 +27,14 @@ export default async function OwnerDashboardPage() {
   const viewer = await getViewer();
   if (!canAccessOwnerScope(viewer)) return <AccessDenied homeHref={roleHome(viewer.role)} />;
 
-  const { projects, activeMemberCount, onLeaveMemberCount, leaderRows, projectMeetings } =
-    await getOwnerDashboardOverview();
-
-  const imminentProjectCount = projects.filter((project) => {
-    const daysUntilDue = getDaysUntilDue(project.dueDate);
-    return daysUntilDue >= 0 && daysUntilDue <= 7;
-  }).length;
+  const {
+    totalProjectCount,
+    dueSoonProjectCount,
+    activeMemberCount,
+    onLeaveMemberCount,
+    leaderRows,
+    projectMeetings,
+  } = await getOwnerDashboardOverview();
 
   /*
     상단 요약 — **한 카드 안에서 세로선으로 가른다**(DESIGN §2). 전에는 미니 카드 넉 장이었는데
@@ -44,8 +45,8 @@ export default async function OwnerDashboardPage() {
        `즉시 확인 필요` 문구가 말한다.
   */
   const summaryItems = [
-    { label: "전체 프로젝트", value: String(projects.length), meta: "진행 중" },
-    { label: "마감 D-7", value: String(imminentProjectCount), meta: "즉시 확인 필요" },
+    { label: "전체 프로젝트", value: String(totalProjectCount), meta: "진행 중" },
+    { label: "마감 D-7", value: String(dueSoonProjectCount), meta: "즉시 확인 필요" },
     { label: "전체 사원", value: String(activeMemberCount), meta: "재직 중" },
     { label: "휴직자", value: String(onLeaveMemberCount), meta: "현재 휴직" },
   ];

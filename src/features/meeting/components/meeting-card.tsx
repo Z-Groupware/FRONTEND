@@ -212,13 +212,14 @@ function CardFooter({
             <Sparkles className="size-3.5" aria-hidden />
             <span>액션 검토</span>
           </Link>
-        ) : meeting.status === MEETING_STATUS.SCHEDULED ? null : (
+        ) : meeting.status === MEETING_STATUS.SCHEDULED ||
+          meeting.status === MEETING_STATUS.CANCELED ? null : (
           /*
-            ⚠️ **진행중에도 있다.** 상세는 이제 모든 상태에서 열리고(메타는 보여주고 덜 찬
-               칸에만 안내한다), 진행중 카드에 아무것도 없으면 죽은 카드로 보인다.
+            ⚠️ 여기 남는 건 **완료** 카드뿐이다(예정·진행중·취소는 위에서 갈렸다). 상세는 완료면
+               항상 열리므로(메타는 보여주고 덜 찬 칸에만 안내한다) [회의록]을 그대로 둔다.
             ⚠️ 📄 WORKFLOW §3-2의 "예정·진행중 카드는 클릭해도 반응 없음"은 이 결정이 덮는다.
-            ⚠️ **예정만 예외로 비운다**(바로 위 `null`). 아직 아무것도 안 남긴 회의라 회의록으로
-               보낼 것이 없다 — 참석자에게는 그래서 이 자리가 빈다(2026-08-10 팀 확정).
+            ⚠️ **예정·취소는 예외로 비운다**(바로 위 `null`). 둘 다 회의록으로 보낼 산출물이 없다
+               — 예정은 아직 안 열렸고(2026-08-10 팀 확정), 취소는 열릴 일이 없어졌다(MEET-06).
           */
           <Link
             href={`/app/meeting/${meeting.id}`}

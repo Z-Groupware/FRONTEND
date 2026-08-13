@@ -1,4 +1,4 @@
-import { MEETING_STATUS, MEMBER_STATUS, PROJECT_STATUS } from "@/constants/domain";
+import { MEETING_STATUS, MEMBER_STATUS } from "@/constants/domain";
 
 import type { OwnerDashboardOverview } from "../types";
 
@@ -8,45 +8,8 @@ import type { OwnerDashboardOverview } from "../types";
  * 원본을 다시 순회해 집계하지 않는다(연동 시 이 파일과 server.ts만 교체).
  */
 export const OWNER_DASHBOARD_MOCK: OwnerDashboardOverview = {
-  projects: [
-    {
-      id: "goods",
-      name: "연예인 굿즈 쇼핑몰 앱 구축",
-      tag: "GOODS",
-      color: "#7C3AED",
-      dueDate: "2026-09-20",
-      status: PROJECT_STATUS.IN_PROGRESS,
-    },
-    {
-      id: "brand",
-      name: "3분기 마케팅 브랜드 리뉴얼",
-      tag: "BRAND",
-      color: "#DB2777",
-      dueDate: "2026-09-30",
-      status: PROJECT_STATUS.IN_PROGRESS,
-    },
-    {
-      id: "collab",
-      name: "사내 협업툴 리뉴얼",
-      tag: "COLLAB",
-      color: "#2563EB",
-      dueDate: "2026-10-15",
-      status: PROJECT_STATUS.IN_PROGRESS,
-    },
-    /*
-      ⚠️ 프로젝트 목록 목(`project/mock/projects.ts`)의 **진행중 넷과 수를 맞춘다**(2026-08-11).
-         대시보드는 집계된 값을 받는다는 전제라 목이 따로 있는데, 한쪽만 늘려 뒀더니
-         `전체 프로젝트 3`인데 목록은 `진행중 4`로 화면 둘이 다른 말을 했다.
-    */
-    {
-      id: "goods-payment",
-      name: "결제 모듈 고도화",
-      tag: "GOODS",
-      color: "#7C3AED",
-      dueDate: "2026-08-07",
-      status: PROJECT_STATUS.IN_PROGRESS,
-    },
-  ],
+  totalProjectCount: 4,
+  dueSoonProjectCount: 1,
   activeMemberCount: 10,
   onLeaveMemberCount: 0,
   leaderRows: [

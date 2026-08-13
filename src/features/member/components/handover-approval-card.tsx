@@ -217,9 +217,8 @@ export function HandoverApprovalCard({
           ⚠️ **오프보딩만** PDF를 준다 — 휴직은 재직 상태로 되돌아오는 일이라 문서로 남길
              필요가 없다고 정리했다(§7). 승인 여부와 무관하게 보인다 — Admin 겸직자도
              내용은 몰라도 되지만(WORKFLOW §11) 파일을 미리 받아 둘 수는 있어야 한다.
-          ⚠️ 실제 PDF 생성 API는 아직 BE와 경로가 확정 전이다(§연동 검증) — 지금은 버튼만
-             두고 눌렀을 때 "연동 전"임을 그대로 알린다. 조용히 아무 일도 안 일어나면
-             고장 난 것처럼 보인다(§정직성).
+          ⚠️ PDF는 `/api/handovers/{id}/pdf`(BFF)가 그 자리에서 만든다 — 미리 발급받아 두지
+             않는다(§HandoverPdfDocument.tsx).
         */}
         {!isVacation && (
           <Button
@@ -227,7 +226,9 @@ export function HandoverApprovalCard({
             size="sm"
             variant="outline"
             className="w-fit"
-            onClick={() => toast("PDF 생성은 아직 연동되지 않았습니다")}
+            onClick={() =>
+              window.open(`/api/handovers/${handover.id}/pdf`, "_blank", "noopener,noreferrer")
+            }
           >
             <Download />
             인수인계서 PDF 다운로드

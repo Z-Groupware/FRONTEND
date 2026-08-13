@@ -131,7 +131,7 @@ export function MemberListView({
                 id="member-search"
                 value={keyword}
                 onChange={(event) => setKeyword(event.target.value)}
-                placeholder="이름·팀·이메일 검색"
+                placeholder="이름·팀·직급 검색"
                 className="pl-9"
               />
               {/* 칸 이름은 자리표시자로만 두지 않는다 — 적기 시작하면 사라진다(§a11y) */}

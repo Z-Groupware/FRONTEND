@@ -65,7 +65,10 @@ export function toPersonBrowseItem(person: BeSearchOverview["people"][number]): 
 
 /**
  * `GET /api/v1/search` 응답 — `results[]`는 종류를 가리지 않는 평평한 모양이다.
- * ⚠️ `project`는 표시용 문구로 **가정**한다 — shape 미확정(BE 실코드 미대조, §연동 검증).
+ * [확인] `search/presentation/api/response/SearchResponse.java` (2026-08-12 실코드 대조).
+ * ⚠️ `project`는 문자열이 아니라 **객체다**(`{id, tag, name, color}`). 전에는 문구로 가정해
+ *    실연동 시 프로젝트명 자리에 객체가 흘러 렌더가 깨질 자리였다 — 화면 계약(문구)으로는
+ *    태그를 내보낸다(프로젝트 표식은 태그 칩 하나라는 규칙, §도메인 상수).
  */
 export interface BeSearchResponse {
   query: string;
@@ -75,7 +78,7 @@ export interface BeSearchResponse {
     id: number;
     title: string;
     snippet: string | null;
-    project: string | null;
+    project: { id: number; tag: string; name: string; color: string | null } | null;
     date: string | null;
     role: string | null;
     score: number;
@@ -104,7 +107,7 @@ export function toSearchResults(be: BeSearchResponse): SearchResults {
         id: hit.id,
         title: hit.title,
         snippet: hit.snippet,
-        project: hit.project,
+        project: hit.project?.tag ?? null,
         date: hit.date,
         role: toAuthorityOrNull(hit.role),
       },

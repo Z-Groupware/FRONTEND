@@ -13,11 +13,19 @@ export const NOTICE_ACTION_LABEL: Record<
   {
     /** 트리거 버튼 글자 */
     trigger: string;
-    /** 확인 창 제목 — **물음꼴**이다(DESIGN §7) */
+    /**
+     * 작성/수정 폼 창을 처음 열었을 때 머리에 얹는 제목 — 물음이 아니라 **무슨 창인지**만 말한다
+     * (2026-08-12 정리: "올릴까요?"는 [발행]을 누른 뒤 한 번 더 묻는 확인 창으로 옮겼다,
+     * `/app/rooms` 예약 모달과 같은 2단계 구조).
+     */
+    formTitle: string;
+    /** 확인 창 제목 — **물음꼴**이다(DESIGN §7). [발행]/[수정]을 누른 뒤에만 뜬다 */
     dialogTitle: string;
     /** 확인 창 설명 — 무엇이 일어나는지. 빠지면 스크린리더가 제목만 읽는다 */
     dialogDescription: string;
     submitLabel: string;
+    /** 확인 창에서 제출 중일 때 버튼에 얹는 문구 */
+    pendingLabel: string;
     /**
      * 성공 토스트.
      * ⚠️ 공지 제목을 **안 끼운다**(2026-08-08). 220px 한 줄이라 제목이 길면 잘렸고, 방금 쓴
@@ -28,16 +36,20 @@ export const NOTICE_ACTION_LABEL: Record<
 > = {
   CREATE: {
     trigger: "새 공지",
+    formTitle: "공지 발행",
     dialogTitle: "공지를 올릴까요?",
     dialogDescription: "올리면 사내 전원에게 보입니다.",
     submitLabel: "발행",
+    pendingLabel: "발행 중",
     successToast: () => "공지를 발행했습니다",
   },
   EDIT: {
     trigger: "수정",
+    formTitle: "공지 수정",
     dialogTitle: "공지를 수정할까요?",
     dialogDescription: "바뀐 내용이 사내 전원에게 바로 보입니다.",
     submitLabel: "수정",
+    pendingLabel: "수정 중",
     successToast: () => "공지를 수정했습니다",
   },
 };

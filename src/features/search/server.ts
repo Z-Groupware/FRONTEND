@@ -193,7 +193,15 @@ function toSearchResultItem(record: MockSearchRecord): SearchResultItem {
         id: record.id,
         title: record.title,
         snippet: record.snippet,
-        project: record.projectName,
+        /*
+          ⚠️ **태그다**(2026-08-13 고침 — 전에는 `projectName`이었다). 실서버 매퍼가 BE의
+             `project` 객체에서 `tag`를 꺼내 쓰는데(§search/mapper) 목만 이름을 넣고 있어,
+             **같은 줄이 목과 실서버에서 다른 값을 보여줬다.**
+          ⚠️ 이름이 아니라 태그로 맞춘 이유: 이 값이 결과 줄의 **팔레트 키**로도 쓰여
+             (`pickPaletteColor`) 앱의 다른 화면(보드·회의 카드)과 같은 키여야 같은
+             프로젝트가 같은 색으로 나온다(§컴포넌트 위생).
+        */
+        project: record.projectTag,
         date: record.meetingDate,
         role: null,
       };
@@ -203,7 +211,8 @@ function toSearchResultItem(record: MockSearchRecord): SearchResultItem {
         id: record.id,
         title: record.title,
         snippet: null,
-        project: null,
+        /* 액션도 프로젝트에 매여 있다 — 회의와 같은 자리에 같은 값(태그)을 채운다 */
+        project: record.projectTag,
         date: record.dueDate,
         role: null,
       };

@@ -1,5 +1,7 @@
 import "server-only";
 
+import type { Authority } from "@/constants/authority";
+import { HANDOVER_TYPE, type HandoverType } from "@/constants/handover";
 import { isVisibleMemberStatus } from "@/constants/member";
 import { requireAccessToken } from "@/features/auth/session";
 import { ApiError, serverApi } from "@/lib/api";
@@ -14,12 +16,86 @@ import {
   toBeFilter,
   toManagedMember,
 } from "./manage-mapper";
-import type { ManagedMember, ManagedMemberDetail, MemberQuery } from "./manage-types";
+import type {
+  ManagedMember,
+  ManagedMemberDetail,
+  MemberQuery,
+  PendingHandover,
+} from "./manage-types";
 import {
   findMockManagedMember,
   listMockManagedMembers,
   listMockMemberEmails,
 } from "./mock/managed";
+
+/** [확인] BE `HandoverSummaryResponse` — `team-handover/mapper.ts`와 같은 응답. */
+interface BeHandoverSummaryResponse {
+  id: number;
+  writerMemberId: number;
+  handoverType: string;
+  status: string;
+  leaveStartAt: string | null;
+  leaveEndAt: string | null;
+  itemCount: number;
+}
+
+/** [확인] BE `HandoverResponse` — 중간 승인자·시각만 본다(나머지는 목록 응답에 이미 있다). */
+interface BeHandoverDetailForApproval {
+  intermediateApproverNameSnap: string | null;
+  intermediateApprovedAt: string | null;
+}
+
+/**
+ * 이 사원 명의로 처리 대기 중인 인수인계서 — `GET /api/handovers`(OWNER면 회사 전체,
+ * 페이지네이션 없음)에서 `writerMemberId`로 찾는다. **대기 중인 두 상태만** 따로
+ * 조회한다(`status=SUBMITTED`·`status=REASSIGNED`) — 전체 이력(FINALIZED·REJECTED
+ * 포함)을 받아 오면 회사가 커질수록 이 화면 하나의 응답 크기가 계속 늘어난다.
+ *
+ * ⚠️ **신청 당시 권한 스냅샷을 BE가 안 준다.** `requesterAuthority`는 지금 권한
+ *    (`currentAuthority`)으로 근사한다 — 팀장 공석 중 승급된 사람이 신청했다면 그때는
+ *    일반 팀원이었어도 지금은 팀장으로 읽힌다(알려진 한계, mock은 신청 시점 값을 그대로
+ *    굳혀 두지만 실 데이터엔 그 스냅샷이 없다).
+ */
+async function findPendingHandoverForMember(
+  memberId: number,
+  currentAuthority: Authority,
+  accessToken: string,
+): Promise<PendingHandover | null> {
+  const [submitted, reassigned] = await Promise.all([
+    serverApi<BeHandoverSummaryResponse[]>(ep.handovers({ status: "SUBMITTED" }), { accessToken }),
+    serverApi<BeHandoverSummaryResponse[]>(ep.handovers({ status: "REASSIGNED" }), { accessToken }),
+  ]);
+  const pending = [...submitted, ...reassigned].find((h) => h.writerMemberId === memberId);
+  if (!pending) return null;
+
+  const type = pending.handoverType as HandoverType;
+  const period =
+    type === HANDOVER_TYPE.VACATION && pending.leaveStartAt && pending.leaveEndAt
+      ? { from: pending.leaveStartAt.slice(0, 10), to: pending.leaveEndAt.slice(0, 10) }
+      : null;
+
+  let midApproval: PendingHandover["midApproval"] = null;
+  if (pending.status === "REASSIGNED") {
+    const detail = await serverApi<BeHandoverDetailForApproval>(ep.handover(pending.id), {
+      accessToken,
+    });
+    if (detail.intermediateApproverNameSnap && detail.intermediateApprovedAt) {
+      midApproval = {
+        approverName: detail.intermediateApproverNameSnap,
+        approvedAt: detail.intermediateApprovedAt.slice(0, 10),
+      };
+    }
+  }
+
+  return {
+    id: String(pending.id),
+    type,
+    period,
+    actionCount: pending.itemCount,
+    midApproval,
+    requesterAuthority: currentAuthority,
+  };
+}
 
 /**
  * 사원 조회 — **격리막**(CLAUDE.md §Mock 격리막).
@@ -82,12 +158,18 @@ export async function getManagedMembersPage(
   if (query.keyword.trim()) params.set("q", query.keyword.trim());
 
   /*
-    ⚠️ **`totalCount`다**(`totalElements` 아님 — [확인] BE `MemberPageResponse`). 이름을 잘못
-       읽으면 `undefined`가 되어 `전체 N건`이 비고 `totalPages`가 `NaN`이 된다 — 다음 페이지가
-       있는지 아무도 모르게 된다.
+    ⚠️ **`totalElements`다**(`totalCount` 아님 — [확인] BE `MemberPageResponse.java` record:
+       `totalElements·totalPages·hasNext·page·size·content`, 2026-08-12 재대조). 전에는
+       `totalCount`로 읽었는데 그 필드가 응답에 없어 `undefined`가 되고, `전체 N건`이 비고
+       `totalPages`가 `NaN`이라 **다음 페이지 판정이 통째로 무너졌다**. 주석의 [확인] 표시까지
+       반대로 적혀 있었다 — 이름 하나가 화면 전체를 조용히 죽이는 자리라 응답 그대로 옮긴다.
+    ⚠️ `totalPages`도 **서버 값을 그대로 쓴다.** 우리가 나눠 만들면 반올림 규칙이 갈릴 때
+       마지막 페이지가 한 번 더 불리거나 잘린다 — 세는 쪽과 자르는 쪽은 같은 곳이어야 한다.
   */
   const response = await serverApi<{
-    totalCount: number;
+    totalElements: number;
+    totalPages: number;
+    hasNext: boolean;
     page: number;
     size: number;
     content: BeMemberListItem[];
@@ -96,7 +178,7 @@ export async function getManagedMembersPage(
   /*
     ⚠️ **지워진 사람은 여기서 뺀다**(§도메인 상수). 퇴사자(`RESIGNED`)는 남는다 — 그 사람이
        남긴 회의·액션의 출처라 이름이 사라지면 추적이 끊긴다.
-    ⚠️ 거른 만큼 `totalCount`를 줄이지 않는다. 그 숫자는 **서버가 센 전체**이고, 화면의
+    ⚠️ 거른 만큼 전체 건수를 줄이지 않는다. 그 숫자는 **서버가 센 전체**이고, 화면의
        `전체 N건`은 그 값을 말해야 다음 페이지가 있는지와 어긋나지 않는다.
   */
   const items = response.content
@@ -106,9 +188,8 @@ export async function getManagedMembersPage(
   return {
     items,
     page: response.page,
-    /* ⚠️ `size`가 0으로 오면 0으로 나눠 `Infinity`가 된다 — 요청한 값으로 되돌린다 */
-    totalPages: Math.max(1, Math.ceil(response.totalCount / (response.size || pageSize))),
-    totalCount: response.totalCount,
+    totalPages: Math.max(1, response.totalPages),
+    totalCount: response.totalElements,
   };
 }
 
@@ -128,9 +209,9 @@ export async function getManagedMember(id: number): Promise<ManagedMemberDetail 
 
   /*
     [확인] BE `MemberController.detail` — `GET /api/members/{memberId}`.
-    ⚠️ **액션·대기 신청은 이 응답에 없다.** BE `MemberDetailResponse`가 주는 건 사람 정보뿐이라,
-       지금은 그 둘을 빈 값으로 둔다 — 지어내지 않는다(§정직성). 액션 목록 API가 붙으면
-       여기서 함께 읽어 채운다.
+    ⚠️ **담당 액션은 아직 이 응답에 없다.** BE `MemberDetailResponse`가 주는 건 사람 정보뿐이라,
+       지금은 빈 값으로 둔다 — 지어내지 않는다(§정직성). 액션 목록 API가 붙으면 여기서 함께
+       읽어 채운다. (인수인계 대기 신청은 `findPendingHandoverForMember`가 채운다, 2026-08-12.)
   */
   const accessToken = await requireAccessToken();
   let detail: BeMemberDetail;
@@ -150,7 +231,8 @@ export async function getManagedMember(id: number): Promise<ManagedMemberDetail 
   const member = toManagedMember(detail);
   if (!isVisibleMemberStatus(member.status)) return null;
 
-  return { member, actions: [], pendingHandover: null };
+  const pendingHandover = await findPendingHandoverForMember(id, member.authority, accessToken);
+  return { member, actions: [], pendingHandover };
 }
 
 /** 이미 쓰고 있는 메일 주소 — 중복 발급을 막는다 */

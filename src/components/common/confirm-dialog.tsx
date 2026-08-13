@@ -12,6 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { splitErrorTag } from "@/lib/error-tag";
 import { cn } from "@/lib/utils";
 
 interface ConfirmDialogProps {
@@ -110,6 +111,9 @@ export function ConfirmDialog({
   error,
   onConfirm,
 }: ConfirmDialogProps) {
+  /* ⚠️ 문구 안에 섞여 온 꼬리표를 떼어 낸다 — 없으면 `tag`가 `null`이라 아무것도 안 그린다 */
+  const failure = error ? splitErrorTag(error) : null;
+
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       {/*
@@ -150,16 +154,33 @@ export function ConfirmDialog({
           ⚠️ 아이콘은 **줄 높이만 한 상자**에 담아 세운다. 그냥 나란히 두면 글자보다
              살짝 떠 보인다(§아이콘 옆 한글 정렬).
         */}
-        {error && (
-          <p
-            role="alert"
-            className="text-destructive mt-4 flex items-start justify-center gap-1.5 text-[13px] leading-5 break-keep"
-          >
-            <span className="flex h-5 shrink-0 items-center">
-              <CircleAlert className="size-3.5" aria-hidden />
-            </span>
-            <span>{error}</span>
-          </p>
+        {failure && (
+          /*
+            ⚠️ **문장과 꼬리표를 갈라 그린다**(2026-08-12). 한 덩이로 두면 빨간 문장 안에
+               `(Z-003 · 271d9bab)`가 끼어들어, 정작 읽어야 할 말보다 코드가 먼저 눈에 걸린다 —
+               꼬리표는 원인을 찾을 사람만 읽는 값이다.
+            ⚠️ 가르는 일은 화면이 한다(`splitErrorTag`). 붙이는 일은 서버(`toUserMessage`)
+               한 곳이라 화면마다 배선할 것이 없다.
+          */
+          /*
+            ⚠️ **`role="alert"`는 바깥 상자에 건다**(적대적 리뷰 2026-08-12). 문장에만 걸면
+               스크린 리더가 알릴 때 꼬리표를 빼고 읽는다 — 사람이 소리 내어 전달해야 하는
+               유일한 단서가 그 코드인데, 문장만 읽히면 그걸 놓친다.
+          */
+          <div role="alert" className="mt-4 flex flex-col items-center gap-1">
+            <p className="text-destructive flex items-start justify-center gap-1.5 text-[13px] leading-5 break-keep">
+              <span className="flex h-5 shrink-0 items-center">
+                <CircleAlert className="size-3.5" aria-hidden />
+              </span>
+              <span>{failure.text}</span>
+            </p>
+
+            {failure.tag && (
+              <p className="text-muted-foreground text-[11px] leading-4 tabular-nums">
+                오류 코드 {failure.tag}
+              </p>
+            )}
+          </div>
         )}
 
         {/*

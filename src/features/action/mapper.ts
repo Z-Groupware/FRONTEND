@@ -3,7 +3,12 @@ import type { MemberAction } from "@/features/member/types";
 import { type BeAttachment, toProjectAttachment } from "@/features/project/mapper";
 import type { TeamActionDetail } from "@/features/project/types";
 
-import type { MyActionListItem, PersonalActionDetail, TeamActionProjectGroup } from "./types";
+import type {
+  MyActionListItem,
+  PersonalActionDetail,
+  TeamActionListItem,
+  TeamActionProjectGroup,
+} from "./types";
 
 /**
  * BE shape → UI 계약 (§Mock 격리막).
@@ -22,6 +27,12 @@ export interface BeActionSummary {
   status: ActionStatus;
   /** "아직 시작 안 함" 액션은 `null`이 정상이다(마이그레이션 문제 아님, BE 주석 확인). */
   startDate: string | null;
+  /**
+   * 검토 화면에서 사람이 정한 예정 시작일(2026-08-12 #386으로 전 경로 추가 — [확인]
+   * `ActionSummaryResponse.java`). `startDate`가 비어 있을 때 이 값을 먼저 쓴다 —
+   * **실값이 있는데 날짜를 지어내면 안 된다**(§정직성).
+   */
+  plannedStartDate: string | null;
   dueDate: string;
   needsReview: boolean;
   isDelayed: boolean;
@@ -33,9 +44,23 @@ export interface BeActionSummary {
   sourceMeetingTitle: string | null;
   parentActionId: number | null;
   parentActionTitle: string | null;
+  /**
+   * 하위 개인 액션 진척(2026-08-11 #355 — [확인] BE 실코드). **`null`과 0/0이 다르다**:
+   * `null`은 "하위 개념 자체가 없음"(개인 액션), 0/0은 "하위가 비어 있음"(BE 주석).
+   * `GET /api/team/actions` 경로에서만 실값이 온다.
+   */
+  childDoneCount: number | null;
+  childTotalCount: number | null;
 }
 
 /**
+ * ⚠️ 목록·타임라인 호출부는 **`startDate ?? plannedStartDate`를 넘긴다**(2026-08-12 고침).
+ *    전에는 `startDate`만 넘겨서, 검토 화면에서 사람이 정한 예정 시작일이 있는데도 **내일
+ *    날짜를 지어내고 있었다** — 지어내는 건 둘 다 없을 때뿐이어야 한다.
+ * ⚠️ **보드(`board/server.ts`)는 예외로 `startDate`만 본다**(2026-08-13 명시). 칸 배치가
+ *    BE 상태 파생과 같아야 하는데, 예정 시작일은 "아직 시작 안 함"인 액션에도 들어 있어
+ *    그걸 시작일로 치면 할일 칸에 있어야 할 카드가 진행중으로 넘어간다.
+ *
  * 보드 카드가 요구하는 `startDate`는 `null`을 못 받는다(`getBoardColumn`이 문자열로 가정) —
  * 시작 전 액션은 "아직 시작 안 함"이 곧 **할일 칸**이라는 뜻이므로, 오늘보다 하루 뒤 날짜로
  * 채워 항상 할일 칸에 떨어지게 한다(프로젝트 쪽 "과거 기록 없음 → 진행중으로 본다"와는
@@ -65,7 +90,7 @@ export function toTeamActionPersonalItem(be: BeActionSummary): {
     id: be.id,
     title: be.title,
     assigneeName: be.assigneeName ?? "",
-    startDate: fallbackActionStartDate(be.startDate),
+    startDate: fallbackActionStartDate(be.startDate ?? be.plannedStartDate),
     dueDate: be.dueDate,
     status: be.status,
   };
@@ -82,7 +107,7 @@ export function toMemberAction(be: BeActionSummary): MemberAction {
     title: be.title,
     projectTag: be.projectTag ?? "",
     status: be.status,
-    startDate: fallbackActionStartDate(be.startDate),
+    startDate: fallbackActionStartDate(be.startDate ?? be.plannedStartDate),
     dueDate: be.dueDate,
   };
 }
@@ -101,36 +126,97 @@ export function toMyActionListItem(be: BeActionSummary): MyActionListItem {
     projectId: be.projectId,
     projectName: be.projectName ?? "",
     projectTag: be.projectTag ?? "",
-    startDate: fallbackActionStartDate(be.startDate),
+    startDate: fallbackActionStartDate(be.startDate ?? be.plannedStartDate),
     dueDate: be.dueDate,
     status: be.status,
   };
 }
 
 /**
- * 팀 액션 목록(`GET /api/team/actions`) → 프로젝트별 그룹.
- * ⚠️ 목록 순서를 유지한 채 `projectId`로 묶는다(첫 등장 순서가 그룹 순서다).
+ * 팀 액션 목록(`GET /api/team/actions`) 한 줄 → 평평한 UI 계약.
+ * ⚠️ 여기서 그룹을 만들지 않는다 — 페이지 단위로 이어 붙인 뒤 화면이
+ *    `groupTeamActionsByProject`로 매번 다시 묶는다(§목록·페이지네이션).
  */
-export function groupTeamActionsByProject(items: BeActionSummary[]): TeamActionProjectGroup[] {
+export function toTeamActionListItem(be: BeActionSummary): TeamActionListItem {
+  return {
+    id: be.id,
+    name: be.title,
+    /*
+      ⚠️ **BE 필드를 읽는 자리는 여기 하나다**(2026-08-13 병합). 그룹핑이 `BeActionSummary`가
+         아니라 UI 계약(`TeamActionListItem`)을 받게 바뀌면서, 예정 시작일 fallback도 진척
+         값도 이 매퍼가 한 번에 흡수한다 — 그룹핑 쪽에서 다시 BE 모양을 알 필요가 없다.
+    */
+    startDate: fallbackActionStartDate(be.startDate ?? be.plannedStartDate),
+    dueDate: be.dueDate,
+    status: be.status,
+    childDoneCount: be.childDoneCount,
+    childTotalCount: be.childTotalCount,
+    projectId: be.projectId,
+    projectName: be.projectName ?? "",
+    projectTag: be.projectTag ?? "",
+  };
+}
+
+/**
+ * 팀 액션 목록 → 프로젝트별 그룹 — **지금까지 이어 붙인 전체**를 대상으로 매번 다시 묶는다.
+ * ⚠️ 목록 순서를 유지한 채 `projectId`로 묶는다(첫 등장 순서가 그룹 순서다). 서버 정렬이
+ *    `sort=dueDate&order=asc`라 그룹 순서는 대체로 안정적이지만, 새 페이지가 오면 이미
+ *    그려진 그룹이 자랄 수 있다 — 그게 정직한 동작이다(전량을 받아 미리 묶지 않는다).
+ */
+export function groupTeamActionsByProject(items: TeamActionListItem[]): TeamActionProjectGroup[] {
   const groups = new Map<number, TeamActionProjectGroup>();
-  for (const be of items) {
-    let group = groups.get(be.projectId);
+  for (const item of items) {
+    let group = groups.get(item.projectId);
     if (!group) {
       group = {
-        projectId: be.projectId,
-        projectName: be.projectName ?? "",
-        projectTag: be.projectTag ?? "",
+        projectId: item.projectId,
+        projectName: item.projectName,
+        projectTag: item.projectTag,
         teamActions: [],
       };
-      groups.set(be.projectId, group);
+      groups.set(item.projectId, group);
     }
     group.teamActions.push({
-      id: be.id,
-      name: be.title,
-      startDate: fallbackActionStartDate(be.startDate),
-      dueDate: be.dueDate,
-      status: be.status,
+      id: item.id,
+      name: item.name,
+      startDate: item.startDate,
+      dueDate: item.dueDate,
+      status: item.status,
+      /* 하위 진척 "3/5" — 값은 여기까지 나르고, 게이지 UI는 #421(화면 담당 몫) */
+      childDoneCount: item.childDoneCount,
+      childTotalCount: item.childTotalCount,
     });
+  }
+  return [...groups.values()];
+}
+
+/** 내 액션 목록(`/app/my/actions`)의 프로젝트별 그룹 — 팀 액션과 같은 규칙으로 다시 묶는다. */
+export interface MyActionProjectGroup {
+  projectId: number;
+  projectName: string;
+  projectTag: string;
+  actions: MyActionListItem[];
+}
+
+/**
+ * 내 액션 목록 → 프로젝트별 그룹 — 이어 붙인 전체를 대상으로 매번 다시 묶는다.
+ * ⚠️ 마감 임박순(`sort=dueDate&order=asc`)으로 이미 정렬된 목록이라 그룹 안 순서도 그대로다.
+ *    새 페이지가 도착하면 그룹이 자랄 수 있다(§목록·페이지네이션 — 위 함수와 같은 이유).
+ */
+export function groupMyActionsByProject(actions: MyActionListItem[]): MyActionProjectGroup[] {
+  const groups = new Map<number, MyActionProjectGroup>();
+  for (const action of actions) {
+    let group = groups.get(action.projectId);
+    if (!group) {
+      group = {
+        projectId: action.projectId,
+        projectName: action.projectName,
+        projectTag: action.projectTag,
+        actions: [],
+      };
+      groups.set(action.projectId, group);
+    }
+    group.actions.push(action);
   }
   return [...groups.values()];
 }

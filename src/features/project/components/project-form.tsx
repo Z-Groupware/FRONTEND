@@ -2,8 +2,9 @@
 
 import { Check, Paperclip, Plus, X } from "lucide-react";
 import Link from "next/link";
-import type { CSSProperties } from "react";
-import { useActionState, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import type { ChangeEvent, CSSProperties } from "react";
+import { useActionState, useCallback, useEffect, useRef, useState } from "react";
 
 import { DatePickerField } from "@/components/common/date-picker-field";
 import { FieldError } from "@/components/common/field-error";
@@ -18,11 +19,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { FLASH_TOAST_PARAM } from "@/constants/flash-toast";
 import { PROJECT_DESCRIPTION_MAX_LENGTH, PROJECT_TAG_MAX_LENGTH } from "@/constants/project";
 import { paletteColorByName, TAG_NAME_LABEL, TAG_NAMES, type TagColorName } from "@/lib/palette";
 import { cn } from "@/lib/utils";
 
 import type { ProjectFormState } from "../actions";
+import { useAttachmentUpload } from "../use-attachment-upload";
+import { validateAttachmentFile } from "../validate";
 
 interface TeamRow {
   /** React key용 — 팀명이 아니라 행 자체의 정체성(같은 팀을 지웠다 다시 골라도 행은 별개). */
@@ -47,6 +51,12 @@ function toTagInput(raw: string): string {
 
 let nextRowId = 1;
 
+/*
+  ⚠️ 액션(`actions.ts`)의 `CREATED_PATH`와 같은 주소다 — 첨부가 있으면 `redirect` 대신
+     화면이 업로드를 마치고 **여기서** 이동하므로, 도착 토스트 열쇠도 같은 것을 싣는다.
+*/
+const CREATED_HREF = `/app/projects?${FLASH_TOAST_PARAM}=PROJECT_CREATED`;
+
 /**
  * 프로젝트 생성 폼.
  * ⚠️ 참여 팀은 **드롭다운 하나가 아니라 다중 지정**이다 — 프로젝트 하나에 여러 팀이 참여할 수 있어
@@ -64,8 +74,41 @@ export function ProjectForm({ action, teamOptions, cancelHref }: ProjectFormProp
   const [tagColor, setTagColor] = useState<TagColorName>(TAG_NAMES[0]);
   const [colorPickerOpen, setColorPickerOpen] = useState(false);
   const [teamRows, setTeamRows] = useState<TeamRow[]>([{ rowId: nextRowId++, team: "" }]);
-  const [attachmentName, setAttachmentName] = useState<string | undefined>(undefined);
+  const [attachment, setAttachment] = useState<File | null>(null);
+  const [attachmentError, setAttachmentError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const router = useRouter();
+  const goToList = useCallback(() => router.replace(CREATED_HREF), [router]);
+  const { phase: uploadPhase, upload } = useAttachmentUpload(goToList);
+
+  /*
+    ⚠️ **첨부가 있으면 액션이 `redirect` 대신 만들어진 id를 되돌린다**(`ProjectFormState` 주석).
+       그 id가 도착하는 순간 업로드 3단계(발급→브라우저 PUT→확정)를 **한 번만** 건다 —
+       StrictMode의 이중 실행·리렌더에 또 걸리지 않게 ref로 잠근다. 실패 후 [다시 시도]는
+       이 잠금과 무관하게 버튼이 직접 다시 부른다.
+  */
+  const uploadStartedRef = useRef(false);
+  const createdProjectId = state.createdProjectId;
+  useEffect(() => {
+    if (createdProjectId === undefined || uploadStartedRef.current) return;
+    uploadStartedRef.current = true;
+    /*
+      ⚠️ **첨부가 사라졌으면 그냥 목록으로 간다**(2026-08-13 고침). 액션은 `hasAttachment=1`을
+         보고 `redirect` 대신 id만 돌려주는데, 응답이 오기 전에 사람이 [첨부 선택 해제]를
+         누르면 여기서 올릴 파일이 없어진다 — 전에는 아무것도 안 하고 끝나서 **프로젝트는
+         만들어졌는데 화면이 제출 버튼만 잠긴 채 멈췄다.** 만들어진 건 사실이므로 이동은 한다.
+    */
+    if (!attachment) {
+      goToList();
+      return;
+    }
+    void upload(createdProjectId, attachment);
+  }, [createdProjectId, attachment, upload, goToList]);
+
+  const isUploading = uploadPhase.kind === "uploading";
+  /* 프로젝트가 이미 만들어진 뒤다 — 제출을 또 받으면 같은 프로젝트가 두 개 생긴다. */
+  const isCreated = createdProjectId !== undefined;
 
   const canSubmit =
     name.trim().length > 0 &&
@@ -75,6 +118,13 @@ export function ProjectForm({ action, teamOptions, cancelHref }: ProjectFormProp
     dueDate.trim().length > 0 &&
     teamRows.length > 0 &&
     teamRows.every((row) => row.team.trim().length > 0);
+  /*
+    ⚠️ **첨부 오류가 제출을 막지 않는다**(2026-08-13 고침). 전에는 `!attachmentError`가
+       `canSubmit`에 있었는데, 파일이 검증에 걸리면 `attachment`는 `null`이 되고 오류만 남아
+       **제출 버튼이 영영 잠겼다** — 그 상태를 풀 [첨부 제거] 버튼은 `attachment`가 있을 때만
+       그려져서 누를 수도 없었다. 첨부는 선택이고 걸린 파일은 붙지 않으므로, 오류 문구는
+       그대로 두고(왜 안 붙는지 말해 준다) 프로젝트 생성은 막지 않는다.
+  */
   const mainColor = paletteColorByName(tagColor);
   const usedTeams = new Set(teamRows.map((row) => row.team).filter(Boolean));
   const canAddTeamRow = teamRows.length < teamOptions.length;
@@ -91,6 +141,29 @@ export function ProjectForm({ action, teamOptions, cancelHref }: ProjectFormProp
 
   function removeTeamRow(rowId: number) {
     setTeamRows((rows) => rows.filter((row) => row.rowId !== rowId));
+  }
+
+  function handleAttachmentChange(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0] ?? null;
+    if (!file) return; // 파일 고르기를 취소한 경우 — 기존 선택을 유지한다
+
+    /* ⚠️ 고른 **직후** 인라인으로 알린다(§토스트 ❌폼 검증 오류) — 제출까지 갔다가 BE한테
+       거절당하면 프로젝트만 만들어지고 파일이 튕기는 반쪽 결과가 된다. */
+    const invalid = validateAttachmentFile(file.name, file.size);
+    if (invalid) {
+      setAttachment(null);
+      setAttachmentError(invalid);
+      event.target.value = ""; // 비워야 같은 파일을 다시 골라도 change가 또 뜬다
+      return;
+    }
+    setAttachmentError(null);
+    setAttachment(file);
+  }
+
+  function clearAttachment() {
+    setAttachment(null);
+    setAttachmentError(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
   }
 
   return (
@@ -351,28 +424,97 @@ export function ProjectForm({ action, teamOptions, cancelHref }: ProjectFormProp
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="project-attachment">첨부파일</Label>
+            {/*
+              ⚠️ **`htmlFor`를 안 쓴다**(2026-08-13 고침). 실제 조작은 아래 [파일 첨부] 버튼이
+                 하고 `input`은 `hidden`이라 포커스를 못 받는다 — 라벨이 포커스 불가 요소를
+                 가리키면 라벨을 눌러도 아무 일이 없다. 라벨·오류를 **버튼**에 건다(§a11y).
+            */}
+            <span id="project-attachment-label" className="text-[13px] leading-5 font-medium">
+              첨부파일
+            </span>
+            {/*
+              ⚠️ 파일 자체는 폼으로 안 보낸다 — BE는 바이너리를 안 받고, 액션이 만든 프로젝트
+                 id로 화면이 presigned PUT을 잇는다(`use-attachment-upload.ts`). 폼에는
+                 "첨부가 기다린다"는 신호(`hasAttachment`)만 싣는다.
+            */}
             <input
               ref={fileInputRef}
               id="project-attachment"
               type="file"
               className="hidden"
-              onChange={(event) => setAttachmentName(event.target.files?.[0]?.name)}
+              onChange={handleAttachmentChange}
             />
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="w-full justify-start"
-              onClick={() => fileInputRef.current?.click()}
-            >
-              <Paperclip />
-              {attachmentName ?? "파일 첨부 (선택)"}
-            </Button>
-            {attachmentName && <input type="hidden" name="attachmentName" value={attachmentName} />}
-            <p className="text-muted-foreground text-[12px] leading-4">
-              프로젝트 기획서 등 참고 문서가 있다면 첨부해 주세요.
-            </p>
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="w-full min-w-0 justify-start"
+                disabled={isUploading || isCreated}
+                aria-labelledby="project-attachment-label"
+                aria-describedby={attachmentError ? "project-attachment-error" : undefined}
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <Paperclip />
+                <span className="truncate">{attachment?.name ?? "파일 첨부 (선택)"}</span>
+              </Button>
+              {/*
+                ⚠️ **제출 중에도 잠근다** — 응답을 기다리는 사이 해제하면 올릴 파일이 사라진다.
+                   위 effect가 그 경우에도 목록으로 보내 주지만, 애초에 못 누르게 하는 편이
+                   "눌렀는데 첨부만 조용히 없어지는" 일을 안 만든다.
+                ⚠️ 파일이 검증에 걸려 `attachment`가 비었어도 **오류 문구가 남아 있으면** 지울
+                   자리가 있어야 한다 — 전에는 이 버튼이 안 그려져 오류를 치울 길이 없었다.
+              */}
+              {(attachment || attachmentError) && !isCreated && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-sm"
+                  aria-label="첨부파일 선택 해제"
+                  disabled={isPending}
+                  onClick={clearAttachment}
+                >
+                  <X />
+                </Button>
+              )}
+            </div>
+            {attachment && <input type="hidden" name="hasAttachment" value="1" />}
+            {attachment && <input type="hidden" name="attachmentName" value={attachment.name} />}
+            <FieldError id="project-attachment-error" message={attachmentError ?? undefined} />
+            {uploadPhase.kind === "failed" ? (
+              /*
+                ⚠️ **반쪽 성공을 그대로 말한다**(§정직성) — 프로젝트는 이미 만들어졌고 파일만
+                   못 올라갔다. 조용히 목록으로 보내면 첨부가 증발한 것처럼 보인다.
+                   [다시 시도]는 안전하다 — 발급은 새 키, 확정은 idempotent(훅 주석 참고).
+              */
+              <div className="flex flex-col gap-1.5" role="alert">
+                <p className="text-destructive text-[12px] leading-4 break-keep">
+                  프로젝트는 만들어졌지만 첨부파일을 올리지 못했습니다 — {uploadPhase.message}
+                </p>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      if (createdProjectId !== undefined && attachment)
+                        void upload(createdProjectId, attachment);
+                    }}
+                  >
+                    다시 시도
+                  </Button>
+                  <Button type="button" variant="ghost" size="sm" onClick={goToList}>
+                    첨부 없이 이동
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <p className="text-muted-foreground text-[12px] leading-4">
+                {isUploading
+                  ? "첨부파일을 올리고 있습니다…"
+                  : "프로젝트 기획서 등 참고 문서가 있다면 첨부해 주세요."}
+              </p>
+            )}
           </div>
         </div>
       </div>
@@ -385,10 +527,11 @@ export function ProjectForm({ action, teamOptions, cancelHref }: ProjectFormProp
         <Button
           type="submit"
           size="sm"
-          disabled={isPending || !canSubmit}
+          /* ⚠️ 만들어진 뒤에는 잠근다 — 업로드가 실패한 채 또 제출하면 프로젝트가 두 개 생긴다 */
+          disabled={isPending || !canSubmit || isCreated}
           className="bg-foreground text-background hover:bg-foreground/90"
         >
-          {isPending ? "생성 중…" : "프로젝트 생성"}
+          {isPending ? "생성 중…" : isUploading ? "파일 올리는 중…" : "프로젝트 생성"}
         </Button>
       </div>
     </form>

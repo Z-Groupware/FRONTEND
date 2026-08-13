@@ -26,8 +26,8 @@ interface LeaderHandoverAssignFormProps {
 /**
  * 수신자(신규 팀장) 선택 + [OOO에게 귀속](WORKFLOW.md §7).
  * ⚠️ 이미 귀속 완료된 건은 다시 못 바꾼다 — 일괄 이전은 한 번뿐이다.
- * ⚠️ 실제 PDF 생성 API는 아직 BE와 경로가 확정 전이다(§연동 검증) — 버튼만 두고
- *    눌렀을 때 "연동 전"임을 그대로 알린다(§정직성).
+ * ⚠️ PDF는 `/api/handovers/{id}/pdf`(BFF)가 그 자리에서 만들어 새 탭으로 연다 — 미리
+ *    발급받아 두지 않는다(§HandoverPdfDocument.tsx).
  */
 export function LeaderHandoverAssignForm({ handover }: LeaderHandoverAssignFormProps) {
   const isAssigned = handover.custodyStatus === LEADER_HANDOVER_CUSTODY_STATUS.ASSIGNED;
@@ -49,7 +49,7 @@ export function LeaderHandoverAssignForm({ handover }: LeaderHandoverAssignFormP
       try {
         const result = await assignLeaderHandoverAction(handover.id, selectedId);
         if (!result.isSuccess) {
-          setError("귀속 처리에 실패했습니다. 잠시 후 다시 시도해 주세요.");
+          setError(result.message ?? "귀속 처리에 실패했습니다. 잠시 후 다시 시도해 주세요.");
           return;
         }
         setConfirmOpen(false);
@@ -143,7 +143,9 @@ export function LeaderHandoverAssignForm({ handover }: LeaderHandoverAssignFormP
           size="sm"
           variant="outline"
           className="w-full"
-          onClick={() => toast("PDF 생성은 아직 연동되지 않았습니다")}
+          onClick={() =>
+            window.open(`/api/handovers/${handover.id}/pdf`, "_blank", "noopener,noreferrer")
+          }
         >
           <Download />
           인수인계서 PDF 다운로드

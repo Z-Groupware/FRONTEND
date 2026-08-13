@@ -23,10 +23,10 @@ export default async function TeamHandoverDetailPage({ params }: TeamHandoverDet
   if (!canAccessTeamScope(viewer)) return <AccessDenied homeHref={roleHome(viewer.role)} />;
 
   const { handoverId } = await params;
-  const memberId = Number(handoverId);
-  if (!Number.isInteger(memberId)) notFound();
+  const id = Number(handoverId);
+  if (!Number.isInteger(id)) notFound();
 
-  const handover = await getTeamHandoverDetail(memberId);
+  const handover = await getTeamHandoverDetail(id);
   if (!handover) notFound();
 
   return (

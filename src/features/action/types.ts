@@ -69,12 +69,27 @@ export interface TeamActionTimelineItem {
   /** 마감일 `YYYY-MM-DD` */
   dueDate: string;
   status: ActionStatus;
+  /** 하위 개인 액션 진척 — `null`은 하위 개념 없음, 0/0은 비어 있음(BE와 같은 구분, #355) */
+  childDoneCount?: number | null;
+  childTotalCount?: number | null;
+}
+
+/**
+ * 팀 액션 목록(`GET /api/team/actions`) 한 줄 — **평평한 UI 계약**이다.
+ * ⚠️ 서버는 그룹을 안 만든다 — 페이지 단위로 평평하게 오고, 프로젝트별 묶기는 화면이
+ *    지금까지 이어 붙인 전체를 대상으로 매번 다시 한다(§목록·페이지네이션). 페이지가
+ *    도착할 때마다 그룹이 자랄 수 있다 — 그게 정직한 동작이다.
+ */
+export interface TeamActionListItem extends TeamActionTimelineItem {
+  projectId: number;
+  projectName: string;
+  projectTag: string;
 }
 
 /**
  * 팀 액션 관리 화면 — 프로젝트별로 묶은 팀 액션 그룹.
- * ⚠️ 하위 개인 액션 진척률(게이지)은 이 목록 API(`GET /api/team/actions`)에 값이 없어 아직 없다
- *    — BE에 `childDoneCount`·`childTotalCount` 추가 요청해 둠(2026-08-11). 나오면 게이지만 얹는다.
+ * ⚠️ 하위 개인 액션 진척 값은 **BE가 이미 준다**(2026-08-11 #355 반영, 2026-08-12 매퍼 수신) —
+ *    게이지 UI만 남았다(#421).
  */
 export interface TeamActionProjectGroup {
   projectId: number;

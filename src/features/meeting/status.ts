@@ -1,6 +1,7 @@
 import { AI_SUMMARY_STATUS, MEETING_STATUS, type MeetingStatus } from "@/constants/meeting";
 
 import type { Meeting } from "./types";
+import type { MeetingDetail } from "./view-types";
 import type { MeetingListItem } from "./view-types";
 
 /**
@@ -13,9 +14,11 @@ import type { MeetingListItem } from "./view-types";
  * ⚠️ `now`를 인자로 받는다 — 안에서 `new Date()`를 부르면 테스트가 시각을 못 잡는다.
  */
 export function meetingStatusOf(
-  meeting: Pick<Meeting, "start" | "endedAt">,
+  meeting: Pick<Meeting, "start" | "endedAt" | "canceledAt">,
   now: Date,
 ): MeetingStatus {
+  // ⚠️ 취소를 가장 먼저 본다 — 취소된 회의는 시작 전이었어도(§types) 예정으로 되돌아가지 않는다.
+  if (meeting.canceledAt !== null) return MEETING_STATUS.CANCELED;
   if (meeting.endedAt !== null) return MEETING_STATUS.DONE;
   if (now < meeting.start) return MEETING_STATUS.SCHEDULED;
   return MEETING_STATUS.IN_PROGRESS;
@@ -44,6 +47,9 @@ export type MeetingCardAffordance =
 export function meetingCardAffordanceOf(
   meeting: Pick<MeetingListItem, "status" | "aiSummaryStatus" | "isHost">,
 ): MeetingCardAffordance {
+  // ⚠️ 취소된 회의는 "live"가 아니다 — [녹음하기]를 띄우면 취소된 회의를 다시 시작할 수 있는
+  //    것처럼 보인다. 볼 것도 없다(산출물·발화 기록 자체가 없다) — 상세로만 보낸다.
+  if (meeting.status === MEETING_STATUS.CANCELED) return "open";
   if (meeting.status !== MEETING_STATUS.DONE) return "live";
 
   /*
@@ -56,4 +62,24 @@ export function meetingCardAffordanceOf(
   if (meeting.aiSummaryStatus === AI_SUMMARY_STATUS.REVIEWED && meeting.isHost) return "review";
 
   return "open";
+}
+
+/**
+ * 참석자 명단 교체(MEET-09) 가능 여부 — **host만, 끝나지 않은 회의에서만**. `pendingReason`이
+ * "SCHEDULED"·"IN_PROGRESS"일 때만 회의가 아직 안 끝났다는 뜻이다(§view-types) — 그 값이
+ * `SUMMARIZING`·`FAILED`·`null`이면 이미 DONE이라 교체할 수 없다.
+ * ⚠️ 판정은 여기 한 곳이다 — 회의 상세 화면과 그 서버 컴포넌트가 각자 조합하면 조건이 갈린다.
+ */
+export function canEditMeetingAttendees(
+  detail: Pick<MeetingDetail, "isHost" | "pendingReason">,
+): boolean {
+  return (
+    detail.isHost &&
+    (detail.pendingReason === "SCHEDULED" || detail.pendingReason === "IN_PROGRESS")
+  );
+}
+
+/** 회의 취소(MEET-06) 가능 여부 — **시작 전(SCHEDULED)만**. 진행중은 종료(MEET-08)를 써야 한다. */
+export function canCancelMeeting(detail: Pick<MeetingDetail, "isHost" | "pendingReason">): boolean {
+  return detail.isHost && detail.pendingReason === "SCHEDULED";
 }

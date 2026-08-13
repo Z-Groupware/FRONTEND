@@ -125,7 +125,16 @@ export function AccountIssueDialog({
 
       setIsOpen(false);
       setIssued(result.issued ?? null);
-      toast.success("계정을 발급했습니다");
+      /*
+        ⚠️ **계정은 났는데 겸직만 못 붙은 경우를 성공으로 뭉개지 않는다**(§정직성).
+           발급과 겸직은 BE에서 두 호출이라 가운데서 끊길 수 있다 — 그때 "발급했습니다"만
+           띄우면 관리자는 겸직이 붙은 줄 알고 넘어간다. 다음에 할 일까지 말해 준다.
+      */
+      if (result.adminGrantFailed) {
+        toast.warning("계정은 발급됐지만 관리자 겸직은 붙지 않았습니다 — 사원 상세에서 켜 주세요");
+      } else {
+        toast.success("계정을 발급했습니다");
+      }
       // 목록은 서버 컴포넌트라 다시 받아온다(`revalidatePath`가 캐시를 이미 비웠다)
       router.refresh();
     });

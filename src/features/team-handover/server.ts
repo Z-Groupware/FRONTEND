@@ -1,13 +1,24 @@
 import "server-only";
 
-import { ACTION_STATUS } from "@/constants/domain";
+import { ACTION_STATUS, isVisibleMemberStatus, type MemberStatus } from "@/constants/domain";
+import { requireAccessToken } from "@/features/auth/session";
 import { getManagedMember, listManagedMembers } from "@/features/member/manage-server";
 import {
   TEAM_ACTION_DETAIL_MOCK,
   TEAM_ACTION_PERSONAL_ITEMS_MOCK,
 } from "@/features/project/mock/team-action-detail";
+import { ApiError, serverApi } from "@/lib/api";
+import { ep } from "@/lib/endpoints";
+import { isMock } from "@/mocks/config";
 
-import type { TeamHandoverAction, TeamHandoverDetail, TeamHandoverListItem } from "./types";
+import type { BeHandoverResponse, BeHandoverSummaryResponse } from "./mapper";
+import { toHandoverDetailFromBe, toTeamHandoverListItem } from "./mapper";
+import type {
+  TeamHandoverAction,
+  TeamHandoverDetail,
+  TeamHandoverListItem,
+  TeamMemberOption,
+} from "./types";
 
 /**
  * ⚠️ 세션이 아직 없다(`getViewer()`는 항상 OWNER를 반환) — `/team/(dashboard)`와 같은 이유로
@@ -45,54 +56,112 @@ function buildHandoverActions(memberName: string): TeamHandoverAction[] {
   return actions;
 }
 
+/** [확인] BE `TeamMemberStatusResponse` — `team/server.ts`와 같은 응답(PR #354 머지 완료). */
+interface BeTeamMemberStatus {
+  memberId: number;
+  name: string;
+  positionName: string | null;
+  roleName: string | null;
+  status: MemberStatus;
+}
+
+/**
+ * 재배정 대상 — 신청자 제외, 같은 팀 구성원(팀장 본인 포함).
+ *
+ * ⚠️ `GET /api/team/members`는 **호출자 토큰의 팀**만 돌려준다(LEADER 전용) — 이 화면을
+ *    여는 사람이 곧 그 인수인계서의 팀장이라 `writerMemberId` 하나만 걸러내면 된다.
+ */
+async function fetchTeammates(
+  writerMemberId: number,
+  accessToken: string,
+): Promise<TeamMemberOption[]> {
+  const members = await serverApi<BeTeamMemberStatus[]>(ep.teamMembers(), { accessToken });
+  // ⚠️ 소프트 딜리트는 상태가 아니라 목록에서 빠지는 일이다 — 퇴사자는 남기고 그것만 거른다.
+  return members
+    .filter((member) => member.memberId !== writerMemberId && isVisibleMemberStatus(member.status))
+    .map((member) => ({ id: member.memberId, name: member.name, roleLabel: member.roleName }));
+}
+
 /** 목록 — 팀장 중간 승인을 기다리는 팀원 신청만(이미 승인된 건은 여기서 할 일이 없다). */
 export async function listTeamHandovers(): Promise<TeamHandoverListItem[]> {
-  const members = await listManagedMembers();
-  const teammates = members.filter(
-    (member) => member.teamName === FIXED_TEAM_NAME && member.id !== FIXED_LEADER_ID,
+  if (isMock) {
+    const members = await listManagedMembers();
+    const teammates = members.filter(
+      (member) => member.teamName === FIXED_TEAM_NAME && member.id !== FIXED_LEADER_ID,
+    );
+
+    const details = await Promise.all(teammates.map((member) => getManagedMember(member.id)));
+
+    return details
+      .filter(
+        (detail) =>
+          detail !== null && detail.pendingHandover && !detail.pendingHandover.midApproval,
+      )
+      .map((detail) => {
+        const member = detail!.member;
+        const handover = detail!.pendingHandover!;
+        return {
+          // ⚠️ 목에는 진짜 인수인계서 id가 없다 — 사원 id를 대신 쓴다(목 전용 관례).
+          handoverId: member.id,
+          memberId: member.id,
+          memberName: member.name,
+          type: handover.type,
+          period: handover.period,
+          actionCount: handover.actionCount,
+        };
+      });
+  }
+
+  const accessToken = await requireAccessToken();
+  const summaries = await serverApi<BeHandoverSummaryResponse[]>(
+    ep.handovers({ status: "SUBMITTED" }),
+    { accessToken },
   );
-
-  const details = await Promise.all(teammates.map((member) => getManagedMember(member.id)));
-
-  return details
-    .filter(
-      (detail) => detail !== null && detail.pendingHandover && !detail.pendingHandover.midApproval,
-    )
-    .map((detail) => {
-      const member = detail!.member;
-      const handover = detail!.pendingHandover!;
-      return {
-        id: String(member.id),
-        memberId: member.id,
-        memberName: member.name,
-        type: handover.type,
-        period: handover.period,
-        actionCount: handover.actionCount,
-      };
-    });
+  return summaries.map(toTeamHandoverListItem);
 }
 
 /** 상세 — 이미 중간 승인됐거나 신청이 없으면 `null`(화면이 `notFound()`를 부른다). */
-export async function getTeamHandoverDetail(memberId: number): Promise<TeamHandoverDetail | null> {
-  const detail = await getManagedMember(memberId);
-  if (!detail || detail.member.teamName !== FIXED_TEAM_NAME) return null;
+export async function getTeamHandoverDetail(
+  handoverId: number,
+): Promise<TeamHandoverDetail | null> {
+  if (isMock) {
+    const memberId = handoverId;
+    const detail = await getManagedMember(memberId);
+    if (!detail || detail.member.teamName !== FIXED_TEAM_NAME) return null;
 
-  const handover = detail.pendingHandover;
-  if (!handover || handover.midApproval) return null;
+    const handover = detail.pendingHandover;
+    if (!handover || handover.midApproval) return null;
 
-  const members = await listManagedMembers();
-  const teammates = members
-    .filter((member) => member.teamName === FIXED_TEAM_NAME && member.id !== memberId)
-    .map((member) => ({ id: member.id, name: member.name, roleLabel: member.roleLabel }));
+    const members = await listManagedMembers();
+    const teammates = members
+      .filter((member) => member.teamName === FIXED_TEAM_NAME && member.id !== memberId)
+      .map((member) => ({ id: member.id, name: member.name, roleLabel: member.roleLabel }));
 
-  return {
-    id: String(memberId),
-    memberId,
-    memberName: detail.member.name,
-    type: handover.type,
-    period: handover.period,
-    actionCount: handover.actionCount,
-    actions: buildHandoverActions(detail.member.name),
-    teammates,
-  };
+    return {
+      handoverId: memberId,
+      memberId,
+      memberName: detail.member.name,
+      type: handover.type,
+      period: handover.period,
+      actionCount: handover.actionCount,
+      actions: buildHandoverActions(detail.member.name),
+      teammates,
+    };
+  }
+
+  const accessToken = await requireAccessToken();
+  let be: BeHandoverResponse;
+  try {
+    be = await serverApi<BeHandoverResponse>(ep.handover(handoverId), { accessToken });
+  } catch (error) {
+    if (error instanceof ApiError && (error.status === 404 || error.status === 403)) return null;
+    throw error;
+  }
+
+  // ⚠️ 이미 팀장이 처리한(재배정·최종승인·반려) 건은 여기서 할 일이 없다 — 목록 필터(§listTeamHandovers)와 같은 기준.
+  if (be.status !== "SUBMITTED") return null;
+
+  const detail = toHandoverDetailFromBe(be);
+  const teammates = await fetchTeammates(be.writerMemberId, accessToken);
+  return { ...detail, teammates };
 }

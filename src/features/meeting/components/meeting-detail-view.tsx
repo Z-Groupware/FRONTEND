@@ -1,4 +1,5 @@
 import {
+  Ban,
   CalendarClock,
   CircleAlert,
   ClipboardCheck,
@@ -16,9 +17,13 @@ import { ProfileAvatar } from "@/components/common/profile-avatar";
 import { ProjectTag } from "@/components/common/project-tag";
 import { StatusDot } from "@/components/common/status-dot";
 import { ACTION_STATUS_LABEL } from "@/constants/action";
+import type { RoomMember } from "@/features/rooms/types";
 import { formatDate } from "@/lib/date";
 
+import { canCancelMeeting, canEditMeetingAttendees } from "../status";
 import type { MeetingContentPending, MeetingDetail } from "../view-types";
+import { MeetingAttendeesEditDialog } from "./meeting-attendees-edit-dialog";
+import { MeetingCancelDialog } from "./meeting-cancel-dialog";
 import { ProjectAccent } from "./project-accent";
 
 /**
@@ -79,6 +84,12 @@ const PENDING_MESSAGE: Record<MeetingContentPending, string> = {
        못 하는 일을 하라고 시키게 된다(§정직성). 다시 돌리는 건 Host의 마이페이지가 맡는다.
   */
   FAILED: "회의 내용을 요약하지 못했습니다. 개설자가 다시 요약해야 표시됩니다.",
+  /*
+    ⚠️ 취소는 "아직"이 아니라 "더는 없음"이다(MEET-06) — 다른 넷과 달리 기다려도 안 채워진다.
+       그래도 같은 자리·같은 생김새를 쓴다 — 회의가 안 끝났을 때와 마찬가지로 산출물·발화
+       기록 두 칸만 비고 나머지 메타(제목·일정·참석자)는 그대로 보여준다.
+  */
+  CANCELED: "취소된 회의입니다.",
 };
 
 /** 아직 볼 것이 없는 이유마다 표식이 다르다 — 훑을 때 글자보다 먼저 걸린다 */
@@ -87,6 +98,7 @@ const PENDING_ICON: Record<MeetingContentPending, LucideIcon> = {
   IN_PROGRESS: Radio,
   SUMMARIZING: Sparkles,
   FAILED: CircleAlert,
+  CANCELED: Ban,
 };
 
 /**
@@ -132,7 +144,8 @@ function actionsSectionStateOf(detail: MeetingDetail): ActionsSectionState {
   if (
     detail.pendingReason === "SCHEDULED" ||
     detail.pendingReason === "IN_PROGRESS" ||
-    detail.pendingReason === "SUMMARIZING"
+    detail.pendingReason === "SUMMARIZING" ||
+    detail.pendingReason === "CANCELED"
   ) {
     return { kind: "notice", reason: detail.pendingReason };
   }
@@ -181,8 +194,18 @@ function ActionsNotice({
   );
 }
 
-export function MeetingDetailView({ detail }: { detail: MeetingDetail }) {
+interface MeetingDetailViewProps {
+  detail: MeetingDetail;
+  /** 참석자 명단 교체(MEET-09) 다이얼로그가 고를 전체 사원 목록. */
+  members: RoomMember[];
+  /** "내 부서만"·"팀장급만" 필터 기준 — `RoomAttendeePicker`로 그대로 흘려보낸다. */
+  viewerTeamName: string | null;
+}
+
+export function MeetingDetailView({ detail, members, viewerTeamName }: MeetingDetailViewProps) {
   const actionsState = actionsSectionStateOf(detail);
+  const canEditAttendees = canEditMeetingAttendees(detail);
+  const canCancel = canCancelMeeting(detail);
 
   return (
     /*
@@ -202,17 +225,20 @@ export function MeetingDetailView({ detail }: { detail: MeetingDetail }) {
                섞여 높이가 제각각이 된다 — 두 화면이 같은 자리를 쓰면 눈이 옮겨 다니지 않는다.
             ⚠️ 태그는 **프로젝트로 가는 링크**다(§12 순환 추적).
           */}
-          <div className="flex min-w-0 items-center gap-2">
-            <Link
-              href={`/app/projects/${detail.projectId}`}
-              className="focus-visible:ring-ring shrink-0 rounded-md transition-opacity hover:opacity-80 focus-visible:ring-2 focus-visible:outline-hidden"
-            >
-              <ProjectTag tag={detail.projectTag} />
-            </Link>
-            {/* 제목은 h2 — 페이지의 h1은 PageHeader가 갖고 있다(§a11y: h1은 하나) */}
-            <h2 className="truncate text-[17px] leading-7 font-semibold tracking-[-0.3px]">
-              {detail.title}
-            </h2>
+          <div className="flex min-w-0 items-center justify-between gap-3">
+            <div className="flex min-w-0 items-center gap-2">
+              <Link
+                href={`/app/projects/${detail.projectId}`}
+                className="focus-visible:ring-ring shrink-0 rounded-md transition-opacity hover:opacity-80 focus-visible:ring-2 focus-visible:outline-hidden"
+              >
+                <ProjectTag tag={detail.projectTag} />
+              </Link>
+              {/* 제목은 h2 — 페이지의 h1은 PageHeader가 갖고 있다(§a11y: h1은 하나) */}
+              <h2 className="truncate text-[17px] leading-7 font-semibold tracking-[-0.3px]">
+                {detail.title}
+              </h2>
+            </div>
+            {canCancel && <MeetingCancelDialog meetingId={detail.id} />}
           </div>
           <div className="pt-1.5">
             <OriginLine detail={detail} />
@@ -245,9 +271,19 @@ export function MeetingDetailView({ detail }: { detail: MeetingDetail }) {
             남고 그 아래가 비는데, 회의를 볼 때 "누가 있었나"는 제목·일정과 함께 읽는 값이다.
           */}
           <div className="border-border mt-5 border-t pt-5">
-            <p className="text-muted-foreground text-[12px] leading-4">
-              참석자 <span className="tabular-nums">{detail.attendees.length}명</span>
-            </p>
+            <div className="flex items-baseline justify-between gap-3">
+              <p className="text-muted-foreground text-[12px] leading-4">
+                참석자 <span className="tabular-nums">{detail.attendees.length}명</span>
+              </p>
+              {canEditAttendees && (
+                <MeetingAttendeesEditDialog
+                  meetingId={detail.id}
+                  currentAttendeeIds={detail.attendees.map((attendee) => attendee.id)}
+                  members={members}
+                  viewerTeamName={viewerTeamName}
+                />
+              )}
+            </div>
             <ul className="flex flex-wrap gap-2 pt-2">
               {detail.attendees.map((attendee) => (
                 <li

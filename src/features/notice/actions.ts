@@ -4,10 +4,20 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { FLASH_TOAST_PARAM } from "@/constants/flash-toast";
+import { requireAccessToken } from "@/features/auth/session";
+import { ApiError, serverApi } from "@/lib/api";
+import { ep } from "@/lib/endpoints";
 import { getMockActor } from "@/lib/mock-actor";
 import { canManageNotice } from "@/lib/permission";
 import { isMock } from "@/mocks/config";
 
+import {
+  type BeCreateNoticeResponse,
+  type BeNotice,
+  toCreatedNotice,
+  toCreateNoticePayload,
+  toNotice,
+} from "./mapper";
 import {
   addMockNotice,
   deleteMockNotice,
@@ -16,6 +26,24 @@ import {
 } from "./mock/notices";
 import type { Notice, NoticeDraft, NoticeFormErrors } from "./types";
 import { validateNoticeDraft } from "./validate";
+
+/**
+ * 작성·수정 API 실패를 폼 필드 오류로 바꾼다(NOTI-03·04 공통).
+ * ⚠️ 이 폼엔 "전체 오류"를 보여줄 별도 자리가 없다 — `rooms`의 `toMeetingRoomFormErrors`와
+ *    같은 이유로 필드 슬롯이 없는 오류는 `title` 칸에 얹는다.
+ */
+function toNoticeFormErrors(error: unknown): NoticeFormErrors {
+  if (!(error instanceof ApiError)) throw error;
+
+  switch (error.code) {
+    case "NT-001":
+      return { title: "수정할 공지를 찾을 수 없습니다" };
+    case "NT-002":
+      return { title: "공지를 작성·수정할 권한이 없습니다" };
+    default:
+      return { title: error.message };
+  }
+}
 
 const LIST_PATH = "/app/notice";
 
@@ -72,8 +100,18 @@ export async function createNoticeAction(
   if (Object.keys(errors).length > 0) return { errors };
 
   if (!isMock) {
-    // ⚠️ 미구현 — API 스펙 확정 후 BFF 경로로 작성 요청을 보낸다.
-    throw new Error("공지 작성 API가 아직 연결되지 않았습니다.");
+    const accessToken = await requireAccessToken();
+    try {
+      const { noticeId } = await serverApi<BeCreateNoticeResponse>(ep.notices(), {
+        method: "POST",
+        accessToken,
+        json: toCreateNoticePayload(draft),
+      });
+      revalidatePath(LIST_PATH);
+      return { errors: {}, notice: toCreatedNotice(noticeId, draft) };
+    } catch (error) {
+      return { errors: toNoticeFormErrors(error) };
+    }
   }
 
   // "YYYY-MM-DD" — 발행일은 서버 기준으로 찍는다(목 데이터는 날짜를 만들지 않는다).
@@ -99,8 +137,19 @@ export async function updateNoticeAction(
   if (Object.keys(errors).length > 0) return { errors };
 
   if (!isMock) {
-    // ⚠️ 미구현 — API 스펙 확정 후 BFF 경로로 수정 요청을 보낸다.
-    throw new Error("공지 수정 API가 아직 연결되지 않았습니다.");
+    const accessToken = await requireAccessToken();
+    try {
+      const be = await serverApi<BeNotice>(ep.notice(Number(id)), {
+        method: "PUT",
+        accessToken,
+        json: toCreateNoticePayload(draft),
+      });
+      revalidatePath(LIST_PATH);
+      revalidatePath(`${LIST_PATH}/${id}`);
+      return { errors: {}, notice: toNotice(be) };
+    } catch (error) {
+      return { errors: toNoticeFormErrors(error) };
+    }
   }
 
   const updated = updateMockNotice(id, draft);
@@ -112,21 +161,29 @@ export async function updateNoticeAction(
 }
 
 /**
- * 공지 삭제 — 격리막(CLAUDE.md §Mock 격리막).
+ * 공지 삭제(`DELETE /api/notices/{noticeId}`, NOTI-05) — 격리막(CLAUDE.md §Mock 격리막).
  * ⚠️ 되돌릴 수 없는 조작이라 화면(`NoticeDeleteButton`)에서 확인 Dialog를 먼저 띄운 뒤에만 이 폼이
  *    제출된다(§토스트: 파괴적 작업은 Dialog). 여기서도 **권한을 다시 본다**(§권한: 서버 재검사).
+ * ⚠️ **재호출을 성공으로 감싸지 않는다**(문서 규칙 — `rooms`의 `MR-001` 멱등 처리와 다르다).
+ *    이미 지운 공지를 다시 지우면 BE가 `NT-001`(404)을 그대로 준다 — 지워진 건지 애초에
+ *    없었는지 화면이 구분 못 하게 만들면 안 되므로, `ApiError`를 조용히 삼키지 않고
+ *    그대로 던져 가장 가까운 `error.tsx`가 받게 둔다. `NoticeDeleteButton`엔 오류 슬롯이
+ *    없어(파괴적 삭제라 재시도 UI가 필요 없다고 판단, ROOM-05와 다른 지점) 이 방식이 맞다.
  */
 export async function deleteNoticeAction(formData: FormData): Promise<void> {
   if (!canManageNotice(getMockActor())) {
     throw new Error("공지를 삭제할 권한이 없습니다");
   }
 
+  const id = String(formData.get("id") ?? "");
+
   if (!isMock) {
-    // ⚠️ 미구현 — API 스펙 확정 후 BFF 경로로 삭제 요청을 보낸다.
-    throw new Error("공지 삭제 API가 아직 연결되지 않았습니다.");
+    const accessToken = await requireAccessToken();
+    await serverApi<null>(ep.notice(Number(id)), { method: "DELETE", accessToken });
+    revalidatePath(LIST_PATH);
+    redirect(`${LIST_PATH}?${FLASH_TOAST_PARAM}=NOTICE_DELETED`);
   }
 
-  const id = String(formData.get("id") ?? "");
   deleteMockNotice(id);
 
   revalidatePath(LIST_PATH);

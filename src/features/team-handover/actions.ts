@@ -8,7 +8,7 @@ import {
   rejectMockHandover,
 } from "@/features/member/mock/managed";
 import { TEAM_ACTION_PERSONAL_ITEMS_MOCK } from "@/features/project/mock/team-action-detail";
-import { serverApi } from "@/lib/api";
+import { ApiError, serverApi } from "@/lib/api";
 import { todayIso } from "@/lib/date";
 import { ep } from "@/lib/endpoints";
 import { isMock } from "@/mocks/config";
@@ -47,19 +47,14 @@ function reassignHandoverItem(
 /**
  * §4 재배정 오케스트레이션(BE 인수인계 문서, 2026-08-10) — 일괄 반영 엔드포인트가 없어
  * FE가 순서를 책임진다: 건별 `PATCH .../items/{actionId}/reassign` **전부** 성공한 뒤에만
- * `PATCH .../complete`(팀장 중간승인)를 부른다.
+ * `PATCH .../complete`(팀장 중간승인)를 부른다. `completeTeamHandoverAction`의 실 연동
+ * 분기가 이 함수를 그대로 부른다.
  *
- * ⚠️ **`handoverId`는 사원(member) id가 아니다.** 진짜 인수인계서 id — `mapper.ts`의
- *    `HandoverDetailFromBe.handoverId`(BE `HandoverResponse.id`)를 받아야 한다.
- * ⚠️ **아직 `completeTeamHandoverAction`에서 안 부른다.** 지금 그 함수는 라우트 파라미터로
- *    사원 id를 받는데(mock 전용 구조, `TeamHandoverListItem.id` 주석 참고), 실제 인수인계서
- *    id로 바꾸는 건 별도 이슈(mock→live 서버 재작성)의 몫이다 — 여기서는 실연동 때 그대로
- *    가져다 쓸 수 있게 준비만 해 둔다.
  * ⚠️ 중간에 하나라도 실패하면 그 assignment에서 예외가 그대로 던져진다 — 이미 성공한
  *    앞쪽 reassign은 BE에 반영된 채로 남는다(부분 성공). 호출부가 이 상태를 다시 열었을 때
  *    `reassigneeId`로 복원하는 건 화면(§4 "재배정 오케스트레이션") 몫이다.
- * ⚠️ `memberId`는 API 호출엔 안 쓴다 — `completeTeamHandoverAction`과 같은 캐시 경로
- *    (`revalidatePath`)를 무효화하는 데만 쓴다(라우트가 아직 사원 id 기준이라서, 위 주석 참고).
+ * ⚠️ `memberId`는 API 호출엔 안 쓴다 — 사원 상세(`/manage/members/{memberId}`) 캐시 경로를
+ *    무효화하는 데만 쓴다.
  */
 export async function commitHandoverReassignments(
   handoverId: number,
@@ -89,21 +84,17 @@ export async function commitHandoverReassignments(
 /**
  * [인수인계 확정] — 팀원 보드로 재배정한 결과를 한 번에 반영하고 팀장 중간 승인을 남긴다
  * (WORKFLOW.md §7·§13-4).
- * ⚠️ **재배정 반영은 `board/actions.ts`와 같은 방식**이다 — `TEAM_ACTION_PERSONAL_ITEMS_MOCK`
+ * ⚠️ **재배정 반영은 `board/actions.ts`와 같은 방식**이다(mock) — `TEAM_ACTION_PERSONAL_ITEMS_MOCK`
  *    항목을 직접 mutate한다(별도 격리 저장소를 새로 두지 않는다).
  * ⚠️ 세션이 아직 없어(`getViewer()`가 항상 OWNER) 이 화면·액션은 `/team/(dashboard)`와 같이
  *    권한 게이트 없이 고정 스코프(김서준 · 개발팀)로 동작한다. 세션이 붙으면 첫 줄에서
  *    `assertPermission(canApproveMid(viewer, { teamId }))`를 넣는다.
  */
 export async function completeTeamHandoverAction(
-  memberId: number,
+  handoverId: number,
   assignments: TeamHandoverAssignment[],
 ): Promise<{ isSuccess: boolean; message?: string }> {
-  if (!isMock) {
-    throw new Error("서버 연동 미구현 — ERD·API 스펙 확정 후 매퍼 작성");
-  }
-
-  const handover = await getTeamHandoverDetail(memberId);
+  const handover = await getTeamHandoverDetail(handoverId);
   if (!handover) return { isSuccess: false, message: "이미 처리됐거나 없는 인수인계서입니다" };
 
   /*
@@ -130,15 +121,23 @@ export async function completeTeamHandoverAction(
     seenActionIds.add(actionId);
   }
 
-  for (const assignment of assignments) {
-    reassignHandoverItem(assignment, teammateById);
+  if (isMock) {
+    for (const assignment of assignments) {
+      reassignHandoverItem(assignment, teammateById);
+    }
+    completeMockHandoverMidApproval(handoverId, FIXED_LEADER_NAME, todayIso());
+  } else {
+    try {
+      await commitHandoverReassignments(handoverId, handover.memberId, assignments);
+    } catch (error) {
+      if (error instanceof ApiError) return { isSuccess: false, message: error.message };
+      throw error;
+    }
   }
 
-  completeMockHandoverMidApproval(memberId, FIXED_LEADER_NAME, todayIso());
-
   revalidatePath(LIST_PATH);
-  revalidatePath(`${LIST_PATH}/${memberId}`);
-  revalidatePath(`${MANAGE_PATH}/${memberId}`);
+  revalidatePath(`${LIST_PATH}/${handoverId}`);
+  revalidatePath(`${MANAGE_PATH}/${handover.memberId}`);
 
   return { isSuccess: true };
 }
@@ -149,31 +148,42 @@ export async function completeTeamHandoverAction(
  * 드러난다 — 팀장 선에서 먼저 막을 수 있어야 한다.
  * ⚠️ **아직 중간 승인 전인 신청만** 반려할 수 있다 — 이미 중간 승인해 올린 건은 오너의
  *    최종 승인/반려(`approveHandoverAction`/`rejectHandoverAction`) 몫이다.
- * ⚠️ 반려 결과는 오너의 반려와 같다(신청 자체를 지우고 재직으로 되돌린다) — 같은
- *    `rejectMockHandover` 뮤테이터를 그대로 쓴다.
+ * ⚠️ mock 반려 결과는 오너의 반려와 같다(신청 자체를 지우고 재직으로 되돌린다) — 같은
+ *    `rejectMockHandover` 뮤테이터를 그대로 쓴다. 실 연동은 `PATCH .../reject`(BE 상태만
+ *    `REJECTED`로 바꾼다 — 사람 재직 상태는 별개 도메인 몫이다).
  */
 export async function rejectTeamHandoverAction(
-  memberId: number,
+  handoverId: number,
   reason: string,
 ): Promise<{ isSuccess: boolean; message?: string }> {
-  if (!isMock) {
-    throw new Error("서버 연동 미구현 — ERD·API 스펙 확정 후 매퍼 작성");
-  }
-
   if (!reason.trim()) return { isSuccess: false, message: "반려 사유를 입력해 주세요" };
 
-  const handover = await getTeamHandoverDetail(memberId);
+  const handover = await getTeamHandoverDetail(handoverId);
   if (!handover) return { isSuccess: false, message: "이미 처리됐거나 없는 인수인계서입니다" };
 
-  /*
-    ⚠️ 사유는 오너의 반려와 같은 이유로 **지금은 저장하지 않는다**(`handover-approval-card.tsx`
-       주석 참고) — 저장할 자리도 보여줄 화면도 아직 없다. 연동되면 함께 보낸다.
-  */
-  rejectMockHandover(memberId);
+  if (isMock) {
+    /*
+      ⚠️ 사유는 오너의 반려와 같은 이유로 **지금은 저장하지 않는다**(`handover-approval-card.tsx`
+         주석 참고) — 저장할 자리도 보여줄 화면도 아직 없다.
+    */
+    rejectMockHandover(handoverId);
+  } else {
+    try {
+      const accessToken = await requireAccessToken();
+      await serverApi<unknown>(ep.handoverReject(handoverId), {
+        method: "PATCH",
+        json: { reason },
+        accessToken,
+      });
+    } catch (error) {
+      if (error instanceof ApiError) return { isSuccess: false, message: error.message };
+      throw error;
+    }
+  }
 
   revalidatePath(LIST_PATH);
-  revalidatePath(`${LIST_PATH}/${memberId}`);
-  revalidatePath(`${MANAGE_PATH}/${memberId}`);
+  revalidatePath(`${LIST_PATH}/${handoverId}`);
+  revalidatePath(`${MANAGE_PATH}/${handover.memberId}`);
 
   return { isSuccess: true };
 }

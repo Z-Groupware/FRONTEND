@@ -1,5 +1,6 @@
 import { Bell, Check, FileText, Send, User } from "lucide-react";
 
+import { CountUp } from "./count-up";
 import { AssignAside, HandoverAside } from "./flow-mock-aside";
 import { MockHead } from "./flow-mock-head";
 
@@ -16,10 +17,10 @@ const ASSIGNED = [
 ] as const;
 
 const HANDOVER_ITEMS = [
-  { label: "회의 기록", count: "24", unit: "건" },
-  { label: "미완료 액션", count: "4", unit: "건" },
-  { label: "참여 결정", count: "12", unit: "건" },
-  { label: "담당 프로젝트", count: "3", unit: "개" },
+  { label: "회의 기록", count: 24, unit: "건" },
+  { label: "미완료 액션", count: 4, unit: "건" },
+  { label: "참여 결정", count: 12, unit: "건" },
+  { label: "담당 프로젝트", count: 3, unit: "개" },
 ] as const;
 
 export function AssignMock() {
@@ -131,7 +132,8 @@ export function HandoverMock() {
                 {item.label}
               </p>
               <p className="text-[18px] leading-6 font-semibold tabular-nums">
-                {item.count}
+                {/* ⚠️ 세는 동안 폭이 흔들리지 않게 `tabular-nums`는 이 줄이 이미 갖고 있다 */}
+                <CountUp value={item.count} />
                 <span className="text-landing-dark-muted pl-0.5 text-[12px] font-normal">
                   {item.unit}
                 </span>

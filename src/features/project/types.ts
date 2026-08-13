@@ -60,6 +60,25 @@ export type ProjectFormErrors = Partial<
   }
 >;
 
+/**
+ * 첨부 업로드 1단계(발급) 결과 — UI 계약(§Mock 격리막). 컴포넌트는 이 모양만 안다.
+ * ⚠️ `uploadUrl`이 `null`이면 **업로드를 건너뛴다** — mock 단계에는 올릴 곳이 없다.
+ *    컴포넌트가 `isMock`을 직접 보면 격리막이 깨지므로, 분기는 이 값 하나로 접는다.
+ */
+export interface AttachmentUploadTicket {
+  /** presigned PUT URL(15분 만료). `null`이면 브라우저 PUT 생략(목 단계). */
+  uploadUrl: string | null;
+  /** S3 오브젝트 키 — 확정(confirm)에 그대로 되돌린다. 브라우저로 열리는 URL이 아니다. */
+  fileUrl: string;
+}
+
+/** 발급 액션 결과 — 실패 `message`는 화면에 그대로 띄울 한국어 문장(§lib/api). */
+export type AttachmentIssueResult =
+  { ok: true; ticket: AttachmentUploadTicket } | { ok: false; message: string };
+
+/** 확정 액션 결과 — 발급 쪽과 같은 규약, 돌려줄 값만 없다. */
+export type AttachmentConfirmResult = { ok: true } | { ok: false; message: string };
+
 /** 프로젝트 첨부파일 한 건 — 다운로드는 클릭 시점에 별도로 URL을 발급받아 연다(5분 만료). */
 export interface ProjectAttachment {
   id: number;

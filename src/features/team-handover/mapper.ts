@@ -1,7 +1,7 @@
 import type { ActionStatus, HandoverStatusBe, HandoverType } from "@/constants/domain";
 import { HANDOVER_TYPE, type HandoverStatus, mapHandoverStatusFromBe } from "@/constants/domain";
 
-import type { TeamHandoverAction } from "./types";
+import type { TeamHandoverAction, TeamHandoverListItem } from "./types";
 
 /**
  * BE shape → UI 계약 (§Mock 격리막 — **shape을 흡수하는 곳은 여기 하나다**).
@@ -10,7 +10,7 @@ import type { TeamHandoverAction } from "./types";
  * ⚠️ 컴포넌트는 이 파일을 모른다. BE가 모양을 바꾸면 여기만 고친다.
  */
 
-/** [확인] BE `HandoverItemResponse` — 인수인계서 한 건에 담긴 액션 스냅샷 한 줄. */
+/** [확인] BE `HandoverItemResponse` — 인수인계서 한 건에 담긴 액션 스냅샷 한 줄(PR #382). */
 export interface BeHandoverItemResponse {
   id: number;
   actionId: number;
@@ -23,6 +23,8 @@ export interface BeHandoverItemResponse {
   sourceMeetingId: number | null;
   sourceMeetingTitleSnap: string | null;
   contentSnap: string | null;
+  parentActionTitleSnap: string | null;
+  startDateSnap: string | null;
   reassignRequired: boolean;
   reassigneeId: number | null;
   reassigneeNameSnap: string | null;
@@ -30,6 +32,23 @@ export interface BeHandoverItemResponse {
   reassignedAt: string | null;
   committedAt: string | null;
   rollbackStatus: string | null;
+}
+
+/** [확인] BE `HandoverSummaryResponse` — `GET /api/handovers` 목록 한 줄. */
+export interface BeHandoverSummaryResponse {
+  id: number;
+  writerMemberId: number;
+  writerName: string;
+  writerPosition: string;
+  teamId: number;
+  handoverType: string;
+  status: string;
+  leaveStartAt: string | null;
+  leaveEndAt: string | null;
+  lastWorkingDay: string | null;
+  itemCount: number;
+  reassignRequiredCount: number;
+  reassignedCount: number;
 }
 
 /** [확인] BE `HandoverResponse` — 인수인계서 상세(전 필드 aggregate). */
@@ -57,11 +76,7 @@ export interface BeHandoverResponse {
   items: BeHandoverItemResponse[];
 }
 
-/**
- * BE 인수인계서 detail — 화면 카드가 쓰는 `TeamHandoverListItem`/`TeamHandoverDetail`(`id`가
- * 사원 id를 문자열로 재활용하는 mock 전용 구조)과는 다르게, **진짜 인수인계서 id**를
- * `handoverId`로 따로 둔다. mock→live 전환 때 이 타입을 기준으로 화면 계약을 다시 잡는다.
- */
+/** BE 인수인계서 detail — `TeamHandoverDetail`에서 `teammates`만 뺀 나머지(그건 별도 API로 채운다). */
 export interface HandoverDetailFromBe {
   handoverId: number;
   memberId: number;
@@ -76,21 +91,36 @@ export interface HandoverDetailFromBe {
 /**
  * 응답 항목(`HandoverItemResponse`) → 화면 액션 한 줄.
  * `actionTitleSnap`→`title`, `projectTagSnap`→`projectTag`, `deadlineSnap`→`dueDate`,
- * `actionStatusSnap`→`status`.
- *
- * ⚠️ **`parentTeamActionName`·`startDate` 소스가 BE 응답에 없다** — `HandoverItemResponse`엔
- *    상위 팀 액션명 필드도, 작업 시작일 필드도 없다(회의 제목(`sourceMeetingTitleSnap`)은
- *    다른 개념이라 대신 쓰지 않는다). 지어내지 않고 빈 값으로 둔다 — **BE에 확인 필요.**
+ * `actionStatusSnap`→`status`, `parentActionTitleSnap`→`parentTeamActionName`,
+ * `startDateSnap`→`startDate`(PR #382로 추가).
  */
 export function toTeamHandoverAction(item: BeHandoverItemResponse): TeamHandoverAction {
   return {
     id: item.actionId,
     projectTag: item.projectTagSnap,
-    parentTeamActionName: "",
+    parentTeamActionName: item.parentActionTitleSnap ?? "",
     title: item.actionTitleSnap,
     status: item.actionStatusSnap as ActionStatus,
-    startDate: "",
+    startDate: item.startDateSnap ?? "",
     dueDate: item.deadlineSnap,
+  };
+}
+
+/** 목록 한 줄(`HandoverSummaryResponse`) → 화면 목록 항목. */
+export function toTeamHandoverListItem(be: BeHandoverSummaryResponse): TeamHandoverListItem {
+  const type = be.handoverType as HandoverType;
+  const period =
+    type === HANDOVER_TYPE.VACATION && be.leaveStartAt && be.leaveEndAt
+      ? { from: be.leaveStartAt.slice(0, 10), to: be.leaveEndAt.slice(0, 10) }
+      : null;
+
+  return {
+    handoverId: be.id,
+    memberId: be.writerMemberId,
+    memberName: be.writerName,
+    type,
+    period,
+    actionCount: be.itemCount,
   };
 }
 

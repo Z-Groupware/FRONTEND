@@ -9,6 +9,8 @@ export const MEETING_STATUS = {
   SCHEDULED: "SCHEDULED",
   IN_PROGRESS: "IN_PROGRESS",
   DONE: "DONE",
+  /** 취소(MEET-06) — 소프트 취소다. BE도 물리 삭제 없이 `status`+`canceled_at`으로 남긴다. */
+  CANCELED: "CANCELED",
 } as const;
 export type MeetingStatus = (typeof MEETING_STATUS)[keyof typeof MEETING_STATUS];
 
@@ -16,7 +18,13 @@ export const MEETING_STATUS_LABEL: Record<MeetingStatus, string> = {
   SCHEDULED: "예정",
   IN_PROGRESS: "진행중",
   DONE: "완료",
+  CANCELED: "취소",
 };
+
+/** URL 쿼리처럼 바깥에서 들어오는 값을 검증할 때 쓴다(`isVisibleMemberStatus`와 같은 패턴). */
+export function isMeetingStatus(value: string): value is MeetingStatus {
+  return (Object.values(MEETING_STATUS) as string[]).includes(value);
+}
 
 /** 캡처 세션 — 담당자만 조작 가능(권한 2축, lib/permission.ts) */
 export const CAPTURE_STATUS = {
@@ -82,20 +90,31 @@ export const AI_CONFIDENCE_LABEL: Record<AiConfidence, string> = {
 };
 
 /**
- * 액션 분배 리뷰에서 ✕(반려) 클릭 시 고르는 사유 3택(WORKFLOW.md §3-4).
+ * 액션 분배 리뷰에서 ✕(반려) 클릭 시 고르는 사유 5택(WORKFLOW.md §3-4).
  * 담당자·날짜만 고친 경우는 사유가 필요 없다 — ✕로 제외할 때만 고른다.
+ *
+ * ⚠️ **BE `RejectReason`에서 사람이 고르는 값(`isHumanSelectable`)과 1:1이다**
+ *    (2026-08-11 PM 확정으로 3종 → 5종 — [확인] `capture/domain/model/RejectReason.java`).
+ *    `NOT_CONFIRMED`는 `NOT_ACTION`으로 대체됐다 — 옛 값을 보내면 BE enum에 없어 거절된다.
+ * ⚠️ `WRONG_ASSIGNEE` 같은 **수정 사유는 여기 없다.** 사람이 고르는 게 아니라 바뀐 필드를
+ *    보고 BE가 자동으로 붙인다 — 보내면 422(`REVIEW_REASON_NOT_SELECTABLE`).
+ * ⚠️ `ETC`는 텍스트 입력이 없다(PM 확정) — 버튼 하나로 고르는 순수 enum 값이다.
  */
 export const ACTION_REJECT_REASON = {
   HALLUCINATION: "HALLUCINATION",
-  NOT_CONFIRMED: "NOT_CONFIRMED",
   DUPLICATE: "DUPLICATE",
+  NOT_ACTION: "NOT_ACTION",
+  NOT_ATTENDANCE: "NOT_ATTENDANCE",
+  ETC: "ETC",
 } as const;
 export type ActionRejectReason = (typeof ACTION_REJECT_REASON)[keyof typeof ACTION_REJECT_REASON];
 
 export const ACTION_REJECT_REASON_LABEL: Record<ActionRejectReason, string> = {
   HALLUCINATION: "그런 말을 한 적 없음",
-  NOT_CONFIRMED: "논의였는데 확정으로 잘못 인식됨",
   DUPLICATE: "다른 액션과 중복",
+  NOT_ACTION: "액션으로 분배할 내용이 아님",
+  NOT_ATTENDANCE: "담당자가 회의에 참석하지 않음",
+  ETC: "기타",
 };
 
 /*
@@ -127,6 +146,8 @@ export const MEETING_STATUS_BADGE_CLASS: Record<MeetingStatus, string> = {
   SCHEDULED: "border-transparent bg-foreground/[0.08] text-foreground font-semibold",
   /** 끝난 것 — 테두리만. 더 볼 일이 없다는 뜻이라 일부러 물러나 있다 */
   DONE: "border-border text-muted-foreground font-medium",
+  /** 취소된 것 — DONE과 같은 무게(더 볼 일이 없다)다. 취소는 색이 아니라 라벨 글자로만 구분한다. */
+  CANCELED: "border-border text-muted-foreground font-medium",
 };
 
 /**

@@ -28,7 +28,15 @@ export function LandingBackdrop() {
          (테마 토큰이 아직 안 붙은 첫 페인트 등) 이 층이 통째로 가려진다.
          이 위에 오는 콘텐츠는 `relative z-10`을 갖는다.
     */
-    <div aria-hidden className={cn("pointer-events-none fixed inset-0 z-0", "bg-landing-stage")}>
+    <div
+      aria-hidden
+      /*
+        ⚠️ `overflow-hidden`이 필요하다. 안쪽 3D Z가 **980px 고정**이라 그보다 좁은 창에서는
+           좌우로 삐져나간다 — 장식이라 잘려도 아무 손해가 없고, 안 자르면 가로 스크롤이
+           생길 위험만 남는다.
+      */
+      className={cn("pointer-events-none fixed inset-0 z-0 overflow-hidden", "bg-landing-stage")}
+    >
       {/* 화면 전체를 덮는 한 장의 그라데이션 — 위는 푸르게, 아래는 보랏빛으로 아주 천천히 넘어간다 */}
       <span
         className={cn(
@@ -88,10 +96,21 @@ export function LandingBackdrop() {
             ⚠️ 가장자리는 `landing-z-fade`가 지운다 — 그만큼 지워지므로 본체 투명도는
                조금 올려 둔다. 중심은 보이고 바깥은 없는 상태가 된다.
           */
-          isDark ? "opacity-50" : "landing-z-fade opacity-[0.22]",
+          /*
+            ⚠️ 진하기는 **스크롤이 정한다**(`--hero-z-opacity`, `hero-scroll-driver.tsx`).
+               첫 화면에서 0.9로 서 있다가 내려가면 0.35까지 물러난다 — 변수가 아직 없을 때
+               (스크립트 전·모션 최소화)의 기본값을 함께 적어 둔다.
+          */
+          isDark ? "hero-z-dark" : "landing-z-fade hero-z-light",
         )}
       >
-        <ThreeZ size={760} tone={isDark ? "dark" : "light"} />
+        {/*
+          ⚠️ **첫 화면에서는 이 Z가 주인공이다**(2026-08-12). 스크롤에 따라 돌면서 세 조각이
+             흩어졌다 다시 붙는다 — "회의가 조직의 기억이 된다"는 말이 눈앞에서 일어나게 한다.
+          ⚠️ 크기를 키운다(760 → 980). 벽지처럼 깔려 있을 때는 이 정도면 됐지만, 주인공이
+             되려면 화면을 채워야 한다.
+        */}
+        <ThreeZ size={980} tone={isDark ? "dark" : "light"} reactsToScroll />
       </div>
     </div>
   );
