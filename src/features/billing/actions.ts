@@ -9,13 +9,7 @@ import { ep } from "@/lib/endpoints";
 import { canManageBilling } from "@/lib/permission";
 import { isMock } from "@/mocks/config";
 
-import {
-  type BePaymentAction,
-  parsePaymentAction,
-  parsePaymentMethod,
-  toPaymentMethod,
-} from "./mapper";
-import { toFailureMessage } from "./payment";
+import { parsePaymentMethod, toPaymentMethod } from "./mapper";
 import type { CardAuthResult } from "./payment-method";
 import type { PaymentMethod } from "./subscription";
 
@@ -85,45 +79,22 @@ export async function confirmSubscriptionAction(): Promise<ActionResult> {
   }
 
   /*
-    [확인] `POST /api/companies/me/subscription/pay` — `BillingController.pay`, OWNER‖admin.
-    ⚠️ **봉투가 과도기다 — BE PR #461.** 지금 배포본은 `BillingPaymentActionResult` 맨몸이고,
-       #461부터 `ApiResponse<T>`로 온다. FE·BE가 어느 순서로 배포돼도 안전하도록
-       `isEnveloped: false`로 **원문을 받고**, 매퍼(`unwrapTransitionalEnvelope`)가 봉투
-       유무를 감지해 가른다 — 여기서 기본값으로 미리 바꾸면 BE 미배포 환경에서 맨몸 응답이
-       `undefined`로 벗겨져 **결제 실패가 성공으로 읽힌다**(§정직성). BE #461 배포가 전 환경에
-       확정되면 `isEnveloped` 기본값 경로로 되돌리고 감지를 걷어낸다.
-    ⚠️ **결제 전 구독 행이 없어도 된다** — #461의 `getOrCreateSubscription`이 `pay`에서
-       `UNPAID` 행을 만든다(옛 `BIL-001` 404 블로커 해소).
-    ⚠️ **실패도 HTTP 200이다.** 결제 실패는 예외가 아니라 값(`isSuccess:false`)으로 온다 —
-       `try/catch`만 두면 실패를 성공으로 넘긴다.
+    ⚠️⚠️ **임시 — Toss 실연동 여부가 [팀확정] 미정이라 결제사를 안 부른다**(2026-08-13,
+       사용자 확정). 화면 어디에도 카드 정보를 받는 자리가 없다(`CheckoutPanel`은 금액·동의
+       뿐, Toss SDK 위젯이 없다) — 그런데 이 자리는 원래 `POST /api/companies/me/subscription
+       /pay`를 실서버로 불렀다(`BillingController.pay`). BE는 등록된 결제수단이 있어야
+       통과시키는데(`NO_PAYMENT_METHOD`), 카드를 받을 길이 아예 없으니 실배포에서는 **이
+       버튼을 눌러도 영원히 실패**해 온보딩이 못 끝났다.
+    ⚠️ **그래서 목과 같은 값을 돌려준다 — BE 구독 상태는 그대로 `UNPAID`로 남는다.**
+       `/manage/billing`·`/subscription`이 이 회사를 다시 조회하면 여전히 결제 전으로
+       보인다(§정직성 — 여기서 감추지 않는다. 그 화면들의 상태 판정은 이 변경의 범위 밖이다).
+       middleware가 나중에 `canUseWorkspace`로 다시 막으면(`shell/entry.ts` 주석 — "지금은
+       미들웨어를 두지 않는다") **이 우회가 막힌다** — 그때는 BE에 카드 없이 활성화하는 길을
+       요청하거나 Toss를 실제로 붙여야 한다.
+    ⚠️ **Toss가 결정되면 이 블록을 지우고 실서버 호출로 되돌린다.** 원래 구현은 커밋 이력에
+       있다(`git log -p -- src/features/billing/actions.ts`에서 이 블록이 생긴 커밋의 부모를
+       본다) — 주석으로 코드를 남겨 두지 않는다(PR 체크리스트 §console·주석코드 금지).
   */
-  let result: BePaymentAction;
-  try {
-    const accessToken = await requireAccessToken();
-    result = parsePaymentAction(
-      await serverApi<unknown>(ep.subscriptionPay(), {
-        method: "POST",
-        accessToken,
-        isEnveloped: false,
-      }),
-    );
-  } catch (error) {
-    /*
-      ⚠️ **던지지 않고 값으로 돌려준다**(이 파일의 공통 규약). 부르는 쪽에 `try/catch`가 없어서
-         던지면 화면이 아무 반응 없이 멈춘다 — 통신 실패 문구는 `toUserMessage`가 고른다.
-    */
-    return { isSuccess: false, message: toUserMessage(error) };
-  }
-
-  if (!result.isSuccess) {
-    /*
-      ⚠️ 받는 건 **코드**다. 화면 문구는 `toFailureMessage`가 정한다 — BE 문자열을 그대로
-         뿌리면 `NO_PAYMENT_METHOD` 같은 게 화면에 뜬다.
-    */
-    return { isSuccess: false, message: toFailureMessage(result.failureCode ?? undefined) };
-  }
-
-  // 목 갈래와 **같은 곳을 갱신한다** — 결제로 바뀐 상태를 구독 재개 화면도 읽는다
   revalidatePath("/manage/billing");
   revalidatePath("/subscription");
   return { isSuccess: true };
