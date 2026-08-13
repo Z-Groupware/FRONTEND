@@ -9,6 +9,18 @@ const config: Config = {
   moduleNameMapper: {
     "^@/(.*)$": "<rootDir>/src/$1",
     /*
+      ⚠️ **`@/...` 별칭으로 걸면 안 된다.** SWC(next의 jest 트랜스포머)가 `tsconfig.json`의
+         `paths`를 이미 트랜스파일 시점에 써서 `@/components/common/markdown-content`를
+         `../../../components/common/markdown-content` 같은 **상대 경로로 먼저 바꿔치기한다**
+         (2026-08-13 실측 — `jest-transform-cache`에 남은 컴파일 결과로 확인). moduleNameMapper는
+         그 뒤에 남은 문자열을 보므로, 별칭이 아니라 **경로 끝(파일 이름)으로** 잡아야 호출한
+         파일의 상대 깊이와 무관하게 걸린다.
+      ⚠️ `react-markdown`·`remark-gfm`·`rehype-sanitize`는 ESM만 내놓는데 `next/jest`가
+         `transformIgnorePatterns`를 덮어써서 변환 대상에 못 넣는다 — 대역으로 바꾼다
+         (`lenis`와 같은 문제, 대역 파일 주석 참고).
+    */
+    "components/common/markdown-content$": "<rootDir>/test/markdown-content-stub.tsx",
+    /*
       ⚠️ `next/cache`를 대역으로 바꾼다. `"use server"` 파일을 클라이언트 컴포넌트가 import할 때
          실제 Next는 그 자리를 클라이언트 참조로 바꾸지만 jest에는 그 변환이 없어서,
          서버 내부 구현이 그대로 로드되며 jsdom에 없는 전역(`Request` 등)을 건드려 터진다.
