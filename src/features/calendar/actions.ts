@@ -78,8 +78,8 @@ export async function toggleTodoCompletionAction(id: string): Promise<void> {
       거부한다([확인] BE PL 가이드).
     */
     const numericId = id.trim() === "" ? NaN : Number(id);
-    if (!Number.isSafeInteger(numericId)) {
-      throw new Error("개인 Todo만 완료 처리할 수 있습니다");
+    if (!Number.isSafeInteger(numericId) || numericId <= 0) {
+      throw new Error("id가 올바르지 않습니다");
     }
 
     const accessToken = await requireAccessToken();
