@@ -5,17 +5,18 @@ import { TEAM_ACTION_PERSONAL_ITEMS_MOCK } from "@/features/project/mock/team-ac
 import { PROJECT_TEAM_ACTIONS_MOCK } from "@/features/project/mock/team-actions";
 import { ApiError, serverApi } from "@/lib/api";
 import { ep } from "@/lib/endpoints";
+import { paginate, type PaginatedResult } from "@/lib/paginate";
 import { isMock } from "@/mocks/config";
 
 import {
   type BeActionDetail,
   type BeActionSummary,
-  groupTeamActionsByProject,
   toMyActionListItem,
   toPersonalActionDetail,
+  toTeamActionListItem,
 } from "./mapper";
 import { PERSONAL_ACTION_DETAIL_MOCK } from "./mock/action-detail";
-import type { MyActionListItem, PersonalActionDetail, TeamActionProjectGroup } from "./types";
+import type { MyActionListItem, PersonalActionDetail, TeamActionListItem } from "./types";
 
 /** 로그인 팀장의 팀 — 세션 붙기 전까지 mock 분기에서만 쓰는 고정값(board/server.ts와 같은 인물). */
 const MOCK_LEADER_TEAM = "개발팀";
@@ -43,12 +44,26 @@ export async function getPersonalActionDetail(
   }
 }
 
+/** 한 화면에 그리는 줄 수 — BE 목록 기본값과 같다([확인] `ActionController.list`의 `size` 기본 20). */
+export const ACTION_PAGE_SIZE = 20;
+
 /**
- * 내 액션 목록(`/app/my/actions`) — 담당자 이름이 일치하는 개인 액션 전체, 마감 임박순.
+ * 내 액션 목록(`/app/my/actions`) 한 페이지 — 마감 임박순, **자르기는 서버가 한다.**
+ *
+ * ⚠️ `size: 9999`로 전량을 받지 않는다(CLAUDE.md §목록·페이지네이션 — 화면만 잘릴 뿐
+ *    10만 건을 다 받아 온다). 첫 페이지는 서버 컴포넌트가 렌더하고, 그 아래부터
+ *    스크롤이 끝에 닿으면 이어 붙인다.
+ * ⚠️ 정렬도 서버에 맡긴다(`sort=dueDate&order=asc`, [확인] BE
+ *    `action/presentation/api/ActionController.java` list — sort=dueDate|createdAt, order,
+ *    page 0-base, size 기본 20). 받아 와서 화면이 다시 정렬하면 페이지 경계가 어긋난다.
  * ⚠️ 실연동에선 `assigneeName`을 안 쓴다 — `GET /api/actions`가 이미 토큰의 본인 소유분만
  *    돌려준다(board/server.ts와 같은 이유). 파라미터는 mock 분기 전용으로 시그니처만 유지한다.
  */
-export async function getMyActionList(assigneeName: string): Promise<MyActionListItem[]> {
+export async function getMyActionsPage(
+  assigneeName: string,
+  page: number,
+  pageSize: number = ACTION_PAGE_SIZE,
+): Promise<PaginatedResult<MyActionListItem>> {
   if (isMock) {
     const list: MyActionListItem[] = [];
     for (const items of Object.values(TEAM_ACTION_PERSONAL_ITEMS_MOCK)) {
@@ -72,51 +87,101 @@ export async function getMyActionList(assigneeName: string): Promise<MyActionLis
         });
       }
     }
-    return list.sort((a, b) => a.dueDate.localeCompare(b.dueDate));
+    // 서버 정렬(sort=dueDate&order=asc)과 같은 순서로 굳힌 뒤 자른다 — 연동 시 화면이 안 바뀐다.
+    list.sort((a, b) => a.dueDate.localeCompare(b.dueDate));
+    return paginate(list, page, pageSize);
   }
 
+  /*
+    [확인] BE `global/response/PageResponse.java` — `content`·`page`·`size`·`totalElements`·
+    `totalPages`·`hasNext`. 목록 3종(projects·actions·team/actions) 공용 봉투라 사원 목록의
+    `MemberPageResponse`(`totalCount`)와 **필드명이 다르다** — 이름을 잘못 읽으면 `전체 N건`이
+    비고 다음 페이지 유무를 아무도 모르게 된다.
+  */
   const accessToken = await requireAccessToken();
-  const page = await serverApi<BePageResponse<BeActionSummary>>(ep.actions({ size: 9999 }), {
-    accessToken,
-  });
-  return page.content
+  const response = await serverApi<BePageResponse<BeActionSummary>>(
+    ep.actions({ sort: "dueDate", order: "asc", page: Math.max(0, page), size: pageSize }),
+    { accessToken },
+  );
+
+  /*
+    ⚠️ TEAM 타입은 방어적으로 거른다 — BE는 본인 소유 **PERSONAL만** 준다([확인]
+       `ActionService.getMyActions` 주석 "기본은 호출자 본인 소유 PERSONAL 액션")라 실제로는
+       안 걸리지만, 계약이 바뀌어 섞여 와도 화면이 팀 액션을 개인 액션인 척 그리지 않게 한다.
+    ⚠️ 거른 만큼 `totalElements`를 줄이지 않는다 — 그 숫자는 서버가 센 전체이고, 화면의
+       `전체 N건`은 그 값을 말해야 다음 페이지 유무와 어긋나지 않는다(member/manage-server.ts와
+       같은 규칙).
+  */
+  const items = response.content
     .filter((action) => action.actionType === "PERSONAL")
-    .map(toMyActionListItem)
-    .sort((a, b) => a.dueDate.localeCompare(b.dueDate));
+    .map(toMyActionListItem);
+
+  return {
+    items,
+    page: response.page,
+    totalPages: response.totalPages,
+    totalCount: response.totalElements,
+  };
 }
 
 /**
- * 팀 액션 관리(`/team/action`) — 로그인 팀장의 팀 액션 전체를 프로젝트별로 묶어 돌려준다.
+ * 팀 액션 관리(`/team/action`) 한 페이지 — **평평한 목록**으로 돌려준다. 프로젝트별 묶기는
+ * 화면이 이어 붙인 전체를 대상으로 매번 다시 한다(`groupTeamActionsByProject`) — 서버가
+ * 그룹을 만들면 페이지 경계에 걸린 그룹을 이어 붙일 수 없다.
+ *
+ * ⚠️ `size: 9999` 전량 수신을 없앴다(§목록·페이지네이션). 정렬은 서버가 한다
+ *    (`sort=dueDate&order=asc`, [확인] BE `action/presentation/api/TeamActionController.java`
+ *    list — sort=dueDate|createdAt, order, page 0-base, size 기본 20).
  * ⚠️ 실연동은 `GET /api/team/actions`가 JWT teamId로 이미 자동 스코프하므로 팀명을 안 넘긴다.
  *    mock은 세션이 없어 팀명 필터가 필요하다(board/server.ts와 같은 이유).
  */
-export async function getTeamActionsGroupedByProject(): Promise<TeamActionProjectGroup[]> {
+export async function getTeamActionsPage(
+  page: number,
+  pageSize: number = ACTION_PAGE_SIZE,
+): Promise<PaginatedResult<TeamActionListItem>> {
   if (isMock) {
-    const groups: TeamActionProjectGroup[] = [];
+    const list: TeamActionListItem[] = [];
+    /*
+      ⚠️ 목은 팀 액션을 **태그로** 찾는데 태그는 프로젝트끼리 겹칠 수 있다(GOODS가 둘,
+         §라우트 그룹 — URL도 그래서 태그가 아니라 id로 다닌다). 그대로 펼치면 같은 액션
+         id가 두 프로젝트에 중복돼, 이어 붙일 때 id로 거르는 규칙(§목록·페이지네이션)이
+         뒤 페이지의 정상 행을 지워 버린다 — 먼저 만난 프로젝트가 가진다. 실 BE는 액션이
+         프로젝트 FK를 직접 들고 있어 이 문제가 없다.
+    */
+    const seen = new Set<number>();
     for (const project of TOP_LEVEL_PROJECTS) {
-      const teamActions = (PROJECT_TEAM_ACTIONS_MOCK[project.tag] ?? []).filter(
-        (action) => action.team === MOCK_LEADER_TEAM,
-      );
-      if (teamActions.length === 0) continue;
-      groups.push({
-        projectId: project.id,
-        projectName: project.name,
-        projectTag: project.tag,
-        teamActions: teamActions.map((action) => ({
+      for (const action of PROJECT_TEAM_ACTIONS_MOCK[project.tag] ?? []) {
+        if (action.team !== MOCK_LEADER_TEAM) continue;
+        if (seen.has(action.id)) continue;
+        seen.add(action.id);
+        list.push({
           id: action.id,
           name: action.name,
           startDate: action.startDate,
           dueDate: action.dueDate,
           status: action.status,
-        })),
-      });
+          projectId: project.id,
+          projectName: project.name,
+          projectTag: project.tag,
+        });
+      }
     }
-    return groups;
+    // 서버 정렬(sort=dueDate&order=asc)과 같은 순서로 굳힌 뒤 자른다 — 연동 시 화면이 안 바뀐다.
+    list.sort((a, b) => a.dueDate.localeCompare(b.dueDate));
+    return paginate(list, page, pageSize);
   }
 
+  /* [확인] BE `global/response/PageResponse.java` — 위 `getMyActionsPage`와 같은 공용 봉투. */
   const accessToken = await requireAccessToken();
-  const page = await serverApi<BePageResponse<BeActionSummary>>(ep.teamActions({ size: 9999 }), {
-    accessToken,
-  });
-  return groupTeamActionsByProject(page.content);
+  const response = await serverApi<BePageResponse<BeActionSummary>>(
+    ep.teamActions({ sort: "dueDate", order: "asc", page: Math.max(0, page), size: pageSize }),
+    { accessToken },
+  );
+
+  return {
+    items: response.content.map(toTeamActionListItem),
+    page: response.page,
+    totalPages: response.totalPages,
+    totalCount: response.totalElements,
+  };
 }
