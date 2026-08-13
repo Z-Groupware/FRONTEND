@@ -3,6 +3,8 @@
 import { ArrowUpRight, Mail, MessageCircleQuestion } from "lucide-react";
 import Link from "next/link";
 
+import { MarkdownContent } from "@/components/common/markdown-content";
+
 import {
   FAQ_CATEGORY,
   FAQ_CATEGORY_ICON,
@@ -53,13 +55,22 @@ export function SupportTurn({ turn, isOpening, onPickCategory, onPickEntry }: Su
     */
     <div className="border-border bg-secondary max-w-[92%] rounded-2xl rounded-bl-sm border px-3.5 py-3">
       {/*
-        ⚠️ `whitespace-pre-line` — 답에 넣어 둔 빈 줄이 그대로 문단이 된다.
-        ⚠️ **평문이다.** 마크다운을 렌더하지 않으므로 답변에 별표를 쓰면 그대로 보인다 —
-           강조가 필요하면 문장 구조로 푼다(§정직성).
+        ⚠️ **답만 마크다운을 렌더한다**(공지 본문과 같은 `MarkdownContent`, §AI 기능:
+           XSS 방어는 `rehype-sanitize`가 맡는다). 우리가 미리 써 둔 답이라 안전하지만,
+           같은 컴포넌트를 쓰는 게 방어를 두 벌로 안 만든다.
+        ⚠️ 되묻는 말(갈래·질문 목록 위 안내 문구)은 짧은 고정 문구라 그대로 평문 +
+           `whitespace-pre-line`을 쓴다 — 빈 줄이 그대로 문단이 된다.
       */}
-      <p className="text-popover-foreground text-[12px] leading-[20px] break-keep whitespace-pre-line">
-        {turn.kind === "answer" ? turn.entry.answer : turn.text}
-      </p>
+      {turn.kind === "answer" ? (
+        <MarkdownContent
+          content={turn.entry.answer}
+          className="text-popover-foreground max-w-none text-[12px] leading-[20px] break-keep"
+        />
+      ) : (
+        <p className="text-popover-foreground text-[12px] leading-[20px] break-keep whitespace-pre-line">
+          {turn.text}
+        </p>
+      )}
 
       {turn.kind === "categories" && (
         <ul className="flex flex-col gap-1 pt-2.5">

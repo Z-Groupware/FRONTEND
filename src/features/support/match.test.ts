@@ -179,4 +179,31 @@ describe("findFaqCandidates", () => {
   ])("`%s`는 인수인계 절차 항목에 닿는다", (question) => {
     expect(findFaqCandidates(question).map((found) => found.id)).toContain("handover-flow");
   });
+
+  /*
+    ⚠️ **요금 답변에는 "무료 요금제"·"결제하셔야" 문구가 들어가면 안 된다**(CLAUDE.md §요금제).
+       한 곳만 남아도 돈을 안 받는 것처럼 읽힌다 — 구독 상태(ACTIVE·CANCELING·UNPAID·EXPIRED)
+       용어로만 답한다. 토끼 PR #458 지적을 다시 들어와도 잡히게 여기서 못 박는다.
+  */
+  it("가격 관련 답변은 '무료 요금제'·'결제하셔야' 문구를 쓰지 않고 구독 상태 용어로 답한다", () => {
+    const freeEntry = FAQ_ENTRIES.find((entry) => entry.id === "free");
+
+    expect(freeEntry).toBeDefined();
+    expect(freeEntry?.answer).not.toMatch(/무료\s*요금제/);
+    expect(freeEntry?.answer).not.toMatch(/결제하셔야/);
+    expect(freeEntry?.answer).toMatch(/ACTIVE/);
+  });
+
+  /*
+    ⚠️ **"무료"는 화면 전체 답변에서 금지다**(CLAUDE.md §요금제 — "화면에 '무료'·'결제 없이'라고
+       쓰지 않는다"). 부정형("무료 요금제는 없습니다")이어도 "무료"라는 글자가 남으면 훑어보는
+       사람은 맥락 없이 그 단어만 본다 — id="free" 하나만 검사하면 다른 항목(trial 등)에서
+       같은 위반이 새로 생겨도 안 잡힌다. **모든 답변**을 훑는다(2026-08-13 적대적 검증에서
+       trial 항목이 이 검사 없이 빠져나간 걸 잡았다).
+  */
+  it("어느 답변에도 화면에 '무료'라는 글자가 남지 않는다", () => {
+    const violations = FAQ_ENTRIES.filter((entry) => entry.answer.includes("무료"));
+
+    expect(violations.map((entry) => entry.id)).toEqual([]);
+  });
 });
