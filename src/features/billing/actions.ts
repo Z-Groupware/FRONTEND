@@ -2,10 +2,19 @@
 
 import { revalidatePath } from "next/cache";
 
+import { requireAccessToken } from "@/features/auth/session";
 import { getViewer } from "@/features/shell/viewer";
+import { serverApi, toUserMessage } from "@/lib/api";
+import { ep } from "@/lib/endpoints";
 import { canManageBilling } from "@/lib/permission";
 import { isMock } from "@/mocks/config";
 
+import {
+  type BePaymentAction,
+  parsePaymentAction,
+  parsePaymentMethod,
+  toPaymentMethod,
+} from "./mapper";
 import { toFailureMessage } from "./payment";
 import type { CardAuthResult } from "./payment-method";
 import type { PaymentMethod } from "./subscription";
@@ -75,10 +84,49 @@ export async function confirmSubscriptionAction(): Promise<ActionResult> {
     return { isSuccess: true };
   }
 
-  // TODO(BE 협의): `POST /companies/me/subscription/pay` → { isSuccess, failureCode }
-  //   ⚠️ 받는 건 **코드**다. 화면 문구는 `toFailureMessage`가 정한다 — BE 문자열을 그대로
-  //      뿌리면 `INVALID_CARD_COMPANY` 같은 게 화면에 뜬다.
-  return { isSuccess: false, message: toFailureMessage() };
+  /*
+    [확인] `POST /api/companies/me/subscription/pay` — `BillingController.pay`, OWNER‖admin.
+    ⚠️ **봉투가 과도기다 — BE PR #461.** 지금 배포본은 `BillingPaymentActionResult` 맨몸이고,
+       #461부터 `ApiResponse<T>`로 온다. FE·BE가 어느 순서로 배포돼도 안전하도록
+       `isEnveloped: false`로 **원문을 받고**, 매퍼(`unwrapTransitionalEnvelope`)가 봉투
+       유무를 감지해 가른다 — 여기서 기본값으로 미리 바꾸면 BE 미배포 환경에서 맨몸 응답이
+       `undefined`로 벗겨져 **결제 실패가 성공으로 읽힌다**(§정직성). BE #461 배포가 전 환경에
+       확정되면 `isEnveloped` 기본값 경로로 되돌리고 감지를 걷어낸다.
+    ⚠️ **결제 전 구독 행이 없어도 된다** — #461의 `getOrCreateSubscription`이 `pay`에서
+       `UNPAID` 행을 만든다(옛 `BIL-001` 404 블로커 해소).
+    ⚠️ **실패도 HTTP 200이다.** 결제 실패는 예외가 아니라 값(`isSuccess:false`)으로 온다 —
+       `try/catch`만 두면 실패를 성공으로 넘긴다.
+  */
+  let result: BePaymentAction;
+  try {
+    const accessToken = await requireAccessToken();
+    result = parsePaymentAction(
+      await serverApi<unknown>(ep.subscriptionPay(), {
+        method: "POST",
+        accessToken,
+        isEnveloped: false,
+      }),
+    );
+  } catch (error) {
+    /*
+      ⚠️ **던지지 않고 값으로 돌려준다**(이 파일의 공통 규약). 부르는 쪽에 `try/catch`가 없어서
+         던지면 화면이 아무 반응 없이 멈춘다 — 통신 실패 문구는 `toUserMessage`가 고른다.
+    */
+    return { isSuccess: false, message: toUserMessage(error) };
+  }
+
+  if (!result.isSuccess) {
+    /*
+      ⚠️ 받는 건 **코드**다. 화면 문구는 `toFailureMessage`가 정한다 — BE 문자열을 그대로
+         뿌리면 `NO_PAYMENT_METHOD` 같은 게 화면에 뜬다.
+    */
+    return { isSuccess: false, message: toFailureMessage(result.failureCode ?? undefined) };
+  }
+
+  // 목 갈래와 **같은 곳을 갱신한다** — 결제로 바뀐 상태를 구독 재개 화면도 읽는다
+  revalidatePath("/manage/billing");
+  revalidatePath("/subscription");
+  return { isSuccess: true };
 }
 
 /**
@@ -107,8 +155,38 @@ export async function registerCardAction(
     };
   }
 
-  // TODO(BE 협의): `POST /companies/me/payment-methods` { authKey, customerKey } → PaymentMethod
-  return { isSuccess: false, message: "결제 수단을 저장하지 못했습니다" };
+  /*
+    [확인] `POST /api/companies/me/payment-methods` — `BillingController.registerPaymentMethod`,
+      OWNER‖admin, 본문 `{ authKey, customerKey }`(`RegisterPaymentMethodRequest`).
+    ⚠️ **경로가 복수형이다.** 우리가 보낸 스펙은 단수(`/payment-method`)였는데 BE가 복수로
+       구현했다 — 문서와 코드가 다르면 코드가 맞다(§연동 검증). `ep`에 복수로 적어 뒀다.
+    ⚠️ **여기도 봉투가 과도기다 — BE PR #461**(위 `confirmSubscriptionAction`과 같은 처리).
+       지금 배포본은 `PaymentMethodResponse` 맨몸, #461부터 봉투 — `isEnveloped: false`로
+       원문을 받고 매퍼가 감지한다. 배포 확정 후 기본값 경로로 되돌린다.
+    ⚠️ `customerKey`는 **기업 id**여야 한다. BE가 principal의 companyId와 대조해서 다르면
+       `BIL-009`로 400을 낸다(`BillingCommandService.register`) — 사람이 아니라 회사가 구독한다.
+    ⚠️ 실패는 **예외로 온다**(결제와 다르다). 잘못된 authKey는 `BIL-004`, 회사 불일치는 `BIL-009`로
+       4xx가 떨어지므로 `toUserMessage`가 BE 문장을 그대로 화면에 올린다.
+  */
+  let method: PaymentMethod;
+  try {
+    const accessToken = await requireAccessToken();
+    method = toPaymentMethod(
+      parsePaymentMethod(
+        await serverApi<unknown>(ep.paymentMethods(), {
+          method: "POST",
+          accessToken,
+          isEnveloped: false,
+          json: { authKey: auth.authKey, customerKey: auth.customerKey },
+        }),
+      ),
+    );
+  } catch (error) {
+    return { isSuccess: false, message: toUserMessage(error) };
+  }
+
+  revalidatePath("/manage/billing");
+  return { isSuccess: true, method };
 }
 
 /*
@@ -132,7 +210,28 @@ export async function toggleCancelAction(isCanceling: boolean): Promise<ActionRe
     return { isSuccess: true };
   }
 
-  // TODO(BE 협의): `POST /companies/me/subscription/cancel` { isCanceling }
-  void isCanceling;
-  return { isSuccess: false, message: "구독 상태를 바꾸지 못했습니다" };
+  /*
+    [확인] `POST /api/companies/me/subscription/cancel` — `BillingController.toggleCancel`,
+      OWNER‖admin, 본문 `{ isCanceling }`(`ToggleSubscriptionCancelRequest`).
+    ⚠️ **여기는 봉투가 있다**(`ApiResponse<Void>`) — 같은 컨트롤러 안에서도 메서드마다 다르다.
+       `data`가 없으니 `serverApi`가 `undefined`를 주는데, 돌려받을 값이 없어 그대로 둔다.
+    ⚠️ **되돌릴 수 없는 상태에서는 BE가 막는다.** `EXPIRED`·`UNPAID`·`CANCELED`면 `BIL-010`으로
+       400이 온다(`BillingCommandService.toggleCancel`) — 화면이 버튼을 감추더라도 서버가 다시
+       본다(§권한: 화면 숨김은 보안이 아니다).
+  */
+  try {
+    const accessToken = await requireAccessToken();
+    await serverApi<void>(ep.subscriptionCancel(), {
+      method: "POST",
+      accessToken,
+      json: { isCanceling },
+    });
+  } catch (error) {
+    return { isSuccess: false, message: toUserMessage(error) };
+  }
+
+  // 해지·재개도 구독 상태를 바꾼다 — 재개 화면이 같은 값을 읽는다
+  revalidatePath("/manage/billing");
+  revalidatePath("/subscription");
+  return { isSuccess: true };
 }

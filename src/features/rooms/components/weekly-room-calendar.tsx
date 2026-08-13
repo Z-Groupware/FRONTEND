@@ -6,11 +6,12 @@ import "./weekly-room-calendar.css";
 import { format, getDay, parse, startOfWeek } from "date-fns";
 import { ko } from "date-fns/locale";
 import { useRouter } from "next/navigation";
-import { useCallback, useMemo } from "react";
-import { Calendar, dateFnsLocalizer, type SlotInfo, type ToolbarProps } from "react-big-calendar";
+import { type MouseEvent as ReactMouseEvent, useCallback, useMemo } from "react";
+import { Calendar, dateFnsLocalizer, type ToolbarProps } from "react-big-calendar";
 
 import { getReservationAccentColor } from "../accent-color";
 import { WEEKLY_CALENDAR_HEIGHT_PX } from "../calendar-height";
+import { findSlotStart, GRID_END_HOUR, GRID_START_HOUR, SLOT_MINUTES } from "../grid-slot";
 import type { MeetingRoom, RoomCalendarEvent, RoomMember } from "../types";
 import { RoomReservationEvent } from "./room-reservation-event";
 import { RoomsCalendarToolbar } from "./rooms-calendar-toolbar";
@@ -79,9 +80,30 @@ export function WeeklyRoomCalendar({
     [router, week],
   );
 
-  const handleSelectSlot = useCallback(
-    (slotInfo: SlotInfo) => onSelectSlot(slotInfo.start),
-    [onSelectSlot],
+  /**
+   * 빈 칸을 누르면 그 30분 칸의 시작 시각을 올려보낸다 — **RBC의 `selectable`을 안 쓴다.**
+   *
+   * ⚠️ 그쪽 좌표 계산이 화면 배율(`transform: scale()`)에서 옆 날짜·옆 시간대를 골랐다
+   *    (#141). 이유와 대안은 `grid-slot.ts`에 적었다.
+   * ⚠️ 리스너는 RBC 뿌리 `div`에 그대로 얹는다(`elementProps`) — 감싸는 `div`를 하나 더 두면
+   *    `lg:h-full`이 기대는 flex 사슬이 한 겹 끊겨 캘린더 높이가 무너진다.
+   * ⚠️ 키보드로는 `RoomListPanel`의 [회의 추가]가 같은 모달을 연다 — 격자 클릭이 유일한
+   *    길이 아니다(CLAUDE.md §a11y).
+   * ⚠️ 기준일은 `week`가 아니라 **그 주의 월요일**로 한 번 더 접는다. `work_week` 뷰는 어떤
+   *    날짜를 줘도 그 주 월~금을 그리므로, 첫 열이 곧 월요일이다 — URL이 주 중간 날짜를
+   *    들고 와도 열 번호와 날짜가 안 갈린다.
+   */
+  const weekStart = useMemo(() => startOfWeek(currentDate, { weekStartsOn: 1 }), [currentDate]);
+
+  const handleGridClick = useCallback(
+    (event: ReactMouseEvent<HTMLElement>) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+
+      const start = findSlotStart({ target, clientY: event.clientY, weekStart });
+      if (start) onSelectSlot(start);
+    },
+    [weekStart, onSelectSlot],
   );
 
   const EventComponent = useCallback(
@@ -119,12 +141,11 @@ export function WeeklyRoomCalendar({
       date={currentDate}
       onNavigate={handleNavigate}
       components={{ toolbar: ToolbarComponent, event: EventComponent }}
-      step={30}
+      step={SLOT_MINUTES}
       timeslots={2}
-      min={new Date(0, 0, 0, 8, 0, 0)}
-      max={new Date(0, 0, 0, 18, 0, 0)}
-      selectable
-      onSelectSlot={handleSelectSlot}
+      min={new Date(0, 0, 0, GRID_START_HOUR, 0, 0)}
+      max={new Date(0, 0, 0, GRID_END_HOUR, 0, 0)}
+      elementProps={{ onClick: handleGridClick }}
       className="lg:h-full!"
       style={{ height: WEEKLY_CALENDAR_HEIGHT_PX }}
       formats={{
