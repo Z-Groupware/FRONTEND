@@ -31,7 +31,5 @@ export async function getMonthEvents(month: Date): Promise<PersonalCalendarEvent
     accessToken,
   });
 
-  return items
-    .map((item, index) => toPersonalCalendarEvent(item, index))
-    .filter((event): event is PersonalCalendarEvent => event !== null);
+  return items.map((item, index) => toPersonalCalendarEvent(item, index));
 }
