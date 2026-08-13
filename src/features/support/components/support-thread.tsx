@@ -21,6 +21,9 @@ interface SupportThreadProps {
  * ⚠️ `role="log"` — 답이 새로 붙는 걸 스크린 리더가 따라 읽는다.
  * ⚠️ 스크롤 막대는 **사이트 전체에서 감춘다**(`globals.css`) — 여기서 따로 붙이지 않는다.
  *    막대만 지우는 것이라 휠·트랙패드·키보드는 그대로다.
+ * ⚠️ **`data-lenis-prevent`가 필요하다.** 랜딩 전체는 `SmoothScroll`(Lenis)이 휠을 가로채
+ *    `#app-scroll`을 굴린다 — 이 속성이 없으면 이 창 안에서 굴려도 Lenis가 이벤트를
+ *    가로채 뒤에 있는 랜딩 페이지가 스크롤되고, 이 안은 안 움직인다(§smooth-scroll).
  */
 export function SupportThread({ turns, onPickCategory, onPickEntry }: SupportThreadProps) {
   const boxRef = useRef<HTMLDivElement>(null);
@@ -46,6 +49,7 @@ export function SupportThread({ turns, onPickCategory, onPickEntry }: SupportThr
          `tabIndex`가 없으면 키보드만 쓰는 사람은 위로 올라간 답을 아예 못 읽는다(§a11y) */
       tabIndex={0}
       ref={boxRef}
+      data-lenis-prevent
       className="flex flex-1 flex-col overflow-y-auto p-4"
     >
       {turns.length === 1 && <Greeting />}
