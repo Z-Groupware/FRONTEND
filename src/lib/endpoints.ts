@@ -86,7 +86,24 @@ export const ep = {
    * ⚠️ 파라미터 뜻·주의는 {@link MeetingListParams} — 특히 `from`·`to`를 비우면 예정 회의가 빠진다.
    */
   meetings: (params?: MeetingListParams) => `/api/meetings${toQuery(params)}`,
-  /** 상세(MEET-04) — 캡처 진입도 이걸 쓴다. 없으면 404 `MT-001`, 열람 권한 없으면 403 `MT-011` */
+  /**
+   * 한 회의의 세 갈래가 **같은 경로**를 쓴다 — `GET` 상세(MEET-04, 캡처 진입도 이걸 쓴다) ·
+   * `PATCH` 수정(MEET-05) · `DELETE` 취소(MEET-06). 없으면 404 `MT-001`, 열람 권한 없으면 403 `MT-011`.
+   *
+   * ⚠️ **MEET-05용 `meetingUpdate`를 따로 만들지 않는다.** 경로 문자열이 같은데 함수를 둘로
+   *    두면 BE가 경로를 옮길 때 한쪽만 고쳐진다(§도메인 상수: 값은 한 곳) — 이미 DELETE(MEET-06)가
+   *    같은 자리를 쓰고 있다. 명세 번호로 찾는 사람을 위해 셋을 여기 다 적어 둔다.
+   * ⚠️ **PATCH는 시작 전(`SCHEDULED`) 회의만 받는다.** 진행중·완료·취소는 409 `MT-014`
+   *    ("이미 시작된 회의는 수정·취소할 수 없습니다") — 확정된 캡처 시간축 때문이다.
+   * ⚠️ PATCH 본문은 **보낸 키만** 바뀐다(BE가 `@JsonSetter`로 미전달과 명시적 null을 가른다) —
+   *    `title`·`projectId`·`meetingRoomId`·`startAt`·`endAt`·`recordingConsent` 6개가 대상이고,
+   *    보낸 키에 `null`을 실으면 400이다(필수 컬럼을 지우는 요청으로 본다).
+   * ⚠️ 시간·회의실을 바꾸면 예약 규칙을 다시 탄다 — 30분 그리드(400 `MT-005`)·회의실 운영시간
+   *    (400 `MT-004`)·과거 시각(400 `MT-012`)·중복 예약(409 `MT-002`).
+   *
+   * [확인] `meeting/presentation/api/{MeetingUpdateController,request/UpdateMeetingRequest}.java` ·
+   *   `application/service/MeetingUpdateService.java`(2026-08-13).
+   */
   meeting: (id: number) => `/api/meetings/${id}`,
   /**
    * 대시보드 최근 회의(MEET-17, 구현 완료) — [확인] `meeting/presentation/api/DashboardMeetingController.java`

@@ -20,10 +20,11 @@ import { ACTION_STATUS_LABEL } from "@/constants/action";
 import type { RoomMember } from "@/features/rooms/types";
 import { formatDate } from "@/lib/date";
 
-import { canCancelMeeting, canEditMeetingAttendees } from "../status";
+import { canCancelMeeting, canEditMeeting, canEditMeetingAttendees } from "../status";
 import type { MeetingContentPending, MeetingDetail } from "../view-types";
 import { MeetingAttendeesEditDialog } from "./meeting-attendees-edit-dialog";
 import { MeetingCancelDialog } from "./meeting-cancel-dialog";
+import { MeetingEditDialog } from "./meeting-edit-dialog";
 import { ProjectAccent } from "./project-accent";
 
 /**
@@ -216,6 +217,7 @@ export function MeetingDetailView({ detail, members, viewerTeamName }: MeetingDe
   const actionsState = actionsSectionStateOf(detail);
   const canEditAttendees = canEditMeetingAttendees(detail);
   const canCancel = canCancelMeeting(detail);
+  const canEdit = canEditMeeting(detail);
 
   return (
     /*
@@ -248,7 +250,18 @@ export function MeetingDetailView({ detail, members, viewerTeamName }: MeetingDe
                 {detail.title}
               </h2>
             </div>
-            {canCancel && <MeetingCancelDialog meetingId={detail.id} />}
+            {/*
+              ⚠️ **수정이 취소보다 앞이다.** 되돌릴 수 없는 쪽(취소)을 오른쪽 끝에 둔다 —
+                 잘못 잡은 회의를 고치러 온 사람이 먼저 만나야 하는 건 [회의 수정]이다
+                 (그게 없어서 취소 후 재개설밖에 없었다, #419).
+              ⚠️ 둘 다 시작 전(SCHEDULED) 회의에만 뜬다 — BE가 그 뒤로는 409로 막는다.
+            */}
+            {(canEdit || canCancel) && (
+              <div className="flex shrink-0 items-center gap-2">
+                {canEdit && <MeetingEditDialog meetingId={detail.id} currentTitle={detail.title} />}
+                {canCancel && <MeetingCancelDialog meetingId={detail.id} />}
+              </div>
+            )}
           </div>
           <div className="pt-1.5">
             <OriginLine detail={detail} />

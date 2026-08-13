@@ -45,3 +45,30 @@ export function meetingListRange(now: Date): { from: string; to: string } {
 
   return { from: shifted(-MEETING_LIST_RANGE_MONTHS), to: shifted(MEETING_LIST_RANGE_MONTHS) };
 }
+
+/** BE `UpdateMeetingRequest.title`의 `@Size(max = 200)`과 같은 값이다 — 어긋나면 화면이 통과시킨 값을 서버가 막는다. */
+export const MEETING_TITLE_MAX_LENGTH = 200;
+
+export type MeetingTitleCheck = { ok: true; title: string } | { ok: false; error: string };
+
+/**
+ * 회의 제목(MEET-05)이 BE 계약 안에 드는지 — **보내기 전에 여기서 본다.**
+ *
+ * ⚠️ 서버 검증을 대신하지 않는다. BE도 공백·200자 초과를 400으로 막는다
+ *    (`MeetingUpdateService.normalizeTitle`) — 여기서 먼저 보는 건 **필드 옆에 이유를 적기**
+ *    위해서다. 왕복해 받은 400은 폼 전체 오류로밖에 못 보여준다(§토스트: 폼 검증 오류는 인라인).
+ * ⚠️ **BE와 같은 자리를 잰다** — 앞뒤 공백을 없앤 뒤(`trim`) 길이를 센다. 다르게 재면
+ *    화면은 통과시키는데 서버가 막는 값이 생긴다.
+ * ⚠️ 던지지 않고 값으로 돌려준다 — 부르는 쪽(Server Action)이 폼 상태로 그대로 옮긴다.
+ */
+export function checkMeetingTitle(raw: string): MeetingTitleCheck {
+  const title = raw.trim();
+  if (title.length === 0) return { ok: false, error: "회의 제목을 입력해 주세요." };
+  if (title.length > MEETING_TITLE_MAX_LENGTH) {
+    return {
+      ok: false,
+      error: `회의 제목은 ${MEETING_TITLE_MAX_LENGTH}자까지 입력할 수 있습니다.`,
+    };
+  }
+  return { ok: true, title };
+}

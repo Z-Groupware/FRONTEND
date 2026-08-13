@@ -1,4 +1,4 @@
-import { formatMeetingSchedule } from "./lib";
+import { checkMeetingTitle, formatMeetingSchedule, MEETING_TITLE_MAX_LENGTH } from "./lib";
 
 describe("formatMeetingSchedule", () => {
   it("우리 날짜 표기와 시각 범위를 한 줄로 잇는다", () => {
@@ -17,5 +17,39 @@ describe("formatMeetingSchedule", () => {
     const end = new Date("2026-08-14T08:30:00+09:00");
 
     expect(formatMeetingSchedule(start, end)).toBe("8월 14일(금) 08:00 – 08:30");
+  });
+});
+
+/** 제목 계약이 어긋나면 화면이 통과시킨 값을 서버가 400으로 되돌린다(MEET-05) */
+describe("checkMeetingTitle", () => {
+  it("앞뒤 공백을 떼고 통과시킨다 — BE도 같은 자리를 자른다", () => {
+    expect(checkMeetingTitle("  8월 스프린트 킥오프  ")).toEqual({
+      ok: true,
+      title: "8월 스프린트 킥오프",
+    });
+  });
+
+  it("공백만 있는 제목은 막는다 — BE가 필수 컬럼을 지우는 요청으로 본다", () => {
+    expect(checkMeetingTitle("   ")).toEqual({
+      ok: false,
+      error: "회의 제목을 입력해 주세요.",
+    });
+  });
+
+  it("빈 문자열도 같은 이유로 막는다", () => {
+    expect(checkMeetingTitle("").ok).toBe(false);
+  });
+
+  it("200자는 통과하고 201자는 막는다 — BE `@Size(max = 200)`과 같은 경계다", () => {
+    expect(checkMeetingTitle("가".repeat(MEETING_TITLE_MAX_LENGTH)).ok).toBe(true);
+    expect(checkMeetingTitle("가".repeat(MEETING_TITLE_MAX_LENGTH + 1))).toEqual({
+      ok: false,
+      error: "회의 제목은 200자까지 입력할 수 있습니다.",
+    });
+  });
+
+  /* ⚠️ 자르고 나서 재야 한다 — 공백 포함 201자인데 실제 저장은 200자인 값을 막으면 안 된다 */
+  it("공백을 뗀 뒤의 길이로 잰다", () => {
+    expect(checkMeetingTitle(` ${"가".repeat(MEETING_TITLE_MAX_LENGTH)} `).ok).toBe(true);
   });
 });

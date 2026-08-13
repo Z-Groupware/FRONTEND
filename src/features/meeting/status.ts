@@ -83,3 +83,20 @@ export function canEditMeetingAttendees(
 export function canCancelMeeting(detail: Pick<MeetingDetail, "isHost" | "pendingReason">): boolean {
   return detail.isHost && detail.pendingReason === "SCHEDULED";
 }
+
+/**
+ * 회의 수정(MEET-05) 가능 여부 — **시작 전(SCHEDULED)만**.
+ *
+ * ⚠️ **BE가 그 자리에서 막는다.** `MeetingUpdateService`는 상태가 `SCHEDULED`가 아니면
+ *    409 `MT-014`를 던진다 — 입장·종료가 시작된 회의는 캡처 시간축이 확정돼 시간을 되돌릴
+ *    수 없기 때문이다. **서버가 안 받는 자리에 버튼을 두지 않는다**(§정직성).
+ * ⚠️ 취소(`canCancelMeeting`)와 지금은 조건이 같지만 **이름을 따로 둔다.** 둘은 각자 다른 BE
+ *    계약(MEET-05·MEET-06)을 보고 있어서 한쪽 관문이 바뀌면 여기서 갈라져야 한다 — 지금
+ *    같다고 합치면 그때 두 기능이 함께 틀린다.
+ * ⚠️ 화면 판정은 `isHost`뿐이지만 **서버는 host·OWNER·ADMIN까지 받는다**(`canManageMeeting` —
+ *    BE `MeetingUpdateService.canManageMeeting`과 같은 범위). 화면 숨김은 UX고 판정은
+ *    Server Action이 다시 한다(§권한).
+ */
+export function canEditMeeting(detail: Pick<MeetingDetail, "isHost" | "pendingReason">): boolean {
+  return detail.isHost && detail.pendingReason === "SCHEDULED";
+}
