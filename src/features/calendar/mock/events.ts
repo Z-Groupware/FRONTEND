@@ -62,7 +62,6 @@ export function addMockTodo(draft: PersonalTodoDraft): PersonalCalendarEvent {
     end: new Date(`${draft.endDate}T00:00:00`),
     tag: CALENDAR_ITEM_TAG.PERSONAL_TODO,
     isCompleted: false,
-    color: draft.color,
   };
   store.events = [...store.events, event];
   return event;

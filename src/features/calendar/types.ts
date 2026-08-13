@@ -52,7 +52,6 @@ export interface PersonalTodoDraft {
   date: string;
   /** 끝 날짜 "YYYY-MM-DD" — 시작 날짜보다 이전일 수 없다. */
   endDate: string;
-  color?: string;
 }
 
 export type PersonalTodoFormErrors = Partial<Record<keyof PersonalTodoDraft, string>>;

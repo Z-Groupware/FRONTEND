@@ -34,7 +34,7 @@ export default async function ManageRoomsPage() {
   return (
     <main className="min-h-0 flex-1 overflow-y-auto px-8 py-7">
       <div className="mx-auto flex max-w-[1440px] flex-col gap-4">
-        {canManage && (
+        {!canManage && (
           <div className="flex justify-end">
             <RoomCreateDialog />
           </div>
