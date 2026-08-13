@@ -10,6 +10,7 @@ import { ep } from "@/lib/endpoints";
 import { assertPermission, canOperateMeeting } from "@/lib/permission";
 import { isMock } from "@/mocks/config";
 
+import { hostIdOf, parseMeetingDetail } from "../mapper";
 import { findMockMeetingReview, markMockReviewConfirmed } from "./mock/review";
 import type { ManualDraftInput } from "./types";
 
@@ -45,15 +46,38 @@ export interface RejectedDraftInput {
 export interface ConfirmActionDistributionPayload {
   reviewed: ReviewedDraftInput[];
   rejected: RejectedDraftInput[];
-  manuallyAdded: ManualDraftInput[];
+  /** ⚠️ `localId`를 함께 보낸다 — 만든 결과를 화면의 그 초안과 맞춰 주기 위해서다 */
+  manuallyAdded: (ManualDraftInput & { localId: string })[];
 }
 
-export type ConfirmActionDistributionResult =
-  | { status: "confirmed"; createdCount: number; skippedCount: number }
-  | { status: "alreadyConfirmed" | "notFound"; createdCount: 0 }
-  /** 확인되지 않은 STT 구간 등으로 BE가 확정을 멈췄다(409) — `force`로만 강행한다 */
-  | { status: "blocked"; message: string }
-  | { status: "failed"; message: string };
+/**
+ * 직접 추가한 초안이 서버에서 받은 id — **화면이 로컬 초안을 이 id로 갈아 끼운다.**
+ *
+ * ⚠️ **재시도 이중 생성을 막는 자리다**(2026-08-13, 코드래빗 지적). ③에서 액션을 만든 뒤
+ *    ④가 409로 멈추면 화면은 같은 payload를 들고 있다 — [그래도 확정]을 누르는 순간 ③이
+ *    다시 돌아 **같은 액션이 하나 더 생긴다.** 성공·실패와 무관하게 "여기까지 만들었다"를
+ *    돌려주면, 화면이 그 초안을 서버 id로 바꿔 다음 시도에서는 판정(②)으로만 나간다.
+ */
+export interface CreatedManualDraft {
+  /** 화면이 들고 있던 로컬 id(`manual-…`) */
+  localId: string;
+  /** BE가 만든 실제 액션 id */
+  actionId: number;
+}
+
+/** 어떤 결과든 **여기까지 서버에 만든 것**을 함께 돌려준다 — 재시도가 겹쳐 만들지 않게 */
+interface CreatedManuals {
+  createdManuals: CreatedManualDraft[];
+}
+
+export type ConfirmActionDistributionResult = CreatedManuals &
+  (
+    | { status: "confirmed"; createdCount: number; skippedCount: number }
+    | { status: "alreadyConfirmed" | "notFound"; createdCount: 0 }
+    /** 확인되지 않은 STT 구간 등으로 BE가 확정을 멈췄다(409) — `force`로만 강행한다 */
+    | { status: "blocked"; message: string }
+    | { status: "failed"; message: string }
+  );
 
 /** BE RVW-05 응답 — [확인] `DistributionConfirmResponse.java` */
 interface BeDistributionConfirm {
@@ -69,8 +93,12 @@ interface BeDistributionConfirm {
  * ⚠️ **화면은 확정 전까지 전부 로컬 상태다**(팀 확정 2026-08-10 "자동 반영 완료 로직 폐기").
  *    BE는 항목별 판정(RVW-02)을 따로 받는 모델이라, 이 액션이 확정 시점에 **판정 → 추가 →
  *    확정을 순서대로 대신 보낸다** — UX는 팀 확정대로 두고 API 계약만 맞춘다.
- * ⚠️ **중간에 끊겨도 다시 누르면 이어진다.** 판정을 다시 보내면 라벨 행이 하나 더 쌓일 뿐
- *    값이 어긋나지는 않는다(BE 주석). 반려해 둔 항목은 재조회가 걸러 준다(매퍼).
+ * ⚠️ **중간에 끊겨도 다시 누르면 이어진다.** 판정(①②)을 다시 보내면 라벨 행이 하나 더 쌓일 뿐
+ *    값이 어긋나지는 않는다(BE 주석).
+ * ⚠️ **직접 추가(③)만은 다르다** — 다시 보내면 액션이 하나 더 생긴다. 그래서 만든 id를
+ *    `createdManuals`로 돌려주고, 화면이 그 초안을 서버 id로 갈아 끼워 다음 시도에서는
+ *    ②(판정)로만 나가게 한다. 반려해 둔 항목을 재조회가 걸러 주는 건 **확정에 성공해
+ *    화면을 다시 연 경우**뿐이라, 409로 멈춘 자리에서는 이 교체가 유일한 방어다.
  */
 export async function confirmActionDistributionAction(
   meetingId: string,
@@ -81,6 +109,33 @@ export async function confirmActionDistributionAction(
 
   const accessToken = await requireAccessToken();
   const id = Number(meetingId);
+
+  /*
+    ⚠️ **여기서도 Host인지 본다**(2026-08-13, 코드래빗 지적). 화면은 Host에게만 열리지만
+       Server Action은 **주소만 알면 부를 수 있다**(§권한: 화면 숨김은 보안이 아니다) —
+       BE는 확정(④)만 403으로 막고 판정·반려·추가(①②③)는 참석자 전원에게 열려 있어,
+       가드가 없으면 참석자가 남의 회의 초안을 반려하거나 액션을 만들 수 있었다.
+    ⚠️ 목 경로(`confirmMockDistribution`)의 `assertPermission`과 **같은 기준**이다 —
+       판정이 두 벌이면 목과 실서버가 다른 사람을 막는다.
+  */
+  try {
+    const detail = parseMeetingDetail(await serverApi<unknown>(ep.meeting(id), { accessToken }));
+    if (!canOperateMeeting(await getViewer(), { ownerId: hostIdOf(detail) })) {
+      return {
+        status: "failed",
+        message: "이 회의의 담당자만 확정할 수 있습니다",
+        createdManuals: [],
+      };
+    }
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) {
+      return { status: "notFound", createdCount: 0, createdManuals: [] };
+    }
+    return { status: "failed", message: toUserMessage(error), createdManuals: [] };
+  }
+
+  /* 여기까지 만든 것 — 어떤 경로로 끝나든 화면에 돌려준다(위 `CreatedManualDraft` 주석) */
+  const createdManuals: CreatedManualDraft[] = [];
 
   try {
     /* ① 반려 — 값은 안 실린다(BE가 무시한다). 사유 코드만 판정으로 남는다. */
@@ -131,6 +186,9 @@ export async function confirmActionDistributionAction(
           evidenceTranscriptId: null,
         },
       });
+      /* ⚠️ **만들자마자 적는다.** 뒤 호출이 실패해도 "이건 이미 만들어졌다"가 남아야 한다 */
+      createdManuals.push({ localId: manual.localId, actionId: added.actionId });
+
       if (manual.startDate) {
         await serverApi(ep.meetingReviewDecision(id, added.actionId), {
           method: "PATCH",
@@ -154,10 +212,13 @@ export async function confirmActionDistributionAction(
       result.dispatchedCount === 0 &&
       result.skipped.length > 0 &&
       result.skipped.every((skip) => skip.reason === "ALREADY_DISPATCHED");
-    if (alreadyDispatched) return { status: "alreadyConfirmed", createdCount: 0 };
+    if (alreadyDispatched) {
+      return { status: "alreadyConfirmed", createdCount: 0, createdManuals };
+    }
 
     return {
       status: "confirmed",
+      createdManuals,
       createdCount: result.dispatchedCount,
       /*
         ⚠️ 반려(`REJECTED`)는 **의도한 제외**라 세지 않는다. 남는 건 미검토·담당자 미정처럼
@@ -168,11 +229,12 @@ export async function confirmActionDistributionAction(
     };
   } catch (error) {
     if (error instanceof ApiError) {
-      if (error.status === 404) return { status: "notFound", createdCount: 0 };
+      if (error.status === 404) return { status: "notFound", createdCount: 0, createdManuals };
       /* 확인되지 않은 STT 구간·미검토가 남았다 — 사람이 알고 강행할지 정한다(§정직성) */
-      if (error.status === 409) return { status: "blocked", message: error.message };
+      if (error.status === 409)
+        return { status: "blocked", message: error.message, createdManuals };
     }
-    return { status: "failed", message: toUserMessage(error) };
+    return { status: "failed", message: toUserMessage(error), createdManuals };
   }
 }
 
@@ -182,12 +244,13 @@ async function confirmMockDistribution(
   payload: ConfirmActionDistributionPayload,
 ): Promise<ConfirmActionDistributionResult> {
   const review = findMockMeetingReview(meetingId);
-  if (!review) return { status: "notFound", createdCount: 0 };
+  if (!review) return { status: "notFound", createdCount: 0, createdManuals: [] };
 
   const viewer = await getViewer();
   assertPermission(canOperateMeeting(viewer, { ownerId: review.hostId }));
 
-  if (review.actionsConfirmed) return { status: "alreadyConfirmed", createdCount: 0 };
+  if (review.actionsConfirmed)
+    return { status: "alreadyConfirmed", createdCount: 0, createdManuals: [] };
 
   markMockReviewConfirmed(meetingId);
 
@@ -198,5 +261,7 @@ async function confirmMockDistribution(
     status: "confirmed",
     createdCount: payload.reviewed.length + payload.manuallyAdded.length,
     skippedCount: 0,
+    /* 목은 서버에 만드는 것이 없다 — 갈아 끼울 id도 없다 */
+    createdManuals: [],
   };
 }

@@ -154,6 +154,8 @@ export function MeetingReviewView({ review }: MeetingReviewViewProps) {
             manuallyAdded: drafts
               .filter((draft) => isLocalManual(draft.id) && !(draft.id in rejectedReasons))
               .map((draft) => ({
+                /* 서버가 만든 id를 이 초안과 맞춰 돌려주기 위한 표식(actions.ts 주석) */
+                localId: draft.id,
                 title: draft.title,
                 description: draft.description,
                 // 폼이 담당자 없이는 추가를 막는다(`canAdd`) — 여기 null이 올 수 없다
@@ -164,6 +166,30 @@ export function MeetingReviewView({ review }: MeetingReviewViewProps) {
           },
           { force },
         );
+
+        /*
+          ⚠️ **어떤 결과든 먼저 갈아 끼운다**(2026-08-13, 코드래빗 지적). 서버가 이미 만든
+             수동 액션은 로컬 초안이 아니라 **서버 초안**이다 — 409로 멈춘 뒤 [그래도 확정]을
+             누르면 같은 항목이 하나 더 만들어졌다. id를 바꿔 두면 다음 시도에서 `isLocalManual`이
+             false가 되어 추가(③)가 아니라 판정(②)으로 나간다.
+        */
+        if (result.createdManuals.length > 0) {
+          const byLocalId = new Map(result.createdManuals.map((made) => [made.localId, made]));
+          setDrafts((prev) =>
+            prev.map((draft) => {
+              const made = byLocalId.get(draft.id);
+              return made ? { ...draft, id: String(made.actionId) } : draft;
+            }),
+          );
+          /* 반려해 둔 것도 같은 초안이라 키를 함께 옮긴다 — 안 옮기면 서버에 반려가 안 간다 */
+          setRejectedReasons((prev) => {
+            const next: Record<string, ActionRejectReason> = {};
+            for (const [id, reason] of Object.entries(prev)) {
+              next[byLocalId.get(id) ? String(byLocalId.get(id)!.actionId) : id] = reason;
+            }
+            return next;
+          });
+        }
 
         if (result.status === "notFound") {
           setConfirmError("회의를 찾을 수 없습니다. 페이지를 새로고침해 주세요.");
