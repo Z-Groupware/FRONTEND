@@ -41,13 +41,16 @@ describe("BE 캘린더 항목 매퍼", () => {
     expect(event?.isCompleted).toBe(false);
   });
 
-  it("PROJECT는 아직 안 그린다 — null로 걸러진다", () => {
+  it("PROJECT는 id가 없어 합성 키를 쓰고 프로젝트 태그를 색상용으로 옮긴다", () => {
     const event = toPersonalCalendarEvent(
-      { ...base, type: "PROJECT", id: null, isDone: null, tag: "PJ" },
-      0,
+      { ...base, type: "PROJECT", id: null, isDone: null, tag: "GROUPWARE" },
+      2,
     );
 
-    expect(event).toBeNull();
+    expect(event.id).toBe("project-2");
+    expect(event.tag).toBe(CALENDAR_ITEM_TAG.PROJECT);
+    expect(event.projectTag).toBe("GROUPWARE");
+    expect(event.isCompleted).toBe(false);
   });
 });
 

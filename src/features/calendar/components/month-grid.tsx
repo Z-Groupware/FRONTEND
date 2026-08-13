@@ -21,6 +21,7 @@ import {
   CALENDAR_TAG_BG,
   CALENDAR_TAG_FG,
   calendarStatusDotColor,
+  getProjectTagColor,
   getTodoTitleColor,
 } from "../tag-colors";
 import { CALENDAR_ITEM_TAG, type PersonalCalendarEvent } from "../types";
@@ -370,16 +371,19 @@ function DayCell({
 function EventChip({ event, spanEdge }: { event: PersonalCalendarEvent; spanEdge: EventSpanEdge }) {
   const done = event.isCompleted;
   const showContent = spanEdge === "single" || spanEdge === "start";
-  // ⚠️ 개인 Todo는 제목마다 색이 갈린다(2026-08-14) — 개인 액션은 여전히 fuchsia 고정이다.
+  // ⚠️ 개인 Todo는 제목마다, 프로젝트는 프로젝트 태그마다 색이 갈린다(2026-08-14) — 개인
+  //    액션은 여전히 fuchsia 고정이다.
   const isTodo = event.tag === CALENDAR_ITEM_TAG.PERSONAL_TODO;
   const todoColor = isTodo ? getTodoTitleColor(event.title) : null;
+  const projectColor = event.projectTag ? getProjectTagColor(event.projectTag) : null;
 
   return (
     <span
       title={event.title}
       style={{
-        color: todoColor?.textColor ?? CALENDAR_TAG_FG[event.tag],
-        backgroundColor: event.color ?? todoColor?.bgColor ?? CALENDAR_TAG_BG[event.tag],
+        color: todoColor?.textColor ?? projectColor?.textColor ?? CALENDAR_TAG_FG[event.tag],
+        backgroundColor:
+          event.color ?? todoColor?.bgColor ?? projectColor?.bgColor ?? CALENDAR_TAG_BG[event.tag],
       }}
       className={cn(
         /*

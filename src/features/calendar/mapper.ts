@@ -1,4 +1,4 @@
-import { CALENDAR_ITEM_TAG, type PersonalCalendarEvent } from "./types";
+import { CALENDAR_ITEM_TAG, type CalendarItemTag, type PersonalCalendarEvent } from "./types";
 
 /**
  * BE 캘린더 항목 — `GET /api/calendar` 응답 한 줄(§Mock 격리막).
@@ -20,27 +20,32 @@ export interface BeCalendarItem {
   isDone: boolean | null;
 }
 
-/**
- * BE 항목 → UI 계약. **PROJECT는 아직 안 그린다** — OWNER용 프로젝트 캘린더 표시(색상 매핑
- * 포함)는 `CalendarItemTag`에 PROJECT 케이스를 새로 정의해야 하는 별도 이슈라, 여기서는 `null`로
- * 걸러 화면이 조용히 잘못 그리지 않게 한다(§정직성).
- */
-export function toPersonalCalendarEvent(
-  be: BeCalendarItem,
-  index: number,
-): PersonalCalendarEvent | null {
-  if (be.type === "PROJECT") return null;
+/** BE `type` → UI `CalendarItemTag` — 판별자 이름만 다를 뿐 값은 그대로 대응한다. */
+const CALENDAR_ITEM_TAG_BY_TYPE: Record<BeCalendarItem["type"], CalendarItemTag> = {
+  PROJECT: CALENDAR_ITEM_TAG.PROJECT,
+  ACTION: CALENDAR_ITEM_TAG.PERSONAL_ACTION,
+  TODO: CALENDAR_ITEM_TAG.PERSONAL_TODO,
+};
 
+/**
+ * BE 항목 → UI 계약.
+ * ⚠️ PROJECT·ACTION은 이 피드에서 id를 안 준다(BE 스펙, 항상 `null`) — 완료 토글도 없는 읽기
+ *    전용 표시라 렌더링 키로만 쓰이는 합성 id로 충분하다. TODO만 완료 토글 대상이라 실 id가
+ *    필요하다.
+ */
+export function toPersonalCalendarEvent(be: BeCalendarItem, index: number): PersonalCalendarEvent {
+  const tag = CALENDAR_ITEM_TAG_BY_TYPE[be.type];
   const isTodo = be.type === "TODO";
+
   return {
-    // ⚠️ ACTION은 이 피드에서 id를 안 준다(BE 스펙, 항상 null) — 완료 토글도 없는 읽기 전용
-    //    표시라 렌더링 키로만 쓰이는 합성 id로 충분하다.
-    id: isTodo && be.id !== null ? String(be.id) : `action-${index}`,
+    id: isTodo && be.id !== null ? String(be.id) : `${be.type.toLowerCase()}-${index}`,
     title: be.title,
     start: new Date(`${be.startDate}T00:00:00`),
     end: new Date(`${be.endDate}T00:00:00`),
-    tag: isTodo ? CALENDAR_ITEM_TAG.PERSONAL_TODO : CALENDAR_ITEM_TAG.PERSONAL_ACTION,
+    tag,
     isCompleted: be.isDone ?? false,
+    // PROJECT만 채운다 — 프로젝트 목록과 같은 규칙(`getProjectTagColor`)으로 색을 뽑는 데 쓴다.
+    projectTag: be.type === "PROJECT" && be.tag ? be.tag : undefined,
   };
 }
 
