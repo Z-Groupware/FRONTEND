@@ -1,4 +1,4 @@
-import { type RegisterDraft, validateRegister } from "./register-draft";
+import { hasPinnedCoords, type RegisterDraft, validateRegister } from "./register-draft";
 
 /**
  * 기업 등록 신청서 검증.
@@ -64,5 +64,28 @@ describe("validateRegister", () => {
   it("좌표가 없어도 주소만 있으면 통과한다", () => {
     const typed = { ...FILLED, place: { address: "서울 어딘가", lat: 0, lng: 0 } };
     expect(validateRegister(typed).place).toBeUndefined();
+  });
+});
+
+/*
+ * ⚠️ 저장(`company/mapper.ts`)과 그리는 쪽(`AddressPicker`)이 **같은 판정**을 써야 한다
+ *    (`hasPinnedCoords` 주석) — 저장에서만 0,0을 걸렀더니 화면은 기니만 앞바다에 핀을
+ *    그렸다. 판정 자체는 여기서 한 번만 검증하고, 두 호출부는 이 함수를 그대로 쓴다.
+ */
+describe("hasPinnedCoords — 0,0은 좌표가 아니라 '못 썼다'는 표기다", () => {
+  it("0,0이면 못 꽂은 것으로 본다", () => {
+    expect(hasPinnedCoords({ address: "서울 어딘가", lat: 0, lng: 0 })).toBe(false);
+  });
+
+  it("null이면 애초에 고른 적이 없다", () => {
+    expect(hasPinnedCoords(null)).toBe(false);
+  });
+
+  it("둘 중 하나만 0이어도 실제 좌표로 본다 — 기니만이 아닌 이상 우연히 0이 될 수 있다", () => {
+    expect(hasPinnedCoords({ address: "적도 어딘가", lat: 0, lng: 127 })).toBe(true);
+  });
+
+  it("실제 좌표는 꽂힌 것으로 본다", () => {
+    expect(hasPinnedCoords({ address: "서울 강남구", lat: 37.5, lng: 127 })).toBe(true);
   });
 });

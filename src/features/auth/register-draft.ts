@@ -72,6 +72,18 @@ export type PickedPlace = z.infer<typeof placeSchema>;
 export type RegisterErrors = Partial<Record<keyof RegisterDraft, string>>;
 
 /**
+ * 지도에 꽂을 좌표가 실제로 있는지.
+ *
+ * ⚠️ **`0,0`은 좌표가 아니라 "지도를 못 썼다"는 표기다**(키 없음·SDK 차단 — 위 `placeSchema`
+ *    주석). 기니만 앞바다라 그대로 믿으면 **맞는 주소 아래에 틀린 핀**이 꽂힌다.
+ * ⚠️ **보내는 쪽과 그리는 쪽이 같은 판정을 쓴다.** 저장에서만 걸렀더니 좌표 없는 회사의
+ *    기업 설정 화면이 0,0에 핀을 꽂았다 — 없는 걸 있는 것처럼 그리지 않는다(§정직성).
+ */
+export function hasPinnedCoords(place: PickedPlace | null): place is PickedPlace {
+  return place !== null && (place.lat !== 0 || place.lng !== 0);
+}
+
+/**
  * 화면이 쓰는 모양(칸별 오류 한 줄)으로 옮긴다.
  *
  * ⚠️ `parse`가 아니라 `safeParse`다 — 검증 실패는 예외가 아니라 **정상적인 결과**다.
