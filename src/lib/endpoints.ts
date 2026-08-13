@@ -16,6 +16,27 @@ export interface ProjectListParams {
   size?: number;
 }
 
+/**
+ * 회의 목록(MEET-02)이 받는 쿼리 파라미터 — [확인] `meeting/presentation/api/MeetingListController.java`.
+ *
+ * ⚠️ **`from`·`to`를 생략하면 안 된다.** 서버 기본값이 `오늘-3개월 ~ 오늘`이라
+ *    (`MeetingListQueryService.validateAndResolve`) **예정 회의가 통째로 빠진다** — 이 화면의
+ *    첫 탭이 "내가 개설한(예정 포함)"이라 앞쪽을 열어 주지 않으면 빈 목록으로 보인다.
+ * ⚠️ `page`는 **0-base**(CLAUDE.md §목록), `size`는 1~100이고 벗어나면 Z-001로 거절된다.
+ */
+export interface MeetingListParams {
+  projectId?: number;
+  meetingRoomId?: number;
+  /** `YYYY-MM-DD` */
+  from?: string;
+  to?: string;
+  status?: "SCHEDULED" | "IN_PROGRESS" | "DONE" | "CANCELED";
+  /** 두 탭을 가르는 값 — `HOSTED`=내가 개설한 · `ATTENDING`=참여해야 할(host 제외) */
+  scope?: "HOSTED" | "ATTENDING";
+  page?: number;
+  size?: number;
+}
+
 /** 개인 액션 목록만 갖는 `overdue` 필터가 추가된다. */
 export interface ActionListParams extends ProjectListParams {
   overdue?: boolean;
@@ -56,10 +77,29 @@ export const ep = {
    *
    * ⚠️ **`/api/v1/` 접두사는 폐기됐다**(2026-08-12, 커밋 `51b5482f`) — 그 전에 붙였던 v1은
    *    이제 전부 404다. 캡처 전용 조회는 없다 — 캡처 화면도 상세(MEET-04)를 쓴다(§환각 API 방지).
+   *
+   * [확인] 목록(MEET-02)·대시보드(MEET-17) 실코드 재대조(2026-08-13) — `MeetingListController.java`
+   *   `MeetingListResponse.java` · `DashboardMeetingController.java` `DashboardMeetingListResponse.java`.
    */
-  meetings: () => "/api/meetings",
+  /**
+   * 예약 생성(`POST`, MEET-01)과 목록 조회(`GET`, MEET-02)가 같은 경로를 쓴다.
+   * ⚠️ 파라미터 뜻·주의는 {@link MeetingListParams} — 특히 `from`·`to`를 비우면 예정 회의가 빠진다.
+   */
+  meetings: (params?: MeetingListParams) => `/api/meetings${toQuery(params)}`,
   /** 상세(MEET-04) — 캡처 진입도 이걸 쓴다. 없으면 404 `MT-001`, 열람 권한 없으면 403 `MT-011` */
   meeting: (id: number) => `/api/meetings/${id}`,
+  /**
+   * 대시보드 최근 회의(MEET-17, 구현 완료) — [확인] `meeting/presentation/api/DashboardMeetingController.java`
+   * · `application/service/DashboardMeetingQueryService.java`(2026-08-13).
+   *
+   * ⚠️ **`scope`는 필수다**(생략하면 Z-001). 역할로 추론하지 않고 부르는 쪽이 명시한다 —
+   *    `owner`는 OWNER만, `team`은 LEADER만(게다가 토큰에 `teamId`가 있어야 한다), `me`는 전원.
+   *    맞지 않으면 403이라 **역할 가드가 있는 화면에서만** 부른다.
+   * ⚠️ `limit`은 1~20(기본 5). 벗어나면 Z-001이다.
+   * ⚠️ 경로가 `/api/meetings/{meetingId}`와 겹쳐 보이지만 리터럴이 먼저 잡힌다(Spring 매핑 규칙).
+   */
+  meetingsDashboard: (params: { scope: "owner" | "team" | "me"; limit?: number }) =>
+    `/api/meetings/dashboard${toQuery(params)}`,
   /** 내 예정 회의(MEET-03, 구현 완료) — 대시보드 위젯용. `limit` 생략 시 서버 기본값(5, 최대 20). */
   meetingsUpcoming: (params?: { limit?: number }) => `/api/meetings/upcoming${toQuery(params)}`,
   /** 참석자 명단 교체(MEET-09, 구현 완료) — 전체 명단 교체(부분 추가·삭제 아님). */

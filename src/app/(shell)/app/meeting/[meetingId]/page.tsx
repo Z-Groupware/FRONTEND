@@ -75,7 +75,11 @@ export default async function MeetingDetailPage({
   if (result.kind === "locked") {
     return (
       <NoticeCard
-        title={result.title}
+        /*
+          ⚠️ 제목이 없을 수 있다 — BE가 403으로 막으면 봉투에 회의 제목이 안 온다(§view-types).
+             그때는 지어내지 않고 **무슨 화면인지**만 적는다.
+        */
+        title={result.title ?? "열람할 수 없는 회의입니다"}
         message="참석자만 열람 가능합니다."
         icon={<Lock className="text-muted-foreground/70 mx-auto size-6" aria-hidden />}
       />

@@ -138,6 +138,8 @@ type ActionsSectionState =
   | { kind: "list" }
   | { kind: "pendingReview" }
   | { kind: "stalled" }
+  /** 안 물어봤다 — 회의별 액션 조회가 아직 안 붙었다(§view-types `outputs === null`) */
+  | { kind: "notLoaded" }
   | { kind: "empty" };
 
 function actionsSectionStateOf(detail: MeetingDetail): ActionsSectionState {
@@ -149,11 +151,19 @@ function actionsSectionStateOf(detail: MeetingDetail): ActionsSectionState {
   ) {
     return { kind: "notice", reason: detail.pendingReason };
   }
-  if (detail.outputs.length > 0) return { kind: "list" };
+  if (detail.outputs !== null && detail.outputs.length > 0) return { kind: "list" };
   if (detail.pendingActionCount > 0) return { kind: "pendingReview" };
   if (detail.pendingReason === "FAILED") {
     return detail.isStalled ? { kind: "stalled" } : { kind: "notice", reason: "FAILED" };
   }
+  /*
+    ⚠️ **못 불러온 칸이 "없음"으로 흘러가지 않게 막는다.** 실서버 상세는 회의별 액션 조회를
+       아직 안 붙여서 목록 자체를 안 물어본다 — 빈 배열과 같은 자리에 두면 화면이 "하달된
+       액션이 없습니다"라고 **단정**한다(§정직성).
+    ⚠️ **맨 아래다.** 위의 확정 대기·중단은 BE가 실제로 준 신호라 "못 불러왔다"보다 정확한
+       말이고, Host가 다음에 할 일까지 알려 준다 — 목록을 못 그리는 사정은 그 뒤의 이야기다.
+  */
+  if (detail.outputs === null) return { kind: "notLoaded" };
   return { kind: "empty" };
 }
 
@@ -323,10 +333,10 @@ export function MeetingDetailView({ detail, members, viewerTeamName }: MeetingDe
             <h2 className="text-[17px] leading-7 font-semibold tracking-[-0.3px]">
               하달된 {detail.outputKindLabel}
             </h2>
-            {/* ⚠️ 아직 안 찬·확정 대기·중단된 회의에 `전체 0건`이라 적으면 하나도 안 나온 회의로 읽힌다 */}
+            {/* ⚠️ 아직 안 찬·확정 대기·중단·못 불러온 회의에 `전체 0건`이라 적으면 하나도 안 나온 회의로 읽힌다 */}
             {(actionsState.kind === "list" || actionsState.kind === "empty") && (
               <p className="text-muted-foreground text-[12px] leading-4 tabular-nums">
-                전체 {detail.outputs.length}건
+                전체 {detail.outputs?.length ?? 0}건
               </p>
             )}
           </div>
@@ -352,6 +362,16 @@ export function MeetingDetailView({ detail, members, viewerTeamName }: MeetingDe
                 detail.isHost ? { href: "/app/me", label: "마이페이지에서 다시 분석하기" } : null
               }
             />
+          ) : actionsState.kind === "notLoaded" ? (
+            /*
+              ⚠️ **"없다"고 하지 않는다.** 회의별 액션 조회가 아직 안 붙어 물어보지도 않은
+                 자리다 — 안 물어본 것을 없다고 말하지 않는다(§정직성).
+            */
+            <EmptyState
+              icon={ListChecks}
+              title={`하달된 ${detail.outputKindLabel}을 아직 표시할 수 없습니다.`}
+              description="회의별 액션 조회가 연동되면 여기에 표시됩니다."
+            />
           ) : actionsState.kind === "empty" ? (
             /* ⚠️ 확정은 했는데 남은 것이 없는 자리다 — "확정을 누르세요"는 위 `pendingReview`가 한다 */
             <EmptyState
@@ -360,7 +380,7 @@ export function MeetingDetailView({ detail, members, viewerTeamName }: MeetingDe
             />
           ) : (
             <ul className="border-border border-t">
-              {detail.outputs.map((output) => (
+              {(detail.outputs ?? []).map((output) => (
                 <li key={output.id} className="border-border not-first:border-t">
                   <Link
                     href={output.href}
@@ -397,7 +417,7 @@ export function MeetingDetailView({ detail, members, viewerTeamName }: MeetingDe
         <section className="border-border bg-card rounded-2xl border">
           <div className="flex items-baseline justify-between gap-3 px-7 pt-6 pb-3">
             <h2 className="text-[17px] leading-7 font-semibold tracking-[-0.3px]">발화 기록</h2>
-            {!detail.pendingReason && (
+            {!detail.pendingReason && detail.script !== null && (
               <p className="text-muted-foreground text-[12px] leading-4 tabular-nums">
                 {detail.script.length}건
               </p>
@@ -406,6 +426,13 @@ export function MeetingDetailView({ detail, members, viewerTeamName }: MeetingDe
 
           {detail.pendingReason ? (
             <SectionNotice reason={detail.pendingReason} />
+          ) : detail.script === null ? (
+            /* ⚠️ 산출물 칸의 `notLoaded`와 같은 자리다 — 자막 조회(CAP-12) 미연동이라 안 물어봤다 */
+            <EmptyState
+              icon={MessageSquareOff}
+              title="발화 기록을 아직 표시할 수 없습니다."
+              description="자막 조회가 연동되면 여기에 표시됩니다."
+            />
           ) : detail.script.length === 0 ? (
             <EmptyState icon={MessageSquareOff} title="남아 있는 발화 기록이 없습니다." />
           ) : (

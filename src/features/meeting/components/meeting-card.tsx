@@ -107,10 +107,15 @@ function CardBody({
            달라 한 줄에 두 종류의 상자가 섞였다 — 둘 다 "이 회의가 어디서 왔나"를 말하는
            **곁 정보**라 같은 무게의 글로 이어 붙인다.
         ⚠️ 가운뎃점으로 잇는다. 상자를 없앤 자리에 구분자가 필요하다.
+        ⚠️ **빈 조각은 가운뎃점째 뺀다**(2026-08-13). 실서버 목록(MEET-02)엔 소속 라벨도 안건도
+           없어 둘 다 빈 문자열로 온다(§view-types) — 그대로 이으면 이 줄에 홀로 남은 `·` 하나만
+           그려진다. 없는 값을 말하지 않는 게 §정직성이다.
       */}
       <p className="text-muted-foreground truncate pt-1.5 pb-6 text-[13px] leading-5">
         {meeting.originLabel}
-        <span className="px-1.5 opacity-50">·</span>
+        {meeting.originLabel && meeting.topicSummary && (
+          <span className="px-1.5 opacity-50">·</span>
+        )}
         {meeting.topicSummary}
       </p>
     </>

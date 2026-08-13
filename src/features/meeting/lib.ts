@@ -23,3 +23,25 @@ export function formatMeetingSchedule(start: Date, end: Date): string {
   const day = formatMonthDayWeekday(DATE_PART.format(start)) ?? DATE_PART.format(start);
   return `${day} ${TIME_PART.format(start)} – ${TIME_PART.format(end)}`;
 }
+
+/**
+ * 회의 목록(MEET-02)이 물어볼 기간 — 앞뒤로 3개월씩.
+ *
+ * ⚠️ **뒤를 열어 주는 게 핵심이다.** BE 기본값은 `오늘-3개월 ~ 오늘`이라
+ *    (`MeetingListQueryService.validateAndResolve`) 그대로 두면 **예정 회의가 한 건도 안 온다** —
+ *    이 화면이 제일 먼저 보여줘야 하는 게 다가올 회의다.
+ * ⚠️ 앞은 BE 기본과 같은 3개월로 맞춘다. 더 늘리면 무한 스크롤이 없는 지금은 한 페이지
+ *    상한(100건)만 더 빨리 채운다(§server `MEETING_LIST_PAGE_SIZE`).
+ * ⚠️ 날짜는 **한국 시간 기준**으로 찍는다 — UTC로 자르면 자정 무렵에 하루가 밀린다(§lib/date).
+ */
+const MEETING_LIST_RANGE_MONTHS = 3;
+
+export function meetingListRange(now: Date): { from: string; to: string } {
+  const shifted = (months: number) => {
+    const moved = new Date(now);
+    moved.setMonth(moved.getMonth() + months);
+    return DATE_PART.format(moved);
+  };
+
+  return { from: shifted(-MEETING_LIST_RANGE_MONTHS), to: shifted(MEETING_LIST_RANGE_MONTHS) };
+}

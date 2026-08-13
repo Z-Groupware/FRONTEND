@@ -15,8 +15,17 @@ import {
 } from "@/lib/permission";
 import { isMock } from "@/mocks/config";
 
-import { formatMeetingSchedule } from "./lib";
-import { hostIdOf, isClosed, parseMeetingDetail, toMeetingCaptureInfo } from "./mapper";
+import { formatMeetingSchedule, meetingListRange } from "./lib";
+import {
+  type BeMeetingListItem,
+  hostIdOf,
+  isClosed,
+  parseMeetingDetail,
+  parseMeetingList,
+  toMeetingCaptureInfo,
+  toMeetingDetailView,
+  toMeetingListItem,
+} from "./mapper";
 import { findMockMeeting, listMockMeetings } from "./mock/meetings";
 import { ensureMockMeetingsSeeded, findMockMeetingExtras } from "./mock/seed";
 import { findMockMeetingReview } from "./review/mock/review";
@@ -80,32 +89,16 @@ function toListItem(meeting: Meeting, viewerId: number, now: Date): MeetingListI
  * ⚠️ 차례: 진행중 → 예정(가까운 순) → 완료(최근 순). 지금 다뤄야 하는 회의가 위로 온다.
  */
 export async function getMeetingDirectory(viewerId: number): Promise<MeetingDirectory> {
-  if (!isMock) {
-    // TODO(BE 협의): `GET /meetings` — 응답 봉투는 아직 모른다(매퍼가 벗긴다)
-    throw new Error("회의 목록 API가 아직 연결되지 않았습니다.");
-  }
+  if (!isMock) return getLiveMeetingDirectory();
 
   ensureMockMeetingsSeeded();
   const now = new Date();
-  const items = listMockMeetings().map((meeting) => toListItem(meeting, viewerId, now));
-
-  const rank = {
-    [MEETING_STATUS.IN_PROGRESS]: 0,
-    [MEETING_STATUS.SCHEDULED]: 1,
-    [MEETING_STATUS.DONE]: 2,
-    // ⚠️ 취소는 맨 뒤다(MEET-06) — 더 볼 일 없는 회의 중에서도 가장 뒤로 물러난다.
-    [MEETING_STATUS.CANCELED]: 3,
-  } as const;
   const byId = new Map(listMockMeetings().map((meeting) => [meeting.id, meeting]));
-  const startOf = (item: MeetingListItem) => byId.get(item.id)?.start.getTime() ?? 0;
-
-  items.sort((a, b) => {
-    if (rank[a.status] !== rank[b.status]) return rank[a.status] - rank[b.status];
-    // 예정·진행중은 가까운 회의부터, 완료·취소는 최근 회의부터
-    return a.status === MEETING_STATUS.SCHEDULED || a.status === MEETING_STATUS.IN_PROGRESS
-      ? startOf(a) - startOf(b)
-      : startOf(b) - startOf(a);
-  });
+  const rows = listMockMeetings().map((meeting) => ({
+    item: toListItem(meeting, viewerId, now),
+    startMs: meeting.start.getTime(),
+  }));
+  const items = sortMeetingListItems(rows);
 
   return {
     hosted: items.filter((item) => item.isHost),
@@ -115,6 +108,78 @@ export async function getMeetingDirectory(viewerId: number): Promise<MeetingDire
       return meeting !== undefined && meeting.attendeeIds.includes(viewerId);
     }),
   };
+}
+
+/**
+ * 목록 차례 — **지금 다뤄야 하는 회의가 위로 온다**(WORKFLOW §3-2).
+ *
+ * ⚠️ **목·실서버가 같은 함수를 쓴다.** 정렬이 두 벌이면 같은 회의가 경로마다 다른 자리에
+ *    서고, 그건 화면을 눌러 보는 것만으로는 안 드러난다(§격리막과 같은 이유).
+ * ⚠️ 시각은 항목이 아니라 **원본**에서 받는다 — `schedule`은 이미 사람이 읽는 문자열이라
+ *    거기서 시각을 되파면 표기가 바뀔 때마다 정렬이 조용히 틀어진다.
+ */
+const STATUS_RANK = {
+  [MEETING_STATUS.IN_PROGRESS]: 0,
+  [MEETING_STATUS.SCHEDULED]: 1,
+  [MEETING_STATUS.DONE]: 2,
+  // ⚠️ 취소는 맨 뒤다(MEET-06) — 더 볼 일 없는 회의 중에서도 가장 뒤로 물러난다.
+  [MEETING_STATUS.CANCELED]: 3,
+} as const;
+
+function sortMeetingListItems(
+  rows: { item: MeetingListItem; startMs: number }[],
+): MeetingListItem[] {
+  return [...rows]
+    .sort((a, b) => {
+      const rankGap = STATUS_RANK[a.item.status] - STATUS_RANK[b.item.status];
+      if (rankGap !== 0) return rankGap;
+      // 예정·진행중은 가까운 회의부터, 완료·취소는 최근 회의부터
+      return a.item.status === MEETING_STATUS.SCHEDULED ||
+        a.item.status === MEETING_STATUS.IN_PROGRESS
+        ? a.startMs - b.startMs
+        : b.startMs - a.startMs;
+    })
+    .map((row) => row.item);
+}
+
+/**
+ * 목록 — 실서버(MEET-02).
+ *
+ * ⚠️ **탭을 서버가 가른다**(`scope=HOSTED`·`ATTENDING`). 전부 받아 와서 `isHost`로 나누면
+ *    같은 회의를 두 번 실어 나르고, 페이지가 잘릴 때 한쪽 탭만 조용히 비어 버린다 —
+ *    BE가 `ATTENDING`에서 host를 이미 빼 준다(BE `MeetingListScope`).
+ * ⚠️ **`from`·`to`를 반드시 싣는다.** 서버 기본이 `오늘-3개월 ~ 오늘`이라 생략하면 **예정
+ *    회의가 통째로 빠진다**(§endpoints `MeetingListParams`) — 이 화면의 첫 줄이 예정 회의다.
+ * ⚠️ **무한 스크롤은 이 이슈에서 안 만든다**(범위 밖). 대신 한 페이지를 BE 상한(100)까지
+ *    받아 첫 화면이 20건에서 잘리지 않게 한다 — 그보다 많으면 뒤가 안 보인다(CLAUDE.md
+ *    §목록의 스크롤 트리거를 붙일 때 이 상수를 지우고 `page`를 이어 붙인다).
+ * ⚠️ 두 탭을 **같이 부른다**(`Promise.all`). 차례로 부르면 화면이 두 번 기다린다.
+ */
+const MEETING_LIST_PAGE_SIZE = 100;
+
+async function getLiveMeetingDirectory(): Promise<MeetingDirectory> {
+  const accessToken = await requireAccessToken();
+  const { from, to } = meetingListRange(new Date());
+
+  const query = { from, to, page: 0, size: MEETING_LIST_PAGE_SIZE } as const;
+  const [hosted, invited] = await Promise.all([
+    serverApi<unknown>(ep.meetings({ ...query, scope: "HOSTED" }), { accessToken }),
+    serverApi<unknown>(ep.meetings({ ...query, scope: "ATTENDING" }), { accessToken }),
+  ]);
+
+  return {
+    hosted: toSortedListItems(parseMeetingList(hosted)),
+    invited: toSortedListItems(parseMeetingList(invited)),
+  };
+}
+
+function toSortedListItems(meetings: BeMeetingListItem[]): MeetingListItem[] {
+  return sortMeetingListItems(
+    meetings.map((meeting) => ({
+      item: toMeetingListItem(meeting),
+      startMs: new Date(meeting.startAt).getTime(),
+    })),
+  );
 }
 
 /** 산출물 조립 — 회의 종류에 따라 팀 액션(§2) 또는 개인 액션(§5)이다 */
@@ -165,10 +230,7 @@ function outputsOf(meeting: Meeting): { kindLabel: string; outputs: MeetingOutpu
  *    잠금은 에러가 아니라서 목록 카드(메타)는 계속 보인다.
  */
 export async function getMeetingDetail(id: string, viewer: Actor): Promise<MeetingDetailResult> {
-  if (!isMock) {
-    // TODO(BE 협의): `GET /meetings/{id}`
-    throw new Error("회의 상세 API가 아직 연결되지 않았습니다.");
-  }
+  if (!isMock) return getLiveMeetingDetail(id, viewer);
 
   ensureMockMeetingsSeeded();
   const meeting = findMockMeeting(id);
@@ -250,6 +312,43 @@ export async function getMeetingDetail(id: string, viewer: Actor): Promise<Meeti
       isStalled,
       isHost: canOperateMeeting(viewer, { ownerId: meeting.hostId }),
     },
+  };
+}
+
+/**
+ * 상세 — 실서버(MEET-04).
+ *
+ * ⚠️ **판정 순서를 목과 맞춘다**(없음 → 권한 없음 → 통과). `getLiveMeetingCapture`와 같은
+ *    규칙이다 — 순서가 갈리면 같은 회의가 경로마다 다른 이유로 막힌다.
+ * ⚠️ **404(`MT-001`)·403(`MT-011`) 둘 다 값으로 돌린다.** 캡처(`getLiveMeetingCapture`)는 403을
+ *    던지는데, 거기서는 **우리가 먼저 판정한 뒤**의 403이라 판정이 틀렸다는 신호이기 때문이다.
+ *    상세는 다르다 — 목록이 전 구성원 공개라 아무나 눌러 들어올 수 있고, 우리는 판정에 필요한
+ *    값(개설 팀·참석자)을 조회 전에 갖고 있지 않다. 여기서 403은 고장이 아니라 **잠금**이고,
+ *    잠금은 에러 화면이 아니다(WORKFLOW §3-2-1).
+ * ⚠️ 제목은 못 싣는다 — 실패 봉투에 회의 제목이 없다(§view-types `locked`).
+ * ⚠️ 개설자 판정은 **목 경로와 같은 함수**(`canOperateMeeting`)다. 매퍼는 값이 어디 있는지만
+ *    알려 주고(`hostIdOf`) 판정은 `lib/permission.ts` 한 곳이다(CLAUDE.md §권한).
+ */
+async function getLiveMeetingDetail(id: string, viewer: Actor): Promise<MeetingDetailResult> {
+  const accessToken = await requireAccessToken();
+
+  let raw: unknown;
+  try {
+    raw = await serverApi<unknown>(ep.meeting(Number(id)), { accessToken });
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) return { kind: "notFound" };
+    if (error instanceof ApiError && error.status === 403) return { kind: "locked", title: null };
+    throw error;
+  }
+
+  /* ⚠️ 단언이 아니라 **검사**다 — 모양이 어긋나면 화면을 그리기 전에 여기서 멈춘다 */
+  const detail = parseMeetingDetail(raw);
+
+  return {
+    kind: "ok",
+    detail: toMeetingDetailView(detail, {
+      isHost: canOperateMeeting(viewer, { ownerId: hostIdOf(detail) }),
+    }),
   };
 }
 
