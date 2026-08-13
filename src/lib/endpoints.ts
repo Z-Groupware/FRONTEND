@@ -171,6 +171,17 @@ export const ep = {
   /** 참석자 명단 교체(MEET-09, 구현 완료) — 전체 명단 교체(부분 추가·삭제 아님). */
   meetingAttendees: (meetingId: number) => `/api/meetings/${meetingId}/attendees`,
   /**
+   * 정본 스크립트 조회(ANLZ-05) — 회의 발화를 시간순으로. [확인]
+   * `capture/presentation/api/AnalysisController.getTranscripts`(2026-08-14, BE 실코드 대조).
+   *
+   * ⚠️ **커서는 우리가 해석하지 않는다.** 불투명한 문자열이고 BE가 준 `nextCursor`를 다음
+   *    호출의 `cursor`로 그대로 돌려준다 — 안에 무엇이 들었는지는 BE만 안다.
+   * ⚠️ `ids`는 근거 발화 지름길(검토 화면이 액션 근거 몇 건만 볼 때)이라 여기서는 안 쓴다 —
+   *    상세 화면은 전체를 시간순으로 읽는다.
+   */
+  meetingTranscripts: (meetingId: number, params?: { cursor?: string }) =>
+    `/api/meetings/${meetingId}/transcripts${toQuery(params)}`,
+  /**
    * 확정 대기 회의 목록(MEET-10, 구현 완료 — PR #233) — 마이페이지 "미확정 액션" 위젯용.
    * [확인] D도메인 REST API 명세(2026-08-12) 대조. 파라미터 없음 — host 본인 회의만 서버가
    * 자동 스코프한다(전 롤 호출 가능, 판정은 역할이 아니라 `hostMemberId` 일치).
@@ -343,6 +354,17 @@ export const ep = {
   member: (id: number) => `/api/members/${id}`,
   /** 조직도 — OWNER·ADMIN 전용 */
   memberOrgChart: () => "/api/members/org-chart",
+  /**
+   * 내 팀 로스터 — 회의 참석자 픽커 전용(`/api/members`와 다르다, 그건 관리 화면용).
+   * 응답은 `{memberId, name}[]`, ACTIVE만, 본인도 포함(제외는 FE 몫) — 팀은 **토큰의 teamId**로
+   * 정해져 파라미터로 안 보낸다. 팀이 없으면(OWNER) 빈 배열이지 오류가 아니다.
+   * [확인] BE `MemberController.myTeamRoster` / `MemberDirectoryService.getTeamRoster`
+   * (identity/member 도메인) — 2026-08-13 BE 레포 실코드 대조.
+   * ⚠️ 역할 게이트는 `hasAnyRole('OWNER','ADMIN','LEADER','MEMBER')`로 전부 열려 있지만,
+   *    OWNER는 토큰에 teamId가 없어 호출해도 빈 배열만 온다 — 그래서 Owner 쪽 참석자 후보는
+   *    이 API가 아니라 팀별 리더 조회(`getTeamLeaders`, `ep.teams()`)로 따로 구한다.
+   */
+  membersMyTeam: () => "/api/members/my-team",
   /** 오너 대시보드 KPI(전체 사원·휴직자) — [확인] PR #385 머지 완료, OWNER 전용 */
   memberDashboardSummary: () => "/api/members/dashboard-summary",
   /** 팀장 현황(이름·이메일·팀·재직상태·휴직기간) — [확인] PR #385 머지 완료, OWNER 전용 */

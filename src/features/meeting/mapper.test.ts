@@ -4,16 +4,19 @@ import {
   type BeDashboardMeeting,
   type BeMeetingDetail,
   type BeMeetingListItem,
+  type BeUtterance,
   hostIdOf,
   isClosed,
   meetingPendingReasonOf,
   parseDashboardMeetings,
   parseMeetingDetail,
   parseMeetingList,
+  parseTranscriptsResponse,
   toDashboardMeetingCard,
   toMeetingCaptureInfo,
   toMeetingDetailView,
   toMeetingListItem,
+  toScriptChunks,
 } from "./mapper";
 
 /** MEET-04 응답 그대로 — 중첩·필드 이름을 BE 실코드에 맞춰 둔다 */
@@ -434,5 +437,123 @@ describe("toDashboardMeetingCard", () => {
 
     expect(card.originLabel).toBe("개발팀");
     expect(card.hostLabel).toBe("김서준(팀장)");
+  });
+});
+
+describe("parseTranscriptsResponse — ANLZ-05", () => {
+  const UTTERANCE: BeUtterance = {
+    transcriptId: 1,
+    seq: 0,
+    speakerMemberId: 3,
+    speakerSource: "SELF_STREAM",
+    startOffsetMs: 4_000,
+    endOffsetMs: 6_500,
+    content: "안녕하세요, 시작하겠습니다.",
+  };
+
+  it("정상 응답을 그대로 읽는다", () => {
+    expect(parseTranscriptsResponse({ utterances: [UTTERANCE], nextCursor: "abc" })).toEqual({
+      utterances: [UTTERANCE],
+      nextCursor: "abc",
+    });
+  });
+
+  /* ⚠️ 마지막 페이지는 `nextCursor`가 없다(`undefined`) — `null`로 정규화해 호출부가 한 값만 본다 */
+  it("마지막 페이지의 nextCursor 부재를 null로 정규화한다", () => {
+    expect(parseTranscriptsResponse({ utterances: [] }).nextCursor).toBeNull();
+  });
+
+  /* ⚠️ speakerMemberId===null은 정상이다(BE 주석 — 화자 판정 포기) — 검사에 안 걸려야 한다 */
+  it("speakerMemberId가 null이어도 통과한다(화자 판정 포기, 오류 아님)", () => {
+    expect(() =>
+      parseTranscriptsResponse({
+        utterances: [{ ...UTTERANCE, speakerMemberId: null, speakerSource: null }],
+      }),
+    ).not.toThrow();
+  });
+
+  it.each([
+    ["utterances가 없음", { nextCursor: "x" }],
+    ["content가 숫자", { utterances: [{ ...UTTERANCE, content: 1 }] }],
+    ["배열 안이 문자열", { utterances: ["안녕"] }],
+  ])("%s이면 그리기 전에 멈춘다", (_label, broken) => {
+    expect(() => parseTranscriptsResponse(broken)).toThrow("약속한 모양");
+  });
+});
+
+describe("toScriptChunks — 회의 시작 + 오프셋 = 발화 시각", () => {
+  /* ⚠️ 목 데이터와 같은 형식이다(`mock/seed.ts`) — "10:00", "10:04"처럼 회의 시작 기준 시계다 */
+  it("시작 시각에 오프셋(ms)을 더해 HH:MM으로 찍는다", () => {
+    const start = new Date("2026-08-14T10:00:00+09:00");
+    const chunks = toScriptChunks(start, [
+      {
+        transcriptId: 1,
+        seq: 0,
+        speakerMemberId: 3,
+        speakerSource: null,
+        startOffsetMs: 0,
+        endOffsetMs: 2_000,
+        content: "시작합니다.",
+      },
+      {
+        transcriptId: 2,
+        seq: 1,
+        speakerMemberId: 4,
+        speakerSource: null,
+        startOffsetMs: 240_000,
+        endOffsetMs: 245_000,
+        content: "네, 진행하겠습니다.",
+      },
+    ]);
+
+    expect(chunks).toEqual([
+      { at: "10:00", text: "시작합니다." },
+      { at: "10:04", text: "네, 진행하겠습니다." },
+    ]);
+  });
+
+  /* ⚠️ 화자 귀속 포기(오프셋 없음)도 화면에서는 그냥 회의 시작 시각으로 보인다 — 없는 값을 지어내지 않는다 */
+  it("오프셋이 없으면(null) 회의 시작 시각으로 찍는다", () => {
+    const start = new Date("2026-08-14T14:00:00+09:00");
+    const chunks = toScriptChunks(start, [
+      {
+        transcriptId: 1,
+        seq: 0,
+        speakerMemberId: null,
+        speakerSource: null,
+        startOffsetMs: null,
+        endOffsetMs: null,
+        content: "...",
+      },
+    ]);
+
+    expect(chunks[0]!.at).toBe("14:00");
+  });
+
+  /* ⚠️ BE는 페이지 단위로 주는데, 페이지 경계에서 seq가 뒤섞여 오면 화면 순서가 틀어진다 */
+  it("seq 순서가 뒤섞여 와도 시간순으로 정렬한다", () => {
+    const start = new Date("2026-08-14T10:00:00+09:00");
+    const chunks = toScriptChunks(start, [
+      {
+        transcriptId: 2,
+        seq: 1,
+        speakerMemberId: null,
+        speakerSource: null,
+        startOffsetMs: 60_000,
+        endOffsetMs: null,
+        content: "두 번째",
+      },
+      {
+        transcriptId: 1,
+        seq: 0,
+        speakerMemberId: null,
+        speakerSource: null,
+        startOffsetMs: 0,
+        endOffsetMs: null,
+        content: "첫 번째",
+      },
+    ]);
+
+    expect(chunks.map((chunk) => chunk.text)).toEqual(["첫 번째", "두 번째"]);
   });
 });

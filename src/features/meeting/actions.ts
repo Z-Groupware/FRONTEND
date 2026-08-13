@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { AUTHORITY, type Authority } from "@/constants/authority";
 import { MEETING_STATUS } from "@/constants/meeting";
 import { requireAccessToken } from "@/features/auth/session";
+import { getManagedMember } from "@/features/member/manage-server";
 import { TOP_LEVEL_PROJECTS } from "@/features/project/mock/projects";
 import { PROJECT_TEAM_ACTIONS_MOCK } from "@/features/project/mock/team-actions";
 import {
@@ -12,6 +13,7 @@ import {
   findAttendeeScopeViolation,
 } from "@/features/rooms/attendee-scope";
 import { findMockMember } from "@/features/rooms/mock/members";
+import { getReservableMembers } from "@/features/rooms/server";
 import { getViewer } from "@/features/shell/viewer";
 import { ApiError, serverApi } from "@/lib/api";
 import { ep } from "@/lib/endpoints";
@@ -20,7 +22,14 @@ import { type Actor, canManageMeeting, requiresParentTeamAction } from "@/lib/pe
 import { isMock } from "@/mocks/config";
 
 import { checkMeetingTitle } from "./lib";
-import { attendeeIdsFrom, type BeUpdateAttendeesResponse } from "./mapper";
+import {
+  attendeeIdsFrom,
+  type BeMeetingDetail,
+  type BeUpdateAttendeesResponse,
+  hostIdOf,
+  isClosed,
+  parseMeetingDetail,
+} from "./mapper";
 import {
   addMockOnlineMeeting,
   cancelMockMeeting,
@@ -55,6 +64,36 @@ function toAttendeesErrorMessage(error: unknown): string {
   return error.message;
 }
 
+/** 재검증 실패 문구 — **목·실서버가 같은 문장을 쓴다**(두 경로가 갈리면 화면이 다른 말을 한다). */
+const ATTENDEES_EDIT_ERROR = {
+  notFound: "회의를 찾을 수 없습니다",
+  forbidden: "참석자를 바꿀 권한이 없습니다",
+  closed: "끝난 회의는 참석자를 바꿀 수 없습니다",
+  unknownMember: "존재하지 않는 참석자가 있습니다",
+} as const;
+
+/**
+ * 재검증에 필요한 **그 회의의 사실**(host·상태)을 실서버에서 가져온다 — `GET /api/meetings/{id}`
+ * (MEET-04, 이미 연동된 엔드포인트다. 캡처 진입 `getLiveMeetingCapture`가 같은 값을 같은 식으로 읽는다).
+ *
+ * ⚠️ **없는 회의는 값(`null`)으로 돌린다** — 던지면 다이얼로그 대신 `error.tsx`가 뜨는데, 없는
+ *    회의는 고장이 아니라 "그런 회의가 없습니다"라고 말해 줄 일이다(캡처 경로와 같은 판단).
+ * ⚠️ 나머지 오류(403·500)는 그대로 던져 호출부의 `catch`가 BE 문구로 옮긴다.
+ */
+async function fetchMeetingFacts(
+  meetingId: string,
+  accessToken: string,
+): Promise<BeMeetingDetail | null> {
+  try {
+    return parseMeetingDetail(
+      await serverApi<unknown>(ep.meeting(Number(meetingId)), { accessToken }),
+    );
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) return null;
+    throw error;
+  }
+}
+
 /**
  * 참석자 명단 교체(MEET-09) — **전체 명단 교체**다. `RoomReservation`의 참석자 피커를 그대로
  * 재사용하는 다이얼로그(`MeetingAttendeesEditDialog`)가 이 액션을 부른다.
@@ -67,7 +106,9 @@ function toAttendeesErrorMessage(error: unknown): string {
  *    AI 팀 액션 판단 근거가 똑같이 무너진다. 규칙은 `rooms/attendee-scope.ts` 한 곳이다.
  * ⚠️ 범위 기준은 **지금 보는 사람이 아니라 그 회의의 host**다 — `canManageMeeting`이 OWNER·Admin
  *    에게도 남의 회의 교체를 허용해서, actor로 재면 Owner가 남의 팀 회의를 열었을 때 규칙이
- *    "팀장만"으로 뒤바뀐다. 회의에 적힌 `hostAuthority`가 그 회의가 만들어질 때의 사실이다.
+ *    "팀장만"으로 뒤바뀐다. mock은 회의 레코드가 `hostAuthority`를 직접 들고 있어 그걸 쓰고,
+ *    실서버는 MEET-04 응답에 host의 role·team이 없어 actor===host면 세션 값을, 아니면
+ *    `getManagedMember`로 따로 구한다(아래 실서버 분기 주석).
  */
 export async function updateMeetingAttendeesAction(
   _prev: UpdateMeetingAttendeesState,
@@ -75,16 +116,27 @@ export async function updateMeetingAttendeesAction(
 ): Promise<UpdateMeetingAttendeesState> {
   const meetingId = String(formData.get("meetingId") ?? "");
   const attendeeIds = formData.getAll("attendeeIds").map(Number);
-  const actor = getMockActor();
+  /*
+    ⚠️ **실서버에서는 목 액터를 쓰지 않는다.** `getMockActor()`는 고정 OWNER를 돌려주는 목이라
+       실연동에서 그걸로 권한을 재면 "언제나 통과"가 된다 — 세션에서 읽는다(`rooms/actions.ts`와
+       같은 자리, CLAUDE.md §권한: 판정은 서버에서).
+  */
+  const actor = isMock ? getMockActor() : await getViewer();
 
   if (isMock) {
     const meeting = findMockMeeting(meetingId);
-    if (!meeting) return { error: "회의를 찾을 수 없습니다", attendeeIds: null };
+    if (!meeting) return { error: ATTENDEES_EDIT_ERROR.notFound, attendeeIds: null };
     if (!canManageMeeting(actor, { hostId: meeting.hostId })) {
-      return { error: "참석자를 바꿀 권한이 없습니다", attendeeIds: null };
+      return { error: ATTENDEES_EDIT_ERROR.forbidden, attendeeIds: null };
     }
-    if (meetingStatusOf(meeting, new Date()) === MEETING_STATUS.DONE) {
-      return { error: "끝난 회의는 참석자를 바꿀 수 없습니다", attendeeIds: null };
+    /*
+      ⚠️ 취소된 회의도 여기서 걸린다 — 명단을 고칠 자리가 아닌데 화면 계약에 아직 취소 문구가
+         없어서 "이미 끝난 회의"와 같은 자리로 보낸다(매퍼 `isClosed`와 같은 판단·같은 결과).
+         실서버 경로가 `isClosed`로 둘을 함께 막으므로, 목만 취소를 통과시키면 두 모드가 갈린다.
+    */
+    const status = meetingStatusOf(meeting, new Date());
+    if (status === MEETING_STATUS.DONE || status === MEETING_STATUS.CANCELED) {
+      return { error: ATTENDEES_EDIT_ERROR.closed, attendeeIds: null };
     }
 
     /*
@@ -115,19 +167,67 @@ export async function updateMeetingAttendeesAction(
   }
 
   const accessToken = await requireAccessToken();
+
+  const meeting = await fetchMeetingFacts(meetingId, accessToken);
+  if (!meeting) return { error: ATTENDEES_EDIT_ERROR.notFound, attendeeIds: null };
+  const hostId = hostIdOf(meeting);
+  if (!canManageMeeting(actor, { hostId })) {
+    return { error: ATTENDEES_EDIT_ERROR.forbidden, attendeeIds: null };
+  }
+  if (isClosed(meeting)) {
+    return { error: ATTENDEES_EDIT_ERROR.closed, attendeeIds: null };
+  }
+
+  /*
+    ⚠️ **참석자 서버 재검증** — `GET /api/members/my-team`이 붙으면서 대부분의 경로는 이제
+       실서버에서도 볼 수 있다(2026-08-13, `rooms/server.ts`의 `getReservableMembers`).
+    ⚠️ **범위 기준은 지금 보는 사람이 아니라 host다**(위 함수 주석). 두 경로로 갈린다:
+       - **host 자신이 고치는 보통 경로**: 세션에 이미 host의 role·team이 있다 — 그대로 쓴다.
+       - **OWNER·ADMIN이 남의 회의를 고치는 드문 경로**: `canManageMeeting`이 그걸 허용해서
+         생기는 경우다. host가 **OWNER**면 `getReservableMembers`가 회사 전체 팀장 명부
+         (`getTeamLeaders`, 호출자 무관)를 보므로 OWNER·ADMIN 전용 API(`GET /api/members/{id}`,
+         `getManagedMember`)로 host가 OWNER인지만 확인하면 그대로 검증해도 안전하다.
+    ⚠️ **host가 LEADER·MEMBER면 여기서도 못 본다 — 본 척하지 않는다**(§정직성). "OWNER·ADMIN이
+       다른 LEADER·MEMBER의 회의를 고치는" 경우 `GET /api/members/my-team`은 **호출자(actor)의
+       토큰**으로 팀을 정하지 host의 팀이 아니다 — `getReservableMembers`를 그대로 부르면
+       actor 자신의 팀 로스터가 와서 host 팀 기준 검증이 아니게 된다(범위를 잘못 잰다). 그래서
+       이 경우는 **FE 검증 자체를 건너뛰고** BE(`PUT /api/meetings/{id}/attendees`)가 최종
+       방어한다 — **아직 BE 요청 문서에 못 올렸다**, 다음 라운드에 올릴 것. UI는 애초에 이
+       경로로 못 들어온다(`canEditMeetingAttendees`가 `isHost`를 요구한다) — 직접 요청을
+       조작해야만 닿는 자리라 영향은 방어 심도 문제다.
+  */
+  let scopeActor: Actor | null;
+  if (actor.id === hostId) {
+    scopeActor = actor;
+  } else {
+    const hostDetail = await getManagedMember(hostId);
+    scopeActor =
+      hostDetail && hostDetail.member.authority === AUTHORITY.OWNER
+        ? {
+            id: hostId,
+            role: hostDetail.member.authority,
+            teamName: hostDetail.member.teamName ?? undefined,
+          }
+        : null;
+  }
+
+  /*
+    ⚠️ scopeActor가 `null`인 건 "actor가 host가 아니고 host가 LEADER·MEMBER인" 경우다(host
+       정보를 못 구한 경우 포함) — 위 주석의 "한 칸", BE가 마저 본다.
+  */
+  if (scopeActor) {
+    const roster = await getReservableMembers(scopeActor);
+    const rosterIds = new Set(roster.map((member) => member.id));
+    if (attendeeIds.some((id) => id !== hostId && !rosterIds.has(id))) {
+      return { error: "지정할 수 없는 참석자가 있습니다", attendeeIds: null };
+    }
+  }
+
   try {
     /*
-      ⚠️ **참석자 범위는 여기서 못 본다 — 본 척하지 않는다**(§정직성). 명부(`getReservableMembers`)가
-         실연동에서 그대로 던지고, 명부 API도 권한별로 갈려 MEMBER는 자기 팀 명단을 볼 길이 없다
-         (`rooms/actions.ts`의 같은 자리 주석에 근거를 적어 뒀다). **최종 방어는 BE다** —
-         `PUT /api/meetings/{id}/attendees`는 [확인] 현재 존재·같은 회사만 보고 권한·팀은 전혀
-         안 본다(`MeetingAttendeeCommandService#findAndValidateMembers`). BE 요청 문서에 올린다.
-    */
-    /*
-      ⚠️ **여기서 host를 끼워 넣지 않는다.** 이 액션은 지금 보는 사람(`actor`)이 host인지
-      모른다(OWNER·Admin이 남의 회의를 고치는 경우도 있다, `canManageMeeting`) — "host 자동
-      포함·제거 불가"는 계약이 **서버 책임**이라고 명시한 규칙이라(MEET-09), FE가 잘못된
-      사람(지금 보는 사람)을 host로 끼워 넣으면 오히려 명단을 틀리게 만든다.
+      ⚠️ **여기서 host를 끼워 넣지 않는다.** "host 자동 포함·제거 불가"는 계약이 **서버 책임**
+         이라고 명시한 규칙이라(MEET-09), FE가 host를 직접 끼워 넣으면 오히려 명단을 틀리게
+         만든다 — 서버가 대신 채운다.
     */
     const response = await serverApi<BeUpdateAttendeesResponse>(
       ep.meetingAttendees(Number(meetingId)),

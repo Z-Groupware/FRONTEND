@@ -47,7 +47,7 @@ export default async function AppMeetingPage({
   const viewer = await getViewer();
   const [directory, members, projects, teamActions] = await Promise.all([
     getMeetingDirectory(viewer.id),
-    getReservableMembers(),
+    getReservableMembers(viewer),
     getReservableProjects(),
     getReservableTeamActions(viewer),
   ]);

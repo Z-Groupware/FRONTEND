@@ -4,10 +4,11 @@ import { Check, MapPin, Search } from "lucide-react";
 import Script from "next/script";
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { EmptyState } from "@/components/common/empty-state";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
-import type { PickedPlace } from "../register-draft";
+import { hasPinnedCoords, type PickedPlace } from "../register-draft";
 import { type KakaoPlace, readKakao } from "./kakao-sdk";
 
 /**
@@ -85,7 +86,8 @@ export function AddressPicker({
   const drawPin = useCallback(
     (container: HTMLDivElement | null) => {
       const kakao = readKakao();
-      if (!kakao || !container || !picked) return;
+      /* ⚠️ 좌표가 없으면(0,0) 그리지 않는다 — 아래에서 상자째 안 붙지만 판정은 여기도 둔다 */
+      if (!kakao || !container || !hasPinnedCoords(picked)) return;
 
       const center = new kakao.maps.LatLng(picked.lat, picked.lng);
       const map = new kakao.maps.Map(container, { center, level: 4 });
@@ -287,19 +289,42 @@ export function AddressPicker({
                `readKakao()`가 아직 `null`이다 — 그대로 두면 **빈 상자가 영영 남는다.**
                상태가 `ready`로 바뀌면 상자가 새로 붙으면서 콜백이 한 번 더 돈다.
           */}
-          <div
-            key={`${loadState}:${picked.lat},${picked.lng}`}
-            ref={drawPin}
-            /*
+          {/*
+            ⚠️ **좌표가 없으면 지도를 아예 안 그린다.** 지도를 못 쓴 채 저장된 회사는 주소만
+               있고 좌표가 `0,0`인데, 그대로 그리면 **맞는 주소 아래 기니만 앞바다에 핀**이
+               꽂혀 위치가 등록된 것처럼 읽힌다(§정직성 — 없는 걸 있는 것처럼 그리지 않는다).
+            ⚠️ 자리는 비워도 **높이는 지도와 같게** 둔다 — 안 그러면 좌표 유무에 따라 카드가
+               껑충 줄었다 늘어 옆 칸까지 밀린다.
+          */}
+          {!hasPinnedCoords(picked) ? (
+            <div
+              className={cn(
+                "border-border flex items-center justify-center overflow-hidden rounded-lg border",
+                mapClassName,
+              )}
+            >
+              <EmptyState
+                icon={MapPin}
+                title="지도 위치가 등록되지 않았습니다"
+                description="주소만 저장돼 있습니다. 위에서 다시 찾아 고르면 지도에 표시됩니다."
+                className="px-4 py-0"
+              />
+            </div>
+          ) : (
+            <div
+              key={`${loadState}:${picked.lat},${picked.lng}`}
+              ref={drawPin}
+              /*
               ⚠️ `aria-hidden`이 아니라 `inert`다. 지도 안에는 카카오 SDK가 만든 버튼·링크가
                  들어 있어서, `aria-hidden`만 걸면 **읽히지는 않는데 탭으로는 들어가진다** —
                  스크린리더 사용자가 이름 없는 것들 사이에 갇힌다. `inert`는 포커스까지 뺀다.
               ⚠️ 지도를 실제로 조작하게 둘 생각이면 반대로 `inert`를 떼고 이름을 줘야 한다.
                  지금은 **고른 곳을 눈으로 확인하는 그림**이라 빼는 게 맞다.
             */
-            inert
-            className={cn("border-border w-full overflow-hidden rounded-lg border", mapClassName)}
-          />
+              inert
+              className={cn("border-border w-full overflow-hidden rounded-lg border", mapClassName)}
+            />
+          )}
         </>
       )}
 

@@ -41,12 +41,16 @@ export default async function RoomsPage({ searchParams }: RoomsPageProps) {
   const { week: weekParam, roomId: roomIdParam } = await searchParams;
   const week = parseWeekParam(weekParam);
 
-  // ⚠️ 팀 액션 목록은 지금 보고 있는 사람이 누구인지(권한·소속 팀)에 따라 달라져서 먼저 받는다.
+  /*
+    ⚠️ 팀 액션 목록·참석자 후보 둘 다 지금 보고 있는 사람이 누구인지(권한·소속 팀)에 따라
+       달라져서 먼저 받는다 — 참석자는 Owner면 팀별 리더, Leader·Member면 자기 팀뿐이다
+       (`getReservableMembers`, `attendee-scope.ts`).
+  */
   const viewer = await getViewer();
 
   const [rooms, members, projects, teamActions] = await Promise.all([
     getMeetingRooms(),
-    getReservableMembers(),
+    getReservableMembers(viewer),
     getReservableProjects(),
     getReservableTeamActions(viewer),
   ]);
