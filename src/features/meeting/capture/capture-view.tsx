@@ -162,8 +162,10 @@ export function CaptureView({
        말만 담는 자리다(DESIGN §7). 카드는 셸이 들고 있어(`NotificationProvider`)
        목록으로 옮겨도 따라오고, **닫기 전까지 남아 자리에서 상태만 바뀐다.**
        ⚠️ 제목을 같이 넘긴다 — 목록으로 튕긴 뒤 카드만 보고도 어느 회의인지 알아야 한다.
+       ⚠️ **id는 문자열 그대로 넘긴다.** `Number()`로 바꾸면 목 id(`meeting-3`)가 `NaN`이 되고,
+       `NaN === NaN`이 거짓이라 프로바이더가 자기 카드를 못 알아봐 「요약 중」에서 멈춘다.
     */
-    trackAnalysis(Number(meeting.id), meeting.title);
+    trackAnalysis(meeting.id, meeting.title);
     router.push("/app/meeting");
   };
 

@@ -26,11 +26,14 @@ interface ProcessingStatusApiResponse {
 }
 
 /**
+ * @param meetingId 화면이 쓰는 문자열 id(라우트 `[meetingId]`와 같은 값). **숫자로 바꾸는 건
+ *                  여기, BE 경로를 만들 때뿐이다** — 화면이 들고 다니는 값이 숫자면 목 id
+ *                  (`meeting-3`)가 `NaN`이 된다(`types.ts` 주석).
  * @param attempt 몇 번째 조회인지 — **목에서만** 쓴다(진행하는 척을 시간이 아니라 횟수로 만든다).
  *                실서버에서는 무시된다.
  */
 export async function fetchAnalysisStatusAction(
-  meetingId: number,
+  meetingId: string,
   attempt: number,
 ): Promise<AnalysisProbe> {
   if (isMock) {
@@ -50,9 +53,11 @@ export async function fetchAnalysisStatusAction(
 
   try {
     const accessToken = await requireAccessToken();
-    const response = await serverApi<ProcessingStatusApiResponse>(ep.processingStatus(meetingId), {
-      accessToken,
-    });
+    /* ⚠️ 경로에 들어갈 때만 숫자다 — `getLiveMeetingCapture`의 `ep.meeting(Number(id))`와 같다 */
+    const response = await serverApi<ProcessingStatusApiResponse>(
+      ep.processingStatus(Number(meetingId)),
+      { accessToken },
+    );
     /*
       ⚠️ **모르는 값은 실패로 본다.** BE가 새 상태를 늘렸는데 우리가 임의로 「요약 중」이나
          「완료」로 접으면 화면이 사실이 아닌 말을 한다 — 못 읽었다고 말하는 편이 낫다.

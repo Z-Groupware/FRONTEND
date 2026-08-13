@@ -96,8 +96,9 @@ describe("분석 이벤트 이음매", () => {
   */
   it("표에 이름이 적히는 순간 스트림이 카드를 움직인다", () => {
     const table = { ANALYSIS_DONE: PROCESSING_STATUS.DONE } as const;
+    /* ⚠️ BE는 숫자로 보내지만 카드가 쥔 id는 문자열이다 — 매퍼가 여기서 맞춰 준다 */
     expect(toAnalysisSignal({ type: "ANALYSIS_DONE", payload: { meetingId: 11 } }, table)).toEqual({
-      meetingId: 11,
+      meetingId: "11",
       status: PROCESSING_STATUS.DONE,
     });
     /* 어느 회의인지 모르면 카드를 못 고른다 — 조용히 남의 카드를 바꾸지 않는다 */

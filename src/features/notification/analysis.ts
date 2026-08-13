@@ -137,7 +137,7 @@ export function restart(tracking: AnalysisTracking, now: number): AnalysisTracki
 }
 
 /** 회의 하나를 새로 쫓기 시작한다(회의 종료 직후 캡처 화면이 부른다). */
-export function startTracking(meetingId: number, title: string, now: number): AnalysisTracking {
+export function startTracking(meetingId: string, title: string, now: number): AnalysisTracking {
   return {
     meetingId,
     title,
@@ -160,7 +160,8 @@ export function startTracking(meetingId: number, title: string, now: number): An
  *    `safeParse`로 본다(§zod).
  */
 const trackingSchema = z.object({
-  meetingId: z.number(),
+  /* ⚠️ **문자열이다** — 숫자로 들면 목 id(`meeting-3`)가 `NaN`이 된다(`types.ts` 주석) */
+  meetingId: z.string(),
   title: z.string(),
   state: z.enum([
     ANALYSIS_CARD_STATE.RUNNING,

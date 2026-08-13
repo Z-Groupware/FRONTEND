@@ -118,7 +118,12 @@ export const ANALYSIS_EVENT_STATE: Readonly<Record<string, ProcessingStatus>> = 
 const analysisPayloadSchema = z.object({ meetingId: z.number() });
 
 export interface AnalysisSignal {
-  meetingId: number;
+  /**
+   * ⚠️ **문자열로 내보낸다.** BE payload는 숫자지만 카드가 들고 있는 id는 화면 쪽 문자열이라
+   *    (`AnalysisTracking.meetingId`), 여기서 안 맞추면 프로바이더의 "쫓던 회의가 맞나"
+   *    비교가 언제나 거짓이 되어 스트림이 카드를 못 움직인다.
+   */
+  meetingId: string;
   status: ProcessingStatus;
 }
 
@@ -138,5 +143,5 @@ export function toAnalysisSignal(
   const parsed = analysisPayloadSchema.safeParse(envelope.payload);
   if (!parsed.success) return null;
 
-  return { meetingId: parsed.data.meetingId, status };
+  return { meetingId: String(parsed.data.meetingId), status };
 }

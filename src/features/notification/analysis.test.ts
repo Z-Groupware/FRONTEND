@@ -17,8 +17,14 @@ import { ANALYSIS_CARD_STATE, type AnalysisTracking } from "./types";
 
 const NOW = 1_700_000_000_000;
 
+/*
+  ⚠️ id는 **목 모양(`meeting-7`)** 이다. 숫자로 들면 `Number("meeting-7")`이 `NaN`이 되어
+     프로바이더의 회의 대조가 전부 빗나간다 — 숫자 id로만 테스트하면 그게 안 잡힌다.
+*/
+const MEETING_ID = "meeting-7";
+
 function running(overrides: Partial<AnalysisTracking> = {}): AnalysisTracking {
-  return { ...startTracking(7, "주간 회의", NOW), ...overrides };
+  return { ...startTracking(MEETING_ID, "주간 회의", NOW), ...overrides };
 }
 
 describe("CAP-06 상태 → 카드 상태", () => {
@@ -84,7 +90,7 @@ describe("카드 상태 기계", () => {
       startedAt: NOW + 60_000,
       attempt: 0,
       failures: 0,
-      meetingId: 7,
+      meetingId: MEETING_ID,
     });
   });
 });
@@ -111,6 +117,18 @@ describe("새로고침 뒤 되살리기", () => {
   it("저장해 둔 값을 그대로 돌려준다", () => {
     const saved = running({ attempt: 3 });
     expect(restoreTracking(JSON.stringify(saved))).toEqual(saved);
+  });
+
+  /*
+    ⚠️ **회의 id는 저장과 비교를 견뎌야 한다.** 숫자로 들고 있던 시절에는 목 id가 `NaN`이라
+       `JSON.stringify`가 `null`로 적어(새로고침하면 카드가 사라졌다) 되살리지도 못했고,
+       `NaN === NaN`이 거짓이라 폴링 응답이 자기 카드를 못 찾아 「요약 중」에서 멈췄다.
+  */
+  it("목 회의 id(meeting-7)도 그대로 되살아나고 자기 자신과 같다", () => {
+    const tracking = running();
+    const restored = restoreTracking(JSON.stringify(tracking));
+    expect(restored?.meetingId).toBe(MEETING_ID);
+    expect(restored?.meetingId === tracking.meetingId).toBe(true);
   });
 
   /* 옛 버전이 남긴 값으로 카드가 이상한 상태에 갇히지 않게 한다 */

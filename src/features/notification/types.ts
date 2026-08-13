@@ -48,7 +48,15 @@ export type AnalysisCardState = (typeof ANALYSIS_CARD_STATE)[keyof typeof ANALYS
 
 /** 지금 쫓고 있는 회의 하나. 카드가 통째로 이 값을 그린다. */
 export interface AnalysisTracking {
-  meetingId: number;
+  /**
+   * 화면이 쓰는 회의 id — **문자열이다**(`MeetingCaptureInfo.id`·라우트 `[meetingId]`와 같은 값).
+   *
+   * ⚠️ **숫자로 바꿔 들고 있으면 안 된다.** 목 회의 id는 `meeting-3`이라 `Number()`가 `NaN`이
+   *    되는데, `NaN === NaN`은 거짓이라 프로바이더의 "쫓던 회의가 맞나" 비교가 전부 빗나가
+   *    카드가 「요약 중」에서 영영 안 바뀐다(§정직성). 숫자가 필요한 건 BE 경로 하나뿐이라
+   *    변환은 `actions.ts`(API 경계)에서 한다 — `server.ts`의 `ep.meeting(Number(id))`와 같다.
+   */
+  meetingId: string;
   /** 카드에 적을 회의 제목 — 목록으로 튕긴 뒤에도 무엇이 도는지 알아야 한다 */
   title: string;
   state: AnalysisCardState;

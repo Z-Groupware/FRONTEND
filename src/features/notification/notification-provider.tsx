@@ -33,8 +33,12 @@ interface NotificationContextValue {
   banners: BannerNotification[];
   dismissBanner: (id: string) => void;
   tracking: AnalysisTracking | null;
-  /** 회의 종료 직후 캡처 화면이 부른다 — 이 순간부터 카드가 뜬다 */
-  trackAnalysis: (meetingId: number, title: string) => void;
+  /**
+   * 회의 종료 직후 캡처 화면이 부른다 — 이 순간부터 카드가 뜬다.
+   * ⚠️ `meetingId`는 **화면이 쓰는 문자열 id 그대로** 넘긴다(`Number()`로 바꾸지 않는다 —
+   *    목 id가 `NaN`이 되어 카드가 멈춘다, `types.ts` 주석).
+   */
+  trackAnalysis: (meetingId: string, title: string) => void;
   dismissAnalysis: () => void;
   retryAnalysis: () => void;
 }
@@ -124,7 +128,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     ⚠️ **한 번에 한 회의만 쫓는다.** 사람이 동시에 두 회의를 끝낼 수는 없고, 여러 장을
        쌓으면 화면 오른쪽 아래가 카드로 덮인다 — 새로 끝내면 앞 카드는 그 자리를 내준다.
   */
-  const trackAnalysis = useCallback((meetingId: number, title: string) => {
+  const trackAnalysis = useCallback((meetingId: string, title: string) => {
     setTracking(startTracking(meetingId, title, Date.now()));
   }, []);
 
