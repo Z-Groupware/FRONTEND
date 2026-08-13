@@ -32,9 +32,11 @@ export async function GET(request: NextRequest) {
   const accessToken = await getAccessToken();
   if (!accessToken) {
     /*
-      ⚠️ **401을 그대로 돌려준다.** `EventSource`는 열리자마자 `error`를 받고 재연결을 반복하는데,
-         훅이 그 신호를 보고 연결을 접는다(`use-notification-stream.ts`) — 로그인이 풀린 채로
-         초당 몇 번씩 두드리지 않게 하려는 것이다.
+      ⚠️ **401을 그대로 돌려준다.** 응답이 온 실패라 `EventSource`가 연결을 닫고, 훅은 그
+         신호를 보고 **간격을 2초→최대 60초로 늘려 가며** 다시 연다
+         (`use-notification-stream.ts`) — 로그인이 풀린 채로 초당 몇 번씩 두드리지 않게
+         하려는 것이다. 아주 멈추지는 않는다: 다시 로그인하면 그 자리에서 알림이 돌아와야
+         한다(멈춰 두면 사람은 조용한 화면을 정상으로 읽는다, §정직성).
     */
     return new Response("인증이 필요합니다.", { status: 401 });
   }
@@ -58,7 +60,14 @@ export async function GET(request: NextRequest) {
   }
 
   if (!upstream.ok || !upstream.body) {
-    return new Response("알림 스트림에 연결하지 못했습니다.", { status: upstream.status || 502 });
+    /*
+      ⚠️ **위쪽 상태를 그대로 되쓰지 않는다.** 204·205·304는 본문을 못 싣는 상태라
+         `new Response(문구, { status: 204 })`가 그 자리에서 터지고, 라우트는 500으로
+         끝난다 — 못 붙었다는 말조차 못 전한다. 성공 계열로 온 실패는 **중계 실패(502)**로
+         모은다(우리가 보기엔 스트림을 못 얻은 것이다).
+    */
+    const status = upstream.status >= 400 ? upstream.status : 502;
+    return new Response("알림 스트림에 연결하지 못했습니다.", { status });
   }
 
   return new Response(upstream.body, {

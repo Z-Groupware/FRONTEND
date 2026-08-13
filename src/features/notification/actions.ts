@@ -39,10 +39,13 @@ export async function fetchAnalysisStatusAction(
          그렇다고 「요약 중」에 굳혀 두면 목으로 도는 개발·데모에서 이 카드가 **끝나는 걸
          아무도 못 본다** — 회의를 끝내도 검토 화면으로 갈 길이 안 생긴다.
          그래서 두 번 물어본 뒤 완료로 넘긴다(5초 간격 × 2 ≈ 10초).
+      ⚠️ **`attempt`는 0부터 온다** — 첫 조회가 0, 두 번째가 1이다(`startTracking`이 0으로
+         시작하고 `advance`가 응답 뒤에 올린다). 그래서 두 번째를 완료로 만드는 조건은
+         `>= 1`이다. `>= 2`로 두면 세 번째(약 15초)라 위에 적은 시나리오와 어긋난다.
       ⚠️ 실패 카드는 목으로 못 본다 — 실패를 섞어 넣으면 데모 때마다 무작위로 깨진 것처럼
          보인다. 실패 모양은 테스트(`analysis.test.ts`)가 지킨다.
     */
-    return { ok: true, status: attempt >= 2 ? PROCESSING_STATUS.DONE : PROCESSING_STATUS.RUNNING };
+    return { ok: true, status: attempt >= 1 ? PROCESSING_STATUS.DONE : PROCESSING_STATUS.RUNNING };
   }
 
   try {

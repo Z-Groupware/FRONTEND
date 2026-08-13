@@ -114,10 +114,13 @@ function CardBody({
          그림자가 없으면 화면 위에 떠 있는 것으로 안 읽힌다.
       ⚠️ 폭을 고정(288px)한다 — 회의 제목 길이에 따라 카드가 늘었다 줄면 자리가 흔들린다.
          제목은 `truncate`로 자른다.
+      ⚠️ 다만 **좁은 화면에서는 접힌다**(§디자인 토큰 — 고정 폭 대신 반응형 여지). 288 + 우측
+         여백 24는 336px보다 좁은 뷰포트에서 왼쪽으로 삐져나가 닫기 버튼만 남는다.
+         `max-w`로 양옆 24px을 남긴다.
       ⚠️ 모션은 **150ms**다(DESIGN — 100/150/250ms). 상태가 바뀔 때 카드를 다시 튀어나오게
          하지 않는다: 처음 뜰 때만 올라오고, 그 뒤로는 안쪽 내용만 바뀐다.
     */
-    <div className="border-border bg-card animate-in fade-in slide-in-from-bottom-2 fixed right-6 bottom-6 z-50 w-72 rounded-2xl border shadow-lg duration-150">
+    <div className="border-border bg-card animate-in fade-in slide-in-from-bottom-2 fixed right-6 bottom-6 z-50 w-72 max-w-[calc(100vw-3rem)] rounded-2xl border shadow-lg duration-150">
       {/*
         ⚠️ `role="status"` + `aria-live`로 **자리에서 바뀌는 것**을 읽게 한다. 카드가 이미
            떠 있는 채로 글자만 바뀌면 스크린리더는 아무 말도 하지 않는다 — 눈으로 보는
