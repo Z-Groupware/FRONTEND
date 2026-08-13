@@ -1,4 +1,9 @@
-import { type BeCalendarItem, toPersonalCalendarEvent } from "./mapper";
+import {
+  type BeCalendarItem,
+  type BeTodoResponse,
+  toPersonalCalendarEvent,
+  toPersonalCalendarEventFromTodo,
+} from "./mapper";
 import { CALENDAR_ITEM_TAG } from "./types";
 
 const base: BeCalendarItem = {
@@ -43,5 +48,26 @@ describe("BE 캘린더 항목 매퍼", () => {
     );
 
     expect(event).toBeNull();
+  });
+});
+
+describe("BE Todo 응답 매퍼", () => {
+  it("생성 응답을 그대로 개인 Todo 이벤트로 옮긴다", () => {
+    const be: BeTodoResponse = {
+      id: 10,
+      title: "여행",
+      date: "2026-08-20",
+      endDate: "2026-08-25",
+      isDone: false,
+    };
+
+    expect(toPersonalCalendarEventFromTodo(be)).toEqual({
+      id: "10",
+      title: "여행",
+      start: new Date("2026-08-20T00:00:00"),
+      end: new Date("2026-08-25T00:00:00"),
+      tag: CALENDAR_ITEM_TAG.PERSONAL_TODO,
+      isCompleted: false,
+    });
   });
 });
