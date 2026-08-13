@@ -97,9 +97,9 @@ export function MeetingReviewView({ review }: MeetingReviewViewProps) {
         id,
         title: input.title,
         description: input.description,
-        assigneeId: input.assigneeId,
-        /* ⚠️ 오너 회의는 [액션 직접 추가] 자체를 막아뒀으니(BE #476 대기) 여기로 안 옴 */
-        teamId: null,
+        /* ⚠️ 폼이 모드별로 둘 중 하나만 채워 보낸다(`ManualDraftForm`) — 안 채운 쪽은 null */
+        assigneeId: input.assigneeId ?? null,
+        teamId: input.teamId ?? null,
         confidence: AI_CONFIDENCE.NEEDS_REVIEW,
         startDate: input.startDate,
         dueDate: input.dueDate,
@@ -176,8 +176,13 @@ export function MeetingReviewView({ review }: MeetingReviewViewProps) {
                 localId: draft.id,
                 title: draft.title,
                 description: draft.description,
-                // 폼이 담당자 없이는 추가를 막는다(`canAdd`) — 여기 null이 올 수 없다
-                assigneeId: draft.assigneeId ?? 0,
+                /*
+                  ⚠️ 폼이 모드별로 둘 중 하나만 채운다(`canAdd`가 그 하나를 강제) — 오너 회의는
+                     `teamId`, 그 외엔 `assigneeId`. 둘 다 실으면 BE가 422로 막는다(actions.ts 주석).
+                */
+                ...(draft.teamId !== null
+                  ? { teamId: draft.teamId }
+                  : { assigneeId: draft.assigneeId ?? 0 }),
                 startDate: draft.startDate,
                 dueDate: draft.dueDate,
               })),
@@ -337,18 +342,11 @@ export function MeetingReviewView({ review }: MeetingReviewViewProps) {
           />
         ))}
 
-        {/*
-          ⚠️ **오너 회의는 [액션 직접 추가]를 잠깐 막는다**(BE 이슈 #476 대기 — RVW-03에
-             `teamId`가 아직 없어, 직접 추가한 액션은 팀 액션으로 만들 방법이 없다). 버튼을
-             숨기지 않고 이유를 적어 안내한다(§정직성) — 잠긴 이유 없는 빈 자리는 고장으로 읽힌다.
-        */}
-        {review.isOwnerMeeting ? (
-          <p className="border-border text-muted-foreground border-t px-7 py-4 text-[12px] leading-4">
-            오너 회의는 [액션 직접 추가]를 아직 지원하지 않습니다 — 부서 지정 기능이 곧 열립니다.
-          </p>
-        ) : isAddingManual ? (
+        {/* ⚠️ 오너 회의는 부서 옵션을 실어 보낸다 — BE #476/PR #477 머지로 [액션 직접 추가]도 열림 */}
+        {isAddingManual ? (
           <ManualDraftForm
             assigneeOptions={review.assigneeOptions}
+            teamOptions={review.isOwnerMeeting ? review.teamOptions : undefined}
             defaultDueDate={needsReview[0]?.dueDate ?? highConfidence[0]?.dueDate ?? ""}
             onAdd={addManualDraft}
             onCancel={() => setIsAddingManual(false)}

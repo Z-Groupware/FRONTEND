@@ -1,5 +1,6 @@
 "use client";
 
+import { Users } from "lucide-react";
 import { useState } from "react";
 
 import { DatePickerField } from "@/components/common/date-picker-field";
@@ -14,29 +15,35 @@ import {
 } from "@/components/ui/select";
 
 import { formatAssigneeLabel } from "../lib";
-import type { AssigneeOption, ManualDraftInput } from "../types";
+import type { AssigneeOption, ManualDraftInput, TeamOption } from "../types";
 
 interface ManualDraftFormProps {
   assigneeOptions: AssigneeOption[];
   defaultDueDate: string;
   onAdd: (input: ManualDraftInput) => void;
   onCancel: () => void;
+  /** 있으면 담당자 대신 부서를 고르는 모드다 — `action-review-row.tsx`와 같은 규칙(2026-08-13). */
+  teamOptions?: TeamOption[];
 }
 
-/** [액션 직접 추가] 클릭 시 펼쳐지는 입력 행 — 담당자·내용·시작일·마감일 전부 직접 입력. */
+/** [액션 직접 추가] 클릭 시 펼쳐지는 입력 행 — 담당자(또는 부서)·내용·시작일·마감일 전부 직접 입력. */
 export function ManualDraftForm({
   assigneeOptions,
   defaultDueDate,
   onAdd,
   onCancel,
+  teamOptions,
 }: ManualDraftFormProps) {
+  const isTeamMode = teamOptions !== undefined;
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [assigneeId, setAssigneeId] = useState(assigneeOptions[0]?.id ?? 0);
+  const [teamId, setTeamId] = useState(teamOptions?.[0]?.teamId ?? 0);
   const [startDate, setStartDate] = useState(defaultDueDate);
   const [dueDate, setDueDate] = useState(defaultDueDate);
 
-  const canAdd = title.trim().length > 0 && assigneeId > 0 && startDate && dueDate;
+  const canAdd =
+    title.trim().length > 0 && (isTeamMode ? teamId > 0 : assigneeId > 0) && startDate && dueDate;
 
   return (
     <div className="border-border bg-muted/30 flex flex-col gap-2 border-t px-7 py-4">
@@ -57,26 +64,61 @@ export function ManualDraftForm({
             className="border-input placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 w-full resize-none rounded-lg border bg-transparent px-2.5 py-1.5 text-[12px] leading-4 outline-none focus-visible:ring-3"
           />
         </div>
-        <Select
-          value={String(assigneeId)}
-          onValueChange={(value) => value && setAssigneeId(Number(value))}
-        >
-          <SelectTrigger aria-label="담당자 선택" className="w-36">
-            <SelectValue>
-              {(value) => {
-                const option = assigneeOptions.find((candidate) => String(candidate.id) === value);
-                return option ? formatAssigneeLabel(option) : value;
-              }}
-            </SelectValue>
-          </SelectTrigger>
-          <SelectContent side="bottom" alignItemWithTrigger={false}>
-            {assigneeOptions.map((option) => (
-              <SelectItem key={option.id} value={String(option.id)}>
-                {formatAssigneeLabel(option)}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        {isTeamMode ? (
+          <Select
+            value={String(teamId)}
+            onValueChange={(value) => value && setTeamId(Number(value))}
+          >
+            <SelectTrigger aria-label="부서 선택" className="w-36">
+              <SelectValue>
+                {(value) => {
+                  const option = teamOptions?.find(
+                    (candidate) => String(candidate.teamId) === value,
+                  );
+                  return option ? (
+                    <>
+                      <Users className="size-4 shrink-0" aria-hidden />
+                      <span className="truncate">{option.teamName}</span>
+                    </>
+                  ) : (
+                    value
+                  );
+                }}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent side="bottom" alignItemWithTrigger={false}>
+              {teamOptions?.map((option) => (
+                <SelectItem key={option.teamId} value={String(option.teamId)}>
+                  <Users className="size-4 shrink-0" aria-hidden />
+                  {option.teamName}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        ) : (
+          <Select
+            value={String(assigneeId)}
+            onValueChange={(value) => value && setAssigneeId(Number(value))}
+          >
+            <SelectTrigger aria-label="담당자 선택" className="w-36">
+              <SelectValue>
+                {(value) => {
+                  const option = assigneeOptions.find(
+                    (candidate) => String(candidate.id) === value,
+                  );
+                  return option ? formatAssigneeLabel(option) : value;
+                }}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent side="bottom" alignItemWithTrigger={false}>
+              {assigneeOptions.map((option) => (
+                <SelectItem key={option.id} value={String(option.id)}>
+                  {formatAssigneeLabel(option)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
         <DatePickerField
           aria-label="시작일"
           value={startDate}
@@ -105,7 +147,7 @@ export function ManualDraftForm({
             onAdd({
               title: title.trim(),
               description: description.trim(),
-              assigneeId,
+              ...(isTeamMode ? { teamId } : { assigneeId }),
               startDate,
               dueDate,
             })

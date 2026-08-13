@@ -112,11 +112,16 @@ export type MeetingReviewResult =
   | { kind: "notHost" }
   | { kind: "notFound" };
 
-/** [액션 직접 추가]로 새 초안 행을 만들 때 필요한 최소 입력. */
+/**
+ * [액션 직접 추가]로 새 초안 행을 만들 때 필요한 최소 입력.
+ * ⚠️ **`assigneeId`·`teamId` 중 정확히 하나만 채운다**(2026-08-13, BE #476/PR #477).
+ *    Owner 회의는 `teamId`, 그 외엔 `assigneeId` — `ReviewValue`(RVW-02)와 같은 상호배타 규칙.
+ */
 export interface ManualDraftInput {
   title: string;
   description: string;
-  assigneeId: number;
+  assigneeId?: number;
+  teamId?: number;
   startDate: string;
   dueDate: string;
 }

@@ -181,11 +181,17 @@ export async function confirmActionDistributionAction(
 
     /* ③ 직접 추가 — RVW-03에는 시작일 칸이 없어, 만들어진 id로 MODIFY를 뒤따라 보낸다 */
     for (const manual of payload.manuallyAdded) {
+      /*
+        ⚠️ **`assigneeMemberId`·`teamId` 상호 배타**(2026-08-13, BE #476/PR #477) — 폼이 모드별로
+           둘 중 하나만 채워 보내므로 여기서도 그대로 하나만 싣는다(ManualDraftInput 주석).
+      */
       const added = await serverApi<{ actionId: number }>(ep.meetingReviewAddAction(id), {
         method: "POST",
         accessToken,
         json: {
-          assigneeMemberId: manual.assigneeId,
+          ...(manual.teamId !== undefined
+            ? { teamId: manual.teamId }
+            : { assigneeMemberId: manual.assigneeId }),
           title: manual.title,
           detail: manual.description,
           dueDate: manual.dueDate,
