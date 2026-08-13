@@ -133,12 +133,16 @@ export async function saveCompanyProfileAction(
           name: draft.name,
           businessNumber: draft.businessNumber,
           /*
-            ⚠️ **비었으면 필드째 뺀다**(2026-08-12 고침). 전에는 빈 문자열을 보냈는데 BE가
-               `@Pattern`(NOT_BLANK_IF_PRESENT)으로 빈 값을 400으로 거절해서 **주소 없는
-               회사는 기본 정보 저장이 항상 실패**했다. BE는 부분 수정이라 필드가 없으면
-               "건드리지 말라"로 읽는다 — 저장은 되고, 대신 **한 번 넣은 주소를 지우는 길은
-               지금 계약에 없다**(빈 값 거부 + 생략 = 미변경). 지우기가 필요해지면 BE와
-               별도 협의한다(요청 문서에 적어 둠, §정직성: 되는 척하지 않는다).
+            ⚠️ **빈 문자열을 보내지 않는다.** BE가 `@Pattern`(NOT_BLANK_IF_PRESENT)으로 빈 값을
+               400으로 거절한다 — 부분 수정이라 필드가 없으면 "건드리지 말라"로 읽는다.
+            ⚠️ **지금은 이 생략이 실제로 일어나지 않는다**(2026-08-13 정정, 코드래빗 지적).
+               `validateCompanyProfile`이 `place`를 **필수로 막아**(register-draft.ts의
+               `.refine(place !== null)`) 주소가 빈 채로 여기까지 오지 않는다 — 즉 화면 정책은
+               "주소는 필수"다. 그래도 생략 형태로 두는 건, 검증이 완화되는 날 곧바로 400이
+               나지 않게 하기 위한 것이다.
+            ⚠️ 따라서 **한 번 넣은 주소를 지우는 길은 지금 없다**(검증이 빈 값을 막고, BE도
+               빈 값을 거절한다). 지우기가 필요해지면 검증 완화 + BE 계약이 함께 필요하다
+               (요청 문서에 적어 둠, §정직성: 되는 척하지 않는다).
           */
           ...(draft.place?.address ? { address: draft.place.address } : {}),
         },

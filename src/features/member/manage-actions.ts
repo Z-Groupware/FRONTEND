@@ -377,6 +377,15 @@ export interface IssueAccountResult {
   /** 칸과 무관한 실패 한 줄(권한 없음·미연동 등) */
   message?: string;
   issued?: { id: number; name: string; email: string };
+  /**
+   * **계정은 만들어졌는데 겸직만 못 붙은 상태**(2026-08-13, 코드래빗 지적).
+   *
+   * ⚠️ 발급(POST)과 겸직(PATCH)은 **원자적이지 않다** — BE `IssueMemberRequest`에 `isAdmin`이
+   *    없어 두 번 나눠 부를 수밖에 없다. 가운데서 끊기면 계정은 이미 있으므로, 실패로 되돌리고
+   *    다시 누르게 하면 **중복 이메일 오류만 뜨고 계정은 겸직 없이 남는다.**
+   *    그래서 실패가 아니라 **부분 성공**으로 알린다 — 사람은 사원 상세에서 겸직만 켜면 된다.
+   */
+  adminGrantFailed?: boolean;
 }
 
 /**
@@ -451,9 +460,9 @@ export async function issueAccountAction(draft: AccountDraft): Promise<IssueAcco
          `memberId·name·email·…`). 전에는 `serverApi<unknown>`으로 버려서, 목에서는 뜨던
          "OO님 보기" 결과 창이 라이브에서만 안 떴다.
     */
+    const accessToken = await requireAccessToken();
     let issuedMember: { memberId: number; name: string; email: string };
     try {
-      const accessToken = await requireAccessToken();
       issuedMember = await serverApi<{ memberId: number; name: string; email: string }>(
         ep.manageMembers(),
         {
@@ -470,25 +479,38 @@ export async function issueAccountAction(draft: AccountDraft): Promise<IssueAcco
           },
         },
       );
-
-      /* 겸직 토글이 켜져 있으면 이어서 붙인다 — OWNER인 것은 위에서 이미 확인했다 */
-      if (draft.isAdmin) {
-        await serverApi<unknown>(ep.memberAdmin(issuedMember.memberId), {
-          method: "PATCH",
-          accessToken,
-          json: { isAdmin: true },
-        });
-      }
     } catch (error) {
       /* 중복 메일이 가장 흔한 실패라 이메일 칸에 붙인다 — 폼 오류는 인라인이다(DECISIONS §7) */
       return { errors: { email: toUserMessage(error) } };
     }
 
+    /*
+      ⚠️ **여기서부터 계정은 이미 있다.** 겸직 PATCH가 실패해도 발급을 없던 일로 되돌릴 수
+         없어서(BE에 취소 경로가 없다) 실패로 돌려주면 안 된다 — 다시 누르면 중복 이메일
+         오류만 나고 계정은 겸직 없이 남는다. **부분 성공으로 알리고** 다음 할 일을 말한다
+         (§정직성: 절반 된 것을 실패나 성공으로 뭉개지 않는다).
+      ⚠️ 목록·조직도 갱신은 **어느 쪽이든 한다** — 계정이 생긴 건 사실이다.
+    */
+    let adminGrantFailed = false;
+    if (draft.isAdmin) {
+      try {
+        await serverApi<unknown>(ep.memberAdmin(issuedMember.memberId), {
+          method: "PATCH",
+          accessToken,
+          json: { isAdmin: true },
+        });
+      } catch {
+        adminGrantFailed = true;
+      }
+    }
+
     revalidatePath("/manage/members");
     revalidatePath(PEOPLE_PATH);
+    revalidatePath(pathOf(issuedMember.memberId));
     return {
       errors: {},
       issued: { id: issuedMember.memberId, name: issuedMember.name, email: issuedMember.email },
+      ...(adminGrantFailed ? { adminGrantFailed: true } : {}),
     };
   }
 
