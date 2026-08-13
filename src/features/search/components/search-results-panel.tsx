@@ -57,11 +57,17 @@ export function SearchResultsPanel({
       {(results.cap || !results.filtersApplied) && (
         <div className="text-muted-foreground flex flex-col gap-1 text-[12px] leading-5">
           {results.cap && (
+            /*
+              ⚠️ **탭을 고르라고 하지 않는다**(2026-08-13 고침). 서버는 늘 `type=ALL`로 한 번만
+                 부르고 상한도 종류마다 걸리므로, 탭을 바꿔도 **같은 줄이 그대로** 나온다 —
+                 "탭으로 종류를 골라 주세요"는 눌러도 아무것도 안 늘어나는 안내였다(§정직성:
+                 지원하지 않는 방법을 권하지 않는다). 실제로 듣는 수단은 검색어를 좁히는 것뿐이다.
+            */
             <p className="flex items-start gap-1.5">
               <Info className="mt-0.5 size-3.5 shrink-0" aria-hidden />
               <span>
-                서버가 상위 <span className="tabular-nums">{results.cap.shown}</span>건까지만
-                돌려줍니다. 나머지를 보려면 검색어를 좁히거나 탭으로 종류를 골라 주세요.
+                서버 상한에 걸려 <span className="tabular-nums">{results.cap.shown}</span>건만
+                왔습니다. 탭을 바꿔도 더 나오지 않으니, 나머지를 보려면 검색어를 좁혀 주세요.
               </span>
             </p>
           )}
@@ -76,10 +82,19 @@ export function SearchResultsPanel({
 
       {results.items.length === 0 ? (
         <div className="border-border bg-card rounded-2xl border">
+          {/*
+            ⚠️ **서버가 필터를 안 걸 때는 필터를 바꾸라고 하지 않는다**(2026-08-13 고침).
+               바로 위에서 "필터는 아직 반영되지 않습니다"라고 해 놓고 "필터를 전체로 바꿔
+               주세요"라고 하면 화면이 두 말을 한다 — 실제로 바꿔도 결과는 한 줄도 안 변한다.
+          */}
           <EmptyState
             icon={SearchX}
             title="검색 결과가 없습니다."
-            description="다른 검색어로 찾거나 필터를 전체로 바꿔 주세요."
+            description={
+              results.filtersApplied
+                ? "다른 검색어로 찾거나 필터를 전체로 바꿔 주세요."
+                : "다른 검색어로 찾아 주세요."
+            }
           />
         </div>
       ) : (
