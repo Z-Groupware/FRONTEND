@@ -10,6 +10,7 @@ import { LeaveGuard } from "@/components/common/leave-guard";
 import { ProfileAvatar } from "@/components/common/profile-avatar";
 import { Button } from "@/components/ui/button";
 import { CAPTURE_FAILURE_MESSAGE } from "@/constants/meeting";
+import { useNotificationCenter } from "@/features/notification/notification-provider";
 import { pickPaletteColor } from "@/lib/palette";
 import { cn } from "@/lib/utils";
 
@@ -101,6 +102,11 @@ export function CaptureView({
   }, [capture.chunks, remoteCaptions, meeting.attendees]);
   const router = useRouter();
   const [isConfirming, setIsConfirming] = useState(false);
+  /*
+    ⚠️ 요약 진행은 **셸이 쫓는다**(#442). 이 화면은 "이 회의를 쫓아 달라"고 넘기기만 한다 —
+       여기서 들고 있으면 목록으로 옮기는 순간 사라져서 카드를 만든 뜻이 없어진다.
+  */
+  const { trackAnalysis } = useNotificationCenter();
 
   const unsupported = !capture.support.stt || !capture.support.recording;
   const isRecording = capture.phase === CAPTURE_PHASE.RECORDING;
@@ -150,13 +156,16 @@ export function CaptureView({
        ⚠️ **바로 목록으로 돌려보낸다**(팀 확정). 요약 API는 응답이 오래 걸려서 서버가
        백그라운드로 돌린다 — 여기서 기다리게 두면 아무것도 못 하는 화면을 몇 분씩
        쳐다보게 된다. 창을 닫아도 안전한 일이라 붙잡을 이유가 없다(§3-3 4).
-       ⚠️ 토스트가 **"백그라운드"를 말한다**(팀 확정: 목록으로 보낸 뒤에 그렇게 전한다).
-       옮겨 간 화면에서 처음 보는 말이 이거라, 여기서 안 하면 왜 목록으로 튕겼는지
-       모른 채 요약을 기다리게 된다.
-       ⚠️ 한 줄(220px)이라 글자 자리가 **184px**뿐이다(DESIGN §7) — 이 문구는 153px다.
-       더 길게 쓰려면 잘린다.
+       ⚠️ **토스트를 지속형 카드로 바꿨다**(#442). 전에는 `toast.success("백그라운드에서
+       요약 중입니다")` 한 줄이 몇 초 뜨고 사라졌는데, 그 뒤로 요약이 끝났는지 깨졌는지
+       알 방법이 없어서 사람이 회의 상세를 새로고침하며 기다렸다 — 토스트는 놓쳐도 되는
+       말만 담는 자리다(DESIGN §7). 카드는 셸이 들고 있어(`NotificationProvider`)
+       목록으로 옮겨도 따라오고, **닫기 전까지 남아 자리에서 상태만 바뀐다.**
+       ⚠️ 제목을 같이 넘긴다 — 목록으로 튕긴 뒤 카드만 보고도 어느 회의인지 알아야 한다.
+       ⚠️ **id는 문자열 그대로 넘긴다.** `Number()`로 바꾸면 목 id(`meeting-3`)가 `NaN`이 되고,
+       `NaN === NaN`이 거짓이라 프로바이더가 자기 카드를 못 알아봐 「요약 중」에서 멈춘다.
     */
-    toast.success("백그라운드에서 요약 중입니다");
+    trackAnalysis(meeting.id, meeting.title);
     router.push("/app/meeting");
   };
 

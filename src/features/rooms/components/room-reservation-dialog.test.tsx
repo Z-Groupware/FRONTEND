@@ -20,13 +20,18 @@ const ROOMS: MeetingRoom[] = [
     closeTime: "18:00",
   },
 ];
+/* ⚠️ Owner가 여는 폼이라 후보는 **팀장뿐**이다(2026-08-13, `attendee-scope.ts`) — 예전의
+   박대표(OWNER)를 그대로 두면 피커에 아무도 안 떠서 이 파일의 다른 케이스가 같이 죽는다. */
 const MEMBERS: RoomMember[] = [
-  { id: 1, name: "박대표", teamName: null, authority: AUTHORITY.OWNER },
+  { id: 2, name: "김서준", teamName: "개발팀", authority: AUTHORITY.LEADER },
 ];
 const PROJECTS: RoomProjectOption[] = [{ id: "1", name: "굿즈 프로젝트", tag: "GOODS" }];
 const TEAM_ACTIONS: RoomTeamActionOption[] = [];
 
 const SLOT_START = new Date("2026-08-11T10:00:00");
+
+/** 개설자 = Owner(팀 없음) — 참석자 후보가 팀장으로 고정되는 쪽이다. */
+const OWNER_VIEWER = { id: 1, role: AUTHORITY.OWNER, teamName: null } as const;
 
 function renderDialog(overrides: Partial<React.ComponentProps<typeof RoomReservationDialog>> = {}) {
   const onOpenChange = jest.fn();
@@ -40,7 +45,7 @@ function renderDialog(overrides: Partial<React.ComponentProps<typeof RoomReserva
       projects={PROJECTS}
       showParentTeamAction={false}
       teamActions={TEAM_ACTIONS}
-      viewerTeamName={null}
+      viewer={OWNER_VIEWER}
       onCreated={onCreated}
       {...overrides}
     />,
@@ -59,7 +64,7 @@ describe("RoomReservationDialog", () => {
         projects={PROJECTS}
         showParentTeamAction={false}
         teamActions={TEAM_ACTIONS}
-        viewerTeamName={null}
+        viewer={OWNER_VIEWER}
         onCreated={jest.fn()}
       />,
     );
