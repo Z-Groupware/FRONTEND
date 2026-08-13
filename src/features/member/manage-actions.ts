@@ -14,6 +14,7 @@ import { ep } from "@/lib/endpoints";
 import type { PaginatedResult } from "@/lib/paginate";
 import {
   canApproveFinal,
+  canChangeAdminGrant,
   canChangeMemberGrade,
   canDeleteMemberAccount,
   canIssueAccount,
@@ -194,7 +195,7 @@ export async function changeMemberGradeAction(
          걸렀다 — ADMIN이 직급+겸직을 같이 바꾸면 직급은 이미 저장된 채 실패 메시지가 떠서
          **절반만 반영**됐다. 실패할 요청이면 아무것도 저장되기 전에 멈춰야 한다.
     */
-    if (next.isAdmin !== target.member.isAdmin && pass.viewer.role !== AUTHORITY.OWNER) {
+    if (next.isAdmin !== target.member.isAdmin && !canChangeAdminGrant(pass.viewer)) {
       return { isSuccess: false, message: "관리자 겸직은 대표만 바꿀 수 있습니다" };
     }
 
@@ -451,7 +452,7 @@ export async function issueAccountAction(draft: AccountDraft): Promise<IssueAcco
          `PATCH /members/{id}/admin`을 이어 부르는 걸로 고쳤고, 그 경로가 **OWNER 전용**이라
          Admin 발급자가 토글을 켰으면 보내기 전에 여기서 막는다 — 직급 변경과 같은 규칙이다.
     */
-    if (draft.isAdmin && pass.viewer.role !== AUTHORITY.OWNER) {
+    if (draft.isAdmin && !canChangeAdminGrant(pass.viewer)) {
       return { errors: {}, message: "관리자 겸직 발급은 대표만 할 수 있습니다" };
     }
 
