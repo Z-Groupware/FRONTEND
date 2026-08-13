@@ -2,18 +2,23 @@
 
 import { revalidatePath } from "next/cache";
 
-import { AUTHORITY } from "@/constants/authority";
+import { AUTHORITY, type Authority } from "@/constants/authority";
 import { MEETING_STATUS } from "@/constants/meeting";
 import { requireAccessToken } from "@/features/auth/session";
 import { getManagedMember } from "@/features/member/manage-server";
-import { findAttendeeScopeViolation } from "@/features/rooms/attendee-scope";
+import { TOP_LEVEL_PROJECTS } from "@/features/project/mock/projects";
+import { PROJECT_TEAM_ACTIONS_MOCK } from "@/features/project/mock/team-actions";
+import {
+  type AttendeeScopeViewer,
+  findAttendeeScopeViolation,
+} from "@/features/rooms/attendee-scope";
 import { findMockMember } from "@/features/rooms/mock/members";
 import { getReservableMembers } from "@/features/rooms/server";
 import { getViewer } from "@/features/shell/viewer";
 import { ApiError, serverApi } from "@/lib/api";
 import { ep } from "@/lib/endpoints";
 import { getMockActor } from "@/lib/mock-actor";
-import { type Actor, canManageMeeting } from "@/lib/permission";
+import { type Actor, canManageMeeting, requiresParentTeamAction } from "@/lib/permission";
 import { isMock } from "@/mocks/config";
 
 import { checkMeetingTitle } from "./lib";
@@ -26,12 +31,20 @@ import {
   parseMeetingDetail,
 } from "./mapper";
 import {
+  addMockOnlineMeeting,
   cancelMockMeeting,
   findMockMeeting,
   updateMockMeeting,
   updateMockMeetingAttendees,
 } from "./mock/meetings";
 import { meetingStatusOf } from "./status";
+import type {
+  MeetingDraft,
+  MeetingTopic,
+  OnlineMeetingDraft,
+  OnlineMeetingFormErrors,
+} from "./types";
+import { validateOnlineMeetingDraft } from "./validate";
 
 const MEETING_LIST_PATH = "/app/meeting";
 
@@ -361,4 +374,144 @@ export async function updateMeetingAction(
   } catch (error) {
     return { error: toUpdateErrorMessage(error), saved: null };
   }
+}
+
+/**
+ * 참석자 범위 판정에 필요한 최소 정보만 `Actor`에서 뽑는다(`attendee-scope.ts`).
+ * ⚠️ `rooms/actions.ts`에 같은 이름의 헬퍼가 있지만 export되지 않아 여기서 다시 만든다 —
+ *    로직은 한 줄이라 두 벌이어도 어긋날 여지가 없다(`updateMeetingAttendeesAction`도 같은
+ *    모양을 인라인으로 쓴다).
+ */
+function toAttendeeScopeViewer(actor: Actor): AttendeeScopeViewer {
+  return { id: actor.id, role: actor.role, teamName: actor.teamName ?? null };
+}
+
+/** 비대면 회의 만들기 폼 결과 — `useActionState`가 그대로 들고 있는 모양. */
+export interface OnlineMeetingFormState {
+  errors: OnlineMeetingFormErrors;
+  /** 성공 시 방금 만든 회의 id — 다이얼로그가 이 값으로 상세로 이동한다(재조회 없이). */
+  created?: { id: string };
+}
+
+function readOnlineMeetingDraft(formData: FormData): OnlineMeetingDraft {
+  const parentTeamActionId = formData.get("parentTeamActionId");
+  const recordingFileName = formData.get("recordingFileName");
+  const mains = formData.getAll("topicMain");
+  const subs = formData.getAll("topicSub");
+
+  return {
+    title: String(formData.get("title") ?? ""),
+    projectId: String(formData.get("projectId") ?? ""),
+    topics: mains.map((main, index) => ({ main: String(main), sub: String(subs[index] ?? "") })),
+    attendeeIds: formData.getAll("attendeeIds").map(Number),
+    parentTeamActionId: parentTeamActionId ? Number(parentTeamActionId) : undefined,
+    recordingFileName: recordingFileName ? String(recordingFileName) : null,
+  };
+}
+
+/**
+ * 비대면 회의 만들기(이슈 #473) — `/app/meeting` 목록의 [비대면 회의] 버튼이 부른다.
+ *
+ * ⚠️ **BE API가 아직 안 정해졌다**(1안/2안 논의 중, 팀원 회신 — 이슈 #473). 추측 요청을 보내지
+ *    않는다(CLAUDE.md §연동 검증: Swagger·구두 추측 금지) — 실서버 분기는 확정될 때까지
+ *    "아직 준비 중"이라고 정직하게 말한다(§정직성). 확정되면 이 분기만 실서버 호출로 바꾼다
+ *    (§Mock 격리막).
+ * ⚠️ **제출하면 그 자리에서 완료 처리된다** — 회의실 예약(`createRoomReservationAction`)과
+ *    달리 캡처 화면으로 안 넘어간다(팀 명세). 그래서 회의실·시간을 아예 안 받는다.
+ * ⚠️ mock 분기의 검증 순서는 `createRoomReservationAction`과 맞춘다(프로젝트 → 참석자 범위 →
+ *    상위 팀 액션) — 같은 도메인의 두 생성 경로가 다른 순서로 막히면 같은 실수가 화면마다
+ *    다른 첫 오류로 보인다.
+ */
+export async function createOnlineMeetingAction(
+  _prev: OnlineMeetingFormState,
+  formData: FormData,
+): Promise<OnlineMeetingFormState> {
+  const draft = readOnlineMeetingDraft(formData);
+  const actor = isMock ? getMockActor() : await getViewer();
+  const errors = validateOnlineMeetingDraft(draft, { role: actor.role });
+  if (Object.keys(errors).length > 0) return { errors };
+
+  if (!isMock) {
+    // ⚠️ BE API가 아직 안 정해졌다(1안/2안 논의 중, 이슈 #473) — 추측 요청을 보내지 않는다
+    //    (CLAUDE.md §연동 검증: Swagger·구두 추측 금지). 확정되면 이 분기를 실서버 호출로 바꾼다.
+    return { errors: { title: "비대면 회의는 아직 준비 중입니다 — 곧 지원됩니다" } };
+  }
+
+  // ⚠️ 화면 select·피커가 이미 실제 목록에서만 고르게 해도, 폼은 조작될 수 있다
+  //    (§권한: 화면 숨김은 UX일 뿐 보안이 아니다) — 참조값이 실제로 존재하는지 서버에서 다시 본다.
+  const project = TOP_LEVEL_PROJECTS.find((item) => String(item.id) === draft.projectId);
+  if (!project) {
+    return { errors: { projectId: "존재하지 않는 프로젝트입니다" } };
+  }
+
+  /*
+    ⚠️ **참석자 서버 재검증**(`createRoomReservationAction`과 같은 규칙, 2026-08-13 확정).
+       화면 피커가 후보를 좁혀 보여줘도 Server Action은 주소만 알면 직접 부를 수 있어, 제출된
+       id가 **실존하는지**와 **범위 안인지**를 여기서 다시 본다. 규칙 자체는 `attendee-scope.ts`
+       한 곳이다 — 화면과 서버가 갈리면 안 된다.
+  */
+  const attendees = draft.attendeeIds.map(findMockMember);
+  if (attendees.some((member) => member === null)) {
+    return { errors: { attendeeIds: "존재하지 않는 참석자가 있습니다" } };
+  }
+  const scopeViolation = findAttendeeScopeViolation(
+    attendees.filter((member) => member !== null),
+    toAttendeeScopeViewer(actor),
+  );
+  if (scopeViolation) return { errors: { attendeeIds: scopeViolation } };
+
+  // ⚠️ Owner가 아니면 "상위 팀 액션"이 필수인데, 그 값이 진짜 이 프로젝트 소속이고 **자기
+  //    팀**에 하달된 게 맞는지까지 다시 본다 — `createRoomReservationAction`과 같은 검사다.
+  if (requiresParentTeamAction(actor) && draft.parentTeamActionId !== undefined) {
+    const teamAction = PROJECT_TEAM_ACTIONS_MOCK[project.tag]?.find(
+      (item) => item.id === draft.parentTeamActionId,
+    );
+    if (!teamAction || teamAction.team !== actor.teamName) {
+      return { errors: { parentTeamActionId: "존재하지 않는 상위 팀 액션입니다" } };
+    }
+  }
+
+  // ⚠️ `Meeting.topics`는 최소 1개짜리 튜플 타입이다 — 위 검증이 이미 최소 1쌍을 보장했다
+  //    (`rooms/mock/reservations.ts`의 `addMockReservation`과 같은 처리).
+  const trimmedTopics = draft.topics.map((topic) => ({
+    main: topic.main.trim(),
+    sub: topic.sub.trim(),
+  }));
+  const [firstTopic, ...restTopics] = trimmedTopics;
+  const topics: [MeetingTopic, ...MeetingTopic[]] = [firstTopic!, ...restTopics];
+  const attendeeIds = Array.from(new Set([actor.id, ...draft.attendeeIds]));
+
+  const meetingCommon = {
+    title: draft.title.trim(),
+    // ⚠️ 비대면 회의는 회의실·시간이 없다(이슈 #473) — mock 스토어(`addMockOnlineMeeting`)가
+    //    저장 직전에 실제 시각(제출 시각)을 채운다. 여기서는 판별식 유니언 조립에 필요한
+    //    최소값만 넣는다.
+    start: new Date(0),
+    end: new Date(0),
+    roomId: null,
+    roomName: null,
+    roomReservationId: null,
+    isOnline: true,
+    recordingFileName: draft.recordingFileName,
+    projectId: project.id,
+    projectTag: project.tag,
+    topics,
+    attendeeIds,
+    hostId: actor.id,
+  };
+
+  // ⚠️ `Meeting`은 Owner 개설/팀 액션 개설을 판별식 유니언으로 나눠 둔다 — 같은 분기를
+  //    `rooms/mock/reservations.ts`의 `addMockReservation`이 쓴다(같은 규칙, 다른 생성 경로).
+  const meetingDraft: MeetingDraft = requiresParentTeamAction(actor)
+    ? {
+        ...meetingCommon,
+        hostAuthority: actor.role as Extract<Authority, "LEADER" | "MEMBER">,
+        hostTeamId: actor.teamId!,
+        parentTeamActionId: draft.parentTeamActionId!,
+      }
+    : { ...meetingCommon, hostAuthority: AUTHORITY.OWNER };
+
+  const meeting = addMockOnlineMeeting(meetingDraft);
+  revalidatePath(MEETING_LIST_PATH);
+  return { errors: {}, created: { id: meeting.id } };
 }

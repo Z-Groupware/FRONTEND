@@ -1,7 +1,9 @@
 import { AUTHORITY } from "@/constants/authority";
 import type { Actor } from "@/lib/permission";
 
-import { getMeetingCapture, getMeetingDirectory } from "./server";
+import { addMockOnlineMeeting } from "./mock/meetings";
+import { getMeetingCapture, getMeetingDetail, getMeetingDirectory } from "./server";
+import type { MeetingDraft } from "./types";
 
 /**
  * 캡처 진입 판정 — **접근 제어라 값으로 고정해 둔다**(CLAUDE.md §테스트: 로직은 짜자마자).
@@ -99,5 +101,59 @@ describe("getMeetingDirectory — 목록 차례", () => {
 
     expect(directory.hosted.every((item) => item.isHost)).toBe(true);
     expect(directory.invited.every((item) => !item.isHost)).toBe(true);
+  });
+});
+
+/**
+ * 비대면 회의(이슈 #473) — 목록 카드·상세가 `isOnline`을 세우고 회의실·시간을 빈 문자열로
+ * 비우는지 본다. 대면 회의(시드)는 그대로 채워져 있어야 한다(회귀 방지).
+ */
+describe("비대면 회의(이슈 #473) — isOnline·빈 schedule·roomName", () => {
+  const ONLINE_DRAFT: MeetingDraft = {
+    title: "비대면 회의 서버 테스트",
+    start: new Date(0),
+    end: new Date(0),
+    roomId: null,
+    roomName: null,
+    roomReservationId: null,
+    isOnline: true,
+    recordingFileName: null,
+    projectId: 1,
+    projectTag: "GOODS",
+    topics: [{ main: "제품", sub: "점검" }],
+    attendeeIds: [OWNER.id],
+    hostId: OWNER.id,
+    hostAuthority: AUTHORITY.OWNER,
+  };
+
+  it("목록 카드는 isOnline을 세우고 schedule·roomName을 빈 문자열로 비운다", async () => {
+    addMockOnlineMeeting(ONLINE_DRAFT);
+
+    const directory = await getMeetingDirectory(OWNER.id);
+    const item = directory.hosted.find((row) => row.title === "비대면 회의 서버 테스트");
+
+    expect(item?.isOnline).toBe(true);
+    expect(item?.schedule).toBe("");
+    expect(item?.roomName).toBe("");
+  });
+
+  it("상세도 isOnline을 세우고 schedule·roomName을 빈 문자열로 비운다", async () => {
+    const created = addMockOnlineMeeting(ONLINE_DRAFT);
+
+    const result = await getMeetingDetail(created.id, OWNER);
+    if (result.kind !== "ok") throw new Error("ok를 기대했다");
+
+    expect(result.detail.isOnline).toBe(true);
+    expect(result.detail.schedule).toBe("");
+    expect(result.detail.roomName).toBe("");
+  });
+
+  it("대면 회의(시드)는 그대로 schedule·roomName이 채워진다(회귀 방지)", async () => {
+    const result = await getMeetingDetail("meeting-1", OWNER);
+    if (result.kind !== "ok") throw new Error("ok를 기대했다");
+
+    expect(result.detail.isOnline).toBe(false);
+    expect(result.detail.schedule).not.toBe("");
+    expect(result.detail.roomName).not.toBe("");
   });
 });

@@ -96,11 +96,14 @@ function toListItem(meeting: Meeting, viewerId: number, now: Date): MeetingListI
     projectTag: meeting.projectTag,
     originLabel: originLabelOf(meeting),
     topicSummary: `${firstTopic.main} · ${firstTopic.sub}`,
-    schedule: formatMeetingSchedule(meeting.start, meeting.end),
-    roomName: meeting.roomName,
+    // ⚠️ 비대면 회의는 회의실·시간이 없다(이슈 #473) — 카드는 `isOnline`을 보고 이 자리에
+    //    안내 한 줄을 그린다(`meeting-card.tsx`).
+    schedule: meeting.isOnline ? "" : formatMeetingSchedule(meeting.start, meeting.end),
+    roomName: meeting.roomName ?? "",
     attendeeCount: meeting.attendeeIds.length,
     isHost: meeting.hostId === viewerId,
     aiSummaryStatus: meeting.aiSummaryStatus,
+    isOnline: meeting.isOnline,
   };
 }
 
@@ -320,8 +323,9 @@ export async function getMeetingDetail(id: string, viewer: Actor): Promise<Meeti
           ? null
           : `/app/projects/${meeting.projectId}/team/${meeting.parentTeamActionId}`,
       agenda: toMockAgenda(meeting.topics),
-      schedule: formatMeetingSchedule(meeting.start, meeting.end),
-      roomName: meeting.roomName,
+      // ⚠️ 비대면 회의는 회의실·시간이 없다(이슈 #473) — 상세도 목록 카드와 같은 규칙이다.
+      schedule: meeting.isOnline ? "" : formatMeetingSchedule(meeting.start, meeting.end),
+      roomName: meeting.roomName ?? "",
       attendees: meeting.attendeeIds.map((attendeeId) => ({
         id: attendeeId,
         name: roster.get(attendeeId) ?? "알 수 없음",
@@ -333,6 +337,7 @@ export async function getMeetingDetail(id: string, viewer: Actor): Promise<Meeti
       pendingActionCount,
       isStalled,
       isHost: canOperateMeeting(viewer, { ownerId: meeting.hostId }),
+      isOnline: meeting.isOnline,
     },
   };
 }
@@ -459,7 +464,10 @@ export async function getMeetingCapture(id: string, viewer: Actor): Promise<Meet
       title: meeting.title,
       projectTag: meeting.projectTag,
       schedule: formatMeetingSchedule(meeting.start, meeting.end),
-      roomName: meeting.roomName,
+      // ⚠️ 비대면 회의(`roomName === null`)는 이 자리에 올 일이 없다 — 만들어지자마자 완료
+      //    상태라 위의 "이미 끝난 회의" 분기가 먼저 걸린다(캡처는 시작 전·진행중만 연다).
+      //    타입만 맞춘다(`meeting.roomName`이 `string | null`이 됐다, 이슈 #473).
+      roomName: meeting.roomName ?? "",
       attendees: meeting.attendeeIds.map((attendeeId) => {
         const member = roster.get(attendeeId);
         return {

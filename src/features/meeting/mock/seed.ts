@@ -86,6 +86,8 @@ export function ensureMockMeetingsSeeded(): void {
     hostId: 1,
     hostAuthority: AUTHORITY.OWNER,
     roomReservationId: "seed-reservation-1",
+    isOnline: false,
+    recordingFileName: null,
   });
   endMockMeeting(kickoff.id, "2026-07-14T10:31:00.000Z");
   /*
@@ -124,6 +126,8 @@ export function ensureMockMeetingsSeeded(): void {
     hostTeamId: 1,
     parentTeamActionId: 1,
     roomReservationId: "seed-reservation-2",
+    isOnline: false,
+    recordingFileName: null,
   });
   endMockMeeting(teamKickoff.id, "2026-07-21T10:32:00.000Z");
   setMockSummaryStatus(teamKickoff.id, AI_SUMMARY_STATUS.DISTRIBUTED);
@@ -158,6 +162,8 @@ export function ensureMockMeetingsSeeded(): void {
     hostId: 1,
     hostAuthority: AUTHORITY.OWNER,
     roomReservationId: "seed-reservation-3",
+    isOnline: false,
+    recordingFileName: null,
   });
 
   /*
@@ -181,6 +187,8 @@ export function ensureMockMeetingsSeeded(): void {
     hostId: 1,
     hostAuthority: AUTHORITY.OWNER,
     roomReservationId: "seed-reservation-5",
+    isOnline: false,
+    recordingFileName: null,
   });
 
   /*
@@ -200,6 +208,8 @@ export function ensureMockMeetingsSeeded(): void {
     hostId: 1,
     hostAuthority: AUTHORITY.OWNER,
     roomReservationId: "seed-reservation-4",
+    isOnline: false,
+    recordingFileName: null,
   });
   endMockMeeting(brand.id, "2026-07-28T14:29:00.000Z");
   /*
@@ -233,6 +243,8 @@ export function ensureMockMeetingsSeeded(): void {
     hostId: 1,
     hostAuthority: AUTHORITY.OWNER,
     roomReservationId: "seed-reservation-6",
+    isOnline: false,
+    recordingFileName: null,
   });
   endMockMeeting(pendingReview.id, "2026-08-04T11:31:00.000Z");
   setMockSummaryStatus(pendingReview.id, AI_SUMMARY_STATUS.REVIEWED);
@@ -260,6 +272,8 @@ export function ensureMockMeetingsSeeded(): void {
     hostId: 1,
     hostAuthority: AUTHORITY.OWNER,
     roomReservationId: "seed-reservation-7",
+    isOnline: false,
+    recordingFileName: null,
   });
   endMockMeeting(stalled.id, "2026-08-06T15:31:00.000Z");
   setMockSummaryStatus(stalled.id, AI_SUMMARY_STATUS.FAILED);
@@ -283,6 +297,8 @@ export function ensureMockMeetingsSeeded(): void {
     hostId: 1,
     hostAuthority: AUTHORITY.OWNER,
     roomReservationId: "seed-reservation-8",
+    isOnline: false,
+    recordingFileName: null,
   });
   cancelMockMeeting(canceled.id, "2026-08-11T09:00:00.000Z");
 }

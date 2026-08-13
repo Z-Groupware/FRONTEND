@@ -9,6 +9,7 @@ import {
   MessageSquareOff,
   Radio,
   Sparkles,
+  Video,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -344,15 +345,29 @@ export function MeetingDetailView({ detail, members, viewer }: MeetingDetailView
             ⚠️ 띠 색은 표 머리와 같은 것(`bg-secondary/50`)이다. 새 회색을 만들지 않는다.
           */}
           <div className="border-border bg-secondary/50 -mx-7 mt-6 -mb-7 flex flex-wrap items-center gap-x-3 gap-y-1 border-t px-7 py-4">
-            <span className="flex shrink-0 items-center gap-1.5 text-[13px] leading-5 font-medium">
-              <CalendarClock className="text-muted-foreground size-4 shrink-0" aria-hidden />
-              <span className="tabular-nums">{detail.schedule}</span>
-            </span>
-            <span className="bg-border h-3 w-px shrink-0" aria-hidden />
-            <span className="text-muted-foreground flex min-w-0 items-center gap-1.5 text-[12px] leading-4">
-              <MapPin className="size-3.5 shrink-0" aria-hidden />
-              <span className="truncate">{detail.roomName}</span>
-            </span>
+            {/*
+              ⚠️ **비대면 회의는 일시·장소가 없다**(이슈 #473) — `schedule`·`roomName`이 서버에서
+                 빈 문자열로 온다. `isOnline`을 먼저 보고 안내 한 줄로 대신한다(목록 카드와
+                 같은 규칙, `meeting-card.tsx`).
+            */}
+            {detail.isOnline ? (
+              <span className="flex shrink-0 items-center gap-1.5 text-[13px] leading-5 font-medium">
+                <Video className="text-muted-foreground size-4 shrink-0" aria-hidden />
+                <span>온라인으로 진행된 회의입니다</span>
+              </span>
+            ) : (
+              <>
+                <span className="flex shrink-0 items-center gap-1.5 text-[13px] leading-5 font-medium">
+                  <CalendarClock className="text-muted-foreground size-4 shrink-0" aria-hidden />
+                  <span className="tabular-nums">{detail.schedule}</span>
+                </span>
+                <span className="bg-border h-3 w-px shrink-0" aria-hidden />
+                <span className="text-muted-foreground flex min-w-0 items-center gap-1.5 text-[12px] leading-4">
+                  <MapPin className="size-3.5 shrink-0" aria-hidden />
+                  <span className="truncate">{detail.roomName}</span>
+                </span>
+              </>
+            )}
           </div>
         </section>
 
@@ -447,14 +462,26 @@ export function MeetingDetailView({ detail, members, viewer }: MeetingDetailView
         <section className="border-border bg-card rounded-2xl border">
           <div className="flex items-baseline justify-between gap-3 px-7 pt-6 pb-3">
             <h2 className="text-[17px] leading-7 font-semibold tracking-[-0.3px]">발화 기록</h2>
-            {!detail.pendingReason && detail.script !== null && (
+            {!detail.isOnline && !detail.pendingReason && detail.script !== null && (
               <p className="text-muted-foreground text-[12px] leading-4 tabular-nums">
                 {detail.script.length}건
               </p>
             )}
           </div>
 
-          {detail.pendingReason ? (
+          {/*
+            ⚠️ **비대면 회의는 발화 기록을 절대 안 남긴다**(이슈 #473, 팀 명세). 캡처(STT)를
+               거치지 않아서다 — 요약 상태·자막 조회 미연동 같은 다른 이유보다 **앞서** 이 사실을
+               말해야 한다. `pendingReason`이 "요약 중"이라고 말해도 온라인 회의는 어차피
+               발화 기록이 생기지 않으므로 그 안내는 거짓말이 된다.
+          */}
+          {detail.isOnline ? (
+            <EmptyState
+              icon={Video}
+              title="온라인으로 진행된 회의입니다."
+              description="비대면 회의는 발화 기록을 남기지 않습니다."
+            />
+          ) : detail.pendingReason ? (
             <SectionNotice reason={detail.pendingReason} />
           ) : detail.script === null ? (
             /* ⚠️ 산출물 칸의 `notLoaded`와 같은 자리다 — 자막 조회(CAP-12) 미연동이라 안 물어봤다 */

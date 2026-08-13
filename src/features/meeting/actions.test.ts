@@ -8,7 +8,7 @@ jest.mock("@/lib/mock-actor", () => ({
   getMockActor: jest.fn(() => ({ id: 1, role: "OWNER" })),
 }));
 
-import { updateMeetingAttendeesAction } from "./actions";
+import { createOnlineMeetingAction, updateMeetingAttendeesAction } from "./actions";
 import { addMockMeeting } from "./mock/meetings";
 import type { MeetingDraft } from "./types";
 
@@ -106,5 +106,74 @@ describe("참석자 교체(MEET-09) — 범위 재검증", () => {
     const result = await updateMeetingAttendeesAction(INITIAL, form(meeting.id, [9999]));
 
     expect(result.error).toBe("존재하지 않는 참석자가 있습니다");
+  });
+});
+
+/*
+  ⚠️ 비대면 회의 만들기(이슈 #473) — **이 파일은 mock 전용이다**(파일 머리 `isMock: true`
+     고정). `!isMock` 분기("아직 준비 중")는 별도 파일(`actions.online-real.test.ts`)이 본다.
+*/
+const onlineForm = (entries: {
+  title?: string;
+  projectId?: string;
+  attendeeIds?: number[];
+  topics?: { main: string; sub: string }[];
+  parentTeamActionId?: number;
+}) => {
+  const data = new FormData();
+  data.append("title", entries.title ?? "비대면 주간 싱크");
+  data.append("projectId", entries.projectId ?? "1");
+  for (const id of entries.attendeeIds ?? [2]) data.append("attendeeIds", String(id));
+  for (const topic of entries.topics ?? [{ main: "제품", sub: "로드맵 검토" }]) {
+    data.append("topicMain", topic.main);
+    data.append("topicSub", topic.sub);
+  }
+  if (entries.parentTeamActionId !== undefined) {
+    data.append("parentTeamActionId", String(entries.parentTeamActionId));
+  }
+  return data;
+};
+
+const ONLINE_INITIAL = { errors: {} } as const;
+
+describe("비대면 회의 만들기(이슈 #473) — mock 분기", () => {
+  it("성공하면 즉시 완료 처리된 회의를 만들고 id를 돌려준다", async () => {
+    const result = await createOnlineMeetingAction(ONLINE_INITIAL, onlineForm({}));
+
+    expect(result.errors).toEqual({});
+    expect(result.created?.id).toMatch(/^meeting-\d+$/);
+  });
+
+  it("존재하지 않는 프로젝트면 막는다(폼 조작 방어)", async () => {
+    const result = await createOnlineMeetingAction(
+      ONLINE_INITIAL,
+      onlineForm({ projectId: "999" }),
+    );
+
+    expect(result.errors.projectId).toBe("존재하지 않는 프로젝트입니다");
+    expect(result.created).toBeUndefined();
+  });
+
+  it("Owner 개설인데 팀장이 아닌 참석자를 넣으면 막는다(참석자 범위)", async () => {
+    // 3 = 이하윤(개발팀 MEMBER) — Owner가 여는 회의엔 팀장만 지정할 수 있다.
+    const result = await createOnlineMeetingAction(
+      ONLINE_INITIAL,
+      onlineForm({ attendeeIds: [3] }),
+    );
+
+    expect(result.errors.attendeeIds).toBe(
+      "Owner가 개설하는 회의에는 팀장만 참석자로 지정할 수 있습니다",
+    );
+    expect(result.created).toBeUndefined();
+  });
+
+  it("존재하지 않는 참석자 id는 막는다(폼 조작 방어)", async () => {
+    const result = await createOnlineMeetingAction(
+      ONLINE_INITIAL,
+      onlineForm({ attendeeIds: [9999] }),
+    );
+
+    expect(result.errors.attendeeIds).toBe("존재하지 않는 참석자가 있습니다");
+    expect(result.created).toBeUndefined();
   });
 });
