@@ -40,11 +40,19 @@ export function pushLokiLog(
     ],
   };
 
+  /*
+    ⚠️ **짧은 타임아웃을 건다**(2초). Loki가 죽으면 fetch는 커넥션 단계에서 오래 매달릴 수 있고,
+       그 사이 요청이 쌓이면 5xx 폭주 때 노드 소켓을 다 먹는다 — 로그는 부가 기능이라 못 보내는
+       편이 낫다.
+    ⚠️ **실패를 삼키되 콘솔에 안 남긴다.** 서버 로그가 Loki push 실패 스택으로 뒤덮이면 정작
+       원인을 못 찾는다 — 실패 자체가 이미 5xx 처리 경로에서 일어난 부수 효과다.
+  */
   fetch(`${LOKI_URL}/loki/api/v1/push`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
-  }).catch((error) => {
-    console.error("[loki] push 실패", error);
+    signal: AbortSignal.timeout(2_000),
+  }).catch(() => {
+    /* 로그 전송 실패는 무시한다 — 요청 흐름은 이미 5xx로 끝났다. */
   });
 }

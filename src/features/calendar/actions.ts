@@ -70,8 +70,18 @@ export async function toggleTodoCompletionAction(id: string): Promise<void> {
       이 피드에서 id 자체가 없다, `mapper.ts`). BE도 본인 소유 TODO가 아니면 CAL-001(404)로
       거부한다([확인] BE PL 가이드).
     */
+    /*
+      ⚠️ 빈 문자열·공백·비수치는 `Number()`가 조용히 `0`이나 `NaN`으로 만든다 — 그대로
+         엔드포인트에 박으면 `/api/todos/0/complete` 같은 잘못된 요청을 BE에 보낸다.
+         정수 여부를 여기서 판정해 요청 자체를 만들지 않는다.
+    */
+    const numericId = Number(id);
+    if (!Number.isSafeInteger(numericId) || numericId <= 0) {
+      throw new Error("완료 처리할 Todo id가 올바르지 않습니다");
+    }
+
     const accessToken = await requireAccessToken();
-    await serverApi<unknown>(ep.todoComplete(Number(id)), {
+    await serverApi<unknown>(ep.todoComplete(numericId), {
       method: "PATCH",
       accessToken,
     });
