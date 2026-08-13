@@ -1,3 +1,4 @@
+import { ACTION_STATUS } from "@/constants/domain";
 import { requireAccessToken } from "@/features/auth/session";
 import type { BePageResponse } from "@/features/project/mapper";
 import { TOP_LEVEL_PROJECTS } from "@/features/project/mock/projects";
@@ -154,12 +155,21 @@ export async function getTeamActionsPage(
         if (action.team !== MOCK_LEADER_TEAM) continue;
         if (seen.has(action.id)) continue;
         seen.add(action.id);
+        /*
+          하위 개인 액션 진척 — 목도 **같은 데이터에서 센다**(BE `childDoneCount`·`childTotalCount`,
+          #355). 상수를 박으면 상세 탭의 하위 목록과 숫자가 어긋나 목이 거짓말을 한다(§정직한 목업).
+          ⚠️ 목에 하위가 아예 안 잡힌 팀 액션은 `0/0`이다 — `null`이 아니다. 팀 액션은 하위를
+             가질 수 있는 개념이고, `null`은 "하위 개념 자체가 없음"을 뜻한다(#421 판정 참고).
+        */
+        const children = TEAM_ACTION_PERSONAL_ITEMS_MOCK[action.id] ?? [];
         list.push({
           id: action.id,
           name: action.name,
           startDate: action.startDate,
           dueDate: action.dueDate,
           status: action.status,
+          childDoneCount: children.filter((child) => child.status === ACTION_STATUS.DONE).length,
+          childTotalCount: children.length,
           projectId: project.id,
           projectName: project.name,
           projectTag: project.tag,
