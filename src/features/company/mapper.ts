@@ -1,3 +1,4 @@
+import { hasPinnedCoords } from "@/features/auth/register-draft";
 import type { AssignableRole } from "@/features/onboarding/types";
 
 import type { CompanyProfile, CompanyProfileDraft, DepartmentNode, Position } from "./types";
@@ -100,7 +101,8 @@ export interface BeCompanyUpdateBody {
  */
 export function toCompanyUpdateBody(draft: CompanyProfileDraft): BeCompanyUpdateBody {
   const place = draft.place?.address ? draft.place : null;
-  const hasPin = place !== null && (place.lat !== 0 || place.lng !== 0);
+  /* ⚠️ 판정은 `hasPinnedCoords` 한 곳이다 — 그리는 쪽(`AddressPicker`)과 같은 규칙을 써야 한다 */
+  const hasPin = hasPinnedCoords(place);
   return {
     name: draft.name,
     businessNumber: draft.businessNumber,
