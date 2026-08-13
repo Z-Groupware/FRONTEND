@@ -76,7 +76,7 @@ export function ProjectListView({
         title={isSearching ? "검색 결과가 없습니다." : "해당 상태의 프로젝트가 없습니다."}
         description={
           isSearching
-            ? "다른 이름이나 태그로 찾아 주세요."
+            ? "다른 프로젝트 이름으로 찾아 주세요."
             : "위 필터를 바꾸면 다른 상태의 프로젝트를 볼 수 있습니다."
         }
       />
