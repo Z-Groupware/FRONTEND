@@ -20,6 +20,12 @@ export interface MeetingListItem {
   /**
    * 소속 라벨 — Owner 개설이면 `Owner 개설`(WORKFLOW §2 — 옛 문구 "프로젝트 공통"은 폐기),
    * 팀 액션 회의면 상위 팀 액션 이름이다.
+   *
+   * ⚠️ **실연동에서는 아직 못 채운다.** 회의 응답 어디에도 상위 팀 액션도, 개설자 소속도
+   *    안 실린다 — 지금 이 값을 만드는 건 목뿐이다(`server.ts` `originLabelOf`).
+   * ⚠️ **기다린다고 오는 값이 아니다.** 링크는 BE 모델에 이미 있고(`meeting.related_action_id`)
+   *    막힌 곳은 응답 DTO다 — 사정과 근거는 `mapper.ts`의 `toDashboardMeeting` 주석에
+   *    한 곳으로 모아 적었다. 필요해지면 **요청해야 한다.**
    */
   originLabel: string;
   /** 안건 첫 쌍 요약(`대주제 · 소주제`) — 카드에서 무슨 회의인지 한 줄로 알린다 */
