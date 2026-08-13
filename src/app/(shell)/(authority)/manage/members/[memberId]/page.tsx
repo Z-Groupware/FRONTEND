@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { AccessDenied } from "@/components/common/access-denied";
 import { AUTHORITY } from "@/constants/authority";
 import { MEMBER_STATUS } from "@/constants/member";
-import { getCompanySetting } from "@/features/company/server";
+import { getCompanyOrg } from "@/features/company/server";
 import { HandoverApprovalCard } from "@/features/member/components/handover-approval-card";
 import { MemberActionList } from "@/features/member/components/member-action-list";
 import { MemberDeleteCard } from "@/features/member/components/member-delete-card";
@@ -56,8 +56,11 @@ export default async function ManageMemberDetailPage({
   /*
     ⚠️ **직급 목록을 같이 받는다.** 손으로 적게 두면 회사에 없는 직급이 생긴다 —
        발급 창과 같은 이유다(직급에는 권한이 매여 있다).
+    ⚠️ `getCompanySetting`이 아니다(2026-08-13 고침) — 그건 OWNER 전용 `GET /api/companies/me`를
+       물고 있어, **Admin 겸직자가 사원 상세를 열면 403으로 페이지가 통째로 죽었다**(목록 페이지만
+       고치고 이 화면을 빠뜨렸다). 여기 필요한 건 직급·팀 역할뿐이고 둘 다 전 역할에게 열려 있다.
   */
-  const company = await getCompanySetting();
+  const company = await getCompanyOrg();
   const positionNames = company.positions.map((position) => position.name);
   /* ⚠️ **이 사람 팀의 역할만** 준다 — 역할은 팀에 매여 있고 팀은 이 화면에서 안 바꾼다 */
   const roleOptions = buildTeamRoles(company.departments)[detail.member.teamName ?? ""] ?? [];
