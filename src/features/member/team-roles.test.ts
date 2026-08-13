@@ -43,6 +43,16 @@ describe("isRoleOfTeam", () => {
   it("모르는 팀이면 막는다 — 빈 값만 예외다", () => {
     expect(isRoleOfTeam(roles, "없는팀", "백엔드")).toBe(false);
   });
+
+  /*
+    ⚠️ **왕복이 맞아야 한다.** `toBeRoleLabel`이 비우기를 글자 `없음`으로 보내므로 BE가 그
+       값을 되돌려 준다 — 여기서 막으면 역할을 비운 사람은 직급·권한을 영영 못 고친다
+       (팀에 역할이 없으면 화면 셀렉트도 잠겨 있어 다른 값으로 바꿀 길이 없다).
+  */
+  it("BE가 돌려준 `없음`도 통과한다 — 우리가 보낸 값이다", () => {
+    expect(isRoleOfTeam(roles, "개발팀", toBeRoleLabel(""))).toBe(true);
+    expect(isRoleOfTeam(roles, "전략기획팀", "없음")).toBe(true);
+  });
 });
 
 describe("toBeRoleLabel — BE 요청 값 변환", () => {
