@@ -391,11 +391,27 @@ export const ep = {
   /** 공지 상세(`GET`, NOTI-02)·수정(`PUT`, NOTI-04)·삭제(`DELETE`, NOTI-05)가 같은 경로를 쓴다. */
   notice: (noticeId: number) => `/api/notices/${noticeId}`,
 
-  /**
-   * 검색 — API 스펙 전달받음(2026-08-11), **BE 실코드 미대조**(§연동 검증: 문서와 코드가
-   * 다르면 코드가 맞다 — 구현 붙일 때 컨트롤러로 재확인한다).
+  /*
+   * 검색 — [확인] `search/presentation/api/SearchController.java` 실코드 대조(2026-08-13).
+   *
+   * ⚠️ **컨트롤러에 있는 건 `GET /api/v1/search` 하나뿐이다.** 아래 셋(overview·recent-queries·
+   *    recent-views)은 2026-08-11에 스펙만 받아 적어 둔 **FE 제안 경로**이고 BE에 매핑이 없다 —
+   *    부르면 404다. 지우지 않고 남기는 건 "합의는 있었고 구현이 없다"는 사실까지 잃지 않으려는
+   *    것이고, **생기기 전까지 호출하지 않는다**(§환각 API 방지). 호출부는 이 주석을 근거로
+   *    비워 뒀다(`features/search/{server,actions}.ts`).
+   * ⚠️ `/api/v1/` 접두사는 회의·캡처에서는 폐기됐지만 **검색은 아직 v1이 맞다**
+   *    (`@RequestMapping("/api/v1/search")`). 다른 도메인을 따라 떼면 404다.
    */
   searchOverview: () => "/api/v1/search/overview",
+  /**
+   * 통합 검색(SR-1) — `q`(필수) · `type`(ALL·MEETING·ACTION·PROJECT·PERSON) · `tags` · `from` ·
+   * `to` · `limit`. **page는 없다** — 21건째부터 보는 수단이 아직 서버에 없다.
+   *
+   * ⚠️ **`limit`은 1~50이고 벗어나면 400**(`SearchService.MAX_LIMIT`) — 크게 부르면 결과가
+   *    아니라 에러가 온다. 그리고 그 상한은 **종류마다** 걸린다(`type=ALL`이면 4종 × limit).
+   * ⚠️ **`tags`·`from`·`to`는 받기만 하고 WHERE에 안 건다**(SR-1 — `SearchJdbcQueryAdapter`에
+   *    태그·기간 조건이 아예 없다). 보내도 결과가 안 좁혀진다, SR-2 대기(§연동 검증).
+   */
   search: () => "/api/v1/search",
   searchRecentQueries: () => "/api/v1/search/recent-queries",
   searchRecentViews: () => "/api/v1/search/recent-views",
