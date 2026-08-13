@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 
 import { getUnreadNoticeCount } from "@/features/notice/server";
+import { AnalysisProgressCard } from "@/features/notification/components/analysis-progress-card";
 import { NotificationBanner } from "@/features/notification/components/notification-banner";
 import { NotificationProvider } from "@/features/notification/notification-provider";
 import { guardWorkspaceEntry } from "@/features/onboarding/guard";
@@ -100,6 +101,8 @@ export default async function ShellLayout({ children }: { children: ReactNode })
           <NotificationBanner />
           {children}
         </div>
+        {/* 요약 진행 — 우하단 고정이라 어느 화면에 있든 같은 자리에 남는다 */}
+        <AnalysisProgressCard />
       </NotificationProvider>
     </div>
   );
