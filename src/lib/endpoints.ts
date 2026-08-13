@@ -263,7 +263,18 @@ export const ep = {
 
   /* 기타 */
   notifications: () => "/api/notifications",
-  /** SSE 스트림 — BFF가 중계하며 토큰을 주입한다 */
+  /**
+   * 개인 알림 실시간 구독(SSE) — BFF가 중계하며 토큰을 주입한다.
+   * [확인] BE 실코드 대조(2026-08-13) — `notification/presentation/api/NotificationController.java`
+   *
+   * ⚠️ **수신자를 URL로 안 보낸다.** BE가 토큰의 `memberId`로 스코프를 정한다
+   *    (`@AuthenticationPrincipal(expression = "memberId")`) — 쿼리로 받으면 남의 알림을 본다.
+   * ⚠️ 이벤트 두 종류: `notification` · `heartbeat`(20초, `{ t }`).
+   *    `notification`의 data는 `{ type, payload }`다(`NotificationEvent` 레코드).
+   * ⚠️ `type`은 지금 **4종뿐**이다 — `MEETING_CREATED`·`MEETING_REMINDER`·`MEETING_CANCELED`·
+   *    `NOTICE_CREATED`(`NotificationType.java`). **분석 완료·실패 이벤트는 아직 없다** —
+   *    그래서 요약 진행 카드는 CAP-06(`processingStatus`) 폴링으로 돈다.
+   */
   notificationStream: () => "/api/notifications/stream",
   notices: () => "/api/notices",
   /** 공지 상세(`GET`, NOTI-02)·수정(`PUT`, NOTI-04)·삭제(`DELETE`, NOTI-05)가 같은 경로를 쓴다. */
