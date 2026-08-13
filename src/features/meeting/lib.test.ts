@@ -1,4 +1,9 @@
-import { checkMeetingTitle, formatMeetingSchedule, MEETING_TITLE_MAX_LENGTH } from "./lib";
+import {
+  checkMeetingTitle,
+  formatMeetingSchedule,
+  MEETING_TITLE_MAX_LENGTH,
+  meetingListRange,
+} from "./lib";
 
 describe("formatMeetingSchedule", () => {
   it("우리 날짜 표기와 시각 범위를 한 줄로 잇는다", () => {
@@ -17,6 +22,30 @@ describe("formatMeetingSchedule", () => {
     const end = new Date("2026-08-14T08:30:00+09:00");
 
     expect(formatMeetingSchedule(start, end)).toBe("8월 14일(금) 08:00 – 08:30");
+  });
+});
+
+describe("meetingListRange", () => {
+  it("오늘을 가운데 두고 앞뒤로 3개월을 연다", () => {
+    expect(meetingListRange(new Date("2026-08-13T10:00:00+09:00"))).toEqual({
+      from: "2026-05-13",
+      to: "2026-11-13",
+    });
+  });
+
+  /*
+    ⚠️ `setMonth`로 옮기면 여기서 틀린다 — 2월 31일이 3월 3일로 넘쳐 기간이 사흘 좁아진다.
+       월말은 그 달의 마지막 날로 눌러 담아야 경계의 회의가 목록에서 안 빠진다.
+  */
+  it("월말이 다음 달로 넘치지 않는다", () => {
+    expect(meetingListRange(new Date("2026-05-31T10:00:00+09:00"))).toEqual({
+      from: "2026-02-28",
+      to: "2026-08-31",
+    });
+  });
+
+  it("+3개월이 12월 1일로 밀리지 않는다", () => {
+    expect(meetingListRange(new Date("2026-08-31T10:00:00+09:00")).to).toBe("2026-11-30");
   });
 });
 

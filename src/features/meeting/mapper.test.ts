@@ -211,6 +211,20 @@ describe("meetingPendingReasonOf", () => {
   it("확정 대기 건수가 있으면 요약은 끝난 것으로 본다", () => {
     expect(meetingPendingReasonOf({ ...done, pendingActionCount: 3 })).toBeNull();
   });
+
+  /* ⚠️ 상태값이 뭐라 하든 초안이 있으면 검토 대기다 — 상태만 보면 "요약 중"이 뜬다 */
+  it("상태가 PROCESSING이어도 초안이 있으면 요약 중이라 하지 않는다", () => {
+    expect(
+      meetingPendingReasonOf({ ...done, summaryStatus: "PROCESSING", pendingActionCount: 2 }),
+    ).toBeNull();
+  });
+
+  /* ⚠️ 중단만은 초안보다 앞이다 — 뒤 계층이 깨진 회의는 [다시 분석]부터 안내한다 */
+  it("중단은 초안이 있어도 실패로 읽는다", () => {
+    expect(
+      meetingPendingReasonOf({ ...done, summaryStatus: "STALLED", pendingActionCount: 2 }),
+    ).toBe("FAILED");
+  });
 });
 
 describe("toMeetingDetailView", () => {

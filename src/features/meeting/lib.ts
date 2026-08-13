@@ -1,3 +1,5 @@
+import { addMonths } from "date-fns";
+
 import { formatMonthDayWeekday } from "@/lib/date";
 
 /** 화면 표기의 시간대 — 서버가 UTC여도 사용자는 한국 시각으로 본다 */
@@ -33,15 +35,14 @@ export function formatMeetingSchedule(start: Date, end: Date): string {
  * ⚠️ 앞은 BE 기본과 같은 3개월로 맞춘다. 더 늘리면 무한 스크롤이 없는 지금은 한 페이지
  *    상한(100건)만 더 빨리 채운다(§server `MEETING_LIST_PAGE_SIZE`).
  * ⚠️ 날짜는 **한국 시간 기준**으로 찍는다 — UTC로 자르면 자정 무렵에 하루가 밀린다(§lib/date).
+ * ⚠️ 달 이동은 **`date-fns`의 `addMonths`**로 한다(2026-08-13, 코드래빗 지적). `setMonth`는
+ *    월말을 보정하지 않아 5월 31일의 -3개월이 **3월 3일**이 되고(2월 31일 → 넘침) 8월 31일의
+ *    +3개월이 **12월 1일**이 된다 — 기간이 며칠씩 어긋나 경계의 회의가 목록에서 빠진다.
  */
 const MEETING_LIST_RANGE_MONTHS = 3;
 
 export function meetingListRange(now: Date): { from: string; to: string } {
-  const shifted = (months: number) => {
-    const moved = new Date(now);
-    moved.setMonth(moved.getMonth() + months);
-    return DATE_PART.format(moved);
-  };
+  const shifted = (months: number) => DATE_PART.format(addMonths(now, months));
 
   return { from: shifted(-MEETING_LIST_RANGE_MONTHS), to: shifted(MEETING_LIST_RANGE_MONTHS) };
 }

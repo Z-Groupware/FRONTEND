@@ -450,9 +450,16 @@ export function meetingPendingReasonOf(
   if (detail.status === MEETING_STATUS.IN_PROGRESS) return "IN_PROGRESS";
 
   if (detail.summaryStatus === BE_SUMMARY_STATUS.STALLED) return "FAILED";
+  /*
+    ⚠️ **확정 대기 건수를 상태값보다 먼저 본다**(2026-08-13, 코드래빗 지적). 예전엔
+       `summaryStatus === null`일 때만 이 규칙을 걸어서, 초안이 이미 나왔는데 상태가
+       `PROCESSING`이면 화면이 검토 대기 대신 **"요약 중"**을 말했다 — 윗 주석대로 초안은
+       요약이 끝났다는 증거라 어떤 상태값보다 강한 신호다.
+    ⚠️ 중단(`STALLED`)만 그 앞에 둔다 — 뒤 계층이 깨진 회의는 [다시 분석]부터 안내해야 한다.
+  */
+  if (detail.pendingActionCount > 0) return null;
   if (detail.summaryStatus === BE_SUMMARY_STATUS.DONE) return null;
   /* ⚠️ 끝난 회의에 `NONE`이 오면 계약이 어긋난 것이다 — 완료로 읽지 말고 아직 안 된 쪽으로 둔다 */
-  if (detail.summaryStatus === null && detail.pendingActionCount > 0) return null;
   return "SUMMARIZING";
 }
 

@@ -38,7 +38,37 @@ function toTeamDashboardMember(be: BeTeamMemberStatus): TeamDashboardMember {
   };
 }
 
+/**
+ * 최근 팀 회의 — **못 받아 와도 대시보드를 죽이지 않는다**(2026-08-13, 코드래빗 지적).
+ *
+ * ⚠️ KPI·팀원 현황과 같은 `Promise.all`에 그대로 실으면 **회의 조회 하나가 넘어질 때 화면
+ *    전체가 `error.tsx`로 사라진다** — 이 카드는 대시보드의 곁 정보이고, 팀장이 보러 오는 건
+ *    액션 수와 팀원 현황이다.
+ * ⚠️ **`scope=team`은 토큰에 `teamId`가 있어야 통과한다**(403 Z-001, BE
+ *    `DashboardMeetingQueryService.validateRoleScope`). 화면 가드(`canAccessTeamScope`)는
+ *    LEADER인지만 보므로 **팀이 없는 팀장은 여기까지 온다** — 받을 수 없는 걸 물어보지 않는다.
+ * ⚠️ 못 받아 온 자리는 **빈 목록**이다. 화면 계약에 "미조회"를 새로 만들지 않는다 —
+ *    이 카드에는 빈 상태 문구가 이미 있다.
+ */
+async function listRecentTeamMeetings(
+  teamId: number | undefined,
+  accessToken: string,
+): Promise<TeamDashboardOverview["meetings"]> {
+  if (teamId === undefined) return [];
+
+  try {
+    const raw = await serverApi<unknown>(
+      ep.meetingsDashboard({ scope: "team", limit: MEETING_MAX_ITEMS }),
+      { accessToken },
+    );
+    return parseDashboardMeetings(raw).map(toDashboardMeetingCard);
+  } catch {
+    return [];
+  }
+}
+
 export async function getTeamDashboardOverview(viewer: {
+  teamId?: number;
   teamName?: string;
 }): Promise<TeamDashboardOverview> {
   if (isMock) {
@@ -53,19 +83,16 @@ export async function getTeamDashboardOverview(viewer: {
 
   const accessToken = await requireAccessToken();
   /*
-    ⚠️ **`scope=team`은 LEADER만**이고 토큰에 `teamId`가 있어야 한다(아니면 403·Z-001,
-       BE `DashboardMeetingQueryService.validateRoleScope`) — 이 함수는 팀장 대시보드
-       (`/team`)에서만 불리므로 그 조건이 라우트 가드로 이미 보장된다.
     ⚠️ 자르는 수는 **화면이 정한다**(`MEETING_MAX_ITEMS`). 박스 높이가 이 수에서 나오므로
        서버가 더 주면 스크롤이 생기고, 덜 주면 카드 바닥이 빈다(§team/lib).
     ⚠️ 셋을 같이 부른다 — 차례로 부르면 대시보드가 세 번 기다린다.
+    ⚠️ **회의만 실패를 삼킨다**(`listRecentTeamMeetings`). KPI·팀원 현황이 없으면 이 화면은
+       할 말이 없지만, 곁 카드 하나 때문에 나머지까지 지울 이유는 없다.
   */
   const [summary, members, meetings] = await Promise.all([
     serverApi<BeTeamDashboardSummary>(ep.teamDashboardSummary(), { accessToken }),
     serverApi<BeTeamMemberStatus[]>(ep.teamMembers(), { accessToken }),
-    serverApi<unknown>(ep.meetingsDashboard({ scope: "team", limit: MEETING_MAX_ITEMS }), {
-      accessToken,
-    }),
+    listRecentTeamMeetings(viewer.teamId, accessToken),
   ]);
 
   return {
@@ -81,6 +108,6 @@ export async function getTeamDashboardOverview(viewer: {
       ⚠️ `originLabel`은 `scope=team`에서 **항상 비어 온다**(명세에 정의가 없다고 BE가
          `null`로 둔다) — 매퍼가 키째로 빼고 화면은 그 배지를 안 그린다(§정직성).
     */
-    meetings: parseDashboardMeetings(meetings).map(toDashboardMeetingCard),
+    meetings,
   };
 }

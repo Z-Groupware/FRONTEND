@@ -9,13 +9,13 @@ import { ep } from "@/lib/endpoints";
 import { canOperateMeeting } from "@/lib/permission";
 import { isMock } from "@/mocks/config";
 
+import { hostIdOf, parseMeetingDetail } from "../mapper";
 import {
   type BeAnalysisResumeResponse,
   type RetrySummaryResult,
   toRetrySummaryResult,
 } from "./mapper";
 import { findMockStalledSummary, removeMockStalledSummary } from "./mock/stalled-summaries";
-import { listStalledSummariesForViewer } from "./server";
 
 const MY_PAGE_PATH = "/app/me";
 
@@ -72,8 +72,7 @@ function toState(result: RetrySummaryResult): RetryMeetingSummaryState {
  *    빈 문자열을 보내면 400 `ANLZ-003`이라 **아예 안 보내는 것**이 계약이다.
  * ⚠️ **Host만 요청할 수 있다 — 그 판정이 우리 몫이다.** BE ANLZ-02는 역할(`@PreAuthorize`)과
  *    회사 스코프(`MeetingAccessGuard`)만 보고 **host인지는 안 본다**(RVW-05와 다르다). 그래서
- *    목록(MEET-15, BE가 host로 스코프)에 그 회의가 있는지를 서버에서 다시 확인하고 부른다 —
- *    화면 버튼 숨김은 보안이 아니다(§권한).
+ *    회의 상세(MEET-04)로 개설자를 확인하고 부른다 — 화면 버튼 숨김은 보안이 아니다(§권한).
  * ⚠️ 성공해도 요약이 찼다는 보장이 없다 — 200 응답의 `status`가 실제 결과다(§mapper).
  */
 export async function retryMeetingSummaryAction(
@@ -94,20 +93,29 @@ export async function retryMeetingSummaryAction(
     return OK;
   }
 
+  const accessToken = await requireAccessToken();
+
   /*
-    ⚠️ **목록으로 host를 확인한다.** MEET-15는 서버가 host 본인 회의만 내려주므로
-       (`listStalledSummariesForViewer`) 그 안에 있다는 건 이 사람이 host라는 뜻이다.
-       목이 `hostId`로 하는 검사를 실연동에서 대신하는 자리다 — 화면 계약(`StalledSummaryInfo`)엔
-       `hostId`가 없어서 이 길뿐이다.
+    ⚠️ **상세로 개설자를 직접 본다**(2026-08-13, 코드래빗 지적). 예전엔 중단 목록(MEET-15)
+       **첫 페이지**에 그 회의가 있는지로 갈랐는데, 그 목록은 페이지로 오므로(최대 100건)
+       101번째부터의 **자기 회의가 "권한 없음"으로 막혔다** — 소유권은 페이지 운에 달린 값이
+       아니다. 목이 `hostId`로 하는 검사를 실연동에서 대신하는 자리이고, 판정 함수도
+       목과 같은 `canOperateMeeting` 하나다(§권한: 판정은 한 곳).
     ⚠️ 한 번 더 부르는 값은 있다. 이 버튼은 자주 눌리지 않고, 없으면 **회사 안 아무 회의나**
        재분석을 걸 수 있는 경로가 열린 채로 남는다.
   */
-  const mine = await listStalledSummariesForViewer(viewer.id);
-  if (!mine.some((item) => item.meetingId === meetingId)) {
-    return { error: "권한이 없습니다", needsFullRerun: false, pendingNote: null };
+  try {
+    const detail = parseMeetingDetail(
+      await serverApi<unknown>(ep.meeting(Number(meetingId)), { accessToken }),
+    );
+    if (!canOperateMeeting(viewer, { ownerId: hostIdOf(detail) })) {
+      return { error: "권한이 없습니다", needsFullRerun: false, pendingNote: null };
+    }
+  } catch (error) {
+    if (!(error instanceof ApiError)) throw error;
+    return { error: error.message, needsFullRerun: false, pendingNote: null };
   }
 
-  const accessToken = await requireAccessToken();
   try {
     const response = await serverApi<BeAnalysisResumeResponse>(
       ep.meetingAnalysisRetry(Number(meetingId)),
