@@ -61,15 +61,3 @@ export interface BeTodoResponse {
   endDate: string;
   isDone: boolean;
 }
-
-/** `POST /api/todos` 응답 → UI 계약. 방금 만든 값이라 항상 TODO 태그·미완료로 시작한다. */
-export function toPersonalCalendarEventFromTodo(be: BeTodoResponse): PersonalCalendarEvent {
-  return {
-    id: String(be.id),
-    title: be.title,
-    start: new Date(`${be.date}T00:00:00`),
-    end: new Date(`${be.endDate}T00:00:00`),
-    tag: CALENDAR_ITEM_TAG.PERSONAL_TODO,
-    isCompleted: be.isDone,
-  };
-}
