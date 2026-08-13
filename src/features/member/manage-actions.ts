@@ -6,7 +6,7 @@ import type { Authority } from "@/constants/authority";
 import { AUTHORITY, POSITION_AUTHORITIES } from "@/constants/authority";
 import { MEMBER_STATUS } from "@/constants/member";
 import { requireAccessToken } from "@/features/auth/session";
-import { getCompanySetting } from "@/features/company/server";
+import { getCompanyOrg } from "@/features/company/server";
 import { getViewer } from "@/features/shell/viewer";
 import { serverApi, toUserMessage } from "@/lib/api";
 import { todayIso } from "@/lib/date";
@@ -14,6 +14,7 @@ import { ep } from "@/lib/endpoints";
 import type { PaginatedResult } from "@/lib/paginate";
 import {
   canApproveFinal,
+  canChangeAdminGrant,
   canChangeMemberGrade,
   canDeleteMemberAccount,
   canIssueAccount,
@@ -128,7 +129,8 @@ export async function changeMemberGradeAction(
   const position = next.position.trim();
   if (!position) return { isSuccess: false, message: "직급을 골라 주세요" };
 
-  const company = await getCompanySetting();
+  /* ⚠️ Admin도 부르는 액션이라 OWNER 전용 `companies/me`를 물면 안 된다 — 팀·직급만 받는다 */
+  const company = await getCompanyOrg();
   if (!company.positions.some((entry) => entry.name === position)) {
     return { isSuccess: false, message: "회사에 없는 직급입니다" };
   }
@@ -187,6 +189,16 @@ export async function changeMemberGradeAction(
     const jobPosition = company.positions.find((item) => item.name === position);
     if (!jobPosition) return { isSuccess: false, message: "회사에 없는 직급입니다" };
 
+    /*
+      ⚠️ **겸직 검사를 첫 PATCH보다 먼저 한다**(2026-08-12 고침). 겸직 변경은 OWNER만 되는데
+         (BE `@PreAuthorize("hasRole('OWNER')")`), 전에는 역할·직급 PATCH를 보낸 **뒤에**
+         걸렀다 — ADMIN이 직급+겸직을 같이 바꾸면 직급은 이미 저장된 채 실패 메시지가 떠서
+         **절반만 반영**됐다. 실패할 요청이면 아무것도 저장되기 전에 멈춰야 한다.
+    */
+    if (next.isAdmin !== target.member.isAdmin && !canChangeAdminGrant(pass.viewer)) {
+      return { isSuccess: false, message: "관리자 겸직은 대표만 바꿀 수 있습니다" };
+    }
+
     try {
       const accessToken = await requireAccessToken();
       await serverApi<unknown>(ep.member(id), {
@@ -195,15 +207,7 @@ export async function changeMemberGradeAction(
         json: { role: next.authority, jobPositionId: Number(jobPosition.id) },
       });
 
-      /*
-        ⚠️ **겸직 변경은 OWNER만 된다**(BE `@PreAuthorize("hasRole('OWNER')")`). ADMIN이
-           겸직을 건드리면 역할·직급은 이미 저장된 뒤 이 호출만 403으로 막혀 **절반만 반영**된다 —
-           화면은 "실패"라고 말하는데 직급은 바뀌어 있다. 부르기 전에 걸러 낸다.
-        ⚠️ 실제로 달라질 때만 부른다 — 같은 값이면 괜히 403을 만들 이유가 없다.
-      */
-      if (next.isAdmin !== target.member.isAdmin && pass.viewer.role !== AUTHORITY.OWNER) {
-        return { isSuccess: false, message: "관리자 겸직은 대표만 바꿀 수 있습니다" };
-      }
+      /* ⚠️ 실제로 달라질 때만 부른다 — 같은 값이면 괜히 왕복을 만들 이유가 없다 */
       if (next.isAdmin !== target.member.isAdmin) {
         await serverApi<unknown>(ep.memberAdmin(id), {
           method: "PATCH",
@@ -374,6 +378,15 @@ export interface IssueAccountResult {
   /** 칸과 무관한 실패 한 줄(권한 없음·미연동 등) */
   message?: string;
   issued?: { id: number; name: string; email: string };
+  /**
+   * **계정은 만들어졌는데 겸직만 못 붙은 상태**(2026-08-13, 코드래빗 지적).
+   *
+   * ⚠️ 발급(POST)과 겸직(PATCH)은 **원자적이지 않다** — BE `IssueMemberRequest`에 `isAdmin`이
+   *    없어 두 번 나눠 부를 수밖에 없다. 가운데서 끊기면 계정은 이미 있으므로, 실패로 되돌리고
+   *    다시 누르게 하면 **중복 이메일 오류만 뜨고 계정은 겸직 없이 남는다.**
+   *    그래서 실패가 아니라 **부분 성공**으로 알린다 — 사람은 사원 상세에서 겸직만 켜면 된다.
+   */
+  adminGrantFailed?: boolean;
 }
 
 /**
@@ -395,7 +408,8 @@ export async function issueAccountAction(draft: AccountDraft): Promise<IssueAcco
     ⚠️ 직급 목록을 **여기서 구해 넘긴다.** 화면이 보낸 값을 그대로 믿으면 회사에 없는
        직급으로도 발급된다(§권한: 화면 숨김은 보안이 아니다).
   */
-  const company = await getCompanySetting();
+  /* ⚠️ Admin도 발급할 수 있다 — OWNER 전용 `companies/me` 대신 팀·직급만 받는다(403 방지) */
+  const company = await getCompanyOrg();
   const errors = validateAccount(
     draft,
     company.positions.map((position) => position.name),
@@ -431,29 +445,74 @@ export async function issueAccountAction(draft: AccountDraft): Promise<IssueAcco
       return { errors: { position: "먼저 기업 설정에서 직급을 저장해 주세요" } };
     }
 
+    /*
+      ⚠️ **겸직 토글은 발급 요청에 못 싣는다** — BE `IssueMemberRequest`에 `isAdmin`이 없다
+         ("발급 시점엔 항상 false"). 전에는 토글 값을 **아무 데도 안 보내서** 켜고 발급해도
+         겸직이 안 붙는데 성공 토스트가 떴다(침묵 탈락, §정직성 위반). 발급 뒤
+         `PATCH /members/{id}/admin`을 이어 부르는 걸로 고쳤고, 그 경로가 **OWNER 전용**이라
+         Admin 발급자가 토글을 켰으면 보내기 전에 여기서 막는다 — 직급 변경과 같은 규칙이다.
+    */
+    if (draft.isAdmin && !canChangeAdminGrant(pass.viewer)) {
+      return { errors: {}, message: "관리자 겸직 발급은 대표만 할 수 있습니다" };
+    }
+
+    /*
+      ⚠️ 응답을 버리지 않는다(2026-08-12 고침 — [확인] BE `IssuedMemberResponse`:
+         `memberId·name·email·…`). 전에는 `serverApi<unknown>`으로 버려서, 목에서는 뜨던
+         "OO님 보기" 결과 창이 라이브에서만 안 떴다.
+    */
+    const accessToken = await requireAccessToken();
+    let issuedMember: { memberId: number; name: string; email: string };
     try {
-      const accessToken = await requireAccessToken();
-      await serverApi<unknown>(ep.manageMembers(), {
-        method: "POST",
-        accessToken,
-        json: {
-          name: draft.name,
-          email: draft.email,
-          teamId: teamId,
-          jobPositionId: positionId,
-          /* ⚠️ **`role`은 필수다**(BE `@NotNull`). 빠뜨리면 **항상 400**이다 */
-          role: draft.authority,
-          roleLabel: draft.roleLabel || null,
+      issuedMember = await serverApi<{ memberId: number; name: string; email: string }>(
+        ep.manageMembers(),
+        {
+          method: "POST",
+          accessToken,
+          json: {
+            name: draft.name,
+            email: draft.email,
+            teamId: teamId,
+            jobPositionId: positionId,
+            /* ⚠️ **`role`은 필수다**(BE `@NotNull`). 빠뜨리면 **항상 400**이다 */
+            role: draft.authority,
+            roleLabel: draft.roleLabel || null,
+          },
         },
-      });
+      );
     } catch (error) {
       /* 중복 메일이 가장 흔한 실패라 이메일 칸에 붙인다 — 폼 오류는 인라인이다(DECISIONS §7) */
       return { errors: { email: toUserMessage(error) } };
     }
 
+    /*
+      ⚠️ **여기서부터 계정은 이미 있다.** 겸직 PATCH가 실패해도 발급을 없던 일로 되돌릴 수
+         없어서(BE에 취소 경로가 없다) 실패로 돌려주면 안 된다 — 다시 누르면 중복 이메일
+         오류만 나고 계정은 겸직 없이 남는다. **부분 성공으로 알리고** 다음 할 일을 말한다
+         (§정직성: 절반 된 것을 실패나 성공으로 뭉개지 않는다).
+      ⚠️ 목록·조직도 갱신은 **어느 쪽이든 한다** — 계정이 생긴 건 사실이다.
+    */
+    let adminGrantFailed = false;
+    if (draft.isAdmin) {
+      try {
+        await serverApi<unknown>(ep.memberAdmin(issuedMember.memberId), {
+          method: "PATCH",
+          accessToken,
+          json: { isAdmin: true },
+        });
+      } catch {
+        adminGrantFailed = true;
+      }
+    }
+
     revalidatePath("/manage/members");
     revalidatePath(PEOPLE_PATH);
-    return { errors: {} };
+    revalidatePath(pathOf(issuedMember.memberId));
+    return {
+      errors: {},
+      issued: { id: issuedMember.memberId, name: issuedMember.name, email: issuedMember.email },
+      ...(adminGrantFailed ? { adminGrantFailed: true } : {}),
+    };
   }
 
   /*

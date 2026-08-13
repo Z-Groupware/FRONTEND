@@ -48,3 +48,33 @@ export async function getCompanySetting(): Promise<CompanySetting> {
     teamMemberCounts: toTeamMemberCounts(teams),
   };
 }
+
+/**
+ * 팀·직급 목록만 — **사원 관리 화면들이 쓴다.**
+ *
+ * ⚠️ 이 자리에 `getCompanySetting`을 쓰면 안 된다(2026-08-12 고침). 그 함수가 부르는
+ *    `GET /api/companies/me`는 **OWNER 전용**이라(BE `@PreAuthorize("hasRole('OWNER')")`),
+ *    Admin 겸직자가 사원 관리에 들어가는 순간 403으로 **페이지가 통째로 죽었다** — FE 가드
+ *    (`canManageMembers` = owner‖is_admin)와 데이터 소스의 권한이 어긋나 있었다.
+ *    팀(`GET /api/teams`)·직급(`GET /api/job-positions`)은 로그인 전원에게 열려 있어
+ *    (`isAuthenticated()`) 이 둘만 부르면 Admin도 막히지 않는다.
+ * ⚠️ 기업 설정 화면(`/owner/setting`)은 계속 `getCompanySetting`을 쓴다 — 거긴 기본 정보
+ *    (프로필)가 필요하고 OWNER 전용 화면이라 어긋날 일이 없다.
+ */
+export async function getCompanyOrg(): Promise<Pick<CompanySetting, "departments" | "positions">> {
+  if (isMock) {
+    const setting = await getMockCompanySetting();
+    return { departments: setting.departments, positions: setting.positions };
+  }
+
+  const accessToken = await requireAccessToken();
+  const [teams, positions] = await Promise.all([
+    serverApi<BeTeam[]>(ep.teams(), { accessToken }),
+    serverApi<BePosition[]>(ep.jobPositions(), { accessToken }),
+  ]);
+
+  return {
+    departments: teams.map(toDepartmentNode),
+    positions: positions.map(toPosition),
+  };
+}

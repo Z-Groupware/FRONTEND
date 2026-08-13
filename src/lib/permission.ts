@@ -143,6 +143,20 @@ export function canChangeMemberGrade(actor: Actor): boolean {
 }
 
 /**
+ * 관리자 겸직을 **바꿀 수 있는 사람** — OWNER 전용.
+ *
+ * ⚠️ `canGrantAdmin`은 **대상**(누구에게 겸직을 얹을 수 있나)을 보고, 이건 **주체**(누가
+ *    켤 수 있나)를 본다 — 둘을 한 함수로 합치면 인자가 섞여 어느 쪽을 물어본 건지 흐려진다.
+ * ⚠️ **BE와 같은 문이다** — `PATCH /api/members/{id}/admin`이 `hasRole('OWNER')`이라
+ *    (Admin이 자기를 복제하는 것을 끊으려고 떼어 둔 경로), Admin이 눌러도 403이 온다.
+ *    화면·발급·직급 변경 세 자리가 이 판정을 **같이** 써야 정책이 바뀔 때 한 곳만 고친다
+ *    (§권한: 판정은 `lib/permission.ts` 한 곳, 역할 상수를 화면에 하드코딩하지 않는다).
+ */
+export function canChangeAdminGrant(actor: Actor): boolean {
+  return actor.role === AUTHORITY.OWNER;
+}
+
+/**
  * 계정 탈퇴 — **OWNER 전용**.
  *
  * ⚠️ 최종 승인보다 더 뒤에 있는 일이라 같은 문을 쓴다. 승인은 사람을 퇴사 상태로 옮길
