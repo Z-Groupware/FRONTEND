@@ -343,8 +343,12 @@ export function useCapture(meetingId: string, initialSeq = 0): UseCaptureResult 
     ⚠️ **마이크가 열린 뒤에 "녹음 중"으로 넘어간다.** 먼저 넘어가 두면 권한이 막힌 브라우저에서
        배지는 `녹음 중`, 타이머는 도는데 담기는 건 아무것도 없다 — 화면이 거짓말을 한다
        (§정직성). 실패하면 `READY`에 머물고 이유만 남긴다.
-    ⚠️ STT는 녹음이 열린 **뒤에** 켠다. 마이크를 못 얻는 상황이면 자막도 못 받는데, 먼저
-       켜 두면 실패한 자리에 자막만 홀로 도는 이상한 상태가 된다.
+    ⚠️ STT는 CAP-01이 **성공한 뒤에** 켠다(2026-08-16 정정). 전에는 CAP-01 실패도 "녹음은
+       계속한다"고 삼켰는데, 그러면 서버는 이 회의를 여전히 `SCHEDULED`로 알고 있어
+       [회의 종료 및 제출]이 항상 `MT-013`으로 거절된다 — 그 시점의 유일한 복구
+       버튼([다시 시도])도 종료(MEET-08)만 다시 부르고 입장(CAP-01)은 재시도하지 않아
+       **영영 못 끝나는 막다른 길**이 됐다. 서버가 이 회의를 모르는 채로 로컬만 도는
+       녹음을 아예 시작하지 않는 게 맞다.
   */
   const start = useCallback(async () => {
     setError(null);
@@ -386,6 +390,36 @@ export function useCapture(meetingId: string, initialSeq = 0): UseCaptureResult 
       return;
     }
 
+    /*
+      CAP-01 — 오디오는 안 보내고 **상태만** 알린다(§3-3). 서버가 이걸 알아야 참석자 STT
+      트리거·새로고침 복구·녹음자 점유가 가능하다.
+      ⚠️ **여기서 거절되면 마이크를 도로 닫고 아무것도 시작하지 않는다.** 서버가 이
+         회의를 `SCHEDULED`로 알고 있는 채로 STT·타이머만 로컬에서 돌면, 나중에 종료를
+         눌러도 서버가 "시작되지 않은 회의"라며 영원히 거절한다(위 주석 참고) — 마이크만
+         켜진 회의보다 아예 시작이 안 된 쪽이 사용자가 다시 시도할 수 있어 낫다.
+    */
+    try {
+      const session = await startCaptureSessionAction(Number(meetingId));
+      if (!session.ok) {
+        recorder.stop();
+        recorderRef.current = null;
+        setError(session.error ?? "녹음 시작을 서버에 알리지 못했습니다.");
+        return;
+      }
+    } catch {
+      recorder.stop();
+      recorderRef.current = null;
+      setError("서버에 연결하지 못했습니다. 다시 시도해 주세요.");
+      return;
+    }
+
+    /* CAP-01 응답을 기다리는 사이에 떠났으면 방금 연 마이크를 바로 닫는다 */
+    if (unmountedRef.current) {
+      recorder.stop();
+      recorderRef.current = null;
+      return;
+    }
+
     utteranceStartRef.current = null;
     const stt = createSttEngine({
       onChunk: pushChunk,
@@ -405,35 +439,10 @@ export function useCapture(meetingId: string, initialSeq = 0): UseCaptureResult 
 
     pendingRef.current = [];
 
-    /*
-      CAP-01 — 오디오는 안 보내고 **상태만** 알린다(§3-3). 서버가 이걸 알아야 참석자 STT
-      트리거·새로고침 복구·녹음자 점유가 가능하다.
-      ⚠️ 실패해도 **녹음은 계속한다.** 여기서 멈추면 마이크는 열렸는데 아무것도 안 담기는
-         회의가 된다 — 이유만 남기고 진행한다(§정직성).
-    */
-    /*
-      ⚠️ **시계를 먼저 돌리고 서버에 알린다.** 전에는 CAP-01 응답을 기다린 뒤 구간을 열었는데,
-         STT는 이미 켜져 있어서 그 왕복(수백 ms) 사이에 확정된 문장이 **`00:00`으로 찍혔다** —
-         `elapsedNow()`가 볼 구간이 아직 없어서다. 오프셋은 우리 시계(`recordedMs`) 기준이라
-         서버 응답을 기다릴 이유가 없다.
-    */
     const at = Date.now();
     setNow(at);
     setSpans((prev) => [...prev, { from: at, to: null }]);
     setPhase(CAPTURE_PHASE.RECORDING);
-
-    /*
-      오디오는 안 보내고 상태만 알린다(§3-3). 실패해도 녹음은 계속한다 — 이유만 남긴다.
-      ⚠️ **거절도 받아 낸다.** 액션은 BE 실패를 값으로 돌려주지만 브라우저→Next 구간이 끊기면
-         `await`가 던진다 — 안 잡으면 아무 말도 못 남긴 채 조용히 지나가고, 서버는 이 회의가
-         녹음 중인 줄 모른다(새로고침 복구·이어받기가 어긋난다).
-    */
-    try {
-      const session = await startCaptureSessionAction(Number(meetingId));
-      if (!session.ok) setError(session.error ?? "녹음 시작을 서버에 알리지 못했습니다.");
-    } catch {
-      setError("서버에 연결하지 못했습니다. 녹음은 계속되지만 서버는 아직 모릅니다.");
-    }
   }, [pushChunk, markPartial, meetingId]);
 
   const pause = useCallback(() => {
