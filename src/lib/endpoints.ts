@@ -113,6 +113,12 @@ export const ep = {
   refresh: () => "/api/auth/refresh",
   logout: () => "/api/auth/logout",
   me: () => "/api/auth/me",
+  /**
+   * 비밀번호 변경 — 마이페이지 담당자 문서(2026-08-14)로 확인. `memberId`는 토큰에서 꺼내므로
+   * 보내지 않는다. 성공하면 BE가 전 기기 로그인을 해제한다 — 호출부가 세션을 지우고
+   * 로그인 화면으로 보낸다(§연동 검증).
+   */
+  changePassword: () => "/api/auth/me/password",
 
   /* 기업 — [확인] identity/company/presentation/api/CompanyController.java */
   companyLookup: () => "/api/companies/lookup",

@@ -5,6 +5,8 @@ import { AnalysisProgressCard } from "@/features/notification/components/analysi
 import { NotificationBanner } from "@/features/notification/components/notification-banner";
 import { NotificationProvider } from "@/features/notification/notification-provider";
 import { guardWorkspaceEntry } from "@/features/onboarding/guard";
+import { PasswordChangeBanner } from "@/features/profile/components/password-change-banner";
+import { shouldShowPasswordChangeBanner } from "@/features/profile/server";
 import { RoleSidebar } from "@/features/shell/components/role-sidebar";
 import type { NavSection } from "@/features/shell/nav";
 import { dashboardFor, navFor } from "@/features/shell/nav-config";
@@ -59,9 +61,10 @@ export default async function ShellLayout({ children }: { children: ReactNode })
   */
   await guardWorkspaceEntry();
 
-  const [viewer, unreadNoticeCount] = await Promise.all([
+  const [viewer, unreadNoticeCount, showPasswordChangeBanner] = await Promise.all([
     getViewer(),
     getUnreadNoticeCount().catch(() => 0),
+    shouldShowPasswordChangeBanner(),
   ]);
   /*
     ⚠️ **역할이 목록을 정한다.** 전에는 `OWNER_NAV` 하나를 모두에게 줘서, 팀장·사원으로
@@ -99,6 +102,8 @@ export default async function ShellLayout({ children }: { children: ReactNode })
         <div className="bg-background flex min-w-0 flex-1 flex-col overflow-hidden">
           {/* 회의 개설·리마인더·취소·공지 — 본문 맨 위 줄로 들어간다(떠 있는 판이 아니다) */}
           <NotificationBanner />
+          {/* 발급받은 비밀번호 안내 — 강제 아님(`mustChangePassword` 아님), 닫으면 그만이다 */}
+          {showPasswordChangeBanner && <PasswordChangeBanner memberId={viewer.id} />}
           {children}
         </div>
         {/* 요약 진행 — 우하단 고정이라 어느 화면에 있든 같은 자리에 남는다 */}
