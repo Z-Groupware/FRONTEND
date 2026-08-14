@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import type { ChangeEvent, CSSProperties } from "react";
 import { useActionState, useCallback, useEffect, useRef, useState } from "react";
 
+import { ConfirmDialog } from "@/components/common/confirm-dialog";
 import { DatePickerField } from "@/components/common/date-picker-field";
 import { FieldError } from "@/components/common/field-error";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -76,6 +77,7 @@ export function ProjectForm({ action, teamOptions, cancelHref }: ProjectFormProp
   const [teamRows, setTeamRows] = useState<TeamRow[]>([{ rowId: nextRowId++, team: "" }]);
   const [attachment, setAttachment] = useState<File | null>(null);
   const [attachmentError, setAttachmentError] = useState<string | null>(null);
+  const [isSkipAttachmentConfirmOpen, setIsSkipAttachmentConfirmOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const router = useRouter();
@@ -503,10 +505,29 @@ export function ProjectForm({ action, teamOptions, cancelHref }: ProjectFormProp
                   >
                     다시 시도
                   </Button>
-                  <Button type="button" variant="ghost" size="sm" onClick={goToList}>
-                    첨부 없이 이동
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setIsSkipAttachmentConfirmOpen(true)}
+                  >
+                    첨부 없이 완료
                   </Button>
                 </div>
+                {/*
+                  ⚠️ **프로젝트는 이미 만들어졌다** — 이 확인창이 "생성할까요?"를 묻지 않는
+                     이유다(§정직성). 여기서 되돌릴 수 없는 건 첨부뿐이고, 나중에 다시 첨부할
+                     수 있는지는 아직 확인된 바 없어 그렇다고도 아니라고도 단언하지 않는다
+                     (DESIGN §9 "화면은 사실만 말한다").
+                */}
+                <ConfirmDialog
+                  isOpen={isSkipAttachmentConfirmOpen}
+                  onOpenChange={setIsSkipAttachmentConfirmOpen}
+                  title="첨부파일 없이 넘어갈까요?"
+                  description="프로젝트는 이미 만들어졌습니다. 지금 넘어가면 첨부파일 없는 채로 남습니다."
+                  confirmLabel="넘어가기"
+                  onConfirm={goToList}
+                />
               </div>
             ) : (
               <p className="text-muted-foreground text-[12px] leading-4">
