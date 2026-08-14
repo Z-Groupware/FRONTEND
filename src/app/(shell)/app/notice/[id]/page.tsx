@@ -5,8 +5,10 @@ import { NoticeCreateDialog } from "@/features/notice/components/notice-create-d
 import { NoticeDetail } from "@/features/notice/components/notice-detail";
 import { NoticeList } from "@/features/notice/components/notice-list";
 import { getNoticeById, getNotices } from "@/features/notice/server";
+import { getViewer } from "@/features/shell/viewer";
 import { getMockActor } from "@/lib/mock-actor";
 import { canManageNotice } from "@/lib/permission";
+import { isMock } from "@/mocks/config";
 
 interface AppNoticeDetailPageProps {
   params: Promise<{ id: string }>;
@@ -25,7 +27,8 @@ export default async function AppNoticeDetailPage({ params }: AppNoticeDetailPag
   // 없는 공지 id로 들어오면 404 — 링크로 닿는 화면이라 조용히 빈 화면을 보이지 않는다(§정직성).
   if (!notice) notFound();
 
-  const canManage = canManageNotice(getMockActor());
+  const actor = isMock ? getMockActor() : await getViewer();
+  const canManage = canManageNotice(actor);
 
   return (
     <main className="min-h-0 flex-1 overflow-y-auto px-8 py-7">
