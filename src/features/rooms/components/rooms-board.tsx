@@ -4,7 +4,7 @@ import { useState } from "react";
 
 import type { AttendeeScopeViewer } from "../attendee-scope";
 import { toCalendarEventFromReservation } from "../mapper";
-import { getNextAvailableSlot } from "../next-available-slot";
+import { getDefaultSlotForWeek } from "../next-available-slot";
 import type {
   MeetingRoom,
   RoomCalendarEvent,
@@ -44,8 +44,9 @@ interface RoomsBoardProps {
  * 주의: 30분 칸을 클릭하면 그 시작 시각을 `slotStart`에 담아 예약 모달을 연다 — 모달이 열려 있는지는
  *    `slotStart !== null`로만 판단한다(별도 `isOpen` state를 안 둔다).
  * 주의: "회의 추가" 진입점은 `RoomListPanel` 상단(2026-08-11, 캘린더 툴바 안에서 이동)에
- *    있다 — 여는 시각은 `getNextAvailableSlot`이 "지금"을 30분 단위로 올려 계산하는
- *    로직은 그대로다.
+ *    있다 — 여는 시각은 `getDefaultSlotForWeek`가 **지금 보고 있는 주(`week`) 기준**으로
+ *    계산한다(2026-08-14 — 예전엔 `getNextAvailableSlot(new Date())`만 써서, 다른 주를
+ *    보는 중에 열면 `SlotPicker`의 요일 선택지 밖 날짜가 잡혔다).
  */
 export function RoomsBoard({
   initialEvents,
@@ -76,7 +77,7 @@ export function RoomsBoard({
 
       <RoomListPanel
         rooms={rooms}
-        onAddClick={() => setSlotStart(getNextAvailableSlot(new Date()))}
+        onAddClick={() => setSlotStart(getDefaultSlotForWeek(week, new Date()))}
         members={members}
         projects={projects}
         showParentTeamAction={showParentTeamAction}

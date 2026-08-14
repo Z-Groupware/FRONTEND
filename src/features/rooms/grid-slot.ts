@@ -13,6 +13,11 @@ import { addDays, addMinutes, startOfDay } from "date-fns";
  *    스크립트 `Date`는 시(hour) 24를 다음 날 0시로 정상 넘겨받아 계산하므로(`GRID_END_HOUR`를
  *    그대로 `new Date(0,0,0,24,0,0)`에 넘겨도 24시간 뒤 인스턴트가 나온다), 별도 보정 없이
  *    자정을 최대값으로 그대로 쓸 수 있다.
+ * ⚠️ **이 값은 "보여주는 범위"일 뿐 "고를 수 있는 범위"가 아니다.** 실제로 예약을 잡을 수
+ *    있는 범위는 회의실 운영 시간(09:00~18:00, `constants.ts`의 `ROOM_OPERATING_*_MINUTES`)
+ *    이다 — 그 값은 `slot-options.ts`(선택지)와 `weekly-room-calendar.tsx`의 `handleGridClick`
+ *    (운영 시간 밖 칸 클릭 무시)이 따로 쓴다. 여기 값을 좁혀 운영 시간처럼 만들면 안 된다 —
+ *    그러면 격자 자체가 하루 전체를 못 보여준다.
  */
 export const GRID_START_HOUR = 0;
 export const GRID_END_HOUR = 24;

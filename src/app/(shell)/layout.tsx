@@ -8,7 +8,6 @@ import { guardWorkspaceEntry } from "@/features/onboarding/guard";
 import { PasswordChangeBanner } from "@/features/profile/components/password-change-banner";
 import { shouldShowPasswordChangeBanner } from "@/features/profile/server";
 import { RoleSidebar } from "@/features/shell/components/role-sidebar";
-import { HeaderBannerPortal, HeaderBannerSlotProvider } from "@/features/shell/header-banner-slot";
 import type { NavSection } from "@/features/shell/nav";
 import { dashboardFor, navFor } from "@/features/shell/nav-config";
 import { getViewer } from "@/features/shell/viewer";
@@ -90,45 +89,44 @@ export default async function ShellLayout({ children }: { children: ReactNode })
       {/*
         상단바는 여기서 그리지 않는다 — 제목·액션이 도메인마다 달라서
         각 도메인의 `layout.tsx`가 `PageHeader`를 그린다.
-        ⚠️ **점 그리드를 깔지 않는다**(2026-08-05 변경). 로그인 뒤 일하는 화면이라 바탕이
+        참고: **점 그리드를 깔지 않는다**(2026-08-05 변경). 로그인 뒤 일하는 화면이라 바탕이
            조용해야 표·카드가 먼저 읽힌다 — 온보딩·결제·랜딩은 처음 만나는 화면이라 그대로 둔다.
-        ⚠️ 대신 **사이드바·상단바·본문을 `bg-background` 한 색으로 묶고 카드만 띄운다.**
+        참고: 대신 **사이드바·상단바·본문을 `bg-background` 한 색으로 묶고 카드만 띄운다.**
            라이트에서 `--background`와 `--card`가 둘 다 흰색이라, 바탕을 안 내리면 카드와
            바탕을 나누는 게 보더선 하나뿐이라 화면이 통째로 하얗게 뜬다.
-           ⚠️ **본문만 내리면 안 된다.** 그러면 껍데기와 본문이 서로 다른 색이 되어
+           참고: **본문만 내리면 안 된다.** 그러면 껍데기와 본문이 서로 다른 색이 되어
            화면이 셋으로 조각나 보인다(DECISIONS §셸 표면에 적힌 첫 실패). 넷을 한 색으로
            두고, 나누는 건 **선 하나**(사이드바 오른쪽·상단바 아래)에 맡긴다.
       */}
       <NotificationProvider>
-        <HeaderBannerSlotProvider>
-          <div className="bg-background relative flex min-w-0 flex-1 flex-col overflow-hidden">
-            {/*
-              ⚠️ **셸에 고정 마운트 — 도메인 `layout.tsx`를 오갈 때도 안 사라진다**(2026-08-14
-                 변경). 전에는 `PageHeader` 바로 뒤 자리로 포털했는데, 그 자리는 도메인마다
-                 `PageHeader`를 다시 마운트하는 화면(예: `/app/board`→`/app/rooms`)으로
-                 옮기면 포털 자리가 잠깐 사라졌다 되살아나 배너가 화면 전환 중 통째로
-                 비었다. 여기서 직접 그리면 페이지를 옮겨도 이 컴포넌트는 그대로 살아 있다.
-              ⚠️ **`absolute`로 얹는다 — 본문을 밀어내지 않는다**(§디자인 토큰). 흐름 안에
-                 두면 배너가 뜨고 닫힐 때마다 그 아래 본문 전체가 오르내렸다. 상단바
-                 (56px) 바로 아래에 겹쳐 띄우고, 본문은 늘 같은 자리에 그대로 둔다.
-            */}
-            <div className="absolute inset-x-0 top-14 z-20">
-              <NotificationBanner />
-            </div>
-            {/*
-              ⚠️ **비밀번호 안내는 그대로 포털한다.** 상단바 바로 뒤 DOM 자리를 유지해야
-                 키보드 탭·스크린리더 순서가 시각 순서(상단바→안내)와 어긋나지 않는다
-                 (적대적 리뷰, 2026-08-14, `header-banner-slot.tsx`). 흐름을 밀어내는 것도
-                 발급 비밀번호를 쓰는 동안만 뜨는 일회성 안내라 문제되지 않는다.
-            */}
-            <HeaderBannerPortal>
-              {showPasswordChangeBanner && <PasswordChangeBanner memberId={viewer.id} />}
-            </HeaderBannerPortal>
-            {children}
+        <div className="bg-background relative flex min-w-0 flex-1 flex-col overflow-hidden">
+          {children}
+          {/*
+            참고: **셸에 고정 마운트 — 도메인 `layout.tsx`를 오갈 때도 안 사라진다**(2026-08-14
+               변경). 도메인마다 `PageHeader`를 다시 마운트하는 화면(예: `/app/board`→`/app/rooms`)
+               으로 옮겨도 이 컴포넌트는 그대로 살아 있다 — 포털로 상단바 뒤 DOM 자리를 빌리면
+               그 자리가 도메인 전환 중 잠깐 사라졌다 되살아나 배너가 통째로 비는 문제가 있었다.
+            참고: **두 배너를 한 스택에 담는다**(2026-08-14 — 전엔 알림 배너만 여기서 `absolute`로
+               얹고 비밀번호 안내는 따로 상단바 뒤로 포털해, 둘 다 뜨면 같은 자리(상단바 바로
+               아래)를 두고 서로 겹쳤다). 이제 한 컨테이너 안에서 세로로 쌓아 겹치지 않는다.
+            참고: **`{children}` 다음에 적어 DOM 순서를 맞춘다.** 상단바(`PageHeader`)의 뒤로가기·
+               테마 전환 버튼이 `children` 안에서 먼저 그려지므로, 이 스택을 그 뒤에 두면
+               `absolute`로 시각 위치는 상단바 바로 아래 그대로 두면서도 키보드 탭·스크린리더
+               순서는 "상단바 컨트롤 → 배너 닫기 버튼" 순서를 지킨다.
+            참고: **`absolute`로 얹는다 — 본문을 밀어내지 않는다**(§디자인 토큰). 흐름 안에
+               두면 배너가 뜨고 닫힐 때마다 그 아래 본문 전체가 오르내렸다. 상단바
+               (56px) 바로 아래에 겹쳐 띄우고, 본문은 늘 같은 자리에 그대로 둔다.
+            참고: **높이를 40vh로 막고 넘치면 스크롤한다.** 알림이 여러 건 쌓이거나 비밀번호
+               안내까지 같이 뜨면 배너 목록이 길어질 수 있다 — 높이를 안 막으면 화면 아래
+               본문을 가리고, 닫기 버튼도 화면 밖으로 밀려 못 누른다.
+          */}
+          <div className="absolute inset-x-0 top-14 z-20 flex max-h-[40vh] flex-col overflow-y-auto">
+            {showPasswordChangeBanner && <PasswordChangeBanner memberId={viewer.id} />}
+            <NotificationBanner />
           </div>
-          {/* 요약 진행 — 우하단 고정이라 어느 화면에 있든 같은 자리에 남는다 */}
-          <AnalysisProgressCard />
-        </HeaderBannerSlotProvider>
+        </div>
+        {/* 요약 진행 — 우하단 고정이라 어느 화면에 있든 같은 자리에 남는다 */}
+        <AnalysisProgressCard />
       </NotificationProvider>
     </div>
   );

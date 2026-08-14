@@ -11,6 +11,11 @@ import { Calendar, dateFnsLocalizer, type ToolbarProps } from "react-big-calenda
 
 import { getReservationAccentColor } from "../accent-color";
 import { WEEKLY_CALENDAR_HEIGHT_PX } from "../calendar-height";
+import {
+  RESERVATION_DURATION_MINUTES,
+  ROOM_OPERATING_END_MINUTES,
+  ROOM_OPERATING_START_MINUTES,
+} from "../constants";
 import { findSlotStart, GRID_END_HOUR, GRID_START_HOUR, SLOT_MINUTES } from "../grid-slot";
 import type { MeetingRoom, RoomCalendarEvent, RoomMember } from "../types";
 import { RoomReservationEvent } from "./room-reservation-event";
@@ -97,6 +102,10 @@ export function WeeklyRoomCalendar({
    * ⚠️ 기준일은 `week`가 아니라 **그 주의 월요일**로 한 번 더 접는다. `work_week` 뷰는 어떤
    *    날짜를 줘도 그 주 월~금을 그리므로, 첫 열이 곧 월요일이다 — URL이 주 중간 날짜를
    *    들고 와도 열 번호와 날짜가 안 갈린다.
+   * ⚠️ **운영 시간(09:00~18:00) 밖 칸은 무시한다**(2026-08-14). 격자는 하루 전체(00:00~24:00,
+   *    `grid-slot.ts`)를 보여주지만 고를 수 있는 범위는 운영 시간뿐이다(`slot-options.ts`) —
+   *    운영 시간 밖 칸을 눌러 모달을 열면 그 시각이 `SlotPicker`의 선택지에 없어 값이 빈칸처럼
+   *    보이고, 그대로 제출해도 `validateRoomReservationDraft`가 뒤늦게 막는다.
    */
   const weekStart = useMemo(() => startOfWeek(currentDate, { weekStartsOn: 1 }), [currentDate]);
 
@@ -106,7 +115,17 @@ export function WeeklyRoomCalendar({
       if (!(target instanceof Element)) return;
 
       const start = findSlotStart({ target, clientY: event.clientY, weekStart });
-      if (start) onSelectSlot(start);
+      if (!start) return;
+
+      const startMinutes = start.getHours() * 60 + start.getMinutes();
+      if (
+        startMinutes < ROOM_OPERATING_START_MINUTES ||
+        startMinutes + RESERVATION_DURATION_MINUTES > ROOM_OPERATING_END_MINUTES
+      ) {
+        return;
+      }
+
+      onSelectSlot(start);
     },
     [weekStart, onSelectSlot],
   );

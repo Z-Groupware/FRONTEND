@@ -19,7 +19,7 @@ jest.mock("./room-list-panel", () => ({
   ),
 }));
 
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 import type { MeetingRoom, RoomProjectOption, RoomTeamActionOption } from "../types";
@@ -60,5 +60,35 @@ describe("RoomsBoard", () => {
     await user.click(screen.getByRole("button", { name: "회의 추가" }));
 
     expect(screen.getByRole("heading", { name: "회의실 예약" })).toBeInTheDocument();
+  });
+
+  it("다른 주를 보는 중에 [회의 추가]를 누르면 지금 보고 있는 주 안의 요일이 잡힌다", () => {
+    // ⚠️ 회귀 테스트 — 예전엔 `getNextAvailableSlot(new Date())`를 그대로 써서, "지금"이
+    //    표시 중인 주(`week`)와 다른 주면 그 실제 오늘 날짜가 `SlotPicker`의 요일 선택지
+    //    (표시 중인 주의 월~금)에 없어 `form.date`가 선택지 밖 값이 됐다.
+    jest.useFakeTimers();
+    // 2026-08-20(목)은 월요일이 2026-08-17인 주다 — 아래 `week="2026-08-10"`과 다른 주.
+    jest.setSystemTime(new Date("2026-08-20T15:00:00"));
+
+    render(
+      <RoomsBoard
+        initialEvents={[]}
+        rooms={ROOMS}
+        selectedRoomId="room-large"
+        members={MEMBERS}
+        projects={PROJECTS}
+        showParentTeamAction={false}
+        teamActions={TEAM_ACTIONS}
+        viewer={{ id: 1, role: AUTHORITY.OWNER, teamName: null }}
+        week="2026-08-10"
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "회의 추가" }));
+
+    expect(screen.getByRole("combobox", { name: "예약 요일" })).toHaveTextContent("월 8/10");
+    expect(screen.getByRole("combobox", { name: "예약 시작 시간" })).toHaveTextContent("09:00");
+
+    jest.useRealTimers();
   });
 });
