@@ -9,9 +9,31 @@ import type { MemberStatus } from "@/constants/member";
  *    사람을 **고치러** 오는 곳이고, 여기는 전 구성원이 조직을 **보러** 오는 곳이다.
  * ⚠️ 그래서 여기 담기는 값이 더 적다. 이메일·입사일·겸직 여부는 안 싣는다 —
  *    조직 구조를 보는 데 필요 없고, 전원이 보는 화면이라 덜 내보내는 편이 맞다.
- * ⚠️ 명부 자체는 **사원 관리와 같은 것**을 읽는다(`mock/managed.ts`). 두 벌로 들고 있으면
- *    같은 회사가 화면마다 달라 보인다.
+ * ⚠️ 목일 때는 명부를 **사원 관리와 같은 것**을 읽는다(`mock/managed.ts`) — 두 벌로 들고
+ *    있으면 같은 회사가 화면마다 달라 보인다. 실서버는 다르다 — BE가 조직도 전용의
+ *    더 얇은 응답(`GET /api/members/org-chart`)을 따로 준다(아래 `OrgRosterMember`).
  */
+
+/**
+ * 조직도 조립(`org-chart.ts`)이 **실제로 필요로 하는 최소 인원 정보** — 사원 관리
+ * (`ManagedMember`)의 부분집합이다.
+ *
+ * ⚠️ **`ManagedMember`를 그대로 쓰지 않는다.** 목 경로는 사원 관리와 같은 명부를 읽어서
+ *    `ManagedMember[]`를 그대로 넘겨도 되지만(구조적으로 이 타입의 상위집합이라 그대로
+ *    맞는다), 실서버 조직도 응답엔 이메일·겸직·근무상태·입사일이 없다 — 그 값들을
+ *    `ManagedMember`에 억지로 채우면 지어낸 값이 된다(§정직성). 이 화면이 실제로 쓰는
+ *    값만 계약으로 남긴다.
+ */
+export interface OrgRosterMember {
+  id: number;
+  name: string;
+  teamName: string | null;
+  position: string;
+  authority: Authority;
+  roleLabel: string | null;
+  /** 실서버 조직도 응답엔 없다 — 있을 때만 넘긴다(아래 `OrgMember.status` 주석 참고) */
+  status?: MemberStatus;
+}
 
 /** 조직도에 서는 사람 한 명 */
 export interface OrgMember {
@@ -37,7 +59,15 @@ export interface OrgMember {
    *    조직 구조와 무관하다).
    */
   authority: Authority;
-  status: MemberStatus;
+  /**
+   * ⚠️⚠️ **없을 수 있다**(2026-08-14). BE 조직도 응답(`GET /api/members/org-chart`)엔
+   *    근무상태가 안 온다 — 전 구성원이 보는 화면이라 인사 정보를 안 싣는다(BE
+   *    `MemberController` 주석: "조직도 응답에는 이름·직급·권한만 들어간다"). 없으면
+   *    `StatusMark`가 아무 뱃지도 안 단다 — **재직으로 지어내지 않는다**(§정직성). BE가
+   *    이 응답에 근무상태를 더하기 전까지, 이 화면의 휴직 배지·집계(`OrgSummary.
+   *    vacationCount`)는 실제로는 항상 비어 있다.
+   */
+  status?: MemberStatus;
 }
 
 /**

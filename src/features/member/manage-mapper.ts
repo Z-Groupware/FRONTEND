@@ -87,7 +87,7 @@ export function toBeFilter(filter: MemberFilter): string {
  * ⚠️ **모르는 값이 오면 가장 낮은 권한으로 떨어뜨린다.** BE가 역할을 하나 늘렸을 때
  *    화면이 터지는 것보다, 덜 보이는 쪽이 안전하다 — 권한은 넘겨짚으면 안 되는 값이다(§권한).
  */
-function toAuthority(role: string): Authority {
+export function toAuthority(role: string): Authority {
   switch (role) {
     case AUTHORITY.OWNER:
       return AUTHORITY.OWNER;
@@ -96,6 +96,15 @@ function toAuthority(role: string): Authority {
     default:
       return AUTHORITY.MEMBER;
   }
+}
+
+/**
+ * 역할 라벨 정규화 — **`toManagedMember`와 조직도(`manage-server.ts`의 org-chart 조회)가
+ * 같은 규칙을 쓴다.** 값이 뭘 근거로 오든(목록·조직도) BE의 "없음" 시스템 값·빈 문자열은
+ * 전부 `null`로 되돌린다(2026-08-14 재발견 — 아래 상세 사유는 `toManagedMember` 안 주석 참고).
+ */
+export function toRoleLabel(raw: string | null): string | null {
+  return raw?.trim() && raw.trim() !== ROLE_NONE_LABEL ? raw : null;
 }
 
 /**
@@ -137,8 +146,7 @@ export function toManagedMember(item: BeMemberListItem | BeMemberDetail): Manage
          실패로 막힌 적이 있다 — 매퍼 한 곳에서 정규화해 두면 그 자리를 다시 만들어도
          같은 함정에 안 걸린다.
     */
-    roleLabel:
-      item.roleLabel?.trim() && item.roleLabel.trim() !== ROLE_NONE_LABEL ? item.roleLabel : null,
+    roleLabel: toRoleLabel(item.roleLabel),
     status: toMemberStatus(item.workStatus),
     joinedAt: item.joinedOn ?? "",
     /*
