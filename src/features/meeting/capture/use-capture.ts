@@ -25,6 +25,7 @@ import {
 import { type CaptureRecorder, createCaptureRecorder, isRecordingSupported } from "./recorder";
 import { createSttEngine, isSttSupported, type SttEngine, type TranscriptChunk } from "./stt";
 import type { CaptionChunkInput } from "./types";
+import { createSliceUploader, type SliceUploader } from "./upload";
 
 /**
  * 캡처 화면의 손발 — 단계·시간·자막을 한 곳에서 든다.
@@ -116,6 +117,7 @@ export function useCapture(meetingId: string, initialSeq = 0): UseCaptureResult 
 
   const sttRef = useRef<SttEngine | null>(null);
   const recorderRef = useRef<CaptureRecorder | null>(null);
+  const uploaderRef = useRef<SliceUploader | null>(null);
   /** 이미 닫은 세그먼트 수 — 같은 경계에서 두 번 닫지 않으려고 든다 */
   const closedRef = useRef(0);
 
@@ -295,14 +297,21 @@ export function useCapture(meetingId: string, initialSeq = 0): UseCaptureResult 
     [elapsedNow],
   );
 
+  /*
+    ⚠️ **화면 이탈 전용이다.** 정리 함수는 동기라 `recorder.stop()`의 마지막 조각을
+       기다릴 수 없다 — 여기서는 마이크 표시등을 최대한 빨리 끄는 게 우선이고, 놓치는
+       마지막 조각은 감수한다. `end()`는 이 함수를 안 쓰고 따로 순서를 지켜 기다린다
+       (아래 참고, CodeRabbit 지적 2026-08-16).
+  */
   const teardown = useCallback(() => {
     sttRef.current?.stop();
     sttRef.current = null;
     /* ⚠️ 음량계를 녹음기보다 **먼저** 놓는다 — 스트림이 닫힌 뒤 읽으면 예외가 난다 */
     levelRef.current?.close();
     levelRef.current = null;
-    recorderRef.current?.stop();
+    void recorderRef.current?.stop();
     recorderRef.current = null;
+    uploaderRef.current = null;
   }, []);
 
   /**
@@ -355,13 +364,16 @@ export function useCapture(meetingId: string, initialSeq = 0): UseCaptureResult 
 
     const recorder = createCaptureRecorder({
       /*
-        ⚠️ **오디오 업로드는 아직 안 붙었다**(다음 조각). 협의 대기가 아니라 **API는 이미
-           확정**돼 있다 — presign(CAP-04)으로 URL을 받아 브라우저가 **S3에 직접 PUT**하고
-           complete(CAP-07)로 알린다. 우리 서버를 거치는 multipart가 아니다.
-        ⚠️ 그때까지 **녹음 파일은 어디에도 안 남는다.** 자막만 올라간다 —
-           되는 척하지 않으려고 여기 적어 둔다(§정직성).
+        ⚠️ **`uploaderRef`가 아직 없을 수 있다.** CAP-01이 성공하기 전까지는 `null`이라
+           조각을 조용히 버린다 — 마이크가 15초를 채우는 것보다 CAP-01 왕복이 훨씬 빨라
+           실제로는 거의 안 일어나지만, 혹시 그 사이에 조각이 와도 없는 업로더에 넣지
+           않는다(아래에서 CAP-01이 실패하면 마이크 자체를 닫는다).
+        ⚠️ **세그먼트가 닫혀도(10분 경계) BE에 따로 알리지 않는다.** BE는 조각 개수로
+           스스로 10분어치를 끊어 붙인다(`SttBlockCutTrigger`, "10분/40청크") — FE의
+           `rotate()`는 `MediaRecorder` 헤더를 새로 여는 로컬 사정일 뿐, 같은 시간
+           기준(`recordedMs`)을 쓰므로 경계가 자연히 맞아떨어진다.
       */
-      onSlice: () => {},
+      onSlice: (blob) => uploaderRef.current?.enqueue(blob),
       onSegmentClosed: () => {},
       onFatal: setError,
     });
@@ -385,7 +397,7 @@ export function useCapture(meetingId: string, initialSeq = 0): UseCaptureResult 
 
     /* 기다리는 사이에 떠났으면 방금 연 마이크를 바로 닫는다 */
     if (unmountedRef.current) {
-      recorder.stop();
+      void recorder.stop();
       recorderRef.current = null;
       return;
     }
@@ -401,13 +413,13 @@ export function useCapture(meetingId: string, initialSeq = 0): UseCaptureResult 
     try {
       const session = await startCaptureSessionAction(Number(meetingId));
       if (!session.ok) {
-        recorder.stop();
+        void recorder.stop();
         recorderRef.current = null;
         setError(session.error ?? "녹음 시작을 서버에 알리지 못했습니다.");
         return;
       }
     } catch {
-      recorder.stop();
+      void recorder.stop();
       recorderRef.current = null;
       setError("서버에 연결하지 못했습니다. 다시 시도해 주세요.");
       return;
@@ -415,10 +427,17 @@ export function useCapture(meetingId: string, initialSeq = 0): UseCaptureResult 
 
     /* CAP-01 응답을 기다리는 사이에 떠났으면 방금 연 마이크를 바로 닫는다 */
     if (unmountedRef.current) {
-      recorder.stop();
+      void recorder.stop();
       recorderRef.current = null;
       return;
     }
+
+    /*
+      ⚠️ **CAP-01 성공 뒤에 만든다.** `onSlice`가 이 값을 읽는 시점(15초 뒤)엔 이미 있어야
+         하고, 위에서 실패하면 여기까지 안 온다 — `null`인 채로 조각을 흘려도 조용히
+         버려질 뿐 잘못된 회의로 잘못 올라가는 일은 없다.
+    */
+    uploaderRef.current = createSliceUploader(Number(meetingId), { onFailure: setError });
 
     utteranceStartRef.current = null;
     const stt = createSttEngine({
@@ -487,16 +506,33 @@ export function useCapture(meetingId: string, initialSeq = 0): UseCaptureResult 
 
   const end = useCallback(async () => {
     /*
-      ⚠️ **정리가 실패해도 종료 알림은 나간다**(2026-08-12, 코드래빗 지적). `MediaRecorder.stop()`
-         같은 브라우저 API는 상태가 어긋나면 던지는데(`InvalidStateError`), 그걸로 흐름이 멈추면
-         **회의는 끝났는데 서버만 모르는** 상태가 된다 — 요약도 액션 분배도 영영 안 돈다.
-         마이크 표시등은 화면을 떠날 때 정리 효과가 한 번 더 끈다.
+      ⚠️ **`teardown()`을 안 쓴다**(CodeRabbit 지적, 2026-08-16 — 종료 순서를 직렬화하라).
+         `teardown()`은 화면 이탈용이라 `recorder.stop()`을 기다리지 않는데, 여기서 그러면
+         `.stop()` 뒤에 비동기로 오는 **마지막 15초 조각**이 이미 비운 `uploaderRef`를 보고
+         조용히 사라진다. 짧은 회의는 그 마지막 조각이 유일한 오디오일 수도 있다.
+      ⚠️ **오디오를 먼저 다 올린 뒤에만 종료를 알린다.** 전에는 업로드 큐와 종료 알림을
+         `Promise.all`로 나란히 돌렸는데, 그러면 서버가 아직 안 받은 조각이 남은 채로
+         회의가 DONE 처리될 수 있다 — 뒤이은 STT 블록 조립이 그 구간을 놓친다.
     */
+    sttRef.current?.stop();
+    sttRef.current = null;
+    /* ⚠️ 음량계를 녹음기보다 **먼저** 놓는다 — 스트림이 닫힌 뒤 읽으면 예외가 난다 */
+    levelRef.current?.close();
+    levelRef.current = null;
+
+    const uploader = uploaderRef.current;
     try {
-      teardown();
+      /*
+        ⚠️ **여기서 기다린다.** `recorder.stop()`이 반환하는 프라미스는 마지막
+           `dataavailable`(→`onSlice`→`uploader.enqueue`)까지 다 받은 뒤에야 풀린다 —
+           그 전에 `uploaderRef`를 비우면 방금 잡힌 마지막 조각이 갈 곳을 잃는다.
+      */
+      await recorderRef.current?.stop();
     } catch {
       /* 로컬 정리 실패는 사용자가 할 수 있는 일이 없다 — 알림을 계속 보내는 게 더 중요하다 */
     }
+    recorderRef.current = null;
+    uploaderRef.current = null;
 
     const at = Date.now();
     /*
@@ -509,7 +545,7 @@ export function useCapture(meetingId: string, initialSeq = 0): UseCaptureResult 
     setPhase(CAPTURE_PHASE.ENDED);
 
     /*
-      MEET-08 — 남은 자막을 마저 보내고 종료를 알린다.
+      MEET-08 — 오디오·자막을 마저 보내고서야 종료를 알린다.
       ⚠️ **AI 분석을 프론트가 부르지 않는다**(§3-3 4번). 서버가 종료 처리 안에서 큐에 걸고
          실패해도 재시도한다 — 사용자가 창을 닫아도 안전하다.
       ⚠️ 되돌릴 수 없다. 확인 창을 거친 뒤에만 여기로 온다(§3-3 종료 정책).
@@ -519,6 +555,13 @@ export function useCapture(meetingId: string, initialSeq = 0): UseCaptureResult 
       ⚠️ 전송 자체가 거부되는 경우(브라우저→Next 단절)도 여기서 받는다.
     */
     try {
+      /*
+        ⚠️ **오디오 큐가 다 끝난 뒤에만 완료를 알린다**(순서 있음, `Promise.all` 아니다).
+           `uploader.flush()` 자체는 개별 조각 실패까지 막지 않는다(연속 실패는
+           `onFailure`로 이미 화면에 알렸다) — 여기서는 "큐가 비었는가"만 기다린다.
+      */
+      await (uploader?.flush() ?? Promise.resolve());
+
       const result = await drainCaptions().then(() => completeMeetingAction(Number(meetingId)));
       if (result.ok) return { ok: true };
 
@@ -530,7 +573,7 @@ export function useCapture(meetingId: string, initialSeq = 0): UseCaptureResult 
       setError(message);
       return { ok: false, error: message };
     }
-  }, [teardown, drainCaptions, meetingId]);
+  }, [drainCaptions, meetingId]);
 
   return { phase, support, recordedMs, chunks, partial, error, enter, start, pause, resume, end };
 }

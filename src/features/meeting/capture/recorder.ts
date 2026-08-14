@@ -8,7 +8,13 @@
  *    10분 완결 파일을 만든다(백엔드 확정).
  * ⚠️ **일시정지는 파일을 안 쪼갠다.** `pause/resume`은 하나의 연속 파일로 이어진다 —
  *    조용한 구간만 빠진다.
+ * ⚠️ **MIME 타입을 고정한다**(`upload.ts`의 `RECORDING_CONTENT_TYPE`). BE presign이
+ *    Content-Type을 서명에 실어서(`CapS3ObjectStorageAdapter`), 브라우저 기본값에
+ *    맡기면 `;codecs=opus` 같은 접미사가 실제 녹음과 presign 요청 사이에서 어긋나
+ *    S3가 서명 불일치로 PUT을 거절한다.
  */
+
+import { RECORDING_CONTENT_TYPE } from "./upload";
 
 export interface RecorderHandlers {
   /** 15초마다 나오는 조각 — 서버가 모아서 세그먼트를 만든다 */
@@ -30,7 +36,12 @@ export interface CaptureRecorder {
   resume(): void;
   /** 세그먼트를 닫고 다음 구간을 연다 — 10분 경계에서 부른다 */
   rotate(index: number): void;
-  stop(): void;
+  /**
+   * 마이크를 끈다 — **마지막 조각까지 다 받은 뒤에 끝난다.**
+   * ⚠️ `void`로 두면 부르는 쪽이 `stop()` 직후 곧바로 다음 일을 해서, 비동기로 뒤늦게
+   *    오는 마지막 `dataavailable`(=마지막 15초 조각)이 갈 곳을 잃는다(§use-capture `end()`).
+   */
+  stop(): Promise<void>;
   /**
    * 열려 있는 마이크 스트림 — `start()`가 성공한 뒤에만 있다.
    *
@@ -69,7 +80,8 @@ export function createCaptureRecorder(handlers: RecorderHandlers): CaptureRecord
 
   const openSegment = () => {
     if (!stream) return;
-    const instance = new MediaRecorder(stream);
+    // ⚠️ 지원 여부는 `start()`가 이미 확인했다 — 여기 오는 시점엔 항상 지원된다.
+    const instance = new MediaRecorder(stream, { mimeType: RECORDING_CONTENT_TYPE });
     instance.ondataavailable = (event) => {
       if (event.data.size > 0) handlers.onSlice(event.data);
     };
@@ -80,6 +92,18 @@ export function createCaptureRecorder(handlers: RecorderHandlers): CaptureRecord
 
   return {
     async start() {
+      /*
+        ⚠️ **지원 안 하면 아예 시작하지 않는다**(CodeRabbit 지적, 2026-08-16). presign
+           요청·PUT 헤더가 항상 `RECORDING_CONTENT_TYPE` 고정이라, 브라우저가 다른 형식으로
+           녹음하면 나중에 S3가 서명 불일치로 PUT을 거절한다 — 마이크만 켜진 채 업로드가
+           전부 실패하는 것보다, 애초에 시작 안 하는 쪽이 낫다. Chrome 계열에서는 사실상
+           항상 지원되는 형식이라 실사용에서 이 분기를 탈 일은 거의 없다.
+      */
+      if (!MediaRecorder.isTypeSupported(RECORDING_CONTENT_TYPE)) {
+        handlers.onFatal("이 브라우저에서는 녹음 형식을 지원하지 않습니다.");
+        return false;
+      }
+
       try {
         /*
           ⚠️ **기본값에 맡기지 않는다.** 회의실 노트북 마이크는 에어컨·타자 소리를 그대로
@@ -129,11 +153,34 @@ export function createCaptureRecorder(handlers: RecorderHandlers): CaptureRecord
       return stream;
     },
     stop() {
-      if (recorder && recorder.state !== "inactive") recorder.stop();
+      const closing = recorder;
       recorder = null;
-      // 마이크 표시등을 끈다 — 트랙을 안 멈추면 회의가 끝나도 계속 켜져 있다
-      stream?.getTracks().forEach((track) => track.stop());
-      stream = null;
+
+      const closeStream = () => {
+        // 마이크 표시등을 끈다 — 트랙을 안 멈추면 회의가 끝나도 계속 켜져 있다
+        stream?.getTracks().forEach((track) => track.stop());
+        stream = null;
+      };
+
+      /*
+        ⚠️ **`onstop` 뒤에 끝난다.** `.stop()`을 부른 직후에도 마지막으로 잡힌 조각은
+           `dataavailable`로 비동기 전달된 뒤에야 `onstop`이 온다 — 스트림을 그 전에 끊으면
+           안전하지만(이미 버퍼링된 조각엔 영향 없다), **부르는 쪽이 "다 끝났다"고 알기엔
+           너무 이르다.** `use-capture.ts`의 `end()`가 이 완료를 기다린 뒤에야 업로드 큐
+           참조를 정리한다 — 그래야 이 마지막 조각의 `onSlice`가 살아있는 업로더를 본다.
+      */
+      return new Promise<void>((resolve) => {
+        if (!closing || closing.state === "inactive") {
+          closeStream();
+          resolve();
+          return;
+        }
+        closing.onstop = () => {
+          closeStream();
+          resolve();
+        };
+        closing.stop();
+      });
     },
   };
 }

@@ -105,6 +105,30 @@ export function useInviteCommit({
 
     if (!result.ok) {
       setCommitting(false);
+
+      /*
+        ⚠️ **오류로 세우지 않는다**(2026-08-14, 프로덕션 사고). 이 코드(`AU-035`)는 지금 이
+           시도가 잘못된 게 아니라 **앞선 시도가 응답만 못 받고 서버에서는 이미 성공**했다는
+           뜻이다 — 타임아웃·네트워크 단절 뒤 재시도가 실제로 이 자리를 밟는다. 창에 오류를
+           띄우고 멈추면 사용자는 "등록이 안 됐다"고 오해해 계속 다시 누르게 된다. 이미 끝난
+           일이니 그대로 다음 단계로 넘긴다 — 4단계(결제)는 어차피 막지 않는 자리다
+           (`guard.ts`: "4단계·완료 화면은 막지 않는다").
+      */
+      if (result.alreadyOnboarded) {
+        markDraftCommitted();
+        setConfirmOpen(false);
+        /*
+          ⚠️ **"전원 초대됨"이라고는 말하지 않는다**(적대적 검토, 2026-08-14). 앞선 시도가
+             실제로 몇 명을 발급하고 몇 명은 주소 중복으로 건너뛰었을 수 있는데, 그 결과를
+             우리는 영영 모른다(`actions.ts`의 `issuedEmails`/`skipped` 주석 참고) — 그래도
+             그 불확실함을 여기서 사용자에게 알리지는 않는다(팀 결정). "완료"·"성공"이라고
+             단정하지 않고 사실("이미 등록됨")만 짧게 말한다.
+        */
+        toast.success("이미 등록된 회사입니다");
+        router.replace("/onboarding/payment");
+        return;
+      }
+
       setError(result.error ?? "등록하지 못했습니다. 잠시 후 다시 시도해 주세요.");
       return;
     }
