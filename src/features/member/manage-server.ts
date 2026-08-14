@@ -166,8 +166,16 @@ export async function listAllManagedMembersForOrgChart(): Promise<ManagedMember[
   const accessToken = await requireAccessToken();
   const teams = await serverApi<BeOrgChartTeam[]>(ep.memberOrgChart(), { accessToken });
 
+  /*
+    ⚠️ **`members`가 없는 팀을 방어한다**(2026-08-14 프로덕션 재현). 이 shape은 위
+       [가정 shape·미검증]대로 아직 BE 실코드로 대조 못 했다 — 사람이 없는 팀에서
+       `members`가 빈 배열이 아니라 필드째 빠져 오면 `team.members.map(...)`이
+       `undefined`에 `.map`을 호출해 `/app/people` 전체가 죽는다.
+  */
   return teams
-    .flatMap((team) => team.members.map((member) => ({ ...member, teamName: team.teamName })))
+    .flatMap((team) =>
+      (team.members ?? []).map((member) => ({ ...member, teamName: team.teamName })),
+    )
     .map(toManagedMember)
     .filter((member) => isVisibleMemberStatus(member.status));
 }

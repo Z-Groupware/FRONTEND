@@ -60,6 +60,22 @@ describe("listAllManagedMembersForOrgChart — 실서버", () => {
     expect(roster.map((m) => m.teamName)).toEqual([null, "개발팀", "개발팀", "디자인팀"]);
   });
 
+  /*
+    ⚠️ **`members` 필드가 없는 팀도 있을 수 있다**(2026-08-14 프로덕션 재현) — 이 shape은
+       [가정 shape·미검증]이라 사람이 없는 팀에서 BE가 `members`를 빈 배열이 아니라
+       필드째 빼고 줄 가능성을 배제할 수 없다. 그때 죽지 않고 그 팀만 빈 것으로 본다.
+  */
+  it("members 필드가 없는 팀이 와도 죽지 않는다", async () => {
+    serverApiMock.mockResolvedValueOnce([
+      { teamName: "개발팀", members: [member(1)] },
+      { teamName: "신규팀" },
+    ]);
+
+    const roster = await listAllManagedMembersForOrgChart();
+
+    expect(roster.map((m) => m.id)).toEqual([1]);
+  });
+
   it("삭제된 사람은 뺀다 — 퇴사자는 남는다", async () => {
     serverApiMock.mockResolvedValueOnce([
       {
