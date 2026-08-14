@@ -162,6 +162,15 @@ export function CompanyProfileCard({ profile }: { profile: CompanyProfile }) {
                 setPlace(next);
                 markFixed("place");
               }}
+              /*
+                ⚠️ **여기서만 넘긴다.** 신청 화면은 위치가 신청을 끝내는 데 반드시 있어야 하는
+                   값이라 지울 수 없다 — 이미 회사가 있는 이 화면만 위치를 선택 값으로 다룬다
+                   (BE `UpdateCompanyRequest`가 빈 주소로 지우기를 지원한다).
+              */
+              onClear={() => {
+                setPlace(null);
+                markFixed("place");
+              }}
               hasError={Boolean(errorOf("place"))}
               mapClassName="h-[232px]"
             />

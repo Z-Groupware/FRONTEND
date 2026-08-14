@@ -28,6 +28,15 @@ interface AddressPickerProps {
   /** 이미 고른 곳. 아직 안 골랐으면 `null` */
   picked: PickedPlace | null;
   onPick: (place: PickedPlace) => void;
+  /**
+   * 고른 곳을 지운다 — **없으면 지우기 버튼 자체가 안 뜬다.**
+   *
+   * ⚠️ 신청 화면은 이 prop을 안 넘긴다. 위치는 신청을 끝내는 데 반드시 있어야 하는 값이라
+   *    (`registerSchema.shape.place`가 `null`을 거절한다) 지울 수 있으면 안 된다 — 기업 설정
+   *    (이미 회사가 있고, 위치는 선택 값)에서만 넘긴다(§연동 검증: BE `UpdateCompanyRequest`
+   *    가 빈 주소로 지우기를 지원한다).
+   */
+  onClear?: () => void;
   hasError: boolean;
   /**
    * 지도 상자 크기.
@@ -40,6 +49,7 @@ interface AddressPickerProps {
 export function AddressPicker({
   picked,
   onPick,
+  onClear,
   hasError,
   mapClassName = "h-[160px]",
 }: AddressPickerProps) {
@@ -281,7 +291,17 @@ export function AddressPicker({
           <p className="text-muted-foreground flex items-center gap-1.5 text-[12px] leading-4">
             {/* ⚠️ 초록은 규칙에 없는 색이다 — 골랐다는 건 체크 표시가 이미 말한다(DESIGN §5) */}
             <Check className="text-foreground size-3.5 shrink-0" aria-hidden />
-            <span>{picked.address}</span>
+            <span className="flex-1">{picked.address}</span>
+            {/* ⚠️ `onClear`가 없으면(신청 화면) 안 그린다 — 위치는 신청을 끝내는 데 반드시 있어야 한다 */}
+            {onClear && (
+              <button
+                type="button"
+                onClick={onClear}
+                className="text-muted-foreground hover:text-foreground focus-visible:ring-ring shrink-0 rounded px-1 underline-offset-2 hover:underline focus-visible:ring-2 focus-visible:outline-hidden"
+              >
+                지우기
+              </button>
+            )}
           </p>
           {/*
             ⚠️ `key`에 **SDK 상태를 함께 넣는다.** 이미 고른 곳을 들고 시작하는 화면

@@ -92,7 +92,14 @@ export function toCompanyProfile(profile: BeCompanyProfile): CompanyProfile {
 export interface BeCompanyUpdateBody {
   name: string;
   businessNumber: string;
-  address?: string;
+  /**
+   * ⚠️ **다른 칸과 달리 항상 보낸다.** 나머지 필드는 없으면 "건드리지 말라"는 뜻인데, 주소는
+   *    BE가 **빈 문자열을 "지운다"는 신호로 따로 읽는다**([확인] `UpdateCompanyRequest` 주석 —
+   *    "빈 문자열을 보내면 주소와 좌표를 함께 지운다", 2026-08-14 develop 대조. 예전엔
+   *    `@Pattern`이 빈 값을 거절했지만(PR #423), 이후 주소만 그 규칙에서 빠졌다). 필드째
+   *    생략하면 지우기 신호 자체를 낼 수 없다.
+   */
+  address: string;
   latitude?: number;
   longitude?: number;
 }
@@ -100,14 +107,14 @@ export interface BeCompanyUpdateBody {
 /**
  * 저장 본문.
  *
- * ⚠️ **부분 수정 계약이다** — 필드가 없으면 "건드리지 말라"다. 빈 문자열은 BE `@Pattern`
- *    (NOT_BLANK_IF_PRESENT)이 400으로 거절하므로 주소가 비면 **필드째 생략**한다(PR #423).
- * ⚠️ **좌표는 주소를 따라간다**(2026-08-13 결정). `place`는 주소+좌표 한 몸이라 주소를
- *    생략하면 좌표도 생략한다 — BE는 좌표 단독 수정도 받지만, 주소 없는 요청에 좌표만 실으면
- *    옛 주소 글자에 새 핀이 붙는 반쪽 위치가 저장된다.
+ * ⚠️ **주소는 지우기가 가능하다**(2026-08-14, BE 실코드 재대조로 뒤집음). 위 `address` 주석
+ *    참고 — 고른 위치가 없으면 빈 문자열을 그대로 보낸다.
+ * ⚠️ **좌표는 주소를 따라간다**(2026-08-13 결정). `place`는 주소+좌표 한 몸이라 주소가 없으면
+ *    좌표도 생략한다 — BE는 좌표 단독 수정도 받지만, 주소 없는 요청에 좌표만 실으면 옛 주소
+ *    글자에 새 핀이 붙는 반쪽 위치가 저장된다. (주소를 지우는 요청이면 어차피 BE가 좌표도
+ *    함께 지운다 — 위 `UpdateCompanyRequest` 주석.)
  * ⚠️ **`0,0`은 좌표가 아니라 "지도를 못 썼다"는 표기다**(`register-draft`의 `PickedPlace`
- *    규칙 — 키 없음·SDK 차단). 그대로 보내면 기니만 바다에 핀이 저장되므로 생략한다 —
- *    없는 값은 안 보내는 게 부분 수정 계약과도 맞는다.
+ *    규칙 — 키 없음·SDK 차단). 그대로 보내면 기니만 바다에 핀이 저장되므로 생략한다.
  *    [확인] BE `UpdateCompanyRequest.latitude/longitude` 2026-08-13 develop(`30952c10`).
  */
 export function toCompanyUpdateBody(draft: CompanyProfileDraft): BeCompanyUpdateBody {
@@ -117,7 +124,8 @@ export function toCompanyUpdateBody(draft: CompanyProfileDraft): BeCompanyUpdate
   return {
     name: draft.name,
     businessNumber: draft.businessNumber,
-    ...(place ? { address: place.address } : {}),
+    // 없으면 빈 문자열 — BE가 이걸 "지운다"로 읽는다(위 `BeCompanyUpdateBody.address` 주석)
+    address: place?.address ?? "",
     ...(hasPin ? { latitude: place.lat, longitude: place.lng } : {}),
   };
 }
