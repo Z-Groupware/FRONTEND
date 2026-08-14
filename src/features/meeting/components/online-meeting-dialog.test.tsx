@@ -2,6 +2,9 @@ jest.mock("next/cache", () => ({ revalidatePath: jest.fn() }));
 jest.mock("@/lib/mock-actor", () => ({
   getMockActor: jest.fn(() => ({ id: 1, role: "OWNER" })),
 }));
+jest.mock("@/features/notification/notification-provider", () => ({
+  useNotificationCenter: jest.fn(() => ({ trackAnalysis: jest.fn() })),
+}));
 
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -150,5 +153,29 @@ describe("OnlineMeetingDialog", () => {
     await waitFor(() => {
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     });
+  });
+
+  /*
+    ⚠️ 등록 직후부터 요약 진행 카드를 쫓아야 한다 — 서버가 등록 시점에 곧장 STT·AI 분석을
+       시작해서(`MeetingService.createOnlineMeeting`), 실시간 캡처 종료와 같은 이유로
+       `trackAnalysis`를 안 부르면 검토 화면으로 갈 길이 안 생긴다.
+  */
+  it("등록에 성공하면 요약 진행 카드를 쫓기 시작한다", async () => {
+    const { useNotificationCenter } = jest.requireMock(
+      "@/features/notification/notification-provider",
+    ) as { useNotificationCenter: jest.Mock };
+    const trackAnalysis = jest.fn();
+    useNotificationCenter.mockReturnValue({ trackAnalysis });
+
+    const user = userEvent.setup();
+    renderDialog();
+
+    await fillFormFields(user);
+    await confirmSubmit(user);
+
+    await waitFor(() => {
+      expect(trackAnalysis).toHaveBeenCalledTimes(1);
+    });
+    expect(trackAnalysis).toHaveBeenCalledWith(expect.any(String), expect.any(String));
   });
 });
