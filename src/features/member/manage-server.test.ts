@@ -1,11 +1,11 @@
 jest.mock("@/mocks/config", () => ({ isMock: false }));
 jest.mock("@/features/auth/session", () => ({ requireAccessToken: jest.fn() }));
-jest.mock("@/lib/api", () => ({ serverApi: jest.fn() }));
+jest.mock("@/lib/api", () => ({ serverApi: jest.fn(), ApiError: class ApiError extends Error {} }));
 
 import { requireAccessToken } from "@/features/auth/session";
 import { serverApi } from "@/lib/api";
 
-import { listAllManagedMembersForOrgChart } from "./manage-server";
+import { getManagedMember, listAllManagedMembersForOrgChart } from "./manage-server";
 
 /**
  * 조직도 전체 명부 — 2026-08-14 프로덕션 장애 수정.
@@ -91,5 +91,88 @@ describe("listAllManagedMembersForOrgChart — 실서버", () => {
     const roster = await listAllManagedMembersForOrgChart();
 
     expect(roster.map((m) => m.id)).toEqual([1, 3]);
+  });
+});
+
+/**
+ * 사원 상세 실서버 조회 — `roleId` 정규화(2026-08-14 프로덕션 재현).
+ *
+ * ⚠️ **`manage-actions.role-id.test.ts`는 이 실코드를 안 지난다** — 그 파일은
+ *    `getManagedMember` 자체를 `jest.mock`으로 통째로 갈아치운다. `!= null`(BE PR #489
+ *    미배포 시 `undefined`도 걸러야 한다)이 실제로 지켜지는지는 여기서만 잠긴다 — 나중에
+ *    누가 `eqeqeq` 린트에 맞춰 `!==`로 되돌려도 다른 테스트는 못 잡는다.
+ */
+describe("getManagedMember — 실서버 roleId", () => {
+  const requireAccessTokenMock = requireAccessToken as unknown as jest.Mock;
+  const serverApiMock = serverApi as unknown as jest.Mock;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    requireAccessTokenMock.mockResolvedValue("token");
+  });
+
+  function detail(overrides: Partial<Record<string, unknown>> = {}) {
+    return {
+      memberId: 4,
+      name: "박도현",
+      teamName: "개발팀",
+      positionName: "사원",
+      role: "MEMBER",
+      isAdmin: false,
+      roleLabel: null,
+      workStatus: "ACTIVE",
+      joinedOn: "2023-01-15",
+      teamId: 1,
+      jobPositionId: 1,
+      email: "dohyun@zgroup.co.kr",
+      ...overrides,
+    };
+  }
+
+  /** 담당 액션·대기 신청 조회는 이 테스트의 관심사가 아니다 — 빈 값으로 통일해 둔다 */
+  function stubSideCalls() {
+    serverApiMock.mockImplementation((url: string) => {
+      if (url.startsWith("/api/handovers")) return Promise.resolve([]);
+      if (url.startsWith("/api/company/actions")) {
+        return Promise.resolve({ content: [], totalElements: 0 });
+      }
+      throw new Error(`이 테스트가 예상하지 않은 serverApi 호출: ${url}`);
+    });
+  }
+
+  it("BE에 roleId 필드 자체가 없으면(#489 미배포) null이다 — 문자열 'undefined'가 아니다", async () => {
+    stubSideCalls();
+    serverApiMock.mockImplementationOnce((url: string) => {
+      expect(url).toBe("/api/members/4");
+      return Promise.resolve(detail({ roleId: undefined }));
+    });
+
+    const result = await getManagedMember(4);
+
+    expect(result?.roleId).toBeNull();
+  });
+
+  it("BE가 roleId를 실제로 주면 문자열로 옮긴다", async () => {
+    stubSideCalls();
+    serverApiMock.mockImplementationOnce((url: string) => {
+      expect(url).toBe("/api/members/4");
+      return Promise.resolve(detail({ roleId: 3 }));
+    });
+
+    const result = await getManagedMember(4);
+
+    expect(result?.roleId).toBe("3");
+  });
+
+  it("roleId가 명시적으로 null이면 그대로 null이다", async () => {
+    stubSideCalls();
+    serverApiMock.mockImplementationOnce((url: string) => {
+      expect(url).toBe("/api/members/4");
+      return Promise.resolve(detail({ roleId: null }));
+    });
+
+    const result = await getManagedMember(4);
+
+    expect(result?.roleId).toBeNull();
   });
 });

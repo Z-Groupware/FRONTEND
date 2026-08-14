@@ -39,8 +39,12 @@ export interface BeTeam {
    * 이 팀에서 고를 수 있는 역할들. [확인] BE `RoleNode`(신규, 2026-08-14 BE PR #489).
    * ⚠️ **`없음`(roleId 2)이 항상 끼어 온다** — 전역 시드 행을 모든 팀 목록에 얹어 준다.
    * ⚠️ **`리더`(roleId 1)는 안 온다** — BE가 팀장 표시용이라 목록에서 뺀다.
+   * ⚠️ **선택적이라고 타입에 그대로 적는다**(2026-08-14 프로덕션 재현 — BE PR #489가 아직
+   *    실제로는 배포 전이라 이 필드 자체가 안 온다). 비필수(`?`)로 안 적으면, 이 필드를
+   *    직접 읽는 새 코드가 생겨도 타입체커가 "`undefined`일 수 있다"고 못 잡아 줘서
+   *    `toDepartmentNode`가 겪었던 `.map()` 크래시를 그대로 되풀이할 수 있다.
    */
-  roles: { roleId: number; name: string }[];
+  roles?: { roleId: number; name: string }[];
 }
 
 /**
