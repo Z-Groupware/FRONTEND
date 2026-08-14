@@ -128,6 +128,24 @@ describe("getReservableProjects — 실서버", () => {
     expect(requestUrl).toContain("page=0");
     expect(requestUrl).toContain("size=200"); // select 한 번에 받을 상한(RESERVABLE_PROJECTS_PAGE_SIZE)
   });
+
+  /*
+    ⚠️ 팀 액션 select에서 코드래빗이 잡은 것과 같은 결함을 여기서도 먼저 막는다 — 200개를
+       조용히 자르지 않는다. `totalPages`가 1보다 크면 뒤 페이지 프로젝트는 select에서
+       영원히 안 보인다(§정직성).
+  */
+  it("진행중 프로젝트가 200건 상한을 넘으면(totalPages>1) 잘린 목록을 정상으로 돌려주지 않는다", async () => {
+    serverApiMock.mockResolvedValue({
+      content: [],
+      page: 0,
+      size: 200,
+      totalElements: 201,
+      totalPages: 2,
+      hasNext: true,
+    });
+
+    await expect(getReservableProjects()).rejects.toThrow("상한을 넘어");
+  });
 });
 
 /**
@@ -185,5 +203,42 @@ describe("getReservableTeamActions — 실서버", () => {
       ep.teamActions({ status: "IN_PROGRESS", page: 0, size: 200 }),
       expect.objectContaining({ accessToken: "token" }),
     );
+  });
+
+  /*
+    ⚠️ 코드래빗 지적(2026-08-14) — 실서버는 토큰에서 팀을 결정하므로 `actor.teamName`이
+       없어도 API를 불러야 한다. 목 분기와 뭉쳐 있으면 이 조합에서 항상 빈 배열만 받는다.
+  */
+  it("teamName이 없는 Leader·Member도 실서버는 부른다 — 그 검사는 목 분기 안에만 둔다", async () => {
+    serverApiMock.mockResolvedValue({
+      content: [],
+      page: 0,
+      size: 200,
+      totalElements: 0,
+      totalPages: 1,
+      hasNext: false,
+    });
+    const leaderWithoutTeamName: Actor = { id: 9, role: AUTHORITY.LEADER };
+
+    await getReservableTeamActions(leaderWithoutTeamName);
+
+    expect(serverApiMock).toHaveBeenCalled();
+  });
+
+  /*
+    ⚠️ 코드래빗 지적(2026-08-14) — 200개를 조용히 자르지 않는다. hasNext가 참인데
+       첫 페이지만 돌려주면 뒤 페이지 항목은 select에서 영원히 안 보인다(§정직성).
+  */
+  it("진행중 팀 액션이 200건 상한을 넘으면(hasNext) 잘린 목록을 정상으로 돌려주지 않는다", async () => {
+    serverApiMock.mockResolvedValue({
+      content: [],
+      page: 0,
+      size: 200,
+      totalElements: 201,
+      totalPages: 2,
+      hasNext: true,
+    });
+
+    await expect(getReservableTeamActions(LEADER)).rejects.toThrow("상한을 넘어");
   });
 });

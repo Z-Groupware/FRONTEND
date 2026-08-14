@@ -73,8 +73,12 @@ describe("listAllManagedMembersForOrgChart — 실서버", () => {
 
     await listAllManagedMembersForOrgChart();
 
+    /*
+      ⚠️ **정확히 "100"인지 본다**(코드래빗 지적, 2026-08-14). `toContain("size=100")`는
+         `size=1000`도 통과시켜 BE `@Max(100)` 위반을 이 테스트가 놓친다.
+    */
     const requestUrl = serverApiMock.mock.calls[0][0] as string;
-    expect(requestUrl).toContain("size=100");
+    expect(new URL(requestUrl, "http://localhost").searchParams.get("size")).toBe("100");
   });
 
   /*

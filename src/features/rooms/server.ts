@@ -209,11 +209,21 @@ export async function getReservableProjects(): Promise<RoomProjectOption[]> {
     }));
   }
 
-  const { items } = await getProjectsPage(
+  const { items, totalPages } = await getProjectsPage(
     { status: PROJECT_STATUS.IN_PROGRESS, keyword: "" },
     0,
     RESERVABLE_PROJECTS_PAGE_SIZE,
   );
+  /*
+    ⚠️ **200개를 조용히 자르지 않는다**(코드래빗이 팀 액션 select에서 잡은 것과 같은
+       결함을 여기서도 먼저 막는다). 진행중 프로젝트가 상한을 넘으면 BE 전용 select
+       응답이 필요한 신호로 던진다(조직도 `manage-server.ts`와 같은 정책).
+  */
+  if (totalPages > 1) {
+    throw new Error(
+      `이 회사의 진행중 프로젝트가 ${RESERVABLE_PROJECTS_PAGE_SIZE}건 상한을 넘어 select를 전부 채우지 못했습니다 — BE 전용 응답이 필요합니다.`,
+    );
+  }
   return items.map((project) => ({
     id: String(project.id),
     name: project.name,
@@ -238,9 +248,16 @@ const RESERVABLE_TEAM_ACTIONS_PAGE_SIZE = 200;
  *    회의를 낳을 수 있다는 게 이 필드의 뜻이다).
  */
 export async function getReservableTeamActions(actor: Actor): Promise<RoomTeamActionOption[]> {
-  if (!requiresParentTeamAction(actor) || !actor.teamName) return [];
+  if (!requiresParentTeamAction(actor)) return [];
 
   if (isMock) {
+    /*
+      ⚠️ **`teamName` 검사는 목 분기 안에만 둔다**(코드래빗 지적, 2026-08-14). 목은 이
+         이름으로 `PROJECT_TEAM_ACTIONS_MOCK`을 직접 걸러야 해서 필요하지만, 실서버는
+         토큰에서 팀을 결정해서 그 값이 없어도(예: teamName을 안 채운 세션) API가
+         정상 동작한다 — 위에서 같이 걸러내면 그 조합에서 항상 빈 배열만 받는다.
+    */
+    if (!actor.teamName) return [];
     const options: RoomTeamActionOption[] = [];
     for (const [projectTag, teamActions] of Object.entries(PROJECT_TEAM_ACTIONS_MOCK)) {
       for (const teamAction of teamActions) {
@@ -261,6 +278,17 @@ export async function getReservableTeamActions(actor: Actor): Promise<RoomTeamAc
     }),
     { accessToken },
   );
+  /*
+    ⚠️ **200개를 조용히 자르지 않는다**(코드래빗 지적, 2026-08-14). `hasNext`가 참인데
+       첫 페이지만 돌려주면 뒤 페이지 항목은 select에서 영원히 안 보인다 — 회사 안 한
+       팀에 진행중 팀 액션이 그렇게 많을 일은 드물지만, 조용히 자르는 건 §정직성 위반이다.
+       BE 전용 select 응답이 필요한 신호로 던진다(조직도 `manage-server.ts`와 같은 정책).
+  */
+  if (response.hasNext) {
+    throw new Error(
+      `이 팀의 진행중 팀 액션이 ${RESERVABLE_TEAM_ACTIONS_PAGE_SIZE}건 상한을 넘어 select를 전부 채우지 못했습니다 — BE 전용 응답이 필요합니다.`,
+    );
+  }
   return response.content
     .filter((item) => item.projectTag !== null)
     .map((item) => ({ id: item.id, name: item.title, projectTag: item.projectTag! }));
