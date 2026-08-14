@@ -157,6 +157,24 @@ describe("회의실 추가·수정·삭제 — 실서버 권한 판정", () => {
     expect(serverApiMock).not.toHaveBeenCalled();
   });
 
+  it("updateMeetingRoomAction — is_admin 로그인 세션이면 통과해 BE를 부른다", async () => {
+    getViewerMock.mockResolvedValue(ADMIN_LEADER);
+    serverApiMock.mockResolvedValue({
+      meetingRoomId: 1,
+      name: "박애관 302호",
+      location: "박애관 302호",
+      availableFrom: "00:00",
+      availableTo: "23:30",
+    });
+    const data = roomForm();
+    data.append("id", "1");
+
+    const result = await updateMeetingRoomAction({ errors: {} }, data);
+
+    expect(result.errors).toEqual({});
+    expect(serverApiMock).toHaveBeenCalledTimes(1);
+  });
+
   it("updateMeetingRoomAction — is_admin 아닌 로그인 세션이면 BE를 부르지 않고 막는다", async () => {
     getViewerMock.mockResolvedValue(NON_ADMIN_LEADER);
     const data = roomForm();
@@ -166,6 +184,17 @@ describe("회의실 추가·수정·삭제 — 실서버 권한 판정", () => {
 
     expect(result.errors.name).toBe("회의실을 수정할 권한이 없습니다");
     expect(serverApiMock).not.toHaveBeenCalled();
+  });
+
+  it("deleteMeetingRoomAction — is_admin 로그인 세션이면 통과해 BE를 부른다", async () => {
+    getViewerMock.mockResolvedValue(ADMIN_LEADER);
+    serverApiMock.mockResolvedValue(null);
+    const data = new FormData();
+    data.append("id", "1");
+
+    await deleteMeetingRoomAction(data);
+
+    expect(serverApiMock).toHaveBeenCalledTimes(1);
   });
 
   it("deleteMeetingRoomAction — is_admin 아닌 로그인 세션이면 BE를 부르지 않고 막는다", async () => {
