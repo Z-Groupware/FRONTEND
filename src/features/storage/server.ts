@@ -106,7 +106,8 @@ interface BeProjectStorage {
 interface BeStorageOverview {
   voiceGb: number;
   sttGb: number;
-  projects: BeProjectStorage[];
+  /** ⚠️ 없을 수도 있다고 정직하게 적는다 — `toStorageOverview`의 `?? []` 방어 근거다 */
+  projects?: BeProjectStorage[];
 }
 
 function toProjectStorage(item: BeProjectStorage): ProjectStorage {
@@ -122,10 +123,17 @@ function toProjectStorage(item: BeProjectStorage): ProjectStorage {
 }
 
 function toStorageOverview(be: BeStorageOverview): StorageOverview {
+  /*
+    ⚠️ **빈 회사가 정상이라는 약속을 여기서도 지킨다**(BE PR #494 본문 — "빈 회사는
+       0.0GB·빈 배열로 정상 응답"). `projects`가 진짜 `[]`로 온다는 보장은 Jackson
+       직렬화 설정에 달려 있어 코드만 보고 100% 확신할 수 없다 — `null`로 와도
+       `.map()`이 죽지 않고 똑같이 빈 배열로 접히게 방어한다(§company/mapper.ts의
+       `team.roles ?? []`와 같은 이유).
+  */
   return {
     voiceGb: be.voiceGb,
     sttGb: be.sttGb,
-    projects: be.projects.map(toProjectStorage),
+    projects: (be.projects ?? []).map(toProjectStorage),
   };
 }
 
