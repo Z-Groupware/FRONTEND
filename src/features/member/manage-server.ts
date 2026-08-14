@@ -362,12 +362,15 @@ export async function getManagedMember(id: number): Promise<ManagedMemberDetail 
   /*
     ⚠️ **id를 문자열로 옮긴다** — 팀·직급 id와 같은 관례다(BE 숫자를 화면 계층에서는
        문자열로 다루고, BFF로 나갈 때만 다시 숫자로 바꾼다).
+    ⚠️ **`!= null`이다(`!==` 아님)** — BE PR #489가 아직 배포 전이면 `roleId` 필드
+       자체가 없어 `undefined`로 온다. `!== null`만 보면 `String(undefined)`가 되어
+       역할 셀렉트에 문자열 `"undefined"`가 값으로 실린다(2026-08-14 프로덕션 재현).
   */
   return {
     member,
     actions,
     pendingHandover,
-    roleId: detail.roleId !== null ? String(detail.roleId) : null,
+    roleId: detail.roleId != null ? String(detail.roleId) : null,
   };
 }
 
