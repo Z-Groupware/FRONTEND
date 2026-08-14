@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 
 import type { Authority } from "@/constants/authority";
 import { AUTHORITY, POSITION_AUTHORITIES } from "@/constants/authority";
-import { MEMBER_STATUS, ROLE_NONE_LABEL } from "@/constants/member";
+import { ROLE_NONE_LABEL } from "@/constants/member";
 import { requireAccessToken } from "@/features/auth/session";
 import { getCompanyOrg } from "@/features/company/server";
 import { getViewer } from "@/features/shell/viewer";
@@ -16,7 +16,6 @@ import {
   canApproveFinal,
   canChangeAdminGrant,
   canChangeMemberGrade,
-  canDeleteMemberAccount,
   canIssueAccount,
   canManageMembers,
 } from "@/lib/permission";
@@ -35,7 +34,6 @@ import type {
 import {
   addMockManagedMember,
   approveMockHandover,
-  deleteMockManagedMember,
   findMockManagedMember,
   listMockMemberEmails,
   rejectMockHandover,
@@ -582,73 +580,6 @@ export async function issueAccountAction(draft: AccountDraft): Promise<IssueAcco
   revalidatePath("/manage/members");
   revalidatePath(PEOPLE_PATH);
   return { errors: {}, issued: { id: issued.id, name: issued.name, email: issued.email } };
-}
-
-/**
- * 계정 탈퇴 — **오프보딩 최종 승인을 마친 사람만**(WORKFLOW §7).
- *
- * ⚠️ 승인은 사람을 퇴사 상태로 옮길 뿐이고, 탈퇴는 그 사람을 **목록에서 지운다.**
- *    남긴 회의·액션의 출처를 찾을 길이 없어져서, 승인보다 한 걸음 더 뒤에 둔다.
- * ⚠️ **줄을 지우지 않는다**(소프트 딜리트). 기록들이 그 사람 id를 참조하고 있어서
- *    진짜로 지우면 가리킬 곳을 잃는다 — 상태만 `DELETED`가 되고 목록에서 빠진다.
- * ⚠️ 화면은 퇴사자에게만 버튼을 그리지만 액션은 주소만 알면 부를 수 있다 — **상태를
- *    서버가 다시 본다**(§권한: 화면 숨김은 보안이 아니다).
- */
-export async function deleteMemberAccountAction(id: number): Promise<MemberActionResult> {
-  const pass = await gate(canDeleteMemberAccount, "계정 탈퇴는 대표만 할 수 있습니다");
-  if ("denied" in pass) return { isSuccess: false, message: pass.denied };
-
-  // ⚠️ 자기 계정은 못 지운다 — 대표가 사라지면 회사를 열 사람이 없다
-  if (pass.viewer.id === id) {
-    return { isSuccess: false, message: "자기 계정은 탈퇴 처리할 수 없습니다" };
-  }
-
-  /* ⚠️ 라이브의 상세 조회는 통신 장애로 던질 수 있다 — 던지면 화면이 통째로 갈린다(§위 주석) */
-  let target: Awaited<ReturnType<typeof getManagedMember>>;
-  try {
-    target = await getManagedMember(id);
-  } catch (error) {
-    return { isSuccess: false, message: toUserMessage(error) };
-  }
-  if (!target) return { isSuccess: false, message: "없는 사원입니다" };
-
-  /*
-    ⚠️ **퇴사 상태가 아니면 막는다**(WORKFLOW §7 "오프보딩 최종 승인 후에만 계정 탈퇴 가능").
-       재직 중인 사람을 바로 지우면 그 사람이 들고 있던 액션이 인수인계 없이 사라진다.
-    ⚠️ **이 검사는 BE에 없다.** BE `delete`가 막는 건 오너(AU-026)·본인(AU-027)뿐이고
-       재직자도 그대로 지워진다 — 여기가 유일한 방벽이라 두 모드 다 지나기 전에 본다.
-  */
-  if (target.member.status !== MEMBER_STATUS.RESIGNED) {
-    return {
-      isSuccess: false,
-      message: "오프보딩 최종 승인을 마친 사원만 탈퇴 처리할 수 있습니다",
-    };
-  }
-
-  if (!isMock) {
-    /*
-      [확인] BE `ManageMemberController.delete` — `DELETE /api/manage/members/{memberId}`,
-      소프트 삭제(상태 `DELETED` + `deleted_at`, 행은 남는다). 응답에 `data`가 없다
-      (`successWithoutData`) — 받을 것도 없다.
-      ⚠️ BE `@PreAuthorize`는 **OWNER·ADMIN**으로 우리보다 넓다. FE는 `canDeleteMemberAccount`
-         (OWNER 전용)를 유지한다 — 탈퇴는 되돌릴 수 없는 인사 결정이라 최종 승인과 같은 줄에
-         둔다(WORKFLOW §7, 2026-08-06 Admin 제외와 같은 취지). 좁히는 쪽이라 BE와 충돌하지 않는다.
-      ⚠️ 되살리는 경로는 없다(BE `@Operation` 명시) — 화면의 Dialog 경고가 빈말이 아니다.
-    */
-    try {
-      const accessToken = await requireAccessToken();
-      await serverApi<unknown>(ep.manageMember(id), { method: "DELETE", accessToken });
-    } catch (error) {
-      return { isSuccess: false, message: toUserMessage(error) };
-    }
-  } else {
-    deleteMockManagedMember(id);
-  }
-
-  revalidatePath(pathOf(id));
-  revalidatePath("/manage/members");
-  revalidatePath(PEOPLE_PATH);
-  return { isSuccess: true };
 }
 
 /**

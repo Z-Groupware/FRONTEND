@@ -11,7 +11,6 @@ import { getViewer } from "@/features/shell/viewer";
 import {
   approveHandoverAction,
   changeMemberGradeAction,
-  deleteMemberAccountAction,
   fetchMembersPageAction,
   issueAccountAction,
   rejectHandoverAction,
@@ -352,54 +351,6 @@ describe("계정 발급 — 관리자 겸직", () => {
     // ⚠️ 먼저 발급됐는지 본다 — 아니면 아래에서 `!`가 터져 진짜 원인이 가려진다
     expect(result.issued).toBeTruthy();
     expect(findMockManagedMember(result.issued!.id)?.member.isAdmin).toBe(false);
-  });
-});
-
-describe("deleteMemberAccountAction — 계정 탈퇴", () => {
-  /*
-    ⚠️ WORKFLOW §7: "오프보딩 최종 승인 후에만 계정 탈퇴 가능." 재직 중인 사람을 바로 지우면
-       그 사람이 들고 있던 액션이 인수인계 없이 사라진다.
-  */
-  it("퇴사 상태가 아니면 막는다", async () => {
-    const result = await deleteMemberAccountAction(4);
-
-    expect(result.isSuccess).toBe(false);
-    expect(result.message).toMatch(/오프보딩/);
-    expect(findMockManagedMember(4)).not.toBeNull();
-  });
-
-  it("오프보딩을 승인한 뒤에는 탈퇴 처리된다", async () => {
-    await approveHandoverAction(8);
-    expect(findMockManagedMember(8)?.member.status).toBe(MEMBER_STATUS.RESIGNED);
-
-    expect(await deleteMemberAccountAction(8)).toEqual({ isSuccess: true });
-  });
-
-  /*
-    ⚠️ **줄을 지우지 않는다**(소프트 딜리트). 그 사람이 남긴 회의·액션이 id를 참조하고 있어서
-       진짜로 지우면 가리킬 곳을 잃는다 — 목록에서만 빠진다.
-  */
-  it("지운 사람은 목록에서 빠지지만 기록은 남는다", async () => {
-    await approveHandoverAction(8);
-    await deleteMemberAccountAction(8);
-
-    const page = await fetchMembersPageAction({ keyword: "", filter: MEMBER_FILTER.ALL }, 0);
-    expect(page.items.some((member) => member.id === 8)).toBe(false);
-    // 상세는 여전히 찾을 수 있다 — 기록이 그 id를 가리킨다
-    expect(findMockManagedMember(8)).not.toBeNull();
-  });
-
-  it("Admin 겸직자는 탈퇴 처리하지 못한다", async () => {
-    getViewerMock.mockResolvedValue(OWNER);
-    await approveHandoverAction(8);
-    getViewerMock.mockResolvedValue(ADMIN);
-
-    expect(await deleteMemberAccountAction(8)).toMatchObject({ isSuccess: false });
-  });
-
-  /* ⚠️ 대표가 사라지면 회사를 열 사람이 없다 */
-  it("자기 계정은 탈퇴 처리할 수 없다", async () => {
-    expect(await deleteMemberAccountAction(OWNER.id)).toMatchObject({ isSuccess: false });
   });
 });
 
