@@ -47,7 +47,7 @@ const DRAFT: AccountDraft = {
   position: "사원",
   authority: AUTHORITY.MEMBER,
   isAdmin: false,
-  roleLabel: "",
+  roleId: null,
 };
 
 beforeEach(() => {

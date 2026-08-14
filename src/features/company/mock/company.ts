@@ -27,14 +27,19 @@ const INITIAL: CompanySetting = {
     ⚠️ 역할 이름은 **5자까지**다(`MAX_NAME_LENGTH`). 사원 목이 쓰던 `브랜드 전략`·`캠페인 운영`
        ·`비주얼 디자인`은 그 한도를 넘어 **기업 설정에서 만들 수조차 없는 이름**이었다 —
        한도 안으로 줄이고 사원 목도 같이 맞췄다.
-    ⚠️ 역할이 **비어 있는 팀을 남긴다**(전략기획팀). 역할은 안 붙여도 되는 값이라
-       (WORKFLOW §9) 그 경로가 화면에서 보여야 한다.
+    ⚠️ **모든 팀에 `없음`(id `r0`)을 끼워 둔다**(2026-08-14 BE PR #489 — 실서버가 모든 팀
+       역할 목록에 전역 시드 행 `없음`을 얹어 준다). 역할 **선택**(계정 발급·직급 변경)에는
+       이 값이 그대로 보여야 하지만, 팀 **편집** 화면(`getCompanySetting`)은 이 값을 걸러
+       내므로(`withoutSystemRoles`) `전략기획팀`·`신규팀`은 편집 화면에서는 여전히 역할이
+       **비어 있는 팀**으로 보인다 — 역할은 안 붙여도 되는 값이라(WORKFLOW §9) 그 경로가
+       화면에서 보여야 한다.
   */
   departments: [
     {
       id: "d1",
       name: "개발팀",
       children: [
+        { id: "r0", name: "없음", children: [] },
         { id: "r1", name: "프론트엔드", children: [] },
         { id: "r2", name: "백엔드", children: [] },
       ],
@@ -43,6 +48,7 @@ const INITIAL: CompanySetting = {
       id: "d2",
       name: "마케팅팀",
       children: [
+        { id: "r0", name: "없음", children: [] },
         { id: "r3", name: "브랜드", children: [] },
         { id: "r4", name: "캠페인", children: [] },
       ],
@@ -50,15 +56,18 @@ const INITIAL: CompanySetting = {
     {
       id: "d3",
       name: "디자인팀",
-      children: [{ id: "r5", name: "비주얼", children: [] }],
+      children: [
+        { id: "r0", name: "없음", children: [] },
+        { id: "r5", name: "비주얼", children: [] },
+      ],
     },
-    { id: "d4", name: "전략기획팀", children: [] },
+    { id: "d4", name: "전략기획팀", children: [{ id: "r0", name: "없음", children: [] }] },
     /*
       ⚠️ **사람이 없는 팀을 하나 둔다.** 사원이 딸린 팀만 있으면 "지울 수 있는 팀"이 하나도
          없어서 삭제 경로를 데모에서 못 본다. 만들어만 두고 아직 아무도 안 넣은 팀은
          실제로 흔하다.
     */
-    { id: "d5", name: "신규팀", children: [] },
+    { id: "d5", name: "신규팀", children: [{ id: "r0", name: "없음", children: [] }] },
   ],
   /*
     ⚠️ **빈 팀을 하나 둔다**(디자인팀). 사람이 딸린 팀만 있으면 "지울 수 있는 팀"이 하나도

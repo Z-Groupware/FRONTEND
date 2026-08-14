@@ -4,6 +4,7 @@ import type { Authority } from "@/constants/authority";
 import { HANDOVER_TYPE, type HandoverType } from "@/constants/handover";
 import { isVisibleMemberStatus } from "@/constants/member";
 import { requireAccessToken } from "@/features/auth/session";
+import { getCompanyOrg } from "@/features/company/server";
 /** ⚠️ 목록 3종 공용 봉투(`PageResponse`)라 프로젝트 매퍼에 사는 타입을 그대로 쓴다 — 사원 목록의 `MemberPageResponse`와는 다른 봉투다. */
 import type { BePageResponse } from "@/features/project/mapper";
 import { ApiError, serverApi } from "@/lib/api";
@@ -32,6 +33,7 @@ import {
   listMockManagedMembers,
   listMockMemberEmails,
 } from "./mock/managed";
+import { buildTeamRoles, roleIdOf } from "./team-roles";
 
 /** [확인] BE `HandoverSummaryResponse` — `team-handover/mapper.ts`와 같은 응답. */
 interface BeHandoverSummaryResponse {
@@ -307,7 +309,20 @@ async function findMemberActions(
 export async function getManagedMember(id: number): Promise<ManagedMemberDetail | null> {
   if (isMock) {
     const found = findMockManagedMember(id);
-    return found && isVisibleMemberStatus(found.member.status) ? found : null;
+    if (!found || !isVisibleMemberStatus(found.member.status)) return null;
+
+    /*
+      ⚠️ **목 저장소는 역할을 이름(`roleLabel`)으로만 들고 있다.** 화면 계약(`roleId`)을
+         채우려면 그 팀의 역할 목록에서 이름이 같은 항목의 id를 되찾아야 한다 — 실서버는
+         애초에 id로 답하므로 이 다리가 필요 없다(`roleIdOf`).
+    */
+    const company = await getCompanyOrg();
+    const roleId = roleIdOf(
+      buildTeamRoles(company.departments),
+      found.member.teamName ?? "",
+      found.member.roleLabel,
+    );
+    return { ...found, roleId };
   }
 
   /*
@@ -344,7 +359,16 @@ export async function getManagedMember(id: number): Promise<ManagedMemberDetail 
     findMemberActions(id, accessToken),
   ]);
 
-  return { member, actions, pendingHandover };
+  /*
+    ⚠️ **id를 문자열로 옮긴다** — 팀·직급 id와 같은 관례다(BE 숫자를 화면 계층에서는
+       문자열로 다루고, BFF로 나갈 때만 다시 숫자로 바꾼다).
+  */
+  return {
+    member,
+    actions,
+    pendingHandover,
+    roleId: detail.roleId !== null ? String(detail.roleId) : null,
+  };
 }
 
 /** 이미 쓰고 있는 메일 주소 — 중복 발급을 막는다 */
