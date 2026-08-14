@@ -19,6 +19,7 @@ import { type AccountDraft, MEMBER_FILTER } from "./manage-types";
 import {
   completeMockHandoverMidApproval,
   findMockManagedMember,
+  listMockManagedMembers,
   resetMockManagedMembers,
 } from "./mock/managed";
 
@@ -266,6 +267,12 @@ describe("승인 · 반려", () => {
     await approveHandoverAction(8);
 
     expect(findMockManagedMember(8)?.member.status).toBe(DELETED_MEMBER_STATUS);
+    /*
+      ⚠️ **내부 저장값만 보면 안 된다**(CodeRabbit 지적, 2026-08-14). `findMockManagedMember`는
+         소프트 삭제된 레코드도 그대로 돌려주는 raw lookup이라, 실제로 목록에서 빠지는지는
+         `listMockManagedMembers()`(=`isVisibleMemberStatus`가 거르는 자리)로 따로 확인해야 한다.
+    */
+    expect(listMockManagedMembers().some((member) => member.id === 8)).toBe(false);
   });
 
   /*
