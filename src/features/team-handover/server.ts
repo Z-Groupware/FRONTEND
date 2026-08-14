@@ -105,6 +105,10 @@ export async function listTeamHandovers(): Promise<TeamHandoverListItem[]> {
           handoverId: member.id,
           memberId: member.id,
           memberName: member.name,
+          // ⚠️ 목 로스터엔 숫자 팀 id가 없다 — `canApproveMid` 팀 스코프 검사는 실서버
+          //    분기에서만 돈다(§목 단계 권한 검사 범위, 이 파일 하단 `completeTeamHandoverAction`
+          //    주석 참고)라 이 값은 목에서 실제로 쓰이지 않는다.
+          teamId: 0,
           type: handover.type,
           period: handover.period,
           actionCount: handover.actionCount,
@@ -141,6 +145,8 @@ export async function getTeamHandoverDetail(
       handoverId: memberId,
       memberId,
       memberName: detail.member.name,
+      // ⚠️ 목 전용 — 위 목록 분기와 같은 이유로 실제로 쓰이지 않는다.
+      teamId: 0,
       type: handover.type,
       period: handover.period,
       actionCount: handover.actionCount,

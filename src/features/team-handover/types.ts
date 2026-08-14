@@ -24,6 +24,8 @@ export interface TeamHandoverListItem {
   handoverId: number;
   memberId: number;
   memberName: string;
+  /** 이 인수인계서가 속한 팀 — 권한 판정(`canApproveMid`)이 이 값과 승인자의 팀을 대조한다. */
+  teamId: number;
   type: HandoverType;
   /** 휴직 기간 `YYYY-MM-DD`. 오프보딩이면 `null`(돌아오지 않는다) */
   period: { from: string; to: string } | null;
