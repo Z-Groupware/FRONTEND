@@ -33,7 +33,10 @@ interface UseOnlineMeetingFormOptions {
  * ⚠️ **성공해도 창을 안 닫는다**(2026-08-14 팀 확정 — 이전엔 상세로 `router.push`했다). 비대면
  *    회의는 만들자마자 완료 처리되지만, 같은 다이얼로그가 이어서 녹음 파일 제출·AI 요약 요청을
  *    받는 **2단계**로 넘어간다 — 페이지 전환 없이 `onCreated`로 부모(다이얼로그)에 알리기만 한다.
- * ⚠️ 폼은 여기서 안 비운다 — 2단계를 마치고 다이얼로그 전체가 닫힐 때 부모가 리셋한다.
+ * ⚠️ 폼은 여기서 안 비운다 — 성공하면 부모(`OnlineMeetingDialog`)가 2단계로 갈아 끼워 이
+ *    컴포넌트(와 이 훅)를 **언마운트**한다. 다시 1단계로 돌아오는 유일한 길은 다이얼로그를
+ *    닫았다 여는 것뿐이라, 그때는 이 훅이 처음부터 다시 마운트돼 `EMPTY_FORM`으로 시작한다 —
+ *    되돌리는 함수가 따로 없다.
  */
 export function useOnlineMeetingForm({ onCreated }: UseOnlineMeetingFormOptions) {
   const [state, formAction] = useActionState(createOnlineMeetingAction, INITIAL_STATE);
@@ -48,10 +51,5 @@ export function useOnlineMeetingForm({ onCreated }: UseOnlineMeetingFormOptions)
     }
   }, [state.created, onCreated]);
 
-  function resetForm() {
-    setForm(EMPTY_FORM);
-    handledCreatedId.current = null;
-  }
-
-  return { state, formAction, form, setForm, resetForm };
+  return { state, formAction, form, setForm };
 }

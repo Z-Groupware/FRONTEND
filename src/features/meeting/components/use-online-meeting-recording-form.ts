@@ -8,7 +8,11 @@ import {
   type SubmitOnlineMeetingRecordingState,
 } from "../actions";
 
-const INITIAL_STATE: SubmitOnlineMeetingRecordingState = { error: null, submitted: null };
+const INITIAL_STATE: SubmitOnlineMeetingRecordingState = {
+  error: null,
+  notice: null,
+  submitted: null,
+};
 
 interface UseOnlineMeetingRecordingFormOptions {
   meetingId: string;
@@ -24,7 +28,6 @@ interface UseOnlineMeetingRecordingFormOptions {
  *    `online-meeting-dialog.tsx`가 전에 하던 것과 같다.
  */
 export function useOnlineMeetingRecordingForm({
-  meetingId,
   onSubmitted,
 }: UseOnlineMeetingRecordingFormOptions) {
   const [state, formAction] = useActionState(submitOnlineMeetingRecordingAction, INITIAL_STATE);
@@ -39,5 +42,5 @@ export function useOnlineMeetingRecordingForm({
     }
   }, [state.submitted, onSubmitted]);
 
-  return { state, formAction, recordingFileName, setRecordingFileName, meetingId };
+  return { state, formAction, recordingFileName, setRecordingFileName };
 }

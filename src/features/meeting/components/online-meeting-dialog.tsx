@@ -1,8 +1,8 @@
 "use client";
 
-import { Paperclip, Video, X } from "lucide-react";
-import type { ChangeEvent, FormEvent } from "react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { Video, X } from "lucide-react";
+import type { FormEvent } from "react";
+import { useCallback, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
 
 import { ConfirmDialog } from "@/components/common/confirm-dialog";
@@ -10,6 +10,7 @@ import { FieldError } from "@/components/common/field-error";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogHeader,
   DialogTitle,
@@ -20,8 +21,9 @@ import { RoomAttendeePicker } from "@/features/rooms/components/room-attendee-pi
 import type { RoomMember, RoomProjectOption, RoomTeamActionOption } from "@/features/rooms/types";
 
 import { OnlineMeetingFields } from "./online-meeting-fields";
+import { PendingReporter } from "./online-meeting-shared";
+import { OnlineMeetingStep2 } from "./online-meeting-step2";
 import { useOnlineMeetingForm } from "./use-online-meeting-form";
-import { useOnlineMeetingRecordingForm } from "./use-online-meeting-recording-form";
 
 interface OnlineMeetingDialogProps {
   members: RoomMember[];
@@ -29,17 +31,6 @@ interface OnlineMeetingDialogProps {
   showParentTeamAction: boolean;
   teamActions: RoomTeamActionOption[];
   viewer: AttendeeScopeViewer;
-}
-
-/** 제출 중인지를 창에 올려 보낸다 — `RoomReservationDialog`의 `PendingReporter`와 같다. */
-function PendingReporter({ onChange }: { onChange: (pending: boolean) => void }) {
-  const { pending } = useFormStatus();
-
-  useEffect(() => {
-    onChange(pending);
-  }, [pending, onChange]);
-
-  return null;
 }
 
 /**
@@ -62,25 +53,6 @@ function ConfirmStepActions({
       </Button>
       <Button type="button" variant="ink" disabled={pending} onClick={onRequestSubmit}>
         {pending ? "등록 중" : "등록"}
-      </Button>
-    </div>
-  );
-}
-
-/**
- * 건너뛰기·바로 제출 버튼 — 2단계(녹음 제출)가 쓴다. 확인 모달을 안 거친다 — 회의는 이미
- * 완료 상태로 존재해서 이 제출은 되돌릴 게 없는 부가 조작이다(§토스트: 파괴적 작업만 Dialog).
- */
-function SkipOrSubmitActions({ onSkip }: { onSkip: () => void }) {
-  const { pending } = useFormStatus();
-
-  return (
-    <div className="flex shrink-0 gap-2">
-      <Button type="button" variant="outline" disabled={pending} onClick={onSkip}>
-        나중에 하기
-      </Button>
-      <Button type="submit" variant="ink" disabled={pending}>
-        {pending ? "요청 중" : "AI 요약 요청"}
       </Button>
     </div>
   );
@@ -177,94 +149,6 @@ function OnlineMeetingStep1({
   );
 }
 
-interface OnlineMeetingStep2Props {
-  meetingId: string;
-  onSubmitted: () => void;
-  onPendingChange: (pending: boolean) => void;
-  onSkip: () => void;
-}
-
-/**
- * 2단계 — 녹음 파일 제출 + AI 요약 요청(2026-08-14 팀 확정). 회의는 1단계에서 이미 완료
- * 상태로 만들어져 있어 이 단계는 **선택**이다 — [나중에 하기]로 건너뛰어도 회의는 그대로 남는다.
- * ⚠️ **첨부는 실제 업로드가 아니다**(§정직한 목업) — 파일 이름만 hidden input으로 싣는다.
- * ⚠️ 실서버(`!isMock`)에서는 서버 액션이 "곧 지원됩니다" 오류를 그대로 돌려준다 — 컴포넌트가
- *    `isMock`을 직접 알면 안 된다(§Mock 격리막)는 규칙 그대로라, 여기서 따로 분기하지 않고
- *    `state.error`를 그대로 보여준다.
- */
-function OnlineMeetingStep2({
-  meetingId,
-  onSubmitted,
-  onPendingChange,
-  onSkip,
-}: OnlineMeetingStep2Props) {
-  const { state, formAction, recordingFileName, setRecordingFileName } =
-    useOnlineMeetingRecordingForm({ meetingId, onSubmitted });
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0] ?? null;
-    setRecordingFileName(file?.name ?? null);
-  }
-
-  function clearFile() {
-    setRecordingFileName(null);
-    if (fileInputRef.current) fileInputRef.current.value = "";
-  }
-
-  return (
-    <form action={formAction}>
-      <PendingReporter onChange={onPendingChange} />
-      <input type="hidden" name="meetingId" value={meetingId} />
-      <input type="hidden" name="recordingFileName" value={recordingFileName ?? ""} />
-
-      <div className="flex flex-col gap-4 px-6 py-4">
-        <p className="text-muted-foreground text-[13px] leading-5">
-          녹음 파일을 제출해 주세요. 제출 없이도 회의는 이미 완료 처리돼 있습니다.
-        </p>
-
-        <div className="flex flex-col gap-1.5">
-          <span id="online-meeting-recording-label" className="text-[13px] leading-5 font-medium">
-            녹음 파일 첨부 (선택)
-          </span>
-          {/* ⚠️ 바이너리는 안 보낸다 — 파일명만 읽어 hidden input으로 싣는다(위 주석). */}
-          <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileChange} />
-          <div className="flex items-center gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="w-full min-w-0 justify-start"
-              aria-labelledby="online-meeting-recording-label"
-              onClick={() => fileInputRef.current?.click()}
-            >
-              <Paperclip aria-hidden />
-              <span className="truncate">{recordingFileName ?? "파일 첨부 (선택)"}</span>
-            </Button>
-            {recordingFileName && (
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon-sm"
-                aria-label="녹음 파일 선택 해제"
-                onClick={clearFile}
-              >
-                <X aria-hidden />
-              </Button>
-            )}
-          </div>
-        </div>
-
-        <FieldError reserveSpace message={state.error ?? undefined} />
-      </div>
-
-      <div className="border-border flex items-center justify-end gap-4 border-t px-6 py-4">
-        <SkipOrSubmitActions onSkip={onSkip} />
-      </div>
-    </form>
-  );
-}
-
 /**
  * 비대면 회의 만들기 — `/app/meeting` 목록의 진입점(이슈 #473). 2026-08-14 팀 확정으로 **2단계
  * 다이얼로그**가 됐다:
@@ -305,9 +189,22 @@ export function OnlineMeetingDialog({
         비대면 회의
       </DialogTrigger>
 
-      <DialogContent className="gap-0 p-0 sm:max-w-[720px]">
-        <DialogHeader className="border-border border-b px-6 py-4">
+      {/*
+        ⚠️ **닫기(X) 버튼을 헤더 안에 직접 그린다.** `DialogContent`의 기본 닫기 버튼은
+           `p-4` 여백을 전제로 `top-2 right-2`에 절대 위치한다 — 이 다이얼로그는 `p-0`을 쓰고
+           헤더가 직접 여백(`px-6 py-4`)을 잡아서, 기본값을 그대로 쓰면 버튼이 모서리 밖으로
+           걸쳐 뜬다. `showCloseButton={false}`로 끄고 헤더 여백 안에 자연스럽게 배치한다.
+      */}
+      <DialogContent className="gap-0 overflow-hidden p-0 sm:max-w-[720px]" showCloseButton={false}>
+        <DialogHeader className="border-border flex-row items-center justify-between border-b px-6 py-4">
           <DialogTitle>{createdMeetingId ? "녹음 파일 제출" : "비대면 회의 만들기"}</DialogTitle>
+          <DialogClose
+            disabled={isPending}
+            render={<Button type="button" variant="ghost" size="icon-sm" />}
+          >
+            <X aria-hidden />
+            <span className="sr-only">닫기</span>
+          </DialogClose>
         </DialogHeader>
 
         {createdMeetingId ? (

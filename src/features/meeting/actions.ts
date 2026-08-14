@@ -18,7 +18,12 @@ import { getViewer } from "@/features/shell/viewer";
 import { ApiError, serverApi } from "@/lib/api";
 import { ep } from "@/lib/endpoints";
 import { getMockActor } from "@/lib/mock-actor";
-import { type Actor, canManageMeeting, requiresParentTeamAction } from "@/lib/permission";
+import {
+  type Actor,
+  canCaptureMeeting,
+  canManageMeeting,
+  requiresParentTeamAction,
+} from "@/lib/permission";
 import { isMock } from "@/mocks/config";
 
 import { checkMeetingTitle } from "./lib";
@@ -562,7 +567,10 @@ export async function createOnlineMeetingAction(
 
 /** 비대면 회의 2단계([녹음 파일 제출]) 결과 — 다이얼로그가 이 값이 바뀐 걸 보고 닫는다. */
 export interface SubmitOnlineMeetingRecordingState {
+  /** 칸에 매길 실패(권한 없음·파일 없음 등) — `FieldError`로 빨갛게 보여준다. */
   error: string | null;
+  /** 실패가 아니라 **아직 지원 안 함** 안내 — `error`와 자리를 나눠 평범한 안내문으로 보여준다. */
+  notice: string | null;
   /** 성공한 제출의 표식(MEET-09 폼과 같은 이유로 `boolean` 대신 객체) */
   submitted: { meetingId: string } | null;
 }
@@ -581,9 +589,15 @@ function readSubmitOnlineMeetingRecordingDraft(
  *
  * ⚠️ **회의는 이미 완료 상태로 존재한다** — 이 액션은 파일명을 덧붙이고 분석을 대기로 옮길
  *    뿐, 회의를 새로 만들거나 상태를 바꾸지 않는다(`createOnlineMeetingAction`과 분리된 이유).
+ * ⚠️ **녹음 파일은 선택이 아니다.** AI 요약을 요청하려면 녹음이 있어야 한다 — 빈 값·공백만
+ *    있는 값은 여기서 막고, 파일명이 확정된 뒤에만 분석을 대기(`PENDING`)로 옮긴다.
+ * ⚠️ **권한은 그 회의 담당자 1명뿐**이다(§권한 ②: 리소스 소유권, `canCaptureMeeting`과 같은
+ *    축 — 캡처·녹음·종료와 한 묶음). `canManageMeeting`(host·OWNER·ADMIN)을 여기서 쓰면
+ *    담당자가 아닌 OWNER도 남의 회의에 파일을 밀어 넣을 수 있어 축이 하나로 무너진다.
  * ⚠️ **실서버 분기가 없다.** BE가 이 제출 자리(녹음 업로드·요약 요청 트리거)를 아직 안 내줬다
  *    (§연동 검증: Swagger·구두 추측 금지) — 추측 엔드포인트를 만드는 대신 정직하게
- *    "곧 지원됩니다"라고 말한다(§정직성, 기존 스텁과 같은 결).
+ *    "곧 지원됩니다"라고 안내한다(§정직성, 기존 스텁과 같은 결). 이건 **실패가 아니라 안내**라
+ *    `error`가 아니라 `notice`에 실어 화면이 빨간 오류로 보여주지 않게 한다.
  * ⚠️ **파일명은 실제 업로드가 아니다**(§정직한 목업) — `setMockRecordingFileName`은 이름만 옮긴다.
  */
 export async function submitOnlineMeetingRecordingAction(
@@ -591,22 +605,37 @@ export async function submitOnlineMeetingRecordingAction(
   formData: FormData,
 ): Promise<SubmitOnlineMeetingRecordingState> {
   const draft = readSubmitOnlineMeetingRecordingDraft(formData);
-  if (!draft.meetingId) return { error: "회의를 찾을 수 없습니다", submitted: null };
+  if (!draft.meetingId) {
+    return { error: "회의를 찾을 수 없습니다", notice: null, submitted: null };
+  }
+
+  const recordingFileName = draft.recordingFileName.trim();
+  if (!recordingFileName) {
+    return { error: "녹음 파일을 첨부해 주세요", notice: null, submitted: null };
+  }
 
   if (!isMock) {
     // ⚠️ BE가 아직 이 제출 엔드포인트를 안 내줬다 — 추측 요청을 보내지 않는다(§연동 검증).
-    return { error: "녹음 파일 제출은 아직 준비 중입니다 — 곧 지원됩니다", submitted: null };
+    return {
+      error: null,
+      notice: "녹음 파일 제출은 아직 준비 중입니다 — 곧 지원됩니다",
+      submitted: null,
+    };
   }
 
-  if (!findMockMeeting(draft.meetingId)) {
-    return { error: "회의를 찾을 수 없습니다", submitted: null };
+  const meeting = findMockMeeting(draft.meetingId);
+  if (!meeting) {
+    return { error: "회의를 찾을 수 없습니다", notice: null, submitted: null };
   }
 
-  if (draft.recordingFileName) {
-    setMockRecordingFileName(draft.meetingId, draft.recordingFileName);
+  const actor = getMockActor();
+  if (!canCaptureMeeting(actor, meeting)) {
+    return { error: "녹음 파일을 제출할 권한이 없습니다", notice: null, submitted: null };
   }
+
+  setMockRecordingFileName(draft.meetingId, recordingFileName);
   setMockSummaryStatus(draft.meetingId, AI_SUMMARY_STATUS.PENDING);
   revalidatePath(`/app/meeting/${draft.meetingId}`);
   revalidatePath(MEETING_LIST_PATH);
-  return { error: null, submitted: { meetingId: draft.meetingId } };
+  return { error: null, notice: null, submitted: { meetingId: draft.meetingId } };
 }

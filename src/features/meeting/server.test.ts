@@ -121,7 +121,9 @@ describe("비대면 회의(이슈 #473) — isOnline·빈 schedule·roomName", (
     projectId: 1,
     projectTag: "GOODS",
     topics: [{ main: "제품", sub: "점검" }],
-    attendeeIds: [OWNER.id],
+    // ⚠️ OTHER_LEADER를 진짜 참석자로 넣는다 — host(OWNER) 관점만으로는 "초대 탭"이 원래도
+    //    비어 있어 걸러지는지 확인이 안 된다(host는 애초에 자기 회의에 초대받지 않는다).
+    attendeeIds: [OWNER.id, OTHER_LEADER.id],
     hostId: OWNER.id,
     hostAuthority: AUTHORITY.OWNER,
   };
@@ -133,10 +135,13 @@ describe("비대면 회의(이슈 #473) — isOnline·빈 schedule·roomName", (
   it("비대면 회의는 목록(호스트·초대 탭 모두)에 나오지 않는다", async () => {
     const created = addMockOnlineMeeting(ONLINE_DRAFT);
 
-    const directory = await getMeetingDirectory(OWNER.id);
+    const hostDirectory = await getMeetingDirectory(OWNER.id);
+    expect(hostDirectory.hosted.some((row) => row.id === created.id)).toBe(false);
+    expect(hostDirectory.invited.some((row) => row.id === created.id)).toBe(false);
 
-    expect(directory.hosted.some((row) => row.id === created.id)).toBe(false);
-    expect(directory.invited.some((row) => row.id === created.id)).toBe(false);
+    // ⚠️ 진짜 초대받은 사람(host가 아닌 OTHER_LEADER) 기준으로도 «참여해야 할» 탭에 안 뜬다.
+    const attendeeDirectory = await getMeetingDirectory(OTHER_LEADER.id);
+    expect(attendeeDirectory.invited.some((row) => row.id === created.id)).toBe(false);
   });
 
   it("상세도 isOnline을 세우고 schedule·roomName을 빈 문자열로 비운다", async () => {

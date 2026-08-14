@@ -58,6 +58,14 @@ function DialogContent({
   return (
     <DialogPortal>
       <DialogOverlay />
+      {/*
+        ⚠️ **`overflow-hidden`은 여기서 공용으로 안 건다.** `p-0` + 직접 여백을 잡는 헤더(각진
+           모서리)가 `rounded-xl` 밖으로 삐져나오는 건 사실이지만, 그걸 여기서 한 번에 자르면
+           `overflow-y-auto`로 세로 스크롤을 걸어 둔 다이얼로그(정보 상세 등)까지 함께 잘려
+           스크롤이 죽는다 — `overflow`와 `overflow-y`는 서로 다른 유틸리티라 `cn`(tailwind-merge)이
+           덮어쓰지 못한다. 모서리를 잘라야 하는 개별 다이얼로그가 각자 `overflow-hidden`을
+           든다(DESIGN.md §2와 같은 이유, 적용 범위만 좁힌다).
+      */}
       <DialogPrimitive.Popup
         data-slot="dialog-content"
         className={cn(
