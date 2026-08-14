@@ -1,7 +1,7 @@
 import { AUTHORITY } from "@/constants/authority";
 import { ACTION_STATUS } from "@/constants/domain";
 import { HANDOVER_TYPE } from "@/constants/handover";
-import { DELETED_MEMBER_STATUS, isVisibleMemberStatus, MEMBER_STATUS } from "@/constants/member";
+import { isVisibleMemberStatus, MEMBER_STATUS } from "@/constants/member";
 
 import type {
   ManagedMember,
@@ -428,22 +428,6 @@ export function addMockManagedMember(
 /** 이미 쓰고 있는 메일 주소들 — 중복 발급을 막는 데 쓴다 */
 export function listMockMemberEmails(): string[] {
   return store.map((entry) => entry.member.email);
-}
-
-/**
- * 계정 탈퇴 — **소프트 딜리트**다.
- *
- * ⚠️ 줄을 지우지 않고 상태만 `DELETED`로 바꾼다. 그 사람이 남긴 회의·액션이 참조하는
- *    id라서, 진짜로 지우면 그 기록들이 가리킬 곳을 잃는다.
- * ⚠️ `DELETED`는 **상태가 아니라 목록에서 빠지는 일**이라 `MEMBER_STATUS`에 없다 —
- *    목록을 만드는 쪽이 `isVisibleMemberStatus`로 거른다(§도메인 상수).
- */
-export function deleteMockManagedMember(id: number): void {
-  store = store.map((entry) =>
-    entry.member.id === id
-      ? { ...entry, member: { ...entry.member, status: DELETED_MEMBER_STATUS as never } }
-      : entry,
-  );
 }
 
 /** 테스트가 앞 테스트의 변경을 물려받지 않게 되돌린다 */
