@@ -1,6 +1,6 @@
 import { AUTHORITY, type Authority } from "@/constants/authority";
 import type { ActionStatus } from "@/constants/domain";
-import type { MemberStatus } from "@/constants/member";
+import { type MemberStatus, ROLE_NONE_LABEL } from "@/constants/member";
 
 import type { ManagedMember, ManagedMemberAction, MemberFilter } from "./manage-types";
 
@@ -124,7 +124,17 @@ export function toManagedMember(item: BeMemberListItem | BeMemberDetail): Manage
     position: item.positionName ?? "",
     authority: toAuthority(item.role),
     isAdmin: item.isAdmin,
-    roleLabel: item.roleLabel?.trim() ? item.roleLabel : null,
+    /*
+      ⚠️ **BE의 시스템 값 `"없음"`도 `null`로 되돌린다**(2026-08-14 재발견 — 오래된 계정
+         발급 경로가 남긴 값이라 역할이 아예 없는 사람에게 빈 문자열이 아니라 이 문자열
+         그대로가 온다). 정규화하지 않으면 목록·조직도 표시(`?? "없음"`)는 우연히 같은
+         글자라 눈치채지 못하지만, 이 값을 직접 쓰는 자리(과거 `changeMemberGradeAction`의
+         `roleLabel` 비교)가 실제 역할 이름과 문자열 `"없음"`을 구분 못 해 저장이 거짓
+         실패로 막힌 적이 있다 — 매퍼 한 곳에서 정규화해 두면 그 자리를 다시 만들어도
+         같은 함정에 안 걸린다.
+    */
+    roleLabel:
+      item.roleLabel?.trim() && item.roleLabel.trim() !== ROLE_NONE_LABEL ? item.roleLabel : null,
     status: toMemberStatus(item.workStatus),
     joinedAt: item.joinedOn ?? "",
     /*
