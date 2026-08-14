@@ -26,8 +26,15 @@ const EMPTY_FORM = {
 export type OnlineMeetingFormValues = typeof EMPTY_FORM;
 
 interface UseOnlineMeetingFormOptions {
-  /** 세 단계가 전부 끝나 회의가 만들어지면 다이얼로그를 닫으라고 알린다. */
-  onCreated: () => void;
+  /**
+   * 세 단계가 전부 끝나 회의가 만들어지면 다이얼로그를 닫으라고 알린다.
+   *
+   * ⚠️ **방금 만든 회의의 id·제목을 같이 준다.** 비대면 회의는 등록되는 순간 서버가 전체
+   *    파일 STT·AI 분석을 곧장 시작한다(`MeetingService.createOnlineMeeting` 주석) — 실시간
+   *    캡처 종료(`capture-view.tsx`의 `trackAnalysis`)와 똑같이, 등록 직후부터 진행 상황을
+   *    쫓아야 검토 화면으로 갈 길이 생긴다. 값이 없으면 그 카드를 못 띄운다.
+   */
+  onCreated: (meetingId: string, title: string) => void;
 }
 
 /**
@@ -134,7 +141,8 @@ export function useOnlineMeetingForm({ onCreated }: UseOnlineMeetingFormOptions)
     }
 
     toast.success("비대면 회의를 등록했습니다");
-    onCreated();
+    // ⚠️ 성공 응답엔 항상 `created`가 실린다(`errors`가 비었을 때만 여기 온다) — 없으면 계약 위반이다.
+    if (result.created) onCreated(result.created.id, form.title);
   }
 
   return {
