@@ -3,10 +3,12 @@ import "server-only";
 import { addDays, format, startOfWeek } from "date-fns";
 
 import { AUTHORITY } from "@/constants/authority";
+import { PROJECT_STATUS } from "@/constants/domain";
 import { requireAccessToken } from "@/features/auth/session";
 import { getTeamLeaders } from "@/features/member/manage-server";
 import { TOP_LEVEL_PROJECTS } from "@/features/project/mock/projects";
 import { PROJECT_TEAM_ACTIONS_MOCK } from "@/features/project/mock/team-actions";
+import { getProjectsPage } from "@/features/project/server";
 import { ApiError, serverApi } from "@/lib/api";
 import { ep } from "@/lib/endpoints";
 import { type Actor, requiresParentTeamAction } from "@/lib/permission";
@@ -182,7 +184,19 @@ export async function getReservableMembers(actor: Actor): Promise<RoomMember[]> 
   }));
 }
 
-/** 예약 폼의 "프로젝트" select용 — 프로젝트 도메인의 전체 목록에서 경량 필드만 골라 낸다. */
+/** select 한 번에 받을 상한 — 이 회사 진행중 프로젝트가 이보다 많아지면 BE 전용 응답을 요청한다. */
+const RESERVABLE_PROJECTS_PAGE_SIZE = 200;
+
+/**
+ * 예약 폼의 "프로젝트" select용 — 프로젝트 도메인의 전체 목록에서 경량 필드만 골라 낸다.
+ *
+ * ⚠️ **`getProjectsPage`를 재사용한다.** 프로젝트 목록 API가 이미 실서버에 연동돼 있으므로
+ *    (`features/project/server.ts`) 여기서 새 경로를 만들지 않는다(§환각 API 방지) — 같은
+ *    회사의 프로젝트가 두 곳에서 다르게 보이면 안 된다.
+ * ⚠️ select는 **한 화면에 다 보여줄 목록**이라 페이지네이션이 안 맞는다. 진행중 프로젝트만
+ *    대상으로 좁히고(완료된 프로젝트에 새 회의를 묶을 일이 없다) 큰 페이지 하나로 받는다 —
+ *    회사 프로젝트가 이 상한을 넘으면 그때 BE에 전용 select 응답을 요청한다.
+ */
 export async function getReservableProjects(): Promise<RoomProjectOption[]> {
   if (isMock) {
     return TOP_LEVEL_PROJECTS.map((project) => ({
@@ -191,7 +205,17 @@ export async function getReservableProjects(): Promise<RoomProjectOption[]> {
       tag: project.tag,
     }));
   }
-  throw new Error("프로젝트 목록 조회 API가 아직 연결되지 않았습니다.");
+
+  const { items } = await getProjectsPage(
+    { status: PROJECT_STATUS.IN_PROGRESS, keyword: "" },
+    0,
+    RESERVABLE_PROJECTS_PAGE_SIZE,
+  );
+  return items.map((project) => ({
+    id: String(project.id),
+    name: project.name,
+    tag: project.tag,
+  }));
 }
 
 /**
