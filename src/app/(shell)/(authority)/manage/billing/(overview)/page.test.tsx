@@ -17,6 +17,7 @@ jest.mock("next/navigation", () => ({
 jest.mock("@/mocks/config", () => ({ isMock: false }));
 
 jest.mock("@/features/shell/viewer", () => ({ getViewer: jest.fn() }));
+jest.mock("@/features/auth/me", () => ({ getMe: jest.fn(async () => ({ companyId: 7 })) }));
 
 jest.mock("@/features/billing/server", () => ({
   getOnboardingSubscription: jest.fn(),
