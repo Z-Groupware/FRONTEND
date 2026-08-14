@@ -13,7 +13,7 @@ import { serverApi } from "@/lib/api";
 import { ep } from "@/lib/endpoints";
 import type { Actor } from "@/lib/permission";
 
-import { getReservableMembers } from "./server";
+import { getReservableMembers, getReservableProjects } from "./server";
 
 /**
  * 참석자 후보 명부 — **실서버 분기가 Owner와 Leader·Member에서 다른 API를 부른다.**
@@ -81,5 +81,51 @@ describe("getReservableMembers — 실서버", () => {
     expect(members).toEqual([
       { id: 3, name: "이서연", teamName: "개발팀", authority: AUTHORITY.MEMBER },
     ]);
+  });
+});
+
+/**
+ * 예약 폼의 "프로젝트" select — 2026-08-14 프로덕션에서 무조건 throw하던 것을 고쳤다.
+ * `getProjectsPage`(project 도메인, 이미 실연동)를 그대로 재사용하는지 확인한다.
+ */
+describe("getReservableProjects — 실서버", () => {
+  it("getProjectsPage를 재사용해 select 모양으로 줄인다 — 새 경로를 만들지 않는다", async () => {
+    serverApiMock.mockResolvedValue({
+      content: [
+        {
+          id: 12,
+          tag: "product-v2",
+          color: "blue",
+          name: "제품 v2.0",
+          description: "",
+          status: "IN_PROGRESS",
+          startDate: null,
+          dueDate: "2026-12-31",
+          teamCount: 1,
+          actionCount: 0,
+          completedActionCount: 0,
+          meetingCount: 0,
+          progressPct: 0,
+          teamNames: [],
+        },
+      ],
+      page: 0,
+      size: 200,
+      totalElements: 1,
+      totalPages: 1,
+      hasNext: false,
+    });
+
+    const projects = await getReservableProjects();
+
+    expect(projects).toEqual([{ id: "12", name: "제품 v2.0", tag: "product-v2" }]);
+    expect(serverApiMock).toHaveBeenCalledWith(
+      expect.stringContaining("status=IN_PROGRESS"),
+      expect.objectContaining({ accessToken: "token" }),
+    );
+    // ⚠️ page·size도 확인한다 — 기본 페이지 크기(20)로 조용히 바뀌어도 status만 보면 통과했다(코드래빗 지적)
+    const requestUrl = serverApiMock.mock.calls[0][0] as string;
+    expect(requestUrl).toContain("page=0");
+    expect(requestUrl).toContain("size=200"); // select 한 번에 받을 상한(RESERVABLE_PROJECTS_PAGE_SIZE)
   });
 });

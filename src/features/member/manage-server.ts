@@ -20,12 +20,13 @@ import {
   toManagedMember,
   toManagedMemberAction,
 } from "./manage-mapper";
-import type {
-  ManagedMember,
-  ManagedMemberActions,
-  ManagedMemberDetail,
-  MemberQuery,
-  PendingHandover,
+import {
+  type ManagedMember,
+  type ManagedMemberActions,
+  type ManagedMemberDetail,
+  MEMBER_FILTER,
+  type MemberQuery,
+  type PendingHandover,
 } from "./manage-types";
 import {
   findMockManagedMember,
@@ -124,6 +125,51 @@ export async function listManagedMembers(): Promise<ManagedMember[]> {
 
 /** 한 화면에 그리는 줄 수 — 첫 페이지를 서버가 렌더하고 그 아래부터 이어 붙인다 */
 export const MEMBER_PAGE_SIZE = 20;
+
+/**
+ * 조직도(`getPeopleDirectory`)가 명부 전체를 요구할 때 쓰는 **임시 우회**.
+ *
+ * ⚠️ **정공법이 아니다.** 조직도는 팀 단위로 구조를 그려야 해서 한 페이지만 받으면
+ *    팀이 반쯤 그려진다(`org-server.ts` 주석) — 그런데 BE엔 "회사 전체 명부"를 한 번에
+ *    주는 응답이 없다(`GET /api/members`는 페이지 단위뿐). 그래서 여러 페이지를 순회해
+ *    합친다. 회사가 커지면 요청도 늘고 화면도 그만큼 늦게 뜬다 — **BE에 조직도 전용
+ *    응답을 요청하고 나면 이 함수째 걷어낸다.**
+ * ⚠️ **상한을 넘으면 던진다 — 잘린 명부를 정상 결과로 돌려주지 않는다**(코드래빗 지적,
+ *    2026-08-14). `console.error`만 남기고 앞의 20페이지를 그대로 리턴하면 호출부
+ *    (`getPeopleDirectory`)가 그걸 완전한 명부로 알고 `summary`·`chart`를 계산해,
+ *    회사 인원이 늘었는데 조직도가 말없이 일부만 보여준다(§정직성 위반). 던지면
+ *    화면이 기존 `error.tsx`(정직한 실패 상태 + [다시 시도])로 떨어진다 — 새 화면을
+ *    안 만들어도 된다.
+ */
+const ORG_DIRECTORY_PAGE_SIZE = 200;
+const ORG_DIRECTORY_PAGE_LIMIT = 20; // 최대 4,000명 — 이 상한을 실제로 넘기면 BE 요청이 먼저다
+
+export async function listAllManagedMembersForOrgChart(): Promise<ManagedMember[]> {
+  if (isMock) return listManagedMembers();
+
+  const all: ManagedMember[] = [];
+  let page = 0;
+  let totalPages = 1;
+
+  while (page < totalPages && page < ORG_DIRECTORY_PAGE_LIMIT) {
+    const result = await getManagedMembersPage(
+      { keyword: "", filter: MEMBER_FILTER.ALL },
+      page,
+      ORG_DIRECTORY_PAGE_SIZE,
+    );
+    all.push(...result.items);
+    totalPages = result.totalPages;
+    page += 1;
+  }
+
+  if (page >= ORG_DIRECTORY_PAGE_LIMIT && page < totalPages) {
+    throw new Error(
+      `회사 사원이 ${ORG_DIRECTORY_PAGE_LIMIT * ORG_DIRECTORY_PAGE_SIZE}명 상한을 넘어 조직도를 통째로 불러오지 못했습니다 — BE 전용 응답이 필요합니다.`,
+    );
+  }
+
+  return all;
+}
 
 /**
  * 목록 한 페이지 — **거르기·자르기를 서버가 한다.**
