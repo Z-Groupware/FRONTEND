@@ -109,8 +109,8 @@ const MAX_EMPTY_RESTARTS = 8;
  *
  * ⚠️ **`isFinal`은 전적으로 브라우저 엔진이 정한다.** 쉬지 않고 이어 말하면 문장이
  *    끝나도 다음 말과 합쳐진 채 계속 interim으로만 머무는 경우가 실제로 나온다(QA
- *    확인, 2026-08-16) — 우리 쪽에 문장 경계를 아는 방법이 없어 완전히 고칠 수는
- *    없고, **너무 길어지면 끊어서 확정시키는** 정도로 완화한다.
+ *    확인) — 우리 쪽에 문장 경계를 아는 방법이 없어 완전히 고칠 수는 없고,
+ *    **너무 길어지면 끊어서 확정시키는** 정도로 완화한다.
  * ⚠️ 8초로 잡은 이유 — 화면(§DESIGN)의 발화 단위 감각과 맞춘 값이다. 더 짧으면 정상
  *    속도로 긴 문장을 말하는 사람의 말까지 억지로 끊는다.
  */
@@ -178,6 +178,7 @@ export function createSttEngine(handlers: SttHandlers): SttEngine | null {
     instance.onerror = (event) => {
       if (!isFatalSttError(event.error)) return;
       stopped = true;
+      clearUtteranceTimer();
       // ⚠️ 비추던 문장을 지운다 — 안 지우면 받아쓰기가 죽었는데 점선 줄이 계속 깜빡여
       //    **아직 듣고 있는 것처럼** 보인다(§정직성). 어차피 확정 안 돼 서버로도 안 간다.
       handlers.onPartial("");
@@ -188,6 +189,14 @@ export function createSttEngine(handlers: SttHandlers): SttEngine | null {
       if (stopped) return;
 
       /*
+        ⚠️ **여기서도 지운다.** 확정 없이 interim만 있던 세션이 스스로 닫히면(다음 줄의
+           재시작), 그 발화는 다음 세션으로 안 이어진다 — 지우지 않으면 새 세션의 첫
+           interim이 이 낡은 시각을 물려받아 감시 타이머가 아직 시작도 안 한 발화를
+           너무 일찍 끊는다(CodeRabbit 지적, 2026-08-16).
+      */
+      utteranceOpenAt = null;
+
+      /*
         세션이 스스로 닫혔다 — 다시 연다.
         ⚠️ 연속 실패가 쌓이면 **물러서며** 연다(0.2s → 0.4s → 0.8s …, 최대 5초). 조용해서
            닫힌 정상 상황은 첫 문장이 오는 순간 `emptyRestarts`가 0으로 돌아가 지연이 사라진다.
@@ -196,6 +205,7 @@ export function createSttEngine(handlers: SttHandlers): SttEngine | null {
       emptyRestarts += 1;
       if (emptyRestarts > MAX_EMPTY_RESTARTS) {
         stopped = true;
+        clearUtteranceTimer();
         handlers.onPartial("");
         handlers.onFatal("자막을 계속 받지 못했습니다. 마이크와 네트워크를 확인해 주세요.");
         return;
@@ -241,6 +251,21 @@ export function createSttEngine(handlers: SttHandlers): SttEngine | null {
     recognition?.stop();
   };
 
+  /*
+    ⚠️ **종료로 가는 길이 셋이다** — 공개 `stop()`, 치명 오류(`onerror`), 재시작 포기
+       (`onend`의 `MAX_EMPTY_RESTARTS` 초과) — 셋 다 여기를 거쳐야 한다. 하나라도
+       빠뜨리면 그 길로 끝난 세션의 타이머가 안 멈추고 계속 돌다가, 다음 `start()`가
+       새 타이머 ID로 `utteranceCheckTimer`를 덮어써서 **옛 타이머는 영영 못 지운다**
+       (CodeRabbit 지적, 2026-08-16).
+  */
+  const clearUtteranceTimer = () => {
+    utteranceOpenAt = null;
+    if (utteranceCheckTimer !== null) {
+      window.clearInterval(utteranceCheckTimer);
+      utteranceCheckTimer = null;
+    }
+  };
+
   return {
     start() {
       if (!stopped) return;
@@ -252,11 +277,7 @@ export function createSttEngine(handlers: SttHandlers): SttEngine | null {
     },
     stop() {
       stopped = true;
-      utteranceOpenAt = null;
-      if (utteranceCheckTimer !== null) {
-        window.clearInterval(utteranceCheckTimer);
-        utteranceCheckTimer = null;
-      }
+      clearUtteranceTimer();
       handlers.onPartial("");
       if (retryTimer !== null) {
         window.clearTimeout(retryTimer);

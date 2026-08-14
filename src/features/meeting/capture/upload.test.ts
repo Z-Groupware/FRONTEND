@@ -76,14 +76,36 @@ it("presigned URL 경로에서 S3 키를 정확히 뽑아 complete에 실어 보
   });
 });
 
-it("S3 PUT이 연속 3번 실패하면 알리고, 성공하면 실패 횟수가 되돌아간다", async () => {
-  presignMock.mockResolvedValue(batch(0, [1, 2, 3, 4]));
+it("PUT이 실패해도 같은 조각을 재시도해서 결국 올린다", async () => {
+  presignMock.mockResolvedValue(batch(0, [1]));
   const onFailure = jest.fn();
   (global.fetch as jest.Mock)
     .mockResolvedValueOnce({ ok: false, status: 500 })
     .mockResolvedValueOnce({ ok: false, status: 500 })
-    .mockResolvedValueOnce({ ok: false, status: 500 })
     .mockResolvedValueOnce({ ok: true });
+
+  const uploader = createSliceUploader(9, { onFailure });
+  uploader.enqueue(new Blob(["a"]));
+  await uploader.flush();
+
+  expect(global.fetch).toHaveBeenCalledTimes(3); // 같은 presignedUrl로 세 번째 만에 성공
+  expect(completeMock).toHaveBeenCalledTimes(1);
+  expect(onFailure).not.toHaveBeenCalled();
+}, 10_000);
+
+it("재시도까지 다 실패한 조각이 연속 3개면 알리고, 그다음 성공하면 실패 횟수가 되돌아간다", async () => {
+  presignMock.mockResolvedValue(batch(0, [1, 2, 3, 4]));
+  const onFailure = jest.fn();
+  /*
+    조각 1·2·3은 매 시도 실패(각 3번씩 재시도 후 포기 = 9번), 조각 4는 그 뒤 첫 시도부터
+    성공한다(10번째 호출) — 호출 순번으로 세는 게 개별 mockResolvedValueOnce를 9개
+    늘어놓는 것보다 개수를 세기 쉽다.
+  */
+  let callCount = 0;
+  (global.fetch as jest.Mock).mockImplementation(async () => {
+    callCount += 1;
+    return { ok: callCount > 9, status: 500 };
+  });
 
   const uploader = createSliceUploader(9, { onFailure });
   uploader.enqueue(new Blob(["a"]));
@@ -92,9 +114,10 @@ it("S3 PUT이 연속 3번 실패하면 알리고, 성공하면 실패 횟수가 
   uploader.enqueue(new Blob(["d"]));
   await uploader.flush();
 
-  expect(onFailure).toHaveBeenCalledTimes(1);
-  expect(completeMock).toHaveBeenCalledTimes(1); // 네 번째만 PUT이 성공해 complete까지 감
-});
+  expect(global.fetch).toHaveBeenCalledTimes(10); // (3+3+3)번 재시도 + 마지막 1번
+  expect(onFailure).toHaveBeenCalledTimes(1); // 조각 3개 연속 포기한 시점에 딱 한 번
+  expect(completeMock).toHaveBeenCalledTimes(1); // 조각 4만 성공해 complete까지 감
+}, 15_000);
 
 it("순서대로, 하나씩 올린다 — 동시에 여러 조각을 PUT하지 않는다", async () => {
   presignMock.mockResolvedValue(batch(0, [1, 2, 3]));

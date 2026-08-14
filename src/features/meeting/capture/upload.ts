@@ -40,6 +40,25 @@ export interface SliceUploader {
 /** 연속 실패 이 횟수부터 화면에 알린다 — 한두 번의 튐은 흔하다(§captions와 같은 기준) */
 const MAX_CONSECUTIVE_FAILURES = 3;
 
+/** 조각 하나(PUT+complete)를 이만큼 재시도한다 — 그래도 안 되면 이 조각만 포기한다 */
+const MAX_UPLOAD_ATTEMPTS = 3;
+
+/** 재시도 사이 간격 — S3·네트워크가 순간적으로 튄 경우를 위한 최소한의 여유 */
+const RETRY_DELAY_MS = 500;
+
+/** S3 PUT 하나가 이 시간을 넘기면 멈춰선 것으로 본다 — `fetch`엔 기본 timeout이 없다 */
+const PUT_TIMEOUT_MS = 20_000;
+
+/**
+ * 풀에 든 조각 — **발급 당시의 `segmentSeq`를 같이 들고 다닌다.**
+ * ⚠️ 배치마다 `segmentSeq`가 바뀔 수 있다(녹음자 교체 등, `CaptureUploadService`
+ *    `willChangeSegment`) — 전역 변수 하나로 두면 새 배치가 그 값을 덮어써서, 아직
+ *    풀에 남아 있던 **이전 배치의 조각**이 **새 세그먼트 번호**로 complete될 수 있다.
+ */
+interface PooledPart extends CapturePart {
+  segmentSeq: number;
+}
+
 /**
  * presigned URL 경로에서 오브젝트 키를 뽑는다.
  *
@@ -51,22 +70,40 @@ function keyOf(presignedUrl: string): string {
   return decodeURIComponent(pathname.replace(/^\//, ""));
 }
 
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
 export function createSliceUploader(meetingId: number, handlers: UploadHandlers): SliceUploader {
-  let pool: CapturePart[] = [];
-  let segmentSeq: number | null = null;
+  let pool: PooledPart[] = [];
   let refilling: Promise<void> | null = null;
   let consecutiveFailures = 0;
   /** 순서를 지키는 직렬 큐 — 각 조각은 앞 조각이 끝난 뒤에만 시작한다 */
   let chain: Promise<void> = Promise.resolve();
 
+  const reportFailure = () => {
+    consecutiveFailures += 1;
+    if (consecutiveFailures === MAX_CONSECUTIVE_FAILURES) {
+      handlers.onFailure("녹음 파일을 서버에 올리지 못하고 있습니다. 자막은 계속 기록됩니다.");
+    }
+  };
+
+  /*
+    ⚠️ **여기서 절대 안 던진다.** `presignCaptureUploadAction`은 스스로 값으로 실패를
+       돌려주지만(actions.ts의 규칙), 그래도 예기치 못하게 거부되면 `refilling`이
+       rejected 프라미스로 남는다 — `nextPart`의 `await refill()`이 그걸 그대로 던지면
+       `uploadOne`이 죽고, 그 뒤로는 `chain`의 `.then()`이 하나도 안 돌아 **큐 전체가
+       멈춘다**(CodeRabbit 지적, 2026-08-16). 실패도 "빈 배치"로 흡수한다.
+  */
   const refill = (): Promise<void> => {
     if (refilling) return refilling;
     refilling = presignCaptureUploadAction(meetingId, BATCH_COUNT, RECORDING_CONTENT_TYPE)
       .then((result) => {
         if (result.ok && result.data) {
-          segmentSeq = result.data.segmentSeq;
-          pool = [...pool, ...result.data.parts];
+          const { segmentSeq, parts } = result.data;
+          pool = [...pool, ...parts.map((part) => ({ ...part, segmentSeq }))];
         }
+      })
+      .catch(() => {
+        /* 배치를 못 받았다 — 빈손으로 끝낸다, `nextPart`가 `null`로 받아 실패 처리한다 */
       })
       .finally(() => {
         refilling = null;
@@ -74,7 +111,7 @@ export function createSliceUploader(meetingId: number, handlers: UploadHandlers)
     return refilling;
   };
 
-  const nextPart = async (): Promise<CapturePart | null> => {
+  const nextPart = async (): Promise<PooledPart | null> => {
     // 여유 있게 미리 채운다 — 기다리지 않는다(바닥나기 전이라 급하지 않다)
     if (pool.length > 0 && pool.length <= REFILL_THRESHOLD) void refill();
     // 정말 바닥났으면 이번엔 기다린다 — 줄 새 조각을 그냥 버릴 수는 없다
@@ -85,38 +122,55 @@ export function createSliceUploader(meetingId: number, handlers: UploadHandlers)
     return part;
   };
 
-  const uploadOne = async (blob: Blob) => {
-    const part = await nextPart();
-    if (!part || segmentSeq === null) {
-      consecutiveFailures += 1;
-      if (consecutiveFailures === MAX_CONSECUTIVE_FAILURES) {
-        handlers.onFailure("녹음 파일을 서버에 올리지 못하고 있습니다. 자막은 계속 기록됩니다.");
-      }
-      return;
-    }
-
+  /** 조각 하나를 한 번 PUT+complete한다 — 성공하면 `true` */
+  const attemptOnce = async (part: PooledPart, blob: Blob): Promise<boolean> => {
     try {
       const response = await fetch(part.presignedUrl, {
         method: "PUT",
         headers: { "Content-Type": RECORDING_CONTENT_TYPE },
         body: blob,
+        // ⚠️ 기본 timeout이 없다 — S3가 응답 없이 멈추면 flush()·end()가 영원히 안 끝난다
+        signal: AbortSignal.timeout(PUT_TIMEOUT_MS),
       });
-      if (!response.ok) throw new Error(`S3 PUT ${response.status}`);
+      if (!response.ok) return false;
 
       const completed = await completeCaptureUploadAction(meetingId, part.seq, {
-        segmentSeq,
+        segmentSeq: part.segmentSeq,
         s3Key: keyOf(part.presignedUrl),
         sizeBytes: blob.size,
       });
-      if (!completed.ok) throw new Error(completed.error ?? "complete 실패");
-
-      consecutiveFailures = 0;
+      return completed.ok;
     } catch {
-      consecutiveFailures += 1;
-      if (consecutiveFailures === MAX_CONSECUTIVE_FAILURES) {
-        handlers.onFailure("녹음 파일을 서버에 올리지 못하고 있습니다. 자막은 계속 기록됩니다.");
-      }
+      return false;
     }
+  };
+
+  /*
+    ⚠️ **실패한 조각을 그냥 버리지 않는다.** 전엔 PUT이든 complete든 한 번 실패하면 그
+       조각은 영영 안 올라가고 다음 조각이 더 큰 seq로 complete돼, 서버가 실제로는
+       없는 공백을 결원(`missingSeqs`)으로 본다(CodeRabbit 지적, 2026-08-16). **같은
+       presigned URL로 몇 번 더 시도**한다 — PUT에 실패했든(파일이 안 올라감) 아직
+       S3엔 있는데 complete만 실패했든, URL 자체는 재사용해도 안전하다(성공한 PUT을
+       또 해도 같은 객체를 덮어쓸 뿐이다).
+  */
+  const uploadOne = async (blob: Blob) => {
+    const part = await nextPart();
+    if (!part) {
+      reportFailure();
+      return;
+    }
+
+    for (let attempt = 1; attempt <= MAX_UPLOAD_ATTEMPTS; attempt += 1) {
+      const ok = await attemptOnce(part, blob);
+      if (ok) {
+        consecutiveFailures = 0;
+        return;
+      }
+      if (attempt < MAX_UPLOAD_ATTEMPTS) await sleep(RETRY_DELAY_MS);
+    }
+
+    // 여기까지 왔으면 이 조각은 포기한다 — 그래도 녹음·다음 조각은 계속돼야 한다
+    reportFailure();
   };
 
   return {
