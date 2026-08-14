@@ -117,33 +117,14 @@ describe("사원이 딸린 팀", () => {
   });
 
   /*
-    ⚠️ **강등도 막는다.** 남의 팀 아래로 내리면 그 사원들의 소속이 역할이 되어 버려
-       지우는 것과 같은 결과다. 화면이 안 막으면 서버만 거절해서, 지운 적도 없는데
-       "사원이 남아 있습니다"를 보고 무엇을 되돌릴지 모른다.
+    ⚠️ **위치 이동 손잡이를 이 화면만 껐다**(2026-08-14). 순서를 저장할 API가 없어서
+       바꾸고 [저장]을 누르면 성공했다고 뜨고 실제로는 조용히 사라졌다(`canReorder`,
+       `department-node.tsx` 주석) — 그래서 드래그·Alt+방향키 전부가 이 화면에서는
+       사라졌다. 강등이 막히는지(사원이 딸린 팀)를 확인하던 아래 두 테스트는 그 조작을
+       시작할 손잡이 자체가 없어져서 지웠다 — `blockIfStaffed`는 이 화면 전용 규칙이라
+       (온보딩엔 사원이 없어 같은 개념이 없다) 다른 자리에도 없다. 손잡이를 되살릴 때
+       (`canReorder: true`) 함께 되살릴 자리다.
   */
-  it("Alt+→로 남의 팀 아래로 내리려 하면 막고 이유를 말한다", async () => {
-    const user = userEvent.setup();
-    renderCard();
-
-    await user.click(screen.getByRole("button", { name: /개발팀 위치 이동/ }));
-    await user.keyboard("{Alt>}{ArrowRight}{/Alt}");
-
-    expect(toastErrorMock).toHaveBeenCalledWith(expect.stringContaining("옮길 수 없습니다"));
-    // 여전히 팀 자리에 있다 — 삭제 버튼이 그대로다
-    expect(screen.getByRole("button", { name: "개발팀 삭제" })).toBeInTheDocument();
-  });
-
-  it("빈 팀은 내려도 막지 않는다", async () => {
-    const user = userEvent.setup();
-    renderCard();
-
-    // 빈팀이 첫 줄이라 내려갈 곳이 없다 — 대신 개발팀을 올려 순서를 바꾼 뒤 내린다
-    await user.click(screen.getByRole("button", { name: /빈팀 위치 이동/ }));
-    await user.keyboard("{Alt>}{ArrowDown}{/Alt}");
-    await user.keyboard("{Alt>}{ArrowRight}{/Alt}");
-
-    expect(toastErrorMock).not.toHaveBeenCalled();
-  });
 });
 
 describe("역할(트리 아랫단)", () => {

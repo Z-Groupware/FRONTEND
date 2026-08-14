@@ -29,6 +29,17 @@ export interface DepartmentNodeHandlers {
   onEditingChange: (id: string | null) => void;
   dragging: DraggingInfo | null;
   onDraggingChange: (info: DraggingInfo | null) => void;
+  /**
+   * 드래그 손잡이·Alt+방향키 전부를 끈다. **기본은 켜짐**(온보딩) — 저장 한 번에 트리
+   * 전체가 새로 만들어져서 순서·계층 변경이 그대로 반영된다.
+   *
+   * ⚠️ **기업 설정만 끈다.** 그 화면은 저장이 팀 단위 API(`POST`·`PATCH`·`DELETE`)로
+   *    나뉘는데, 순서를 저장할 API 자체가 없고(§연동 검증), 계층 변경(승격·강등)은
+   *    이미 다른 경로(`역할 안 저장` 안내)로 막혀 있다 — 그런데 **순서만** 그 경로를
+   *    안 타서, 바꾸고 [저장]을 누르면 성공했다고 뜨고 실제로는 조용히 사라진다
+   *    (2026-08-14 적발). 손잡이를 아예 안 주는 게 거짓 성공보다 정직하다(§정직성).
+   */
+  canReorder?: boolean;
 }
 
 interface DepartmentNodeProps extends DepartmentNodeHandlers {
@@ -40,6 +51,7 @@ interface DepartmentNodeProps extends DepartmentNodeHandlers {
 export function DepartmentNode({ node, depth, parentId, ...handlers }: DepartmentNodeProps) {
   const { onRename, onAddChild, onRemove, onShift, onPromote, onDemote } = handlers;
   const { editingId, onEditingChange } = handlers;
+  const canReorder = handlers.canReorder ?? true;
 
   const [isExpanded, setIsExpanded] = useState(true);
 
@@ -92,15 +104,20 @@ export function DepartmentNode({ node, depth, parentId, ...handlers }: Departmen
           dropZone === "inside" && "bg-secondary outline-ring outline-2 outline-dashed",
         )}
       >
-        <button
-          {...handleProps}
-          type="button"
-          aria-label={`${node.name} 위치 이동 — Alt와 방향키로도 옮길 수 있습니다(위아래: 순서, 왼쪽: 팀으로 빼기, 오른쪽: 바로 위 팀의 역할로)`}
-          onKeyDown={handleKeyMove}
-          className="text-muted-foreground/40 hover:text-muted-foreground focus-visible:ring-ring shrink-0 cursor-grab rounded opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:outline-hidden active:cursor-grabbing"
-        >
-          <GripVertical className="size-3.5" />
-        </button>
+        {canReorder ? (
+          <button
+            {...handleProps}
+            type="button"
+            aria-label={`${node.name} 위치 이동 — Alt와 방향키로도 옮길 수 있습니다(위아래: 순서, 왼쪽: 팀으로 빼기, 오른쪽: 바로 위 팀의 역할로)`}
+            onKeyDown={handleKeyMove}
+            className="text-muted-foreground/40 hover:text-muted-foreground focus-visible:ring-ring shrink-0 cursor-grab rounded opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:outline-hidden active:cursor-grabbing"
+          >
+            <GripVertical className="size-3.5" />
+          </button>
+        ) : (
+          // ⚠️ 자리만 지킨다 — 없으면 옆 아이콘들이 한 칸씩 밀린다(위 `canReorder` 주석 참고)
+          <span className="size-3.5 shrink-0" aria-hidden />
+        )}
 
         {hasChildren ? (
           <button
