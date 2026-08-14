@@ -22,7 +22,13 @@ export function validateOnlineMeetingDraft(
   if (!draft.title.trim()) errors.title = "회의 제목을 입력해 주세요";
 
   // ⚠️ 프로젝트는 항상 필수다(WORKFLOW.md §3-1 확정) — 프로젝트에 안 묶인 회의는 없다.
-  if (!draft.projectId.trim()) errors.projectId = "프로젝트를 선택해 주세요";
+  // ⚠️ **숫자여야 한다** — `toCreateOnlineMeetingPayload`가 `Number()`로 그대로 바꿔 보낸다.
+  //    여기서 막지 않으면 `"abc"` 같은 값이 `NaN`으로 바뀌어 그 사실을 모른 채 서버로 나간다.
+  if (!draft.projectId.trim()) {
+    errors.projectId = "프로젝트를 선택해 주세요";
+  } else if (!Number.isInteger(Number(draft.projectId))) {
+    errors.projectId = "프로젝트 값이 올바르지 않습니다";
+  }
 
   if (draft.topics.length === 0 || !draft.topics[0]?.main.trim() || !draft.topics[0]?.sub.trim()) {
     errors.topics = "회의 안건(대주제·소주제)을 한 쌍 이상 입력해 주세요";

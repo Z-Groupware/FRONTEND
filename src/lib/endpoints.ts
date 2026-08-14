@@ -113,6 +113,12 @@ export const ep = {
   refresh: () => "/api/auth/refresh",
   logout: () => "/api/auth/logout",
   me: () => "/api/auth/me",
+  /**
+   * 비밀번호 변경 — 마이페이지 담당자 문서(2026-08-14)로 확인. `memberId`는 토큰에서 꺼내므로
+   * 보내지 않는다. 성공하면 BE가 전 기기 로그인을 해제한다 — 호출부가 세션을 지우고
+   * 로그인 화면으로 보낸다(§연동 검증).
+   */
+  changePassword: () => "/api/auth/me/password",
 
   /* 기업 — [확인] identity/company/presentation/api/CompanyController.java */
   companyLookup: () => "/api/companies/lookup",
@@ -135,6 +141,12 @@ export const ep = {
    * ⚠️ 파라미터 뜻·주의는 {@link MeetingListParams} — 특히 `from`·`to`를 비우면 예정 회의가 빠진다.
    */
   meetings: (params?: MeetingListParams) => `/api/meetings${toQuery(params)}`,
+  /**
+   * 비대면 회의 생성(`POST`, MEET-18, 이슈 #473) — **FE 제안 경로**, 아직 BE 실코드로 대조 전이다
+   *   (§연동 검증: 계약은 도메인 담당자 문서로 확정됐지만 컨트롤러는 못 봤다). 구현 착수 전 재대조할 것.
+   * ⚠️ `meetings()`(MEET-01)와 경로가 다르다 — 비대면 회의는 회의실·시간이 없어 별도 엔드포인트다.
+   */
+  meetingsOnline: () => "/api/meetings/online",
   /**
    * 한 회의의 세 갈래가 **같은 경로**를 쓴다 — `GET` 상세(MEET-04, 캡처 진입도 이걸 쓴다) ·
    * `PATCH` 수정(MEET-05) · `DELETE` 취소(MEET-06). 없으면 404 `MT-001`, 열람 권한 없으면 403 `MT-011`.

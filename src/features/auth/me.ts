@@ -46,6 +46,7 @@ interface MyProfileResponse {
   workStatus: string;
   joinedOn: string | null;
   plan: string | null;
+  passwordChanged: boolean;
 }
 
 /** 화면이 보는 계약. BE 키 이름(`authority`·`roleName`)은 여기서 우리 말로 바뀐다. */
@@ -72,6 +73,8 @@ export interface Me {
   isOnboarded: boolean;
   joinedOn: string | null;
   plan: string | null;
+  /** `false`면 발급받은 비밀번호를 아직 쓰고 있다는 뜻 — 강제 변경은 아니다(`mustChangePassword`가 아니다). */
+  passwordChanged: boolean;
 }
 
 /**
@@ -134,5 +137,6 @@ function toMe(data: MyProfileResponse): Me {
     isOnboarded: data.isOnboarded,
     joinedOn: data.joinedOn,
     plan: data.plan,
+    passwordChanged: data.passwordChanged,
   };
 }

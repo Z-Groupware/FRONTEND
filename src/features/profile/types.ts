@@ -6,6 +6,8 @@ import type { Authority } from "@/constants/authority";
  *    편집·연차 등은 명세가 없어 만들지 않는다(§명세에 없는 화면·기능은 안 만든다).
  */
 export interface MyProfile {
+  /** 아바타 색을 정하는 키(`useProfileAvatar`) — 이름·부서와 달리 안 바뀐다. */
+  id: number;
   name: string;
   email: string;
   role: Authority;

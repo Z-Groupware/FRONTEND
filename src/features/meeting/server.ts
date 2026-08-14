@@ -96,14 +96,11 @@ function toListItem(meeting: Meeting, viewerId: number, now: Date): MeetingListI
     projectTag: meeting.projectTag,
     originLabel: originLabelOf(meeting),
     topicSummary: `${firstTopic.main} · ${firstTopic.sub}`,
-    // ⚠️ 비대면 회의는 회의실·시간이 없다(이슈 #473) — 카드는 `isOnline`을 보고 이 자리에
-    //    안내 한 줄을 그린다(`meeting-card.tsx`).
-    schedule: meeting.isOnline ? "" : formatMeetingSchedule(meeting.start, meeting.end),
+    schedule: formatMeetingSchedule(meeting.start, meeting.end),
     roomName: meeting.roomName ?? "",
     attendeeCount: meeting.attendeeIds.length,
     isHost: meeting.hostId === viewerId,
     aiSummaryStatus: meeting.aiSummaryStatus,
-    isOnline: meeting.isOnline,
   };
 }
 
@@ -112,14 +109,19 @@ function toListItem(meeting: Meeting, viewerId: number, now: Date): MeetingListI
  *
  * ⚠️ **목록은 전 구성원 공개**다(§3-2-1) — 여기서 권한으로 거르지 않는다. 막는 건 상세다.
  * ⚠️ 차례: 진행중 → 예정(가까운 순) → 완료(최근 순). 지금 다뤄야 하는 회의가 위로 온다.
+ * ⚠️ **비대면 회의(`isOnline`)는 목록에 아예 안 낸다**(2026-08-14 팀 확정 — 실서버 목록·대시보드
+ *    (MEET-02·03·17)가 서버에서부터 `isOnline=false`만 준다). 목이 실서버 동작을 미리 따라 하지
+ *    않으면 화면이 실서버로 넘어가는 날 갑자기 카드가 사라져 버그처럼 보인다 — 상세(`getMeetingDetail`)
+ *    는 여전히 `/app/meeting/:id` 직접 링크로 열린다(§Mock 격리막: 목록·상세는 다른 조회다).
  */
 export async function getMeetingDirectory(viewerId: number): Promise<MeetingDirectory> {
   if (!isMock) return getLiveMeetingDirectory();
 
   ensureMockMeetingsSeeded();
   const now = new Date();
-  const byId = new Map(listMockMeetings().map((meeting) => [meeting.id, meeting]));
-  const rows = listMockMeetings().map((meeting) => ({
+  const listableMeetings = listMockMeetings().filter((meeting) => !meeting.isOnline);
+  const byId = new Map(listableMeetings.map((meeting) => [meeting.id, meeting]));
+  const rows = listableMeetings.map((meeting) => ({
     item: toListItem(meeting, viewerId, now),
     startMs: meeting.start.getTime(),
   }));
@@ -273,6 +275,12 @@ export async function getMeetingDetail(id: string, viewer: Actor): Promise<Meeti
        시간·장소·참석자·안건은 이미 정해진 값이다 — 없는 건 회의가 남기는 것(기록·산출물)뿐이라
        그 두 칸만 안내로 채운다(§view-types `MeetingContentPending`).
     ⚠️ 순서가 있다. 회의가 안 끝났으면 요약은 시작조차 안 했으므로 회의 상태를 먼저 본다.
+    ⚠️ **비대면 회의는 완료 + `aiSummaryStatus: null`("아직 요청 안 함")로 며칠이고 남을 수 있다**
+       (2026-08-14 팀 확정 — [AI 요약 요청]을 안 누르면 계속 이 상태다). 아래 삼항이 그 조합을
+       `null`(=다 찼다)로 흘려보내는데, 산출물 칸은 `outputs`가 빈 배열이라 "0건"으로 자연히
+       읽혀 깨지진 않는다 — 다만 "아직 요청 안 함"과 "정말 하달할 게 없음"을 문구로는 못
+       가른다. 새 `MeetingContentPending` 값을 추가하는 건 이 이슈 범위 밖이라(화면 문구·
+       아이콘 맵까지 늘어난다) 지금은 이 fallthrough를 그대로 둔다.
   */
   const status = meetingStatusOf(meeting, new Date());
   const pendingReason: MeetingContentPending | null =

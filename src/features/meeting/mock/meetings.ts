@@ -58,6 +58,11 @@ export function addMockMeeting(draft: MeetingDraft): Meeting {
  *    `date`·`startTime`이 없다) 방금 완료된 시각을 그대로 쓴다 — 예정·진행중을 거치지 않는다.
  * ⚠️ `roomId`·`roomName`·`roomReservationId`는 draft에서부터 이미 `null`이다(회의실이 없다) —
  *    여기서 다시 지우지 않는다.
+ * ⚠️ **분석 대기(`PENDING`)로 안 들어간다**(2026-08-14 팀 확정, 대면 회의의 `endMockMeeting`과
+ *    다른 점). 대면 회의는 종료와 동시에 서버가 분석을 큐에 걸지만, 비대면 회의는 만들자마자
+ *    끝나 있어 녹음 파일 자체가 없다 — 요약 요청은 다이얼로그 2단계([AI 요약 요청])에서
+ *    사람이 직접 눌러야 시작된다(`setMockSummaryStatus`가 그때 `PENDING`으로 옮긴다). 그래서
+ *    여기서는 `null`("아직 요청 안 함")로 둔다.
  */
 export function addMockOnlineMeeting(draft: MeetingDraft): Meeting {
   const now = new Date();
@@ -70,8 +75,8 @@ export function addMockOnlineMeeting(draft: MeetingDraft): Meeting {
     // 캡처를 거치지 않고 제출과 동시에 끝난다 — endMockMeeting을 따로 부르지 않는다.
     endedAt: now.toISOString(),
     canceledAt: null,
-    // 종료와 동시에 대기로 들어간다 — endMockMeeting과 같은 이유(§types).
-    aiSummaryStatus: AI_SUMMARY_STATUS.PENDING,
+    // 아직 요약을 요청하지 않았다 — 위 주석 참고.
+    aiSummaryStatus: null,
   };
   store.meetings = [...store.meetings, meeting];
   return meeting;
@@ -161,5 +166,18 @@ export function updateMockMeeting(id: string, patch: { title: string }): Meeting
 export function setMockSummaryStatus(id: string, status: AiSummaryStatus): void {
   store.meetings = store.meetings.map((meeting) =>
     meeting.id === id ? { ...meeting, aiSummaryStatus: status } : meeting,
+  );
+}
+
+/**
+ * 비대면 회의 다이얼로그 2단계([녹음 파일 제출])가 파일명을 적어 둔다(이슈 #473, 2026-08-14).
+ * ⚠️ **여기서도 바이트는 안 든다** — 파일명만 옮긴다(§정직한 목업, `Meeting.recordingFileName`
+ *    주석과 같은 사정). `.map()`으로 훑다가 `id`가 맞는 회의만 바꿔 끼운다 — 맞는 회의가
+ *    없으면 `store.meetings`는 그대로고, 던지거나 알리지도 않는다(호출부가 이미
+ *    `findMockMeeting`으로 존재를 확인하고 부른다는 전제).
+ */
+export function setMockRecordingFileName(id: string, fileName: string): void {
+  store.meetings = store.meetings.map((meeting) =>
+    meeting.id === id ? { ...meeting, recordingFileName: fileName } : meeting,
   );
 }

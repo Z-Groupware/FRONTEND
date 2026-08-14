@@ -64,15 +64,33 @@ describe("listAllManagedMembersForOrgChart — 실서버", () => {
   });
 
   /*
+    ⚠️ 회귀 방지(2026-08-14 실제 프로덕션 재현) — BE `MemberController.list`의 `size`는
+       `@Max(100)`이다. 200을 보내면 사원 5명뿐인 회사에서도 그 자리에서 400이 나서
+       조직도 전체가 죽는다. 다시 200으로 늘어나면 이 테스트가 잡는다.
+  */
+  it("size는 100을 넘지 않는다 — BE @Max(100)", async () => {
+    serverApiMock.mockResolvedValueOnce(page([1], 0, 1));
+
+    await listAllManagedMembersForOrgChart();
+
+    /*
+      ⚠️ **정확히 "100"인지 본다**(코드래빗 지적, 2026-08-14). `toContain("size=100")`는
+         `size=1000`도 통과시켜 BE `@Max(100)` 위반을 이 테스트가 놓친다.
+    */
+    const requestUrl = serverApiMock.mock.calls[0][0] as string;
+    expect(new URL(requestUrl, "http://localhost").searchParams.get("size")).toBe("100");
+  });
+
+  /*
     ⚠️ 코드래빗 지적(2026-08-14) — 상한을 넘으면 앞부분만 조용히 정상 리턴하면 안 된다.
        회사 인원이 늘었는데 조직도가 말없이 일부만 보여주는 건 §정직성 위반이다.
   */
-  it("상한(20페이지)을 넘으면 잘린 명부를 정상 결과로 돌려주지 않는다 — 던진다", async () => {
-    // totalPages=21 — 상한 20을 넘는다. 20번째 응답까지만 mock하면 충분하다(그 이상 안 부른다).
-    serverApiMock.mockResolvedValue(page([1], 0, 21));
+  it("상한(40페이지)을 넘으면 잘린 명부를 정상 결과로 돌려주지 않는다 — 던진다", async () => {
+    // totalPages=41 — 상한 40을 넘는다. 40번째 응답까지만 mock하면 충분하다(그 이상 안 부른다).
+    serverApiMock.mockResolvedValue(page([1], 0, 41));
 
     await expect(listAllManagedMembersForOrgChart()).rejects.toThrow("상한을 넘어");
 
-    expect(serverApiMock).toHaveBeenCalledTimes(20);
+    expect(serverApiMock).toHaveBeenCalledTimes(40);
   });
 });

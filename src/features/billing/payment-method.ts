@@ -18,6 +18,12 @@ import { isMock } from "@/mocks/config";
  *    빌링키 발급·저장은 서버(`actions.ts`)가 한다.
  * ⚠️ 지금은 목이다 — `isMock`만 내리면 아래 주석대로 이어 붙일 수 있게 자리를 만들어 뒀다.
  *    PG는 아직 팀 미확정이다(CLAUDE.md §팀확정 — 결제 실연동 여부).
+ * ⚠️⚠️ 임시(2026-08-14) — 목·실서버 구분 없이 같은 자리표시자 값을 쓴다. BE 쪽
+ *    저장 로직도 아직 이 값을 그대로 받아 두는 단계라(BE 실코드 확인 — 형식 검증
+ *    없음), 여기서 실연동 위젯을 먼저 붙여도 뒷단이 그 결과를 그대로 받아 두는
+ *    수준이라 의미가 없다. 목적은 화면 값과 뒷단 저장값을 **같게 맞추는 것**이지
+ *    결제 완료를 지어내는 게 아니다. PG가 확정되면 이 줄만 지우고 위 실연동
+ *    코드로 바꾼다.
  */
 
 /**
@@ -52,10 +58,6 @@ export interface CardAuthResult {
  *    실연동 때 콜백 라우트로 바뀐다. 지금 목은 흐름만 확인하려고 값을 바로 준다.
  */
 export async function requestCardAuth(customerKey: string): Promise<CardAuthResult> {
-  if (isMock) {
-    return { authKey: `mock_auth_${Date.now()}`, customerKey };
-  }
-
-  // TODO(PG 확정): 위 주석의 Toss 호출로 바꾼다.
-  throw new Error("결제사가 연결되지 않았습니다");
+  // TODO(PG 확정): 위 주석의 실연동 호출로 바꾼다. 그 전까지는 목과 같은 자리표시자 값을 쓴다.
+  return { authKey: `placeholder_${Date.now()}`, customerKey };
 }

@@ -134,15 +134,20 @@ export const MEMBER_PAGE_SIZE = 20;
  *    주는 응답이 없다(`GET /api/members`는 페이지 단위뿐). 그래서 여러 페이지를 순회해
  *    합친다. 회사가 커지면 요청도 늘고 화면도 그만큼 늦게 뜬다 — **BE에 조직도 전용
  *    응답을 요청하고 나면 이 함수째 걷어낸다.**
+ * ⚠️⚠️ **`size`는 100을 넘으면 안 된다**(2026-08-14 실제 프로덕션에서 재현 — BE
+ *    `MemberController.list`가 `size`를 `@Max(100)`으로 검증한다. 200을 보내면 사원이
+ *    단 몇 명인 회사에서도 그 자리에서 400이 나서 조직도 전체가 죽는다). 원래 200으로
+ *    잡았던 건 요청 수를 줄이려던 것뿐이라 100으로 낮추고, 상한(4,000명)을 지키려
+ *    페이지 수를 그만큼 늘렸다.
  * ⚠️ **상한을 넘으면 던진다 — 잘린 명부를 정상 결과로 돌려주지 않는다**(코드래빗 지적,
- *    2026-08-14). `console.error`만 남기고 앞의 20페이지를 그대로 리턴하면 호출부
+ *    2026-08-14). `console.error`만 남기고 일부만 그대로 리턴하면 호출부
  *    (`getPeopleDirectory`)가 그걸 완전한 명부로 알고 `summary`·`chart`를 계산해,
  *    회사 인원이 늘었는데 조직도가 말없이 일부만 보여준다(§정직성 위반). 던지면
  *    화면이 기존 `error.tsx`(정직한 실패 상태 + [다시 시도])로 떨어진다 — 새 화면을
  *    안 만들어도 된다.
  */
-const ORG_DIRECTORY_PAGE_SIZE = 200;
-const ORG_DIRECTORY_PAGE_LIMIT = 20; // 최대 4,000명 — 이 상한을 실제로 넘기면 BE 요청이 먼저다
+const ORG_DIRECTORY_PAGE_SIZE = 100; // BE MemberController.list @Max(100)
+const ORG_DIRECTORY_PAGE_LIMIT = 40; // 최대 4,000명 — 이 상한을 실제로 넘기면 BE 요청이 먼저다
 
 export async function listAllManagedMembersForOrgChart(): Promise<ManagedMember[]> {
   if (isMock) return listManagedMembers();

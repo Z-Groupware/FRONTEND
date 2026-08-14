@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { AUTHORITY, type Authority } from "@/constants/authority";
-import { MEETING_STATUS } from "@/constants/meeting";
+import { AI_SUMMARY_STATUS, MEETING_STATUS } from "@/constants/meeting";
 import { requireAccessToken } from "@/features/auth/session";
 import { getManagedMember } from "@/features/member/manage-server";
 import { TOP_LEVEL_PROJECTS } from "@/features/project/mock/projects";
@@ -18,7 +18,12 @@ import { getViewer } from "@/features/shell/viewer";
 import { ApiError, serverApi } from "@/lib/api";
 import { ep } from "@/lib/endpoints";
 import { getMockActor } from "@/lib/mock-actor";
-import { type Actor, canManageMeeting, requiresParentTeamAction } from "@/lib/permission";
+import {
+  type Actor,
+  canCaptureMeeting,
+  canManageMeeting,
+  requiresParentTeamAction,
+} from "@/lib/permission";
 import { isMock } from "@/mocks/config";
 
 import { checkMeetingTitle } from "./lib";
@@ -31,9 +36,15 @@ import {
   parseMeetingDetail,
 } from "./mapper";
 import {
+  type BeCreateOnlineMeetingResponse,
+  toCreateOnlineMeetingPayload,
+} from "./mapper/online-meetings";
+import {
   addMockOnlineMeeting,
   cancelMockMeeting,
   findMockMeeting,
+  setMockRecordingFileName,
+  setMockSummaryStatus,
   updateMockMeeting,
   updateMockMeetingAttendees,
 } from "./mock/meetings";
@@ -43,6 +54,7 @@ import type {
   MeetingTopic,
   OnlineMeetingDraft,
   OnlineMeetingFormErrors,
+  SubmitOnlineMeetingRecordingDraft,
 } from "./types";
 import { validateOnlineMeetingDraft } from "./validate";
 
@@ -395,7 +407,6 @@ export interface OnlineMeetingFormState {
 
 function readOnlineMeetingDraft(formData: FormData): OnlineMeetingDraft {
   const parentTeamActionId = formData.get("parentTeamActionId");
-  const recordingFileName = formData.get("recordingFileName");
   const mains = formData.getAll("topicMain");
   const subs = formData.getAll("topicSub");
 
@@ -405,19 +416,47 @@ function readOnlineMeetingDraft(formData: FormData): OnlineMeetingDraft {
     topics: mains.map((main, index) => ({ main: String(main), sub: String(subs[index] ?? "") })),
     attendeeIds: formData.getAll("attendeeIds").map(Number),
     parentTeamActionId: parentTeamActionId ? Number(parentTeamActionId) : undefined,
-    recordingFileName: recordingFileName ? String(recordingFileName) : null,
   };
+}
+
+/**
+ * `POST /api/meetings/online`(MEET-18) 실패를 폼 필드 오류로 바꾼다.
+ * ⚠️ `rooms/actions.ts`의 `toMeetingCreateFormErrors`(MEET-01)와 같은 자리 — 필드 슬롯이 없는
+ *    오류(`PROJECT_NOT_FOUND` 등 프로젝트 슬롯이 있는 것 빼고)는 `title` 칸에 얹는다.
+ * ⚠️ **`PROJECT_NOT_FOUND`가 이 엔드포인트만 리터럴이 다르다**(도메인 담당자 명세, 2026-08-14) —
+ *    MEET-01은 `PJ-001`을 쓰지만 여기는 그대로 이 문자열이다. 어긋나 보여도 그게 명세다.
+ */
+function toOnlineMeetingCreateFormErrors(error: unknown): OnlineMeetingFormErrors {
+  if (!(error instanceof ApiError)) throw error;
+
+  switch (error.code) {
+    case "MT-010":
+      return { attendeeIds: "존재하지 않는 참석자가 있습니다" };
+    case "MT-015":
+      return { topics: error.message };
+    case "MT-016":
+    case "MT-017":
+    case "MT-018":
+    case "MT-019":
+      return { parentTeamActionId: error.message };
+    case "PROJECT_NOT_FOUND":
+      return { projectId: "존재하지 않는 프로젝트입니다" };
+    default:
+      return { title: error.message };
+  }
 }
 
 /**
  * 비대면 회의 만들기(이슈 #473) — `/app/meeting` 목록의 [비대면 회의] 버튼이 부른다.
  *
- * ⚠️ **BE API가 아직 안 정해졌다**(1안/2안 논의 중, 팀원 회신 — 이슈 #473). 추측 요청을 보내지
- *    않는다(CLAUDE.md §연동 검증: Swagger·구두 추측 금지) — 실서버 분기는 확정될 때까지
- *    "아직 준비 중"이라고 정직하게 말한다(§정직성). 확정되면 이 분기만 실서버 호출로 바꾼다
- *    (§Mock 격리막).
+ * ⚠️ **BE API가 확정됐다**(MEET-18, 2026-08-14 도메인 담당자 문서) — 더는 "아직 준비 중"이
+ *    아니다. 다만 BE 실코드 대조 전이라 매퍼·엔드포인트 주석에 그 사실을 남겨 뒀다(§연동 검증).
+ * ⚠️ **`recordingConsent`를 안 보낸다** — 서버가 항상 `true`로 고정한다(팀 확정, 매퍼 주석).
  * ⚠️ **제출하면 그 자리에서 완료 처리된다** — 회의실 예약(`createRoomReservationAction`)과
  *    달리 캡처 화면으로 안 넘어간다(팀 명세). 그래서 회의실·시간을 아예 안 받는다.
+ * ⚠️ **성공해도 녹음 파일·AI 요약 요청은 여기서 안 한다**(2026-08-14 팀 확정) — 그 회의는
+ *    이미 완료 상태로 만들어졌고, 파일 첨부는 같은 다이얼로그의 **2단계**(`submitOnlineMeetingRecordingAction`)
+ *    가 뒤이어 처리하는 별개의 가벼운 흐름이다.
  * ⚠️ mock 분기의 검증 순서는 `createRoomReservationAction`과 맞춘다(프로젝트 → 참석자 범위 →
  *    상위 팀 액션) — 같은 도메인의 두 생성 경로가 다른 순서로 막히면 같은 실수가 화면마다
  *    다른 첫 오류로 보인다.
@@ -432,9 +471,18 @@ export async function createOnlineMeetingAction(
   if (Object.keys(errors).length > 0) return { errors };
 
   if (!isMock) {
-    // ⚠️ BE API가 아직 안 정해졌다(1안/2안 논의 중, 이슈 #473) — 추측 요청을 보내지 않는다
-    //    (CLAUDE.md §연동 검증: Swagger·구두 추측 금지). 확정되면 이 분기를 실서버 호출로 바꾼다.
-    return { errors: { title: "비대면 회의는 아직 준비 중입니다 — 곧 지원됩니다" } };
+    const accessToken = await requireAccessToken();
+    try {
+      const response = await serverApi<BeCreateOnlineMeetingResponse>(ep.meetingsOnline(), {
+        method: "POST",
+        accessToken,
+        json: toCreateOnlineMeetingPayload(draft),
+      });
+      revalidatePath(MEETING_LIST_PATH);
+      return { errors: {}, created: { id: String(response.meetingId) } };
+    } catch (error) {
+      return { errors: toOnlineMeetingCreateFormErrors(error) };
+    }
   }
 
   // ⚠️ 화면 select·피커가 이미 실제 목록에서만 고르게 해도, 폼은 조작될 수 있다
@@ -492,7 +540,8 @@ export async function createOnlineMeetingAction(
     roomName: null,
     roomReservationId: null,
     isOnline: true,
-    recordingFileName: draft.recordingFileName,
+    // ⚠️ 첨부는 이 액션의 몫이 아니다 — 다이얼로그 2단계가 성공 후 따로 붙인다(§types 주석).
+    recordingFileName: null,
     projectId: project.id,
     projectTag: project.tag,
     topics,
@@ -514,4 +563,79 @@ export async function createOnlineMeetingAction(
   const meeting = addMockOnlineMeeting(meetingDraft);
   revalidatePath(MEETING_LIST_PATH);
   return { errors: {}, created: { id: meeting.id } };
+}
+
+/** 비대면 회의 2단계([녹음 파일 제출]) 결과 — 다이얼로그가 이 값이 바뀐 걸 보고 닫는다. */
+export interface SubmitOnlineMeetingRecordingState {
+  /** 칸에 매길 실패(권한 없음·파일 없음 등) — `FieldError`로 빨갛게 보여준다. */
+  error: string | null;
+  /** 실패가 아니라 **아직 지원 안 함** 안내 — `error`와 자리를 나눠 평범한 안내문으로 보여준다. */
+  notice: string | null;
+  /** 성공한 제출의 표식(MEET-09 폼과 같은 이유로 `boolean` 대신 객체) */
+  submitted: { meetingId: string } | null;
+}
+
+function readSubmitOnlineMeetingRecordingDraft(
+  formData: FormData,
+): SubmitOnlineMeetingRecordingDraft {
+  return {
+    meetingId: String(formData.get("meetingId") ?? ""),
+    recordingFileName: String(formData.get("recordingFileName") ?? ""),
+  };
+}
+
+/**
+ * 비대면 회의 2단계 — [녹음 파일 제출] + [AI 요약 요청](이슈 #473, 2026-08-14 팀 확정).
+ *
+ * ⚠️ **회의는 이미 완료 상태로 존재한다** — 이 액션은 파일명을 덧붙이고 분석을 대기로 옮길
+ *    뿐, 회의를 새로 만들거나 상태를 바꾸지 않는다(`createOnlineMeetingAction`과 분리된 이유).
+ * ⚠️ **녹음 파일은 선택이 아니다.** AI 요약을 요청하려면 녹음이 있어야 한다 — 빈 값·공백만
+ *    있는 값은 여기서 막고, 파일명이 확정된 뒤에만 분석을 대기(`PENDING`)로 옮긴다.
+ * ⚠️ **권한은 그 회의 담당자 1명뿐**이다(§권한 ②: 리소스 소유권, `canCaptureMeeting`과 같은
+ *    축 — 캡처·녹음·종료와 한 묶음). `canManageMeeting`(host·OWNER·ADMIN)을 여기서 쓰면
+ *    담당자가 아닌 OWNER도 남의 회의에 파일을 밀어 넣을 수 있어 축이 하나로 무너진다.
+ * ⚠️ **실서버 분기가 없다.** BE가 이 제출 자리(녹음 업로드·요약 요청 트리거)를 아직 안 내줬다
+ *    (§연동 검증: Swagger·구두 추측 금지) — 추측 엔드포인트를 만드는 대신 정직하게
+ *    "곧 지원됩니다"라고 안내한다(§정직성, 기존 스텁과 같은 결). 이건 **실패가 아니라 안내**라
+ *    `error`가 아니라 `notice`에 실어 화면이 빨간 오류로 보여주지 않게 한다.
+ * ⚠️ **파일명은 실제 업로드가 아니다**(§정직한 목업) — `setMockRecordingFileName`은 이름만 옮긴다.
+ */
+export async function submitOnlineMeetingRecordingAction(
+  _prev: SubmitOnlineMeetingRecordingState,
+  formData: FormData,
+): Promise<SubmitOnlineMeetingRecordingState> {
+  const draft = readSubmitOnlineMeetingRecordingDraft(formData);
+  if (!draft.meetingId) {
+    return { error: "회의를 찾을 수 없습니다", notice: null, submitted: null };
+  }
+
+  const recordingFileName = draft.recordingFileName.trim();
+  if (!recordingFileName) {
+    return { error: "녹음 파일을 첨부해 주세요", notice: null, submitted: null };
+  }
+
+  if (!isMock) {
+    // ⚠️ BE가 아직 이 제출 엔드포인트를 안 내줬다 — 추측 요청을 보내지 않는다(§연동 검증).
+    return {
+      error: null,
+      notice: "녹음 파일 제출은 아직 준비 중입니다 — 곧 지원됩니다",
+      submitted: null,
+    };
+  }
+
+  const meeting = findMockMeeting(draft.meetingId);
+  if (!meeting) {
+    return { error: "회의를 찾을 수 없습니다", notice: null, submitted: null };
+  }
+
+  const actor = getMockActor();
+  if (!canCaptureMeeting(actor, meeting)) {
+    return { error: "녹음 파일을 제출할 권한이 없습니다", notice: null, submitted: null };
+  }
+
+  setMockRecordingFileName(draft.meetingId, recordingFileName);
+  setMockSummaryStatus(draft.meetingId, AI_SUMMARY_STATUS.PENDING);
+  revalidatePath(`/app/meeting/${draft.meetingId}`);
+  revalidatePath(MEETING_LIST_PATH);
+  return { error: null, notice: null, submitted: { meetingId: draft.meetingId } };
 }

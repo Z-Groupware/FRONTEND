@@ -130,8 +130,17 @@ export interface OnlineMeetingDraft {
   attendeeIds: number[];
   /** Host가 Leader/Member일 때만 필수 — `RoomReservationDraft`와 같은 규칙. */
   parentTeamActionId?: number;
-  /** 첨부한 녹음 파일 이름 — `Meeting.recordingFileName`과 같다(§정직한 목업). */
-  recordingFileName: string | null;
 }
 
 export type OnlineMeetingFormErrors = Partial<Record<keyof OnlineMeetingDraft, string>>;
+
+/**
+ * 비대면 회의 만들기 2단계 — 녹음 파일 제출 + AI 요약 요청(2026-08-14 팀 확정).
+ * ⚠️ 회의는 1단계에서 이미 만들어져 있다 — 이 드래프트는 그 회의에 파일명을 덧붙이고
+ *    분석을 대기 상태로 옮기는 별도의 가벼운 흐름이다(`Meeting.recordingFileName`과 같다,
+ *    §정직한 목업 — 바이트는 안 든다).
+ */
+export interface SubmitOnlineMeetingRecordingDraft {
+  meetingId: string;
+  recordingFileName: string;
+}
