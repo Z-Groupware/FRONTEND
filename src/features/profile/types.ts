@@ -13,6 +13,8 @@ export interface MyProfile {
   role: Authority;
   companyName: string;
   teamName: string;
+  /** 팀 안의 세부 역할 라벨(프론트엔드·백엔드 등) — 없는 팀도 있어 `null` 가능(§조직 계층). */
+  roleLabel: string | null;
   /** 직급 라벨 — 영문 워딩 규칙(§카피)과 별개로, 직급은 팀에서 한글로 쓴다(예: "수석"). */
   position: string;
   /** "YYYY-MM-DD" */

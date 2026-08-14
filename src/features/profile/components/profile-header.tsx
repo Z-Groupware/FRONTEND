@@ -1,6 +1,6 @@
 "use client";
 
-import { AUTHORITY_BADGE_CLASS, AUTHORITY_LABEL } from "@/constants/authority";
+import { AUTHORITY, AUTHORITY_BADGE_CLASS, AUTHORITY_LABEL } from "@/constants/authority";
 import { LogoutButton } from "@/features/auth/components/logout-button";
 import { useProfileAvatar } from "@/hooks/use-profile-avatar";
 import { cn } from "@/lib/utils";
@@ -10,6 +10,21 @@ import { ChangePasswordDialog } from "./change-password-dialog";
 
 interface ProfileHeaderProps {
   profile: MyProfile;
+}
+
+/**
+ * 권한별로 소속 표기가 다르다(§권한 — 축이 2개다).
+ * OWNER=회사·대표 / LEADER=회사·팀·직책 / MEMBER=회사·팀·(역할 있으면)·직책.
+ */
+function formatAffiliation(profile: MyProfile): string {
+  const { companyName, teamName, roleLabel, position, role } = profile;
+
+  if (role === AUTHORITY.OWNER) return `${companyName} · 대표`;
+  if (role === AUTHORITY.LEADER) return `${companyName} · ${teamName} · ${position}`;
+
+  return roleLabel
+    ? `${companyName} · ${teamName} · ${roleLabel} · ${position}`
+    : `${companyName} · ${teamName} · ${position}`;
 }
 
 /**
@@ -42,9 +57,7 @@ export function ProfileHeader({ profile }: ProfileHeaderProps) {
           >
             {AUTHORITY_LABEL[profile.role]}
           </span>
-          <span className="text-muted-foreground/70 text-[11px]">
-            {profile.companyName} · {profile.teamName} · {profile.position}
-          </span>
+          <span className="text-muted-foreground/70 text-[11px]">{formatAffiliation(profile)}</span>
         </div>
       </div>
 

@@ -12,6 +12,8 @@ export const MY_PROFILE_MOCK: MyProfile = {
   role: AUTHORITY.OWNER,
   companyName: "(주)테크스타트",
   teamName: "제품개발팀",
+  // ⚠️ OWNER는 소속 표시에 팀 안 세부 역할을 쓰지 않는다("대표"로 고정 표시).
+  roleLabel: null,
   position: "수석",
   joinedAt: "2021-03-02",
 };
