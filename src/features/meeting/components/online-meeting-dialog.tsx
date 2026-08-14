@@ -10,6 +10,7 @@ import { FieldError } from "@/components/common/field-error";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogHeader,
   DialogTitle,
@@ -19,9 +20,13 @@ import type { AttendeeScopeViewer } from "@/features/rooms/attendee-scope";
 import { RoomAttendeePicker } from "@/features/rooms/components/room-attendee-picker";
 import type { RoomMember, RoomProjectOption, RoomTeamActionOption } from "@/features/rooms/types";
 
+import { RECORDING_FILE_ACCEPTED_EXTENSIONS, validateRecordingFile } from "../recording-file";
 import { OnlineMeetingFields } from "./online-meeting-fields";
 import { useOnlineMeetingForm } from "./use-online-meeting-form";
 import { useOnlineMeetingRecordingForm } from "./use-online-meeting-recording-form";
+
+/** 파일 피커의 `accept` 속성 — 확장자 앞에 점을 붙인다. 실제 차단은 `validateRecordingFile`이 한다. */
+const RECORDING_FILE_ACCEPT = RECORDING_FILE_ACCEPTED_EXTENSIONS.map((ext) => `.${ext}`).join(",");
 
 interface OnlineMeetingDialogProps {
   members: RoomMember[];
@@ -201,13 +206,32 @@ function OnlineMeetingStep2({
   const { state, formAction, recordingFileName, setRecordingFileName } =
     useOnlineMeetingRecordingForm({ meetingId, onSubmitted });
   const fileInputRef = useRef<HTMLInputElement>(null);
+  // ⚠️ 형식·용량은 여기서 1차로만 거른다 — 최종 검증은 서버 몫이다(§권한: 화면 검증은
+  //    보안이 아니다). 서버 오류(`state.error`)와 자리가 같아 파일을 다시 고르면 없어진다.
+  const [fileError, setFileError] = useState<string | null>(null);
 
   function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0] ?? null;
-    setRecordingFileName(file?.name ?? null);
+    if (!file) {
+      setFileError(null);
+      setRecordingFileName(null);
+      return;
+    }
+
+    const error = validateRecordingFile(file);
+    if (error) {
+      setFileError(error);
+      setRecordingFileName(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+
+    setFileError(null);
+    setRecordingFileName(file.name);
   }
 
   function clearFile() {
+    setFileError(null);
     setRecordingFileName(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
   }
@@ -228,7 +252,13 @@ function OnlineMeetingStep2({
             녹음 파일 첨부 (선택)
           </span>
           {/* ⚠️ 바이너리는 안 보낸다 — 파일명만 읽어 hidden input으로 싣는다(위 주석). */}
-          <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileChange} />
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept={RECORDING_FILE_ACCEPT}
+            className="hidden"
+            onChange={handleFileChange}
+          />
           <div className="flex items-center gap-2">
             <Button
               type="button"
@@ -255,7 +285,7 @@ function OnlineMeetingStep2({
           </div>
         </div>
 
-        <FieldError reserveSpace message={state.error ?? undefined} />
+        <FieldError reserveSpace message={fileError ?? state.error ?? undefined} />
       </div>
 
       <div className="border-border flex items-center justify-end gap-4 border-t px-6 py-4">
@@ -305,9 +335,19 @@ export function OnlineMeetingDialog({
         비대면 회의
       </DialogTrigger>
 
-      <DialogContent className="gap-0 p-0 sm:max-w-[720px]">
-        <DialogHeader className="border-border border-b px-6 py-4">
+      {/*
+        ⚠️ **닫기(X) 버튼을 헤더 안에 직접 그린다.** `DialogContent`의 기본 닫기 버튼은
+           `p-4` 여백을 전제로 `top-2 right-2`에 절대 위치한다 — 이 다이얼로그는 `p-0`을 쓰고
+           헤더가 직접 여백(`px-6 py-4`)을 잡아서, 기본값을 그대로 쓰면 버튼이 모서리 밖으로
+           걸쳐 뜬다. `showCloseButton={false}`로 끄고 헤더 여백 안에 자연스럽게 배치한다.
+      */}
+      <DialogContent className="gap-0 p-0 sm:max-w-[720px]" showCloseButton={false}>
+        <DialogHeader className="border-border flex-row items-center justify-between border-b px-6 py-4">
           <DialogTitle>{createdMeetingId ? "녹음 파일 제출" : "비대면 회의 만들기"}</DialogTitle>
+          <DialogClose render={<Button type="button" variant="ghost" size="icon-sm" />}>
+            <X aria-hidden />
+            <span className="sr-only">닫기</span>
+          </DialogClose>
         </DialogHeader>
 
         {createdMeetingId ? (
