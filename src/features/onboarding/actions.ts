@@ -3,12 +3,20 @@
 import { revalidatePath } from "next/cache";
 
 import { requireAccessToken } from "@/features/auth/session";
-import { serverApi, toUserMessage } from "@/lib/api";
+import { ApiError, serverApi, toUserMessage } from "@/lib/api";
 import { ep } from "@/lib/endpoints";
 import { isMock } from "@/mocks/config";
 
 import { findPayloadProblem, toOnboardingPayload } from "./mapper";
 import type { DepartmentNode, Invite, Position } from "./types";
+
+/**
+ * [확인] `AU-035` — 이미 온보딩을 끝낸 회사가 커밋을 다시 시도했다(BE
+ * `AuthErrorCode.ALREADY_ONBOARDED`, 409). 응답이 끊긴 뒤 재시도했을 때 실제로 나는 코드다 —
+ * 이 시도가 잘못된 게 아니라 **앞선 시도가 서버에서는 이미 성공**했다는 뜻이라 일반 실패와
+ * 다르게 다룬다(`use-invite-commit.ts` 참고).
+ */
+const ALREADY_ONBOARDED = "AU-035";
 
 /**
  * 온보딩 커밋 창구 — 격리막(§Mock 격리막).
@@ -20,12 +28,22 @@ import type { DepartmentNode, Invite, Position } from "./types";
  * ⚠️ **한 번뿐이다.** 재호출은 409(`ALREADY_ONBOARDED`)다 — 되돌리는 경로가 없다.
  * ⚠️ 이메일이 겹치면 400이 아니라 `skipped`로 돌아온다. 조용히 버리지 말고 화면에 띄운다
  *    (§정직성) — 오너는 누가 빠졌는지 알아야 계정 발급 화면에서 다시 만든다.
+ * ⚠️⚠️ **응답이 끊기면 재시도가 이 409를 실제로 밟는다**(2026-08-14 프로덕션에서 겪었다).
+ *    Next↔BE 구간이 오래 걸리거나 끊기면 브라우저는 실패로 보는데 BE는 이미 처리를
+ *    끝냈을 수 있다 — 그 상태에서 다시 누르면 여기로 떨어진다. `alreadyOnboarded`로
+ *    구분해서 일반 실패와 다르게 다룬다(부르는 쪽 참고).
  */
 
 export interface OnboardingCommitResult {
   ok: boolean;
-  /** 실패했을 때 화면에 그대로 띄울 한 줄 */
+  /** 실패했을 때 화면에 그대로 띄울 한 줄. `alreadyOnboarded`면 안 쓴다 */
   error?: string;
+  /**
+   * ⚠️ **이 회사는 이미 온보딩이 끝났다는 뜻이다** — 이번 시도가 잘못된 게 아니라, 앞선
+   *    시도가 응답만 못 받고 서버에서는 이미 성공했을 뿐이다. 화면은 이걸 오류로 세우지
+   *    않고 결제 단계로 그냥 넘긴다(`use-invite-commit.ts`).
+   */
+  alreadyOnboarded?: boolean;
   /** 실제로 계정이 나간 주소 — 이 줄에만 `isSent` 도장을 찍는다 */
   issuedEmails: string[];
   /** 빠진 주소와 사유 — 확인 창이 아니라 완료 화면에서 알린다 */
@@ -89,9 +107,12 @@ export async function commitOnboardingAction(input: {
       skipped: data.skipped,
     };
   } catch (error) {
+    const alreadyOnboarded = error instanceof ApiError && error.code === ALREADY_ONBOARDED;
     return {
       ok: false,
-      error: toUserMessage(error),
+      // ⚠️ 이미 끝난 회사면 문구를 안 쓴다 — 부르는 쪽이 오류로 세우지 않고 넘긴다
+      error: alreadyOnboarded ? undefined : toUserMessage(error),
+      alreadyOnboarded,
       issuedEmails: [],
       skipped: [],
     };
