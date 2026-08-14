@@ -88,7 +88,7 @@ export function FindPasswordStep({ company, onBack }: FindPasswordStepProps) {
             key={`find-password-email-${state.attempt}`}
             name="email"
             type="email"
-            defaultValue=""
+            defaultValue={state.email}
             placeholder="name@company.com"
             autoComplete="email"
             aria-invalid={state.errors.email !== undefined}
