@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 
 import { FLASH_TOAST_PARAM } from "@/constants/flash-toast";
 import { requireAccessToken } from "@/features/auth/session";
+import { getViewer } from "@/features/shell/viewer";
 import { ApiError, serverApi } from "@/lib/api";
 import { ep } from "@/lib/endpoints";
 import { getMockActor } from "@/lib/mock-actor";
@@ -92,8 +93,8 @@ export async function createNoticeAction(
   _prev: NoticeFormState,
   formData: FormData,
 ): Promise<NoticeFormState> {
-  if (!canManageNotice(getMockActor()))
-    return { errors: { title: "공지를 작성할 권한이 없습니다" } };
+  const actor = isMock ? getMockActor() : await getViewer();
+  if (!canManageNotice(actor)) return { errors: { title: "공지를 작성할 권한이 없습니다" } };
 
   const draft = readDraft(formData);
   const errors = validateNoticeDraft(draft);
@@ -128,8 +129,8 @@ export async function updateNoticeAction(
   _prev: NoticeFormState,
   formData: FormData,
 ): Promise<NoticeFormState> {
-  if (!canManageNotice(getMockActor()))
-    return { errors: { title: "공지를 수정할 권한이 없습니다" } };
+  const actor = isMock ? getMockActor() : await getViewer();
+  if (!canManageNotice(actor)) return { errors: { title: "공지를 수정할 권한이 없습니다" } };
 
   const id = String(formData.get("id") ?? "");
   const draft = readDraft(formData);
@@ -171,7 +172,8 @@ export async function updateNoticeAction(
  *    없어(파괴적 삭제라 재시도 UI가 필요 없다고 판단, ROOM-05와 다른 지점) 이 방식이 맞다.
  */
 export async function deleteNoticeAction(formData: FormData): Promise<void> {
-  if (!canManageNotice(getMockActor())) {
+  const actor = isMock ? getMockActor() : await getViewer();
+  if (!canManageNotice(actor)) {
     throw new Error("공지를 삭제할 권한이 없습니다");
   }
 
