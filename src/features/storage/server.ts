@@ -1,16 +1,18 @@
 import "server-only";
 
-import { PROJECT_STATUS } from "@/constants/project";
+import { PROJECT_STATUS, type ProjectStatus } from "@/constants/project";
+import { requireAccessToken } from "@/features/auth/session";
+import { serverApi } from "@/lib/api";
+import { ep } from "@/lib/endpoints";
 import { isMock } from "@/mocks/config";
 
-import type { StorageOverview } from "./types";
+import type { ProjectStorage, StorageOverview } from "./types";
 
 /**
  * 녹음 용량 조회 — **격리막**.
  *
  * ⚠️ 컴포넌트는 반환 타입(`StorageOverview`)만 본다. 연동되면 여기서 `isMock` 분기만
  *    실서버 호출로 바꾸고 매퍼가 shape을 흡수한다 — 화면은 안 바뀐다.
- * ⚠️ ERD·API가 아직 없다(BE 협의 전). 아래 값은 "그럴듯한 예시"가 아니라 **가정한 shape**이다.
  */
 
 /**
@@ -76,9 +78,69 @@ const MOCK: StorageOverview = {
   ],
 };
 
+/**
+ * BE shape → UI 계약 (§Mock 격리막).
+ *
+ * [확인] BE `StorageOverviewResponse`(`metering` 패키지, 2026-08-14 BE PR #494) —
+ * BE가 이 화면의 UI 계약(`StorageOverview`)에 필드명을 그대로 맞춰서 냈다(BE 코드 주석에
+ * "FE storage/types.ts의 StorageOverview 계약과 필드명을 그대로 맞춘다"라고 명시). 그래도
+ * 매퍼를 거친다 — BE 응답 모양이 바뀌어도 고칠 곳이 여기 한 곳이어야 한다.
+ *
+ * ⚠️ **`sttGb`는 지금 캡션 몫만 반영된다**(BE PR #494 본문 명시) — transcript·요약 리포트는
+ *    capture 도메인 연동이 아직 안 붙어서, 실제보다 적게 보일 수 있다. FE가 고칠 수 있는
+ *    값이 아니다 — BE가 그 리포트를 붙이면 이 값도 저절로 올라온다.
+ * ⚠️ `voiceGb`·`sttGb`는 BE가 이미 소수점 첫째 자리로 반올림해서 준다 — 여기서 다시
+ *    반올림하지 않는다.
+ */
+interface BeProjectStorage {
+  tag: string;
+  name: string;
+  meetingCount: number;
+  voiceGb: number;
+  sttGb: number;
+  /** `2020-01-02` — Jackson이 `LocalDate`를 ISO 문자열로 내린다 */
+  lastRecordedAt: string;
+  status: ProjectStatus;
+}
+
+interface BeStorageOverview {
+  voiceGb: number;
+  sttGb: number;
+  projects: BeProjectStorage[];
+}
+
+function toProjectStorage(item: BeProjectStorage): ProjectStorage {
+  return {
+    tag: item.tag,
+    name: item.name,
+    meetingCount: item.meetingCount,
+    voiceGb: item.voiceGb,
+    sttGb: item.sttGb,
+    lastRecordedAt: item.lastRecordedAt,
+    status: item.status,
+  };
+}
+
+function toStorageOverview(be: BeStorageOverview): StorageOverview {
+  return {
+    voiceGb: be.voiceGb,
+    sttGb: be.sttGb,
+    projects: be.projects.map(toProjectStorage),
+  };
+}
+
+/**
+ * [확인] BE `CompanyStorageController.getStorage` — `GET /api/companies/me/storage`,
+ * `@PreAuthorize("hasAnyRole('OWNER', 'ADMIN')")`(`canManageStorage`와 같은 문).
+ *
+ * ⚠️ 이 엔드포인트 자체가 던지는 도메인 예외는 없다(BE PR #494 본문) — 빈 회사는
+ *    0.0GB·빈 배열로 정상 응답한다. 인증 없음·OWNER·ADMIN 아님만 403이고, 그건 화면
+ *    가드(`canManageStorage`)가 이미 걸러 이 함수를 부르기 전에 막는다.
+ */
 export async function getStorageOverview(): Promise<StorageOverview> {
   if (isMock) return MOCK;
 
-  // TODO(BE 협의): `GET /companies/me/storage` → { voiceGb, sttGb, projects[] }
-  throw new Error("저장소 정보를 불러오지 못했습니다");
+  const accessToken = await requireAccessToken();
+  const overview = await serverApi<BeStorageOverview>(ep.companyStorage(), { accessToken });
+  return toStorageOverview(overview);
 }
