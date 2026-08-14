@@ -41,12 +41,25 @@
   주의: 헤더(`.rbc-time-header-content`)엔 세로 스크롤바가 없고 본문(`.rbc-time-content`)엔
   있을 수 있어서, 스크롤바 폭(브라우저·배율마다 다르다)만큼 두 영역의 실제 칸 너비가
   서로 달라져 세로 구분선이 어긋나 보였다("화면 배율을 바꾸면" 흔들리는 것도 그래서다).
-  이 화면의 전체 높이(`calendar-height.ts`)는 이미 "시간 슬롯 수 × 칸 높이"로 딱 맞춰
-  계산해 두므로 본문이 넘칠 일이 없다 — 스크롤 자체를 없애 스크롤바 폭 변수를 지운다.
-  (RBC가 인라인으로 `overflow-y`를 얹으므로 `!important`로 이긴다.)
+  `lg` 미만은 이 화면의 전체 높이(`calendar-height.ts`)를 "시간 슬롯 수 × 칸 높이"로 딱
+  맞춰 계산해 두므로(하루 24시간을 그대로 펼친다) 본문이 넘칠 일이 없다 — 스크롤 자체를
+  없애 스크롤바 폭 변수를 지운다(RBC가 인라인으로 `overflow-y`를 얹으므로 `!important`로 이긴다).
 */
 .rbc-time-content {
   overflow-y: hidden !important;
+}
+
+/*
+  ⚠️ **`lg` 이상은 캘린더 내부 스크롤이다**(2026-08-14, 팀 확정 — "캘린더를 아래로 늘어뜨리지
+     않는다"). 하루 24시간(48칸)을 고정 칸 높이로 그리면 화면보다 훨씬 길어진다 — 캘린더
+     자체 높이는 부모가 주는 만큼만(`weekly-room-calendar.tsx`의 `lg:h-full!`) 쓰고, 넘치는
+     시간대는 이 안에서만 스크롤한다. 최초 진입 시 지금 시각 근처로 스크롤하는 건
+     `scrollToTime`(`weekly-room-calendar.tsx`)이 맡는다.
+*/
+@media (min-width: 1024px) {
+  .rbc-time-content {
+    overflow-y: auto !important;
+  }
 }
 
 /*
@@ -133,6 +146,25 @@
   전에는 슬롯 보더를 통째로 지워서 시간 눈금(왼쪽 거터)과 칸 사이가 안 맞아 보였다 —
   30분 눈금도 옅은 점선으로 남겨야 왼쪽 숫자와 오른쪽 칸이 줄이 맞아떨어진다.
 */
+/*
+  ⚠️ **칸 높이를 고정한다**(2026-08-14, 기존 40px의 1.5배인 60px — 팀 확정,
+     `calendar-height.ts`의 `HALF_HOUR_SLOT_HEIGHT_PX`). RBC 기본은 `.rbc-time-column
+     .rbc-timeslot-group`에 `flex: 1`을 걸어 하루 칸 수만큼 남는 높이를 나눠 채우는데,
+     그 방식대로면 하루 24시간(48칸)이 화면 높이에 맞춰 매번 눌리거나 늘어난다 — 고정
+     높이로 바꾸고, 화면에 다 안 들어오는 시간대는 위 미디어쿼리의 캘린더 내부 스크롤로 본다.
+  ⚠️ **`flex-basis`를 픽셀로 못박는다(`flex: 0 0 120px`), `flex: none`이 아니다**(2026-08-14
+     정정 — 처음엔 `flex: none`(`flex-basis: auto`) + `min-height`로 했다가 시간 눈금·격자선이
+     통째로 안 보이는 렌더 붕괴가 났다. 빈 `div`는 내용이 없어 `flex-basis: auto`가 콘텐츠
+     기준으로 0에 가깝게 잡히고, 그 상태에서 부모 체인의 `min-height: 100%`가 겹치면 실제
+     칸 높이가 0으로 무너진다 — `flex-basis`에 직접 숫자를 주면 그 계산 자체가 필요 없어진다.
+     `.rbc-time-column .rbc-timeslot-group`(글자 특이도 0,2,0)는 라이브러리 기본 규칙과
+     특이도가 같아 **이 규칙이 CSS 로드 순서상 나중이라 이겨야** 값이 먹는다 — 셀렉터를
+     그대로 두고 값만 바꾼다.
+*/
+.rbc-time-column .rbc-timeslot-group {
+  flex: 0 0 120px;
+}
+
 .rbc-timeslot-group {
   border-bottom: 1px solid var(--border) !important;
 }
@@ -151,6 +183,8 @@
   z-index: 9;
   color: var(--muted-foreground);
   border-top: none;
+  /* ⚠️ 위 `.rbc-timeslot-group`과 짝이다 — 반칸도 `flex-basis` 고정 60px(그룹 120px의 절반) */
+  flex: 0 0 60px;
 }
 
 /*

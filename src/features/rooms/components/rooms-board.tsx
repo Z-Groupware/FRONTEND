@@ -86,6 +86,7 @@ export function RoomsBoard({
 
       <RoomReservationDialog
         slotStart={slotStart}
+        week={week}
         onOpenChange={(open) => !open && setSlotStart(null)}
         rooms={rooms}
         members={members}

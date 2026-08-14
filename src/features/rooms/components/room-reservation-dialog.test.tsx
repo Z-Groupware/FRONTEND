@@ -29,6 +29,8 @@ const PROJECTS: RoomProjectOption[] = [{ id: "1", name: "굿즈 프로젝트", t
 const TEAM_ACTIONS: RoomTeamActionOption[] = [];
 
 const SLOT_START = new Date("2026-08-11T10:00:00");
+/** 2026-08-10(월)이 이 슬롯이 속한 주의 월요일이다 — `SlotPicker`의 요일 선택지 기준. */
+const WEEK = "2026-08-10";
 
 /** 개설자 = Owner(팀 없음) — 참석자 후보가 팀장으로 고정되는 쪽이다. */
 const OWNER_VIEWER = { id: 1, role: AUTHORITY.OWNER, teamName: null } as const;
@@ -39,6 +41,7 @@ function renderDialog(overrides: Partial<React.ComponentProps<typeof RoomReserva
   render(
     <RoomReservationDialog
       slotStart={SLOT_START}
+      week={WEEK}
       onOpenChange={onOpenChange}
       rooms={ROOMS}
       members={MEMBERS}
@@ -58,6 +61,7 @@ describe("RoomReservationDialog", () => {
     render(
       <RoomReservationDialog
         slotStart={null}
+        week={WEEK}
         onOpenChange={jest.fn()}
         rooms={ROOMS}
         members={MEMBERS}
@@ -72,11 +76,12 @@ describe("RoomReservationDialog", () => {
     expect(screen.queryByText("회의실 예약")).not.toBeInTheDocument();
   });
 
-  it("클릭한 슬롯의 날짜·시각을 안내한다", () => {
+  it("클릭한 슬롯의 요일·시각을 선택지 초깃값으로 채운다", () => {
     renderDialog();
 
-    expect(screen.getByText("화 8/11")).toBeInTheDocument();
-    expect(screen.getByText("10:00 - 10:30")).toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: "예약 요일" })).toHaveTextContent("화 8/11");
+    expect(screen.getByRole("combobox", { name: "예약 시작 시간" })).toHaveTextContent("10:00");
+    expect(screen.getByText("~ 10:30")).toBeInTheDocument();
     expect(screen.getByText("30분 · 즉시 확정")).toBeInTheDocument();
   });
 

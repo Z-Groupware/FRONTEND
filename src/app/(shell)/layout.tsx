@@ -101,17 +101,27 @@ export default async function ShellLayout({ children }: { children: ReactNode })
       */}
       <NotificationProvider>
         <HeaderBannerSlotProvider>
-          <div className="bg-background flex min-w-0 flex-1 flex-col overflow-hidden">
+          <div className="bg-background relative flex min-w-0 flex-1 flex-col overflow-hidden">
             {/*
-              ⚠️ **여기 안 그린다 — `PageHeader` 바로 뒤로 포털한다**(적대적 리뷰, 2026-08-14).
-                 이 자리에 그대로 두면 도메인 `layout.tsx`가 상단바를 `{children}` 안에서
-                 그리는 탓에 배너가 상단바보다 DOM상 먼저 와서, 시각 순서는 CSS로 맞춰도
-                 키보드 탭·스크린리더 순서가 상단바보다 배너를 먼저 짚는다(`header-banner-slot.tsx`).
+              ⚠️ **셸에 고정 마운트 — 도메인 `layout.tsx`를 오갈 때도 안 사라진다**(2026-08-14
+                 변경). 전에는 `PageHeader` 바로 뒤 자리로 포털했는데, 그 자리는 도메인마다
+                 `PageHeader`를 다시 마운트하는 화면(예: `/app/board`→`/app/rooms`)으로
+                 옮기면 포털 자리가 잠깐 사라졌다 되살아나 배너가 화면 전환 중 통째로
+                 비었다. 여기서 직접 그리면 페이지를 옮겨도 이 컴포넌트는 그대로 살아 있다.
+              ⚠️ **`absolute`로 얹는다 — 본문을 밀어내지 않는다**(§디자인 토큰). 흐름 안에
+                 두면 배너가 뜨고 닫힐 때마다 그 아래 본문 전체가 오르내렸다. 상단바
+                 (56px) 바로 아래에 겹쳐 띄우고, 본문은 늘 같은 자리에 그대로 둔다.
+            */}
+            <div className="absolute inset-x-0 top-14 z-20">
+              <NotificationBanner />
+            </div>
+            {/*
+              ⚠️ **비밀번호 안내는 그대로 포털한다.** 상단바 바로 뒤 DOM 자리를 유지해야
+                 키보드 탭·스크린리더 순서가 시각 순서(상단바→안내)와 어긋나지 않는다
+                 (적대적 리뷰, 2026-08-14, `header-banner-slot.tsx`). 흐름을 밀어내는 것도
+                 발급 비밀번호를 쓰는 동안만 뜨는 일회성 안내라 문제되지 않는다.
             */}
             <HeaderBannerPortal>
-              {/* 회의 개설·리마인더·취소·공지 — 상단바 바로 아래 줄로 들어간다(떠 있는 판이 아니다) */}
-              <NotificationBanner />
-              {/* 발급받은 비밀번호 안내 — 강제 아님(`mustChangePassword` 아님), 닫으면 그만이다 */}
               {showPasswordChangeBanner && <PasswordChangeBanner memberId={viewer.id} />}
             </HeaderBannerPortal>
             {children}

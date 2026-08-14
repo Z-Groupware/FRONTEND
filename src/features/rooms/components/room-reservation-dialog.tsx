@@ -1,7 +1,5 @@
 "use client";
 
-import { format } from "date-fns";
-import { ko } from "date-fns/locale";
 import { Bell } from "lucide-react";
 import type { FormEvent } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -13,7 +11,6 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 import type { AttendeeScopeViewer } from "../attendee-scope";
-import { RESERVATION_DURATION_MINUTES } from "../constants";
 import type {
   MeetingRoom,
   RoomMember,
@@ -23,12 +20,16 @@ import type {
 } from "../types";
 import { RoomAttendeePicker } from "./room-attendee-picker";
 import { RoomReservationFields } from "./room-reservation-fields";
+import { SlotPicker } from "./slot-picker";
 import { useRoomReservationForm } from "./use-room-reservation-form";
 
 interface RoomReservationDialogProps {
-  /** 클릭한 30분 슬롯의 시작 시각 — null이면 닫힌 상태다. 날짜·시작 시각은 이 값으로 고정된다
-   *  (30분 한 타임 고정, CLAUDE.md §브라우저 API — 모달에서 시간을 다시 고르지 않는다). */
+  /** 클릭한 30분 슬롯의 시작 시각 — null이면 닫힌 상태다. 열릴 때 요일·시작 시간의 초깃값으로만
+   *  쓰인다 — 그 뒤로는 `SlotPicker`에서 자유롭게 바꿀 수 있다(2026-08-14, 고정 요약에서 편집
+   *  가능한 선택지로 바뀜). */
   slotStart: Date | null;
+  /** "YYYY-MM-DD" — 이 주의 월요일. `SlotPicker`의 요일 선택지(월~금)를 여기서 뽑는다. */
+  week: string;
   onOpenChange: (open: boolean) => void;
   rooms: MeetingRoom[];
   members: RoomMember[];
@@ -43,27 +44,6 @@ interface RoomReservationDialogProps {
   viewer: AttendeeScopeViewer;
   /** 생성 성공 시 호출 — 재조회 없이 부모 화면에 바로 얹는다(§최적화: action 리턴값 그대로 반영). */
   onCreated: (created: RoomReservation) => void;
-}
-
-/** 상단 슬롯 요약 — 요일·날짜 / 시간대 / "30분 · 즉시 확정" 세 칸을 한 줄에 나눠 보여준다. */
-function SlotSummary({ slotStart }: { slotStart: Date }) {
-  const slotEnd = new Date(slotStart.getTime() + RESERVATION_DURATION_MINUTES * 60_000);
-
-  return (
-    <div className="border-border bg-secondary/50 flex items-center gap-3 rounded-lg border px-3.5 py-2.5 text-[13px]">
-      <span className="font-medium">{format(slotStart, "EEE M/d", { locale: ko })}</span>
-      <span className="text-border" aria-hidden>
-        |
-      </span>
-      <span className="tabular-nums">
-        {format(slotStart, "HH:mm")} - {format(slotEnd, "HH:mm")}
-      </span>
-      <span className="text-border" aria-hidden>
-        |
-      </span>
-      <span className="text-muted-foreground">{RESERVATION_DURATION_MINUTES}분 · 즉시 확정</span>
-    </div>
-  );
 }
 
 interface DialogActionsProps {
@@ -130,6 +110,7 @@ function PendingReporter({ onChange }: PendingReporterProps) {
  */
 export function RoomReservationDialog({
   slotStart,
+  week,
   onOpenChange,
   rooms,
   members,
@@ -192,22 +173,25 @@ export function RoomReservationDialog({
 
         <form ref={formRef} action={formAction} onSubmit={handleFormSubmit}>
           <PendingReporter onChange={handlePendingChange} />
-          <input
-            type="hidden"
-            name="date"
-            value={slotStart ? format(slotStart, "yyyy-MM-dd") : ""}
-          />
-          <input
-            type="hidden"
-            name="startTime"
-            value={slotStart ? format(slotStart, "HH:mm") : ""}
-          />
+          <input type="hidden" name="date" value={form.date} />
+          <input type="hidden" name="startTime" value={form.startTime} />
           <input type="hidden" name="roomId" value={form.roomId} />
           <input type="hidden" name="projectId" value={form.projectId} />
           <input type="hidden" name="parentTeamActionId" value={form.parentTeamActionId} />
 
           <div className="flex max-h-[70vh] flex-col gap-4 overflow-y-auto px-6 py-4">
-            {slotStart && <SlotSummary slotStart={slotStart} />}
+            {slotStart && (
+              <div className="flex flex-col gap-1.5">
+                <SlotPicker
+                  week={week}
+                  date={form.date}
+                  startTime={form.startTime}
+                  onDateChange={(date) => setForm((prev) => ({ ...prev, date }))}
+                  onStartTimeChange={(startTime) => setForm((prev) => ({ ...prev, startTime }))}
+                />
+                <FieldError reserveSpace message={state.errors.date ?? state.errors.startTime} />
+              </div>
+            )}
 
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-[1fr_260px]">
               <RoomReservationFields

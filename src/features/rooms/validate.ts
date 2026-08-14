@@ -1,4 +1,4 @@
-import { isValid, parse } from "date-fns";
+import { getDay, isValid, parse } from "date-fns";
 
 import type { Authority } from "@/constants/authority";
 import { requiresParentTeamAction } from "@/lib/permission";
@@ -54,8 +54,19 @@ export function validateRoomReservationDraft(
   if (!draft.title.trim()) errors.title = "회의 제목을 입력해 주세요";
   if (!draft.roomId.trim()) errors.roomId = "회의실을 선택해 주세요";
 
-  if (!draft.date.trim()) errors.date = "날짜를 선택해 주세요";
-  else if (!isValidCalendarDate(draft.date)) errors.date = "올바른 날짜가 아니에요";
+  if (!draft.date.trim()) {
+    errors.date = "날짜를 선택해 주세요";
+  } else if (!isValidCalendarDate(draft.date)) {
+    errors.date = "올바른 날짜가 아니에요";
+  } else {
+    /*
+      ⚠️ **화면(`SlotPicker`)도 요일 선택지를 월~금뿐으로 두지만, 여기서 다시 본다**(§권한:
+         화면 숨김은 UX일 뿐 보안이 아니다). 값 자체는 그대로 폼 조작·직접 호출로 주말이
+         들어올 수 있다.
+    */
+    const day = getDay(parse(draft.date, "yyyy-MM-dd", new Date()));
+    if (day === 0 || day === 6) errors.date = "평일에만 예약할 수 있어요";
+  }
 
   if (!draft.startTime.trim()) {
     errors.startTime = "시작 시간을 선택해 주세요";

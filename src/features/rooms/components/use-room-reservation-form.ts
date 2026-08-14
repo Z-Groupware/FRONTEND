@@ -1,5 +1,6 @@
 "use client";
 
+import { format } from "date-fns";
 import { useActionState, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -18,6 +19,10 @@ const EMPTY_FORM = {
   attendeeIds: [] as number[],
   /** Select 값은 문자열이라 여기서도 문자열로 든다 — 없으면 빈 문자열("Owner 개설"이거나 아직 안 골랐을 때). */
   parentTeamActionId: "",
+  /** "YYYY-MM-DD" — `SlotPicker`가 고른다. 열릴 때 `slotStart`로 한 번 채워진다(아래 effect). */
+  date: "",
+  /** "HH:mm" */
+  startTime: "",
 };
 
 export type RoomReservationFormValues = typeof EMPTY_FORM;
@@ -44,6 +49,21 @@ export function useRoomReservationForm({
   const [state, formAction] = useActionState(createRoomReservationAction, INITIAL_STATE);
   const [form, setForm] = useState<RoomReservationFormValues>(EMPTY_FORM);
   const handledCreatedId = useRef<string | null>(null);
+
+  /*
+    ⚠️ **연 시점의 슬롯으로 요일·시간을 채운다** — 격자 빈 칸 클릭이든 [회의 추가] 기본값
+       (`getNextAvailableSlot`)이든, 열릴 때 값은 `slotStart` 하나뿐이다. 그 뒤로는
+       `SlotPicker`가 `form.date`·`form.startTime`을 직접 바꾸므로, 여기서는 **열릴 때만** 채운다.
+  */
+  useEffect(() => {
+    if (!slotStart) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setForm((prev) => ({
+      ...prev,
+      date: format(slotStart, "yyyy-MM-dd"),
+      startTime: format(slotStart, "HH:mm"),
+    }));
+  }, [slotStart]);
 
   useEffect(() => {
     if (state.created && state.created.id !== handledCreatedId.current) {
