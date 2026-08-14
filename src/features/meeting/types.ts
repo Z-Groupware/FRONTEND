@@ -115,12 +115,27 @@ export type Meeting = MeetingDraft & {
 };
 
 /**
+ * 비대면 회의 녹음 파일 — S3에 직접 올린 결과(이슈 #473, 2026-08-14 계약 변경). 바이트는
+ * 여기 없다 — presigned URL 발급(`getOnlineMeetingRecordingUploadUrlAction`)과 브라우저의
+ * S3 PUT이 끝난 뒤 그 결과(`s3Key` 등)만 담아 `POST /api/meetings/online` 요청에 싣는다.
+ */
+export interface OnlineMeetingRecordingInfo {
+  s3Key: string;
+  fileName: string;
+  contentType: string;
+  sizeBytes: number;
+}
+
+/**
  * 비대면 회의 만들기 폼 입력(이슈 #473) — `RoomReservationDraft`와 같은 필드를 쓰되
  * **회의실·시간대가 없다**(`roomId`·`date`·`startTime` 없음). 제출하면 그 자리에서 완료
  * 처리되므로 잡을 시간 자체가 없다.
  * ⚠️ `topics`는 `rooms/types.ts`의 `MeetingTopicInput`을 그대로 쓴다 — 회의 주제 입력은
  *    대면·비대면이 같은 모양이라 타입을 새로 만들지 않는다(교차 도메인 재사용은
  *    `rooms/mock/reservations.ts`가 `features/meeting`을 참조하는 것과 같은 전례다).
+ * ⚠️ **`recording`이 필수다**(2026-08-14 계약 변경 — 단일 모달로 바뀌며 녹음 제출이 선택
+ *    단계에서 등록 자체의 일부가 됐다). `null`은 "아직 파일을 안 올렸다"는 뜻으로 폼 조립
+ *    단계에서만 잠깐 거친다 — `validateOnlineMeetingDraft`가 이 상태를 막는다.
  */
 export interface OnlineMeetingDraft {
   title: string;
@@ -130,17 +145,7 @@ export interface OnlineMeetingDraft {
   attendeeIds: number[];
   /** Host가 Leader/Member일 때만 필수 — `RoomReservationDraft`와 같은 규칙. */
   parentTeamActionId?: number;
+  recording: OnlineMeetingRecordingInfo | null;
 }
 
 export type OnlineMeetingFormErrors = Partial<Record<keyof OnlineMeetingDraft, string>>;
-
-/**
- * 비대면 회의 만들기 2단계 — 녹음 파일 제출 + AI 요약 요청(2026-08-14 팀 확정).
- * ⚠️ 회의는 1단계에서 이미 만들어져 있다 — 이 드래프트는 그 회의에 파일명을 덧붙이고
- *    분석을 대기 상태로 옮기는 별도의 가벼운 흐름이다(`Meeting.recordingFileName`과 같다,
- *    §정직한 목업 — 바이트는 안 든다).
- */
-export interface SubmitOnlineMeetingRecordingDraft {
-  meetingId: string;
-  recordingFileName: string;
-}

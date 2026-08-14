@@ -5,11 +5,19 @@ import { validateOnlineMeetingDraft } from "./validate";
 const OWNER_HOST = { role: AUTHORITY.OWNER };
 const LEADER_HOST = { role: AUTHORITY.LEADER };
 
+const VALID_RECORDING = {
+  s3Key: "recordings/org-1/member-1/online-pending/uuid/meeting.webm",
+  fileName: "meeting.webm",
+  contentType: "audio/webm",
+  sizeBytes: 12345,
+};
+
 const VALID_DRAFT = {
   title: "비대면 주간 싱크",
   projectId: "1",
   topics: [{ main: "제품", sub: "로드맵 검토" }],
   attendeeIds: [1],
+  recording: VALID_RECORDING,
 };
 
 describe("비대면 회의 만들기 검증", () => {
@@ -117,5 +125,10 @@ describe("비대면 회의 만들기 검증", () => {
     expect(errors).not.toHaveProperty("roomId");
     expect(errors).not.toHaveProperty("date");
     expect(errors).not.toHaveProperty("startTime");
+  });
+
+  it("녹음 파일이 없으면 막는다(2026-08-14 계약 변경 — 단일 모달, 등록의 일부다)", () => {
+    const errors = validateOnlineMeetingDraft({ ...VALID_DRAFT, recording: null }, OWNER_HOST);
+    expect(errors.recording).toBe("녹음 파일을 첨부해 주세요");
   });
 });
