@@ -1,23 +1,11 @@
 /*
-  ⚠️ 회귀 방지 — 2026-08-14 프로덕션에서 결제 전 회사가 사이드바 링크로 이 화면에 그대로
-     들어와 `getBillingOverview`의 404(BIL-001)가 새서 에러 화면이 떴다. `middleware.ts`가
-     아직 없어 이 페이지가 그 문 역할을 해야 하는데 빠져 있었다 — 다시 빠지면 이 테스트가 잡는다.
+  ⚠️ 2026-08-14 — 이 화면의 결제 전 회사 리다이렉트 가드는 없앴다(`page.tsx` 주석 참고).
+     `getBillingOverview`가 이제 항상 더미를 돌려줘 404가 날 수 없다 — 여기서 지키는 건
+     "권한 없으면 화면 대신 접근 거부를 그린다"뿐이다.
 */
 jest.mock("server-only", () => ({}));
-/*
-  ⚠️ 그냥 return하는 mock이면 실제 `redirect()`(호출 즉시 던져서 렌더를 멈추는 함수)와
-     달리 아래 코드가 계속 실행된다 — `getBillingOverview`가 불려도 이 mock으로는 못 잡는다.
-     `NEXT_REDIRECT`를 던지게 해서 실제 동작과 같게 맞춘다(코드래빗 지적, 2026-08-14).
-*/
-jest.mock("next/navigation", () => ({
-  redirect: jest.fn(() => {
-    throw new Error("NEXT_REDIRECT");
-  }),
-}));
-jest.mock("@/mocks/config", () => ({ isMock: false }));
 
 jest.mock("@/features/shell/viewer", () => ({ getViewer: jest.fn() }));
-jest.mock("@/features/auth/me", () => ({ getMe: jest.fn(async () => ({ companyId: 7 })) }));
 
 jest.mock("@/features/billing/server", () => ({
   getOnboardingSubscription: jest.fn(),
@@ -26,7 +14,7 @@ jest.mock("@/features/billing/server", () => ({
 }));
 
 jest.mock("@/lib/permission", () => ({
-  canAccessManageScope: jest.fn(() => true),
+  canAccessManageScope: jest.fn(),
   canManageBilling: jest.fn(() => true),
 }));
 
@@ -38,40 +26,44 @@ jest.mock("@/features/billing/components/billing-view", () => ({
   BillingView: () => <div data-testid="billing-view" />,
 }));
 
-import { redirect } from "next/navigation";
+import { render, screen } from "@testing-library/react";
 
-import {
-  getBillingConfig,
-  getBillingOverview,
-  getOnboardingSubscription,
-} from "@/features/billing/server";
+import { getBillingConfig, getBillingOverview } from "@/features/billing/server";
 import { getViewer } from "@/features/shell/viewer";
+import { canAccessManageScope } from "@/lib/permission";
 
 import OwnerBillingPage from "./page";
 
-describe("/manage/billing — 결제 전 회사는 여기서 막는다", () => {
+describe("/manage/billing", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     (getViewer as jest.Mock).mockResolvedValue({ role: "owner" });
   });
 
-  it("구독 상태가 UNPAID면 /subscription으로 돌려보낸다 — 그 뒤 조회는 안 나간다", async () => {
-    (getOnboardingSubscription as jest.Mock).mockResolvedValue({ status: "UNPAID" });
+  /*
+    ⚠️ `toBeTruthy()`는 아무 React element에나 통과한다 — 실제로 어느 컴포넌트가
+       그려졌는지, 조회가 몇 번 나갔는지는 그걸로 안 잡힌다(코드래빗 지적, 2026-08-14).
+       렌더링까지 해서 눈에 보이는 결과로 확인한다.
+  */
+  it("관리 스코프 권한이 없으면 접근 거부를 그린다 — 조회는 안 나간다", async () => {
+    (canAccessManageScope as jest.Mock).mockReturnValue(false);
 
-    await expect(OwnerBillingPage()).rejects.toThrow("NEXT_REDIRECT");
+    render(await OwnerBillingPage());
 
-    expect(redirect).toHaveBeenCalledWith("/subscription");
-    // ⚠️ 실제 redirect()는 던져서 렌더를 멈춘다 — 결제 전 회사의 404가 여기까지 오면 안 된다
+    expect(screen.getByTestId("access-denied")).toBeInTheDocument();
+    expect(screen.queryByTestId("billing-view")).not.toBeInTheDocument();
     expect(getBillingOverview).not.toHaveBeenCalled();
     expect(getBillingConfig).not.toHaveBeenCalled();
   });
 
-  it("ACTIVE면 그대로 통과해 화면을 그린다", async () => {
-    (getOnboardingSubscription as jest.Mock).mockResolvedValue({ status: "ACTIVE" });
+  it("권한이 있으면 조회를 마치고 화면을 그린다", async () => {
+    (canAccessManageScope as jest.Mock).mockReturnValue(true);
 
-    const ui = await OwnerBillingPage();
+    render(await OwnerBillingPage());
 
-    expect(redirect).not.toHaveBeenCalled();
-    expect(ui).toBeTruthy();
+    expect(screen.getByTestId("billing-view")).toBeInTheDocument();
+    expect(screen.queryByTestId("access-denied")).not.toBeInTheDocument();
+    expect(getBillingOverview).toHaveBeenCalledTimes(1);
+    expect(getBillingConfig).toHaveBeenCalledTimes(1);
   });
 });
