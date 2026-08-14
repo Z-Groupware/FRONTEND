@@ -17,9 +17,11 @@ import {
   type BeCompanyAction,
   type BeMemberDetail,
   type BeMemberListItem,
+  toAuthority,
   toBeFilter,
   toManagedMember,
   toManagedMemberAction,
+  toRoleLabel,
 } from "./manage-mapper";
 import {
   type ManagedMember,
@@ -33,6 +35,7 @@ import {
   listMockManagedMembers,
   listMockMemberEmails,
 } from "./mock/managed";
+import type { OrgRosterMember } from "./org-types";
 import { buildTeamRoles, roleIdOf } from "./team-roles";
 
 /** [확인] BE `HandoverSummaryResponse` — `team-handover/mapper.ts`와 같은 응답. */
@@ -128,21 +131,40 @@ export async function listManagedMembers(): Promise<ManagedMember[]> {
 export const MEMBER_PAGE_SIZE = 20;
 
 /**
- * 조직도 전용 응답 한 팀 — `GET /api/members/org-chart`가 **팀 단위로 이미 묶어서** 준다.
+ * 조직도 전용 응답 — `GET /api/members/org-chart`, **팀 → 역할 → 사람 3단계**다.
  *
- * [가정 shape·미검증] BE 실코드를 아직 대조하지 못했다(§연동 검증) — 담당자가 전해 준 것은
- * "`List<OrgChartTeamResponse>`, 팀 → 소속 구성원 구조"뿐이라, 팀 한 칸은 `GET /api/members`
- * 목록 한 줄(`BeMemberListItem`)과 같은 사람 정보에 `teamName`만 팀 쪽으로 옮겨졌다고 가정한다.
- * 다르면 이 인터페이스와 바로 아래 매핑만 고치면 된다(§Mock 격리막).
+ * [확인] BE 실코드 대조(2026-08-14) — `OrgChartTeamResponse`·`OrgChartSubTeamResponse`·
+ * `OrgChartMemberResponse`(`MemberController.orgChart`). **이전엔 "팀 → 사람" 2단계로
+ * 잘못 가정해 뒀었다** — 그 가정으로는 실제 응답의 `subTeams`를 아예 안 읽어서
+ * `team.members`가 매번 `undefined`였고, 방어 코드(`?? []`)가 그걸 조용히 빈 배열로 접어
+ * **조직도가 팀마다 항상 0명으로 그려지고 있었다.** BE(안현님 보고 · PR #511)가 대표를
+ * 아예 응답에서 빼던 것도 이 자리를 함께 고쳤다 — `teamId: null`·`name: "미배정"`인 팀 칸을
+ * 응답 맨 뒤에 추가로 보낸다. 그 칸도 그냥 팀처럼 평평하게 펴면 된다 — `buildOrgChart`는
+ * `teamName`이 아니라 `authority === OWNER`로 대표를 뽑아내므로 이 칸의 이름이 뭐든 상관없다.
  *
- * ⚠️ **대표(팀이 없는 사람)를 담을 자리가 있어야 한다.** 팀은 계층 없는 플랫 목록이라
- *    (CLAUDE.md §권한 ③) 대표는 어느 팀에도 안 속한다 — `teamName: null`인 칸으로 온다고
- *    가정한다. BE가 대표를 아예 응답에서 빼면 `buildOrgChart`가 대표 없이 팀만 그린다
- *    (`org-types.ts`가 이미 그 경우를 `owner: null`로 다룬다).
+ * ⚠️ **이메일·겸직·근무상태·입사일이 없다.** 전 구성원이 보는 화면이라 인사 정보를 안
+ *    싣는다(BE 주석: "조직도 응답에는 이름·직급·권한만 들어간다"). `OrgRosterMember`가
+ *    이 화면이 실제로 쓰는 값만 계약으로 남기는 이유다(`org-types.ts`) — `ManagedMember`로
+ *    억지로 채우면 없는 값을 지어내게 된다(§정직성).
  */
 interface BeOrgChartTeam {
-  teamName: string | null;
-  members: BeMemberListItem[];
+  teamId: number | null;
+  name: string;
+  subTeams: BeOrgChartSubTeam[];
+}
+
+/** 팀 안의 역할 묶음 — `roleLabel`이 사원 관리 목록의 그것과 같은 값이다 */
+interface BeOrgChartSubTeam {
+  roleLabel: string | null;
+  members: BeOrgChartMember[];
+}
+
+/** 조직도 응답의 사람 한 칸 — 목록·상세보다 훨씬 적다(위 주석 참고) */
+interface BeOrgChartMember {
+  memberId: number;
+  name: string;
+  positionName: string | null;
+  role: string;
 }
 
 /**
@@ -154,30 +176,36 @@ interface BeOrgChartTeam {
  *    BE가 조직도 전용 응답(`GET /api/members/org-chart`)을 이미 열어 두고 있어 — 페이지
  *    단위가 아니라 명부 전체를 한 번에 주고, 권한도 전 구성원에게 열려 있다 — 그걸 그대로
  *    쓴다.
- * ⚠️ **팀 단위로 온 것을 도로 평평하게 편다.** `buildOrgChart`(`org-chart.ts`)는 원래
- *    평평한 `ManagedMember[]`를 받아 자기가 팀별로 다시 묶고 리더를 앞으로 당긴다 — BE가
- *    이미 팀별로 준다고 그 로직을 새로 짤 필요는 없다. 팀이 나온 순서, 팀 안 사람 순서를
+ * ⚠️ **3단계로 온 것을 도로 평평하게 편다.** `buildOrgChart`(`org-chart.ts`)는 원래
+ *    평평한 `OrgRosterMember[]`를 받아 자기가 팀별로 다시 묶고 리더를 앞으로 당긴다 — BE가
+ *    이미 팀·역할별로 준다고 그 로직을 새로 짤 필요는 없다. 팀이 나온 순서, 팀 안 사람 순서를
  *    그대로 유지해서 펴면 `buildOrgChart`가 같은 순서로 다시 묶는다(§목록: 순서는 회사가
  *    정한 것이라 프론트가 안 바꾼다).
  */
-export async function listAllManagedMembersForOrgChart(): Promise<ManagedMember[]> {
+export async function listAllManagedMembersForOrgChart(): Promise<OrgRosterMember[]> {
   if (isMock) return listManagedMembers();
 
   const accessToken = await requireAccessToken();
   const teams = await serverApi<BeOrgChartTeam[]>(ep.memberOrgChart(), { accessToken });
 
   /*
-    ⚠️ **`members`가 없는 팀을 방어한다**(2026-08-14 프로덕션 재현). 이 shape은 위
-       [가정 shape·미검증]대로 아직 BE 실코드로 대조 못 했다 — 사람이 없는 팀에서
-       `members`가 빈 배열이 아니라 필드째 빠져 오면 `team.members.map(...)`이
-       `undefined`에 `.map`을 호출해 `/app/people` 전체가 죽는다.
+    ⚠️ **`subTeams`·`members`가 없는 칸을 방어한다**(2026-08-14, 앞선 2단계 가정이 겪었던
+       것과 같은 종류의 사고 — 사람·역할이 없는 팀에서 그 필드가 빈 배열이 아니라 필드째
+       빠져 오면 `.flatMap`이 `undefined`에서 터진다).
   */
-  return teams
-    .flatMap((team) =>
-      (team.members ?? []).map((member) => ({ ...member, teamName: team.teamName })),
-    )
-    .map(toManagedMember)
-    .filter((member) => isVisibleMemberStatus(member.status));
+  return teams.flatMap((team) =>
+    (team.subTeams ?? []).flatMap((subTeam) =>
+      (subTeam.members ?? []).map((member): OrgRosterMember => ({
+        id: member.memberId,
+        name: member.name,
+        teamName: team.name?.trim() ? team.name : null,
+        position: member.positionName ?? "",
+        authority: toAuthority(member.role),
+        roleLabel: toRoleLabel(subTeam.roleLabel),
+        // 이 응답엔 근무상태가 없다 — 지어내지 않는다(`OrgRosterMember.status` 주석)
+      })),
+    ),
+  );
 }
 
 /**

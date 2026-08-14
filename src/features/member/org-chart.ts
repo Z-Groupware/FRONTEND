@@ -1,11 +1,11 @@
 import { AUTHORITY } from "@/constants/authority";
 import { MEMBER_STATUS, ROLE_NONE_LABEL } from "@/constants/member";
 
-import type { ManagedMember } from "./manage-types";
 import {
   NO_TEAM_LABEL,
   type OrgChart,
   type OrgMember,
+  type OrgRosterMember,
   type OrgSummary,
   type OrgTeam,
 } from "./org-types";
@@ -25,7 +25,7 @@ import {
  *    "팀장이 누구지"로 찾는 자리라 역할·직급이 열쇠다.
  * ⚠️ 그래서 저 함수를 그대로 못 쓴다. 억지로 합치면 한쪽 화면의 검색이 조용히 나빠진다.
  */
-export function searchOrgMembers(members: ManagedMember[], keyword: string): ManagedMember[] {
+export function searchOrgMembers(members: OrgRosterMember[], keyword: string): OrgRosterMember[] {
   const needle = keyword.trim().toLowerCase();
   if (!needle) return members;
 
@@ -37,7 +37,7 @@ export function searchOrgMembers(members: ManagedMember[], keyword: string): Man
 }
 
 /** 화면 맨 위 요약 — **검색 전 명부**를 넘겨야 한다(§org-types) */
-export function summarizeOrg(members: ManagedMember[]): OrgSummary {
+export function summarizeOrg(members: OrgRosterMember[]): OrgSummary {
   const teams = new Set(
     members
       .filter((member) => member.authority !== AUTHORITY.OWNER)
@@ -52,7 +52,7 @@ export function summarizeOrg(members: ManagedMember[]): OrgSummary {
 }
 
 /** 목록 한 줄에서 조직도가 쓰는 것만 꺼낸다 — 이메일·입사일은 안 싣는다(§org-types) */
-function toOrgMember(member: ManagedMember): OrgMember {
+function toOrgMember(member: OrgRosterMember): OrgMember {
   return {
     id: member.id,
     name: member.name,
@@ -78,7 +78,7 @@ function toOrgMember(member: ManagedMember): OrgMember {
  *    둘째부터는 명부가 이상한 것인데, 조용히 버리면 전체 인원과 화면이 어긋난다 —
  *    팀이 없으니 `소속 없음`으로 내려가 눈에 띈다.
  */
-export function buildOrgChart(members: ManagedMember[]): OrgChart {
+export function buildOrgChart(members: OrgRosterMember[]): OrgChart {
   let owner: OrgMember | null = null;
 
   /*
