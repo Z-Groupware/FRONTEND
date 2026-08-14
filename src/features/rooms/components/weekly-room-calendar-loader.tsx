@@ -14,12 +14,9 @@ const WeeklyRoomCalendar = dynamic(
   () => import("./weekly-room-calendar").then((m) => m.WeeklyRoomCalendar),
   {
     ssr: false,
-    // 주의: 실제 캘린더와 같은 반응형 높이 규칙 — `lg` 이상은 부모가 주는 실제 높이를 채운다.
+    // 주의: 실제 캘린더와 같은 고정 높이 — 항상 이 값이다(더 이상 `lg` 기준 반응형이 아니다).
     loading: () => (
-      <Skeleton
-        className="w-full rounded-lg lg:h-full!"
-        style={{ height: WEEKLY_CALENDAR_HEIGHT_PX }}
-      />
+      <Skeleton className="w-full rounded-lg" style={{ height: WEEKLY_CALENDAR_HEIGHT_PX }} />
     ),
   },
 );
@@ -31,6 +28,7 @@ interface WeeklyRoomCalendarLoaderProps {
   selectedRoomId: string | null;
   week: string;
   onSelectSlot: (start: Date) => void;
+  onSelectMeeting: (meetingId: string) => void;
 }
 
 export function WeeklyRoomCalendarLoader(props: WeeklyRoomCalendarLoaderProps) {

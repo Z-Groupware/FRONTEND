@@ -280,7 +280,7 @@ describe("회의실 예약 생성 (Owner 개설 = 프로젝트 회의)", () => {
   it("폼이 조작돼 존재하지 않는 회의실 id가 오면 막는다", async () => {
     const result = await createRoomReservationAction(
       { errors: {} },
-      form({ ...VALID_ENTRIES, roomId: "room-does-not-exist", date: "2026-08-15" }),
+      form({ ...VALID_ENTRIES, roomId: "room-does-not-exist", date: "2026-08-24" }),
     );
 
     expect(result.errors.roomId).toBe("존재하지 않는 회의실입니다");
@@ -290,7 +290,7 @@ describe("회의실 예약 생성 (Owner 개설 = 프로젝트 회의)", () => {
   it("폼이 조작돼 존재하지 않는 프로젝트 id가 오면 막는다", async () => {
     const result = await createRoomReservationAction(
       { errors: {} },
-      form({ ...VALID_ENTRIES, projectId: "999", date: "2026-08-15" }),
+      form({ ...VALID_ENTRIES, projectId: "999", date: "2026-08-24" }),
     );
 
     expect(result.errors.projectId).toBe("존재하지 않는 프로젝트입니다");
@@ -300,7 +300,7 @@ describe("회의실 예약 생성 (Owner 개설 = 프로젝트 회의)", () => {
   it("폼이 조작돼 존재하지 않는 참석자 id가 오면 막는다", async () => {
     const result = await createRoomReservationAction(
       { errors: {} },
-      form({ ...VALID_ENTRIES, date: "2026-08-15" }, [9999]),
+      form({ ...VALID_ENTRIES, date: "2026-08-24" }, [9999]),
     );
 
     expect(result.errors.attendeeIds).toBe("존재하지 않는 참석자가 있습니다");
@@ -342,7 +342,7 @@ describe("회의실 예약 생성 (Owner 개설 = 프로젝트 회의)", () => {
 
   it("폼이 조작돼 참석자 값이 숫자가 아니면 막는다", async () => {
     const data = new FormData();
-    for (const [key, value] of Object.entries({ ...VALID_ENTRIES, date: "2026-08-15" })) {
+    for (const [key, value] of Object.entries({ ...VALID_ENTRIES, date: "2026-08-24" })) {
       data.append(key, value);
     }
     data.append("attendeeIds", "not-a-number");
@@ -366,7 +366,7 @@ describe("회의실 예약 생성 (Leader 개설 = 팀 액션 회의)", () => {
   it("상위 팀 액션 없이 제출하면 막는다", async () => {
     const result = await createRoomReservationAction(
       { errors: {} },
-      form({ ...VALID_ENTRIES, date: "2026-08-16" }),
+      form({ ...VALID_ENTRIES, date: "2026-08-25" }),
     );
 
     expect(result.errors.parentTeamActionId).toBe("상위 팀 액션을 선택해 주세요");
@@ -377,7 +377,7 @@ describe("회의실 예약 생성 (Leader 개설 = 팀 액션 회의)", () => {
     // projectId=1(GOODS)의 팀 액션 id=1("앱 개발 착수")은 team-actions 목데이터상 "개발팀" 소속이다.
     const result = await createRoomReservationAction(
       { errors: {} },
-      form({ ...VALID_ENTRIES, date: "2026-08-16", parentTeamActionId: "1" }),
+      form({ ...VALID_ENTRIES, date: "2026-08-25", parentTeamActionId: "1" }),
     );
 
     expect(result.errors).toEqual({});
@@ -396,7 +396,7 @@ describe("회의실 예약 생성 (Leader 개설 = 팀 액션 회의)", () => {
     // id=3("TV 광고 계약 및 모델 섭외")은 GOODS 프로젝트 소속이지만 팀은 "마케팅팀"이다.
     const result = await createRoomReservationAction(
       { errors: {} },
-      form({ ...VALID_ENTRIES, date: "2026-08-16", parentTeamActionId: "3" }),
+      form({ ...VALID_ENTRIES, date: "2026-08-25", parentTeamActionId: "3" }),
     );
 
     expect(result.errors.parentTeamActionId).toBe("존재하지 않는 상위 팀 액션입니다");
@@ -408,7 +408,7 @@ describe("회의실 예약 생성 (Leader 개설 = 팀 액션 회의)", () => {
        ⚠️ id=5는 안 쓴다 — 이 블록의 액터가 id=5라 host 예외에 걸려 검사에서 빠진다. */
     const result = await createRoomReservationAction(
       { errors: {} },
-      form({ ...VALID_ENTRIES, date: "2026-08-16", parentTeamActionId: "1" }, [2, 7]),
+      form({ ...VALID_ENTRIES, date: "2026-08-25", parentTeamActionId: "1" }, [2, 7]),
     );
 
     expect(result.errors.attendeeIds).toBe("자기 팀 소속만 참석자로 지정할 수 있습니다");
@@ -444,7 +444,7 @@ describe("회의실 예약 생성 (Leader 개설 = 팀 액션 회의)", () => {
     // id=7("협업툴 리뉴얼 착수")은 "개발팀" 소속이지만 COLLAB 프로젝트다 — 지금 고른 프로젝트는 GOODS(1).
     const result = await createRoomReservationAction(
       { errors: {} },
-      form({ ...VALID_ENTRIES, date: "2026-08-16", parentTeamActionId: "7" }),
+      form({ ...VALID_ENTRIES, date: "2026-08-25", parentTeamActionId: "7" }),
     );
 
     expect(result.errors.parentTeamActionId).toBe("존재하지 않는 상위 팀 액션입니다");

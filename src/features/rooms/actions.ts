@@ -27,7 +27,7 @@ import {
 import { findMockMember } from "./mock/members";
 import { addMockReservation, listMockReservationsByRoom } from "./mock/reservations";
 import { addMockRoom, deleteMockRoom, findMockRoom, updateMockRoom } from "./mock/rooms";
-import { getReservableMembers } from "./server";
+import { getMeetingRooms, getReservableMembers } from "./server";
 import type {
   MeetingRoom,
   MeetingRoomDraft,
@@ -157,7 +157,17 @@ export async function createRoomReservationAction(
 ): Promise<RoomReservationFormState> {
   const draft = readDraft(formData);
   const actor = isMock ? getMockActor() : await getViewer();
-  const errors = validateRoomReservationDraft(draft, { role: actor.role });
+
+  /*
+    ⚠️ **회의실마다 이용 가능 시간이 다르다**(2026-08-14, BE 24시간 운영 협의) — 전역 상수 하나로
+       모든 회의실을 같이 막던 걸 걷어내고, 지금 고른 회의실의 실제 `openTime`/`closeTime`으로
+       검증한다. 못 찾으면(폼 조작 등) `null`을 넘겨 시간대 검사만 건너뛴다 — 없는 `roomId` 자체는
+       존재하지 않는 회의실이라 서버 호출 단계에서 어차피 막힌다.
+  */
+  const rooms = await getMeetingRooms();
+  const room = rooms.find((candidate) => candidate.id === draft.roomId) ?? null;
+
+  const errors = validateRoomReservationDraft(draft, { role: actor.role }, room);
   if (Object.keys(errors).length > 0) return { errors };
 
   if (!isMock) {

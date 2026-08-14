@@ -163,7 +163,14 @@ export interface RoomWeekAvailability {
  *    (열람 권한이 따로 있어서다, ROOM-02 규칙). 없으면 아바타를 안 그린다.
  */
 export interface RoomCalendarEvent {
+  /**
+   * React key·막대 색 계산용 — 주간 그리드 API 경로에서는 `${meetingId}-${date}` 합성값이라
+   * 회의 하나를 가리키는 값이 아니다. 회의 하나를 가리켜야 하는 자리(상세 모달 열기)는
+   * 반드시 아래 `meetingId`를 쓴다.
+   */
   id: string;
+  /** 이 예약이 실제로 가리키는 회의 id — 상세 조회 모달이 이 값으로 `getMeetingSummaryAction`을 부른다. */
+  meetingId: string;
   title: string;
   start: Date;
   end: Date;

@@ -72,11 +72,15 @@ describe("RoomReservationDialog", () => {
     expect(screen.queryByText("회의실 예약")).not.toBeInTheDocument();
   });
 
-  it("클릭한 슬롯의 날짜·시각을 안내한다", () => {
+  /*
+    ⚠️ 2026-08-14부터 이 값은 초기 제안일 뿐이라 정적 텍스트가 아니라 피커(버튼)로 뜬다
+       (`DatePickerField`·`TimePickerField`) — 그 버튼 라벨에 클릭한 슬롯 값이 실렸는지만 본다.
+  */
+  it("클릭한 슬롯을 날짜·시간 피커의 초기값으로 채운다", () => {
     renderDialog();
 
-    expect(screen.getByText("화 8/11")).toBeInTheDocument();
-    expect(screen.getByText("10:00 - 10:30")).toBeInTheDocument();
+    expect(screen.getByText("8월 11일(화)")).toBeInTheDocument();
+    expect(screen.getByText("오전 10:00")).toBeInTheDocument();
     expect(screen.getByText("30분 · 즉시 확정")).toBeInTheDocument();
   });
 

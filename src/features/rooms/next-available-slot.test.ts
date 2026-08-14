@@ -25,4 +25,22 @@ describe("getNextAvailableSlot", () => {
     const slot = getNextAvailableSlot(new Date("2026-08-11T18:00:00"));
     expect(slot).toEqual(new Date("2026-08-12T09:00:00"));
   });
+
+  /* 2026-08-14는 금요일 — 마감 넘겨 넘어가면 "다음 날"이 토요일(08-15)이라 그대로 두면 안 된다. */
+  it("금요일 마감 뒤엔 주말을 건너 월요일 09:00으로 넘긴다", () => {
+    const slot = getNextAvailableSlot(new Date("2026-08-14T17:45:00"));
+    expect(slot).toEqual(new Date("2026-08-17T09:00:00"));
+  });
+
+  /* 2026-08-15는 토요일 — 주말에 눌러도 결과는 평일이어야 한다. */
+  it("토요일에 누르면 월요일 09:00으로 넘긴다", () => {
+    const slot = getNextAvailableSlot(new Date("2026-08-15T10:00:00"));
+    expect(slot).toEqual(new Date("2026-08-17T09:00:00"));
+  });
+
+  /* 2026-08-16은 일요일. */
+  it("일요일에 누르면 월요일 09:00으로 넘긴다", () => {
+    const slot = getNextAvailableSlot(new Date("2026-08-16T14:00:00"));
+    expect(slot).toEqual(new Date("2026-08-17T09:00:00"));
+  });
 });

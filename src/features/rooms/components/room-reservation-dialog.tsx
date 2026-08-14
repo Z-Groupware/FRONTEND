@@ -1,16 +1,17 @@
 "use client";
 
-import { format } from "date-fns";
-import { ko } from "date-fns/locale";
 import { Bell } from "lucide-react";
 import type { FormEvent } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
 
 import { ConfirmDialog } from "@/components/common/confirm-dialog";
+import { DatePickerField } from "@/components/common/date-picker-field";
 import { FieldError } from "@/components/common/field-error";
+import { TimePickerField } from "@/components/common/time-picker-field";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 
 import type { AttendeeScopeViewer } from "../attendee-scope";
 import { RESERVATION_DURATION_MINUTES } from "../constants";
@@ -26,8 +27,13 @@ import { RoomReservationFields } from "./room-reservation-fields";
 import { useRoomReservationForm } from "./use-room-reservation-form";
 
 interface RoomReservationDialogProps {
-  /** 클릭한 30분 슬롯의 시작 시각 — null이면 닫힌 상태다. 날짜·시작 시각은 이 값으로 고정된다
-   *  (30분 한 타임 고정, CLAUDE.md §브라우저 API — 모달에서 시간을 다시 고르지 않는다). */
+  /**
+   * 캘린더 빈 칸 클릭 또는 [회의 추가] 버튼이 여는 **초기 제안** — null이면 닫힌 상태다.
+   * ⚠️ 더 이상 고정값이 아니다(2026-08-14) — 열릴 때 `form.date`·`form.startTime`의 시작값으로만
+   *    쓰이고, 그 뒤로는 아래 날짜·시간 피커가 독립적으로 값을 바꾼다. 종료 시각은 여전히
+   *    입력받지 않는다 — 예약은 **30분 한 타임 고정**이라(CLAUDE.md §브라우저 API) 시작 시각만
+   *    고르면 길이는 서버가 계산한다.
+   */
   slotStart: Date | null;
   onOpenChange: (open: boolean) => void;
   rooms: MeetingRoom[];
@@ -45,23 +51,59 @@ interface RoomReservationDialogProps {
   onCreated: (created: RoomReservation) => void;
 }
 
-/** 상단 슬롯 요약 — 요일·날짜 / 시간대 / "30분 · 즉시 확정" 세 칸을 한 줄에 나눠 보여준다. */
-function SlotSummary({ slotStart }: { slotStart: Date }) {
-  const slotEnd = new Date(slotStart.getTime() + RESERVATION_DURATION_MINUTES * 60_000);
+interface SlotPickerProps {
+  date: string;
+  startTime: string;
+  onDateChange: (date: string) => void;
+  onStartTimeChange: (startTime: string) => void;
+  dateError?: string;
+  startTimeError?: string;
+}
 
+/**
+ * 날짜·시작 시각 피커 — 예전엔 캘린더에서 클릭한 슬롯을 그대로 보여주기만 했지만(고정값),
+ * 이제 [회의 추가] 버튼으로 열었을 때도 직접 고를 수 있어야 한다(2026-08-14 팀 확정).
+ * ⚠️ **주말은 날짜 피커에서부터 막는다**(`disabledDayOfWeek`) — 서버(`validateRoomReservationDraft`)도
+ *    같은 규칙으로 다시 막지만, 화면에서 아예 못 고르게 하는 편이 "제출해 보고서야 안다"보다 낫다
+ *    (§권한: 화면 숨김은 UX일 뿐이라도, UX 자체는 여기서 챙긴다).
+ */
+function SlotPicker({
+  date,
+  startTime,
+  onDateChange,
+  onStartTimeChange,
+  dateError,
+  startTimeError,
+}: SlotPickerProps) {
   return (
-    <div className="border-border bg-secondary/50 flex items-center gap-3 rounded-lg border px-3.5 py-2.5 text-[13px]">
-      <span className="font-medium">{format(slotStart, "EEE M/d", { locale: ko })}</span>
-      <span className="text-border" aria-hidden>
-        |
-      </span>
-      <span className="tabular-nums">
-        {format(slotStart, "HH:mm")} - {format(slotEnd, "HH:mm")}
-      </span>
-      <span className="text-border" aria-hidden>
-        |
-      </span>
-      <span className="text-muted-foreground">{RESERVATION_DURATION_MINUTES}분 · 즉시 확정</span>
+    <div className="flex flex-wrap items-start gap-4">
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="reservation-date">날짜</Label>
+        <DatePickerField
+          id="reservation-date"
+          value={date}
+          onChange={onDateChange}
+          disabledDayOfWeek={[0, 6]}
+          aria-invalid={Boolean(dateError)}
+        />
+        <FieldError reserveSpace message={dateError} />
+      </div>
+
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="reservation-start-time">시작 시간</Label>
+        <TimePickerField
+          id="reservation-start-time"
+          value={startTime}
+          onChange={onStartTimeChange}
+          step={RESERVATION_DURATION_MINUTES}
+          aria-invalid={Boolean(startTimeError)}
+        />
+        <FieldError reserveSpace message={startTimeError} />
+      </div>
+
+      <p className="text-muted-foreground self-center pt-6 text-[13px]">
+        {RESERVATION_DURATION_MINUTES}분 · 즉시 확정
+      </p>
     </div>
   );
 }
@@ -124,9 +166,10 @@ function PendingReporter({ onChange }: PendingReporterProps) {
  * 폼 상태는 `useRoomReservationForm`, 왼쪽 열 필드는 `RoomReservationFields`로 뺐다
  * (CLAUDE.md §폴더·네이밍: 200줄↑ 분리·로직=커스텀훅) — 여기는 모달 뼈대만 조립한다.
  * ⚠️ **실제 `<form action={formAction}>`으로 제출한다.** `title`·회의 주제·참석자는 전부
- *    네이티브 입력(`name` 속성)이라 그대로 실리고, `roomId`·`projectId`·`parentTeamActionId`·
- *    `date`·`startTime`은 네이티브 입력이 아닌 값(위젯 상태·계산값)이라 hidden input으로
- *    따로 실어 보낸다.
+ *    네이티브 입력(`name` 속성)이라 그대로 실리고, `roomId`·`projectId`·`parentTeamActionId`는
+ *    네이티브 입력이 아닌 값(위젯 상태)이라 여기서 직접 hidden input으로 실어 보낸다.
+ *    `date`·`startTime`은 `SlotPicker`(`DatePickerField`·`TimePickerField`)가 각자 자기
+ *    hidden input을 낸다 — 2026-08-14부터 고정 슬롯이 아니라 직접 고르는 값이라서다.
  */
 export function RoomReservationDialog({
   slotStart,
@@ -192,22 +235,21 @@ export function RoomReservationDialog({
 
         <form ref={formRef} action={formAction} onSubmit={handleFormSubmit}>
           <PendingReporter onChange={handlePendingChange} />
-          <input
-            type="hidden"
-            name="date"
-            value={slotStart ? format(slotStart, "yyyy-MM-dd") : ""}
-          />
-          <input
-            type="hidden"
-            name="startTime"
-            value={slotStart ? format(slotStart, "HH:mm") : ""}
-          />
+          {/* ⚠️ `date`·`startTime`은 hidden input이 여기 없다 — `SlotPicker` 안의 `DatePickerField`·
+              `TimePickerField`가 각자 `name`으로 자기 hidden input을 낸다. */}
           <input type="hidden" name="roomId" value={form.roomId} />
           <input type="hidden" name="projectId" value={form.projectId} />
           <input type="hidden" name="parentTeamActionId" value={form.parentTeamActionId} />
 
           <div className="flex max-h-[70vh] flex-col gap-4 overflow-y-auto px-6 py-4">
-            {slotStart && <SlotSummary slotStart={slotStart} />}
+            <SlotPicker
+              date={form.date}
+              startTime={form.startTime}
+              onDateChange={(date) => setForm((prev) => ({ ...prev, date }))}
+              onStartTimeChange={(startTime) => setForm((prev) => ({ ...prev, startTime }))}
+              dateError={state.errors.date}
+              startTimeError={state.errors.startTime}
+            />
 
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-[1fr_260px]">
               <RoomReservationFields

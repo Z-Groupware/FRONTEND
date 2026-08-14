@@ -43,6 +43,7 @@ import {
   updateMockMeetingAttendees,
 } from "./mock/meetings";
 import { validateRecordingFileMeta } from "./recording-file";
+import { getMeetingDetail } from "./server";
 import { meetingStatusOf } from "./status";
 import type {
   MeetingDraft,
@@ -51,6 +52,7 @@ import type {
   OnlineMeetingFormErrors,
 } from "./types";
 import { validateOnlineMeetingDraft } from "./validate";
+import type { MeetingAgenda, MeetingAttendee, MeetingContentPending } from "./view-types";
 
 const MEETING_LIST_PATH = "/app/meeting";
 
@@ -259,6 +261,43 @@ export interface CancelMeetingResult {
 function toCancelErrorMessage(error: unknown): string {
   if (!(error instanceof ApiError)) throw error;
   return error.message;
+}
+
+/**
+ * 회의실 캘린더의 상세 조회 모달(`RoomMeetingDetailDialog`)이 보는 만큼만 담은 경량 요약 —
+ * `MeetingDetail` 전체(산출물·발화 기록 등)를 클라이언트로 그대로 넘기지 않는다.
+ */
+export type MeetingSummary = {
+  id: string;
+  title: string;
+  schedule: string;
+  roomName: string;
+  attendees: MeetingAttendee[];
+  agenda: MeetingAgenda | null;
+  isHost: boolean;
+  pendingReason: MeetingContentPending | null;
+};
+
+export type MeetingSummaryResult =
+  | { kind: "ok"; summary: MeetingSummary }
+  | { kind: "locked"; title: string | null }
+  | { kind: "notFound" };
+
+/**
+ * 회의실 캘린더에서 예약 막대를 클릭했을 때 뜨는 상세 조회 모달이 부른다(`getMeetingDetail`
+ * 얇은 래퍼). `getMeetingDetail`은 `server-only`라 클라이언트 컴포넌트가 직접 못 부른다 —
+ * 이 액션이 그 경계를 넘는다.
+ */
+export async function getMeetingSummaryAction(meetingId: string): Promise<MeetingSummaryResult> {
+  const viewer = await getViewer();
+  const result = await getMeetingDetail(meetingId, viewer);
+  if (result.kind !== "ok") return result;
+
+  const { id, title, schedule, roomName, attendees, agenda, isHost, pendingReason } = result.detail;
+  return {
+    kind: "ok",
+    summary: { id, title, schedule, roomName, attendees, agenda, isHost, pendingReason },
+  };
 }
 
 /**

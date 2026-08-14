@@ -1,13 +1,9 @@
-import { isValid, parse } from "date-fns";
+import { getDay, isValid, parse } from "date-fns";
 
 import type { Authority } from "@/constants/authority";
 import { requiresParentTeamAction } from "@/lib/permission";
 
-import {
-  RESERVATION_DURATION_MINUTES,
-  ROOM_OPERATING_END_MINUTES,
-  ROOM_OPERATING_START_MINUTES,
-} from "./constants";
+import { RESERVATION_DURATION_MINUTES } from "./constants";
 import type {
   MeetingRoomDraft,
   MeetingRoomFormErrors,
@@ -44,30 +40,45 @@ function toMinutes(time: string): number {
  *    뒤에 따로 확인한다(§권한: 화면 숨김은 UX일 뿐 보안이 아니다). 여기는 **형식**만 본다.
  * @param host "상위 팀 액션" 필수 여부는 회의를 여는 사람의 권한에 달렸다(`requiresParentTeamAction`,
  *   WORKFLOW.md §3-1) — Owner면 이 필드가 없어도 되고, Leader/Member면 반드시 있어야 한다.
+ * @param room 이 예약이 실제로 겨냥한 회의실의 이용 가능 시간 — **회의실마다 다르다**(2026-08-14,
+ *   BE 24시간 운영 협의). 예전엔 전역 09:00~18:00 상수 하나로 모든 회의실을 같이 막았는데,
+ *   그러면 회의실별로 다르게 늘린 운영시간이 의미가 없어진다. `roomId`가 가리키는 회의실을
+ *   못 찾았으면(폼 조작 등) `null`을 넘긴다 — 그때는 시간대 검사를 건너뛴다, 존재하지 않는
+ *   `roomId` 자체는 `actions.ts`가 참조 무결성으로 따로 막는다(위 주석 참고).
  */
 export function validateRoomReservationDraft(
   draft: RoomReservationDraft,
   host: { role: Authority },
+  room: { openTime: string; closeTime: string } | null,
 ): RoomReservationFormErrors {
   const errors: RoomReservationFormErrors = {};
 
   if (!draft.title.trim()) errors.title = "회의 제목을 입력해 주세요";
   if (!draft.roomId.trim()) errors.roomId = "회의실을 선택해 주세요";
 
-  if (!draft.date.trim()) errors.date = "날짜를 선택해 주세요";
-  else if (!isValidCalendarDate(draft.date)) errors.date = "올바른 날짜가 아니에요";
+  if (!draft.date.trim()) {
+    errors.date = "날짜를 선택해 주세요";
+  } else if (!isValidCalendarDate(draft.date)) {
+    errors.date = "올바른 날짜가 아니에요";
+  } else {
+    /*
+      ⚠️ **화면(`SlotPicker`)도 요일 선택지를 월~금뿐으로 두지만, 여기서 다시 본다**(§권한:
+         화면 숨김은 UX일 뿐 보안이 아니다). 값 자체는 폼 조작·직접 호출로 주말이 들어올 수 있다.
+    */
+    const day = getDay(parse(draft.date, "yyyy-MM-dd", new Date()));
+    if (day === 0 || day === 6) errors.date = "평일에만 예약할 수 있어요";
+  }
 
   if (!draft.startTime.trim()) {
     errors.startTime = "시작 시간을 선택해 주세요";
   } else if (!TIME_PATTERN.test(draft.startTime)) {
     errors.startTime = "예약은 30분 단위로만 가능합니다";
-  } else {
+  } else if (room) {
     const startMinutes = toMinutes(draft.startTime);
-    if (
-      startMinutes < ROOM_OPERATING_START_MINUTES ||
-      startMinutes + RESERVATION_DURATION_MINUTES > ROOM_OPERATING_END_MINUTES
-    ) {
-      errors.startTime = "회의실 운영 시간(09:00~18:00) 안에서 선택해 주세요";
+    const openMinutes = toMinutes(room.openTime);
+    const closeMinutes = toMinutes(room.closeTime);
+    if (startMinutes < openMinutes || startMinutes + RESERVATION_DURATION_MINUTES > closeMinutes) {
+      errors.startTime = `회의실 이용 시간(${room.openTime}~${room.closeTime}) 안에서 선택해 주세요`;
     }
   }
 

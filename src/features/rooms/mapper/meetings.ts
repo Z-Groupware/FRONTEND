@@ -132,6 +132,7 @@ export function toReservationFromCreatedMeeting(
 export function toCalendarEventFromReservation(reservation: RoomReservation): RoomCalendarEvent {
   return {
     id: reservation.id,
+    meetingId: reservation.id,
     title: reservation.title,
     start: reservation.start,
     end: reservation.end,
