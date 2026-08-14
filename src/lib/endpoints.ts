@@ -119,6 +119,13 @@ export const ep = {
    * 로그인 화면으로 보낸다(§연동 검증).
    */
   changePassword: () => "/api/auth/me/password",
+  /**
+   * 비밀번호 찾기(로그인 전) — 마이페이지 담당자 문서(2026-08-14)로 확인. 인증 불필요.
+   * 이메일은 회사 안에서만 유일해 `companyCode`가 같이 필요하다. 성공해도 새 비밀번호는
+   * 응답에 안 실리고 메일로만 나간다 — 그리고 성공(200)이면 BE가 전 기기 로그인을 해제한다
+   * (`changePassword`와 같은 자리).
+   */
+  passwordReset: () => "/api/auth/password/reset",
 
   /* 기업 — [확인] identity/company/presentation/api/CompanyController.java */
   companyLookup: () => "/api/companies/lookup",
@@ -364,7 +371,11 @@ export const ep = {
   /* 조직 — [확인] identity/member/presentation/api/{Member,ManageMember}Controller.java */
   members: () => "/api/members",
   member: (id: number) => `/api/members/${id}`,
-  /** 조직도 — OWNER·ADMIN 전용 */
+  /**
+   * 조직도 — `/api/members`와 달리 전 구성원(OWNER·LEADER·MEMBER)에게 열려 있다.
+   * 응답은 팀 단위로 이미 묶여 온다(`List<OrgChartTeamResponse>`) — `manage-server.ts`
+   * `listAllManagedMembersForOrgChart`가 다시 평평하게 편다.
+   */
   memberOrgChart: () => "/api/members/org-chart",
   /**
    * 내 팀 로스터 — 회의 참석자 픽커 전용(`/api/members`와 다르다, 그건 관리 화면용).

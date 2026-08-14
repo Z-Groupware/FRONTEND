@@ -25,7 +25,6 @@ import {
   type ManagedMember,
   type ManagedMemberActions,
   type ManagedMemberDetail,
-  MEMBER_FILTER,
   type MemberQuery,
   type PendingHandover,
 } from "./manage-types";
@@ -129,53 +128,48 @@ export async function listManagedMembers(): Promise<ManagedMember[]> {
 export const MEMBER_PAGE_SIZE = 20;
 
 /**
- * 조직도(`getPeopleDirectory`)가 명부 전체를 요구할 때 쓰는 **임시 우회**.
+ * 조직도 전용 응답 한 팀 — `GET /api/members/org-chart`가 **팀 단위로 이미 묶어서** 준다.
  *
- * ⚠️ **정공법이 아니다.** 조직도는 팀 단위로 구조를 그려야 해서 한 페이지만 받으면
- *    팀이 반쯤 그려진다(`org-server.ts` 주석) — 그런데 BE엔 "회사 전체 명부"를 한 번에
- *    주는 응답이 없다(`GET /api/members`는 페이지 단위뿐). 그래서 여러 페이지를 순회해
- *    합친다. 회사가 커지면 요청도 늘고 화면도 그만큼 늦게 뜬다 — **BE에 조직도 전용
- *    응답을 요청하고 나면 이 함수째 걷어낸다.**
- * ⚠️⚠️ **`size`는 100을 넘으면 안 된다**(2026-08-14 실제 프로덕션에서 재현 — BE
- *    `MemberController.list`가 `size`를 `@Max(100)`으로 검증한다. 200을 보내면 사원이
- *    단 몇 명인 회사에서도 그 자리에서 400이 나서 조직도 전체가 죽는다). 원래 200으로
- *    잡았던 건 요청 수를 줄이려던 것뿐이라 100으로 낮추고, 상한(4,000명)을 지키려
- *    페이지 수를 그만큼 늘렸다.
- * ⚠️ **상한을 넘으면 던진다 — 잘린 명부를 정상 결과로 돌려주지 않는다**(코드래빗 지적,
- *    2026-08-14). `console.error`만 남기고 일부만 그대로 리턴하면 호출부
- *    (`getPeopleDirectory`)가 그걸 완전한 명부로 알고 `summary`·`chart`를 계산해,
- *    회사 인원이 늘었는데 조직도가 말없이 일부만 보여준다(§정직성 위반). 던지면
- *    화면이 기존 `error.tsx`(정직한 실패 상태 + [다시 시도])로 떨어진다 — 새 화면을
- *    안 만들어도 된다.
+ * [가정 shape·미검증] BE 실코드를 아직 대조하지 못했다(§연동 검증) — 담당자가 전해 준 것은
+ * "`List<OrgChartTeamResponse>`, 팀 → 소속 구성원 구조"뿐이라, 팀 한 칸은 `GET /api/members`
+ * 목록 한 줄(`BeMemberListItem`)과 같은 사람 정보에 `teamName`만 팀 쪽으로 옮겨졌다고 가정한다.
+ * 다르면 이 인터페이스와 바로 아래 매핑만 고치면 된다(§Mock 격리막).
+ *
+ * ⚠️ **대표(팀이 없는 사람)를 담을 자리가 있어야 한다.** 팀은 계층 없는 플랫 목록이라
+ *    (CLAUDE.md §권한 ③) 대표는 어느 팀에도 안 속한다 — `teamName: null`인 칸으로 온다고
+ *    가정한다. BE가 대표를 아예 응답에서 빼면 `buildOrgChart`가 대표 없이 팀만 그린다
+ *    (`org-types.ts`가 이미 그 경우를 `owner: null`로 다룬다).
  */
-const ORG_DIRECTORY_PAGE_SIZE = 100; // BE MemberController.list @Max(100)
-const ORG_DIRECTORY_PAGE_LIMIT = 40; // 최대 4,000명 — 이 상한을 실제로 넘기면 BE 요청이 먼저다
+interface BeOrgChartTeam {
+  teamName: string | null;
+  members: BeMemberListItem[];
+}
 
+/**
+ * 조직도(`getPeopleDirectory`)가 쓰는 명부 전체 — BE 조직도 전용 응답 하나로 받는다.
+ *
+ * ⚠️ **더 이상 `GET /api/members`를 페이지 순회하지 않는다**(2026-08-14, 프로덕션 장애
+ *    수정). 그 API는 `size`가 `@Max(100)`인 데다 `hasAnyRole('OWNER','ADMIN')` 전용이라,
+ *    `/app/people`(전 구성원이 쓰는 화면)에서 Leader·Member 계정이 열면 403이 났다.
+ *    BE가 조직도 전용 응답(`GET /api/members/org-chart`)을 이미 열어 두고 있어 — 페이지
+ *    단위가 아니라 명부 전체를 한 번에 주고, 권한도 전 구성원에게 열려 있다 — 그걸 그대로
+ *    쓴다.
+ * ⚠️ **팀 단위로 온 것을 도로 평평하게 편다.** `buildOrgChart`(`org-chart.ts`)는 원래
+ *    평평한 `ManagedMember[]`를 받아 자기가 팀별로 다시 묶고 리더를 앞으로 당긴다 — BE가
+ *    이미 팀별로 준다고 그 로직을 새로 짤 필요는 없다. 팀이 나온 순서, 팀 안 사람 순서를
+ *    그대로 유지해서 펴면 `buildOrgChart`가 같은 순서로 다시 묶는다(§목록: 순서는 회사가
+ *    정한 것이라 프론트가 안 바꾼다).
+ */
 export async function listAllManagedMembersForOrgChart(): Promise<ManagedMember[]> {
   if (isMock) return listManagedMembers();
 
-  const all: ManagedMember[] = [];
-  let page = 0;
-  let totalPages = 1;
+  const accessToken = await requireAccessToken();
+  const teams = await serverApi<BeOrgChartTeam[]>(ep.memberOrgChart(), { accessToken });
 
-  while (page < totalPages && page < ORG_DIRECTORY_PAGE_LIMIT) {
-    const result = await getManagedMembersPage(
-      { keyword: "", filter: MEMBER_FILTER.ALL },
-      page,
-      ORG_DIRECTORY_PAGE_SIZE,
-    );
-    all.push(...result.items);
-    totalPages = result.totalPages;
-    page += 1;
-  }
-
-  if (page >= ORG_DIRECTORY_PAGE_LIMIT && page < totalPages) {
-    throw new Error(
-      `회사 사원이 ${ORG_DIRECTORY_PAGE_LIMIT * ORG_DIRECTORY_PAGE_SIZE}명 상한을 넘어 조직도를 통째로 불러오지 못했습니다 — BE 전용 응답이 필요합니다.`,
-    );
-  }
-
-  return all;
+  return teams
+    .flatMap((team) => team.members.map((member) => ({ ...member, teamName: team.teamName })))
+    .map(toManagedMember)
+    .filter((member) => isVisibleMemberStatus(member.status));
 }
 
 /**
