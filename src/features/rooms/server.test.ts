@@ -119,10 +119,13 @@ describe("getReservableProjects — 실서버", () => {
     const projects = await getReservableProjects();
 
     expect(projects).toEqual([{ id: "12", name: "제품 v2.0", tag: "product-v2" }]);
-    // 완료된 프로젝트에 새 회의를 묶을 일이 없다 — 진행중만 요청한다
     expect(serverApiMock).toHaveBeenCalledWith(
       expect.stringContaining("status=IN_PROGRESS"),
       expect.objectContaining({ accessToken: "token" }),
     );
+    // ⚠️ page·size도 확인한다 — 기본 페이지 크기(20)로 조용히 바뀌어도 status만 보면 통과했다(코드래빗 지적)
+    const requestUrl = serverApiMock.mock.calls[0][0] as string;
+    expect(requestUrl).toContain("page=0");
+    expect(requestUrl).toContain("size=200"); // select 한 번에 받을 상한(RESERVABLE_PROJECTS_PAGE_SIZE)
   });
 });
