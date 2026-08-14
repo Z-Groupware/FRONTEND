@@ -38,7 +38,15 @@ interface PageHeaderProps {
  */
 export function PageHeader({ title, icon: Icon, meta, backTo, action }: PageHeaderProps) {
   return (
-    <header className="border-border bg-background flex h-[56px] shrink-0 items-center border-b px-8">
+    /*
+      ⚠️ **`order-first`다.** 셸(`(shell)/layout.tsx`)이 배너(`NotificationBanner`·
+         `PasswordChangeBanner`)를 이 헤더보다 앞서 그리는데, 도메인 `layout.tsx`가 이 헤더를
+         `<>{'{'}children{'}'}</>`로 감싸기만 해서 실제로는 셸의 같은 flex 세로줄 안에 배너와
+         나란한 형제로 들어간다 — DOM 순서 그대로 두면 배너가 헤더 위에 뜬다(2026-08-14
+         피드백: 알림 줄이 상단바보다 위에 있다). 순서를 코드로 옮기는 대신 이 자리에서
+         `order`로 고정해, 셸도 배너도 이 헤더가 늘 맨 위라는 걸 몰라도 되게 한다.
+    */
+    <header className="border-border bg-background order-first flex h-[56px] shrink-0 items-center border-b px-8">
       {/*
         ⚠️ **본문과 같은 상자를 쓴다**(`mx-auto max-w-[1440px]`). 전에는 머리만 화면 끝까지
            늘어나서, 화면이 1440보다 넓어지면 본문 카드는 가운데로 모이는데 제목은 왼쪽 끝에
