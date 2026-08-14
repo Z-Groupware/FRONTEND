@@ -18,9 +18,8 @@ import type { PeopleDirectory } from "./org-types";
  *    남긴 회의·액션·인수인계의 출처라 이름이 사라지면 추적이 끊긴다. 화면은 `퇴사` 뱃지로
  *    알린다. 소프트 딜리트(`DELETED`)만 그 앞의 매퍼가 거른다.
  * ⚠️ **명부 전체가 필요하다** — 조직도는 목록이 아니라 **구조**라 한 페이지만 받으면
- *    팀이 반쯤 그려진다. 실서버에는 전체를 한 번에 주는 응답이 없어(§연동 검증)
- *    `listAllManagedMembersForOrgChart`가 여러 페이지를 순회해 합친다(임시 우회 —
- *    그 함수 주석 참고). BE에 조직도 전용 응답이 생기면 여기만 고친다.
+ *    팀이 반쯤 그려진다. `listAllManagedMembersForOrgChart`가 BE 조직도 전용 응답
+ *    (`GET /api/members/org-chart`)을 한 번에 받아 온다(그 함수 주석 참고).
  */
 export async function getPeopleDirectory(keyword: string): Promise<PeopleDirectory> {
   const roster = await listAllManagedMembersForOrgChart();
