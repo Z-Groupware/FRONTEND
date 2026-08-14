@@ -36,9 +36,9 @@ export function MeetingHeader() {
 
   return (
     <PageHeader
-      title="회의"
+      title="내 회의"
       icon={Video}
-      backTo={isList ? undefined : { href: MEETING_LIST_PATH, label: "회의" }}
+      backTo={isList ? undefined : { href: MEETING_LIST_PATH, label: "내 회의" }}
     />
   );
 }

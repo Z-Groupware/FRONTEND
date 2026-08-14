@@ -6,13 +6,7 @@ import {
   type MeetingTab,
 } from "@/features/meeting/components/meeting-list-view";
 import { getMeetingDirectory } from "@/features/meeting/server";
-import {
-  getReservableMembers,
-  getReservableProjects,
-  getReservableTeamActions,
-} from "@/features/rooms/server";
 import { getViewer } from "@/features/shell/viewer";
-import { requiresParentTeamAction } from "@/lib/permission";
 
 /*
   ⚠️ 정적으로 굳히지 않는다 — 예약이 회의를 만들고 상태가 시각으로 변하는 화면이라
@@ -21,7 +15,7 @@ import { requiresParentTeamAction } from "@/lib/permission";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "회의",
+  title: "내 회의",
 };
 
 /** 주소에서 온 탭 값 — 모르는 값이면 첫 탭으로 되돌린다 */
@@ -30,13 +24,11 @@ function parseTab(value: string | string[] | undefined): MeetingTab {
 }
 
 /**
- * 회의 목록(WORKFLOW §3-2) — 조회뿐이라 Server Component 하나로 끝난다.
+ * 내 회의 목록(WORKFLOW §3-2) — 조회뿐이라 Server Component 하나로 끝난다.
  *
  * ⚠️ **목록은 전 구성원 공개**다(§3-2-1) — 권한 가드가 없다. 막는 건 상세다.
- * ⚠️ **대면 회의 생성 진입점은 여전히 `/app/rooms` 예약 모달 하나뿐이다**(§3-1) — 회의실
- *    예약이 곧 회의 개설이라 이 화면에 따로 만들지 않는다. 다만 **비대면 회의는 회의실·시간이
- *    없어 예약이 필요 없다**(이슈 #473) — 그래서 이 목록 화면에 자기 진입점(비대면 회의
- *    다이얼로그)을 하나 더 둔다.
+ * ⚠️ **회의 개설(대면·비대면 모두) 진입점은 `/app/rooms`(회의 예약) 하나뿐이다**
+ *    (2026-08-14 사이드바 개편) — 이 화면에는 그리로 가는 이동 링크만 둔다.
  */
 export default async function AppMeetingPage({
   searchParams,
@@ -45,25 +37,12 @@ export default async function AppMeetingPage({
 }) {
   const tab = parseTab((await searchParams).tab);
   const viewer = await getViewer();
-  const [directory, members, projects, teamActions] = await Promise.all([
-    getMeetingDirectory(viewer.id),
-    getReservableMembers(viewer),
-    getReservableProjects(),
-    getReservableTeamActions(viewer),
-  ]);
+  const directory = await getMeetingDirectory(viewer.id);
 
   return (
     <main className="min-h-0 flex-1 overflow-y-auto px-8 py-7">
       <div className="mx-auto w-full max-w-[1440px]">
-        <MeetingListView
-          directory={directory}
-          tab={tab}
-          members={members}
-          projects={projects}
-          showParentTeamAction={requiresParentTeamAction(viewer)}
-          teamActions={teamActions}
-          viewer={{ id: viewer.id, role: viewer.role, teamName: viewer.teamName ?? null }}
-        />
+        <MeetingListView directory={directory} tab={tab} />
       </div>
     </main>
   );
