@@ -13,7 +13,7 @@ import { serverApi } from "@/lib/api";
 import { ep } from "@/lib/endpoints";
 import type { Actor } from "@/lib/permission";
 
-import { getReservableMembers, getReservableProjects } from "./server";
+import { getReservableMembers, getReservableProjects, getReservableTeamActions } from "./server";
 
 /**
  * 참석자 후보 명부 — **실서버 분기가 Owner와 Leader·Member에서 다른 API를 부른다.**
@@ -127,5 +127,63 @@ describe("getReservableProjects — 실서버", () => {
     const requestUrl = serverApiMock.mock.calls[0][0] as string;
     expect(requestUrl).toContain("page=0");
     expect(requestUrl).toContain("size=200"); // select 한 번에 받을 상한(RESERVABLE_PROJECTS_PAGE_SIZE)
+  });
+});
+
+/**
+ * 예약 폼의 "상위 팀 액션" select — 2026-08-14 프로덕션에서 무조건 throw하던 것을 고쳤다.
+ * `GET /api/team/actions`는 teamId를 토큰에서만 꺼내므로(BE 확인) actor.teamName으로
+ * 필터링할 필요가 없다 — 그 사실을 테스트로도 확인한다.
+ */
+describe("getReservableTeamActions — 실서버", () => {
+  it("Owner는 상위 팀 액션 필드가 없어 서버를 안 부르고 빈 배열이다", async () => {
+    const teamActions = await getReservableTeamActions(OWNER);
+
+    expect(teamActions).toEqual([]);
+    expect(serverApiMock).not.toHaveBeenCalled();
+  });
+
+  it("Leader·Member는 GET /api/team/actions를 IN_PROGRESS로만 불러 select 모양으로 줄인다", async () => {
+    serverApiMock.mockResolvedValue({
+      content: [
+        {
+          id: 7,
+          actionType: "TEAM",
+          title: "3분기 마케팅 캠페인 기획",
+          description: "",
+          status: "IN_PROGRESS",
+          startDate: null,
+          plannedStartDate: null,
+          dueDate: "2026-09-30",
+          needsReview: false,
+          isDelayed: false,
+          assigneeName: null,
+          projectId: 3,
+          projectTag: "marketing-q3",
+          projectName: "마케팅 캠페인 Q3",
+          teamName: "개발팀",
+          sourceMeetingTitle: null,
+          parentActionId: null,
+          parentActionTitle: null,
+          childDoneCount: 2,
+          childTotalCount: 5,
+        },
+      ],
+      page: 0,
+      size: 200,
+      totalElements: 1,
+      totalPages: 1,
+      hasNext: false,
+    });
+
+    const teamActions = await getReservableTeamActions(LEADER);
+
+    expect(teamActions).toEqual([
+      { id: 7, name: "3분기 마케팅 캠페인 기획", projectTag: "marketing-q3" },
+    ]);
+    expect(serverApiMock).toHaveBeenCalledWith(
+      ep.teamActions({ status: "IN_PROGRESS", page: 0, size: 200 }),
+      expect.objectContaining({ accessToken: "token" }),
+    );
   });
 });
