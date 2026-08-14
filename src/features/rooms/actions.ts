@@ -272,7 +272,8 @@ export async function createMeetingRoomAction(
   _prev: MeetingRoomFormState,
   formData: FormData,
 ): Promise<MeetingRoomFormState> {
-  if (!canManageRooms(getMockActor())) {
+  const actor = isMock ? getMockActor() : await getViewer();
+  if (!canManageRooms(actor)) {
     return { errors: { name: "회의실을 추가할 권한이 없습니다" } };
   }
 
@@ -307,7 +308,8 @@ export async function updateMeetingRoomAction(
   _prev: MeetingRoomFormState,
   formData: FormData,
 ): Promise<MeetingRoomFormState> {
-  if (!canManageRooms(getMockActor())) {
+  const actor = isMock ? getMockActor() : await getViewer();
+  if (!canManageRooms(actor)) {
     return { errors: { name: "회의실을 수정할 권한이 없습니다" } };
   }
 
@@ -351,7 +353,8 @@ export async function updateMeetingRoomAction(
  *    부르는 흐름이라 폼 오류 슬롯이 없고, 던진 오류는 가장 가까운 `error.tsx`가 받는다.
  */
 export async function deleteMeetingRoomAction(formData: FormData): Promise<void> {
-  if (!canManageRooms(getMockActor())) {
+  const actor = isMock ? getMockActor() : await getViewer();
+  if (!canManageRooms(actor)) {
     throw new Error("회의실을 삭제할 권한이 없습니다");
   }
 
