@@ -40,6 +40,13 @@ export function ChangePasswordDialog() {
   const [draft, setDraft] = useState<PasswordDraft>(EMPTY_DRAFT);
   const shownAttempt = useRef(0);
 
+  // 닫는 경로(취소·ESC·바깥 클릭) 전부 여기로 모은다 — 한 곳만 고치면 전부 반영된다.
+  const handleClose = () => {
+    if (isPending) return;
+    setOpen(false);
+    setDraft(EMPTY_DRAFT);
+  };
+
   useEffect(() => {
     // 칸에 못 매는 오류만 토스트로 알린다 — 필드 오류는 칸 밑에 이미 보인다(§토스트).
     if (state.attempt !== shownAttempt.current && state.error) {
@@ -73,10 +80,11 @@ export function ChangePasswordDialog() {
       <Dialog
         open={open}
         onOpenChange={(next) => {
-          if (!next && isPending) return;
-          setOpen(next);
-          // 창을 닫으면(취소 포함) 다음에 열 때는 빈 칸에서 시작한다.
-          if (!next) setDraft(EMPTY_DRAFT);
+          if (next) {
+            setOpen(true);
+            return;
+          }
+          handleClose();
         }}
       >
         <DialogContent className="gap-0 p-0 sm:max-w-[420px]">
@@ -186,12 +194,7 @@ export function ChangePasswordDialog() {
             </div>
 
             <div className="border-border flex items-center justify-end gap-2 border-t px-6 py-4">
-              <Button
-                type="button"
-                variant="outline"
-                disabled={isPending}
-                onClick={() => setOpen(false)}
-              >
+              <Button type="button" variant="outline" disabled={isPending} onClick={handleClose}>
                 취소
               </Button>
               <Button type="submit" variant="ink" disabled={isPending}>
