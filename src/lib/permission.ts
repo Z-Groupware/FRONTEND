@@ -157,19 +157,6 @@ export function canChangeAdminGrant(actor: Actor): boolean {
 }
 
 /**
- * 계정 탈퇴 — **OWNER 전용**.
- *
- * ⚠️ 최종 승인보다 더 뒤에 있는 일이라 같은 문을 쓴다. 승인은 사람을 퇴사 상태로 옮길
- *    뿐이지만, 탈퇴는 그 사람을 **목록에서 지운다** — 남긴 회의·액션의 출처를 찾을 길이
- *    없어진다(§도메인 상수: 나간 사람은 목록에 남는다).
- * ⚠️ `canApproveFinal`과 판정이 같지만 **함수를 따로 둔다.** 한쪽 정책이 바뀔 때 다른 쪽이
- *    끌려가면 안 된다(§권한: 화면·액션 단위로 판정한다).
- */
-export function canDeleteMemberAccount(actor: Actor): boolean {
-  return actor.role === AUTHORITY.OWNER;
-}
-
-/**
  * 인수인계 **최종** 승인 — **OWNER 전용**(2026-08-06 확정: Admin 제외).
  * ⚠️ 이전엔 Admin도 됐지만, 최종 승인은 인사·조직 결정이라 대표만 하기로 정정했다.
  *    Admin은 사원 관리 화면(`canManageMembers`)엔 계속 들어가 계정 발급·직급 변경은 하되,

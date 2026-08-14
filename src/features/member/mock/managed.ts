@@ -328,8 +328,14 @@ export function updateMockMemberGrade(
 
 /**
  * 최종 승인 — 신청을 치우고 사람 상태를 옮긴다.
- * ⚠️ 휴직은 `VACATION`, 오프보딩은 `RESIGNED`다. 끝난 뒤의 사람 상태는 흐름 이름과 다르다
- *    (§도메인 상수: 오프보딩 ↔ 퇴사).
+ *
+ * ⚠️ **오프보딩은 승인 즉시 소프트 삭제된다**(2026-08-14 정정 — BE `MemberJpaEntity.offboard`
+ *    확인). `RESIGNED`는 BE 내부 감사 흔적일 뿐 조회 응답엔 안 실린다 — 목이 그 자리에서
+ *    `RESIGNED`로만 바꾸고 그대로 남겨 두면, 실제로는 절대 안 오는 상태가 이 화면에 계속
+ *    보이고(`org-member-node.tsx`의 `StatusMark`가 더 이상 안 그린다) `gradeLockOf`도 더는
+ *    막지 않아 지워진 사람의 계정을 권한만으로 다시 만질 수 있는 구멍이 생긴다 — 그래서
+ *    `DELETED_MEMBER_STATUS`로 바로 보내 `isVisibleMemberStatus`가 걸러 내게 한다.
+ * ⚠️ 휴직(`VACATION`)은 다르다 — 복귀를 전제로 하므로 계속 보인다.
  * ⚠️ **팀장이 오프보딩되면 `authority`도 같이 내린다**(2026-08-08 정정) — 안 내리면
  *    이 사람은 퇴사했는데도 시스템엔 여전히 그 팀 LEADER로 남아, 후임을 승급하려 하면
  *    "이미 팀장이 있다"로 막히고 본인을 내리려 해도 "유일한 팀장"이라 막혀 순환 잠금에
@@ -345,7 +351,7 @@ export function approveMockHandover(id: number): void {
       ...entry,
       member: {
         ...entry.member,
-        status: isVacation ? MEMBER_STATUS.VACATION : MEMBER_STATUS.RESIGNED,
+        status: isVacation ? MEMBER_STATUS.VACATION : (DELETED_MEMBER_STATUS as never),
         authority: !isVacation && wasLeader ? AUTHORITY.MEMBER : entry.member.authority,
       },
       pendingHandover: null,
@@ -428,22 +434,6 @@ export function addMockManagedMember(
 /** 이미 쓰고 있는 메일 주소들 — 중복 발급을 막는 데 쓴다 */
 export function listMockMemberEmails(): string[] {
   return store.map((entry) => entry.member.email);
-}
-
-/**
- * 계정 탈퇴 — **소프트 딜리트**다.
- *
- * ⚠️ 줄을 지우지 않고 상태만 `DELETED`로 바꾼다. 그 사람이 남긴 회의·액션이 참조하는
- *    id라서, 진짜로 지우면 그 기록들이 가리킬 곳을 잃는다.
- * ⚠️ `DELETED`는 **상태가 아니라 목록에서 빠지는 일**이라 `MEMBER_STATUS`에 없다 —
- *    목록을 만드는 쪽이 `isVisibleMemberStatus`로 거른다(§도메인 상수).
- */
-export function deleteMockManagedMember(id: number): void {
-  store = store.map((entry) =>
-    entry.member.id === id
-      ? { ...entry, member: { ...entry.member, status: DELETED_MEMBER_STATUS as never } }
-      : entry,
-  );
 }
 
 /** 테스트가 앞 테스트의 변경을 물려받지 않게 되돌린다 */
