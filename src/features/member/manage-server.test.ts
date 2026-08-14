@@ -62,4 +62,17 @@ describe("listAllManagedMembersForOrgChart — 실서버", () => {
     expect(serverApiMock).toHaveBeenCalledTimes(1);
     expect(roster).toHaveLength(1);
   });
+
+  /*
+    ⚠️ 코드래빗 지적(2026-08-14) — 상한을 넘으면 앞부분만 조용히 정상 리턴하면 안 된다.
+       회사 인원이 늘었는데 조직도가 말없이 일부만 보여주는 건 §정직성 위반이다.
+  */
+  it("상한(20페이지)을 넘으면 잘린 명부를 정상 결과로 돌려주지 않는다 — 던진다", async () => {
+    // totalPages=21 — 상한 20을 넘는다. 20번째 응답까지만 mock하면 충분하다(그 이상 안 부른다).
+    serverApiMock.mockResolvedValue(page([1], 0, 21));
+
+    await expect(listAllManagedMembersForOrgChart()).rejects.toThrow("상한을 넘어");
+
+    expect(serverApiMock).toHaveBeenCalledTimes(20);
+  });
 });
