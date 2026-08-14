@@ -53,35 +53,6 @@ export function toHandoverCreateRequestBody(payload: SubmitHandoverPayload) {
   };
 }
 
-/**
- * ⚠️ **임시 미리보기 토글**(사용자 요청, 2026-08-08) — 로그인이 아직 없어 "지금 보고
- *    있는 사람"을 화면에서 바로 바꿔볼 수 있게 둔 것. 실제 세션이 붙으면 이 토글과
- *    `?as=`는 걷어내고 `getViewer()`가 그 자리를 대신한다.
- */
-export const HANDOVER_PREVIEW = {
-  MEMBER: "member",
-  LEADER: "leader",
-} as const;
-export type HandoverPreview = (typeof HANDOVER_PREVIEW)[keyof typeof HANDOVER_PREVIEW];
-
-export const HANDOVER_PREVIEW_LABEL: Record<HandoverPreview, string> = {
-  member: "팀원(이하윤)",
-  leader: "팀장(김서준)",
-};
-
-export const HANDOVER_PREVIEW_TABS: { preview: HandoverPreview; label: string }[] = [
-  HANDOVER_PREVIEW.MEMBER,
-  HANDOVER_PREVIEW.LEADER,
-].map((preview) => ({ preview, label: HANDOVER_PREVIEW_LABEL[preview] }));
-
-export const DEFAULT_HANDOVER_PREVIEW: HandoverPreview = HANDOVER_PREVIEW.MEMBER;
-
-export function parseHandoverPreview(value: string | undefined): HandoverPreview {
-  return (
-    HANDOVER_PREVIEW_TABS.find((t) => t.preview === value)?.preview ?? DEFAULT_HANDOVER_PREVIEW
-  );
-}
-
 export const HANDOVER_TYPE_TABS: { type: HandoverType; label: string }[] = [
   HANDOVER_TYPE.VACATION,
   HANDOVER_TYPE.OFFBOARDING,

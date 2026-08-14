@@ -11,7 +11,6 @@ import { requireAccessToken } from "@/features/auth/session";
 import { getViewer } from "@/features/shell/viewer";
 import { serverApi } from "@/lib/api";
 
-import { HANDOVER_PREVIEW } from "./lib";
 import { getHandoverContext } from "./server";
 
 /**
@@ -71,7 +70,7 @@ describe("getHandoverContext — 실서버", () => {
       ],
     });
 
-    const context = await getHandoverContext(HANDOVER_PREVIEW.MEMBER);
+    const context = await getHandoverContext();
 
     expect(context.applicant).toEqual({
       id: 3,
@@ -112,7 +111,7 @@ describe("getHandoverContext — 실서버", () => {
       },
     ]);
 
-    const context = await getHandoverContext(HANDOVER_PREVIEW.LEADER);
+    const context = await getHandoverContext();
 
     // ⚠️ 본인(memberId 2)은 후보에서 빠져야 한다 — 자기 자신에게 재배정할 수 없다.
     expect(context.teammates).toEqual([
