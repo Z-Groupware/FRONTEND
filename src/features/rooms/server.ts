@@ -2,10 +2,13 @@ import "server-only";
 
 import { addDays, format, startOfWeek } from "date-fns";
 
+import { ACTION_STATUS } from "@/constants/action";
 import { AUTHORITY } from "@/constants/authority";
 import { PROJECT_STATUS } from "@/constants/domain";
+import type { BeActionSummary } from "@/features/action/mapper";
 import { requireAccessToken } from "@/features/auth/session";
 import { getTeamLeaders } from "@/features/member/manage-server";
+import type { BePageResponse } from "@/features/project/mapper";
 import { TOP_LEVEL_PROJECTS } from "@/features/project/mock/projects";
 import { PROJECT_TEAM_ACTIONS_MOCK } from "@/features/project/mock/team-actions";
 import { getProjectsPage } from "@/features/project/server";
@@ -218,22 +221,47 @@ export async function getReservableProjects(): Promise<RoomProjectOption[]> {
   }));
 }
 
+/** select 한 번에 받을 상한 — 한 팀의 진행중 팀 액션이 이보다 많아지면 BE 전용 응답을 요청한다. */
+const RESERVABLE_TEAM_ACTIONS_PAGE_SIZE = 200;
+
 /**
  * 예약 폼의 "상위 팀 액션" select용 — Host가 Owner면 빈 배열(그 필드가 아예 안 뜬다,
  * WORKFLOW.md §3-1). Leader/Member면 **자기 팀**에 하달된 팀 액션만, 어느 프로젝트 것인지
  * `projectTag`로 같이 내려줘 화면이 지금 고른 프로젝트로 다시 거른다.
+ *
+ * ⚠️ **`GET /api/team/actions`를 그대로 쓴다.** `teamId`는 BE가 토큰에서만 꺼내므로
+ *    (BE `TeamActionController` 주석) 우리가 팀을 골라 보낼 길이 없다 — 그래서 실서버
+ *    분기에는 `actor.teamName` 필터가 필요 없다(항상 자기 팀만 온다). BE 주석에도 이
+ *    API를 "회의 개설 모달의 상위 팀 액션 드롭다운"용으로 이미 열어 뒀다고 적혀 있다
+ *    (이슈 #389, MEMBER도 호출 가능하게 완화).
+ * ⚠️ 완료된 팀 액션은 상위로 고를 이유가 없어 `IN_PROGRESS`만 받는다(진행중 항목이 새
+ *    회의를 낳을 수 있다는 게 이 필드의 뜻이다).
  */
 export async function getReservableTeamActions(actor: Actor): Promise<RoomTeamActionOption[]> {
-  if (!isMock) throw new Error("팀 액션 목록 조회 API가 아직 연결되지 않았습니다.");
   if (!requiresParentTeamAction(actor) || !actor.teamName) return [];
 
-  const options: RoomTeamActionOption[] = [];
-  for (const [projectTag, teamActions] of Object.entries(PROJECT_TEAM_ACTIONS_MOCK)) {
-    for (const teamAction of teamActions) {
-      if (teamAction.team === actor.teamName) {
-        options.push({ id: teamAction.id, name: teamAction.name, projectTag });
+  if (isMock) {
+    const options: RoomTeamActionOption[] = [];
+    for (const [projectTag, teamActions] of Object.entries(PROJECT_TEAM_ACTIONS_MOCK)) {
+      for (const teamAction of teamActions) {
+        if (teamAction.team === actor.teamName) {
+          options.push({ id: teamAction.id, name: teamAction.name, projectTag });
+        }
       }
     }
+    return options;
   }
-  return options;
+
+  const accessToken = await requireAccessToken();
+  const response = await serverApi<BePageResponse<BeActionSummary>>(
+    ep.teamActions({
+      status: ACTION_STATUS.IN_PROGRESS,
+      page: 0,
+      size: RESERVABLE_TEAM_ACTIONS_PAGE_SIZE,
+    }),
+    { accessToken },
+  );
+  return response.content
+    .filter((item) => item.projectTag !== null)
+    .map((item) => ({ id: item.id, name: item.title, projectTag: item.projectTag! }));
 }
