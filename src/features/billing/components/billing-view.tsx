@@ -23,6 +23,8 @@ interface BillingViewProps {
   overview: BillingOverview;
   /** 바꿀 수 있는 사람인지 — Owner이거나 Admin을 겸한 사람 */
   canManage: boolean;
+  /** `requestCardAuth`의 customerKey — BE가 principal의 companyId와 대조한다(다르면 400) */
+  companyId: number;
 }
 
 /**
@@ -42,7 +44,7 @@ interface BillingViewProps {
  * ⚠️ 결과 토스트는 **한 줄**이다. "지금은 화면에서만 바뀐다"는 설명을 붙였더니 두 줄이 되어
  *    알약이 판처럼 커졌다 — 목이라는 사실은 연동 전 임시 상태라 화면 문구로 남길 것이 아니다.
  */
-export function BillingView({ overview, config, canManage }: BillingViewProps) {
+export function BillingView({ overview, config, canManage, companyId }: BillingViewProps) {
   const [subscription, setSubscription] = useState(overview.subscription);
   const [method, setMethod] = useState<PaymentMethod | null>(overview.method);
 
@@ -88,9 +90,11 @@ export function BillingView({ overview, config, canManage }: BillingViewProps) {
       /*
         ⚠️ **결제사 창만 브라우저에서 연다.** 카드 번호는 그 창에서만 입력되고, 우리는
            `authKey`만 받는다 — 빌링키로 바꾸고 저장하는 건 서버(액션)의 일이다.
-        ⚠️ TODO(로그인 연동): `customerKey`는 세션의 기업 id를 쓴다 — 회사가 구독하는 단위다
+        ⚠️ `customerKey`는 세션의 기업 id다(props로 받은 `companyId`) — BE가 principal의
+           companyId와 문자열 대조하므로(`BillingCommandService.register`), 다르면 BIL-009로
+           400이 온다.
       */
-      const auth = await requestCardAuth("mock-company");
+      const auth = await requestCardAuth(String(companyId));
       const result = await registerCardAction(auth);
 
       if (!result.isSuccess || !result.method) {
