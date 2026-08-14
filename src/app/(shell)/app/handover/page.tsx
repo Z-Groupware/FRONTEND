@@ -1,11 +1,15 @@
 import type { Metadata } from "next";
 
+import { AccessDenied } from "@/components/common/access-denied";
 import { HANDOVER_TYPE } from "@/constants/domain";
 import { HandoverControls } from "@/features/handover/components/handover-controls";
 import { OffboardingForm } from "@/features/handover/components/offboarding-form";
 import { VacationForm } from "@/features/handover/components/vacation-form";
 import { parseHandoverPreview, parseHandoverType } from "@/features/handover/lib";
 import { getHandoverContext } from "@/features/handover/server";
+import { roleHome } from "@/features/shell/home";
+import { getViewer } from "@/features/shell/viewer";
+import { canWriteHandover } from "@/lib/permission";
 
 export const metadata: Metadata = {
   title: "인수인계서",
@@ -17,10 +21,17 @@ interface HandoverPageProps {
 
 /**
  * 인수인계서 신청 — 휴직/오프보딩(WORKFLOW.md §7).
- * ⚠️ Owner는 이 화면에 안 온다(`canWriteHandover`) — 지금은 로그인 세션이 없어 실제 가드
- *    대신 미리보기 토글로 인물을 바꾼다(`HandoverControls` 주석 참고).
+ * ⚠️ Owner는 이 화면에 안 온다 — `canWriteHandover`로 실제 가드를 건다(2026-08-15,
+ *    "로그인 세션이 없어 미리보기 토글로 대신한다"던 이전 상태를 벗어남).
+ *    미리보기 토글(`?as=`)은 mock 모드에서만 의미가 있고, 실서버에서는
+ *    `getHandoverContext`가 그 값을 무시하고 실제 로그인 세션(`getViewer`)만 본다.
  */
 export default async function HandoverPage({ searchParams }: HandoverPageProps) {
+  const viewer = await getViewer();
+  if (!canWriteHandover(viewer)) {
+    return <AccessDenied homeHref={roleHome(viewer.role)} />;
+  }
+
   const params = await searchParams;
   const preview = parseHandoverPreview(params.as);
   const type = parseHandoverType(params.type);
