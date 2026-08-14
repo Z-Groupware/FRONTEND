@@ -59,14 +59,17 @@ function DialogContent({
     <DialogPortal>
       <DialogOverlay />
       {/*
-        ⚠️ `overflow-hidden` 없이는 `p-0` + 직접 여백을 잡는 헤더(각진 모서리)가 이 `rounded-xl`
-           밖으로 삐져나온다(DESIGN.md §2 "세로 띠를 쓰면 카드에 overflow-hidden"과 같은 이유 —
-           각진 자식이 둥근 부모를 못 넘게 여기서 한 번만 자른다).
+        ⚠️ **`overflow-hidden`은 여기서 공용으로 안 건다.** `p-0` + 직접 여백을 잡는 헤더(각진
+           모서리)가 `rounded-xl` 밖으로 삐져나오는 건 사실이지만, 그걸 여기서 한 번에 자르면
+           `overflow-y-auto`로 세로 스크롤을 걸어 둔 다이얼로그(정보 상세 등)까지 함께 잘려
+           스크롤이 죽는다 — `overflow`와 `overflow-y`는 서로 다른 유틸리티라 `cn`(tailwind-merge)이
+           덮어쓰지 못한다. 모서리를 잘라야 하는 개별 다이얼로그가 각자 `overflow-hidden`을
+           든다(DESIGN.md §2와 같은 이유, 적용 범위만 좁힌다).
       */}
       <DialogPrimitive.Popup
         data-slot="dialog-content"
         className={cn(
-          "fixed top-1/2 left-1/2 z-50 grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 overflow-hidden rounded-xl bg-popover p-4 text-sm text-popover-foreground ring-1 ring-foreground/10 duration-100 outline-none sm:max-w-sm data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
+          "fixed top-1/2 left-1/2 z-50 grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 rounded-xl bg-popover p-4 text-sm text-popover-foreground ring-1 ring-foreground/10 duration-100 outline-none sm:max-w-sm data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
           className
         )}
         {...props}

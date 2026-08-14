@@ -157,7 +157,7 @@ export function NoticeFormDialog({
         ⚠️ **뷰포트의 70%다**(2026-08-12 확정). 에디터가 서식 버튼·긴 글을 들고 있어 기존
            확인 창 폭(420)으로는 답답했다 — 넓은 화면일수록 창도 넓어져야 한다.
       */}
-      <DialogContent className="flex max-h-[calc(100dvh-4rem)] flex-col gap-0 p-0 sm:max-w-[70vw]">
+      <DialogContent className="flex max-h-[calc(100dvh-4rem)] flex-col gap-0 overflow-y-auto p-0 sm:max-w-[70vw]">
         <DialogHeader className="border-border shrink-0 border-b px-6 py-4">
           <DialogTitle>{formTitle}</DialogTitle>
         </DialogHeader>

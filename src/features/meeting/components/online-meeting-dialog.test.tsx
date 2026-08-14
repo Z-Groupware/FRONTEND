@@ -3,7 +3,7 @@ jest.mock("@/lib/mock-actor", () => ({
   getMockActor: jest.fn(() => ({ id: 1, role: "OWNER" })),
 }));
 
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 import { AUTHORITY } from "@/constants/authority";
@@ -27,7 +27,7 @@ const TEAM_ACTIONS: RoomTeamActionOption[] = [];
 const OWNER_VIEWER = { id: 1, role: AUTHORITY.OWNER, teamName: null } as const;
 
 function renderDialog() {
-  render(
+  return render(
     <OnlineMeetingDialog
       members={MEMBERS}
       projects={PROJECTS}
@@ -48,7 +48,11 @@ async function fillAndConfirmStep1(user: ReturnType<typeof userEvent.setup>) {
   await user.click(screen.getByRole("checkbox", { name: /김서준/ }));
 
   await user.click(screen.getByRole("button", { name: "등록" }));
-  await user.click(screen.getByRole("button", { name: "등록" }));
+
+  // ⚠️ 확인 모달이 뜬 뒤엔 폼 안의 [등록] 버튼이 여전히 DOM에 남아 있다 — 전역으로 다시 찾으면
+  //    두 개가 잡혀 모호해진다. 뜨는 걸 기다린 뒤 그 다이얼로그 안에서만 찾는다.
+  const confirmDialog = await screen.findByRole("dialog", { name: "이대로 등록하시겠습니까?" });
+  await user.click(within(confirmDialog).getByRole("button", { name: "등록" }));
 }
 
 describe("OnlineMeetingDialog", () => {
@@ -68,7 +72,7 @@ describe("OnlineMeetingDialog", () => {
     expect(screen.queryByLabelText("회의실")).not.toBeInTheDocument();
     expect(screen.queryByText(/시작 시간/)).not.toBeInTheDocument();
     // ⚠️ 녹음 파일 첨부는 2단계로 옮겨서 1단계엔 없다(2026-08-14).
-    expect(screen.queryByText("녹음 파일 첨부 (선택)")).not.toBeInTheDocument();
+    expect(screen.queryByText("녹음 파일 첨부")).not.toBeInTheDocument();
   });
 
   it("등록을 누르면 바로 등록하지 않고 확인 모달을 먼저 띄운다", async () => {
@@ -128,7 +132,7 @@ describe("OnlineMeetingDialog", () => {
     await waitFor(() => {
       expect(screen.getByRole("dialog", { name: "녹음 파일 제출" })).toBeInTheDocument();
     });
-    expect(screen.getByText("녹음 파일 첨부 (선택)")).toBeInTheDocument();
+    expect(screen.getByText("녹음 파일 첨부")).toBeInTheDocument();
   });
 
   it("2단계에서 [나중에 하기]를 누르면 창이 닫힌다", async () => {
@@ -140,15 +144,37 @@ describe("OnlineMeetingDialog", () => {
 
     await user.click(screen.getByRole("button", { name: "나중에 하기" }));
 
-    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    // ⚠️ 닫힘은 상태 변경 두 단계(`setOpen`·`setCreatedMeetingId`)를 거쳐 언마운트된다 —
+    //    AI 요약 요청 테스트와 같은 이유로 비동기로 기다린다.
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    });
   });
 
-  it("2단계에서 [AI 요약 요청]을 누르면 확인 모달 없이 바로 제출되고 창이 닫힌다", async () => {
+  /* ⚠️ 녹음 파일은 선택이 아니다 — 첨부 전엔 [AI 요약 요청]이 눌리지 않는다. */
+  it("녹음 파일을 첨부하기 전에는 [AI 요약 요청] 버튼이 비활성 상태다", async () => {
     const user = userEvent.setup();
     renderDialog();
 
     await fillAndConfirmStep1(user);
     await screen.findByRole("dialog", { name: "녹음 파일 제출" });
+
+    expect(screen.getByRole("button", { name: "AI 요약 요청" })).toBeDisabled();
+  });
+
+  it("2단계에서 파일을 첨부하고 [AI 요약 요청]을 누르면 확인 모달 없이 바로 제출되고 창이 닫힌다", async () => {
+    const user = userEvent.setup();
+    renderDialog();
+
+    await fillAndConfirmStep1(user);
+    await screen.findByRole("dialog", { name: "녹음 파일 제출" });
+
+    // ⚠️ `container.querySelector`로는 못 찾는다 — `DialogContent`는 `DialogPortal`을 거쳐
+    //    `document.body`(또는 범위 테마 컨테이너)에 그려져 RTL의 `container` 바깥에 있다.
+    const fileInput = document.querySelector<HTMLInputElement>('input[type="file"]');
+    expect(fileInput).not.toBeNull();
+    const file = new File(["dummy audio content"], "recording.mp3", { type: "audio/mpeg" });
+    await user.upload(fileInput!, file);
 
     await user.click(screen.getByRole("button", { name: "AI 요약 요청" }));
 

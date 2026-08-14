@@ -96,4 +96,31 @@ describe("비대면 회의 만들기(이슈 #473, MEET-18) — 실서버 분기(
 
     expect(result.errors.attendeeIds).toBe("존재하지 않는 참석자가 있습니다");
   });
+
+  it("MT-015는 topics 칸 오류로 바뀐다", async () => {
+    serverApiMock.mockRejectedValue(new ApiError(400, "안건 오류", "MT-015"));
+
+    const result = await createOnlineMeetingAction({ errors: {} }, VALID_FORM());
+
+    expect(result.errors.topics).toBe("안건 오류");
+  });
+
+  it.each(["MT-016", "MT-017", "MT-018", "MT-019"])(
+    "%s는 parentTeamActionId 칸 오류로 바뀐다",
+    async (code) => {
+      serverApiMock.mockRejectedValue(new ApiError(400, "상위 팀 액션 오류", code));
+
+      const result = await createOnlineMeetingAction({ errors: {} }, VALID_FORM());
+
+      expect(result.errors.parentTeamActionId).toBe("상위 팀 액션 오류");
+    },
+  );
+
+  it("목록에 없는 오류 코드는 title 칸으로 떨어진다(필드 슬롯이 없는 오류의 기본 자리)", async () => {
+    serverApiMock.mockRejectedValue(new ApiError(400, "알 수 없는 오류", "MT-999"));
+
+    const result = await createOnlineMeetingAction({ errors: {} }, VALID_FORM());
+
+    expect(result.errors.title).toBe("알 수 없는 오류");
+  });
 });

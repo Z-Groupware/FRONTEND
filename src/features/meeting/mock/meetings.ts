@@ -172,7 +172,9 @@ export function setMockSummaryStatus(id: string, status: AiSummaryStatus): void 
 /**
  * 비대면 회의 다이얼로그 2단계([녹음 파일 제출])가 파일명을 적어 둔다(이슈 #473, 2026-08-14).
  * ⚠️ **여기서도 바이트는 안 든다** — 파일명만 옮긴다(§정직한 목업, `Meeting.recordingFileName`
- *    주석과 같은 사정). 없는 회의를 조용히 넘기지 않고 값이 없으면 아무 일도 안 한다.
+ *    주석과 같은 사정). `.map()`으로 훑다가 `id`가 맞는 회의만 바꿔 끼운다 — 맞는 회의가
+ *    없으면 `store.meetings`는 그대로고, 던지거나 알리지도 않는다(호출부가 이미
+ *    `findMockMeeting`으로 존재를 확인하고 부른다는 전제).
  */
 export function setMockRecordingFileName(id: string, fileName: string): void {
   store.meetings = store.meetings.map((meeting) =>

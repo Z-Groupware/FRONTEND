@@ -91,7 +91,7 @@ export function MeetingAttendeesEditDialog({
           setOpen(next);
         }}
       >
-        <DialogContent className="gap-0 p-0 sm:max-w-[420px]">
+        <DialogContent className="gap-0 overflow-hidden p-0 sm:max-w-[420px]">
           <DialogHeader className="border-border border-b px-6 py-4">
             <DialogTitle>참석자 수정</DialogTitle>
           </DialogHeader>
