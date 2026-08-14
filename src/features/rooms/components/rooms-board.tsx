@@ -77,6 +77,11 @@ export function RoomsBoard({
       <RoomListPanel
         rooms={rooms}
         onAddClick={() => setSlotStart(getNextAvailableSlot(new Date()))}
+        members={members}
+        projects={projects}
+        showParentTeamAction={showParentTeamAction}
+        teamActions={teamActions}
+        viewer={viewer}
       />
 
       <RoomReservationDialog

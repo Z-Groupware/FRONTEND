@@ -67,9 +67,9 @@ describe("Owner", () => {
 describe("Leader", () => {
   it("팀 관리가 붙는다", () => {
     expect(labels(navFor(actor(AUTHORITY.LEADER)), "팀 관리")).toEqual([
-      "팀원",
-      "팀 액션",
-      "인수인계 승인",
+      "팀원 관리",
+      "팀 액션 관리",
+      "인수인계서 관리",
     ]);
   });
 
@@ -197,11 +197,11 @@ describe("화면이 있으면 자동으로 이어진다", () => {
     ["/app/calendar", "캘린더"],
     ["/app/notice", "공지"],
     ["/app/me", "마이페이지"],
-    ["/manage/billing", "구독"],
+    ["/manage/billing", "구독 관리"],
     ["/manage/storage", "녹음 용량"],
     ["/owner/setting", "기업 설정"],
     ["/manage/members", "사원 관리"],
-    ["/app/meeting", "회의"],
+    ["/app/meeting", "내 회의"],
   ])("만들어진 화면 `%s`(%s)는 링크가 된다", (href) => {
     const item = everyItem.find((candidate) => candidate.href === href);
 

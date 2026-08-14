@@ -31,6 +31,8 @@ interface OnlineMeetingDialogProps {
   showParentTeamAction: boolean;
   teamActions: RoomTeamActionOption[];
   viewer: AttendeeScopeViewer;
+  /** 트리거 버튼에 얹을 클래스 — 회의실 패널(280px)에서는 폭을 꽉 채운다(`room-list-panel.tsx`). */
+  triggerClassName?: string;
 }
 
 /**
@@ -162,6 +164,7 @@ export function OnlineMeetingDialog({
   showParentTeamAction,
   teamActions,
   viewer,
+  triggerClassName,
 }: OnlineMeetingDialogProps) {
   const [open, setOpen] = useState(false);
   const [createdMeetingId, setCreatedMeetingId] = useState<string | null>(null);
@@ -184,7 +187,9 @@ export function OnlineMeetingDialog({
         setOpen(next);
       }}
     >
-      <DialogTrigger render={<Button type="button" variant="outline" />}>
+      <DialogTrigger
+        render={<Button type="button" variant="outline" size="sm" className={triggerClassName} />}
+      >
         <Video aria-hidden />
         비대면 회의
       </DialogTrigger>
