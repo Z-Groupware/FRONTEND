@@ -158,8 +158,19 @@ export const ep = {
    * 비대면 회의 생성(`POST`, MEET-18, 이슈 #473) — **FE 제안 경로**, 아직 BE 실코드로 대조 전이다
    *   (§연동 검증: 계약은 도메인 담당자 문서로 확정됐지만 컨트롤러는 못 봤다). 구현 착수 전 재대조할 것.
    * ⚠️ `meetings()`(MEET-01)와 경로가 다르다 — 비대면 회의는 회의실·시간이 없어 별도 엔드포인트다.
+   * ⚠️ **2026-08-14 계약 변경** — 요청 본문에 `recording`(`s3Key`·`fileName`·`contentType`·
+   *    `sizeBytes`)이 추가됐다. 파일 바이트는 이 경로로 안 온다 — 아래 `meetingsOnlineRecordingsUploadUrl`로
+   *    미리 받은 presigned URL에 브라우저가 S3로 직접 올린 뒤, 그 결과(`s3Key` 등)만 여기 싣는다.
    */
   meetingsOnline: () => "/api/meetings/online",
+  /**
+   * 비대면 회의 녹음 업로드용 presigned URL 발급(`POST`, 이슈 #473, 2026-08-14 계약 변경) —
+   * **FE 제안 경로**, 아직 BE 실코드로 대조 전이다(§연동 검증). 구현 착수 전 재대조할 것.
+   * ⚠️ 여기서 받은 `presignedUrl`로 **브라우저가 S3에 직접 PUT**한다 — 파일이 BE 서버를
+   *    거치지 않는다. `s3Key`는 응답을 그대로 옮겨 `meetingsOnline()` 요청의 `recording.s3Key`에
+   *    싣는다(발급받지 않은 경로를 쓰면 BE가 `CAP-015`로 막는다).
+   */
+  meetingsOnlineRecordingUploadUrl: () => "/api/meetings/online/recordings/upload-url",
   /**
    * 한 회의의 세 갈래가 **같은 경로**를 쓴다 — `GET` 상세(MEET-04, 캡처 진입도 이걸 쓴다) ·
    * `PATCH` 수정(MEET-05) · `DELETE` 취소(MEET-06). 없으면 404 `MT-001`, 열람 권한 없으면 403 `MT-011`.

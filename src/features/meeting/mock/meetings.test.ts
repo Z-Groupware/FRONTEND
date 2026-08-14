@@ -7,8 +7,6 @@ import {
   addMockOnlineMeeting,
   findMockMeeting,
   listMockMeetings,
-  setMockRecordingFileName,
-  setMockSummaryStatus,
 } from "./meetings";
 
 const DRAFT: MeetingDraft = {
@@ -74,9 +72,9 @@ describe("비대면 회의 생성(이슈 #473) — addMockOnlineMeeting", () => 
     roomId: null,
     roomName: null,
     roomReservationId: null,
-    // ⚠️ `createOnlineMeetingAction`은 항상 `null`로 만든다 — 첨부는 이 액션의 몫이 아니라
-    //    다이얼로그 **2단계**(`submitOnlineMeetingRecordingAction`)가 따로 붙인다(actions.ts 주석).
-    recordingFileName: null,
+    // ⚠️ 2026-08-14 계약 변경 — 등록 시점에 이미 파일이 S3에 올라가 있어 파일명이 채워져 온다
+    //    (`createOnlineMeetingAction`이 `draft.recording.fileName`을 그대로 옮긴다).
+    recordingFileName: "회의록.m4a",
   };
 
   it("만들자마자 종료 처리된다 — endedAt이 즉시 채워진다", () => {
@@ -88,13 +86,13 @@ describe("비대면 회의 생성(이슈 #473) — addMockOnlineMeeting", () => 
   });
 
   /*
-    ⚠️ 2026-08-14 팀 확정 — 대면 회의의 `endMockMeeting`과 달리 **대기로 안 들어간다.** 요약
-       요청은 다이얼로그 2단계([AI 요약 요청])에서 사람이 직접 눌러야 시작된다.
+    ⚠️ 2026-08-14 계약 변경 — 단일 모달로 바뀌며 등록 시점에 이미 녹음 파일이 있으므로,
+       대면 회의의 `endMockMeeting`과 같은 순간에 곧바로 분석 대기(PENDING)로 들어간다.
   */
-  it("만들어진 시점엔 아직 AI 요약을 요청하지 않은 상태다", () => {
+  it("만들어지자마자 AI 요약 분석 대기(PENDING) 상태다", () => {
     const created = addMockOnlineMeeting(ONLINE_DRAFT);
 
-    expect(created.aiSummaryStatus).toBeNull();
+    expect(created.aiSummaryStatus).toBe(AI_SUMMARY_STATUS.PENDING);
   });
 
   it("회의실이 없다 — roomId·roomName·roomReservationId가 그대로 null이다", () => {
@@ -111,34 +109,10 @@ describe("비대면 회의 생성(이슈 #473) — addMockOnlineMeeting", () => 
     expect(created.canceledAt).toBeNull();
   });
 
-  /*
-    ⚠️ 실제 2단계 흐름 재현(이슈 #473, 2026-08-14) — 1단계(`createOnlineMeetingAction`이
-       부르는 `addMockOnlineMeeting`)는 녹음 파일 없이 회의를 만들고, 2단계
-       (`submitOnlineMeetingRecordingAction`)가 `setMockRecordingFileName`으로 파일명을
-       따로 붙인다. 한 함수만 따로 테스트하면 두 단계가 실제로 이어지는지는 안 잡힌다.
-  */
-  describe("2단계([녹음 파일 제출]) — setMockRecordingFileName", () => {
-    it("만들어질 때는 녹음 파일이 없다", () => {
-      const created = addMockOnlineMeeting(ONLINE_DRAFT);
+  // ⚠️ 2026-08-14 계약 변경 — 단일 모달이라 등록과 동시에 녹음 파일명이 이미 채워져 있다.
+  it("만들어질 때 이미 녹음 파일명이 채워져 있다", () => {
+    const created = addMockOnlineMeeting(ONLINE_DRAFT);
 
-      expect(created.recordingFileName).toBeNull();
-    });
-
-    it("setMockRecordingFileName을 부르면 파일명이 그 회의에 붙는다(§정직한 목업 — 이름만 옮긴다)", () => {
-      const created = addMockOnlineMeeting(ONLINE_DRAFT);
-
-      setMockRecordingFileName(created.id, "회의록.m4a");
-
-      expect(findMockMeeting(created.id)?.recordingFileName).toBe("회의록.m4a");
-    });
-
-    it("파일 제출과 함께 분석 대기(PENDING)로 옮겨진다", () => {
-      const created = addMockOnlineMeeting(ONLINE_DRAFT);
-
-      setMockRecordingFileName(created.id, "회의록.m4a");
-      setMockSummaryStatus(created.id, AI_SUMMARY_STATUS.PENDING);
-
-      expect(findMockMeeting(created.id)?.aiSummaryStatus).toBe(AI_SUMMARY_STATUS.PENDING);
-    });
+    expect(findMockMeeting(created.id)?.recordingFileName).toBe("회의록.m4a");
   });
 });

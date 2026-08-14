@@ -52,5 +52,8 @@ export function validateOnlineMeetingDraft(
     errors.attendeeIds = "참석자 값이 올바르지 않습니다";
   }
 
+  // ⚠️ 단일 모달로 바뀌며 녹음 파일이 선택이 아니라 등록의 일부가 됐다(2026-08-14 계약 변경).
+  if (!draft.recording) errors.recording = "녹음 파일을 첨부해 주세요";
+
   return errors;
 }

@@ -10,12 +10,31 @@ import type { MeetingTopicInput } from "../../rooms/types";
 import type { OnlineMeetingDraft } from "../types";
 
 /**
+ * `POST /api/meetings/online/recordings/upload-url` 요청 본문·응답(이슈 #473, 2026-08-14 계약
+ * 변경 — 도메인 담당자 문서 기준, BE 실코드는 아직 대조 전이다, §연동 검증).
+ */
+export interface BeRecordingUploadUrlRequest {
+  fileName: string;
+  contentType: string;
+  sizeBytes: number;
+}
+
+/** ⚠️ `expiresInSeconds`는 화면에서 안 쓴다 — 만료 전에 바로 PUT하므로 카운트다운이 필요 없다. */
+export interface BeRecordingUploadUrlResponse {
+  s3Key: string;
+  presignedUrl: string;
+  expiresInSeconds: number;
+}
+
+/**
  * `POST /api/meetings/online`(MEET-18) 요청 본문.
  * ⚠️ `recordingConsent`는 **아예 안 싣는다** — 서버가 항상 `true`로 고정한다고 팀이 확정했다
  *    (2026-08-14). 보내 봐야 서버가 무시하는 값이라, 보내는 척하면 거짓 UI다(§정직한 목업).
  * ⚠️ `relatedActionId`: `parentTeamActionId`가 같은 개념이라 그대로 싣는다 — MEET-01과 같은 이름 매핑.
  * ⚠️ `meetingRoomId`·`startAt`·`endAt`이 **아예 없다**(옵셔널이 아니라 필드 자체가 없다) — 비대면
  *    회의는 회의실·시간을 안 받는다(팀 명세).
+ * ⚠️ **`recording`이 필수다**(2026-08-14 계약 변경) — 등록 버튼 한 번으로 업로드 URL 발급 →
+ *    S3 PUT → 이 호출이 순서대로 이어지므로, 이 시점엔 이미 S3에 올라간 파일의 `s3Key`가 있다.
  */
 export interface BeCreateOnlineMeetingPayload {
   title: string;
@@ -24,6 +43,12 @@ export interface BeCreateOnlineMeetingPayload {
   attendeeMemberIds: number[];
   mainTopic: string;
   subTopics: string[];
+  recording: {
+    s3Key: string;
+    fileName: string;
+    contentType: string;
+    sizeBytes: number;
+  };
 }
 
 /**
@@ -38,9 +63,15 @@ function toSentTopics(topics: MeetingTopicInput[]): { mainTopic: string; subTopi
   };
 }
 
+/**
+ * ⚠️ `draft.recording`이 `null`이면 던진다 — 여기 닿기 전에 `validateOnlineMeetingDraft`가
+ *    이미 막아야 정상이다(폼 조작으로 뚫려도 존재하지 않는 파일 정보를 지어내지 않는다).
+ */
 export function toCreateOnlineMeetingPayload(
   draft: OnlineMeetingDraft,
 ): BeCreateOnlineMeetingPayload {
+  if (!draft.recording) throw new Error("녹음 파일 정보 없이 비대면 회의를 만들 수 없습니다");
+
   const { mainTopic, subTopics } = toSentTopics(draft.topics);
   return {
     title: draft.title.trim(),
@@ -49,6 +80,7 @@ export function toCreateOnlineMeetingPayload(
     attendeeMemberIds: draft.attendeeIds,
     mainTopic,
     subTopics,
+    recording: draft.recording,
   };
 }
 
