@@ -23,11 +23,11 @@ import {
   AUTHORITY_LABEL,
   POSITION_AUTHORITIES,
 } from "@/constants/authority";
-import { ROLE_NONE_LABEL } from "@/constants/member";
 
 import { canChangeGradeOf } from "../grade";
 import { changeMemberGradeAction } from "../manage-actions";
 import type { ManagedMember } from "../manage-types";
+import type { TeamRoleOption } from "../team-roles";
 
 /**
  * 직급 및 권한 변경 — **Owner·Admin 겸직자 둘 다** 쓴다(WORKFLOW §11).
@@ -43,6 +43,7 @@ export function MemberGradeCard({
   canEdit,
   positionNames,
   roleOptions,
+  currentRoleId,
 }: {
   member: ManagedMember;
   canEdit: boolean;
@@ -52,10 +53,16 @@ export function MemberGradeCard({
    */
   positionNames: string[];
   /** 이 사람 팀의 역할들 — 역할은 팀에 매여 있다(`team-roles`) */
-  roleOptions: string[];
+  roleOptions: TeamRoleOption[];
+  /**
+   * 지금 이 사람에게 붙은 역할 id(`ManagedMemberDetail.roleId`).
+   * ⚠️ **`member.roleLabel`(이름)로 되찾지 않는다.** 역할 이름은 회사 안에서도 중복될 수
+   *    있어 이름으로 지금 값을 되찾으면 같은 이름의 다른 역할이 골라질 수 있다.
+   */
+  currentRoleId: string | null;
 }) {
   const [position, setPosition] = useState(member.position);
-  const [roleLabel, setRoleLabel] = useState(member.roleLabel ?? "");
+  const [roleId, setRoleId] = useState<string | null>(currentRoleId);
   const [authority, setAuthority] = useState<Authority>(member.authority);
   const [isAdmin, setIsAdmin] = useState(member.isAdmin);
   const [error, setError] = useState<string | null>(null);
@@ -79,7 +86,7 @@ export function MemberGradeCard({
   const showsAdmin = eligible.includes(authority);
   const isDirty =
     position !== member.position ||
-    roleLabel !== (member.roleLabel ?? "") ||
+    roleId !== currentRoleId ||
     authority !== member.authority ||
     (showsAdmin ? isAdmin : false) !== member.isAdmin;
 
@@ -98,7 +105,7 @@ export function MemberGradeCard({
       try {
         result = await changeMemberGradeAction(member.id, {
           position,
-          roleLabel,
+          roleId,
           authority,
           // Owner에게는 칸 자체가 없다 — 화면에 없는 값을 보내지 않는다
           isAdmin: showsAdmin ? isAdmin : false,
@@ -220,23 +227,24 @@ export function MemberGradeCard({
               */}
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="member-role">역할</Label>
+                {/*
+                  ⚠️ **`없음`을 화면에서 만들어 넣지 않는다.** BE가 모든 팀의 역할 목록에
+                     그 행을 실제 id로 끼워 준다(2026-08-14 BE PR #489) — 받은 목록을
+                     그대로 그린다.
+                */}
                 <Select
-                  items={{
-                    "": ROLE_NONE_LABEL,
-                    ...Object.fromEntries(roleOptions.map((name) => [name, name])),
-                  }}
-                  value={roleLabel}
-                  onValueChange={(value) => setRoleLabel(value ?? "")}
+                  items={Object.fromEntries(roleOptions.map((role) => [role.id, role.name]))}
+                  value={roleId ?? ""}
+                  onValueChange={(value) => setRoleId(value || null)}
                   disabled={!canEdit || isPending || roleOptions.length === 0}
                 >
                   <SelectTrigger id="member-role" className="w-full">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent alignItemWithTrigger={false}>
-                    <SelectItem value="">{ROLE_NONE_LABEL}</SelectItem>
-                    {roleOptions.map((name) => (
-                      <SelectItem key={name} value={name}>
-                        {name}
+                    {roleOptions.map((role) => (
+                      <SelectItem key={role.id} value={role.id}>
+                        {role.name}
                       </SelectItem>
                     ))}
                   </SelectContent>

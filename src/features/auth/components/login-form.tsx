@@ -10,6 +10,7 @@ import { loginAction, type LoginState } from "../actions";
 import { clearCompany, useSavedCompany } from "../company-code";
 import { AuthCard } from "./auth-card";
 import { CompanyCodeStep } from "./company-code-step";
+import { FindPasswordStep } from "./find-password-step";
 import { SubmitButton } from "./submit-button";
 
 /**
@@ -20,12 +21,15 @@ import { SubmitButton } from "./submit-button";
  * ⚠️ 검증도 로그인도 **Server Action**이 한다(`loginAction`). 화면은 목인지 실서버인지 모른다.
  * ⚠️ **로그인 API가 아직 없다.** 검증을 통과해도 갈 데가 없는데, 그때 조용히 아무것도 안 하면
  *    사용자는 비밀번호가 틀린 줄 안다 — 액션이 안내를 돌려주고 여기서 보여 준다(§정직성).
- * ⚠️ 비밀번호 재발급 화면은 만들지 않는다(팀 결정) — 링크가 아니라 안내 문구로 둔다.
+ * ⚠️ **비밀번호 찾기는 같은 화면 안의 세 번째 단계다**(2026-08-14 — 이전엔 화면이 없어
+ *    안내 문구만 뒀는데, BE가 `POST /api/auth/password/reset`을 열어 화면을 만들었다).
+ *    주소를 안 바꾸는 건 위 두 단계와 같은 이유다.
  */
 const INITIAL: LoginState = { errors: {}, attempt: 0 };
 export function LoginForm() {
   // 기억해 둔 회사가 있으면 1단계를 건너뛴다
   const company = useSavedCompany();
+  const [view, setView] = useState<"login" | "find-password">("login");
 
   const [isPasswordShown, setIsPasswordShown] = useState(false);
   /*
@@ -39,6 +43,9 @@ export function LoginForm() {
   const handleChangeCompany = () => clearCompany();
 
   if (!company) return <CompanyCodeStep />;
+  if (view === "find-password") {
+    return <FindPasswordStep company={company} onBack={() => setView("login")} />;
+  }
 
   return (
     <AuthCard icon={KeyRound} step="2 / 2" title="로그인">
@@ -140,10 +147,6 @@ export function LoginForm() {
           </p>
         </div>
 
-        {/*
-          ⚠️ 비밀번호 재발급은 **화면이 없다**(팀 결정: 관리자가 재발급). 누를 데가 없으므로
-             링크로 두지 않고 안내 문구로만 둔다 — 안 되는 걸 되는 척하지 않는다(§정직성).
-        */}
         <div className="mt-2 flex items-center justify-between gap-3">
           <label className="flex items-center gap-2 text-[12px] leading-4">
             {/* 체크값은 서버가 쿠키 수명(`maxAge`)을 정할 때 쓴다 — 연동되면 액션이 읽는다 */}
@@ -155,9 +158,13 @@ export function LoginForm() {
             />
             <span className="translate-y-px">로그인 상태 유지</span>
           </label>
-          <p className="text-muted-foreground/70 text-[11px] leading-4">
-            비밀번호 재발급은 관리자에게 문의해 주세요
-          </p>
+          <button
+            type="button"
+            onClick={() => setView("find-password")}
+            className="text-muted-foreground/70 focus-visible:ring-ring rounded text-[11px] leading-4 hover:underline focus-visible:ring-2 focus-visible:outline-hidden"
+          >
+            비밀번호를 잊으셨나요?
+          </button>
         </div>
 
         <SubmitButton>로그인</SubmitButton>

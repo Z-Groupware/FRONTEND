@@ -35,21 +35,22 @@ function AuthorityMark({ authority }: { authority: OrgMember["authority"] }) {
 }
 
 /**
- * 상태 뱃지 — **자리에 없는 사람에게만** 단다(휴직·퇴사).
+ * 상태 뱃지 — **자리에 없는 사람에게만** 단다(휴직).
  *
  * ⚠️ **`대기`를 달지 않는다.** 그건 "휴직·오프보딩을 신청하고 승인을 기다리는" 상태인데
  *    (§constants/member), 이 화면은 **전 구성원이 본다**. 달아 두면 아직 승인도 안 난
  *    남의 휴직·퇴사 신청이 회사 전체에 공개된다 — 그 신청을 다루는 자리는 대표·관리자의
  *    사원 관리(`/manage/members/:id`)다(WORKFLOW §7).
  *    승인 전까지 그 사람은 **여전히 재직 중**이라, 여기서는 아무 표시도 안 하는 게 사실에 맞다.
- * ⚠️ **퇴사자는 조직도에 남는다**(CLAUDE.md §도메인 상수: 나간 사람은 목록에 남는다).
- *    남긴 회의·액션의 출처라 이름이 사라지면 추적이 끊긴다 — 대신 이 뱃지로 알린다.
- *    한때 아예 걸렀는데, 그건 팀이 정한 적 없는 정책을 화면이 단언한 것이었다.
+ * ⚠️ **`RESIGNED`는 안 본다**(2026-08-14 정리). 오프보딩 최종 승인 시 BE가 그 자리에서
+ *    `deleted_at`을 찍어 이후 모든 조회에서 빠진다(BE `MemberJpaEntity.offboard` 확인) —
+ *    이 조직도 조회에 `RESIGNED` 상태 사람이 올 길이 없다. 휴직은 소프트 딜리트가 아니라
+ *    그대로 유효하다.
  * ⚠️ 재직은 기본이라 안 단다. 생김새는 `MEMBER_STATUS_BADGE_CLASS` 한 곳이 정하고,
  *    색이 아니라 채움과 진하기로 층을 만든다(§디자인 토큰).
  */
 function StatusMark({ status }: { status: OrgMember["status"] }) {
-  if (status !== MEMBER_STATUS.VACATION && status !== MEMBER_STATUS.RESIGNED) return null;
+  if (status !== MEMBER_STATUS.VACATION) return null;
 
   return (
     <span

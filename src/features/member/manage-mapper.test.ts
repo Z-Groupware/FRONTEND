@@ -1,6 +1,11 @@
 import { ACTION_STATUS } from "@/constants/domain";
 
-import { type BeCompanyAction, toManagedMemberAction } from "./manage-mapper";
+import {
+  type BeCompanyAction,
+  type BeMemberListItem,
+  toManagedMember,
+  toManagedMemberAction,
+} from "./manage-mapper";
 
 /**
  * 사원 상세 담당 액션 매퍼 — `GET /api/company/actions` → 화면 계약.
@@ -42,5 +47,36 @@ describe("담당 액션 매퍼 (toManagedMemberAction)", () => {
     expect(toManagedMemberAction({ ...beAction, status: ACTION_STATUS.DONE }).status).toBe(
       ACTION_STATUS.DONE,
     );
+  });
+});
+
+const BE_MEMBER: BeMemberListItem = {
+  memberId: 4,
+  name: "박도현",
+  teamName: "개발팀",
+  positionName: "사원",
+  role: "MEMBER",
+  isAdmin: false,
+  roleLabel: null,
+  workStatus: "ACTIVE",
+  joinedOn: "2023-01-15",
+};
+
+/**
+ * ⚠️ **BE의 시스템 값 `없음`도 `null`로 되돌인다**(2026-08-14 재발견) — 이 정규화 없이는
+ *    "역할이 없다"는 두 가지 다른 모양(빈 문자열 · 문자열 `없음`)으로 온다.
+ */
+describe("toManagedMember — roleLabel 정규화", () => {
+  it("BE의 시스템 값 `없음`은 `null`로 되돌린다", () => {
+    expect(toManagedMember({ ...BE_MEMBER, roleLabel: "없음" }).roleLabel).toBeNull();
+  });
+
+  it("빈 문자열·공백뿐인 문자열도 `null`이다", () => {
+    expect(toManagedMember({ ...BE_MEMBER, roleLabel: "" }).roleLabel).toBeNull();
+    expect(toManagedMember({ ...BE_MEMBER, roleLabel: "   " }).roleLabel).toBeNull();
+  });
+
+  it("실제 역할 이름은 그대로 옮긴다", () => {
+    expect(toManagedMember({ ...BE_MEMBER, roleLabel: "프론트엔드" }).roleLabel).toBe("프론트엔드");
   });
 });

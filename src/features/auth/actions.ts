@@ -2,11 +2,16 @@
 
 import { redirect } from "next/navigation";
 
-import { serverApi, toUserMessage } from "@/lib/api";
+import { ApiError, serverApi, toUserMessage } from "@/lib/api";
 import { ep } from "@/lib/endpoints";
 import { isMock } from "@/mocks/config";
 
 import { type CredentialErrors, validateCredentials } from "./credentials";
+import {
+  type FindPasswordDraft,
+  type FindPasswordErrors,
+  validateFindPassword,
+} from "./find-password";
 import { findMockCompany } from "./mock/companies";
 import { type RegisterDraft, type RegisterErrors, validateRegister } from "./register-draft";
 import { clearSession, getAccessToken, setSession } from "./session";
@@ -344,4 +349,117 @@ export async function logoutAction(): Promise<void> {
 
   await clearSession();
   redirect("/login");
+}
+
+/** 비밀번호 찾기 결과 — `useActionState`가 그대로 들고 있는 모양 */
+export interface FindPasswordState {
+  errors: FindPasswordErrors;
+  /** 칸에 못 매길 오류(계정 없음·발송 실패·시도 초과·통신 실패) */
+  error?: string;
+  /** 성공했을 때만 채워지는 안내 — 새 비밀번호는 여기 안 실린다, 메일로만 나간다 */
+  notice?: string;
+  /** 성공했는가 — 화면이 폼을 접고 안내만 남기는 데 쓴다 */
+  done: boolean;
+  /**
+   * 방금 적은 이메일 — **실패했을 때 되살린다.**
+   *
+   * ⚠️ `loginAction`(§`email`)과 같은 이유다. React 19의 `<form action={서버액션}>`은
+   *    액션이 끝나면 폼을 리셋한다 — 이 값이 없으면 실패할 때마다(형식 오류든 서버 오류든)
+   *    방금 친 이메일이 지워져 처음부터 다시 쳐야 했다(적대적 리뷰, 2026-08-14).
+   */
+  email?: string;
+  /** 몇 번째 시도인가 — 화면이 입력칸의 `key`를 바꿔 되살리는 데 쓴다 */
+  attempt: number;
+}
+
+/**
+ * `POST /api/auth/password/reset` 실패를 사람이 읽을 문장으로 나눈다 — 마이페이지
+ * 담당자 문서(2026-08-14).
+ *
+ * ⚠️ **`AU-007`(429)과 `AU-045`(503)만 문구를 보탠다.** BE 문장은 무슨 일이 있었는지를
+ *    말하고, 이 둘은 **다음에 뭘 해야 하는지**까지 덧붙여야 하는 자리라서다(시도 횟수 초과 →
+ *    내일 다시, 메일 발송 실패 → 비밀번호는 안 바뀌었으니 기존 걸 그대로).
+ * ⚠️ **`AU-044`(계정 없음·퇴사자)는 BE 문장을 그대로 안 쓴다**(적대적 리뷰, 2026-08-14 —
+ *    계정 열거 취약점). 성공(`done: true`)과 실패(에러 문구)가 이미 갈리는 것 자체는 이
+ *    API 설계상 못 막지만("이 이메일로 보냈다" 대 "실패했다"), `AU-044`만 BE의 "계정 없음"
+ *    문장을 그대로 보여주면 그 실패가 **정확히 어떤 이유인지**(계정이 없다)까지 확정해
+ *    준다 — `loginAction`이 아이디·비밀번호 실패를 `LOGIN_FAILED` 한 문장으로 합쳐 이
+ *    구분을 막는 것과 같은 이유로, 여기도 다른 실패(발송 실패·시도 초과 등)와 구분 안 되는
+ *    문구로 맞춘다.
+ */
+function toFindPasswordError(error: unknown): string {
+  if (!(error instanceof ApiError)) return toUserMessage(error);
+
+  switch (error.code) {
+    case "AU-007":
+      return `${error.message} 내일 다시 시도해 주세요.`;
+    case "AU-045":
+      return `${error.message} 기존 비밀번호는 그대로 사용할 수 있어요.`;
+    case "AU-044":
+      return "요청을 처리하지 못했습니다. 기업 코드와 이메일을 다시 확인해 주세요.";
+    default:
+      return error.message;
+  }
+}
+
+/**
+ * 비밀번호 찾기 — 로그인 화면에서 부른다(§AI 지시 2026-08-14).
+ *
+ * ⚠️ **이메일 하나로는 못 찾는다.** 이메일은 회사 안에서만 유일해 `companyCode`가 항상
+ *    같이 필요하다(`find-password.ts`).
+ * ⚠️ **성공 응답에 새 비밀번호가 없다.** 메일로만 나간다 — 화면에 보여줄 값이 없고,
+ *    성공 문구도 BE `message`가 아니라 여기서 정한 문장을 쓴다(`serverApi`가 성공 응답의
+ *    `message`는 벗겨 버리고 `data`만 돌려주기 때문— `lib/api.ts`).
+ * ⚠️ **성공하면 전 기기 로그인이 해제된다**(마이페이지 담당자 문서) — 로그인 전 화면에서
+ *    부르는 액션이라 지울 세션이 없는 게 보통이지만, 다른 탭에 로그인해 둔 채로 이 화면을
+ *    썼을 수도 있어 `changePasswordAction`과 같은 이유로 세션을 지운다. 안 지우면 그 탭이
+ *    죽은 토큰으로 이후 요청마다 401을 반복해서 맞는다.
+ */
+export async function findPasswordAction(
+  prevState: FindPasswordState,
+  formData: FormData,
+): Promise<FindPasswordState> {
+  const draft: FindPasswordDraft = {
+    companyCode: String(formData.get("companyCode") ?? ""),
+    email: String(formData.get("email") ?? ""),
+  };
+
+  const keep = (state: Omit<FindPasswordState, "email" | "attempt">): FindPasswordState => ({
+    ...state,
+    email: draft.email,
+    attempt: prevState.attempt + 1,
+  });
+
+  const errors = validateFindPassword(draft);
+  if (Object.keys(errors).length > 0) return keep({ errors, done: false });
+
+  if (isMock) {
+    // 목 모드에는 메일을 보낼 서버가 없다 — 조용히 성공한 척하지 않는다(§정직성).
+    return keep({
+      errors: {},
+      done: false,
+      error: "목 모드입니다. 실제 발송은 연동 후 동작합니다.",
+    });
+  }
+
+  try {
+    await serverApi<null>(ep.passwordReset(), {
+      method: "POST",
+      json: { companyCode: draft.companyCode.trim(), email: draft.email.trim() },
+    });
+  } catch (error) {
+    return keep({ errors: {}, done: false, error: toFindPasswordError(error) });
+  }
+
+  await clearSession();
+  /*
+    ⚠️ 성공했을 때는 **이메일을 안 담는다.** `done: true`라 폼 자체가 접히고 안내만 남는다 —
+       되살릴 폼이 없다(`loginAction`의 `redirect` 성공 케이스와 같은 이유).
+  */
+  return {
+    errors: {},
+    done: true,
+    notice: "새 비밀번호를 메일로 보냈습니다. 메일을 확인해 주세요.",
+    attempt: prevState.attempt + 1,
+  };
 }

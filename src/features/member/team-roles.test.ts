@@ -1,24 +1,34 @@
 import type { DepartmentNode } from "@/features/company/types";
 
-import { buildTeamRoles, isRoleOfTeam, toBeRoleLabel } from "./team-roles";
+import { buildTeamRoles, isRoleOfTeam, roleIdOf, roleNameOf } from "./team-roles";
 
+/*
+  ⚠️ **`없음`을 실제 행으로 둔다**(2026-08-14 BE PR #489) — BE가 모든 팀의 역할 목록에
+     전역 시드 행 `없음`을 실제 id로 끼워서 주므로, 여기서도 화면이 만들어 넣지 않고
+     BE처럼 목에 이미 있는 값으로 둔다.
+*/
 const TEAMS: DepartmentNode[] = [
   {
     id: "d1",
     name: "개발팀",
     children: [
+      { id: "r0", name: "없음", children: [] },
       { id: "r1", name: "프론트엔드", children: [] },
       { id: "r2", name: "백엔드", children: [] },
     ],
   },
-  { id: "d2", name: "전략기획팀", children: [] },
+  { id: "d2", name: "전략기획팀", children: [{ id: "r0", name: "없음", children: [] }] },
 ];
 
 describe("buildTeamRoles", () => {
   it("팀 이름에 그 팀의 역할만 매단다", () => {
     expect(buildTeamRoles(TEAMS)).toEqual({
-      개발팀: ["프론트엔드", "백엔드"],
-      전략기획팀: [],
+      개발팀: [
+        { id: "r0", name: "없음" },
+        { id: "r1", name: "프론트엔드" },
+        { id: "r2", name: "백엔드" },
+      ],
+      전략기획팀: [{ id: "r0", name: "없음" }],
     });
   });
 });
@@ -27,50 +37,60 @@ describe("isRoleOfTeam", () => {
   const roles = buildTeamRoles(TEAMS);
 
   it("그 팀의 역할이면 통과한다", () => {
-    expect(isRoleOfTeam(roles, "개발팀", "백엔드")).toBe(true);
+    expect(isRoleOfTeam(roles, "개발팀", "r2")).toBe(true);
   });
 
   /* ⚠️ 역할은 팀에 매여 있다 — 남의 팀 역할을 붙이면 조직도가 거짓말을 한다 */
   it("다른 팀의 역할이면 막는다", () => {
-    expect(isRoleOfTeam(roles, "전략기획팀", "백엔드")).toBe(false);
+    expect(isRoleOfTeam(roles, "전략기획팀", "r2")).toBe(false);
   });
 
-  it("`없음`(빈 값)은 늘 통과한다 — 역할은 안 붙여도 되는 값이다", () => {
-    expect(isRoleOfTeam(roles, "개발팀", "")).toBe(true);
-    expect(isRoleOfTeam(roles, "전략기획팀", "")).toBe(true);
+  it("`null`(아직 안 골랐다)은 늘 통과한다", () => {
+    expect(isRoleOfTeam(roles, "개발팀", null)).toBe(true);
+    expect(isRoleOfTeam(roles, "전략기획팀", null)).toBe(true);
   });
 
-  it("모르는 팀이면 막는다 — 빈 값만 예외다", () => {
-    expect(isRoleOfTeam(roles, "없는팀", "백엔드")).toBe(false);
+  /* ⚠️ `없음`도 그 팀의 실제 역할 행이라 다른 역할과 똑같이 검사를 통과한다 */
+  it("`없음` id를 고른 것도 통과한다 — 실제로 있는 행이다", () => {
+    expect(isRoleOfTeam(roles, "전략기획팀", "r0")).toBe(true);
   });
 
-  /*
-    ⚠️ **왕복이 맞아야 한다.** `toBeRoleLabel`이 비우기를 글자 `없음`으로 보내므로 BE가 그
-       값을 되돌려 준다 — 여기서 막으면 역할을 비운 사람은 직급·권한을 영영 못 고친다
-       (팀에 역할이 없으면 화면 셀렉트도 잠겨 있어 다른 값으로 바꿀 길이 없다).
-  */
-  it("BE가 돌려준 `없음`도 통과한다 — 우리가 보낸 값이다", () => {
-    expect(isRoleOfTeam(roles, "개발팀", toBeRoleLabel(""))).toBe(true);
-    expect(isRoleOfTeam(roles, "전략기획팀", "없음")).toBe(true);
+  it("모르는 팀이면 막는다 — `null`만 예외다", () => {
+    expect(isRoleOfTeam(roles, "없는팀", "r2")).toBe(false);
   });
 });
 
-describe("toBeRoleLabel — BE 요청 값 변환", () => {
-  /*
-    ⚠️ 빈 문자열을 그대로 보내면 BE `@Pattern`이 400으로 거절하고, `null`은 "안 바꾼다"라
-       비우기에 못 쓴다 — 비우기는 문자열 `"없음"`이다([확인] BE `UpdateMemberRoleRequest`).
-       이 변환이 무너지면 역할을 비운 저장이 전부 400으로 튕긴다.
-  */
-  it("빈 값은 `없음`으로 바꾼다 — 그대로 보내면 400이다", () => {
-    expect(toBeRoleLabel("")).toBe("없음");
+describe("roleNameOf — 목 저장소에 싣기 전 id → 이름", () => {
+  const roles = buildTeamRoles(TEAMS);
+
+  it("역할 id면 그 이름을 돌려준다", () => {
+    expect(roleNameOf(roles, "개발팀", "r1")).toBe("프론트엔드");
   });
 
-  it("공백뿐인 값도 `없음`이다 — BE 패턴이 공백을 빈 값으로 본다", () => {
-    expect(toBeRoleLabel("   ")).toBe("없음");
+  /* ⚠️ 목 계약(`ManagedMember.roleLabel`)은 역할 없음을 `null`로 적는다 */
+  it("`없음` id는 `null`이다", () => {
+    expect(roleNameOf(roles, "개발팀", "r0")).toBeNull();
   });
 
-  it("값이 있으면 다듬어서 그대로 보낸다", () => {
-    expect(toBeRoleLabel("백엔드")).toBe("백엔드");
-    expect(toBeRoleLabel(" 프론트엔드 ")).toBe("프론트엔드");
+  it("`null`(안 바꿈)도 `null`이다", () => {
+    expect(roleNameOf(roles, "개발팀", null)).toBeNull();
+  });
+});
+
+describe("roleIdOf — 목 저장소를 읽어 화면 계약 채우기", () => {
+  const roles = buildTeamRoles(TEAMS);
+
+  it("이름이 있으면 그 id를 돌려준다", () => {
+    expect(roleIdOf(roles, "개발팀", "백엔드")).toBe("r2");
+  });
+
+  /* ⚠️ 라벨이 없는 사람(`roleLabel: null`)은 그 팀의 `없음` 행 id로 되찾는다 */
+  it("라벨이 없으면 `없음` 행의 id다", () => {
+    expect(roleIdOf(roles, "개발팀", null)).toBe("r0");
+    expect(roleIdOf(roles, "전략기획팀", null)).toBe("r0");
+  });
+
+  it("못 찾으면 `null`이다", () => {
+    expect(roleIdOf(roles, "개발팀", "없는역할")).toBeNull();
   });
 });

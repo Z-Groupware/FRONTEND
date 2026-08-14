@@ -1,7 +1,7 @@
 import { POSITION_AUTHORITIES } from "@/constants/authority";
 
 import type { AccountDraft, AccountErrors } from "./manage-types";
-import { isRoleOfTeam } from "./team-roles";
+import { isRoleOfTeam, type TeamRoleOption } from "./team-roles";
 
 /**
  * 계정 발급 검증 — **화면과 서버가 같은 함수를 쓴다.**
@@ -21,7 +21,7 @@ export function validateAccount(
    * ⚠️ 화면은 고른 팀의 역할만 주지만 Server Action은 직접 부를 수 있다 —
    *    없으면 남의 팀 역할이 붙어 조직도가 거짓말을 한다.
    */
-  teamRoles?: Record<string, string[]>,
+  teamRoles?: Record<string, TeamRoleOption[]>,
 ): AccountErrors {
   const errors: AccountErrors = {};
 
@@ -53,9 +53,9 @@ export function validateAccount(
   const allowed: readonly string[] = POSITION_AUTHORITIES;
   if (!allowed.includes(draft.authority)) errors.authority = "발급할 수 없는 권한입니다";
 
-  /* ⚠️ 역할은 **그 팀의 것만** 붙는다. 빈 값(`없음`)은 늘 통과한다(§WORKFLOW 9) */
-  if (teamRoles && !isRoleOfTeam(teamRoles, draft.teamName.trim(), draft.roleLabel.trim())) {
-    errors.roleLabel = "그 팀에 없는 역할입니다";
+  /* ⚠️ 역할은 **그 팀의 것만** 붙는다. `null`(아직 안 골랐다)은 늘 통과한다(§WORKFLOW 9) */
+  if (teamRoles && !isRoleOfTeam(teamRoles, draft.teamName.trim(), draft.roleId)) {
+    errors.roleId = "그 팀에 없는 역할입니다";
   }
 
   return errors;

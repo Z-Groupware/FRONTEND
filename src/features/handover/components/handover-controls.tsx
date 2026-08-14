@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import type { HandoverType } from "@/constants/domain";
 import { cn } from "@/lib/utils";
+import { isMock } from "@/mocks/config";
 
 import {
   DEFAULT_HANDOVER_PREVIEW,
@@ -34,32 +35,37 @@ export function HandoverControls({ activePreview, activeType }: HandoverControls
       {/*
         ⚠️ **무채색이다**(2026-08-11). 주황 테두리·바탕이었는데, 이건 연동 전 임시 도구이지
            경고가 아니다 — 색으로 알리는 건 에러(빨강)뿐이다(DESIGN §5).
+        ⚠️ **mock 모드에서만 보인다**(2026-08-15). 실서버에서는 `getViewer()`가 실제 로그인
+           본인을 이미 정해서 바꿔 볼 "인물"이라는 개념 자체가 없다 — 실서버인데 이 토글이
+           남아 있으면 실제 신청 화면에 아직 로그인 전 임시 도구가 뜨는 것처럼 보인다.
       */}
-      <div className="border-border bg-secondary/50 flex items-center gap-3 rounded-lg border px-3 py-2">
-        <span className="text-muted-foreground shrink-0 text-[12px] leading-4 font-medium">
-          임시 미리보기
-        </span>
-        <div role="group" aria-label="미리보기 인물" className="flex items-center gap-1">
-          {HANDOVER_PREVIEW_TABS.map((tab) => (
-            <Link
-              key={tab.preview}
-              href={buildHref(tab.preview, activeType)}
-              aria-pressed={activePreview === tab.preview}
-              className={cn(
-                "rounded-md px-2 py-1 text-[12px] leading-4 transition-colors",
-                activePreview === tab.preview
-                  ? "bg-foreground text-background font-medium"
-                  : "text-muted-foreground hover:bg-muted",
-              )}
-            >
-              {tab.label}
-            </Link>
-          ))}
+      {isMock && (
+        <div className="border-border bg-secondary/50 flex items-center gap-3 rounded-lg border px-3 py-2">
+          <span className="text-muted-foreground shrink-0 text-[12px] leading-4 font-medium">
+            임시 미리보기
+          </span>
+          <div role="group" aria-label="미리보기 인물" className="flex items-center gap-1">
+            {HANDOVER_PREVIEW_TABS.map((tab) => (
+              <Link
+                key={tab.preview}
+                href={buildHref(tab.preview, activeType)}
+                aria-pressed={activePreview === tab.preview}
+                className={cn(
+                  "rounded-md px-2 py-1 text-[12px] leading-4 transition-colors",
+                  activePreview === tab.preview
+                    ? "bg-foreground text-background font-medium"
+                    : "text-muted-foreground hover:bg-muted",
+                )}
+              >
+                {tab.label}
+              </Link>
+            ))}
+          </div>
+          <span className="text-muted-foreground text-[11px] leading-4">
+            — 로그인 연동 전까지만 쓰는 화면 확인용입니다.
+          </span>
         </div>
-        <span className="text-muted-foreground text-[11px] leading-4">
-          — 로그인 연동 전까지만 쓰는 화면 확인용입니다.
-        </span>
-      </div>
+      )}
 
       <nav aria-label="인수인계 종류" className="border-border flex gap-4 border-b">
         {HANDOVER_TYPE_TABS.map((tab) => (

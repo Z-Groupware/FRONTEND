@@ -13,6 +13,7 @@ import {
   toDepartmentNode,
   toPosition,
   toTeamMemberCounts,
+  withoutSystemRoles,
 } from "./mapper";
 import { getMockCompanySetting } from "./mock/company";
 import type { CompanySetting } from "./types";
@@ -25,7 +26,16 @@ import type { CompanySetting } from "./types";
  * ⚠️ 회사는 세션(`companyId`)으로 정해진다 — 인자로 받지 않는다(§라우트 그룹).
  */
 export async function getCompanySetting(): Promise<CompanySetting> {
-  if (isMock) return getMockCompanySetting();
+  /*
+    ⚠️ **팀 편집 화면 전용이라 시스템 역할을 뺀다**(`withoutSystemRoles`, 2026-08-14 BE PR
+       #489). `없음`은 회사가 만든 역할이 아니라 전역 시드 행이다 — 그대로 두면 편집 트리에서
+       사용자가 이름을 바꾸거나 지울 수 있는 것처럼 보인다. 목이든 실서버든 이 화면에
+       나가는 값은 여기서 한 번에 거른다.
+  */
+  if (isMock) {
+    const setting = getMockCompanySetting();
+    return { ...setting, departments: setting.departments.map(withoutSystemRoles) };
+  }
 
   /*
     ⚠️ **한 번에 주는 API가 없다.** 화면은 기본 정보·팀·직급을 한 화면에 그리는데 BE는 셋으로
@@ -43,7 +53,7 @@ export async function getCompanySetting(): Promise<CompanySetting> {
 
   return {
     profile: toCompanyProfile(profile),
-    departments: teams.map(toDepartmentNode),
+    departments: teams.map(toDepartmentNode).map(withoutSystemRoles),
     positions: positions.map(toPosition),
     teamMemberCounts: toTeamMemberCounts(teams),
   };

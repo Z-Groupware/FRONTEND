@@ -5,13 +5,12 @@ jest.mock("@/features/shell/viewer", () => ({ getViewer: jest.fn() }));
 import { revalidatePath } from "next/cache";
 
 import { AUTHORITY } from "@/constants/authority";
-import { MEMBER_STATUS } from "@/constants/member";
+import { DELETED_MEMBER_STATUS, MEMBER_STATUS } from "@/constants/member";
 import { getViewer } from "@/features/shell/viewer";
 
 import {
   approveHandoverAction,
   changeMemberGradeAction,
-  deleteMemberAccountAction,
   fetchMembersPageAction,
   issueAccountAction,
   rejectHandoverAction,
@@ -20,6 +19,7 @@ import { type AccountDraft, MEMBER_FILTER } from "./manage-types";
 import {
   completeMockHandoverMidApproval,
   findMockManagedMember,
+  listMockManagedMembers,
   resetMockManagedMembers,
 } from "./mock/managed";
 
@@ -47,7 +47,7 @@ const DRAFT: AccountDraft = {
   position: "사원",
   authority: AUTHORITY.MEMBER,
   isAdmin: false,
-  roleLabel: "",
+  roleId: null,
 };
 
 beforeEach(() => {
@@ -255,10 +255,43 @@ describe("승인 · 반려", () => {
     expect(after?.pendingHandover).toBeNull();
   });
 
-  it("오프보딩을 승인하면 퇴사 상태가 된다", async () => {
+  /*
+    ⚠️ **`RESIGNED`가 아니라 즉시 소프트 삭제된다**(2026-08-14 정정). BE가 최종 승인
+       시점에 그 자리에서 `deleted_at`을 찍어 이후 모든 조회에서 빠지는 걸로 재확인됐다 —
+       목도 같은 동작을 흉내내야 `getManagedMember`(§isVisibleMemberStatus)가 실제로
+       이 사람을 숨긴다. `RESIGNED`로만 바꾸고 남겨 두면 절대 안 오는 상태가 화면에
+       계속 보이고, 직급·권한 폼의 잠금(`gradeLockOf`)도 더는 걸리지 않아 지워진 계정을
+       권한만으로 다시 만질 수 있는 구멍이 생긴다.
+  */
+  it("오프보딩을 승인하면 즉시 소프트 삭제된다", async () => {
     await approveHandoverAction(8);
 
-    expect(findMockManagedMember(8)?.member.status).toBe(MEMBER_STATUS.RESIGNED);
+    expect(findMockManagedMember(8)?.member.status).toBe(DELETED_MEMBER_STATUS);
+    /*
+      ⚠️ **내부 저장값만 보면 안 된다**(CodeRabbit 지적, 2026-08-14). `findMockManagedMember`는
+         소프트 삭제된 레코드도 그대로 돌려주는 raw lookup이라, 실제로 목록에서 빠지는지는
+         `listMockManagedMembers()`(=`isVisibleMemberStatus`가 거르는 자리)로 따로 확인해야 한다.
+    */
+    expect(listMockManagedMembers().some((member) => member.id === 8)).toBe(false);
+  });
+
+  /*
+    ⚠️ **지워진 계정에 권한을 다시 얹을 수 있던 구멍**(2026-08-14 재발견 — `gradeLockOf`가
+       퇴사자 분기를 지운 근거는 "그 사람이 이 화면에 다시 올 길이 없다"였는데, 즉시 소프트
+       삭제로 정정하기 전까지는 목이 `RESIGNED`로만 바꾸고 그대로 남겨 둬서 실제로 다시 올
+       수 있었다). `getManagedMember`가 `isVisibleMemberStatus`로 걸러 `null`을 돌려주는
+       지금은 이 자리에서 먼저 막혀야 한다 — `gradeLockOf`까지 갈 필요조차 없다.
+  */
+  it("최종 승인 직후 그 계정은 직급·권한을 더 못 바꾼다", async () => {
+    await approveHandoverAction(8);
+
+    const result = await changeMemberGradeAction(8, {
+      position: "사원",
+      authority: AUTHORITY.LEADER,
+      isAdmin: true,
+    });
+
+    expect(result).toEqual({ isSuccess: false, message: "없는 사원입니다" });
   });
 
   it("반려하면 재직으로 돌아가고 신청이 사라진다", async () => {
@@ -352,54 +385,6 @@ describe("계정 발급 — 관리자 겸직", () => {
     // ⚠️ 먼저 발급됐는지 본다 — 아니면 아래에서 `!`가 터져 진짜 원인이 가려진다
     expect(result.issued).toBeTruthy();
     expect(findMockManagedMember(result.issued!.id)?.member.isAdmin).toBe(false);
-  });
-});
-
-describe("deleteMemberAccountAction — 계정 탈퇴", () => {
-  /*
-    ⚠️ WORKFLOW §7: "오프보딩 최종 승인 후에만 계정 탈퇴 가능." 재직 중인 사람을 바로 지우면
-       그 사람이 들고 있던 액션이 인수인계 없이 사라진다.
-  */
-  it("퇴사 상태가 아니면 막는다", async () => {
-    const result = await deleteMemberAccountAction(4);
-
-    expect(result.isSuccess).toBe(false);
-    expect(result.message).toMatch(/오프보딩/);
-    expect(findMockManagedMember(4)).not.toBeNull();
-  });
-
-  it("오프보딩을 승인한 뒤에는 탈퇴 처리된다", async () => {
-    await approveHandoverAction(8);
-    expect(findMockManagedMember(8)?.member.status).toBe(MEMBER_STATUS.RESIGNED);
-
-    expect(await deleteMemberAccountAction(8)).toEqual({ isSuccess: true });
-  });
-
-  /*
-    ⚠️ **줄을 지우지 않는다**(소프트 딜리트). 그 사람이 남긴 회의·액션이 id를 참조하고 있어서
-       진짜로 지우면 가리킬 곳을 잃는다 — 목록에서만 빠진다.
-  */
-  it("지운 사람은 목록에서 빠지지만 기록은 남는다", async () => {
-    await approveHandoverAction(8);
-    await deleteMemberAccountAction(8);
-
-    const page = await fetchMembersPageAction({ keyword: "", filter: MEMBER_FILTER.ALL }, 0);
-    expect(page.items.some((member) => member.id === 8)).toBe(false);
-    // 상세는 여전히 찾을 수 있다 — 기록이 그 id를 가리킨다
-    expect(findMockManagedMember(8)).not.toBeNull();
-  });
-
-  it("Admin 겸직자는 탈퇴 처리하지 못한다", async () => {
-    getViewerMock.mockResolvedValue(OWNER);
-    await approveHandoverAction(8);
-    getViewerMock.mockResolvedValue(ADMIN);
-
-    expect(await deleteMemberAccountAction(8)).toMatchObject({ isSuccess: false });
-  });
-
-  /* ⚠️ 대표가 사라지면 회사를 열 사람이 없다 */
-  it("자기 계정은 탈퇴 처리할 수 없다", async () => {
-    expect(await deleteMemberAccountAction(OWNER.id)).toMatchObject({ isSuccess: false });
   });
 });
 
