@@ -39,8 +39,12 @@ export interface BeTeam {
    * 이 팀에서 고를 수 있는 역할들. [확인] BE `RoleNode`(신규, 2026-08-14 BE PR #489).
    * ⚠️ **`없음`(roleId 2)이 항상 끼어 온다** — 전역 시드 행을 모든 팀 목록에 얹어 준다.
    * ⚠️ **`리더`(roleId 1)는 안 온다** — BE가 팀장 표시용이라 목록에서 뺀다.
+   * ⚠️ **선택적이라고 타입에 그대로 적는다**(2026-08-14 프로덕션 재현 — BE PR #489가 아직
+   *    실제로는 배포 전이라 이 필드 자체가 안 온다). 비필수(`?`)로 안 적으면, 이 필드를
+   *    직접 읽는 새 코드가 생겨도 타입체커가 "`undefined`일 수 있다"고 못 잡아 줘서
+   *    `toDepartmentNode`가 겪었던 `.map()` 크래시를 그대로 되풀이할 수 있다.
    */
-  roles: { roleId: number; name: string }[];
+  roles?: { roleId: number; name: string }[];
 }
 
 /**
@@ -127,6 +131,11 @@ export function toCompanyUpdateBody(draft: CompanyProfileDraft): BeCompanyUpdate
  * ⚠️ **역할을 그대로 담는다**(2026-08-14 BE PR #489 — 전에는 BE가 안 줘서 늘 빈 배열이었다).
  *    `없음`도 그대로 온다 — 역할 **선택**(`team-roles.ts`)엔 필요한 값이라 여기서 안 거른다.
  *    팀 **편집** 화면(`getCompanySetting()`)만 `withoutSystemRoles`로 따로 걸러 낸다.
+ * ⚠️ **`roles`가 아직 안 올 수 있다**(2026-08-14 프로덕션 재현 — BE PR #489가 실제로는
+ *    아직 배포 전이라 `GET /api/teams` 응답에 `roles` 필드 자체가 없다). 그대로
+ *    `team.roles.map(...)`을 부르면 `undefined`에 `.map`을 호출해 **`/manage/members`·
+ *    `/owner/setting` 전체가 Server Component 에러로 죽는다** — `roles`가 없으면 빈
+ *    배열로 접어서, BE가 그 필드를 내려주기 전까지는 "역할 없음"과 같은 모양으로 견딘다.
  * ⚠️ **팀장(`leaderMemberId`·`leaderName`)을 못 담는다.** 우리 노드에 자리가 없어 지금은
  *    버린다 — 화면에 팀장이 안 보이는 건 그래서다.
  */
@@ -134,7 +143,7 @@ export function toDepartmentNode(team: BeTeam): DepartmentNode {
   return {
     id: String(team.teamId),
     name: team.name,
-    children: team.roles.map((role) => ({
+    children: (team.roles ?? []).map((role) => ({
       id: String(role.roleId),
       name: role.name,
       children: [],

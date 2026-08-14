@@ -21,7 +21,12 @@ import { requireAccessToken } from "@/features/auth/session";
 import { getViewer } from "@/features/shell/viewer";
 import { serverApi } from "@/lib/api";
 
-import { createRoomReservationAction } from "./actions";
+import {
+  createMeetingRoomAction,
+  createRoomReservationAction,
+  deleteMeetingRoomAction,
+  updateMeetingRoomAction,
+} from "./actions";
 import { getReservableMembers } from "./server";
 
 /**
@@ -110,5 +115,94 @@ describe("createRoomReservationAction — 실서버 참석자 재검증", () => 
 
     expect(result.errors).toEqual({});
     expect(serverApiMock).toHaveBeenCalledTimes(1);
+  });
+});
+
+/**
+ * 회의실 추가·수정·삭제 — **실서버 권한 판정이 실제 로그인 세션을 본다**.
+ *
+ * ⚠️ 회귀 테스트다 — 세 액션이 전부 `canManageRooms(getMockActor())`로 실서버에서도
+ *    고정된 mock 액터(OWNER, isAdmin 없음)를 판정해서, 실제로 is_admin인 사람이 로그인해도
+ *    항상 막히던 버그가 있었다. `getViewer()`(실제 세션)를 보게 고쳤다.
+ */
+function roomForm(): FormData {
+  const data = new FormData();
+  data.append("name", "박애관 302호");
+  data.append("location", "박애관 302호");
+  data.append("openTime", "00:00");
+  data.append("closeTime", "23:30");
+  return data;
+}
+
+const ADMIN_LEADER = { id: 5, role: AUTHORITY.LEADER, isAdmin: true, teamName: "인사팀" };
+const NON_ADMIN_LEADER = { id: 2, role: AUTHORITY.LEADER, teamName: "개발팀" };
+
+describe("회의실 추가·수정·삭제 — 실서버 권한 판정", () => {
+  it("createMeetingRoomAction — is_admin 로그인 세션이면 통과해 BE를 부른다", async () => {
+    getViewerMock.mockResolvedValue(ADMIN_LEADER);
+    serverApiMock.mockResolvedValue({ meetingRoomId: 1 });
+
+    const result = await createMeetingRoomAction({ errors: {} }, roomForm());
+
+    expect(result.errors).toEqual({});
+    expect(serverApiMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("createMeetingRoomAction — is_admin 아닌 로그인 세션이면 BE를 부르지 않고 막는다", async () => {
+    getViewerMock.mockResolvedValue(NON_ADMIN_LEADER);
+
+    const result = await createMeetingRoomAction({ errors: {} }, roomForm());
+
+    expect(result.errors.name).toBe("회의실을 추가할 권한이 없습니다");
+    expect(serverApiMock).not.toHaveBeenCalled();
+  });
+
+  it("updateMeetingRoomAction — is_admin 로그인 세션이면 통과해 BE를 부른다", async () => {
+    getViewerMock.mockResolvedValue(ADMIN_LEADER);
+    serverApiMock.mockResolvedValue({
+      meetingRoomId: 1,
+      name: "박애관 302호",
+      location: "박애관 302호",
+      availableFrom: "00:00",
+      availableTo: "23:30",
+    });
+    const data = roomForm();
+    data.append("id", "1");
+
+    const result = await updateMeetingRoomAction({ errors: {} }, data);
+
+    expect(result.errors).toEqual({});
+    expect(serverApiMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("updateMeetingRoomAction — is_admin 아닌 로그인 세션이면 BE를 부르지 않고 막는다", async () => {
+    getViewerMock.mockResolvedValue(NON_ADMIN_LEADER);
+    const data = roomForm();
+    data.append("id", "1");
+
+    const result = await updateMeetingRoomAction({ errors: {} }, data);
+
+    expect(result.errors.name).toBe("회의실을 수정할 권한이 없습니다");
+    expect(serverApiMock).not.toHaveBeenCalled();
+  });
+
+  it("deleteMeetingRoomAction — is_admin 로그인 세션이면 통과해 BE를 부른다", async () => {
+    getViewerMock.mockResolvedValue(ADMIN_LEADER);
+    serverApiMock.mockResolvedValue(null);
+    const data = new FormData();
+    data.append("id", "1");
+
+    await deleteMeetingRoomAction(data);
+
+    expect(serverApiMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("deleteMeetingRoomAction — is_admin 아닌 로그인 세션이면 BE를 부르지 않고 막는다", async () => {
+    getViewerMock.mockResolvedValue(NON_ADMIN_LEADER);
+    const data = new FormData();
+    data.append("id", "1");
+
+    await expect(deleteMeetingRoomAction(data)).rejects.toThrow("회의실을 삭제할 권한이 없습니다");
+    expect(serverApiMock).not.toHaveBeenCalled();
   });
 });

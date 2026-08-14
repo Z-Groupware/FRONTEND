@@ -1,22 +1,40 @@
 import { Plus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { OnlineMeetingDialog } from "@/features/meeting/components/online-meeting-dialog";
 
+import type { AttendeeScopeViewer } from "../attendee-scope";
 import { ROOM_LIST_PANEL_LABEL, ROOMS_CALENDAR_TOOLBAR_LABEL } from "../constants";
-import type { MeetingRoom } from "../types";
+import type { MeetingRoom, RoomMember, RoomProjectOption, RoomTeamActionOption } from "../types";
 
 interface RoomListPanelProps {
   rooms: MeetingRoom[];
   /** "회의 추가"(2026-08-11 이전엔 캘린더 툴바 안) — 예약 도입부가 회의실 목록 옆이 더 맞다. */
   onAddClick: () => void;
+  /** 비대면 회의 다이얼로그로 그대로 흘려보낸다(2026-08-14, `/app/meeting`에서 이관). */
+  members: RoomMember[];
+  projects: RoomProjectOption[];
+  showParentTeamAction: boolean;
+  teamActions: RoomTeamActionOption[];
+  viewer: AttendeeScopeViewer;
 }
 
 /**
  * 회의실 목록 — 캘린더 우측 사이드바(2026-08-10, 캘린더 하단에서 이동). 예약은 왼쪽
  * 캘린더에서 하고, 여기는 운영 시간만 빠르게 확인하는 자리.
+ * ⚠️ **비대면 회의 진입점도 여기 있다**(2026-08-14, 사이드바 개편으로 `/app/meeting`에서
+ *    이관). 회의실·시간이 없어 예약이 필요 없는 회의라 대면 예약([회의 추가])과 나란히 둔다.
  * 주의: `lg` 미만에서는 캘린더 아래로 쌓인다(`rooms-board.tsx`) — `CalendarDayDetailPanel`과 같은 패턴.
  */
-export function RoomListPanel({ rooms, onAddClick }: RoomListPanelProps) {
+export function RoomListPanel({
+  rooms,
+  onAddClick,
+  members,
+  projects,
+  showParentTeamAction,
+  teamActions,
+  viewer,
+}: RoomListPanelProps) {
   return (
     <aside className="border-border bg-card flex w-full shrink-0 flex-col overflow-hidden rounded-2xl border lg:h-full lg:w-[280px] lg:max-w-[280px]">
       {/*
@@ -53,6 +71,16 @@ export function RoomListPanel({ rooms, onAddClick }: RoomListPanelProps) {
           <Plus aria-hidden />
           {ROOMS_CALENDAR_TOOLBAR_LABEL.addMeeting}
         </Button>
+
+        {/* 비대면 회의는 회의실·시간이 없어 예약이 아니라 등록이다 — 대면 예약과 나란히, 별도 진입점 */}
+        <OnlineMeetingDialog
+          members={members}
+          projects={projects}
+          showParentTeamAction={showParentTeamAction}
+          teamActions={teamActions}
+          viewer={viewer}
+          triggerClassName="w-full"
+        />
       </div>
 
       <ul className="min-h-0 flex-1 overflow-y-auto">

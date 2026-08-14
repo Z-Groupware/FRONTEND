@@ -81,6 +81,7 @@ export interface HandoverDetailFromBe {
   handoverId: number;
   memberId: number;
   memberName: string;
+  teamId: number;
   type: HandoverType;
   status: HandoverStatus;
   period: { from: string; to: string } | null;
@@ -118,6 +119,7 @@ export function toTeamHandoverListItem(be: BeHandoverSummaryResponse): TeamHando
     handoverId: be.id,
     memberId: be.writerMemberId,
     memberName: be.writerName,
+    teamId: be.teamId,
     type,
     period,
     actionCount: be.itemCount,
@@ -136,6 +138,7 @@ export function toHandoverDetailFromBe(be: BeHandoverResponse): HandoverDetailFr
     handoverId: be.id,
     memberId: be.writerMemberId,
     memberName: be.writerNameSnap,
+    teamId: be.teamId,
     type,
     status: mapHandoverStatusFromBe(be.status as HandoverStatusBe),
     period,

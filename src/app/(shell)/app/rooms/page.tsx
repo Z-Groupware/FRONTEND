@@ -14,7 +14,7 @@ import { getViewer } from "@/features/shell/viewer";
 import { requiresParentTeamAction } from "@/lib/permission";
 
 export const metadata: Metadata = {
-  title: "회의실",
+  title: "회의 예약",
 };
 
 const DATE_PARAM_PATTERN = /^\d{4}-\d{2}-\d{2}$/;

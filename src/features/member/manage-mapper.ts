@@ -57,12 +57,16 @@ export interface BeMemberListItem {
  *
  * ⚠️ **`roleId`는 상세에만 있다**(2026-08-14 BE PR #489). 목록·조직도는 계속 `roleLabel`
  *    (표시용)만 주고, 폼이 선택 상태를 잡을 때 쓰는 id는 상세 조회에만 실려 온다.
+ * ⚠️ **선택적이라고 타입에 그대로 적는다**(2026-08-14 프로덕션 재현 — BE PR #489가 아직
+ *    실제로는 배포 전이라 이 필드 자체가 안 온다, `undefined`). 비필수(`?`)로 안 적으면
+ *    이 필드를 직접 읽는 새 코드가 생겨도 타입체커가 못 잡아 준다(`manage-server.ts`의
+ *    `!= null` 정규화가 왜 필요한지도 이 타입만 봐서는 안 보인다).
  */
 export interface BeMemberDetail extends BeMemberListItem {
   teamId: number | null;
   jobPositionId: number | null;
   email: string | null;
-  roleId: number | null;
+  roleId?: number | null;
 }
 
 /**

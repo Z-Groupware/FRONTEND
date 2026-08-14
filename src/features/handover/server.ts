@@ -15,7 +15,6 @@ import { serverApi } from "@/lib/api";
 import { ep } from "@/lib/endpoints";
 import { isMock } from "@/mocks/config";
 
-import { HANDOVER_PREVIEW, type HandoverPreview } from "./lib";
 import type {
   HandoverActionItem,
   HandoverApplicant,
@@ -29,10 +28,7 @@ import type {
  * `TEAM_MEMBER_ROSTER_MOCK`(team/members 피처)을 그대로 쓴다. 두 벌을 따로 두면
  * 화면마다 같은 사람의 액션·명단이 어긋난다.
  */
-const APPLICANT_NAME_BY_PREVIEW: Record<HandoverPreview, string> = {
-  member: "이하윤",
-  leader: "김서준",
-};
+const MOCK_APPLICANT_NAME = "이하윤";
 
 function buildActions(memberName: string): HandoverActionItem[] {
   const actions: HandoverActionItem[] = [];
@@ -114,7 +110,7 @@ async function fetchTeammatesForSelfReassign(
     }));
 }
 
-export async function getHandoverContext(preview: HandoverPreview): Promise<HandoverContext> {
+export async function getHandoverContext(): Promise<HandoverContext> {
   if (!isMock) {
     const viewer = await getViewer();
     const accessToken = await requireAccessToken();
@@ -136,36 +132,17 @@ export async function getHandoverContext(preview: HandoverPreview): Promise<Hand
     return { applicant, actions, teammates };
   }
 
-  const applicantName = APPLICANT_NAME_BY_PREVIEW[preview];
-  const roster = TEAM_MEMBER_ROSTER_MOCK.find((member) => member.name === applicantName);
-  if (!roster) throw new Error("mock 데이터 오류 — 로스터에 없는 미리보기 인물입니다.");
+  const roster = TEAM_MEMBER_ROSTER_MOCK.find((member) => member.name === MOCK_APPLICANT_NAME);
+  if (!roster) throw new Error("mock 데이터 오류 — 로스터에 없는 인물입니다.");
 
   const applicant: HandoverApplicant = {
     id: roster.id,
     name: roster.name,
-    role: preview === HANDOVER_PREVIEW.LEADER ? AUTHORITY.LEADER : AUTHORITY.MEMBER,
+    role: AUTHORITY.MEMBER,
     teamName: roster.teamName,
   };
 
   const actions = buildActions(applicant.name);
 
-  /*
-    ⚠️ 팀장 본인 휴직의 자가 재할당 대상 — **같은 팀** 소속(본인 제외)만(WORKFLOW.md §7
-       "팀장 본인 휴직", 2026-08-09 재확인). 지금은 로스터 mock이 개발팀 한 팀뿐이라
-       `teamName` 필터가 없어도 우연히 같은 팀만 나왔었다 — 다른 팀이 로스터에 추가되는
-       순간 타 팀원이 조용히 새어 들어갈 수 있어 명시적으로 건다.
-  */
-  const teammates =
-    applicant.role === AUTHORITY.LEADER
-      ? TEAM_MEMBER_ROSTER_MOCK.filter(
-          (member) => member.teamName === applicant.teamName && member.name !== applicant.name,
-        ).map((member) => ({
-          id: member.id,
-          name: member.name,
-          position: member.position,
-          role: member.role,
-        }))
-      : [];
-
-  return { applicant, actions, teammates };
+  return { applicant, actions, teammates: [] };
 }

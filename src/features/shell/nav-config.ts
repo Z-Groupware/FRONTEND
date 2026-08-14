@@ -19,33 +19,41 @@ import { hasRoute } from "./routes";
  * ⚠️ 화면이 아직 없으면 눌러도 404 대신 "준비 중"이 뜬다(§정직성).
  */
 
-/** 로그인한 전원이 같이 쓰는 워크벤치 — 역할에 따라 **빠지는 항목만** 있다 */
+/** 로그인한 전원이 같이 쓰는 상단 항목 — 역할에 따라 **빠지는 항목만** 있다 */
 const COMMON_TOP: NavItem[] = [
-  { href: "/app/projects", label: "프로젝트", icon: "project" },
-  { href: "/app/search", label: "검색", icon: "search" },
-  { href: "/app/calendar", label: "캘린더", icon: "calendar" },
-  { href: "/app/notice", label: "공지", icon: "notice" },
+  { href: "/app/meeting", label: "내 회의", icon: "meeting" },
+  { href: "/app/board", label: "보드", icon: "board" },
 ];
 
+const COMMON_TOP_TAIL: NavItem[] = [
+  { href: "/app/calendar", label: "캘린더", icon: "calendar" },
+  { href: "/app/me", label: "마이페이지", icon: "me" },
+];
+
+/**
+ * Owner에게는 **없는** 상단 항목.
+ *
+ * ⚠️ `/app/my/actions`는 OWNER 접근 불가다(CLAUDE.md §라우트 그룹).
+ *    Owner는 액션을 받는 자리가 아니다.
+ */
+const MEMBER_TOP: NavItem[] = [{ href: "/app/my/actions", label: "내 액션", icon: "board" }];
+
 const COMMON_WORKBENCH: NavItem[] = [
-  { href: "/app/meeting", label: "회의", icon: "meeting" },
-  { href: "/app/rooms", label: "회의실", icon: "room" },
-  { href: "/app/board", label: "보드", icon: "board" },
+  { href: "/app/projects", label: "프로젝트", icon: "project" },
+  { href: "/app/rooms", label: "회의 예약", icon: "room" },
+  { href: "/app/search", label: "검색", icon: "search" },
+  { href: "/app/notice", label: "공지", icon: "notice" },
   { href: "/app/people", label: "구성원", icon: "people" },
 ];
 
 /**
  * Owner에게는 **없는** 워크벤치 항목.
  *
- * ⚠️ `/app/my/actions`는 OWNER 접근 불가, `/app/handover`는 OWNER 제외다
- *    (CLAUDE.md §라우트 그룹). Owner는 액션을 받는 자리가 아니고, 인수인계를 쓰는 쪽도 아니다.
+ * ⚠️ `/app/handover`는 OWNER 제외다(CLAUDE.md §라우트 그룹). Owner는 인수인계를 쓰는 쪽이 아니다.
  */
 const MEMBER_WORKBENCH: NavItem[] = [
-  { href: "/app/my/actions", label: "내 액션", icon: "board" },
-  { href: "/app/handover", label: "인수인계", icon: "approval" },
+  { href: "/app/handover", label: "인수인계서 작성", icon: "approval" },
 ];
-
-const MY_PAGE: NavItem = { href: "/app/me", label: "마이페이지", icon: "me" };
 
 /**
  * 회사 운영 — **Owner와 Admin 겸직자가 보는 것이 다르다.**
@@ -61,7 +69,7 @@ const MY_PAGE: NavItem = { href: "/app/me", label: "마이페이지", icon: "me"
 const MANAGE_MEMBERS: NavItem = { href: "/manage/members", label: "사원 관리", icon: "members" };
 
 const MANAGE_MONEY: NavItem[] = [
-  { href: "/manage/billing", label: "구독", icon: "billing" },
+  { href: "/manage/billing", label: "구독 관리", icon: "billing" },
   { href: "/manage/storage", label: "저장소 관리", icon: "storage" },
 ];
 
@@ -85,9 +93,9 @@ const OWNER_ONLY: NavItem[] = [
 const TEAM_SECTION: NavSection = {
   title: "팀 관리",
   items: [
-    { href: "/team/members", label: "팀원", icon: "members" },
-    { href: "/team/action", label: "팀 액션", icon: "board" },
-    { href: "/team/handover", label: "인수인계 승인", icon: "approval" },
+    { href: "/team/members", label: "팀원 관리", icon: "members" },
+    { href: "/team/action", label: "팀 액션 관리", icon: "board" },
+    { href: "/team/handover", label: "인수인계서 관리", icon: "approval" },
   ],
 };
 
@@ -133,14 +141,13 @@ function withReadiness(items: NavItem[]): NavItem[] {
 export function navFor(viewer: Actor): NavSection[] {
   const isOwner = viewer.role === AUTHORITY.OWNER;
 
-  const workbench = isOwner
-    ? [...COMMON_WORKBENCH, MY_PAGE]
-    : [...COMMON_WORKBENCH, ...MEMBER_WORKBENCH, MY_PAGE];
+  const top = isOwner
+    ? [DASHBOARD[viewer.role], ...COMMON_TOP, ...COMMON_TOP_TAIL]
+    : [DASHBOARD[viewer.role], ...COMMON_TOP, ...MEMBER_TOP, ...COMMON_TOP_TAIL];
 
-  const sections: NavSection[] = [
-    { items: [DASHBOARD[viewer.role], ...COMMON_TOP] },
-    { title: "워크벤치", items: workbench },
-  ];
+  const workbench = isOwner ? COMMON_WORKBENCH : [...COMMON_WORKBENCH, ...MEMBER_WORKBENCH];
+
+  const sections: NavSection[] = [{ items: top }, { title: "워크벤치", items: workbench }];
 
   if (viewer.role === AUTHORITY.LEADER) sections.push(TEAM_SECTION);
 

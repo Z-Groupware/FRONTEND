@@ -41,6 +41,7 @@ export async function getMyProfile(): Promise<MyProfile> {
     role: me.authority,
     companyName: me.companyName,
     teamName: me.teamName ?? "-",
+    roleLabel: me.roleLabel,
     position: me.positionName ?? "-",
     joinedAt: me.joinedOn ?? "-",
   };
