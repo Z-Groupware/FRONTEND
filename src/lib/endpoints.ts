@@ -371,7 +371,11 @@ export const ep = {
   /* 조직 — [확인] identity/member/presentation/api/{Member,ManageMember}Controller.java */
   members: () => "/api/members",
   member: (id: number) => `/api/members/${id}`,
-  /** 조직도 — `/api/members`와 달리 전 구성원(OWNER·LEADER·MEMBER)에게 열려 있다 */
+  /**
+   * 조직도 — `/api/members`와 달리 전 구성원(OWNER·LEADER·MEMBER)에게 열려 있다.
+   * 응답은 팀 단위로 이미 묶여 온다(`List<OrgChartTeamResponse>`) — `manage-server.ts`
+   * `listAllManagedMembersForOrgChart`가 다시 평평하게 편다.
+   */
   memberOrgChart: () => "/api/members/org-chart",
   /**
    * 내 팀 로스터 — 회의 참석자 픽커 전용(`/api/members`와 다르다, 그건 관리 화면용).
