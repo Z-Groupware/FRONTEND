@@ -15,6 +15,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { useNotificationCenter } from "@/features/notification/notification-provider";
 import type { AttendeeScopeViewer } from "@/features/rooms/attendee-scope";
 import { RoomAttendeePicker } from "@/features/rooms/components/room-attendee-picker";
 import type { RoomMember, RoomProjectOption, RoomTeamActionOption } from "@/features/rooms/types";
@@ -63,8 +64,21 @@ export function OnlineMeetingDialog({
   const formRef = useRef<HTMLFormElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const { trackAnalysis } = useNotificationCenter();
+
+  /*
+    ⚠️ **등록 직후부터 진행 카드를 띄운다.** 비대면 회의는 등록되는 순간 서버가 전체 파일
+       STT·AI 분석을 곧장 시작한다(`MeetingService.createOnlineMeeting` 주석) — 실시간
+       캡처 종료(`capture-view.tsx`)와 같은 이유로, 여기서도 안 쫓으면 회의를 만들고도
+       검토 화면으로 갈 길이 안 생긴다.
+  */
   const { form, setForm, file, fileError, errors, isSubmitting, handleFileChange, handleSubmit } =
-    useOnlineMeetingForm({ onCreated: () => setOpen(false) });
+    useOnlineMeetingForm({
+      onCreated: (meetingId, title) => {
+        trackAnalysis(meetingId, title);
+        setOpen(false);
+      },
+    });
 
   function handleFormSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
