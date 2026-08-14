@@ -8,7 +8,13 @@
  *    10분 완결 파일을 만든다(백엔드 확정).
  * ⚠️ **일시정지는 파일을 안 쪼갠다.** `pause/resume`은 하나의 연속 파일로 이어진다 —
  *    조용한 구간만 빠진다.
+ * ⚠️ **MIME 타입을 고정한다**(`upload.ts`의 `RECORDING_CONTENT_TYPE`). BE presign이
+ *    Content-Type을 서명에 실어서(`CapS3ObjectStorageAdapter`), 브라우저 기본값에
+ *    맡기면 `;codecs=opus` 같은 접미사가 실제 녹음과 presign 요청 사이에서 어긋나
+ *    S3가 서명 불일치로 PUT을 거절한다.
  */
+
+import { RECORDING_CONTENT_TYPE } from "./upload";
 
 export interface RecorderHandlers {
   /** 15초마다 나오는 조각 — 서버가 모아서 세그먼트를 만든다 */
@@ -69,7 +75,15 @@ export function createCaptureRecorder(handlers: RecorderHandlers): CaptureRecord
 
   const openSegment = () => {
     if (!stream) return;
-    const instance = new MediaRecorder(stream);
+    /*
+      ⚠️ 지원 여부를 먼저 묻는다 — 지원 안 하는 `mimeType`을 그냥 넘기면 생성자가 던진다.
+         Chrome 계열은 거의 항상 지원하지만, 혹시라도 없으면 브라우저 기본값으로 물러난다
+         (그때는 PUT Content-Type이 실제 녹음과 어긋날 수 있다는 걸 감수한다 — 녹음
+         자체가 아예 안 되는 것보다는 낫다).
+    */
+    const instance = MediaRecorder.isTypeSupported(RECORDING_CONTENT_TYPE)
+      ? new MediaRecorder(stream, { mimeType: RECORDING_CONTENT_TYPE })
+      : new MediaRecorder(stream);
     instance.ondataavailable = (event) => {
       if (event.data.size > 0) handlers.onSlice(event.data);
     };

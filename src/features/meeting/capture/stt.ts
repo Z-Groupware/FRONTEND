@@ -104,6 +104,21 @@ const FATAL_MESSAGE: Record<string, string> = {
 /** 이만큼 연속으로 빈 세션이면 포기하고 알린다 — 대략 30초어치다 */
 const MAX_EMPTY_RESTARTS = 8;
 
+/**
+ * 한 발화가 확정 없이 이어질 수 있는 최대 시간(ms).
+ *
+ * ⚠️ **`isFinal`은 전적으로 브라우저 엔진이 정한다.** 쉬지 않고 이어 말하면 문장이
+ *    끝나도 다음 말과 합쳐진 채 계속 interim으로만 머무는 경우가 실제로 나온다(QA
+ *    확인, 2026-08-16) — 우리 쪽에 문장 경계를 아는 방법이 없어 완전히 고칠 수는
+ *    없고, **너무 길어지면 끊어서 확정시키는** 정도로 완화한다.
+ * ⚠️ 8초로 잡은 이유 — 화면(§DESIGN)의 발화 단위 감각과 맞춘 값이다. 더 짧으면 정상
+ *    속도로 긴 문장을 말하는 사람의 말까지 억지로 끊는다.
+ */
+const MAX_UTTERANCE_MS = 8_000;
+
+/** 발화가 너무 길어졌는지 이 주기로 살핀다 */
+const UTTERANCE_CHECK_MS = 1_000;
+
 export function createSttEngine(handlers: SttHandlers): SttEngine | null {
   const Ctor = ctorOf();
   if (!Ctor) return null;
@@ -120,6 +135,9 @@ export function createSttEngine(handlers: SttHandlers): SttEngine | null {
    */
   let emptyRestarts = 0;
   let retryTimer: number | null = null;
+  /** 지금 확정 안 된 말이 **언제부터** 이어지고 있는가 — 없으면 `null` */
+  let utteranceOpenAt: number | null = null;
+  let utteranceCheckTimer: number | null = null;
 
   const spawn = () => {
     const instance = new Ctor();
@@ -142,11 +160,16 @@ export function createSttEngine(handlers: SttHandlers): SttEngine | null {
         if (result?.isFinal) {
           // 한 문장이라도 받았으면 정상이다 — 물러설 시간을 되돌린다
           emptyRestarts = 0;
+          utteranceOpenAt = null;
           handlers.onChunk(text);
         } else {
           pending = pending ? `${pending} ${text}` : text;
         }
       }
+
+      // 새로 이어지는 말이 생겼으면 그 시작 시각을 잡는다 — 너무 길어지면 강제로 끊는다
+      if (pending && utteranceOpenAt === null) utteranceOpenAt = Date.now();
+      if (!pending) utteranceOpenAt = null;
 
       // 확정으로 넘어간 순간 흐린 줄을 비운다 — 안 비우면 같은 말이 두 줄로 보인다
       handlers.onPartial(pending);
@@ -204,15 +227,36 @@ export function createSttEngine(handlers: SttHandlers): SttEngine | null {
     }
   };
 
+  /*
+    ⚠️ **`.stop()`으로 끊는다, `.abort()`가 아니다.** `stop()`은 지금까지 들은 걸 확정해서
+       `onresult(isFinal)`로 돌려준 뒤 `onend`를 부른다 — `abort()`는 그 없이 즉시 버린다.
+       여기서 `abort()`를 쓰면 8초 넘게 참은 말이 그대로 통째로 사라진다.
+    ⚠️ **`stopped`는 안 건드린다.** 이건 우리가 의도적으로 끝내는 게 아니라 **길어서
+       강제로 한 번 끊는 것**이다 — `onend`가 정상적으로 다시 여는 경로를 그대로 탄다.
+  */
+  const cutIfTooLong = () => {
+    if (utteranceOpenAt === null) return;
+    if (Date.now() - utteranceOpenAt < MAX_UTTERANCE_MS) return;
+    utteranceOpenAt = null;
+    recognition?.stop();
+  };
+
   return {
     start() {
       if (!stopped) return;
       stopped = false;
       emptyRestarts = 0;
+      utteranceOpenAt = null;
+      utteranceCheckTimer = window.setInterval(cutIfTooLong, UTTERANCE_CHECK_MS);
       spawn();
     },
     stop() {
       stopped = true;
+      utteranceOpenAt = null;
+      if (utteranceCheckTimer !== null) {
+        window.clearInterval(utteranceCheckTimer);
+        utteranceCheckTimer = null;
+      }
       handlers.onPartial("");
       if (retryTimer !== null) {
         window.clearTimeout(retryTimer);
