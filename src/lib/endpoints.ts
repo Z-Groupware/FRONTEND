@@ -136,6 +136,12 @@ export const ep = {
    */
   meetings: (params?: MeetingListParams) => `/api/meetings${toQuery(params)}`,
   /**
+   * 비대면 회의 생성(`POST`, MEET-18, 이슈 #473) — **FE 제안 경로**, 아직 BE 실코드로 대조 전이다
+   *   (§연동 검증: 계약은 도메인 담당자 문서로 확정됐지만 컨트롤러는 못 봤다). 구현 착수 전 재대조할 것.
+   * ⚠️ `meetings()`(MEET-01)와 경로가 다르다 — 비대면 회의는 회의실·시간이 없어 별도 엔드포인트다.
+   */
+  meetingsOnline: () => "/api/meetings/online",
+  /**
    * 한 회의의 세 갈래가 **같은 경로**를 쓴다 — `GET` 상세(MEET-04, 캡처 진입도 이걸 쓴다) ·
    * `PATCH` 수정(MEET-05) · `DELETE` 취소(MEET-06). 없으면 404 `MT-001`, 열람 권한 없으면 403 `MT-011`.
    *

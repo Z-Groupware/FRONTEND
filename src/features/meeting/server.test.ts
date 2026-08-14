@@ -126,15 +126,17 @@ describe("비대면 회의(이슈 #473) — isOnline·빈 schedule·roomName", (
     hostAuthority: AUTHORITY.OWNER,
   };
 
-  it("목록 카드는 isOnline을 세우고 schedule·roomName을 빈 문자열로 비운다", async () => {
-    addMockOnlineMeeting(ONLINE_DRAFT);
+  /*
+    ⚠️ 2026-08-14 팀 확정으로 실서버 목록·대시보드(MEET-02·03·17)가 비대면 회의를 서버에서부터
+       걸러 준다 — 목도 같은 동작을 미리 따라 한다(`server.ts`의 `getMeetingDirectory` 주석).
+  */
+  it("비대면 회의는 목록(호스트·초대 탭 모두)에 나오지 않는다", async () => {
+    const created = addMockOnlineMeeting(ONLINE_DRAFT);
 
     const directory = await getMeetingDirectory(OWNER.id);
-    const item = directory.hosted.find((row) => row.title === "비대면 회의 서버 테스트");
 
-    expect(item?.isOnline).toBe(true);
-    expect(item?.schedule).toBe("");
-    expect(item?.roomName).toBe("");
+    expect(directory.hosted.some((row) => row.id === created.id)).toBe(false);
+    expect(directory.invited.some((row) => row.id === created.id)).toBe(false);
   });
 
   it("상세도 isOnline을 세우고 schedule·roomName을 빈 문자열로 비운다", async () => {

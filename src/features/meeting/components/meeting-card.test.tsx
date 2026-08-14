@@ -17,7 +17,6 @@ const BASE: MeetingListItem = {
   attendeeCount: 4,
   isHost: true,
   aiSummaryStatus: null,
-  isOnline: false,
 };
 
 function renderCard(patch: Partial<MeetingListItem> = {}) {
@@ -67,30 +66,6 @@ describe("MeetingCard — 발치 버튼", () => {
       "href",
       "/app/meeting/meeting-3/review",
     );
-  });
-});
-
-/** 비대면 회의(이슈 #473) — 발치의 일시·장소 자리가 안내 한 줄로 바뀐다. 인원수는 그대로다. */
-describe("MeetingCard — 비대면 회의(isOnline)", () => {
-  it("대면 회의는 일시·장소를 그대로 보여준다", () => {
-    renderCard({ isOnline: false });
-
-    expect(screen.getByText("8월 14일(금) 10:00 – 10:30")).toBeInTheDocument();
-    expect(screen.getByText("대회의실")).toBeInTheDocument();
-    expect(screen.queryByText("온라인으로 진행된 회의입니다")).not.toBeInTheDocument();
-  });
-
-  it("비대면 회의는 일시·장소 대신 안내 한 줄을 보여준다", () => {
-    renderCard({ isOnline: true, schedule: "", roomName: "" });
-
-    expect(screen.getByText("온라인으로 진행된 회의입니다")).toBeInTheDocument();
-    expect(screen.queryByText("대회의실")).not.toBeInTheDocument();
-  });
-
-  it("비대면 회의도 참석자 인원수는 그대로 보여준다", () => {
-    renderCard({ isOnline: true, schedule: "", roomName: "" });
-
-    expect(screen.getByText("4명")).toBeInTheDocument();
   });
 });
 

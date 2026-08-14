@@ -1,5 +1,4 @@
 import { AUTHORITY } from "@/constants/authority";
-import { AI_SUMMARY_STATUS } from "@/constants/meeting";
 
 import type { MeetingDraft } from "../types";
 import {
@@ -83,10 +82,14 @@ describe("비대면 회의 생성(이슈 #473) — addMockOnlineMeeting", () => 
     expect(created.endedAt).toBe(new Date(created.endedAt!).toISOString());
   });
 
-  it("종료와 동시에 AI 분석 대기 상태로 들어간다 — endMockMeeting과 같은 규칙", () => {
+  /*
+    ⚠️ 2026-08-14 팀 확정 — 대면 회의의 `endMockMeeting`과 달리 **대기로 안 들어간다.** 요약
+       요청은 다이얼로그 2단계([AI 요약 요청])에서 사람이 직접 눌러야 시작된다.
+  */
+  it("만들어진 시점엔 아직 AI 요약을 요청하지 않은 상태다", () => {
     const created = addMockOnlineMeeting(ONLINE_DRAFT);
 
-    expect(created.aiSummaryStatus).toBe(AI_SUMMARY_STATUS.PENDING);
+    expect(created.aiSummaryStatus).toBeNull();
   });
 
   it("회의실이 없다 — roomId·roomName·roomReservationId가 그대로 null이다", () => {

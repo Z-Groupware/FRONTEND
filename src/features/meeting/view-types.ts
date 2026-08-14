@@ -9,7 +9,12 @@ import type { AiSummaryStatus, MeetingStatus } from "@/constants/meeting";
  *    고쳐야 하기 때문이다(§Mock 격리막) — 옮기는 일은 `server.ts` 한 곳이 한다.
  */
 
-/** 목록 카드 한 장 */
+/**
+ * 목록 카드 한 장.
+ * ⚠️ **비대면 회의(`isOnline`)는 여기 안 온다**(2026-08-14 팀 확정 — 실서버 목록·대시보드가
+ *    서버에서부터 걸러 준다, `server.ts`의 `getMeetingDirectory` 주석). `isOnline` 필드가 없는
+ *    이유다 — 상세(`MeetingDetail`)는 직접 링크로 계속 열리므로 거기는 남겨 둔다.
+ */
 export interface MeetingListItem {
   id: string;
   title: string;
@@ -31,17 +36,10 @@ export interface MeetingListItem {
    * 실서버는 `agendaPreview`(BE PR #461)로 채운다 — 없으면(미배포·안건 0건) 빈 문자열이다.
    */
   topicSummary: string;
-  /**
-   * `7월 14일(화) 10:00 – 10:30` — 서버가 우리 표기로 만들어 보낸다(§lib).
-   * ⚠️ **비대면 회의(`isOnline`)는 빈 문자열이다** — 회의실·시간이 없다(이슈 #473). 컴포넌트는
-   *    `isOnline`을 먼저 보고, `true`면 이 값을 그대로 그리지 않는다.
-   */
+  /** `7월 14일(화) 10:00 – 10:30` — 서버가 우리 표기로 만들어 보낸다(§lib). */
   schedule: string;
-  /** ⚠️ 비대면 회의는 빈 문자열이다 — `schedule`과 같은 이유. */
   roomName: string;
   attendeeCount: number;
-  /** 비대면(원격) 회의인가(이슈 #473) — `schedule`·`roomName` 대신 안내 한 줄을 그린다. */
-  isOnline: boolean;
   /**
    * 보는 사람이 이 회의의 Host인가.
    *
