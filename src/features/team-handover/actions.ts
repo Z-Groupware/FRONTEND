@@ -8,9 +8,11 @@ import {
   rejectMockHandover,
 } from "@/features/member/mock/managed";
 import { TEAM_ACTION_PERSONAL_ITEMS_MOCK } from "@/features/project/mock/team-action-detail";
+import { getViewer } from "@/features/shell/viewer";
 import { ApiError, serverApi } from "@/lib/api";
 import { todayIso } from "@/lib/date";
 import { ep } from "@/lib/endpoints";
+import { canApproveMid } from "@/lib/permission";
 import { isMock } from "@/mocks/config";
 
 import { FIXED_LEADER_NAME, getTeamHandoverDetail } from "./server";
@@ -86,9 +88,10 @@ export async function commitHandoverReassignments(
  * (WORKFLOW.md §7·§13-4).
  * ⚠️ **재배정 반영은 `board/actions.ts`와 같은 방식**이다(mock) — `TEAM_ACTION_PERSONAL_ITEMS_MOCK`
  *    항목을 직접 mutate한다(별도 격리 저장소를 새로 두지 않는다).
- * ⚠️ 세션이 아직 없어(`getViewer()`가 항상 OWNER) 이 화면·액션은 `/team/(dashboard)`와 같이
- *    권한 게이트 없이 고정 스코프(김서준 · 개발팀)로 동작한다. 세션이 붙으면 첫 줄에서
- *    `assertPermission(canApproveMid(viewer, { teamId }))`를 넣는다.
+ * ⚠️ **실서버 분기만 팀 스코프를 검사한다**(2026-08-15) — mock 로스터엔 숫자 팀 id가 없어
+ *    (`server.ts`의 `teamId: 0` 참고) mock 분기는 종전처럼 `/team/(dashboard)`와 같은
+ *    고정 스코프(김서준 · 개발팀)로 그대로 둔다. **진짜 방어선은 BE다**(§권한: 화면 숨김은
+ *    UX일 뿐) — 이건 그 앞에 세우는 1차 가드일 뿐이라 BE 쪽 스코프 검증과 별개로 먼저 넣는다.
  */
 export async function completeTeamHandoverAction(
   handoverId: number,
@@ -96,6 +99,13 @@ export async function completeTeamHandoverAction(
 ): Promise<{ isSuccess: boolean; message?: string }> {
   const handover = await getTeamHandoverDetail(handoverId);
   if (!handover) return { isSuccess: false, message: "이미 처리됐거나 없는 인수인계서입니다" };
+
+  if (!isMock) {
+    const viewer = await getViewer();
+    if (!canApproveMid(viewer, { teamId: handover.teamId })) {
+      return { isSuccess: false, message: "이 인수인계서를 승인할 권한이 없습니다" };
+    }
+  }
 
   /*
     ⚠️ 화면의 "전부 배정" 제약은 UX일 뿐이다 — 여기서도 다시 본다(§권한: 화면 숨김은
@@ -160,6 +170,13 @@ export async function rejectTeamHandoverAction(
 
   const handover = await getTeamHandoverDetail(handoverId);
   if (!handover) return { isSuccess: false, message: "이미 처리됐거나 없는 인수인계서입니다" };
+
+  if (!isMock) {
+    const viewer = await getViewer();
+    if (!canApproveMid(viewer, { teamId: handover.teamId })) {
+      return { isSuccess: false, message: "이 인수인계서를 반려할 권한이 없습니다" };
+    }
+  }
 
   if (isMock) {
     /*
