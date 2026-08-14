@@ -119,6 +119,18 @@ describe("toDepartmentNode — 역할을 담는다", () => {
   it("역할이 없는 팀은 빈 배열이다", () => {
     expect(toDepartmentNode({ ...BE_TEAM, roles: [] }).children).toEqual([]);
   });
+
+  /*
+    ⚠️ **`roles` 필드 자체가 없어도 죽지 않는다**(2026-08-14 프로덕션 재현 — BE PR #489가
+       아직 배포 전이라 `GET /api/teams` 응답에 `roles`가 없다). `undefined`에 `.map`을
+       그대로 부르면 `/manage/members`·`/owner/setting` 전체가 Server Component
+       에러로 죽는다 — 빈 배열로 접어서 견딘다.
+  */
+  it("BE가 roles 필드를 아직 안 주면(undefined) 죽지 않고 빈 배열이다", () => {
+    const legacyTeam = { ...BE_TEAM, roles: undefined } as unknown as BeTeam;
+
+    expect(toDepartmentNode(legacyTeam).children).toEqual([]);
+  });
 });
 
 describe("withoutSystemRoles — 팀 편집 화면 전용 필터", () => {
