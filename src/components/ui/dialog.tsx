@@ -58,10 +58,15 @@ function DialogContent({
   return (
     <DialogPortal>
       <DialogOverlay />
+      {/*
+        ⚠️ `overflow-hidden` 없이는 `p-0` + 직접 여백을 잡는 헤더(각진 모서리)가 이 `rounded-xl`
+           밖으로 삐져나온다(DESIGN.md §2 "세로 띠를 쓰면 카드에 overflow-hidden"과 같은 이유 —
+           각진 자식이 둥근 부모를 못 넘게 여기서 한 번만 자른다).
+      */}
       <DialogPrimitive.Popup
         data-slot="dialog-content"
         className={cn(
-          "fixed top-1/2 left-1/2 z-50 grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 rounded-xl bg-popover p-4 text-sm text-popover-foreground ring-1 ring-foreground/10 duration-100 outline-none sm:max-w-sm data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
+          "fixed top-1/2 left-1/2 z-50 grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 overflow-hidden rounded-xl bg-popover p-4 text-sm text-popover-foreground ring-1 ring-foreground/10 duration-100 outline-none sm:max-w-sm data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
           className
         )}
         {...props}

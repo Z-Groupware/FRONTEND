@@ -264,7 +264,7 @@ function OnlineMeetingStep2({
               type="button"
               variant="outline"
               size="sm"
-              className="w-full min-w-0 justify-start"
+              className="min-w-0 flex-1 justify-start"
               aria-labelledby="online-meeting-recording-label"
               onClick={() => fileInputRef.current?.click()}
             >
