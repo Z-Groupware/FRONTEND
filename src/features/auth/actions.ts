@@ -360,6 +360,14 @@ export interface FindPasswordState {
   notice?: string;
   /** 성공했는가 — 화면이 폼을 접고 안내만 남기는 데 쓴다 */
   done: boolean;
+  /**
+   * 방금 적은 이메일 — **실패했을 때 되살린다.**
+   *
+   * ⚠️ `loginAction`(§`email`)과 같은 이유다. React 19의 `<form action={서버액션}>`은
+   *    액션이 끝나면 폼을 리셋한다 — 이 값이 없으면 실패할 때마다(형식 오류든 서버 오류든)
+   *    방금 친 이메일이 지워져 처음부터 다시 쳐야 했다(적대적 리뷰, 2026-08-14).
+   */
+  email?: string;
   /** 몇 번째 시도인가 — 화면이 입력칸의 `key`를 바꿔 되살리는 데 쓴다 */
   attempt: number;
 }
@@ -370,8 +378,14 @@ export interface FindPasswordState {
  *
  * ⚠️ **`AU-007`(429)과 `AU-045`(503)만 문구를 보탠다.** BE 문장은 무슨 일이 있었는지를
  *    말하고, 이 둘은 **다음에 뭘 해야 하는지**까지 덧붙여야 하는 자리라서다(시도 횟수 초과 →
- *    내일 다시, 메일 발송 실패 → 비밀번호는 안 바뀌었으니 기존 걸 그대로). 나머지(`AU-044`
- *    계정 없음 등)는 BE 문장 그대로가 이미 충분하다(§api.ts: 코드로 문구를 조립하지 않는다).
+ *    내일 다시, 메일 발송 실패 → 비밀번호는 안 바뀌었으니 기존 걸 그대로).
+ * ⚠️ **`AU-044`(계정 없음·퇴사자)는 BE 문장을 그대로 안 쓴다**(적대적 리뷰, 2026-08-14 —
+ *    계정 열거 취약점). 성공(`done: true`)과 실패(에러 문구)가 이미 갈리는 것 자체는 이
+ *    API 설계상 못 막지만("이 이메일로 보냈다" 대 "실패했다"), `AU-044`만 BE의 "계정 없음"
+ *    문장을 그대로 보여주면 그 실패가 **정확히 어떤 이유인지**(계정이 없다)까지 확정해
+ *    준다 — `loginAction`이 아이디·비밀번호 실패를 `LOGIN_FAILED` 한 문장으로 합쳐 이
+ *    구분을 막는 것과 같은 이유로, 여기도 다른 실패(발송 실패·시도 초과 등)와 구분 안 되는
+ *    문구로 맞춘다.
  */
 function toFindPasswordError(error: unknown): string {
   if (!(error instanceof ApiError)) return toUserMessage(error);
@@ -381,6 +395,8 @@ function toFindPasswordError(error: unknown): string {
       return `${error.message} 내일 다시 시도해 주세요.`;
     case "AU-045":
       return `${error.message} 기존 비밀번호는 그대로 사용할 수 있어요.`;
+    case "AU-044":
+      return "요청을 처리하지 못했습니다. 기업 코드와 이메일을 다시 확인해 주세요.";
     default:
       return error.message;
   }
@@ -408,8 +424,9 @@ export async function findPasswordAction(
     email: String(formData.get("email") ?? ""),
   };
 
-  const keep = (state: Omit<FindPasswordState, "attempt">): FindPasswordState => ({
+  const keep = (state: Omit<FindPasswordState, "email" | "attempt">): FindPasswordState => ({
     ...state,
+    email: draft.email,
     attempt: prevState.attempt + 1,
   });
 
@@ -435,9 +452,14 @@ export async function findPasswordAction(
   }
 
   await clearSession();
-  return keep({
+  /*
+    ⚠️ 성공했을 때는 **이메일을 안 담는다.** `done: true`라 폼 자체가 접히고 안내만 남는다 —
+       되살릴 폼이 없다(`loginAction`의 `redirect` 성공 케이스와 같은 이유).
+  */
+  return {
     errors: {},
     done: true,
     notice: "새 비밀번호를 메일로 보냈습니다. 메일을 확인해 주세요.",
-  });
+    attempt: prevState.attempt + 1,
+  };
 }

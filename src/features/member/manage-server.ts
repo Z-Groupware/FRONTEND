@@ -126,6 +126,24 @@ export async function listManagedMembers(): Promise<ManagedMember[]> {
 export const MEMBER_PAGE_SIZE = 20;
 
 /**
+ * 조직도 전용 응답 한 팀 — `GET /api/members/org-chart`가 **팀 단위로 이미 묶어서** 준다.
+ *
+ * [가정 shape·미검증] BE 실코드를 아직 대조하지 못했다(§연동 검증) — 담당자가 전해 준 것은
+ * "`List<OrgChartTeamResponse>`, 팀 → 소속 구성원 구조"뿐이라, 팀 한 칸은 `GET /api/members`
+ * 목록 한 줄(`BeMemberListItem`)과 같은 사람 정보에 `teamName`만 팀 쪽으로 옮겨졌다고 가정한다.
+ * 다르면 이 인터페이스와 바로 아래 매핑만 고치면 된다(§Mock 격리막).
+ *
+ * ⚠️ **대표(팀이 없는 사람)를 담을 자리가 있어야 한다.** 팀은 계층 없는 플랫 목록이라
+ *    (CLAUDE.md §권한 ③) 대표는 어느 팀에도 안 속한다 — `teamName: null`인 칸으로 온다고
+ *    가정한다. BE가 대표를 아예 응답에서 빼면 `buildOrgChart`가 대표 없이 팀만 그린다
+ *    (`org-types.ts`가 이미 그 경우를 `owner: null`로 다룬다).
+ */
+interface BeOrgChartTeam {
+  teamName: string | null;
+  members: BeMemberListItem[];
+}
+
+/**
  * 조직도(`getPeopleDirectory`)가 쓰는 명부 전체 — BE 조직도 전용 응답 하나로 받는다.
  *
  * ⚠️ **더 이상 `GET /api/members`를 페이지 순회하지 않는다**(2026-08-14, 프로덕션 장애
@@ -134,17 +152,22 @@ export const MEMBER_PAGE_SIZE = 20;
  *    BE가 조직도 전용 응답(`GET /api/members/org-chart`)을 이미 열어 두고 있어 — 페이지
  *    단위가 아니라 명부 전체를 한 번에 주고, 권한도 전 구성원에게 열려 있다 — 그걸 그대로
  *    쓴다.
- * ⚠️ [가정 shape·미검증] BE 실코드를 아직 대조하지 못했다 — 응답이 `GET /api/members`와
- *    같은 `BeMemberListItem[]`(페이지 봉투 없이 배열만)이라고 가정한다. 다르면 여기 매핑만
- *    고치면 된다(§Mock 격리막).
+ * ⚠️ **팀 단위로 온 것을 도로 평평하게 편다.** `buildOrgChart`(`org-chart.ts`)는 원래
+ *    평평한 `ManagedMember[]`를 받아 자기가 팀별로 다시 묶고 리더를 앞으로 당긴다 — BE가
+ *    이미 팀별로 준다고 그 로직을 새로 짤 필요는 없다. 팀이 나온 순서, 팀 안 사람 순서를
+ *    그대로 유지해서 펴면 `buildOrgChart`가 같은 순서로 다시 묶는다(§목록: 순서는 회사가
+ *    정한 것이라 프론트가 안 바꾼다).
  */
 export async function listAllManagedMembersForOrgChart(): Promise<ManagedMember[]> {
   if (isMock) return listManagedMembers();
 
   const accessToken = await requireAccessToken();
-  const content = await serverApi<BeMemberListItem[]>(ep.memberOrgChart(), { accessToken });
+  const teams = await serverApi<BeOrgChartTeam[]>(ep.memberOrgChart(), { accessToken });
 
-  return content.map(toManagedMember).filter((member) => isVisibleMemberStatus(member.status));
+  return teams
+    .flatMap((team) => team.members.map((member) => ({ ...member, teamName: team.teamName })))
+    .map(toManagedMember)
+    .filter((member) => isVisibleMemberStatus(member.status));
 }
 
 /**

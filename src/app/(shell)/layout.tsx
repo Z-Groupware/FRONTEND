@@ -8,6 +8,7 @@ import { guardWorkspaceEntry } from "@/features/onboarding/guard";
 import { PasswordChangeBanner } from "@/features/profile/components/password-change-banner";
 import { shouldShowPasswordChangeBanner } from "@/features/profile/server";
 import { RoleSidebar } from "@/features/shell/components/role-sidebar";
+import { HeaderBannerPortal, HeaderBannerSlotProvider } from "@/features/shell/header-banner-slot";
 import type { NavSection } from "@/features/shell/nav";
 import { dashboardFor, navFor } from "@/features/shell/nav-config";
 import { getViewer } from "@/features/shell/viewer";
@@ -99,15 +100,25 @@ export default async function ShellLayout({ children }: { children: ReactNode })
            두고, 나누는 건 **선 하나**(사이드바 오른쪽·상단바 아래)에 맡긴다.
       */}
       <NotificationProvider>
-        <div className="bg-background flex min-w-0 flex-1 flex-col overflow-hidden">
-          {/* 회의 개설·리마인더·취소·공지 — 본문 맨 위 줄로 들어간다(떠 있는 판이 아니다) */}
-          <NotificationBanner />
-          {/* 발급받은 비밀번호 안내 — 강제 아님(`mustChangePassword` 아님), 닫으면 그만이다 */}
-          {showPasswordChangeBanner && <PasswordChangeBanner memberId={viewer.id} />}
-          {children}
-        </div>
-        {/* 요약 진행 — 우하단 고정이라 어느 화면에 있든 같은 자리에 남는다 */}
-        <AnalysisProgressCard />
+        <HeaderBannerSlotProvider>
+          <div className="bg-background flex min-w-0 flex-1 flex-col overflow-hidden">
+            {/*
+              ⚠️ **여기 안 그린다 — `PageHeader` 바로 뒤로 포털한다**(적대적 리뷰, 2026-08-14).
+                 이 자리에 그대로 두면 도메인 `layout.tsx`가 상단바를 `{children}` 안에서
+                 그리는 탓에 배너가 상단바보다 DOM상 먼저 와서, 시각 순서는 CSS로 맞춰도
+                 키보드 탭·스크린리더 순서가 상단바보다 배너를 먼저 짚는다(`header-banner-slot.tsx`).
+            */}
+            <HeaderBannerPortal>
+              {/* 회의 개설·리마인더·취소·공지 — 상단바 바로 아래 줄로 들어간다(떠 있는 판이 아니다) */}
+              <NotificationBanner />
+              {/* 발급받은 비밀번호 안내 — 강제 아님(`mustChangePassword` 아님), 닫으면 그만이다 */}
+              {showPasswordChangeBanner && <PasswordChangeBanner memberId={viewer.id} />}
+            </HeaderBannerPortal>
+            {children}
+          </div>
+          {/* 요약 진행 — 우하단 고정이라 어느 화면에 있든 같은 자리에 남는다 */}
+          <AnalysisProgressCard />
+        </HeaderBannerSlotProvider>
       </NotificationProvider>
     </div>
   );
