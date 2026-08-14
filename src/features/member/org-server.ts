@@ -1,13 +1,13 @@
 import "server-only";
 
-import { listManagedMembers } from "./manage-server";
+import { listAllManagedMembersForOrgChart } from "./manage-server";
 import { buildOrgChart, searchOrgMembers, summarizeOrg } from "./org-chart";
 import type { PeopleDirectory } from "./org-types";
 
 /**
  * 구성원 화면 조회 — **격리막**(CLAUDE.md §Mock 격리막).
  *
- * ⚠️ **명부를 따로 두지 않는다.** 사원 관리와 같은 `listManagedMembers()`를 읽고 모양만
+ * ⚠️ **명부를 따로 두지 않는다.** 사원 관리와 같은 명부 조회를 읽고 모양만
  *    바꾼다 — 두 벌로 들고 있으면 같은 회사가 화면마다 달라 보인다. 연동될 때도 고칠
  *    자리가 한 곳이다.
  * ⚠️ 조회 전용이다. 이 화면에는 바꾸는 일이 없어 `actions.ts`가 없다.
@@ -17,12 +17,13 @@ import type { PeopleDirectory } from "./org-types";
  * ⚠️ **퇴사자를 거르지 않는다.** 나간 사람은 목록에 남는다(CLAUDE.md §도메인 상수) — 그 사람이
  *    남긴 회의·액션·인수인계의 출처라 이름이 사라지면 추적이 끊긴다. 화면은 `퇴사` 뱃지로
  *    알린다. 소프트 딜리트(`DELETED`)만 그 앞의 매퍼가 거른다.
- * ⚠️ 지금은 명부를 통째로 받아 세운다. 조직도는 목록이 아니라 **구조**라 잘라 보내면
- *    팀이 반쯤 그려진다 — 사원이 수백 명이 되면 BE에 팀 단위 응답을 요청하고
- *    여기서 그 모양을 흡수한다(§연동 검증).
+ * ⚠️ **명부 전체가 필요하다** — 조직도는 목록이 아니라 **구조**라 한 페이지만 받으면
+ *    팀이 반쯤 그려진다. 실서버에는 전체를 한 번에 주는 응답이 없어(§연동 검증)
+ *    `listAllManagedMembersForOrgChart`가 여러 페이지를 순회해 합친다(임시 우회 —
+ *    그 함수 주석 참고). BE에 조직도 전용 응답이 생기면 여기만 고친다.
  */
 export async function getPeopleDirectory(keyword: string): Promise<PeopleDirectory> {
-  const roster = await listManagedMembers();
+  const roster = await listAllManagedMembersForOrgChart();
 
   return {
     summary: summarizeOrg(roster),
