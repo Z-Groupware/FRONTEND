@@ -117,7 +117,14 @@ export function useInviteCommit({
       if (result.alreadyOnboarded) {
         markDraftCommitted();
         setConfirmOpen(false);
-        toast.success("이미 등록이 완료되어 있습니다. 결제 단계로 이동합니다.");
+        /*
+          ⚠️ **"전원 초대됨"이라고는 말하지 않는다**(적대적 검토, 2026-08-14). 앞선 시도가
+             실제로 몇 명을 발급하고 몇 명은 주소 중복으로 건너뛰었을 수 있는데, 그 결과를
+             우리는 영영 모른다(`actions.ts`의 `issuedEmails`/`skipped` 주석 참고) — 그래도
+             그 불확실함을 여기서 사용자에게 알리지는 않는다(팀 결정). "완료"·"성공"이라고
+             단정하지 않고 사실("이미 등록됨")만 짧게 말한다.
+        */
+        toast.success("이미 등록된 회사입니다");
         router.replace("/onboarding/payment");
         return;
       }

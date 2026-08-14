@@ -44,9 +44,20 @@ export interface OnboardingCommitResult {
    *    않고 결제 단계로 그냥 넘긴다(`use-invite-commit.ts`).
    */
   alreadyOnboarded?: boolean;
-  /** 실제로 계정이 나간 주소 — 이 줄에만 `isSent` 도장을 찍는다 */
+  /**
+   * 실제로 계정이 나간 주소 — 이 줄에만 `isSent` 도장을 찍는다.
+   *
+   * ⚠️ **`alreadyOnboarded`면 빈 배열이지만 "아무도 안 나갔다"는 뜻이 아니다.** 앞선
+   *    시도가 실제로 몇 명을 발급하고 몇 명은 주소 중복으로 건너뛰었을 수 있는데, 그
+   *    응답을 브라우저가 못 받아서 **우리는 그 결과를 영영 모른다**(재검증 API가 없다) —
+   *    "빈 배열=전원 성공"으로 읽으면 안 된다(적대적 검토, 2026-08-14).
+   */
   issuedEmails: string[];
-  /** 빠진 주소와 사유 — 확인 창이 아니라 완료 화면에서 알린다 */
+  /**
+   * 빠진 주소와 사유 — 확인 창이 아니라 완료 화면에서 알린다.
+   * ⚠️ 위 `issuedEmails`와 같은 이유로 `alreadyOnboarded`면 빈 배열이라도 "빠진 사람 없음"을
+   *    보장하지 않는다.
+   */
   skipped: { email: string; reason: string }[];
 }
 

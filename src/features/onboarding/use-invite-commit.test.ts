@@ -102,9 +102,7 @@ describe("useInviteCommit — 이미 온보딩이 끝난 회사(AU-035)", () => 
     expect(result.current.error).toBeNull();
     // ⚠️ 확인 창을 닫는다 — 성공한 것처럼 다음 화면으로 넘어간다
     expect(result.current.isConfirmOpen).toBe(false);
-    expect(toast.success).toHaveBeenCalledWith(
-      "이미 등록이 완료되어 있습니다. 결제 단계로 이동합니다.",
-    );
+    expect(toast.success).toHaveBeenCalledWith("이미 등록된 회사입니다");
     expect(replaceMock).toHaveBeenCalledWith("/onboarding/payment");
   });
 });
