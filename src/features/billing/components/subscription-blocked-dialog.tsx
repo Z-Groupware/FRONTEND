@@ -1,9 +1,10 @@
 "use client";
 
-import Link from "next/link";
+import { useFormStatus } from "react-dom";
 
 import { ResultDialog } from "@/components/common/result-dialog";
 import { buttonVariants } from "@/components/ui/button";
+import { logoutAction } from "@/features/auth/actions";
 import { cn } from "@/lib/utils";
 
 import { SUBSCRIPTION_STATUS, type SubscriptionStatus } from "../subscription";
@@ -17,10 +18,9 @@ import { SUBSCRIPTION_STATUS, type SubscriptionStatus } from "../subscription";
  *    돈 때문에 막히는 자리가 화면마다 다르게 생기면 같은 서비스로 안 읽힌다(§컴포넌트 위생).
  * ⚠️ **닫을 수 없다.** X도 없고 바깥을 눌러도 안 닫힌다 — 닫으면 뒤에 아무것도 없는
  *    빈 화면만 남아서, 막힌 게 아니라 고장 난 것처럼 보인다.
- * ⚠️ 나가는 길은 **로그인 화면**뿐이다. 지금은 세션이 없어 링크로 보내지만,
- *    세션이 붙으면 여기서 로그아웃을 부른다.
- *    TODO(BE 연동): `logoutAction`으로 쿠키를 지우고 `/login`으로 보낸다
- *    (경로는 `lib/endpoints.ts`의 `auth.logout`).
+ * ⚠️ 나가는 길은 **로그아웃**뿐이다 — 세션 쿠키가 살아 있는 채로 `/login`에 링크만
+ *    걸면 로그인 화면에서 다시 이 회사로 돌아와 버린다. `logoutAction`(`LogoutButton`과
+ *    같은 액션)으로 쿠키를 지우고 나서 `/login`으로 보낸다.
  */
 export function SubscriptionBlockedDialog({ status }: { status: SubscriptionStatus }) {
   const isUnpaid = status === SUBSCRIPTION_STATUS.UNPAID;
@@ -49,13 +49,27 @@ export function SubscriptionBlockedDialog({ status }: { status: SubscriptionStat
         </>
       }
       action={
-        <Link
-          href="/login"
-          className={cn(buttonVariants({ variant: "ink" }), "h-11 w-full text-[13px] leading-none")}
-        >
-          로그인 화면으로
-        </Link>
+        <form action={logoutAction} className="w-full">
+          <LogoutSubmitButton />
+        </form>
       }
     />
+  );
+}
+
+function LogoutSubmitButton() {
+  const { pending } = useFormStatus();
+
+  return (
+    <button
+      type="submit"
+      disabled={pending}
+      className={cn(
+        buttonVariants({ variant: "ink" }),
+        "h-11 w-full text-[13px] leading-none disabled:opacity-60",
+      )}
+    >
+      {pending ? "로그아웃하는 중" : "로그인 화면으로"}
+    </button>
   );
 }
