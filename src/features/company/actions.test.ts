@@ -12,6 +12,7 @@ import { getViewer } from "@/features/shell/viewer";
 
 import { saveCompanyProfileAction, saveDepartmentsAction, savePositionsAction } from "./actions";
 import { getMockCompanySetting, resetMockCompanySetting } from "./mock/company";
+import { getCompanySetting } from "./server";
 import type { CompanyProfileDraft, DepartmentNode, Position } from "./types";
 
 /**
@@ -188,10 +189,16 @@ describe("saveDepartmentsAction · savePositionsAction", () => {
     expect(revalidatePathMock).not.toHaveBeenCalled();
   });
 
+  /*
+    ⚠️ **`getMockCompanySetting()`이 아니라 `getCompanySetting()`을 쓴다.** 저장소는 역할을
+       원본 그대로 들고 있어(전역 시드 `없음`이 팀마다 같은 id로 반복된다), 화면이 실제로
+       받는 값은 `withoutSystemRoles`로 그 값을 거른 뒤다(`getCompanySetting`) — 안 거르면
+       모든 팀에 `없음`(id `r0`)이 겹쳐서 "같은 식별자가 둘"로 먼저 막힌다.
+  */
   /* ⚠️ 화면이 미리 막지만 액션은 직접 부를 수 있다 — 서버가 마지막에 다시 본다 */
   /* ⚠️ 옮긴 것과 지운 것은 다른 사건이라 문구도 다르다 */
   it("사원이 남은 팀을 남의 역할로 내리려 하면 다른 말로 막는다", async () => {
-    const teams = getMockCompanySetting().departments;
+    const teams = (await getCompanySetting()).departments;
     /* ⚠️ 자식이 없는 팀을 옮긴다 — 자식 있는 팀을 넣으면 3계층이 되어 다른 규칙에 먼저 걸린다 */
     const moved = teams
       .filter((team) => team.id !== "d4")
@@ -208,7 +215,7 @@ describe("saveDepartmentsAction · savePositionsAction", () => {
   });
 
   it("사원이 남은 팀을 지우려 하면 막는다", async () => {
-    const withoutTeams = getMockCompanySetting().departments.filter((team) => team.id !== "d1");
+    const withoutTeams = (await getCompanySetting()).departments.filter((team) => team.id !== "d1");
 
     const result = await saveDepartmentsAction(withoutTeams);
 
@@ -219,7 +226,7 @@ describe("saveDepartmentsAction · savePositionsAction", () => {
 
   it("빈 팀은 지울 수 있다", async () => {
     // ⚠️ 사람이 없는 팀은 `d5`다 — `d3`(디자인팀)에는 사원이 있다
-    const withoutEmpty = getMockCompanySetting().departments.filter((team) => team.id !== "d5");
+    const withoutEmpty = (await getCompanySetting()).departments.filter((team) => team.id !== "d5");
 
     expect(await saveDepartmentsAction(withoutEmpty)).toEqual({ isSuccess: true });
   });

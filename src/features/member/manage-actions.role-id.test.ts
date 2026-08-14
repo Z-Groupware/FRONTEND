@@ -17,19 +17,18 @@ import { serverApi } from "@/lib/api";
 
 import { changeMemberGradeAction } from "./manage-actions";
 import { getManagedMember } from "./manage-server";
-import type { ManagedMember } from "./manage-types";
+import type { ManagedMember, ManagedMemberDetail } from "./manage-types";
 
 /**
  * 실서버 분기(`isMock: false`)에서 `PATCH /api/members/{id}`로 나가는 요청 본문 — 특히
- * `roleLabel`.
+ * `roleId`(2026-08-14 BE PR #489, 이름 대신 id로 바뀌었다).
  *
  * ⚠️ **왜 따로 판다.** 기존 `manage-actions.test.ts`는 파일 전체가 `isMock: true`로
  *    고정돼 있어(모듈 스코프 `jest.mock`), 실서버로 나가는 요청 본문은 그 파일 어디서도
- *    실행되지 않는다 — `roleLabel`을 매번 실어 보내던 버그가 타입 에러 하나로만 드러났고
+ *    실행되지 않는다 — `roleId`를 매번 실어 보내던 버그가 타입 에러 하나로만 드러났고
  *    실행 경로로는 한 번도 검증되지 않았다.
  * ⚠️ **바뀐 게 아니면 필드째 뺀다**(`manage-actions.ts` 주석). BE는 `null`(필드 없음)을
- *    "안 바꾼다"로 읽고 빈 문자열은 400을 낸다 — 매 요청에 값을 실으면 직급만 고쳐도
- *    역할이 함께 써진다(2026-08-13 재발 확인).
+ *    "안 바꾼다"로 읽는다 — 매 요청에 값을 실으면 직급만 고쳐도 역할이 함께 써진다.
  */
 
 const getViewerMock = getViewer as unknown as jest.Mock;
@@ -39,6 +38,11 @@ const requireAccessTokenMock = requireAccessToken as unknown as jest.Mock;
 const serverApiMock = serverApi as unknown as jest.Mock;
 
 const OWNER = { id: 1, name: "박대표", role: AUTHORITY.OWNER, isAdmin: false };
+
+/* ⚠️ 역할 id는 **숫자 문자열**이어야 한다 — 액션이 BE로 나갈 때 `Number()`로 바꾼다 */
+const NONE_ROLE_ID = "0";
+const FRONTEND_ROLE_ID = "1";
+const BACKEND_ROLE_ID = "2";
 
 function memberOf(overrides: Partial<ManagedMember>): ManagedMember {
   return {
@@ -62,6 +66,18 @@ function memberOf(overrides: Partial<ManagedMember>): ManagedMember {
   };
 }
 
+function detailOf(overrides: {
+  member?: Partial<ManagedMember>;
+  roleId?: string | null;
+}): ManagedMemberDetail {
+  return {
+    member: memberOf(overrides.member ?? {}),
+    actions: null,
+    pendingHandover: null,
+    roleId: overrides.roleId ?? FRONTEND_ROLE_ID,
+  };
+}
+
 beforeEach(() => {
   jest.clearAllMocks();
   getViewerMock.mockResolvedValue(OWNER);
@@ -71,8 +87,9 @@ beforeEach(() => {
         id: "team-1",
         name: "제품팀",
         children: [
-          { id: "role-1", name: "프론트엔드", children: [] },
-          { id: "role-2", name: "백엔드", children: [] },
+          { id: NONE_ROLE_ID, name: "없음", children: [] },
+          { id: FRONTEND_ROLE_ID, name: "프론트엔드", children: [] },
+          { id: BACKEND_ROLE_ID, name: "백엔드", children: [] },
         ],
       },
     ],
@@ -82,32 +99,24 @@ beforeEach(() => {
   serverApiMock.mockResolvedValue(undefined);
 });
 
-describe("changeMemberGradeAction — 실서버 요청 본문의 roleLabel", () => {
-  it("역할을 안 바꾸면 요청에 roleLabel 키 자체가 없다", async () => {
-    getManagedMemberMock.mockResolvedValue({
-      member: memberOf({ roleLabel: "프론트엔드" }),
-      actions: [],
-      pendingHandover: null,
-    });
+describe("changeMemberGradeAction — 실서버 요청 본문의 roleId", () => {
+  it("역할을 안 바꾸면 요청에 roleId 키 자체가 없다", async () => {
+    getManagedMemberMock.mockResolvedValue(detailOf({ roleId: FRONTEND_ROLE_ID }));
 
     const result = await changeMemberGradeAction(4, {
       position: "사원",
       authority: AUTHORITY.MEMBER,
       isAdmin: false,
-      roleLabel: "프론트엔드",
+      roleId: FRONTEND_ROLE_ID,
     });
 
     expect(result.isSuccess).toBe(true);
     const [, options] = serverApiMock.mock.calls[0]!;
-    expect(options.json).not.toHaveProperty("roleLabel");
+    expect(options.json).not.toHaveProperty("roleId");
   });
 
-  it("roleLabel을 아예 안 넘겨도(직급만 고친 저장) 키가 없다", async () => {
-    getManagedMemberMock.mockResolvedValue({
-      member: memberOf({ roleLabel: "프론트엔드" }),
-      actions: [],
-      pendingHandover: null,
-    });
+  it("roleId를 아예 안 넘겨도(직급만 고친 저장) 키가 없다", async () => {
+    getManagedMemberMock.mockResolvedValue(detailOf({ roleId: FRONTEND_ROLE_ID }));
 
     await changeMemberGradeAction(4, {
       position: "사원",
@@ -116,93 +125,70 @@ describe("changeMemberGradeAction — 실서버 요청 본문의 roleLabel", () 
     });
 
     const [, options] = serverApiMock.mock.calls[0]!;
-    expect(options.json).not.toHaveProperty("roleLabel");
+    expect(options.json).not.toHaveProperty("roleId");
   });
 
-  it("역할을 실제로 바꾸면 그 값을 싣는다", async () => {
-    getManagedMemberMock.mockResolvedValue({
-      member: memberOf({ roleLabel: "프론트엔드" }),
-      actions: [],
-      pendingHandover: null,
-    });
+  it("역할을 실제로 바꾸면 숫자로 바꿔 싣는다", async () => {
+    getManagedMemberMock.mockResolvedValue(detailOf({ roleId: FRONTEND_ROLE_ID }));
 
     const result = await changeMemberGradeAction(4, {
       position: "사원",
       authority: AUTHORITY.MEMBER,
       isAdmin: false,
-      roleLabel: "백엔드",
+      roleId: BACKEND_ROLE_ID,
     });
 
     expect(result.isSuccess).toBe(true);
     const [, options] = serverApiMock.mock.calls[0]!;
-    expect(options.json).toMatchObject({ roleLabel: "백엔드" });
+    expect(options.json).toMatchObject({ roleId: 2 });
   });
 
   /*
-    ⚠️ **비우기는 막지 않는다** — `team-roles.ts`의 `toBeRoleLabel`이 빈 값을 BE의 실제
-       시스템 행 `"없음"`으로 바꿔 보내는, 이미 해결된 길이다. 여기서 막으면 한 번 역할을
-       단 사람은 그 뒤로 영영 못 뗀다(2026-08-13 회귀 — 앞선 수정이 이 경로를 잘못 읽고
-       "비울 수 없습니다" 오류로 통째로 잠갔었다).
+    ⚠️ **비우기는 막지 않는다** — `없음`도 그 팀의 실제 역할 행이라(진짜 id가 있다) 다른
+       역할을 고르는 것과 똑같이 취급한다. 예전(라벨 시절)처럼 특별 취급하지 않는다.
   */
-  it("역할을 빈 값으로 바꾸면 '없음'을 실어 보낸다 — 비우기는 이미 되는 길이다", async () => {
-    getManagedMemberMock.mockResolvedValue({
-      member: memberOf({ roleLabel: "프론트엔드" }),
-      actions: [],
-      pendingHandover: null,
-    });
+  it("역할을 `없음`으로 바꾸면 그 행의 id를 그대로 실어 보낸다", async () => {
+    getManagedMemberMock.mockResolvedValue(detailOf({ roleId: FRONTEND_ROLE_ID }));
 
     const result = await changeMemberGradeAction(4, {
       position: "사원",
       authority: AUTHORITY.MEMBER,
       isAdmin: false,
-      roleLabel: "",
+      roleId: NONE_ROLE_ID,
     });
 
     expect(result.isSuccess).toBe(true);
     const [, options] = serverApiMock.mock.calls[0]!;
-    expect(options.json).toMatchObject({ roleLabel: "없음" });
+    expect(options.json).toMatchObject({ roleId: 0 });
   });
 
-  it("이미 역할이 없는 사람에게 빈 값을 다시 보내면(안 바뀜) 키 자체를 안 싣는다", async () => {
-    getManagedMemberMock.mockResolvedValue({
-      member: memberOf({ roleLabel: null }),
-      actions: [],
-      pendingHandover: null,
-    });
+  it("이미 그 값이면(안 바뀜) 키 자체를 안 싣는다", async () => {
+    getManagedMemberMock.mockResolvedValue(detailOf({ roleId: NONE_ROLE_ID }));
 
     await changeMemberGradeAction(4, {
       position: "사원",
       authority: AUTHORITY.MEMBER,
       isAdmin: false,
-      roleLabel: "",
+      roleId: NONE_ROLE_ID,
     });
 
     const [, options] = serverApiMock.mock.calls[0]!;
-    expect(options.json).not.toHaveProperty("roleLabel");
+    expect(options.json).not.toHaveProperty("roleId");
   });
 
-  /*
-    ⚠️ 조회값이 `null`이 아니라 **문자열 `"없음"`으로 오는 경우**를 따로 검증한다 — 저장할 때
-       `toBeRoleLabel`이 빈 값을 `"없음"`으로 바꿔 보내므로, 이미 비워 둔 사람은 다음 조회에서
-       `roleLabel`이 `null`이 아니라 `"없음"` 문자열로 돌아온다(`manage-mapper.ts`는 빈 문자열만
-       `null`로 되돌리고 `"없음"`은 그대로 둔다). 요청 값 `""`과 비교할 때 이 정규화가 없으면
-       실제로는 안 바뀐 값을 바뀌었다고 오판해 불필요한 PATCH가 나간다(2026-08-14 회귀).
-  */
-  it("기존 값이 문자열 '없음'이고 빈 값을 다시 보내면(안 바뀜) 키 자체를 안 싣는다", async () => {
-    getManagedMemberMock.mockResolvedValue({
-      member: memberOf({ roleLabel: "없음" }),
-      actions: [],
-      pendingHandover: null,
-    });
+  /* ⚠️ 화면은 그 팀 역할만 주지만 액션은 주소만 알면 부를 수 있다 — 남의 팀 역할을 막는다 */
+  it("그 팀에 없는 역할 id면 막고 요청을 보내지 않는다", async () => {
+    getManagedMemberMock.mockResolvedValue(detailOf({ roleId: FRONTEND_ROLE_ID }));
 
-    await changeMemberGradeAction(4, {
+    const result = await changeMemberGradeAction(4, {
       position: "사원",
       authority: AUTHORITY.MEMBER,
       isAdmin: false,
-      roleLabel: "",
+      roleId: "no-such-role",
     });
 
-    const [, options] = serverApiMock.mock.calls[0]!;
-    expect(options.json).not.toHaveProperty("roleLabel");
+    expect(result.isSuccess).toBe(false);
+    expect(result.message).toBe("그 팀에 없는 역할입니다");
+    expect(serverApiMock).not.toHaveBeenCalled();
   });
 });

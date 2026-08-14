@@ -1,3 +1,4 @@
+import { ROLE_NONE_LABEL } from "@/constants/member";
 import { hasPinnedCoords } from "@/features/auth/register-draft";
 import type { AssignableRole } from "@/features/onboarding/types";
 
@@ -34,6 +35,12 @@ export interface BeTeam {
   leaderMemberId: number | null;
   leaderName: string | null;
   memberCount: number;
+  /**
+   * 이 팀에서 고를 수 있는 역할들. [확인] BE `RoleNode`(신규, 2026-08-14 BE PR #489).
+   * ⚠️ **`없음`(roleId 2)이 항상 끼어 온다** — 전역 시드 행을 모든 팀 목록에 얹어 준다.
+   * ⚠️ **`리더`(roleId 1)는 안 온다** — BE가 팀장 표시용이라 목록에서 뺀다.
+   */
+  roles: { roleId: number; name: string }[];
 }
 
 /**
@@ -116,12 +123,36 @@ export function toCompanyUpdateBody(draft: CompanyProfileDraft): BeCompanyUpdate
  *
  * ⚠️ **팀은 계층이 없다**(CLAUDE.md §권한 ③ — 플랫 목록, 2026-08-06 BE 스키마 확정).
  *    `DepartmentNode`가 `children`을 들고 있는 건 온보딩과 타입을 공유해서지, 팀이 중첩된다는
- *    뜻이 아니다 — 항상 빈 배열이다.
+ *    뜻이 아니다 — 팀 아래 칸에는 **역할**만 온다(2계층, DECISIONS).
+ * ⚠️ **역할을 그대로 담는다**(2026-08-14 BE PR #489 — 전에는 BE가 안 줘서 늘 빈 배열이었다).
+ *    `없음`도 그대로 온다 — 역할 **선택**(`team-roles.ts`)엔 필요한 값이라 여기서 안 거른다.
+ *    팀 **편집** 화면(`getCompanySetting()`)만 `withoutSystemRoles`로 따로 걸러 낸다.
  * ⚠️ **팀장(`leaderMemberId`·`leaderName`)을 못 담는다.** 우리 노드에 자리가 없어 지금은
  *    버린다 — 화면에 팀장이 안 보이는 건 그래서다.
  */
 export function toDepartmentNode(team: BeTeam): DepartmentNode {
-  return { id: String(team.teamId), name: team.name, children: [] };
+  return {
+    id: String(team.teamId),
+    name: team.name,
+    children: team.roles.map((role) => ({
+      id: String(role.roleId),
+      name: role.name,
+      children: [],
+    })),
+  };
+}
+
+/**
+ * 팀 **편집** 화면(`CompanyTeamCard`) 전용 — 시스템 역할을 뺀다.
+ *
+ * ⚠️ **`없음`은 회사가 만든 역할이 아니다.** 모든 팀 목록에 끼어 오는 전역 시드 행이라
+ *    (BE PR #489), 편집 트리에 그대로 두면 사용자가 그 자리의 이름을 바꾸거나 지울 수
+ *    있는 것처럼 보인다 — 팀을 지워도 실제로는 같이 지워지지 않는 값이다.
+ * ⚠️ 역할 **선택**(`team-roles.ts`의 `buildTeamRoles`)에는 걸지 않는다 — 거긴 실제로
+ *    골라야 하는 값이라 없으면 안 된다.
+ */
+export function withoutSystemRoles(team: DepartmentNode): DepartmentNode {
+  return { ...team, children: team.children.filter((role) => role.name !== ROLE_NONE_LABEL) };
 }
 
 export function toTeamMemberCounts(teams: BeTeam[]): Record<string, number> {

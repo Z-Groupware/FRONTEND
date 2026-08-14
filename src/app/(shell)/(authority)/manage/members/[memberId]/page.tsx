@@ -86,6 +86,7 @@ export default async function ManageMemberDetailPage({
               canEdit={canChangeMemberGrade(viewer)}
               positionNames={positionNames}
               roleOptions={roleOptions}
+              currentRoleId={detail.roleId}
             />
           </div>
 

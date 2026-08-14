@@ -125,6 +125,16 @@ export interface ManagedMemberDetail {
   actions: ManagedMemberActions | null;
   /** 승인을 기다리는 신청. 없으면 `null` */
   pendingHandover: PendingHandover | null;
+  /**
+   * 지금 이 사람에게 붙은 역할 id. [확인] BE `MemberDetailResponse.roleId`(신규, PR #489).
+   *
+   * ⚠️ **`roleLabel`(이름)이 아니라 id로 들고 다닌다.** 역할 이름은 회사 안에서도 중복될 수
+   *    있어(`(company_id, name)` UNIQUE 없음) 이름으로 지금 값을 되찾으면 같은 이름의 다른
+   *    역할이 골라질 수 있다 — `member.roleLabel`은 목록·표시용으로 그대로 두고, 폼의
+   *    선택 상태는 이 값으로만 잡는다(`MemberGradeCard`).
+   * ⚠️ 이 팀에 역할이 하나도 없거나(이상 상태) 팀이 없는 사람(Owner)이면 `null`이다.
+   */
+  roleId: string | null;
 }
 
 /**
@@ -169,13 +179,16 @@ export interface AccountDraft {
    */
   isAdmin: boolean;
   /**
-   * 팀 안의 세부 역할(프론트엔드 등). 안 붙이면 빈 값이다.
+   * 팀 안의 세부 역할(프론트엔드 등) id. [확인] BE `IssueMemberRequest.roleId`(PR #489).
    *
    * ⚠️ **역할은 팀에 매여 있다** — 팀을 바꾸면 다시 골라야 한다(`team-roles`).
-   * ⚠️ 온보딩 3단계 초대는 줄마다 이 칸을 갖는데 발급 창에만 없었다. 그래서 온보딩 때
-   *    들어온 사람만 역할이 있고, 그 뒤에 발급된 사람은 계속 `없음`이었다.
+   * ⚠️ **이름이 아니라 id다.** 역할 이름은 회사 안에서도 중복될 수 있어(`(company_id, name)`
+   *    UNIQUE 없음) 이름으로는 어느 역할을 가리키는지 확정할 수 없다.
+   * ⚠️ `null`은 "아직 안 골랐다"가 아니라 **`없음`을 그대로 고른 상태**다 — BE가 모든 팀의
+   *    역할 목록에 `없음`을 실제 행으로 끼워 주므로, 기본값도 그 행의 진짜 id로 잡는다
+   *    (`emptyDraft`) — 화면이 직접 만든 자리표시자가 아니다.
    */
-  roleLabel: string;
+  roleId: string | null;
 }
 
 /** 칸별 오류 — 칸 밑에 인라인으로 붙는다(§토스트: 폼 검증 오류는 인라인) */

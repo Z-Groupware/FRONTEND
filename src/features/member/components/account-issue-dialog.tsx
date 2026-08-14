@@ -32,6 +32,7 @@ import { cn } from "@/lib/utils";
 import { validateAccount } from "../account-validate";
 import { issueAccountAction } from "../manage-actions";
 import type { AccountDraft, AccountErrors } from "../manage-types";
+import type { TeamRoleOption } from "../team-roles";
 
 /**
  * 계정 발급 — **공용 확인 창**(`ConfirmDialog`)에 폼을 담아 연다.
@@ -60,11 +61,13 @@ export function AccountIssueDialog({
    */
   positionNames: string[];
   /** 팀 이름 → 그 팀의 역할들. 역할은 팀에 매여 있다(`team-roles`) */
-  teamRoles: Record<string, string[]>;
+  teamRoles: Record<string, TeamRoleOption[]>;
 }) {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
-  const [draft, setDraft] = useState<AccountDraft>(() => emptyDraft(teamNames, positionNames));
+  const [draft, setDraft] = useState<AccountDraft>(() =>
+    emptyDraft(teamNames, positionNames, teamRoles),
+  );
   const [errors, setErrors] = useState<AccountErrors>({});
   const [message, setMessage] = useState<string | null>(null);
   const [issued, setIssued] = useState<{ id: number; name: string; email: string } | null>(null);
@@ -85,7 +88,7 @@ export function AccountIssueDialog({
   };
 
   const reset = () => {
-    setDraft(emptyDraft(teamNames, positionNames));
+    setDraft(emptyDraft(teamNames, positionNames, teamRoles));
     setErrors({});
     setMessage(null);
   };
@@ -249,12 +252,18 @@ export function AccountIssueDialog({
                 items={Object.fromEntries(teamNames.map((name) => [name, name]))}
                 value={draft.teamName}
                 /*
-                  ⚠️ **팀이 바뀌면 역할을 비운다.** 역할은 팀에 매여 있어서, 안 비우면
-                     개발팀의 `프론트엔드`를 단 채로 마케팅팀으로 넘어간다(온보딩과 같은 규칙).
+                  ⚠️ **팀이 바뀌면 역할도 그 팀의 기본값(`없음`)으로 되돌린다.** 역할은
+                     팀에 매여 있어서, 안 바꾸면 개발팀의 `프론트엔드` id를 단 채로 마케팅팀
+                     으로 넘어간다(온보딩과 같은 규칙).
                 */
-                onValueChange={(value) =>
-                  setDraft((prev) => ({ ...prev, teamName: value ?? "", roleLabel: "" }))
-                }
+                onValueChange={(value) => {
+                  const teamName = value ?? "";
+                  setDraft((prev) => ({
+                    ...prev,
+                    teamName,
+                    roleId: defaultRoleId(teamRoles[teamName] ?? []),
+                  }));
+                }}
               >
                 <SelectTrigger
                   id="account-teamName"
@@ -284,33 +293,33 @@ export function AccountIssueDialog({
           {/*
             ⚠️ **역할 칸이다.** 온보딩 3단계 초대는 줄마다 이 칸을 갖는데 발급 창에만 없어서,
                온보딩 뒤에 들어온 사람은 계속 `없음`이었다 — 그리고 뒤에 고칠 화면도 없었다.
-            ⚠️ 역할은 **고른 팀의 것만** 나온다(`teamRoles`). 팀을 바꾸면 비워진다.
-            ⚠️ **안 골라도 된다.** 역할이 없는 팀도 있고 안 붙인 사람도 있다(WORKFLOW §9) —
-               그래서 목록 맨 위에 `없음`을 둔다. 빈 셀렉트로 두면 "아직 안 골랐다"와
-               "안 붙인다"가 같은 모양이 된다.
+            ⚠️ 역할은 **고른 팀의 것만** 나온다(`teamRoles`). 팀을 바꾸면 그 팀의 `없음`으로
+               되돌아간다.
+            ⚠️ **`없음`도 실제 역할 행이다.** BE가 모든 팀의 역할 목록에 그 행을 진짜 id로
+               끼워 주므로(2026-08-14 BE PR #489) 화면이 따로 빈 값을 만들지 않는다 — 항상
+               고른 상태로 시작한다(`defaultRoleId`).
           */}
           {field(
-            "roleLabel",
+            "roleId",
             "역할",
             <Select
-              items={{ "": ROLE_NONE_LABEL, ...Object.fromEntries(roleOptions.map((n) => [n, n])) }}
-              value={draft.roleLabel}
-              onValueChange={(value) => set("roleLabel", value ?? "")}
+              items={Object.fromEntries(roleOptions.map((role) => [role.id, role.name]))}
+              value={draft.roleId ?? ""}
+              onValueChange={(value) => set("roleId", value || null)}
               disabled={roleOptions.length === 0}
             >
               <SelectTrigger
-                id="account-roleLabel"
+                id="account-roleId"
                 className="w-full"
-                aria-invalid={Boolean(errors.roleLabel)}
-                aria-describedby="account-roleLabel-error"
+                aria-invalid={Boolean(errors.roleId)}
+                aria-describedby="account-roleId-error"
               >
                 <SelectValue />
               </SelectTrigger>
               <SelectContent alignItemWithTrigger={false}>
-                <SelectItem value="">{ROLE_NONE_LABEL}</SelectItem>
-                {roleOptions.map((name) => (
-                  <SelectItem key={name} value={name}>
-                    {name}
+                {roleOptions.map((role) => (
+                  <SelectItem key={role.id} value={role.id}>
+                    {role.name}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -481,16 +490,29 @@ export function AccountIssueDialog({
 }
 
 /** 팀이 하나뿐이면 고를 것도 없으니 첫 팀을 미리 넣어 둔다 */
-function emptyDraft(teamNames: string[], positionNames: string[]): AccountDraft {
+function emptyDraft(
+  teamNames: string[],
+  positionNames: string[],
+  teamRoles: Record<string, TeamRoleOption[]>,
+): AccountDraft {
+  const teamName = teamNames[0] ?? "";
   return {
     name: "",
     email: "",
-    teamName: teamNames[0] ?? "",
+    teamName,
     position: positionNames[0] ?? "",
     authority: AUTHORITY.MEMBER,
     // ⚠️ 겸직은 **기본 꺼짐**이다. 권한을 주는 값이라 미리 켜 두면 확인 없이 나간다
     isAdmin: false,
-    // ⚠️ 역할은 **안 고른 상태로 시작한다** — 안 붙여도 되는 값이라 기본을 정하면 안 된다
-    roleLabel: "",
+    roleId: defaultRoleId(teamRoles[teamName] ?? []),
   };
+}
+
+/**
+ * 그 팀의 `없음` 역할 id — 기본 선택값으로 쓴다.
+ * ⚠️ BE가 모든 팀의 역할 목록에 이 행을 실제 id로 끼워 준다(2026-08-14 BE PR #489) —
+ *    화면이 만들어 넣는 값이 아니라 받은 목록에서 찾을 뿐이다.
+ */
+function defaultRoleId(roleOptions: TeamRoleOption[]): string | null {
+  return roleOptions.find((role) => role.name === ROLE_NONE_LABEL)?.id ?? null;
 }

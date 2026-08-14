@@ -17,6 +17,7 @@ import {
   type MemberFilter,
   type MemberQuery,
 } from "../manage-types";
+import type { TeamRoleOption } from "../team-roles";
 import { AccountIssueDialog } from "./account-issue-dialog";
 import { MemberTable } from "./member-table";
 
@@ -64,7 +65,7 @@ export function MemberListView({
   /** 회사가 만든 직급 이름들 — 발급 창이 이 안에서만 고르게 한다 */
   positionNames: string[];
   /** 팀 이름 → 그 팀의 역할들. 역할은 팀에 매여 있다 */
-  teamRoles: Record<string, string[]>;
+  teamRoles: Record<string, TeamRoleOption[]>;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();

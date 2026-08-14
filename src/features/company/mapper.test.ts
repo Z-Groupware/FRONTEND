@@ -1,4 +1,11 @@
-import { type BeCompanyProfile, toCompanyProfile, toCompanyUpdateBody } from "./mapper";
+import {
+  type BeCompanyProfile,
+  type BeTeam,
+  toCompanyProfile,
+  toCompanyUpdateBody,
+  toDepartmentNode,
+  withoutSystemRoles,
+} from "./mapper";
 import type { CompanyProfileDraft } from "./types";
 
 /**
@@ -78,5 +85,58 @@ describe("toCompanyUpdateBody — 좌표 저장", () => {
     const body = toCompanyUpdateBody({ ...DRAFT, place: null });
 
     expect(body).toEqual({ name: "새이름", businessNumber: "999-88-77777" });
+  });
+});
+
+const BE_TEAM: BeTeam = {
+  teamId: 1,
+  name: "개발팀",
+  leaderMemberId: 9,
+  leaderName: "김서준",
+  memberCount: 3,
+  roles: [
+    { roleId: 2, name: "없음" },
+    { roleId: 3, name: "프론트엔드" },
+  ],
+};
+
+/**
+ * 팀 → 트리 — **역할을 담는다**(2026-08-14 BE PR #489. 전에는 BE가 안 줘서 늘 빈 배열이었다).
+ */
+describe("toDepartmentNode — 역할을 담는다", () => {
+  it("id를 문자열로 바꿔 그대로 옮긴다", () => {
+    expect(toDepartmentNode(BE_TEAM)).toEqual({
+      id: "1",
+      name: "개발팀",
+      children: [
+        { id: "2", name: "없음", children: [] },
+        { id: "3", name: "프론트엔드", children: [] },
+      ],
+    });
+  });
+
+  /* ⚠️ 팀장(`leaderMemberId`·`leaderName`)은 우리 노드에 자리가 없어 그대로 버린다 */
+  it("역할이 없는 팀은 빈 배열이다", () => {
+    expect(toDepartmentNode({ ...BE_TEAM, roles: [] }).children).toEqual([]);
+  });
+});
+
+describe("withoutSystemRoles — 팀 편집 화면 전용 필터", () => {
+  /*
+    ⚠️ **`없음`은 회사가 만든 역할이 아니다.** 팀을 지워도 같이 지워지지 않는 전역 시드
+       행이라, 편집 트리에 그대로 두면 사용자가 이름을 바꾸거나 지울 수 있는 것처럼 보인다.
+  */
+  it("`없음`만 뺀다 — 회사가 만든 역할은 남는다", () => {
+    const node = toDepartmentNode(BE_TEAM);
+
+    expect(withoutSystemRoles(node).children).toEqual([
+      { id: "3", name: "프론트엔드", children: [] },
+    ]);
+  });
+
+  it("`없음`만 있던 팀은 편집 화면에서 역할이 빈 팀으로 보인다", () => {
+    const node = toDepartmentNode({ ...BE_TEAM, roles: [{ roleId: 2, name: "없음" }] });
+
+    expect(withoutSystemRoles(node).children).toEqual([]);
   });
 });

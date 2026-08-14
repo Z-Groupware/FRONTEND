@@ -51,11 +51,18 @@ export interface BeMemberListItem {
   joinedOn: string | null;
 }
 
-/** [확인] BE `MemberDetailResponse` — 목록에 없는 `email`·`teamId`·`jobPositionId`가 더 있다 */
+/**
+ * [확인] BE `MemberDetailResponse` — 목록에 없는 `email`·`teamId`·`jobPositionId`·`roleId`가
+ * 더 있다.
+ *
+ * ⚠️ **`roleId`는 상세에만 있다**(2026-08-14 BE PR #489). 목록·조직도는 계속 `roleLabel`
+ *    (표시용)만 주고, 폼이 선택 상태를 잡을 때 쓰는 id는 상세 조회에만 실려 온다.
+ */
 export interface BeMemberDetail extends BeMemberListItem {
   teamId: number | null;
   jobPositionId: number | null;
   email: string | null;
+  roleId: number | null;
 }
 
 /**

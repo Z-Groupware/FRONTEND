@@ -303,8 +303,11 @@ export function listMockManagedMembers(): ManagedMember[] {
 /**
  * ⚠️ 담당 액션에 껍데기를 씌워 내보낸다 — 목은 **항상 다 읽은 상태**라 `null`이 아니고,
  *    `totalCount`는 목이 가진 전부다(실서버는 첫 페이지만 오고 전체는 서버가 센다).
+ * ⚠️ **`roleId`는 여기서 안 채운다.** 이 저장소는 역할을 이름(`roleLabel`)으로만 들고
+ *    있어서, 그 팀의 역할 목록과 대조해야 id를 찾을 수 있다 — 그건 팀 목록을 아는
+ *    `manage-server.ts`(`getManagedMember`)가 `roleIdOf`로 채운다.
  */
-export function findMockManagedMember(id: number): ManagedMemberDetail | null {
+export function findMockManagedMember(id: number): Omit<ManagedMemberDetail, "roleId"> | null {
   const found = store.find((entry) => entry.member.id === id);
   if (!found) return null;
 
@@ -316,14 +319,35 @@ export function findMockManagedMember(id: number): ManagedMemberDetail | null {
   };
 }
 
-/** 직급·권한·Admin 겸직 변경 */
+/**
+ * 직급·권한·Admin 겸직·역할 변경.
+ *
+ * ⚠️ **`roleLabel`은 안 넘기면 안 바꾼다**(부분 수정) — `manage-actions.ts`가 화면의
+ *    역할 id를 이 저장소의 이름으로 바꿔서 넘긴다(`roleNameOf`). 실서버는 id를 그대로
+ *    BE에 보내므로 이 다리가 필요 없다.
+ */
 export function updateMockMemberGrade(
   id: number,
-  next: { position: string; authority: ManagedMember["authority"]; isAdmin: boolean },
+  next: {
+    position: string;
+    authority: ManagedMember["authority"];
+    isAdmin: boolean;
+    roleLabel?: string | null;
+  },
 ): void {
-  store = store.map((entry) =>
-    entry.member.id === id ? { ...entry, member: { ...entry.member, ...next } } : entry,
-  );
+  store = store.map((entry) => {
+    if (entry.member.id !== id) return entry;
+    return {
+      ...entry,
+      member: {
+        ...entry.member,
+        position: next.position,
+        authority: next.authority,
+        isAdmin: next.isAdmin,
+        ...(next.roleLabel !== undefined ? { roleLabel: next.roleLabel } : {}),
+      },
+    };
+  });
 }
 
 /**
