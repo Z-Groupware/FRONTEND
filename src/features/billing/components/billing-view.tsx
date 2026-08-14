@@ -130,6 +130,15 @@ export function BillingView({ overview, config, canManage, companyId }: BillingV
            같은 줄이 **저절로** 맞는다(짧은 쪽은 늘어나고 안쪽 내용은 위에 붙는다).
       */}
       <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-7">
+        {/*
+          ⚠️⚠️ **2026-08-14** — 이 화면의 사용량·결제 내역은 실 연동이 안정되기 전까지
+             더미 데이터다(`server.ts` 주석 참고). 아무 말 없이 실제인 척하면 화면이 거짓말을
+             하는 셈이라, 베타 서버라는 사실을 짧게 밝힌다(§정직성).
+        */}
+        <p className="text-muted-foreground/70 text-[12px] leading-4">
+          베타 서버라 이번 주기 사용량·결제 내역은 예시 데이터입니다
+        </p>
+
         {/* 첫 줄 — 이번 주기 사용량 · 플랜 */}
         <div className="grid grid-cols-1 gap-7 lg:grid-cols-[minmax(0,1fr)_360px]">
           <UsagePanel subscription={subscription} config={config} />

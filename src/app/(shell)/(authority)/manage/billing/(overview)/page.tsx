@@ -1,22 +1,14 @@
 import type { Metadata } from "next";
-import { redirect } from "next/navigation";
 
 import { AccessDenied } from "@/components/common/access-denied";
-import { getMe } from "@/features/auth/me";
 import { BillingView } from "@/features/billing/components/billing-view";
-import {
-  getBillingConfig,
-  getBillingOverview,
-  getOnboardingSubscription,
-} from "@/features/billing/server";
-import { canUseWorkspace } from "@/features/billing/subscription";
+import { getBillingConfig, getBillingOverview } from "@/features/billing/server";
 import { roleHome } from "@/features/shell/home";
 import { getViewer } from "@/features/shell/viewer";
 import { canAccessManageScope } from "@/lib/permission";
 import { canManageBilling } from "@/lib/permission";
-import { isMock } from "@/mocks/config";
 
-/** 목 모드엔 진짜 세션이 없어 `getMe()`가 `null`이다 — 카드 등록 흐름만 확인하는 자리표시자. */
+/** 이 도메인은 항상 더미라 진짜 세션 값이 없다 — 카드 등록 흐름만 확인하는 자리표시자. */
 const MOCK_COMPANY_ID = 1;
 
 export const metadata: Metadata = {
@@ -24,10 +16,9 @@ export const metadata: Metadata = {
 };
 
 /*
-  ⚠️ **정적으로 굳히지 않는다.** 회사마다 다른 구독 상태·사용량·결제 이력을 그리는 화면이라
-     한 벌을 미리 구워 돌려쓸 수 없다.
-  ⚠️ 세션이 붙으면 `getViewer()`가 쿠키를 읽어 저절로 동적이 되지만, 목인 지금은
-     동적 신호가 하나도 없어 `○`(Static)으로 빌드된다 — 그때 지워도 되는 줄이다.
+  ⚠️ **정적으로 굳히지 않는다.** 회사마다 다른 권한으로 보는 화면이라 한 벌을 미리 구워
+     돌려쓸 수 없다. `getViewer()`가 쿠키를 읽어 저절로 동적이 되지만, 신호가 안 잡히는
+     경우를 위해 명시해 둔다.
 */
 export const dynamic = "force-dynamic";
 
@@ -35,48 +26,27 @@ export const dynamic = "force-dynamic";
  * 구독 — 지금 무엇을 얼마에 쓰는지 보고, 플랜·결제 수단을 바꾸고, 지난 결제를 확인한다.
  *
  * ⚠️ 조회는 **Server Component**가 한다 — `useEffect` 페칭을 쓰지 않는다(CLAUDE.md §렌더링).
- * ⚠️ **OWNER 또는 Admin 겸직자만** 볼 수 있다. 지금은 로그인이 없어 화면 가드만 있고,
- *    Server Action·BFF가 붙으면 `canManageBilling`으로 서버에서 재검사한다 —
+ * ⚠️ **OWNER 또는 Admin 겸직자만** 볼 수 있다. 판정은 `canManageBilling` 한 곳이 한다 —
  *    화면 숨김은 UX일 뿐 보안이 아니다(§권한).
- * ⚠️ **결제 전 회사는 여기 오면 안 된다.** `middleware.ts`가 아직 없어(`/subscription/page.tsx`
- *    자체 주석 — "세션에 구독 상태가 실리면 middleware.ts가 막고 여기로 돌린다. 지금은
- *    주소로 직접 들어와 확인한다") 이 화면에 오는 유일한 문 역할을 한다. `getBillingOverview`는
- *    "이미 결제한 회사만 오는 자리"라는 전제로 404를 그대로 던지므로(그 파일 주석 참고), 그
- *    전제를 여기서 지킨다 — 안 지키면 결제 전 회사가 사이드바 링크로 들어와 그 404가 그대로
- *    새서 에러 화면이 뜬다(2026-08-14 실제 프로덕션에서 재현).
- * ⚠️ **목에서는 이 문을 건너뛴다.** `getOnboardingSubscription()`의 목 값은 게이트
- *    화면(`/subscription`)을 보여 주기 위해 일부러 `UNPAID`로 고정돼 있다(그 함수 주석
- *    참고) — 실서버 판정과 같은 값으로 여기서 재사용하면 데모에서 구독 화면 자체가
- *    통째로 막힌다.
+ * ⚠️⚠️ **2026-08-14 — 결제 전 회사를 여기서 돌려보내던 문을 없앴다.** 그 문은 실서버
+ *    `getBillingOverview`가 결제 전 회사에게 404를 던지는 걸 막기 위한 것이었는데,
+ *    지금은 이 도메인 전체가 더미라 그 404가 날 수 없다(`server.ts` 주석 참고) —
+ *    실 연동을 되돌릴 때 이 자리에 그 가드를 다시 둔다.
  */
 export default async function OwnerBillingPage() {
   /* ⚠️ 문(권한)을 먼저 본다 — 돈이 걸린 화면이라 판정 전 조회를 한 번도 내보내지 않는다(§권한) */
   const viewer = await getViewer();
   if (!canAccessManageScope(viewer)) return <AccessDenied homeHref={roleHome(viewer.role)} />;
 
-  /* ⚠️ 실서버에서만 확인한다 — 결제 전이면 여기서 끝(아래 getBillingOverview는 결제 전 회사를 모른다) */
-  if (!isMock) {
-    const { status } = await getOnboardingSubscription();
-    if (!canUseWorkspace(status)) redirect("/subscription");
-  }
-
   const [overview, config] = await Promise.all([getBillingOverview(), getBillingConfig()]);
 
-  /*
-    ⚠️ 판정은 **`canManageBilling` 한 곳**이 한다. 전에는 여기만 `const canManage = true`로
-       손으로 두어서, 같은 판정을 하는 `/subscription`과 규칙이 갈라져 있었다 —
-       권한을 화면마다 적으면 한쪽만 고치고 지나간다(CLAUDE.md §권한).
-    ⚠️ 잠긴 화면을 보려면 `viewer.ts`의 목을 바꾼다.
-  */
   const canManage = canManageBilling(viewer);
 
   /*
-    ⚠️ `requestCardAuth`의 customerKey로 실어 보낼 기업 id — BE가 principal의 companyId와
-       문자열 대조한다(`billing-view.tsx` 주석). 목엔 진짜 세션이 없어 `getMe()`가 `null`이라
-       자리표시자를 쓴다.
+    ⚠️ `requestCardAuth`의 customerKey로 실어 보낼 기업 id — 이 도메인이 더미라 진짜
+       세션 값 대신 자리표시자를 쓴다(위 상수 참고).
   */
-  const me = isMock ? null : await getMe();
-  const companyId = me?.companyId ?? MOCK_COMPANY_ID;
+  const companyId = MOCK_COMPANY_ID;
 
   return (
     <BillingView overview={overview} config={config} canManage={canManage} companyId={companyId} />

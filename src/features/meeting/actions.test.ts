@@ -8,7 +8,11 @@ jest.mock("@/lib/mock-actor", () => ({
   getMockActor: jest.fn(() => ({ id: 1, role: "OWNER" })),
 }));
 
-import { createOnlineMeetingAction, updateMeetingAttendeesAction } from "./actions";
+import {
+  createOnlineMeetingAction,
+  getOnlineMeetingRecordingUploadUrlAction,
+  updateMeetingAttendeesAction,
+} from "./actions";
 import { addMockMeeting } from "./mock/meetings";
 import type { MeetingDraft } from "./types";
 
@@ -119,6 +123,7 @@ const onlineForm = (entries: {
   attendeeIds?: number[];
   topics?: { main: string; sub: string }[];
   parentTeamActionId?: number;
+  withRecording?: boolean;
 }) => {
   const data = new FormData();
   data.append("title", entries.title ?? "비대면 주간 싱크");
@@ -131,6 +136,14 @@ const onlineForm = (entries: {
   if (entries.parentTeamActionId !== undefined) {
     data.append("parentTeamActionId", String(entries.parentTeamActionId));
   }
+  // ⚠️ 2026-08-14 계약 변경 — 단일 모달이 등록 시점에 S3 업로드까지 끝낸 뒤 이 세 값을 채워
+  //    보낸다(`useOnlineMeetingForm.handleSubmit`). 기본값은 "이미 업로드까지 마쳤다"로 둔다.
+  if (entries.withRecording ?? true) {
+    data.append("recordingS3Key", "recordings/mock/online-pending/meeting.webm");
+    data.append("recordingFileName", "meeting.webm");
+    data.append("recordingContentType", "audio/webm");
+    data.append("recordingSizeBytes", "12345");
+  }
   return data;
 };
 
@@ -142,6 +155,16 @@ describe("비대면 회의 만들기(이슈 #473) — mock 분기", () => {
 
     expect(result.errors).toEqual({});
     expect(result.created?.id).toMatch(/^meeting-\d+$/);
+  });
+
+  it("녹음 파일 정보가 없으면 막는다(2026-08-14 계약 변경 — 단일 모달, 등록의 일부다)", async () => {
+    const result = await createOnlineMeetingAction(
+      ONLINE_INITIAL,
+      onlineForm({ withRecording: false }),
+    );
+
+    expect(result.errors.recording).toBe("녹음 파일을 첨부해 주세요");
+    expect(result.created).toBeUndefined();
   });
 
   it("존재하지 않는 프로젝트면 막는다(폼 조작 방어)", async () => {
@@ -175,5 +198,47 @@ describe("비대면 회의 만들기(이슈 #473) — mock 분기", () => {
 
     expect(result.errors.attendeeIds).toBe("존재하지 않는 참석자가 있습니다");
     expect(result.created).toBeUndefined();
+  });
+});
+
+/*
+  ⚠️ 업로드 URL 발급(2026-08-14 계약 변경) — mock 분기는 실제 S3가 없어 `presignedUrl: null`을
+     돌려준다(§정직한 목업). 형식·용량 검증은 발급 단계에서 먼저 걸린다.
+*/
+describe("비대면 회의 녹음 업로드 URL 발급 — mock 분기", () => {
+  it("성공하면 s3Key를 받고 presignedUrl은 null이다(목엔 실제 S3가 없다)", async () => {
+    const result = await getOnlineMeetingRecordingUploadUrlAction({
+      fileName: "meeting.webm",
+      contentType: "audio/webm",
+      sizeBytes: 12345,
+    });
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.presignedUrl).toBeNull();
+      expect(result.s3Key).toContain("meeting.webm");
+    }
+  });
+
+  it("지원하지 않는 형식이면 발급 전에 막는다", async () => {
+    const result = await getOnlineMeetingRecordingUploadUrlAction({
+      fileName: "meeting.txt",
+      contentType: "text/plain",
+      sizeBytes: 100,
+    });
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.message).toContain("지원하지 않는 형식입니다");
+  });
+
+  it("5GiB를 넘으면 발급 전에 막는다", async () => {
+    const result = await getOnlineMeetingRecordingUploadUrlAction({
+      fileName: "meeting.webm",
+      contentType: "audio/webm",
+      sizeBytes: 5 * 1024 * 1024 * 1024 + 1,
+    });
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.message).toBe("파일 용량이 5GiB를 넘었습니다");
   });
 });

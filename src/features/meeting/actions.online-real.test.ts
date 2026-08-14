@@ -22,7 +22,7 @@ jest.mock("@/lib/api", () => ({
 import { requireAccessToken } from "@/features/auth/session";
 import { ApiError, serverApi } from "@/lib/api";
 
-import { createOnlineMeetingAction } from "./actions";
+import { createOnlineMeetingAction, getOnlineMeetingRecordingUploadUrlAction } from "./actions";
 
 const requireAccessTokenMock = requireAccessToken as unknown as jest.Mock;
 const serverApiMock = serverApi as unknown as jest.Mock;
@@ -34,6 +34,11 @@ const VALID_FORM = () => {
   data.append("attendeeIds", "2");
   data.append("topicMain", "제품");
   data.append("topicSub", "로드맵 검토");
+  // ⚠️ 2026-08-14 계약 변경 — 단일 모달이 S3 업로드까지 끝낸 뒤 이 세 값을 채워 보낸다.
+  data.append("recordingS3Key", "recordings/org-1/member-1/online-pending/uuid/meeting.webm");
+  data.append("recordingFileName", "meeting.webm");
+  data.append("recordingContentType", "audio/webm");
+  data.append("recordingSizeBytes", "12345678");
   return data;
 };
 
@@ -70,7 +75,38 @@ describe("비대면 회의 만들기(이슈 #473, MEET-18) — 실서버 분기(
     expect(init.json).not.toHaveProperty("recordingConsent");
     expect(init.json).not.toHaveProperty("meetingRoomId");
     expect(init.json).not.toHaveProperty("startAt");
+    expect(init.json.recording).toEqual({
+      s3Key: "recordings/org-1/member-1/online-pending/uuid/meeting.webm",
+      fileName: "meeting.webm",
+      contentType: "audio/webm",
+      sizeBytes: 12345678,
+    });
   });
+
+  it("녹음 파일 정보가 없으면 BE 호출보다 앞서 막는다", async () => {
+    const data = new FormData();
+    data.append("title", "비대면 주간 싱크");
+    data.append("projectId", "1");
+    data.append("attendeeIds", "2");
+    data.append("topicMain", "제품");
+    data.append("topicSub", "로드맵 검토");
+
+    const result = await createOnlineMeetingAction({ errors: {} }, data);
+
+    expect(result.errors.recording).toBe("녹음 파일을 첨부해 주세요");
+    expect(serverApiMock).not.toHaveBeenCalled();
+  });
+
+  it.each(["CAP-015", "CAP-023", "CAP-024", "CAP-025"])(
+    "%s는 recording 칸 오류로 바뀐다",
+    async (code) => {
+      serverApiMock.mockRejectedValue(new ApiError(400, "녹음 파일 오류", code));
+
+      const result = await createOnlineMeetingAction({ errors: {} }, VALID_FORM());
+
+      expect(result.errors.recording).toBe("녹음 파일 오류");
+    },
+  );
 
   it("폼 자체가 비어 있으면 그 검증 오류가 먼저 온다(BE 호출보다 앞선다)", async () => {
     const result = await createOnlineMeetingAction({ errors: {} }, new FormData());
@@ -122,5 +158,59 @@ describe("비대면 회의 만들기(이슈 #473, MEET-18) — 실서버 분기(
     const result = await createOnlineMeetingAction({ errors: {} }, VALID_FORM());
 
     expect(result.errors.title).toBe("알 수 없는 오류");
+  });
+});
+
+/**
+ * 비대면 회의 녹음 업로드 URL 발급(2026-08-14 계약 변경) — 실서버 분기.
+ */
+describe("비대면 회의 녹음 업로드 URL 발급 — 실서버 분기(!isMock)", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    requireAccessTokenMock.mockResolvedValue("token");
+  });
+
+  it("성공하면 BE가 준 s3Key·presignedUrl을 그대로 돌려준다", async () => {
+    serverApiMock.mockResolvedValue({
+      s3Key: "recordings/org-1/member-10/online-pending/uuid/meeting.webm",
+      presignedUrl: "https://s3.example.com/upload",
+      expiresInSeconds: 900,
+    });
+
+    const result = await getOnlineMeetingRecordingUploadUrlAction({
+      fileName: "meeting.webm",
+      contentType: "audio/webm",
+      sizeBytes: 12345678,
+    });
+
+    expect(result).toEqual({
+      ok: true,
+      s3Key: "recordings/org-1/member-10/online-pending/uuid/meeting.webm",
+      presignedUrl: "https://s3.example.com/upload",
+      contentType: "audio/webm",
+    });
+  });
+
+  it("지원하지 않는 형식이면 BE 호출보다 앞서 막는다", async () => {
+    const result = await getOnlineMeetingRecordingUploadUrlAction({
+      fileName: "meeting.txt",
+      contentType: "text/plain",
+      sizeBytes: 100,
+    });
+
+    expect(result.ok).toBe(false);
+    expect(serverApiMock).not.toHaveBeenCalled();
+  });
+
+  it("BE 실패(CAP-024 등)는 메시지를 그대로 돌려준다", async () => {
+    serverApiMock.mockRejectedValue(new ApiError(413, "파일 용량이 너무 큽니다", "CAP-024"));
+
+    const result = await getOnlineMeetingRecordingUploadUrlAction({
+      fileName: "meeting.webm",
+      contentType: "audio/webm",
+      sizeBytes: 12345678,
+    });
+
+    expect(result).toEqual({ ok: false, message: "파일 용량이 너무 큽니다" });
   });
 });

@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { AUTHORITY, type Authority } from "@/constants/authority";
-import { AI_SUMMARY_STATUS, MEETING_STATUS } from "@/constants/meeting";
+import { MEETING_STATUS } from "@/constants/meeting";
 import { requireAccessToken } from "@/features/auth/session";
 import { getManagedMember } from "@/features/member/manage-server";
 import { TOP_LEVEL_PROJECTS } from "@/features/project/mock/projects";
@@ -18,12 +18,7 @@ import { getViewer } from "@/features/shell/viewer";
 import { ApiError, serverApi } from "@/lib/api";
 import { ep } from "@/lib/endpoints";
 import { getMockActor } from "@/lib/mock-actor";
-import {
-  type Actor,
-  canCaptureMeeting,
-  canManageMeeting,
-  requiresParentTeamAction,
-} from "@/lib/permission";
+import { type Actor, canManageMeeting, requiresParentTeamAction } from "@/lib/permission";
 import { isMock } from "@/mocks/config";
 
 import { checkMeetingTitle } from "./lib";
@@ -37,24 +32,23 @@ import {
 } from "./mapper";
 import {
   type BeCreateOnlineMeetingResponse,
+  type BeRecordingUploadUrlResponse,
   toCreateOnlineMeetingPayload,
 } from "./mapper/online-meetings";
 import {
   addMockOnlineMeeting,
   cancelMockMeeting,
   findMockMeeting,
-  setMockRecordingFileName,
-  setMockSummaryStatus,
   updateMockMeeting,
   updateMockMeetingAttendees,
 } from "./mock/meetings";
+import { validateRecordingFileMeta } from "./recording-file";
 import { meetingStatusOf } from "./status";
 import type {
   MeetingDraft,
   MeetingTopic,
   OnlineMeetingDraft,
   OnlineMeetingFormErrors,
-  SubmitOnlineMeetingRecordingDraft,
 } from "./types";
 import { validateOnlineMeetingDraft } from "./validate";
 
@@ -410,12 +404,27 @@ function readOnlineMeetingDraft(formData: FormData): OnlineMeetingDraft {
   const mains = formData.getAll("topicMain");
   const subs = formData.getAll("topicSub");
 
+  // ⚠️ `handleSubmit`(클라이언트)이 S3 업로드까지 끝낸 뒤에만 이 세 값을 채워 넣는다 — 하나라도
+  //    비면 아직 파일이 안 올라간 것이라 `recording: null`로 둔다(§types의 `OnlineMeetingDraft` 주석).
+  const recordingS3Key = String(formData.get("recordingS3Key") ?? "");
+  const recordingFileName = String(formData.get("recordingFileName") ?? "");
+  const recordingContentType = String(formData.get("recordingContentType") ?? "");
+  const recordingSizeBytes = Number(formData.get("recordingSizeBytes") ?? 0);
+
   return {
     title: String(formData.get("title") ?? ""),
     projectId: String(formData.get("projectId") ?? ""),
     topics: mains.map((main, index) => ({ main: String(main), sub: String(subs[index] ?? "") })),
     attendeeIds: formData.getAll("attendeeIds").map(Number),
     parentTeamActionId: parentTeamActionId ? Number(parentTeamActionId) : undefined,
+    recording: recordingS3Key
+      ? {
+          s3Key: recordingS3Key,
+          fileName: recordingFileName,
+          contentType: recordingContentType,
+          sizeBytes: recordingSizeBytes,
+        }
+      : null,
   };
 }
 
@@ -441,22 +450,95 @@ function toOnlineMeetingCreateFormErrors(error: unknown): OnlineMeetingFormError
       return { parentTeamActionId: error.message };
     case "PROJECT_NOT_FOUND":
       return { projectId: "존재하지 않는 프로젝트입니다" };
+    // ⚠️ **여기 도착한 CAP-0XX는 "발급 뒤 상태가 바뀐" 경우다** — CAP-024(용량)·CAP-025(형식)는
+    //    보통 업로드 URL 발급 단계(`getOnlineMeetingRecordingUploadUrlAction`)에서 먼저 걸리지만,
+    //    발급 뒤 S3 업로드가 안 끝났거나(CAP-023) 다른 사용자·경로의 `s3Key`를 흉내 냈으면(CAP-015)
+    //    이 마지막 호출에서야 드러난다 — 전부 녹음 칸 오류로 보여준다.
+    case "CAP-015":
+    case "CAP-023":
+    case "CAP-024":
+    case "CAP-025":
+      return { recording: error.message };
     default:
       return { title: error.message };
   }
 }
 
+/** `POST /api/meetings/online/recordings/upload-url` 실패 → 화면에 보여줄 문구 하나로 바꾼다. */
+function toRecordingUploadUrlErrorMessage(error: unknown): string {
+  if (!(error instanceof ApiError)) throw error;
+  return error.message;
+}
+
+/** 업로드 URL 발급 결과 — 실패는 파일 첨부 칸의 오류로, S3 PUT은 클라이언트가 직접 한다. */
+export type RecordingUploadUrlResult =
+  | {
+      ok: true;
+      s3Key: string;
+      /** `null`이면 목 모드다 — 실제 S3가 없어 클라이언트가 PUT 단계를 건너뛴다. */
+      presignedUrl: string | null;
+      contentType: string;
+    }
+  | { ok: false; message: string };
+
 /**
- * 비대면 회의 만들기(이슈 #473) — `/app/meeting` 목록의 [비대면 회의] 버튼이 부른다.
+ * 비대면 회의 등록 3단계 중 **1단계** — presigned 업로드 URL 발급(이슈 #473, 2026-08-14 계약
+ * 변경). `OnlineMeetingDialog`가 [등록]을 누른 순간 직접 호출한다(폼 제출이 아니다 — S3로의
+ * 직접 PUT은 브라우저 `fetch`라 `useActionState` 한 번의 제출로는 표현이 안 된다, 프로젝트
+ * 첨부파일 업로드와 같은 이유).
+ * ⚠️ 파일 형식·용량은 **여기서도 다시 본다**(§권한: 화면 검증은 UX일 뿐 보안이 아니다) — 클라이언트
+ *    1차 검증을 우회해도 잘못된 메타로 발급을 받을 수 없다.
+ */
+export async function getOnlineMeetingRecordingUploadUrlAction(input: {
+  fileName: string;
+  contentType: string;
+  sizeBytes: number;
+}): Promise<RecordingUploadUrlResult> {
+  const fileError = validateRecordingFileMeta(input);
+  if (fileError) return { ok: false, message: fileError };
+
+  if (!isMock) {
+    const accessToken = await requireAccessToken();
+    try {
+      const response = await serverApi<BeRecordingUploadUrlResponse>(
+        ep.meetingsOnlineRecordingUploadUrl(),
+        { method: "POST", accessToken, json: input },
+      );
+      return {
+        ok: true,
+        s3Key: response.s3Key,
+        presignedUrl: response.presignedUrl,
+        contentType: input.contentType,
+      };
+    } catch (error) {
+      return { ok: false, message: toRecordingUploadUrlErrorMessage(error) };
+    }
+  }
+
+  /*
+    ⚠️ 목은 실제 S3가 없다 — `presignedUrl: null`로 돌려 클라이언트가 2단계(S3 PUT)를 건너뛰게
+       한다(§정직한 목업, `project`의 `AttachmentUploadTicket.uploadUrl: string | null`과 같은 규칙).
+  */
+  return {
+    ok: true,
+    s3Key: `recordings/mock/online-pending/${input.fileName}`,
+    presignedUrl: null,
+    contentType: input.contentType,
+  };
+}
+
+/**
+ * 비대면 회의 만들기(이슈 #473) — `/app/rooms` 회의실 패널의 [비대면 회의] 버튼이 부른다.
  *
  * ⚠️ **BE API가 확정됐다**(MEET-18, 2026-08-14 도메인 담당자 문서) — 더는 "아직 준비 중"이
  *    아니다. 다만 BE 실코드 대조 전이라 매퍼·엔드포인트 주석에 그 사실을 남겨 뒀다(§연동 검증).
  * ⚠️ **`recordingConsent`를 안 보낸다** — 서버가 항상 `true`로 고정한다(팀 확정, 매퍼 주석).
  * ⚠️ **제출하면 그 자리에서 완료 처리된다** — 회의실 예약(`createRoomReservationAction`)과
  *    달리 캡처 화면으로 안 넘어간다(팀 명세). 그래서 회의실·시간을 아예 안 받는다.
- * ⚠️ **성공해도 녹음 파일·AI 요약 요청은 여기서 안 한다**(2026-08-14 팀 확정) — 그 회의는
- *    이미 완료 상태로 만들어졌고, 파일 첨부는 같은 다이얼로그의 **2단계**(`submitOnlineMeetingRecordingAction`)
- *    가 뒤이어 처리하는 별개의 가벼운 흐름이다.
+ * ⚠️ **단일 모달, 등록 한 번**(2026-08-14 계약 변경 — 이전엔 회의 생성 뒤 별도 2단계에서
+ *    녹음 파일을 붙였다). `OnlineMeetingDialog`가 [등록]을 누르면 업로드 URL 발급 → 브라우저의
+ *    S3 직접 PUT → 이 액션 순서로 부른다 — 이 시점엔 `draft.recording`이 이미 채워져 있어야
+ *    한다(`validateOnlineMeetingDraft`가 비어 있으면 막는다).
  * ⚠️ mock 분기의 검증 순서는 `createRoomReservationAction`과 맞춘다(프로젝트 → 참석자 범위 →
  *    상위 팀 액션) — 같은 도메인의 두 생성 경로가 다른 순서로 막히면 같은 실수가 화면마다
  *    다른 첫 오류로 보인다.
@@ -540,8 +622,8 @@ export async function createOnlineMeetingAction(
     roomName: null,
     roomReservationId: null,
     isOnline: true,
-    // ⚠️ 첨부는 이 액션의 몫이 아니다 — 다이얼로그 2단계가 성공 후 따로 붙인다(§types 주석).
-    recordingFileName: null,
+    // ⚠️ 이제 이 시점에 이미 파일이 S3에 올라가 있다 — 파일명을 그대로 붙인다(§types 주석).
+    recordingFileName: draft.recording!.fileName,
     projectId: project.id,
     projectTag: project.tag,
     topics,
@@ -563,79 +645,4 @@ export async function createOnlineMeetingAction(
   const meeting = addMockOnlineMeeting(meetingDraft);
   revalidatePath(MEETING_LIST_PATH);
   return { errors: {}, created: { id: meeting.id } };
-}
-
-/** 비대면 회의 2단계([녹음 파일 제출]) 결과 — 다이얼로그가 이 값이 바뀐 걸 보고 닫는다. */
-export interface SubmitOnlineMeetingRecordingState {
-  /** 칸에 매길 실패(권한 없음·파일 없음 등) — `FieldError`로 빨갛게 보여준다. */
-  error: string | null;
-  /** 실패가 아니라 **아직 지원 안 함** 안내 — `error`와 자리를 나눠 평범한 안내문으로 보여준다. */
-  notice: string | null;
-  /** 성공한 제출의 표식(MEET-09 폼과 같은 이유로 `boolean` 대신 객체) */
-  submitted: { meetingId: string } | null;
-}
-
-function readSubmitOnlineMeetingRecordingDraft(
-  formData: FormData,
-): SubmitOnlineMeetingRecordingDraft {
-  return {
-    meetingId: String(formData.get("meetingId") ?? ""),
-    recordingFileName: String(formData.get("recordingFileName") ?? ""),
-  };
-}
-
-/**
- * 비대면 회의 2단계 — [녹음 파일 제출] + [AI 요약 요청](이슈 #473, 2026-08-14 팀 확정).
- *
- * ⚠️ **회의는 이미 완료 상태로 존재한다** — 이 액션은 파일명을 덧붙이고 분석을 대기로 옮길
- *    뿐, 회의를 새로 만들거나 상태를 바꾸지 않는다(`createOnlineMeetingAction`과 분리된 이유).
- * ⚠️ **녹음 파일은 선택이 아니다.** AI 요약을 요청하려면 녹음이 있어야 한다 — 빈 값·공백만
- *    있는 값은 여기서 막고, 파일명이 확정된 뒤에만 분석을 대기(`PENDING`)로 옮긴다.
- * ⚠️ **권한은 그 회의 담당자 1명뿐**이다(§권한 ②: 리소스 소유권, `canCaptureMeeting`과 같은
- *    축 — 캡처·녹음·종료와 한 묶음). `canManageMeeting`(host·OWNER·ADMIN)을 여기서 쓰면
- *    담당자가 아닌 OWNER도 남의 회의에 파일을 밀어 넣을 수 있어 축이 하나로 무너진다.
- * ⚠️ **실서버 분기가 없다.** BE가 이 제출 자리(녹음 업로드·요약 요청 트리거)를 아직 안 내줬다
- *    (§연동 검증: Swagger·구두 추측 금지) — 추측 엔드포인트를 만드는 대신 정직하게
- *    "곧 지원됩니다"라고 안내한다(§정직성, 기존 스텁과 같은 결). 이건 **실패가 아니라 안내**라
- *    `error`가 아니라 `notice`에 실어 화면이 빨간 오류로 보여주지 않게 한다.
- * ⚠️ **파일명은 실제 업로드가 아니다**(§정직한 목업) — `setMockRecordingFileName`은 이름만 옮긴다.
- */
-export async function submitOnlineMeetingRecordingAction(
-  _prev: SubmitOnlineMeetingRecordingState,
-  formData: FormData,
-): Promise<SubmitOnlineMeetingRecordingState> {
-  const draft = readSubmitOnlineMeetingRecordingDraft(formData);
-  if (!draft.meetingId) {
-    return { error: "회의를 찾을 수 없습니다", notice: null, submitted: null };
-  }
-
-  const recordingFileName = draft.recordingFileName.trim();
-  if (!recordingFileName) {
-    return { error: "녹음 파일을 첨부해 주세요", notice: null, submitted: null };
-  }
-
-  if (!isMock) {
-    // ⚠️ BE가 아직 이 제출 엔드포인트를 안 내줬다 — 추측 요청을 보내지 않는다(§연동 검증).
-    return {
-      error: null,
-      notice: "녹음 파일 제출은 아직 준비 중입니다 — 곧 지원됩니다",
-      submitted: null,
-    };
-  }
-
-  const meeting = findMockMeeting(draft.meetingId);
-  if (!meeting) {
-    return { error: "회의를 찾을 수 없습니다", notice: null, submitted: null };
-  }
-
-  const actor = getMockActor();
-  if (!canCaptureMeeting(actor, meeting)) {
-    return { error: "녹음 파일을 제출할 권한이 없습니다", notice: null, submitted: null };
-  }
-
-  setMockRecordingFileName(draft.meetingId, recordingFileName);
-  setMockSummaryStatus(draft.meetingId, AI_SUMMARY_STATUS.PENDING);
-  revalidatePath(`/app/meeting/${draft.meetingId}`);
-  revalidatePath(MEETING_LIST_PATH);
-  return { error: null, notice: null, submitted: { meetingId: draft.meetingId } };
 }
