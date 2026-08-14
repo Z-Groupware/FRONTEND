@@ -10,7 +10,6 @@ const VALID_DRAFT = {
   projectId: "1",
   topics: [{ main: "제품", sub: "로드맵 검토" }],
   attendeeIds: [1],
-  recordingFileName: null,
 };
 
 describe("비대면 회의 만들기 검증", () => {

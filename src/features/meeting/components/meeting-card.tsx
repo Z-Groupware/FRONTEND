@@ -1,4 +1,4 @@
-import { CalendarClock, ChevronRight, MapPin, Mic, Sparkles, Users, Video } from "lucide-react";
+import { CalendarClock, ChevronRight, MapPin, Mic, Sparkles, Users } from "lucide-react";
 import Link from "next/link";
 
 import { ProjectTag } from "@/components/common/project-tag";
@@ -167,29 +167,19 @@ function CardFooter({
       */}
       <div className="flex min-w-0 flex-nowrap items-center gap-x-3">
         {/*
-          ⚠️ **비대면 회의는 일시·장소 대신 안내 한 줄이다**(이슈 #473). 회의실·시간이 없어서
-             (`meeting.schedule`·`meeting.roomName`이 서버에서부터 빈 문자열로 온다) 그 칸을
-             그대로 그리면 빈 채로 보인다 — `isOnline`을 먼저 보고 아예 다른 것을 그린다.
+          ⚠️ **비대면 회의는 이제 이 목록에 안 온다**(2026-08-14 팀 확정 — `server.ts`의
+             `getMeetingDirectory` 주석). 일시·장소는 항상 채워져 있다고 봐도 된다.
         */}
-        {meeting.isOnline ? (
-          <span className="flex shrink-0 items-center gap-1.5 text-[13px] leading-5 font-medium">
-            <Video className="text-muted-foreground size-4 shrink-0" aria-hidden />
-            <span>온라인으로 진행된 회의입니다</span>
-          </span>
-        ) : (
-          <span className="flex shrink-0 items-center gap-1.5 text-[13px] leading-5 font-medium">
-            <CalendarClock className="text-muted-foreground size-4 shrink-0" aria-hidden />
-            <span className="tabular-nums">{meeting.schedule}</span>
-          </span>
-        )}
+        <span className="flex shrink-0 items-center gap-1.5 text-[13px] leading-5 font-medium">
+          <CalendarClock className="text-muted-foreground size-4 shrink-0" aria-hidden />
+          <span className="tabular-nums">{meeting.schedule}</span>
+        </span>
         <span className="bg-border h-3 w-px shrink-0" aria-hidden />
         <span className="text-muted-foreground flex min-w-0 items-center gap-x-3 text-[12px] leading-4">
-          {!meeting.isOnline && (
-            <span className="flex min-w-0 items-center gap-1.5">
-              <MapPin className="size-3.5 shrink-0" aria-hidden />
-              <span className="truncate">{meeting.roomName}</span>
-            </span>
-          )}
+          <span className="flex min-w-0 items-center gap-1.5">
+            <MapPin className="size-3.5 shrink-0" aria-hidden />
+            <span className="truncate">{meeting.roomName}</span>
+          </span>
           <span className="flex shrink-0 items-center gap-1.5">
             <Users className="size-3.5 shrink-0" aria-hidden />
             <span className="tabular-nums">{meeting.attendeeCount}명</span>

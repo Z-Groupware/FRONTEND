@@ -21,6 +21,7 @@ import type { RoomMember, RoomProjectOption, RoomTeamActionOption } from "@/feat
 
 import { OnlineMeetingFields } from "./online-meeting-fields";
 import { useOnlineMeetingForm } from "./use-online-meeting-form";
+import { useOnlineMeetingRecordingForm } from "./use-online-meeting-recording-form";
 
 interface OnlineMeetingDialogProps {
   members: RoomMember[];
@@ -30,8 +31,22 @@ interface OnlineMeetingDialogProps {
   viewer: AttendeeScopeViewer;
 }
 
-/** 취소·제출 버튼 — `useFormStatus`는 `<form>`의 자손에서만 읽을 수 있다(`RoomReservationDialog`와 같은 이유). */
-function DialogActions({
+/** 제출 중인지를 창에 올려 보낸다 — `RoomReservationDialog`의 `PendingReporter`와 같다. */
+function PendingReporter({ onChange }: { onChange: (pending: boolean) => void }) {
+  const { pending } = useFormStatus();
+
+  useEffect(() => {
+    onChange(pending);
+  }, [pending, onChange]);
+
+  return null;
+}
+
+/**
+ * 취소·확인 2단계 제출 버튼 — 1단계(비대면 회의 등록)가 쓴다. `useFormStatus`는 `<form>`의
+ * 자손에서만 읽을 수 있다(`RoomReservationDialog`와 같은 이유).
+ */
+function ConfirmStepActions({
   onCancel,
   onRequestSubmit,
 }: {
@@ -52,41 +67,52 @@ function DialogActions({
   );
 }
 
-/** 제출 중인지를 창에 올려 보낸다 — `RoomReservationDialog`의 `PendingReporter`와 같다. */
-function PendingReporter({ onChange }: { onChange: (pending: boolean) => void }) {
+/**
+ * 건너뛰기·바로 제출 버튼 — 2단계(녹음 제출)가 쓴다. 확인 모달을 안 거친다 — 회의는 이미
+ * 완료 상태로 존재해서 이 제출은 되돌릴 게 없는 부가 조작이다(§토스트: 파괴적 작업만 Dialog).
+ */
+function SkipOrSubmitActions({ onSkip }: { onSkip: () => void }) {
   const { pending } = useFormStatus();
 
-  useEffect(() => {
-    onChange(pending);
-  }, [pending, onChange]);
+  return (
+    <div className="flex shrink-0 gap-2">
+      <Button type="button" variant="outline" disabled={pending} onClick={onSkip}>
+        나중에 하기
+      </Button>
+      <Button type="submit" variant="ink" disabled={pending}>
+        {pending ? "요청 중" : "AI 요약 요청"}
+      </Button>
+    </div>
+  );
+}
 
-  return null;
+interface OnlineMeetingStep1Props {
+  members: RoomMember[];
+  projects: RoomProjectOption[];
+  showParentTeamAction: boolean;
+  teamActions: RoomTeamActionOption[];
+  viewer: AttendeeScopeViewer;
+  onCreated: (meetingId: string) => void;
+  onPendingChange: (pending: boolean) => void;
+  onCancel: () => void;
 }
 
 /**
- * 비대면 회의 만들기 — `/app/meeting` 목록의 진입점(이슈 #473). `RoomReservationDialog`와
- * 같은 뼈대(`ConfirmDialog`를 안 쓰는 이유·확인 2단계 제출도 그대로)를 쓰되 **회의실·시간이
- * 없다.** 대신 녹음 파일 첨부 필드가 하나 더 있다.
- * ⚠️ **첨부는 실제 업로드가 아니다**(§정직한 목업). BE에 파일을 받을 자리가 없어(이슈 #473)
- *    파일 이름만 hidden input(`recordingFileName`)으로 실어 보낸다 — 바이트는 어디에도
- *    안 올라간다.
+ * 1단계 — 제목·프로젝트·안건·참석자(회의실·시간 없음). 성공하면 회의가 그 자리에서 완료
+ * 처리되고 `onCreated`로 부모에 알린다 — 여기서는 페이지 이동도, 창 닫기도 하지 않는다
+ * (2026-08-14 팀 확정, `use-online-meeting-form.ts` 주석).
  */
-export function OnlineMeetingDialog({
+function OnlineMeetingStep1({
   members,
   projects,
   showParentTeamAction,
   teamActions,
   viewer,
-}: OnlineMeetingDialogProps) {
-  const [open, setOpen] = useState(false);
-  const { state, formAction, form, setForm, handleOpenChange } = useOnlineMeetingForm({
-    onOpenChange: setOpen,
-  });
-
-  const [isPending, setIsPending] = useState(false);
-  const handlePendingChange = useCallback((next: boolean) => setIsPending(next), []);
-
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  onCreated,
+  onPendingChange,
+  onCancel,
+}: OnlineMeetingStep1Props) {
+  const { state, formAction, form, setForm } = useOnlineMeetingForm({ onCreated });
   const formRef = useRef<HTMLFormElement>(null);
   const [showConfirm, setShowConfirm] = useState(false);
   const confirmedSubmitRef = useRef(false);
@@ -100,14 +126,167 @@ export function OnlineMeetingDialog({
     setShowConfirm(true);
   }
 
+  return (
+    <>
+      <form ref={formRef} action={formAction} onSubmit={handleFormSubmit}>
+        <PendingReporter onChange={onPendingChange} />
+        <input type="hidden" name="projectId" value={form.projectId} />
+        <input type="hidden" name="parentTeamActionId" value={form.parentTeamActionId} />
+
+        <div className="flex max-h-[70vh] flex-col gap-4 overflow-y-auto px-6 py-4">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-[1fr_260px]">
+            <OnlineMeetingFields
+              form={form}
+              setForm={setForm}
+              errors={state.errors}
+              projects={projects}
+              showParentTeamAction={showParentTeamAction}
+              teamActions={teamActions}
+            />
+
+            <div className="flex flex-col gap-4">
+              <RoomAttendeePicker
+                members={members}
+                selectedIds={form.attendeeIds}
+                onChange={(attendeeIds) => setForm((prev) => ({ ...prev, attendeeIds }))}
+                viewer={viewer}
+              />
+              <FieldError reserveSpace message={state.errors.attendeeIds} />
+            </div>
+          </div>
+        </div>
+
+        <div className="border-border flex items-center justify-end gap-4 border-t px-6 py-4">
+          <ConfirmStepActions onCancel={onCancel} onRequestSubmit={() => setShowConfirm(true)} />
+        </div>
+      </form>
+
+      <ConfirmDialog
+        isOpen={showConfirm}
+        onOpenChange={setShowConfirm}
+        title="이대로 등록하시겠습니까?"
+        description="등록하면 곧바로 회의가 완료 처리됩니다."
+        confirmLabel="등록"
+        onConfirm={() => {
+          setShowConfirm(false);
+          confirmedSubmitRef.current = true;
+          formRef.current?.requestSubmit();
+        }}
+      />
+    </>
+  );
+}
+
+interface OnlineMeetingStep2Props {
+  meetingId: string;
+  onSubmitted: () => void;
+  onPendingChange: (pending: boolean) => void;
+  onSkip: () => void;
+}
+
+/**
+ * 2단계 — 녹음 파일 제출 + AI 요약 요청(2026-08-14 팀 확정). 회의는 1단계에서 이미 완료
+ * 상태로 만들어져 있어 이 단계는 **선택**이다 — [나중에 하기]로 건너뛰어도 회의는 그대로 남는다.
+ * ⚠️ **첨부는 실제 업로드가 아니다**(§정직한 목업) — 파일 이름만 hidden input으로 싣는다.
+ * ⚠️ 실서버(`!isMock`)에서는 서버 액션이 "곧 지원됩니다" 오류를 그대로 돌려준다 — 컴포넌트가
+ *    `isMock`을 직접 알면 안 된다(§Mock 격리막)는 규칙 그대로라, 여기서 따로 분기하지 않고
+ *    `state.error`를 그대로 보여준다.
+ */
+function OnlineMeetingStep2({
+  meetingId,
+  onSubmitted,
+  onPendingChange,
+  onSkip,
+}: OnlineMeetingStep2Props) {
+  const { state, formAction, recordingFileName, setRecordingFileName } =
+    useOnlineMeetingRecordingForm({ meetingId, onSubmitted });
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0] ?? null;
-    setForm((prev) => ({ ...prev, recordingFileName: file?.name ?? null }));
+    setRecordingFileName(file?.name ?? null);
   }
 
   function clearFile() {
-    setForm((prev) => ({ ...prev, recordingFileName: null }));
+    setRecordingFileName(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
+  }
+
+  return (
+    <form action={formAction}>
+      <PendingReporter onChange={onPendingChange} />
+      <input type="hidden" name="meetingId" value={meetingId} />
+      <input type="hidden" name="recordingFileName" value={recordingFileName ?? ""} />
+
+      <div className="flex flex-col gap-4 px-6 py-4">
+        <p className="text-muted-foreground text-[13px] leading-5">
+          녹음 파일을 제출해 주세요. 제출 없이도 회의는 이미 완료 처리돼 있습니다.
+        </p>
+
+        <div className="flex flex-col gap-1.5">
+          <span id="online-meeting-recording-label" className="text-[13px] leading-5 font-medium">
+            녹음 파일 첨부 (선택)
+          </span>
+          {/* ⚠️ 바이너리는 안 보낸다 — 파일명만 읽어 hidden input으로 싣는다(위 주석). */}
+          <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileChange} />
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="w-full min-w-0 justify-start"
+              aria-labelledby="online-meeting-recording-label"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <Paperclip aria-hidden />
+              <span className="truncate">{recordingFileName ?? "파일 첨부 (선택)"}</span>
+            </Button>
+            {recordingFileName && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                aria-label="녹음 파일 선택 해제"
+                onClick={clearFile}
+              >
+                <X aria-hidden />
+              </Button>
+            )}
+          </div>
+        </div>
+
+        <FieldError reserveSpace message={state.error ?? undefined} />
+      </div>
+
+      <div className="border-border flex items-center justify-end gap-4 border-t px-6 py-4">
+        <SkipOrSubmitActions onSkip={onSkip} />
+      </div>
+    </form>
+  );
+}
+
+/**
+ * 비대면 회의 만들기 — `/app/meeting` 목록의 진입점(이슈 #473). 2026-08-14 팀 확정으로 **2단계
+ * 다이얼로그**가 됐다:
+ *  1) 제목·프로젝트·안건·참석자를 받아 `POST /api/meetings/online`을 부른다(회의실·시간 없음).
+ *  2) 같은 창에서 곧바로 녹음 파일 제출 + AI 요약 요청으로 넘어간다(페이지 이동 없음).
+ * ⚠️ 회의는 1단계 성공 시점에 이미 완료 상태다 — 2단계는 선택이고, 건너뛰어도 회의는 남는다.
+ */
+export function OnlineMeetingDialog({
+  members,
+  projects,
+  showParentTeamAction,
+  teamActions,
+  viewer,
+}: OnlineMeetingDialogProps) {
+  const [open, setOpen] = useState(false);
+  const [createdMeetingId, setCreatedMeetingId] = useState<string | null>(null);
+  const [isPending, setIsPending] = useState(false);
+  const handlePendingChange = useCallback((next: boolean) => setIsPending(next), []);
+
+  function closeDialog() {
+    setOpen(false);
+    setCreatedMeetingId(null);
   }
 
   return (
@@ -117,8 +296,8 @@ export function OnlineMeetingDialog({
         // ⚠️ 제출 중엔 Esc·바깥 클릭 전부 막는다 — 요청은 계속 가는데 창만 사라지면 결과를
         //    못 본다(`RoomReservationDialog`와 같은 이유).
         if (!next && isPending) return;
-        // `handleOpenChange`가 폼 리셋 + `setOpen`까지 한 번에 한다(훅 안에서 `onOpenChange`로 위임).
-        handleOpenChange(next);
+        if (!next) setCreatedMeetingId(null);
+        setOpen(next);
       }}
     >
       <DialogTrigger render={<Button type="button" variant="outline" />}>
@@ -128,101 +307,29 @@ export function OnlineMeetingDialog({
 
       <DialogContent className="gap-0 p-0 sm:max-w-[720px]">
         <DialogHeader className="border-border border-b px-6 py-4">
-          <DialogTitle>비대면 회의 만들기</DialogTitle>
+          <DialogTitle>{createdMeetingId ? "녹음 파일 제출" : "비대면 회의 만들기"}</DialogTitle>
         </DialogHeader>
 
-        <form ref={formRef} action={formAction} onSubmit={handleFormSubmit}>
-          <PendingReporter onChange={handlePendingChange} />
-          <input type="hidden" name="projectId" value={form.projectId} />
-          <input type="hidden" name="parentTeamActionId" value={form.parentTeamActionId} />
-          <input type="hidden" name="recordingFileName" value={form.recordingFileName ?? ""} />
-
-          <div className="flex max-h-[70vh] flex-col gap-4 overflow-y-auto px-6 py-4">
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-[1fr_260px]">
-              <OnlineMeetingFields
-                form={form}
-                setForm={setForm}
-                errors={state.errors}
-                projects={projects}
-                showParentTeamAction={showParentTeamAction}
-                teamActions={teamActions}
-              />
-
-              <div className="flex flex-col gap-4">
-                <RoomAttendeePicker
-                  members={members}
-                  selectedIds={form.attendeeIds}
-                  onChange={(attendeeIds) => setForm((prev) => ({ ...prev, attendeeIds }))}
-                  viewer={viewer}
-                />
-                <FieldError reserveSpace message={state.errors.attendeeIds} />
-
-                <div className="flex flex-col gap-1.5">
-                  <span
-                    id="online-meeting-recording-label"
-                    className="text-[13px] leading-5 font-medium"
-                  >
-                    녹음 파일 첨부 (선택)
-                  </span>
-                  {/* ⚠️ 바이너리는 안 보낸다 — 파일명만 읽어 hidden input으로 싣는다(위 주석). */}
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    className="hidden"
-                    onChange={handleFileChange}
-                  />
-                  <div className="flex items-center gap-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="w-full min-w-0 justify-start"
-                      aria-labelledby="online-meeting-recording-label"
-                      onClick={() => fileInputRef.current?.click()}
-                    >
-                      <Paperclip aria-hidden />
-                      <span className="truncate">
-                        {form.recordingFileName ?? "파일 첨부 (선택)"}
-                      </span>
-                    </Button>
-                    {form.recordingFileName && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon-sm"
-                        aria-label="녹음 파일 선택 해제"
-                        onClick={clearFile}
-                      >
-                        <X aria-hidden />
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="border-border flex items-center justify-end gap-4 border-t px-6 py-4">
-            <DialogActions
-              onCancel={() => handleOpenChange(false)}
-              onRequestSubmit={() => setShowConfirm(true)}
-            />
-          </div>
-        </form>
+        {createdMeetingId ? (
+          <OnlineMeetingStep2
+            meetingId={createdMeetingId}
+            onSubmitted={closeDialog}
+            onPendingChange={handlePendingChange}
+            onSkip={closeDialog}
+          />
+        ) : (
+          <OnlineMeetingStep1
+            members={members}
+            projects={projects}
+            showParentTeamAction={showParentTeamAction}
+            teamActions={teamActions}
+            viewer={viewer}
+            onCreated={setCreatedMeetingId}
+            onPendingChange={handlePendingChange}
+            onCancel={() => setOpen(false)}
+          />
+        )}
       </DialogContent>
-
-      <ConfirmDialog
-        isOpen={showConfirm}
-        onOpenChange={setShowConfirm}
-        title="이대로 등록하시겠습니까?"
-        description="등록하면 곧바로 회의가 완료 처리되고 AI 요약이 시작됩니다."
-        confirmLabel="등록"
-        onConfirm={() => {
-          setShowConfirm(false);
-          confirmedSubmitRef.current = true;
-          formRef.current?.requestSubmit();
-        }}
-      />
     </Dialog>
   );
 }
