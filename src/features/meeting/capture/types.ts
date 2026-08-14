@@ -18,6 +18,20 @@ export interface CaptureSession {
 }
 
 /**
+ * presign(CAP-04)이 발급한 업로드 자리 하나 — S3로 직접 PUT할 때 쓴다.
+ *
+ * ⚠️ **오브젝트 키가 따로 없다.** BE는 서명된 URL만 주고 키는 검증용으로만 들고 있어서,
+ *    complete(CAP-07)에 실어 보낼 키는 이 URL 경로에서 직접 뽑아야 한다(`upload.ts`).
+ */
+export interface CapturePart {
+  /** 세그먼트 내 청크 순번 — complete·재개 조회의 키 */
+  seq: number;
+  presignedUrl: string;
+  /** 이 초 안에 PUT까지 끝나야 한다 */
+  expiresIn: number;
+}
+
+/**
  * 서버로 보낼 자막 한 조각 — [확인] BE `SubmitCaptionsRequest.ChunkRequest`.
  *
  * ⚠️ 필드 이름을 바꾸지 않는다. 이 모양 그대로 JSON이 된다.

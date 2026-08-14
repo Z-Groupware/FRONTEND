@@ -5,7 +5,7 @@ import { serverApi, toUserMessage } from "@/lib/api";
 import { ep } from "@/lib/endpoints";
 import { isMock } from "@/mocks/config";
 
-import type { CaptionChunkInput, CaptureSession } from "./types";
+import type { CaptionChunkInput, CapturePart, CaptureSession } from "./types";
 
 /**
  * 캡처 창구 — 격리막(§Mock 격리막).
@@ -65,6 +65,67 @@ export async function startCaptureSessionAction(
         startedAtEpochMs: response.startedAtEpochMs,
       },
     };
+  } catch (error) {
+    return { ok: false, error: toUserMessage(error) };
+  }
+}
+
+/* ────────────────────────── CAP-04 · 07 오디오 조각 업로드 ────────────────────────── */
+
+/** [확인] BE `CaptureUploadController.presign` — `PresignedPartsResponse` */
+interface PresignedPartsApiResponse {
+  segmentSeq: number;
+  parts: { seq: number; presignedUrl: string; expiresIn: number }[];
+}
+
+/**
+ * 조각 업로드용 presigned URL을 배치로 받는다(CAP-04).
+ *
+ * ⚠️ **한 번에 여러 개 받는다**(기본 20개=5분치, `upload.ts`가 정한다). 15초마다 새로
+ *    발급받으면 그 왕복이 매번 녹음 조각 전송을 가로막는다.
+ * ⚠️ 목에서는 **빈 배치를 돌려준다** — 목은 S3가 없어서 업로드를 안 한다(자막만 오간다).
+ */
+export async function presignCaptureUploadAction(
+  meetingId: number,
+  count: number,
+  contentType: string,
+): Promise<CaptureActionResult<{ segmentSeq: number; parts: CapturePart[] }>> {
+  if (isMock) return { ok: true, data: { segmentSeq: 0, parts: [] } };
+
+  try {
+    const accessToken = await requireAccessToken();
+    const response = await serverApi<PresignedPartsApiResponse>(ep.partsPresign(meetingId), {
+      method: "POST",
+      accessToken,
+      json: { count, contentType },
+    });
+    return { ok: true, data: response };
+  } catch (error) {
+    return { ok: false, error: toUserMessage(error) };
+  }
+}
+
+/**
+ * 조각 하나가 S3에 다 올라갔음을 알린다(CAP-07) — 이 호출 자체가 녹음자 하트비트다.
+ *
+ * ⚠️ **BE가 재검증한다.** 여기 실은 `sizeBytes`를 그대로 믿지 않고 S3 HEAD로 실제 업로드
+ *    여부를 다시 본다 — 우리가 보내는 값은 참고일 뿐 신뢰 경계는 서버에 있다.
+ */
+export async function completeCaptureUploadAction(
+  meetingId: number,
+  seq: number,
+  body: { segmentSeq: number; s3Key: string; sizeBytes: number },
+): Promise<CaptureActionResult<void>> {
+  if (isMock) return { ok: true };
+
+  try {
+    const accessToken = await requireAccessToken();
+    await serverApi<unknown>(ep.partComplete(meetingId, seq), {
+      method: "POST",
+      accessToken,
+      json: body,
+    });
+    return { ok: true };
   } catch (error) {
     return { ok: false, error: toUserMessage(error) };
   }
