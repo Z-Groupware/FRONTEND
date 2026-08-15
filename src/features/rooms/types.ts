@@ -9,16 +9,15 @@ import type { Authority } from "@/constants/authority";
  * 회의실 한 곳.
  * ⚠️ **"수용 인원" 필드는 없다**(WORKFLOW.md §10-A 확정 — 전면 폐기). 화면·모달·데이터 구조
  *    어디에도 안 둔다. 대신 "위치"가 있다.
+ * ⚠️ **운영시간(`openTime`/`closeTime`) 필드도 없다**(2026-08-15, BE PR #523 — DB 컬럼째 삭제,
+ *    회의실은 이제 도메인상 항상 이용 가능하다). 예전엔 여기 있었다 — BE가 안 주는 값을
+ *    화면이 지어내면 안 되고(§정직성), 시간대 검증도 더는 할 대상이 없다.
  */
 export interface MeetingRoom {
   id: string;
   name: string;
   /** 자유 텍스트 — "3층 A동"처럼(WORKFLOW.md §10-A) */
   location: string;
-  /** "HH:mm" */
-  openTime: string;
-  /** "HH:mm" */
-  closeTime: string;
 }
 
 /**
@@ -28,10 +27,6 @@ export interface MeetingRoom {
 export interface MeetingRoomDraft {
   name: string;
   location: string;
-  /** "HH:mm" */
-  openTime: string;
-  /** "HH:mm" */
-  closeTime: string;
 }
 
 export type MeetingRoomFormErrors = Partial<Record<keyof MeetingRoomDraft, string>>;

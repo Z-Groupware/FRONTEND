@@ -1,4 +1,4 @@
-import { CalendarRange, Clock, MapPin } from "lucide-react";
+import { CalendarRange, MapPin } from "lucide-react";
 
 import { EmptyState } from "@/components/common/empty-state";
 
@@ -51,16 +51,14 @@ export function RoomsManageTable({ rooms, canManage }: RoomsManageTableProps) {
         <div className="border-border overflow-x-auto border-t">
           <table className="w-full min-w-[560px] table-fixed text-[13px]">
             <colgroup>
-              <col className="w-[30%]" />
-              <col className="w-[28%]" />
-              <col className="w-[26%]" />
-              <col className="w-[16%]" />
+              <col className="w-[40%]" />
+              <col className="w-[38%]" />
+              <col className="w-[22%]" />
             </colgroup>
             <thead>
               <tr className="text-muted-foreground bg-secondary/50 border-border border-b text-[12px] leading-4">
                 <th className="px-7 py-3 text-left font-normal">이름</th>
                 <th className="px-4 py-3 text-center font-normal">위치</th>
-                <th className="px-4 py-3 text-center font-normal">이용 가능 시간</th>
                 <th className="px-4 py-3 text-center font-normal">
                   <span className="sr-only">관리</span>
                 </th>
@@ -78,12 +76,6 @@ export function RoomsManageTable({ rooms, canManage }: RoomsManageTableProps) {
                     <span className="text-muted-foreground inline-flex items-center gap-1.5">
                       <MapPin className="size-3.5 shrink-0" aria-hidden />
                       {room.location}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3.5 text-center tabular-nums">
-                    <span className="text-muted-foreground inline-flex items-center gap-1.5">
-                      <Clock className="size-3.5 shrink-0" aria-hidden />
-                      {room.openTime} - {room.closeTime}
                     </span>
                   </td>
                   <td className="px-4 py-3.5 text-center">

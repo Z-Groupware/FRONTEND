@@ -6,14 +6,16 @@
 
 import type { MeetingRoom, MeetingRoomDraft } from "../types";
 
-/** `GET /api/meeting-rooms` 배열 원소, `POST`·`PATCH` 성공 응답의 회의실 부분과 같은 모양. */
+/**
+ * `GET /api/meeting-rooms` 배열 원소, `POST`·`PATCH` 성공 응답의 회의실 부분과 같은 모양.
+ * ⚠️ **`availableFrom`/`availableTo`는 없다**(2026-08-15, BE PR #523 — 운영시간 개념 자체를
+ *    DB 컬럼째 삭제했다). 예전엔 여기 있었다 — 실서버가 그 필드를 더는 안 준다.
+ */
 export interface BeMeetingRoom {
   meetingRoomId: number;
   name: string;
   /** nullable — 위치 미등록 회의실은 `null`. */
   location: string | null;
-  availableFrom: string;
-  availableTo: string;
 }
 
 export function toMeetingRoom(be: BeMeetingRoom): MeetingRoom {
@@ -21,17 +23,13 @@ export function toMeetingRoom(be: BeMeetingRoom): MeetingRoom {
     id: String(be.meetingRoomId),
     name: be.name,
     location: be.location ?? "",
-    openTime: be.availableFrom,
-    closeTime: be.availableTo,
   };
 }
 
-/** `POST /api/meeting-rooms`(ROOM-03) 요청 본문 — 폼 입력(`openTime`·`closeTime`)을 BE 필드명으로 바꾼다. */
+/** `POST /api/meeting-rooms`(ROOM-03) 요청 본문. */
 export interface BeCreateMeetingRoomPayload {
   name: string;
   location: string | null;
-  availableFrom: string;
-  availableTo: string;
 }
 
 export function toCreateMeetingRoomPayload(draft: MeetingRoomDraft): BeCreateMeetingRoomPayload {
@@ -39,8 +37,6 @@ export function toCreateMeetingRoomPayload(draft: MeetingRoomDraft): BeCreateMee
   return {
     name: draft.name.trim(),
     location: location.length > 0 ? location : null,
-    availableFrom: draft.openTime,
-    availableTo: draft.closeTime,
   };
 }
 
@@ -55,7 +51,5 @@ export function toCreatedMeetingRoom(meetingRoomId: number, draft: MeetingRoomDr
     id: String(meetingRoomId),
     name: draft.name.trim(),
     location: draft.location.trim(),
-    openTime: draft.openTime,
-    closeTime: draft.closeTime,
   };
 }

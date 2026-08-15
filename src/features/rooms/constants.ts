@@ -8,18 +8,6 @@
 /** 예약 길이 — 팀 확정: 30분 한 타임, 연장하지 않는다(CLAUDE.md §브라우저 API). */
 export const RESERVATION_DURATION_MINUTES = 30;
 
-/**
- * "회의 추가" 버튼이 여는 기본 슬롯 계산(`next-available-slot.ts`)만 쓰는 넉넉한 기본값
- * (분 단위, 09:00~18:00) — 어느 회의실을 고를지 아직 모르는 시점이라 실제 제약이 아니라
- * **그럴듯한 시작값**일 뿐이다.
- * ⚠️ **실제 예약 가능 여부는 이 값이 안 막는다**(2026-08-14, BE 회의실 24시간 운영 협의 이후
- *    정정 — 예전엔 이 상수가 모든 회의실의 실제 운영시간 제약이었다). 진짜 제약은
- *    `validate.ts`가 고른 회의실의 `openTime`/`closeTime`으로 따로 본다 — 회의실마다
- *    운영시간이 다를 수 있어 전역 상수로는 표현이 안 된다.
- */
-export const ROOM_OPERATING_START_MINUTES = 9 * 60;
-export const ROOM_OPERATING_END_MINUTES = 18 * 60;
-
 /*
   ⚠️ **참석자 피커 필터 상수(`ROOM_ATTENDEE_FILTER`·`ROOM_ATTENDEE_FILTER_LABEL`)는 지웠다**
      (2026-08-13 — 2026-08-12에 넣었던 "전체 · 팀장급만"/"전체 · 내 부서만" 토글을 뒤집었다).
@@ -39,8 +27,10 @@ export const ROOMS_CALENDAR_TOOLBAR_LABEL = {
 export const ROOM_LIST_PANEL_LABEL = {
   title: "회의실 목록",
   /* ⚠️ 명령이 아니라 **설명**이다 — `~하세요`는 §카피(명령은 `~해 주세요`) 밖이고, 이 줄은
-     시키는 말이 아니라 이 목록이 무엇인지 알리는 말이다. */
-  guidance: "회의실별 예약 가능 시간입니다.",
+     시키는 말이 아니라 이 목록이 무엇인지 알리는 말이다.
+     ⚠️ "예약 가능 시간"이 아니라 "위치"다(2026-08-15, BE PR #523 — 운영시간 개념이 없어져
+     회의실은 이제 항상 이용 가능하다, 목록에 남는 부가 정보는 위치뿐이다). */
+  guidance: "회의실별 위치입니다.",
   countSuffix: "개",
 } as const;
 

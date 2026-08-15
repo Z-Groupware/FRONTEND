@@ -18,6 +18,7 @@ import { type Actor, requiresParentTeamAction } from "@/lib/permission";
 import { isMock } from "@/mocks/config";
 
 import { RESERVATION_DURATION_MINUTES } from "./constants";
+import { GRID_END_HOUR, GRID_START_HOUR } from "./grid-slot";
 import {
   type BeMeetingRoom,
   type BeRoomWeekAvailability,
@@ -39,25 +40,28 @@ import type {
 
 const WEEKDAYS_PER_WEEK = 5;
 
-function toMinutesOfDay(hhmm: string): number {
-  const [hours, minutes] = hhmm.split(":").map(Number);
-  return hours! * 60 + minutes!;
-}
-
 function toHHMM(minutesOfDay: number): string {
   const hours = Math.floor(minutesOfDay / 60);
   const minutes = minutesOfDay % 60;
   return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
 }
 
-/** 목 데이터로 하루치 슬롯을 만든다 — 회의실 운영 시간을 30분 단위로 나누고 겹치는 예약이 있으면 RESERVED로 채운다. */
+/*
+  ⚠️ **회의실 운영시간이 아니라 하루 전체 범위다**(2026-08-15, BE PR #523 — 운영시간 개념 자체를
+     없앴다. 회의실은 이제 항상 이용 가능). 캘린더 그리드(`grid-slot.ts`)와 같은 00:00~24:00
+     범위를 그대로 쓴다 — 목 슬롯이 실제 그리드보다 좁으면 그리드 하단이 빈 칸처럼 보인다.
+*/
+const DAY_START_MINUTES = GRID_START_HOUR * 60;
+const DAY_END_MINUTES = GRID_END_HOUR * 60;
+
+/** 목 데이터로 하루치 슬롯을 만든다 — 하루 전체를 30분 단위로 나누고 겹치는 예약이 있으면 RESERVED로 채운다. */
 function buildMockDaySlots(date: Date, room: MeetingRoom): RoomDayAvailability {
   const reservations = listMockReservationsByRoom(room.id);
   const slots: RoomAvailabilitySlot[] = [];
 
   for (
-    let minutesOfDay = toMinutesOfDay(room.openTime);
-    minutesOfDay < toMinutesOfDay(room.closeTime);
+    let minutesOfDay = DAY_START_MINUTES;
+    minutesOfDay < DAY_END_MINUTES;
     minutesOfDay += RESERVATION_DURATION_MINUTES
   ) {
     const startTime = toHHMM(minutesOfDay);

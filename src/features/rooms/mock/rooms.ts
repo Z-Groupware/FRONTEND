@@ -11,34 +11,10 @@ interface RoomStore {
 }
 
 const INITIAL: MeetingRoom[] = [
-  {
-    id: "room-large",
-    name: "대회의실",
-    location: "3층 A동",
-    openTime: "09:00",
-    closeTime: "18:00",
-  },
-  {
-    id: "room-small-a",
-    name: "소회의실 A",
-    location: "3층 A동",
-    openTime: "09:00",
-    closeTime: "18:00",
-  },
-  {
-    id: "room-small-b",
-    name: "소회의실 B",
-    location: "3층 B동",
-    openTime: "09:00",
-    closeTime: "18:00",
-  },
-  {
-    id: "room-video",
-    name: "화상회의실",
-    location: "본관 5층",
-    openTime: "09:00",
-    closeTime: "18:00",
-  },
+  { id: "room-large", name: "대회의실", location: "3층 A동" },
+  { id: "room-small-a", name: "소회의실 A", location: "3층 A동" },
+  { id: "room-small-b", name: "소회의실 B", location: "3층 B동" },
+  { id: "room-video", name: "화상회의실", location: "본관 5층" },
 ];
 
 const globalStore = globalThis as typeof globalThis & {
@@ -63,8 +39,6 @@ export function addMockRoom(draft: MeetingRoomDraft): MeetingRoom {
     id: `room-${++store.sequence}`,
     name: draft.name.trim(),
     location: draft.location.trim(),
-    openTime: draft.openTime,
-    closeTime: draft.closeTime,
   };
   store.rooms = [...store.rooms, room];
   return room;
@@ -75,13 +49,7 @@ export function updateMockRoom(id: string, draft: MeetingRoomDraft): MeetingRoom
   const index = store.rooms.findIndex((room) => room.id === id);
   if (index === -1) return null;
 
-  const updated: MeetingRoom = {
-    id,
-    name: draft.name.trim(),
-    location: draft.location.trim(),
-    openTime: draft.openTime,
-    closeTime: draft.closeTime,
-  };
+  const updated: MeetingRoom = { id, name: draft.name.trim(), location: draft.location.trim() };
   store.rooms = [...store.rooms.slice(0, index), updated, ...store.rooms.slice(index + 1)];
   return updated;
 }

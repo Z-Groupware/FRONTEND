@@ -90,9 +90,7 @@ export function RoomListPanel({
             className="border-border hover:bg-foreground/[0.03] flex items-center justify-between gap-3 border-t px-5 py-3.5 transition-colors"
           >
             <span className="text-foreground text-[13px] leading-5">{room.name}</span>
-            <span className="text-muted-foreground text-[12px] leading-4 tabular-nums">
-              {room.openTime} - {room.closeTime}
-            </span>
+            <span className="text-muted-foreground text-[12px] leading-4">{room.location}</span>
           </li>
         ))}
       </ul>
