@@ -252,6 +252,19 @@
   right: 0;
   margin-right: 0;
   z-index: 20;
+  /*
+    ⚠️ **컨테이너 자체는 클릭을 안 받는다**(2026-08-15 추가 수정). 이 컨테이너는 그 날 칸
+       전체 높이를 차지하는 하나짜리 `div`다(예약이 몇 개든, 심지어 0개여도) — 위에서
+       z-index만 올렸더니 예약이 없는 빈 시간대까지 이 컨테이너가 뒤덮어서, 빈 칸의
+       `.rbc-time-slot:hover`가 아예 발화하지 않았다(마우스 아래 최상단 요소가 항상 이
+       빈 컨테이너였다 — #571). 컨테이너는 통과시키고, 실제 예약 막대(`.rbc-event`)만
+       도로 받게 한다.
+  */
+  pointer-events: none;
+}
+
+.rbc-day-slot .rbc-events-container .rbc-event {
+  pointer-events: auto;
 }
 
 .rbc-event.rbc-selected {
