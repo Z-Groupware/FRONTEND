@@ -97,7 +97,20 @@ export async function completeTeamHandoverAction(
   handoverId: number,
   assignments: TeamHandoverAssignment[],
 ): Promise<{ isSuccess: boolean; message?: string }> {
-  const handover = await getTeamHandoverDetail(handoverId);
+  /*
+    ⚠️ `getTeamHandoverDetail`은 404·403만 `null`로 접는다 — 그 외 실패(통신 장애 등)는
+       그대로 다시 던진다. 여기서도 잡아야 페이지가 안 죽는다(2026-08-15, 같은 사고 —
+       #553/#554/#556/#558).
+  */
+  let handover: Awaited<ReturnType<typeof getTeamHandoverDetail>>;
+  try {
+    handover = await getTeamHandoverDetail(handoverId);
+  } catch {
+    return {
+      isSuccess: false,
+      message: "인수인계서를 불러오지 못했습니다 — 잠시 후 다시 시도해 주세요",
+    };
+  }
   if (!handover) return { isSuccess: false, message: "이미 처리됐거나 없는 인수인계서입니다" };
 
   if (!isMock) {
@@ -168,7 +181,15 @@ export async function rejectTeamHandoverAction(
 ): Promise<{ isSuccess: boolean; message?: string }> {
   if (!reason.trim()) return { isSuccess: false, message: "반려 사유를 입력해 주세요" };
 
-  const handover = await getTeamHandoverDetail(handoverId);
+  let handover: Awaited<ReturnType<typeof getTeamHandoverDetail>>;
+  try {
+    handover = await getTeamHandoverDetail(handoverId);
+  } catch {
+    return {
+      isSuccess: false,
+      message: "인수인계서를 불러오지 못했습니다 — 잠시 후 다시 시도해 주세요",
+    };
+  }
   if (!handover) return { isSuccess: false, message: "이미 처리됐거나 없는 인수인계서입니다" };
 
   if (!isMock) {

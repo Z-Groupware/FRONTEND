@@ -91,6 +91,21 @@ describe("updateMeetingAttendeesAction — 실서버, host 자신이 고치는 �
     expect(getManagedMemberMock).not.toHaveBeenCalled();
   });
 
+  /*
+    ⚠️ 회귀 테스트다(2026-08-15, #558 — `rooms/actions.ts`의 `getMeetingRooms()`와 같은
+       사고). `getReservableMembers`에 try/catch가 없어서 BE가 흔들리면 이 액션 전체가
+       예외를 던져 페이지가 500으로 죽었다.
+  */
+  it("참석자 명부 조회가 실패해도 페이지를 죽이지 않고 오류로 돌려준다", async () => {
+    serverApiMock.mockResolvedValueOnce(meetingDetail());
+    getReservableMembersMock.mockRejectedValue(new Error("network down"));
+
+    const result = await updateMeetingAttendeesAction(INITIAL, form(100, [3]));
+
+    expect(result.error).toBeDefined();
+    expect(result.attendeeIds).toBeNull();
+  });
+
   it("명부 밖 id가 섞이면 PUT을 부르지 않고 막는다", async () => {
     serverApiMock.mockResolvedValueOnce(meetingDetail());
 
@@ -173,5 +188,16 @@ describe("updateMeetingAttendeesAction — 실서버, OWNER·ADMIN이 남의 회
     expect(getReservableMembersMock).not.toHaveBeenCalled();
     expect(result.error).toBeNull();
     expect(serverApiMock).toHaveBeenCalledTimes(2);
+  });
+
+  /* ⚠️ 회귀 테스트다(2026-08-15, #558) — getManagedMember도 같은 사고를 겪을 수 있었다. */
+  it("host 정보 조회가 실패해도 페이지를 죽이지 않고 오류로 돌려준다", async () => {
+    serverApiMock.mockResolvedValueOnce(meetingDetail({ host: { memberId: 9, name: "대표" } }));
+    getManagedMemberMock.mockRejectedValue(new Error("network down"));
+
+    const result = await updateMeetingAttendeesAction(INITIAL, form(100, [3]));
+
+    expect(result.error).toBeDefined();
+    expect(result.attendeeIds).toBeNull();
   });
 });

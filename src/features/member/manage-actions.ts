@@ -132,8 +132,20 @@ export async function changeMemberGradeAction(
   const position = next.position.trim();
   if (!position) return { isSuccess: false, message: "직급을 골라 주세요" };
 
-  /* ⚠️ Admin도 부르는 액션이라 OWNER 전용 `companies/me`를 물면 안 된다 — 팀·직급만 받는다 */
-  const company = await getCompanyOrg();
+  /*
+    ⚠️ Admin도 부르는 액션이라 OWNER 전용 `companies/me`를 물면 안 된다 — 팀·직급만 받는다
+    ⚠️ **실패도 잡는다**(2026-08-15, `rooms/actions.ts`의 `getMeetingRooms()`와 같은 사고 —
+       #553/#554/#556). 감싸지 않으면 이 액션 전체가 죽어 페이지가 500으로 날아간다.
+  */
+  let company: Awaited<ReturnType<typeof getCompanyOrg>>;
+  try {
+    company = await getCompanyOrg();
+  } catch {
+    return {
+      isSuccess: false,
+      message: "회사 정보를 불러오지 못했습니다 — 잠시 후 다시 시도해 주세요",
+    };
+  }
   if (!company.positions.some((entry) => entry.name === position)) {
     return { isSuccess: false, message: "회사에 없는 직급입니다" };
   }
@@ -148,7 +160,19 @@ export async function changeMemberGradeAction(
        부를 수 있다 — 없으면 회사에 하나뿐인 대표를 Member로 끌어내릴 수 있고, `OWNER`는
        화이트리스트에 없어 **되돌릴 수도 없다**(일방통행 파괴).
   */
-  const target = await getManagedMember(id);
+  /*
+    ⚠️ `getManagedMember`는 404·403만 `null`로 접는다 — 그 외 실패(통신 장애 등)는 그대로
+       다시 던진다(§정직성 주석, 그 함수 자체). 여기서도 잡아야 페이지가 안 죽는다.
+  */
+  let target: Awaited<ReturnType<typeof getManagedMember>>;
+  try {
+    target = await getManagedMember(id);
+  } catch {
+    return {
+      isSuccess: false,
+      message: "사원 정보를 불러오지 못했습니다 — 잠시 후 다시 시도해 주세요",
+    };
+  }
   if (!target) return { isSuccess: false, message: "없는 사원입니다" };
   /*
     ⚠️ 잠긴 이유(대표 · 퇴사)는 **화면과 같은 판정**을 쓴다. 두 곳이 각자 세면 화면은 폼을
@@ -189,7 +213,20 @@ export async function changeMemberGradeAction(
        인수인계를 두 사람이 중간 승인할 수 있고, 하나뿐인 리더를 내리면 그 팀의 중간 승인
        라인이 조용히 사라진다(WORKFLOW §7). 기업 설정도 같은 규칙을 지킨다.
   */
-  const clash = await findTeamLeaderClash(target.member, next.authority);
+  /*
+    ⚠️ **이 호출도 실패를 잡는다**(2026-08-15, 같은 사고 — #553/#554/#556). `findTeamLeaderClash`는
+       리더 여부가 실제로 바뀔 때만 내부에서 `getTeamLeaders()`로 BE를 부르므로 늘 도는 건
+       아니지만, 돌 때 실패하면 감싸지 않는 한 페이지가 500으로 죽는다.
+  */
+  let clash: string | null;
+  try {
+    clash = await findTeamLeaderClash(target.member, next.authority);
+  } catch {
+    return {
+      isSuccess: false,
+      message: "팀장 정보를 불러오지 못했습니다 — 잠시 후 다시 시도해 주세요",
+    };
+  }
   if (clash) return { isSuccess: false, message: clash };
 
   if (!isMock) {
@@ -457,8 +494,16 @@ export async function issueAccountAction(draft: AccountDraft): Promise<IssueAcco
     ⚠️ 직급 목록을 **여기서 구해 넘긴다.** 화면이 보낸 값을 그대로 믿으면 회사에 없는
        직급으로도 발급된다(§권한: 화면 숨김은 보안이 아니다).
   */
-  /* ⚠️ Admin도 발급할 수 있다 — OWNER 전용 `companies/me` 대신 팀·직급만 받는다(403 방지) */
-  const company = await getCompanyOrg();
+  /*
+    ⚠️ Admin도 발급할 수 있다 — OWNER 전용 `companies/me` 대신 팀·직급만 받는다(403 방지)
+    ⚠️ **실패도 잡는다**(2026-08-15, 같은 사고 — #553/#554/#556/#558).
+  */
+  let company: Awaited<ReturnType<typeof getCompanyOrg>>;
+  try {
+    company = await getCompanyOrg();
+  } catch {
+    return { errors: {}, message: "회사 정보를 불러오지 못했습니다 — 잠시 후 다시 시도해 주세요" };
+  }
   const errors = validateAccount(
     draft,
     company.positions.map((position) => position.name),

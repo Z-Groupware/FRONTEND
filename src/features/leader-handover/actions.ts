@@ -46,7 +46,19 @@ export async function assignLeaderHandoverAction(
       ⚠️ 후보 목록에 있는지는 여기서 다시 본다(§권한: 화면 숨김은 보안이 아니다) — 주소만
          알면 이 액션을 직접 부를 수 있어, 화면이 안 보여준 값이라도 여기서 걸러야 한다.
     */
-    const handover = await getLeaderHandoverDetail(handoverId);
+    /*
+      ⚠️ **실패도 잡는다**(2026-08-15, `rooms/actions.ts`의 `getMeetingRooms()`와 같은 사고 —
+         #553/#554/#556/#558). 감싸지 않으면 이 액션 전체가 죽어 페이지가 500으로 날아간다.
+    */
+    let handover: Awaited<ReturnType<typeof getLeaderHandoverDetail>>;
+    try {
+      handover = await getLeaderHandoverDetail(handoverId);
+    } catch {
+      return {
+        isSuccess: false,
+        message: "인수인계서를 불러오지 못했습니다 — 잠시 후 다시 시도해 주세요",
+      };
+    }
     if (!handover) return { isSuccess: false };
     if (handover.custodyStatus !== LEADER_HANDOVER_CUSTODY_STATUS.PENDING) {
       return { isSuccess: false };

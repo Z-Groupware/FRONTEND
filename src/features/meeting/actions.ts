@@ -204,11 +204,24 @@ export async function updateMeetingAttendeesAction(
        경로로 못 들어온다(`canEditMeetingAttendees`가 `isHost`를 요구한다) — 직접 요청을
        조작해야만 닿는 자리라 영향은 방어 심도 문제다.
   */
+  /*
+    ⚠️ **`getManagedMember`·`getReservableMembers` 실패도 잡는다**(2026-08-15, `rooms/actions.ts`
+       의 `getMeetingRooms()`와 같은 사고 — #553/#554/#556). 둘 다 실서버 분기에서 BE를
+       부르는데, 감싸지 않으면 이 액션 전체가 죽어 페이지가 500으로 날아간다.
+  */
   let scopeActor: Actor | null;
   if (actor.id === hostId) {
     scopeActor = actor;
   } else {
-    const hostDetail = await getManagedMember(hostId);
+    let hostDetail: Awaited<ReturnType<typeof getManagedMember>>;
+    try {
+      hostDetail = await getManagedMember(hostId);
+    } catch {
+      return {
+        error: "개설자 정보를 불러오지 못했습니다 — 잠시 후 다시 시도해 주세요",
+        attendeeIds: null,
+      };
+    }
     scopeActor =
       hostDetail && hostDetail.member.authority === AUTHORITY.OWNER
         ? {
@@ -224,7 +237,15 @@ export async function updateMeetingAttendeesAction(
        정보를 못 구한 경우 포함) — 위 주석의 "한 칸", BE가 마저 본다.
   */
   if (scopeActor) {
-    const roster = await getReservableMembers(scopeActor);
+    let roster: Awaited<ReturnType<typeof getReservableMembers>>;
+    try {
+      roster = await getReservableMembers(scopeActor);
+    } catch {
+      return {
+        error: "참석자 명부를 불러오지 못했습니다 — 잠시 후 다시 시도해 주세요",
+        attendeeIds: null,
+      };
+    }
     const rosterIds = new Set(roster.map((member) => member.id));
     if (attendeeIds.some((id) => id !== hostId && !rosterIds.has(id))) {
       return { error: "지정할 수 없는 참석자가 있습니다", attendeeIds: null };
