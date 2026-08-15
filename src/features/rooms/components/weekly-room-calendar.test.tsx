@@ -63,8 +63,8 @@ import type { MeetingRoom, RoomCalendarEvent, RoomMember } from "../types";
 import { WeeklyRoomCalendar } from "./weekly-room-calendar";
 
 const ROOMS: MeetingRoom[] = [
-  { id: "room-a", name: "대회의실", location: "3층 A동", openTime: "09:00", closeTime: "18:00" },
-  { id: "room-b", name: "소회의실", location: "3층 B동", openTime: "09:00", closeTime: "18:00" },
+  { id: "room-a", name: "대회의실", location: "3층 A동" },
+  { id: "room-b", name: "소회의실", location: "3층 B동" },
 ];
 const MEMBERS: RoomMember[] = [
   { id: 1, name: "박대표", teamName: null, authority: AUTHORITY.OWNER },

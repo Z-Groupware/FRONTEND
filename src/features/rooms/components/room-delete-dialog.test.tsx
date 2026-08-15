@@ -22,8 +22,6 @@ const ROOM: MeetingRoom = {
   id: "r1",
   name: "대회의실",
   location: "3층 A동",
-  openTime: "09:00",
-  closeTime: "18:00",
 };
 
 function renderDialog() {

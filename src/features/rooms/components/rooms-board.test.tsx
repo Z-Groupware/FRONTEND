@@ -30,8 +30,6 @@ const ROOMS: MeetingRoom[] = [
     id: "room-large",
     name: "대회의실",
     location: "3층 A동",
-    openTime: "09:00",
-    closeTime: "18:00",
   },
 ];
 const MEMBERS = [{ id: 2, name: "김서준", teamName: "개발팀", authority: AUTHORITY.LEADER }];

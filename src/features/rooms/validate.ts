@@ -3,7 +3,6 @@ import { isValid, parse } from "date-fns";
 import type { Authority } from "@/constants/authority";
 import { requiresParentTeamAction } from "@/lib/permission";
 
-import { RESERVATION_DURATION_MINUTES } from "./constants";
 import type {
   MeetingRoomDraft,
   MeetingRoomFormErrors,
@@ -13,22 +12,10 @@ import type {
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const TIME_PATTERN = /^([01]\d|2[0-3]):(00|30)$/;
-/**
- * 회의실 운영 시작·종료 시각용 — **예약 슬롯과 똑같이 30분 단위다**(2026-08-12 고침).
- * ⚠️ 전에는 임의 분(09:15)을 허용했는데 BE `@Pattern`([확인] `CreateMeetingRoomRequest`)이
- *    30분 단위만 받아, FE 검증을 통과한 값이 400으로 튕기고 그 오류가 매핑 default 분기라
- *    **엉뚱한 이름 칸에** 붙었다 — 검증 규칙은 BE와 한 벌이어야 한다.
- */
-const GENERAL_TIME_PATTERN = /^([01]\d|2[0-3]):(00|30)$/;
 
 function isValidCalendarDate(value: string): boolean {
   if (!DATE_PATTERN.test(value)) return false;
   return isValid(parse(value, "yyyy-MM-dd", new Date()));
-}
-
-function toMinutes(time: string): number {
-  const [hour, minute] = time.split(":");
-  return Number(hour) * 60 + Number(minute);
 }
 
 /**
@@ -38,18 +25,16 @@ function toMinutes(time: string): number {
  * ⚠️ **참조 무결성도 여기서 안 본다** — `roomId`·`projectId`가 실제로 존재하는지, 골라 낸
  *    `parentTeamActionId`가 진짜 그 프로젝트·그 팀의 것인지는 `actions.ts`가 목/실서버 조회
  *    뒤에 따로 확인한다(§권한: 화면 숨김은 UX일 뿐 보안이 아니다). 여기는 **형식**만 본다.
+ * ⚠️ **회의실 이용 시간 검사는 없다**(2026-08-15, BE PR #523 — 운영시간 개념 자체를 없앴다,
+ *    회의실은 이제 항상 이용 가능이 도메인 모델). 예전엔 여기서 회의실의 `openTime`/`closeTime`을
+ *    받아 시작 시각이 그 안에 드는지 봤는데, 그 값 자체가 더는 안 온다 — 지운 게 아니라
+ *    검사할 대상이 사라졌다.
  * @param host "상위 팀 액션" 필수 여부는 회의를 여는 사람의 권한에 달렸다(`requiresParentTeamAction`,
  *   WORKFLOW.md §3-1) — Owner면 이 필드가 없어도 되고, Leader/Member면 반드시 있어야 한다.
- * @param room 이 예약이 실제로 겨냥한 회의실의 이용 가능 시간 — **회의실마다 다르다**(2026-08-14,
- *   BE 24시간 운영 협의). 예전엔 전역 09:00~18:00 상수 하나로 모든 회의실을 같이 막았는데,
- *   그러면 회의실별로 다르게 늘린 운영시간이 의미가 없어진다. `roomId`가 가리키는 회의실을
- *   못 찾았으면(폼 조작 등) `null`을 넘긴다 — 그때는 시간대 검사를 건너뛴다, 존재하지 않는
- *   `roomId` 자체는 `actions.ts`가 참조 무결성으로 따로 막는다(위 주석 참고).
  */
 export function validateRoomReservationDraft(
   draft: RoomReservationDraft,
   host: { role: Authority },
-  room: { openTime: string; closeTime: string } | null,
 ): RoomReservationFormErrors {
   const errors: RoomReservationFormErrors = {};
 
@@ -66,13 +51,6 @@ export function validateRoomReservationDraft(
     errors.startTime = "시작 시간을 선택해 주세요";
   } else if (!TIME_PATTERN.test(draft.startTime)) {
     errors.startTime = "예약은 30분 단위로만 가능합니다";
-  } else if (room) {
-    const startMinutes = toMinutes(draft.startTime);
-    const openMinutes = toMinutes(room.openTime);
-    const closeMinutes = toMinutes(room.closeTime);
-    if (startMinutes < openMinutes || startMinutes + RESERVATION_DURATION_MINUTES > closeMinutes) {
-      errors.startTime = `회의실 이용 시간(${room.openTime}~${room.closeTime}) 안에서 선택해 주세요`;
-    }
   }
 
   // ⚠️ 프로젝트는 이제 항상 필수다(WORKFLOW.md §3-1 확정) — 프로젝트에 안 묶인 예약은 없다.
@@ -105,34 +83,14 @@ export function validateRoomReservationDraft(
 
 /**
  * 회의실 추가·수정 폼 검증(`/manage/rooms`) — 화면과 서버(Server Action)가 이 함수 하나로 본다.
- * ⚠️ 이용 가능 시간도 **예약 슬롯과 같은 30분 단위**다(2026-08-13 정정 — 전에는 "제약이 없다"고
- *    적혀 있었으나 BE `@Pattern`이 30분 단위만 받는다). 검증 규칙은 BE와 한 벌이어야 한다.
+ * ⚠️ **이용 가능 시간 입력은 없다**(2026-08-15, BE PR #523 — 운영시간 개념 자체를 없앴다).
+ *    예전엔 여기서 `openTime`/`closeTime` 형식·순서를 봤는데, 그 필드 자체가 폼에서 빠졌다.
  */
 export function validateMeetingRoomDraft(draft: MeetingRoomDraft): MeetingRoomFormErrors {
   const errors: MeetingRoomFormErrors = {};
 
   if (!draft.name.trim()) errors.name = "회의실 이름을 입력해 주세요";
   if (!draft.location.trim()) errors.location = "위치를 입력해 주세요";
-
-  if (!draft.openTime.trim()) {
-    errors.openTime = "이용 시작 시간을 입력해 주세요";
-  } else if (!GENERAL_TIME_PATTERN.test(draft.openTime)) {
-    errors.openTime = "30분 단위로 입력해 주세요 (예: 09:00, 09:30)";
-  }
-
-  if (!draft.closeTime.trim()) {
-    errors.closeTime = "이용 종료 시간을 입력해 주세요";
-  } else if (!GENERAL_TIME_PATTERN.test(draft.closeTime)) {
-    errors.closeTime = "30분 단위로 입력해 주세요 (예: 18:00, 18:30)";
-  }
-
-  if (
-    !errors.openTime &&
-    !errors.closeTime &&
-    toMinutes(draft.openTime) >= toMinutes(draft.closeTime)
-  ) {
-    errors.closeTime = "종료 시간은 시작 시간보다 늦어야 합니다";
-  }
 
   return errors;
 }

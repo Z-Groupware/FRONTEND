@@ -68,8 +68,6 @@ const roomForm = (entries: Record<string, string>) => {
 const VALID_ROOM_ENTRIES: Record<string, string> = {
   name: "신관 세미나실",
   location: "4층 C동",
-  openTime: "10:00",
-  closeTime: "17:00",
 };
 
 describe("회의실 추가·수정", () => {

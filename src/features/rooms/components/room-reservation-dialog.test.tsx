@@ -16,8 +16,6 @@ const ROOMS: MeetingRoom[] = [
     id: "room-large",
     name: "대회의실",
     location: "3층 A동",
-    openTime: "09:00",
-    closeTime: "18:00",
   },
 ];
 /* ⚠️ Owner가 여는 폼이라 후보는 **팀장뿐**이다(2026-08-13, `attendee-scope.ts`) — 예전의

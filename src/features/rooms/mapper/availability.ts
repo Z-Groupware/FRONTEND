@@ -14,12 +14,11 @@ import type {
 /**
  * 주간 예약 현황(`GET /api/meeting-rooms/availability`, ROOM-02) 안의 회의실 사본 — `location`이
  * 없다(BE가 이 엔드포인트에서는 안 내려준다).
+ * ⚠️ `availableFrom`/`availableTo`도 없다(2026-08-15, BE PR #523 — 운영시간 개념 자체를 없앴다).
  */
 export interface BeRoomAvailabilityMeetingRoom {
   meetingRoomId: number;
   name: string;
-  availableFrom: string;
-  availableTo: string;
 }
 
 export interface BeRoomAvailabilitySlot {
@@ -51,8 +50,6 @@ export function toRoomWeekAvailability(be: BeRoomWeekAvailability): RoomWeekAvai
       id: String(be.meetingRoom.meetingRoomId),
       name: be.meetingRoom.name,
       location: "",
-      openTime: be.meetingRoom.availableFrom,
-      closeTime: be.meetingRoom.availableTo,
     },
     days: be.days.map((day) => ({
       date: day.date,

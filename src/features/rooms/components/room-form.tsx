@@ -3,7 +3,6 @@
 import { useActionState, useEffect, useRef, useState } from "react";
 
 import { FieldError } from "@/components/common/field-error";
-import { TimePickerField } from "@/components/common/time-picker-field";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
@@ -29,15 +28,13 @@ interface RoomFormProps {
 
 /**
  * 회의실 추가·수정 폼 — `notice-form.tsx`와 같은 골격(실제 `<form action={formAction}>`).
- * 이용 시작·종료는 `TimePickerField`(shadcn Popover 기반)로 고른다 — 네이티브
- * `<input type="time">` 대신 서비스 톤에 맞춘 팝오버 목록을 쓴다(2026-08-10 변경).
+ * ⚠️ **이용 시작·종료 입력이 없다**(2026-08-15, BE PR #523 — 운영시간 개념 자체를 없앴다,
+ *    회의실은 이제 항상 이용 가능). 예전엔 여기 `TimePickerField` 두 칸이 있었다.
  */
 export function RoomForm({ action, room, onSuccess, onPendingChange, formRef }: RoomFormProps) {
   const [state, formAction, isPending] = useActionState(action, { errors: {} });
   const [name, setName] = useState(room?.name ?? "");
   const [location, setLocation] = useState(room?.location ?? "");
-  const [openTime, setOpenTime] = useState(room?.openTime ?? "");
-  const [closeTime, setCloseTime] = useState(room?.closeTime ?? "");
   const handledRoomId = useRef<string | null>(null);
 
   useEffect(() => {
@@ -79,34 +76,6 @@ export function RoomForm({ action, room, onSuccess, onPendingChange, formRef }: 
           aria-invalid={Boolean(state.errors.location)}
         />
         <FieldError reserveSpace message={state.errors.location} />
-      </div>
-
-      <div className="grid grid-cols-2 gap-3">
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="room-open-time">이용 시작</Label>
-          <TimePickerField
-            id="room-open-time"
-            name="openTime"
-            value={openTime}
-            onChange={setOpenTime}
-            aria-invalid={Boolean(state.errors.openTime)}
-            className="w-full"
-          />
-          <FieldError reserveSpace message={state.errors.openTime} />
-        </div>
-
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="room-close-time">이용 종료</Label>
-          <TimePickerField
-            id="room-close-time"
-            name="closeTime"
-            value={closeTime}
-            onChange={setCloseTime}
-            aria-invalid={Boolean(state.errors.closeTime)}
-            className="w-full"
-          />
-          <FieldError reserveSpace message={state.errors.closeTime} />
-        </div>
       </div>
     </form>
   );

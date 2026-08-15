@@ -27,7 +27,7 @@ import {
 import { findMockMember } from "./mock/members";
 import { addMockReservation, listMockReservationsByRoom } from "./mock/reservations";
 import { addMockRoom, deleteMockRoom, findMockRoom, updateMockRoom } from "./mock/rooms";
-import { getMeetingRooms, getReservableMembers } from "./server";
+import { getReservableMembers } from "./server";
 import type {
   MeetingRoom,
   MeetingRoomDraft,
@@ -46,11 +46,12 @@ const ROOM_NOT_FOUND_MESSAGE = "수정할 회의실을 찾을 수 없습니다";
 
 /**
  * 회의실 추가·수정 API 실패를 폼 필드 오류로 바꾼다(ROOM-03·04 공통).
- * ⚠️ `MR-002`(이름 중복)는 `name` 칸에, `MR-003`(시간 역전)·`MR-006`(좁힌 시간 밖에 이미
- *    예약된 슬롯 있음)은 `closeTime` 칸에 붙인다 — 이 폼엔 "회의실 전체" 오류를 보여줄 자리가
+ * ⚠️ `MR-002`(이름 중복)는 `name` 칸에 붙인다 — 이 폼엔 "회의실 전체" 오류를 보여줄 자리가
  *    따로 없어서, 화면 가드가 이미 막아 준 `MR-004`(권한)를 포함해 나머지는 전부 `name` 칸에
  *    얹는다(기존 권한 오류와 같은 자리). `MR-001`(존재하지 않는 회의실, 수정 전용)은 mock
  *    분기의 "수정할 회의실을 찾을 수 없습니다"와 문구를 맞춘다.
+ * ⚠️ **`MR-003`(시간 역전)·`MR-006`(운영시간 밖 예약)은 더는 없다**(2026-08-15, BE PR #523 —
+ *    운영시간 개념 자체를 없애 그 오류 코드도 같이 사라졌다).
  */
 function toMeetingRoomFormErrors(error: unknown): MeetingRoomFormErrors {
   if (!(error instanceof ApiError)) throw error;
@@ -60,9 +61,6 @@ function toMeetingRoomFormErrors(error: unknown): MeetingRoomFormErrors {
       return { name: ROOM_NOT_FOUND_MESSAGE };
     case "MR-002":
       return { name: ROOM_NAME_CONFLICT_MESSAGE };
-    case "MR-003":
-    case "MR-006":
-      return { closeTime: error.message };
     default:
       return { name: error.message };
   }
@@ -160,25 +158,13 @@ export async function createRoomReservationAction(
   const actor = isMock ? getMockActor() : await getViewer();
 
   /*
-    ⚠️ **회의실마다 이용 가능 시간이 다르다**(2026-08-14, BE 24시간 운영 협의) — 전역 상수 하나로
-       모든 회의실을 같이 막던 걸 걷어내고, 지금 고른 회의실의 실제 `openTime`/`closeTime`으로
-       검증한다. 못 찾으면(폼 조작 등) `null`을 넘겨 시간대 검사만 건너뛴다 — 없는 `roomId` 자체는
-       존재하지 않는 회의실이라 서버 호출 단계에서 어차피 막힌다.
-    ⚠️ **`getMeetingRooms()` 실패를 여기서 잡는다**(2026-08-15 실서버 500 사고 수정 — 이 호출에
-       try/catch가 없어서 BE가 잠깐이라도 흔들리면 이 액션 전체가 예외를 던졌고, Next.js가
-       `/app/rooms` 페이지 전체를 500으로 날려 버렸다). 아래 `POST /api/meetings`와 같은 자리다 —
-       BE 호출 실패는 **이 액션의 실패**지 페이지 전체의 실패가 아니다, 폼 필드 오류로 곱게
-       돌려준다.
+    ⚠️ **회의실별 이용 가능 시간 검증은 없다**(2026-08-15, BE PR #523 — 회의실 운영시간
+       개념 자체를 없앴다, 항상 이용 가능). 예전엔 여기서 `getMeetingRooms()`로 고른
+       회의실을 찾아 `openTime`/`closeTime`을 봤는데, 그 값 자체가 더는 안 와서 그 호출
+       자체가 필요 없어졌다 — 존재하지 않는 `roomId`는 `POST /api/meetings` 단계에서
+       BE가 어차피 막는다(위 §정직성과 같은 결).
   */
-  let rooms: MeetingRoom[];
-  try {
-    rooms = await getMeetingRooms();
-  } catch {
-    return { errors: { roomId: "회의실 정보를 불러오지 못했습니다 — 잠시 후 다시 시도해 주세요" } };
-  }
-  const room = rooms.find((candidate) => candidate.id === draft.roomId) ?? null;
-
-  const errors = validateRoomReservationDraft(draft, { role: actor.role }, room);
+  const errors = validateRoomReservationDraft(draft, { role: actor.role });
   if (Object.keys(errors).length > 0) return { errors };
 
   if (!isMock) {
@@ -288,8 +274,6 @@ function readRoomDraft(formData: FormData): MeetingRoomDraft {
   return {
     name: String(formData.get("name") ?? ""),
     location: String(formData.get("location") ?? ""),
-    openTime: String(formData.get("openTime") ?? ""),
-    closeTime: String(formData.get("closeTime") ?? ""),
   };
 }
 
