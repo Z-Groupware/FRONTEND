@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import { AUTHORITY, POSITION_AUTHORITIES } from "@/constants/domain";
-import { registerSchema } from "@/features/auth/register-draft";
+import { placeSchema, registerSchema } from "@/features/auth/register-draft";
 import { MAX_DEPARTMENT_DEPTH, MAX_ORG_NAME_LENGTH } from "@/features/onboarding/types";
 
 import type { CompanyProfileDraft, CompanyProfileErrors, DepartmentNode, Position } from "./types";
@@ -12,15 +12,19 @@ import type { CompanyProfileDraft, CompanyProfileErrors, DepartmentNode, Positio
  */
 
 /**
- * 기본 정보 규칙은 **기업 등록 신청과 같은 것**을 쓴다.
+ * 기본 정보 규칙은 **기업 등록 신청과 같은 것**을 쓴다 — 단, 위치는 다르다.
  *
  * ⚠️ 여기서 규칙을 새로 적으면 신청 때는 통과한 값이 설정에서 막히거나 그 반대가 된다 —
  *    같은 회사의 같은 값이다. 신청 스키마의 칸을 그대로 꺼내 쓴다(칸 이름만 우리 것).
+ * ⚠️ **`place`만 신청 스키마를 그대로 못 쓴다**(2026-08-14). 신청은 위치를 **반드시 골라야**
+ *    끝나는 자리라 `registerSchema.shape.place`가 `null`을 거절하는데, 설정은 **이미 고른
+ *    위치를 지울 수 있어야** 한다(BE `UpdateCompanyRequest` — 빈 주소로 지우기를 지원한다).
+ *    그래서 여기만 `refine` 없는 `placeSchema.nullable()`을 직접 쓴다.
  */
 const companyProfileSchema = z.object({
   name: registerSchema.shape.companyName,
   businessNumber: registerSchema.shape.businessNumber,
-  place: registerSchema.shape.place,
+  place: placeSchema.nullable(),
 });
 
 export function validateCompanyProfile(draft: CompanyProfileDraft): CompanyProfileErrors {

@@ -43,8 +43,14 @@ describe("validateCompanyProfile", () => {
     },
   );
 
-  it("위치를 안 고르면 막는다 — 세금계산서가 나가는 주소다", () => {
-    expect(validateCompanyProfile({ ...VALID, place: null }).place).toBeTruthy();
+  /*
+    ⚠️ **2026-08-14, BE 실코드 재대조로 뒤집었다.** 신청(`registerSchema`)에서는 위치가
+       필수라 `null`을 막지만, 여기(기업 설정)는 **이미 등록한 위치를 지울 수 있어야** 한다
+       (BE `UpdateCompanyRequest` — 빈 주소로 지우기를 지원한다). 그래서 신청 스키마를
+       그대로 안 쓰고 `place`만 따로 둔다(`validate.ts` 주석).
+  */
+  it("위치를 지워도(null) 막지 않는다 — 등록한 위치를 나중에 지울 수 있어야 한다", () => {
+    expect(validateCompanyProfile({ ...VALID, place: null })).toEqual({});
   });
 
   it("주소가 비어 있으면 좌표가 있어도 막는다", () => {
@@ -79,11 +85,11 @@ describe("validateCompanyProfile", () => {
     expect(errors.businessNumber).toBe("사업자등록번호를 입력해 주세요");
   });
 
-  it("신청 화면과 같은 문구로 알린다", () => {
+  it("신청 화면과 같은 문구로 알린다 — 위치만 예외다(위 테스트 참고)", () => {
     const errors = validateCompanyProfile({ name: "", businessNumber: "", place: null });
 
     expect(errors.name).toBe("기업명을 입력해 주세요");
-    expect(errors.place).toBe("회사 위치를 찾아 골라 주세요");
+    expect(errors.place).toBeUndefined();
   });
 });
 
