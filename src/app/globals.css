@@ -141,15 +141,18 @@
   --card-foreground: #1c1917;
   --popover: #ffffff;
   --popover-foreground: #1c1917;
-  --primary: #3b82f6; /* 액센트 */
+  --primary: #3b82f6;
+  /* 액센트 */
   --primary-foreground: #ffffff;
-  --secondary: #fafaf9; /* 섹션 띠 */
+  --secondary: #fafaf9;
+  /* 섹션 띠 */
   --secondary-foreground: #1c1917;
   --muted: #fafaf9;
   --muted-foreground: #78716c;
   --accent: #fafaf9;
   --accent-foreground: #1c1917;
-  --destructive: #ef4444; /* 에러 */
+  --destructive: #ef4444;
+  /* 에러 */
   /*
     에러 면 **위에** 얹는 글자·아이콘. 두 모드 모두 흰색이다 — 뒤집지 않는다.
     ⚠️ 이 짝이 있어야 실패 토스트가 성립한다. 빨강을 글자에 쓰면 알약 배경이 모드마다
@@ -428,9 +431,11 @@
       transform: translate3d(-34px, 10px, 0) scale(0.94);
       filter: blur(10px);
     }
+
     55% {
       filter: blur(0);
     }
+
     100% {
       opacity: 1;
       transform: translate3d(0, 0, 0) scale(1);
@@ -444,9 +449,11 @@
       transform: translate3d(34px, 10px, 0) scale(0.94);
       filter: blur(10px);
     }
+
     55% {
       filter: blur(0);
     }
+
     100% {
       opacity: 1;
       transform: translate3d(0, 0, 0) scale(1);
@@ -463,6 +470,7 @@
       opacity: 0.4;
       transform: perspective(1200px) rotateX(6deg) translateY(10px);
     }
+
     100% {
       opacity: 1;
       transform: perspective(1200px) rotateX(0deg) translateY(0);
@@ -774,6 +782,7 @@
     100% {
       transform: translateY(0);
     }
+
     50% {
       transform: translateY(-6px);
     }
@@ -794,6 +803,7 @@
       transform: scale(1);
       opacity: 0.04;
     }
+
     50% {
       transform: scale(1.05);
       opacity: 0.07;
@@ -810,6 +820,7 @@
     100% {
       transform: translate(0, 0);
     }
+
     50% {
       transform: translate(24px, -20px);
     }
@@ -888,11 +899,13 @@
       opacity: 0;
       transform: translateY(5px);
     }
+
     8%,
     88% {
       opacity: 1;
       transform: none;
     }
+
     100% {
       opacity: 0;
       transform: translateY(-3px);
@@ -916,6 +929,7 @@
         transform: translateY(120px) scale(0.92);
         filter: blur(10px);
       }
+
       to {
         opacity: 1;
         transform: none;
@@ -954,6 +968,7 @@
         transform: translateX(-110px) scale(0.94);
         filter: blur(10px);
       }
+
       to {
         opacity: 1;
         transform: none;
@@ -967,6 +982,7 @@
         transform: translateX(110px) scale(0.94);
         filter: blur(10px);
       }
+
       to {
         opacity: 1;
         transform: none;
@@ -1009,6 +1025,7 @@
       from {
         transform: scaleX(0);
       }
+
       to {
         transform: scaleX(1);
       }
@@ -1196,21 +1213,26 @@
       transform: translateX(-140%) skewX(-20deg);
       opacity: 0;
     }
+
     47% {
       opacity: 1;
     }
+
     54% {
       transform: translateX(360%) skewX(-20deg);
       opacity: 0;
     }
+
     /* 두 번째 섬광 — 한 번보다 두 번이 "빠·라밤"으로 읽힌다 */
     58% {
       transform: translateX(-140%) skewX(-20deg);
       opacity: 0;
     }
+
     60% {
       opacity: 0.8;
     }
+
     68%,
     100% {
       transform: translateX(360%) skewX(-20deg);
@@ -1228,6 +1250,7 @@
     45% {
       box-shadow: 0 0 0 0 rgba(124, 58, 237, 0);
     }
+
     /* 첫 박 — 흰빛이 터진다 */
     50% {
       box-shadow:
@@ -1235,11 +1258,13 @@
         0 0 60px 16px rgba(255, 255, 255, 0.6),
         0 0 110px 34px rgba(124, 58, 237, 0.55);
     }
+
     56% {
       box-shadow:
         0 0 0 0 rgba(255, 255, 255, 0),
         0 0 30px 5px rgba(124, 58, 237, 0.35);
     }
+
     /* 둘째 박 — 조금 작게 한 번 더 */
     61% {
       box-shadow:
@@ -1247,6 +1272,7 @@
         0 0 44px 10px rgba(255, 255, 255, 0.35),
         0 0 80px 22px rgba(59, 130, 246, 0.4);
     }
+
     75%,
     100% {
       box-shadow: 0 0 22px 3px rgba(124, 58, 237, 0.2);
@@ -1289,11 +1315,13 @@
       opacity: 0;
       transform: translate(-30px, -24px) rotate(-9deg);
     }
+
     25%,
     82% {
       opacity: 1;
       transform: none;
     }
+
     94%,
     100% {
       opacity: 0;
@@ -1306,11 +1334,13 @@
       opacity: 0;
       transform: translate(26px, 28px) rotate(7deg);
     }
+
     25%,
     82% {
       opacity: 1;
       transform: none;
     }
+
     94%,
     100% {
       opacity: 0;
@@ -1323,11 +1353,13 @@
       opacity: 0;
       transform: translate(30px, -20px) rotate(9deg);
     }
+
     25%,
     82% {
       opacity: 1;
       transform: none;
     }
+
     94%,
     100% {
       opacity: 0;
@@ -1358,6 +1390,7 @@
       opacity: 0;
       transform: translate(-14px, -10px) rotate(-8deg);
     }
+
     to {
       opacity: 1;
       transform: none;
@@ -1369,6 +1402,7 @@
       opacity: 0;
       transform: translate(10px, 12px) rotate(6deg);
     }
+
     to {
       opacity: 1;
       transform: none;
@@ -1380,6 +1414,7 @@
       opacity: 0;
       transform: translate(12px, -8px) rotate(8deg);
     }
+
     to {
       opacity: 1;
       transform: none;
@@ -1410,6 +1445,7 @@
     100% {
       transform: scaleY(0.3);
     }
+
     50% {
       transform: scaleY(1);
     }
@@ -1436,10 +1472,12 @@
     0% {
       transform: scaleX(0);
     }
+
     45%,
     88% {
       transform: scaleX(1);
     }
+
     100% {
       transform: scaleX(0);
     }
@@ -1455,6 +1493,7 @@
     from {
       transform: scale(0);
     }
+
     to {
       transform: scale(1);
     }
@@ -1470,6 +1509,7 @@
       opacity: 0;
       transform: scale(0.4);
     }
+
     to {
       opacity: 1;
       transform: scale(1);
@@ -1486,6 +1526,7 @@
     49% {
       opacity: 1;
     }
+
     50%,
     100% {
       opacity: 0;
@@ -1512,29 +1553,35 @@
       left: 2%;
       transform: translateY(-50%) rotate(45deg);
     }
+
     8% {
       opacity: 1;
       transform: translateY(-70%) rotate(36deg);
     }
+
     35% {
       left: 32%;
       transform: translateY(-95%) rotate(40deg);
     }
+
     55% {
       left: 50%;
       transform: translateY(-72%) rotate(48deg);
     }
+
     /* 힘이 빠진다 — 기수가 꺾이고 고도를 잃는다 */
     75% {
       opacity: 1;
       left: 66%;
       transform: translateY(-46%) rotate(64deg);
     }
+
     88% {
       opacity: 0;
       left: 76%;
       transform: translateY(10%) rotate(96deg);
     }
+
     100% {
       opacity: 0;
       left: 76%;
@@ -1556,17 +1603,21 @@
       opacity: 0;
       transform: scale(1.8) translateY(-10px);
     }
+
     12% {
       opacity: 1;
       transform: scale(0.92) translateY(0);
     }
+
     18% {
       transform: scale(1.06);
     }
+
     24%,
     88% {
       transform: scale(1);
     }
+
     100% {
       opacity: 0;
       transform: scale(1);
@@ -1584,6 +1635,7 @@
       opacity: 0.5;
       transform: scale(0.6);
     }
+
     30%,
     100% {
       opacity: 0;
@@ -1608,11 +1660,13 @@
       opacity: 0;
       visibility: hidden;
     }
+
     45%,
     88% {
       opacity: 1;
       visibility: visible;
     }
+
     100% {
       opacity: 0;
       visibility: hidden;
@@ -1635,11 +1689,13 @@
       opacity: 0;
       transform: translate3d(-26px, -20px, 0) rotateY(-45deg) rotate(-14deg);
     }
+
     54%,
     92% {
       opacity: 1;
       transform: none;
     }
+
     100% {
       opacity: 0;
       transform: none;
@@ -1652,11 +1708,13 @@
       opacity: 0;
       transform: translate3d(22px, 26px, 0) rotateY(45deg) rotate(12deg);
     }
+
     60%,
     92% {
       opacity: 1;
       transform: none;
     }
+
     100% {
       opacity: 0;
       transform: none;
@@ -1669,11 +1727,13 @@
       opacity: 0;
       transform: translate3d(26px, -18px, 0) rotateY(-40deg) rotate(14deg);
     }
+
     64%,
     92% {
       opacity: 1;
       transform: none;
     }
+
     100% {
       opacity: 0;
       transform: none;
@@ -1728,9 +1788,11 @@
       transform: translate3d(0, 26px, 0) scale(0.94);
       filter: blur(10px);
     }
+
     55% {
       filter: blur(0);
     }
+
     100% {
       opacity: 1;
       transform: translate3d(0, 0, 0) scale(1);
@@ -1747,9 +1809,11 @@
       transform: translateX(-120%);
       opacity: 0;
     }
+
     35% {
       opacity: 0.9;
     }
+
     100% {
       transform: translateX(220%);
       opacity: 0;
@@ -1809,6 +1873,7 @@
     animation-name: assemble-in-left;
     animation-delay: 0.22s;
   }
+
   .assemble > * > *:nth-child(2) {
     animation-name: assemble-in-right;
     animation-delay: 0.38s;
@@ -1818,21 +1883,27 @@
   .assemble > * > * > * {
     animation: assemble-in 0.55s cubic-bezier(0.16, 1.1, 0.3, 1) both;
   }
+
   .assemble > * > * > *:nth-child(1) {
     animation-delay: 0.3s;
   }
+
   .assemble > * > * > *:nth-child(2) {
     animation-delay: 0.42s;
   }
+
   .assemble > * > * > *:nth-child(3) {
     animation-delay: 0.54s;
   }
+
   .assemble > * > * > *:nth-child(4) {
     animation-delay: 0.66s;
   }
+
   .assemble > * > * > *:nth-child(5) {
     animation-delay: 0.78s;
   }
+
   .assemble > * > * > *:nth-child(6) {
     animation-delay: 0.9s;
   }
@@ -1982,6 +2053,7 @@
   * {
     @apply border-border outline-ring/50;
   }
+
   /*
    * 화면 배율 — **`body`를 키워 놓고 `transform`으로 줄인다.**
    *
@@ -2008,6 +2080,7 @@
     height: 100%;
     overflow: hidden;
   }
+
   body {
     @apply bg-background text-foreground;
 
@@ -2047,9 +2120,11 @@
       0 1px 2px color-mix(in oklch, var(--foreground) 4%, transparent),
       0 1px 3px color-mix(in oklch, var(--foreground) 3%, transparent);
   }
+
   .dark .app-shell .bg-card {
     box-shadow: none;
   }
+
   html {
     @apply font-sans;
   }
@@ -2090,6 +2165,7 @@
   .recharts-surface:focus {
     outline: none;
   }
+
   .recharts-surface:focus-visible {
     outline: 2px solid var(--ring);
     outline-offset: 2px;

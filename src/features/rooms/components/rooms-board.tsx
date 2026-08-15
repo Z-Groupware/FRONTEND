@@ -112,6 +112,9 @@ export function RoomsBoard({
             prev.map((event) => (event.meetingId === meetingId ? { ...event, title } : event)),
           );
         }}
+        onCancelled={(meetingId) => {
+          setEvents((prev) => prev.filter((event) => event.meetingId !== meetingId));
+        }}
       />
     </div>
   );
