@@ -36,15 +36,19 @@ export interface BeTeam {
   leaderName: string | null;
   memberCount: number;
   /**
-   * 이 팀에서 고를 수 있는 역할들. [확인] BE `RoleNode`(신규, 2026-08-14 BE PR #489).
+   * 이 팀에서 고를 수 있는 역할들. [확인] BE `RoleNode`(2026-08-14 BE PR #489,
+   * `memberCount`는 PR #528에서 추가).
    * ⚠️ **`없음`(roleId 2)이 항상 끼어 온다** — 전역 시드 행을 모든 팀 목록에 얹어 준다.
+   *    이 행의 `memberCount`는 **회사 전체 미배정 인원 수**라 모든 팀에 같은 숫자가
+   *    실린다(부서에 안 매인 시드 행이라 그렇다, BE 안현님 확인) — 지울 수 없는 역할이라
+   *    삭제 판단에는 안 쓰이고, 화면(선택 목록 제외)에서도 걸러 낸다.
    * ⚠️ **`리더`(roleId 1)는 안 온다** — BE가 팀장 표시용이라 목록에서 뺀다.
    * ⚠️ **선택적이라고 타입에 그대로 적는다**(2026-08-14 프로덕션 재현 — BE PR #489가 아직
    *    실제로는 배포 전이라 이 필드 자체가 안 온다). 비필수(`?`)로 안 적으면, 이 필드를
    *    직접 읽는 새 코드가 생겨도 타입체커가 "`undefined`일 수 있다"고 못 잡아 줘서
    *    `toDepartmentNode`가 겪었던 `.map()` 크래시를 그대로 되풀이할 수 있다.
    */
-  roles?: { roleId: number; name: string }[];
+  roles?: { roleId: number; name: string; memberCount: number }[];
 }
 
 /**
@@ -166,6 +170,23 @@ export function withoutSystemRoles(team: DepartmentNode): DepartmentNode {
 
 export function toTeamMemberCounts(teams: BeTeam[]): Record<string, number> {
   return Object.fromEntries(teams.map((team) => [String(team.teamId), team.memberCount]));
+}
+
+/**
+ * 역할 id → 그 역할을 쓰는 사원 수 — **역할 삭제를 막는 판정**에 쓴다(팀 삭제와 같은 원칙,
+ * BE PR #528).
+ *
+ * ⚠️ **전 팀을 평평하게 편다.** 역할 id는 회사 안에서 유일한 값이라(팀에 매여 있어도 DB
+ *    행은 하나다) 팀별로 나눠 들고 있을 이유가 없다 — `withoutSystemRoles`로 편집 트리에서
+ *    걸러지는 시스템 역할(`없음`·`리더`)의 수치도 여기 같이 담기지만, 그 id로는 편집 트리가
+ *    아예 조회하지 않으니 해가 없다.
+ */
+export function toRoleMemberCounts(teams: BeTeam[]): Record<string, number> {
+  return Object.fromEntries(
+    teams.flatMap((team) =>
+      (team.roles ?? []).map((role) => [String(role.roleId), role.memberCount]),
+    ),
+  );
 }
 
 /**

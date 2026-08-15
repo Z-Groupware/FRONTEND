@@ -160,6 +160,46 @@ export function findBlockedTeamChange(
   return null;
 }
 
+/** 사원이 딸린 역할을 지우려 했을 때 막는 이유 — 없으면 `null` */
+export interface BlockedRoleChange {
+  team: string;
+  role: string;
+  /** 이 역할을 쓰는 사원 수 — 화면 문구가 그대로 쓴다 */
+  count: number;
+}
+
+/**
+ * 사원이 딸린 **역할**을 지우려 했는지 본다 — 팀 삭제와 같은 원칙이다(BE PR #528).
+ *
+ * ⚠️ 팀이 사라지거나 강등된 경우는 여기서 안 본다 — `findBlockedTeamChange`가 이미 막는다.
+ *    같은 사람이 두 함수에 각각 걸리면 어느 쪽 문구가 먼저 뜨는지가 호출 순서에 좌우된다 —
+ *    한쪽 관심사만 본다(§단일 책임).
+ * ⚠️ **팀 간 역할 이동은 안 본다.** 기업 설정에서 그 조작 자체가 없다(2026-08-14, 드래그·
+ *    Alt+방향키를 없앴다 — `department-node.tsx`의 `canReorder`) — 한 팀의 자식 목록에서
+ *    역할이 사라졌으면 다른 팀으로 옮겨 간 게 아니라 그냥 지워진 것이다.
+ */
+export function findBlockedRoleChange(
+  previous: DepartmentNode[],
+  next: DepartmentNode[],
+  roleMemberCounts: Record<string, number>,
+): BlockedRoleChange | null {
+  const nextTeamById = new Map(next.map((team) => [team.id, team]));
+
+  for (const team of previous) {
+    const nextTeam = nextTeamById.get(team.id);
+    if (!nextTeam) continue;
+
+    const survivingRoleIds = new Set(nextTeam.children.map((role) => role.id));
+    for (const role of team.children) {
+      const count = roleMemberCounts[role.id] ?? 0;
+      if (count === 0) continue;
+      if (!survivingRoleIds.has(role.id)) return { team: team.name, role: role.name, count };
+    }
+  }
+
+  return null;
+}
+
 /**
  * 직급 검증 — 이름과 **리더 하나 규칙**.
  * ⚠️ 리더 직급은 회사에 하나뿐이다(CLAUDE.md §권한). 둘이 되면 팀 범위 판정이 무너진다.

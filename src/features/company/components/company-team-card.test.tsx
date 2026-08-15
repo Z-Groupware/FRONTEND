@@ -33,8 +33,17 @@ const TEAMS: DepartmentNode[] = [
 /** 개발팀에만 사람이 있다 — 빈팀은 지울 수 있어야 한다 */
 const COUNTS = { d1: 6, d2: 0 };
 
-function renderCard() {
-  return render(<CompanyTeamCard initial={TEAMS} memberCounts={COUNTS} />);
+/*
+  ⚠️ 기본은 **역할에 사람이 없다**로 둔다. 역할 삭제 자체를 보는 기존 테스트들이
+     "막히지 않고 지워지는" 경로를 확인하기 때문이다 — 역할이 막히는 경로는
+     `roleMemberCounts`를 따로 주는 아래 describe에서 본다.
+*/
+const ROLE_COUNTS = { r1: 0 };
+
+function renderCard(roleCounts: Record<string, number> = ROLE_COUNTS) {
+  return render(
+    <CompanyTeamCard initial={TEAMS} memberCounts={COUNTS} roleMemberCounts={roleCounts} />,
+  );
 }
 
 beforeEach(() => {
@@ -155,5 +164,22 @@ describe("역할(트리 아랫단)", () => {
     await user.click(screen.getByRole("button", { name: "프론트 삭제" }));
 
     expect(screen.getByText(/‘프론트’ 역할을 지울까요\?/)).toBeInTheDocument();
+  });
+
+  /*
+    ⚠️ **BE PR #528 이후 역할도 팀과 같은 원칙을 따른다.** 사람이 있는 역할을 지우면
+       그 사람은 되돌릴 명시적 재할당 없이 조용히 "역할 없음"이 된다 — 팀처럼 막고
+       갈 곳(사원 관리)을 알려 준다.
+  */
+  it("사람이 있는 역할은 지우지 못하고, 팀이 아니라 역할이 막혔다고 말한다", async () => {
+    const user = userEvent.setup();
+    renderCard({ r1: 4 });
+
+    await user.click(screen.getByRole("button", { name: "프론트 삭제" }));
+
+    expect(screen.getByText(/‘프론트’ 역할은 지울 수 없습니다/)).toBeInTheDocument();
+    expect(screen.getByText(/사원 4명이 이 역할을 쓰고 있습니다/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "사원 관리 열기" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "삭제" })).not.toBeInTheDocument();
   });
 });

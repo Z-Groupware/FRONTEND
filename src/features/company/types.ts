@@ -57,6 +57,14 @@ export interface CompanySetting {
    *    아직 사원이 없다.
    */
   teamMemberCounts: Record<string, number>;
+  /**
+   * 역할 id → 그 역할을 쓰는 사원 수(BE PR #528).
+   *
+   * ⚠️ **사원이 있는 역할은 지울 수 없다** — 팀과 같은 원칙이다(위 `teamMemberCounts` 주석).
+   *    역할이 사라지면 그 역할로 불리던 사람이 조용히 "역할 없음"이 되는데, 되돌릴 명시적
+   *    재할당 절차가 없다.
+   */
+  roleMemberCounts: Record<string, number>;
 }
 
 /** 폼이 보내는 값 — 기업 코드는 못 고치므로 빠진다 */
