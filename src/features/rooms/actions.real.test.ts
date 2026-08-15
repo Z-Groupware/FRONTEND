@@ -141,6 +141,17 @@ describe("createRoomReservationAction — 실서버 참석자 재검증", () => 
     expect(result.created).toBeUndefined();
     expect(serverApiMock).not.toHaveBeenCalled();
   });
+
+  /* ⚠️ 회귀 테스트다(2026-08-15, #556) — getMeetingRooms()와 같은 사고가 여기도 있었다. */
+  it("참석자 명부 조회가 실패해도 페이지를 죽이지 않고 폼 오류로 돌려준다", async () => {
+    getReservableMembersMock.mockRejectedValue(new Error("network down"));
+
+    const result = await createRoomReservationAction({ errors: {} }, form([3, 4]));
+
+    expect(result.errors.attendeeIds).toBeDefined();
+    expect(result.created).toBeUndefined();
+    expect(serverApiMock).not.toHaveBeenCalled();
+  });
 });
 
 /**

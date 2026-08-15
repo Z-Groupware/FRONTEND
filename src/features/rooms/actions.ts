@@ -33,6 +33,7 @@ import type {
   MeetingRoomDraft,
   MeetingRoomFormErrors,
   MeetingTopicInput,
+  RoomMember,
   RoomReservation,
   RoomReservationDraft,
   RoomReservationFormErrors,
@@ -193,8 +194,18 @@ export async function createRoomReservationAction(
       ⚠️ **최종 방어는 여전히 BE(`POST /api/meetings`)다.** 여기서 걸러도 폼을 안 거치고
          API를 직접 호출하면 이 검사 자체가 안 돈다 — BE `MeetingAttendeeCommandService`가
          스스로 다시 봐야 한다(아직 BE 요청 문서에 못 올렸다, 다음 라운드에 올릴 것).
+      ⚠️ **이 호출도 실패를 잡는다**(2026-08-15, `getMeetingRooms()`와 같은 사고 — #553/#554).
+         실서버 분기는 BE를 한 번 더 부르는데(`getTeamLeaders()` 또는 `GET /api/members/my-team`),
+         감싸지 않으면 이 액션 전체가 예외를 던져 `/app/rooms` 페이지 전체가 500으로 죽는다.
     */
-    const roster = await getReservableMembers(actor);
+    let roster: RoomMember[];
+    try {
+      roster = await getReservableMembers(actor);
+    } catch {
+      return {
+        errors: { attendeeIds: "참석자 명부를 불러오지 못했습니다 — 잠시 후 다시 시도해 주세요" },
+      };
+    }
     const rosterIds = new Set(roster.map((member) => member.id));
     if (draft.attendeeIds.some((id) => id !== actor.id && !rosterIds.has(id))) {
       return { errors: { attendeeIds: "지정할 수 없는 참석자가 있습니다" } };
