@@ -126,6 +126,21 @@ describe("createRoomReservationAction — 실서버 참석자 재검증", () => 
     expect(result.errors).toEqual({});
     expect(serverApiMock).toHaveBeenCalledTimes(1);
   });
+
+  /*
+    ⚠️ 회귀 테스트다(2026-08-15 실서버 500 사고) — `getMeetingRooms()`에 try/catch가 없어서
+       BE가 잠깐 흔들리면 이 액션 전체가 예외를 던졌고, Next.js가 `/app/rooms` 페이지 전체를
+       500으로 날렸다. 폼 필드 오류로 곱게 돌아와야 한다 — 페이지가 죽으면 안 된다.
+  */
+  it("회의실 목록 조회가 실패해도 페이지를 죽이지 않고 폼 오류로 돌려준다", async () => {
+    getMeetingRoomsMock.mockRejectedValue(new Error("network down"));
+
+    const result = await createRoomReservationAction({ errors: {} }, form([3, 4]));
+
+    expect(result.errors.roomId).toBeDefined();
+    expect(result.created).toBeUndefined();
+    expect(serverApiMock).not.toHaveBeenCalled();
+  });
 });
 
 /**
