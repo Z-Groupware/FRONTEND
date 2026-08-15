@@ -23,7 +23,8 @@ type LoadState =
   | { status: "loading" }
   | { status: "ok"; summary: MeetingSummary }
   | { status: "locked"; title: string | null }
-  | { status: "notFound" };
+  | { status: "notFound" }
+  | { status: "error" };
 
 interface RoomMeetingDetailDialogProps {
   /** `null`이면 닫힌 상태 — 캘린더에서 예약 막대를 클릭하면 그 회의 id가 들어온다. */
@@ -85,14 +86,23 @@ function MeetingSummaryPanel({ meetingId, onClose, onTitleUpdated }: MeetingSumm
   const [state, formAction, isPending] = useActionState(updateMeetingAction, INITIAL_STATE);
   const handledSave = useRef<UpdateMeetingState["saved"]>(null);
 
+  /*
+    ⚠️ **`.catch()`가 반드시 있어야 한다**(CodeRabbit 지적, PR #547) — 없으면 요청이 거부됐을
+       때(네트워크 오류 등) `.then()` 콜백이 아예 안 돌아 `load`가 영원히 `"loading"`에 멈춘다.
+       스켈레톤이 계속 떠 있어서 사용자는 뭐가 잘못됐는지도 모른다(§정직성 위반).
+  */
   useEffect(() => {
     let canceled = false;
-    getMeetingSummaryAction(meetingId).then((result) => {
-      if (canceled) return;
-      if (result.kind === "ok") setLoad({ status: "ok", summary: result.summary });
-      else if (result.kind === "locked") setLoad({ status: "locked", title: result.title });
-      else setLoad({ status: "notFound" });
-    });
+    getMeetingSummaryAction(meetingId)
+      .then((result) => {
+        if (canceled) return;
+        if (result.kind === "ok") setLoad({ status: "ok", summary: result.summary });
+        else if (result.kind === "locked") setLoad({ status: "locked", title: result.title });
+        else setLoad({ status: "notFound" });
+      })
+      .catch(() => {
+        if (!canceled) setLoad({ status: "error" });
+      });
     return () => {
       canceled = true;
     };
@@ -123,6 +133,14 @@ function MeetingSummaryPanel({ meetingId, onClose, onTitleUpdated }: MeetingSumm
     return (
       <p className="text-muted-foreground px-6 py-5 text-[13px] leading-5">
         회의를 찾을 수 없습니다.
+      </p>
+    );
+  }
+
+  if (load.status === "error") {
+    return (
+      <p className="text-muted-foreground px-6 py-5 text-[13px] leading-5">
+        회의 정보를 불러오지 못했습니다 — 잠시 후 다시 시도해 주세요.
       </p>
     );
   }

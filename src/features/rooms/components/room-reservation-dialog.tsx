@@ -81,6 +81,7 @@ function SlotPicker({
         <Label htmlFor="reservation-date">날짜</Label>
         <DatePickerField
           id="reservation-date"
+          name="date"
           value={date}
           onChange={onDateChange}
           aria-invalid={Boolean(dateError)}
@@ -92,6 +93,7 @@ function SlotPicker({
         <Label htmlFor="reservation-start-time">시작 시간</Label>
         <TimePickerField
           id="reservation-start-time"
+          name="startTime"
           value={startTime}
           onChange={onStartTimeChange}
           step={RESERVATION_DURATION_MINUTES}

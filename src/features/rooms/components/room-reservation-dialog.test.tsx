@@ -84,6 +84,19 @@ describe("RoomReservationDialog", () => {
     expect(screen.getByText("30분 · 즉시 확정")).toBeInTheDocument();
   });
 
+  /*
+    ⚠️ 회귀 테스트다 — `DatePickerField`·`TimePickerField`에 `name`을 안 넘기면 그 값이 hidden
+       input으로 안 나가서, 화면엔 날짜·시간이 멀쩡히 보이는데 실제 제출은 "날짜를 선택해
+       주세요"/"시작 시간을 선택해 주세요"로 매번 막혔다(CodeRabbit 지적, PR #547).
+  */
+  it("날짜·시간 값이 hidden input으로 실려 나간다(제출용)", () => {
+    renderDialog();
+
+    // ⚠️ Radix `Dialog`는 포털로 `document.body`에 그려서 `container` 안에는 없다 — 문서 전체에서 찾는다.
+    expect(document.querySelector('input[name="date"]')).toHaveValue("2026-08-11");
+    expect(document.querySelector('input[name="startTime"]')).toHaveValue("10:00");
+  });
+
   it("취소를 누르면 onOpenChange(false)를 부른다", async () => {
     const user = userEvent.setup();
     const { onOpenChange } = renderDialog();
