@@ -404,9 +404,12 @@ export interface BeMeetingDetail {
    * ⚠️ 오프셋 없는 문자열은 JS가 **그 프로세스의 시간대**로 읽는다. 우리 서버는
    *    `next.config.ts`가 `TZ=Asia/Seoul`을 박아 두어 맞아떨어진다 — 배포에서 TZ를
    *    덮어쓰면 회의 시각이 통째로 밀린다(배포 전달사항).
+   * ⚠️ **비대면 회의는 `null`이다**(2026-08-15, MEET-18 — WORKFLOW.md §3-1-A. 이 필드는
+   *    DB에도 안 저장된다). `MeetingDetailResponse.formatDateTime`이 `null`을 그대로 통과시킨다
+   *    (BE 실코드 대조) — 여기서 문자열로만 받으면 비대면 회의 상세가 파싱 단계에서 죽는다.
    */
-  startAt: string;
-  endAt: string;
+  startAt: string | null;
+  endAt: string | null;
   /**
    * 확정 전 AI 액션 초안 건수 — 종료되지 않은 회의는 서버가 조회 없이 `0`으로 확정한다
    * (BE `MeetingDetailQueryService.resolvePendingActionCount`).
@@ -435,7 +438,15 @@ export interface BeMeetingDetail {
    */
   agenda?: { mainTopic: string | null; subTopics: string[] } | null;
   project: { projectId: number; tag: string };
-  meetingRoom: { meetingRoomId: number; name: string };
+  /**
+   * ⚠️ **비대면 회의는 `null`이다**(2026-08-15, MEET-18 — 회의실·시간대 예약 자체가 없는
+   *    회의라 회의실이 없다, WORKFLOW.md §3-1-A). `MeetingDetailResponse.from`이
+   *    `result.meetingRoom() == null ? null : ...`로 실제로 `null`을 보낸다(BE 실코드 대조,
+   *    `AnalysisController`가 아니라 `MeetingDetailResponse.java`) — **이 화면이 온라인
+   *    회의인지 판별하는 유일한 신호이기도 하다**(`toMeetingDetailView`의 `isOnline` 참고,
+   *    응답에 별도 `isOnline` 필드는 없다).
+   */
+  meetingRoom: { meetingRoomId: number; name: string } | null;
   host: { memberId: number; name: string };
   attendees: BeMeetingAttendee[];
 }
@@ -482,8 +493,9 @@ function isBeMeetingDetail(value: unknown): value is BeMeetingDetail {
     typeof detail.meetingId === "number" &&
     typeof detail.title === "string" &&
     typeof detail.status === "string" &&
-    typeof detail.startAt === "string" &&
-    typeof detail.endAt === "string" &&
+    /* ⚠️ 비대면 회의는 `null`이다(MEET-18, WORKFLOW.md §3-1-A) — `BeMeetingDetail.startAt` 주석 참고 */
+    isOptionalNullableString(detail.startAt) &&
+    isOptionalNullableString(detail.endAt) &&
     typeof detail.pendingActionCount === "number" &&
     (detail.summaryStatus === null || typeof detail.summaryStatus === "string") &&
     /* ⚠️ #461/#472 확장 필드 — 없어도 통과한다(배포 전 응답에는 이 필드들이 없다) */
@@ -491,7 +503,8 @@ function isBeMeetingDetail(value: unknown): value is BeMeetingDetail {
     isOptionalAgenda(detail.agenda) &&
     typeof detail.project?.projectId === "number" &&
     typeof detail.project?.tag === "string" &&
-    typeof detail.meetingRoom?.name === "string" &&
+    /* ⚠️ 비대면 회의는 `null`이다(MEET-18) — `BeMeetingDetail.meetingRoom` 주석 참고 */
+    (detail.meetingRoom === null || typeof detail.meetingRoom?.name === "string") &&
     typeof detail.host?.memberId === "number" &&
     Array.isArray(detail.attendees) &&
     detail.attendees.every(isBeMeetingAttendee)
@@ -572,14 +585,20 @@ export function hostIdOf(detail: Pick<BeMeetingDetail, "host">): number {
  *    직접 포맷하면 목·실서버가 서로 다른 문자열을 그린다.
  * ⚠️ 소속·직급은 가운뎃점으로 잇되 **빈 조각은 버린다** — 팀이 없는 대표에게 ` · 대표`처럼
  *    앞이 빈 줄이 남으면 명단이 어긋나 보인다(목 경로와 같은 규칙).
+ * ⚠️ **비대면 회의는 이 화면에 올 일이 없다**(WORKFLOW.md §3-1-A — 제출 즉시 `DONE`이라
+ *    `/capture`로 갈 이유가 없다). 그래도 `parseMeetingDetail`은 공용이라 `startAt`·`meetingRoom`이
+ *    `null`이어도 여기서 죽지 않게만 방어한다(빈 문자열, `BeMeetingDetail`과 같은 규칙).
  */
 export function toMeetingCaptureInfo(detail: BeMeetingDetail): MeetingCaptureInfo {
   return {
     id: String(detail.meetingId),
     title: detail.title,
     projectTag: detail.project.tag,
-    schedule: formatMeetingSchedule(new Date(detail.startAt), new Date(detail.endAt)),
-    roomName: detail.meetingRoom.name,
+    schedule:
+      detail.startAt && detail.endAt
+        ? formatMeetingSchedule(new Date(detail.startAt), new Date(detail.endAt))
+        : "",
+    roomName: detail.meetingRoom?.name ?? "",
     attendees: detail.attendees.map((attendee) =>
       toCaptureAttendee(attendee, detail.host.memberId),
     ),
@@ -662,8 +681,9 @@ export function toMeetingDetailView(
     originLabel: originLabelFromTeamId(be.teamId),
     parentTeamActionHref: null,
     agenda: toMeetingAgenda(be.agenda),
-    schedule: formatMeetingSchedule(new Date(be.startAt), new Date(be.endAt)),
-    roomName: be.meetingRoom.name,
+    schedule:
+      be.startAt && be.endAt ? formatMeetingSchedule(new Date(be.startAt), new Date(be.endAt)) : "",
+    roomName: be.meetingRoom?.name ?? "",
     attendees: be.attendees.map((attendee) => ({ id: attendee.memberId, name: attendee.name })),
     outputKindLabel: outputKindLabelOf(be.teamId),
     outputs: null,
@@ -672,8 +692,12 @@ export function toMeetingDetailView(
     pendingActionCount: be.pendingActionCount,
     isStalled: be.summaryStatus === BE_SUMMARY_STATUS.STALLED,
     isHost: options.isHost,
-    // 실서버는 아직 비대면 회의를 모른다 — BE가 필드를 주면 그때 매퍼가 읽는다(이슈 #473).
-    isOnline: false,
+    /*
+     * ⚠️ **`meetingRoom`이 이제 실제 신호다**(2026-08-15, MEET-18 배포 확인). 응답에 별도
+     *    `isOnline` 필드는 없다 — 회의실이 없다는 것 자체가 비대면 회의라는 뜻이라
+     *    (`BeMeetingDetail.meetingRoom` 주석) 이 값 하나로 가른다.
+     */
+    isOnline: be.meetingRoom === null,
   };
 }
 
