@@ -59,7 +59,19 @@ export async function deleteRecordingsAction(tag: string): Promise<StorageAction
     ⚠️ **지울 수 있는 줄인지 서버가 판정한다.** 화면이 보낸 태그를 그대로 믿으면
        진행 중인 프로젝트의 녹음도 지워진다 — 되돌릴 수 없는 일이라 여기서 막는다.
   */
-  const overview = await getStorageOverview();
+  /*
+    ⚠️ **실패도 잡는다**(2026-08-15, `rooms/actions.ts`의 `getMeetingRooms()`와 같은 사고 —
+       #553/#554/#556/#558). 감싸지 않으면 이 액션 전체가 죽어 페이지가 500으로 날아간다.
+  */
+  let overview: Awaited<ReturnType<typeof getStorageOverview>>;
+  try {
+    overview = await getStorageOverview();
+  } catch {
+    return {
+      isSuccess: false,
+      message: "저장소 정보를 불러오지 못했습니다 — 잠시 후 다시 시도해 주세요",
+    };
+  }
   const target = overview.projects.find((project) => project.tag === tag);
 
   if (!target) return { isSuccess: false, message: "프로젝트를 찾지 못했습니다" };

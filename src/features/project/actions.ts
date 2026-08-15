@@ -84,7 +84,17 @@ export async function createProjectAction(
 
   if (!isMock) {
     const accessToken = await requireAccessToken();
-    const teamIds = await resolveTeamIds(accessToken, draft.teamNames);
+    /*
+      ⚠️ **`resolveTeamIds`도 실패를 잡는다**(2026-08-15, `rooms/actions.ts`의 `getMeetingRooms()`와
+         같은 사고 — #553/#554/#556). BE 팀 목록 조회가 실패하면 이 호출도 예외를 던지는데,
+         감싸지 않으면 이 액션 전체가 죽어 페이지가 500으로 날아간다.
+    */
+    let teamIds: number[];
+    try {
+      teamIds = await resolveTeamIds(accessToken, draft.teamNames);
+    } catch {
+      return { errors: { name: "팀 목록을 불러오지 못했습니다 — 잠시 후 다시 시도해 주세요" } };
+    }
     const body = toCreateProjectRequestBody(draft, teamIds);
 
     try {
