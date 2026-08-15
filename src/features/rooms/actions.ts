@@ -163,8 +163,18 @@ export async function createRoomReservationAction(
        모든 회의실을 같이 막던 걸 걷어내고, 지금 고른 회의실의 실제 `openTime`/`closeTime`으로
        검증한다. 못 찾으면(폼 조작 등) `null`을 넘겨 시간대 검사만 건너뛴다 — 없는 `roomId` 자체는
        존재하지 않는 회의실이라 서버 호출 단계에서 어차피 막힌다.
+    ⚠️ **`getMeetingRooms()` 실패를 여기서 잡는다**(2026-08-15 실서버 500 사고 수정 — 이 호출에
+       try/catch가 없어서 BE가 잠깐이라도 흔들리면 이 액션 전체가 예외를 던졌고, Next.js가
+       `/app/rooms` 페이지 전체를 500으로 날려 버렸다). 아래 `POST /api/meetings`와 같은 자리다 —
+       BE 호출 실패는 **이 액션의 실패**지 페이지 전체의 실패가 아니다, 폼 필드 오류로 곱게
+       돌려준다.
   */
-  const rooms = await getMeetingRooms();
+  let rooms: MeetingRoom[];
+  try {
+    rooms = await getMeetingRooms();
+  } catch {
+    return { errors: { roomId: "회의실 정보를 불러오지 못했습니다 — 잠시 후 다시 시도해 주세요" } };
+  }
   const room = rooms.find((candidate) => candidate.id === draft.roomId) ?? null;
 
   const errors = validateRoomReservationDraft(draft, { role: actor.role }, room);
