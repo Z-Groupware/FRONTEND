@@ -12,6 +12,7 @@ import {
   toCompanyProfile,
   toDepartmentNode,
   toPosition,
+  toRoleMemberCounts,
   toTeamMemberCounts,
   withoutSystemRoles,
 } from "./mapper";
@@ -56,6 +57,7 @@ export async function getCompanySetting(): Promise<CompanySetting> {
     departments: teams.map(toDepartmentNode).map(withoutSystemRoles),
     positions: positions.map(toPosition),
     teamMemberCounts: toTeamMemberCounts(teams),
+    roleMemberCounts: toRoleMemberCounts(teams),
   };
 }
 
