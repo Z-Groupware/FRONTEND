@@ -106,6 +106,13 @@ export function CompanyTeamCard({ initial, memberCounts }: CompanyTeamCardProps)
     onEditingChange: tree.setEditingId,
     dragging,
     onDraggingChange: setDragging,
+    /*
+      ⚠️ **순서를 저장할 API가 없다**(§연동 검증). 손잡이를 그대로 두면 순서를 바꾸고
+         [저장]을 눌렀을 때 "저장했습니다"가 뜨지만 실제로는 조용히 사라진다(2026-08-14
+         적발) — 계층 변경(승격·강등)은 이미 "역할 안 저장" 안내로 막혀 있는데 순서만
+         그 경로를 안 타서 몰래 새고 있었다. `DepartmentNodeHandlers.canReorder` 참고.
+    */
+    canReorder: false,
   };
 
   /*

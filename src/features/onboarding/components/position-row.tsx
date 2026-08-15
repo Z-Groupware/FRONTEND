@@ -26,6 +26,16 @@ export interface PositionRowHandlers {
   onEditingChange: (id: string | null) => void;
   draggingId: DraggingPositionId;
   onDraggingChange: (id: DraggingPositionId) => void;
+  /**
+   * 드래그 손잡이·Alt+↑↓를 끈다. **기본은 켜짐**(온보딩) — 저장 한 번에 목록 전체가
+   * 새로 만들어져서 순서가 그대로 반영된다.
+   *
+   * ⚠️ **기업 설정만 끈다.** 직급 저장은 이름·권한만 비교해 보내는 부분 수정이라 순서를
+   *    담을 API가 없다(§연동 검증) — 순서를 바꾸고 [저장]을 누르면 성공했다고 뜨지만
+   *    실제로는 조용히 사라진다(2026-08-14 적발). 손잡이를 아예 안 주는 게 거짓 성공보다
+   *    정직하다(§정직성).
+   */
+  canReorder?: boolean;
 }
 
 interface PositionRowProps extends PositionRowHandlers {
@@ -47,6 +57,7 @@ export function PositionRow({
   ...handlers
 }: PositionRowProps) {
   const { onRename, onChangeRole, onRemove, onShift, editingId, onEditingChange } = handlers;
+  const canReorder = handlers.canReorder ?? true;
 
   const isEditing = editingId === position.id;
 
@@ -87,28 +98,36 @@ export function PositionRow({
       <span
         className={cn(POSITION_COLUMN.INDEX, "relative flex shrink-0 items-center justify-center")}
       >
-        <span className="text-muted-foreground/40 text-[11px] leading-none tabular-nums transition-opacity group-focus-within:opacity-0 group-hover:opacity-0">
+        <span
+          className={cn(
+            "text-muted-foreground/40 text-[11px] leading-none tabular-nums",
+            // 손잡이가 없으면 굳이 숨겼다 보여줄 이유가 없다 — 번호가 늘 보인다
+            canReorder && "transition-opacity group-focus-within:opacity-0 group-hover:opacity-0",
+          )}
+        >
           {index + 1}
         </span>
-        <button
-          {...handleProps}
-          type="button"
-          aria-label={`${position.name} 순서 이동 — Alt와 위아래 방향키로도 옮길 수 있습니다`}
-          onKeyDown={(event) => {
-            if (!event.altKey) return;
-            if (event.key === "ArrowUp") {
-              event.preventDefault();
-              onShift(position.id, -1);
-            }
-            if (event.key === "ArrowDown") {
-              event.preventDefault();
-              onShift(position.id, 1);
-            }
-          }}
-          className="text-muted-foreground/50 hover:text-muted-foreground focus-visible:ring-ring absolute inset-0 flex cursor-grab items-center justify-center rounded opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:outline-hidden active:cursor-grabbing"
-        >
-          <GripVertical className="size-3.5" />
-        </button>
+        {canReorder && (
+          <button
+            {...handleProps}
+            type="button"
+            aria-label={`${position.name} 순서 이동 — Alt와 위아래 방향키로도 옮길 수 있습니다`}
+            onKeyDown={(event) => {
+              if (!event.altKey) return;
+              if (event.key === "ArrowUp") {
+                event.preventDefault();
+                onShift(position.id, -1);
+              }
+              if (event.key === "ArrowDown") {
+                event.preventDefault();
+                onShift(position.id, 1);
+              }
+            }}
+            className="text-muted-foreground/50 hover:text-muted-foreground focus-visible:ring-ring absolute inset-0 flex cursor-grab items-center justify-center rounded opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:outline-hidden active:cursor-grabbing"
+          >
+            <GripVertical className="size-3.5" />
+          </button>
+        )}
       </span>
 
       {isEditing ? (
