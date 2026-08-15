@@ -3,8 +3,6 @@ import { addMockRoom, deleteMockRoom, findMockRoom, listMockRooms, updateMockRoo
 const DRAFT = {
   name: "  신관 세미나실  ",
   location: "  4층 C동  ",
-  openTime: "10:00",
-  closeTime: "17:00",
 };
 
 describe("회의실 mock 스토어", () => {

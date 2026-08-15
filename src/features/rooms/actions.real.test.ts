@@ -2,7 +2,7 @@ jest.mock("next/cache", () => ({ revalidatePath: jest.fn() }));
 jest.mock("@/mocks/config", () => ({ isMock: false }));
 jest.mock("@/features/auth/session", () => ({ requireAccessToken: jest.fn() }));
 jest.mock("@/features/shell/viewer", () => ({ getViewer: jest.fn() }));
-jest.mock("./server", () => ({ getReservableMembers: jest.fn(), getMeetingRooms: jest.fn() }));
+jest.mock("./server", () => ({ getReservableMembers: jest.fn() }));
 jest.mock("@/lib/api", () => ({
   ApiError: class ApiError extends Error {
     status: number;
@@ -27,7 +27,7 @@ import {
   deleteMeetingRoomAction,
   updateMeetingRoomAction,
 } from "./actions";
-import { getMeetingRooms, getReservableMembers } from "./server";
+import { getReservableMembers } from "./server";
 
 /**
  * 회의실 예약 생성 — **실서버 참석자 재검증**.
@@ -39,7 +39,6 @@ import { getMeetingRooms, getReservableMembers } from "./server";
 const requireAccessTokenMock = requireAccessToken as unknown as jest.Mock;
 const getViewerMock = getViewer as unknown as jest.Mock;
 const getReservableMembersMock = getReservableMembers as unknown as jest.Mock;
-const getMeetingRoomsMock = getMeetingRooms as unknown as jest.Mock;
 const serverApiMock = serverApi as unknown as jest.Mock;
 
 const LEADER = { id: 2, name: "김서준", role: AUTHORITY.LEADER, teamName: "개발팀" };
@@ -75,15 +74,6 @@ beforeEach(() => {
   getReservableMembersMock.mockResolvedValue([
     { id: 3, name: "박도현", teamName: "개발팀", authority: AUTHORITY.MEMBER },
     { id: 4, name: "이서연", teamName: "개발팀", authority: AUTHORITY.MEMBER },
-  ]);
-  getMeetingRoomsMock.mockResolvedValue([
-    {
-      id: "room-small-b",
-      name: "소회의실 B",
-      location: "3층",
-      openTime: "09:00",
-      closeTime: "18:00",
-    },
   ]);
   serverApiMock.mockResolvedValue({
     meetingId: 10,
@@ -127,22 +117,7 @@ describe("createRoomReservationAction — 실서버 참석자 재검증", () => 
     expect(serverApiMock).toHaveBeenCalledTimes(1);
   });
 
-  /*
-    ⚠️ 회귀 테스트다(2026-08-15 실서버 500 사고) — `getMeetingRooms()`에 try/catch가 없어서
-       BE가 잠깐 흔들리면 이 액션 전체가 예외를 던졌고, Next.js가 `/app/rooms` 페이지 전체를
-       500으로 날렸다. 폼 필드 오류로 곱게 돌아와야 한다 — 페이지가 죽으면 안 된다.
-  */
-  it("회의실 목록 조회가 실패해도 페이지를 죽이지 않고 폼 오류로 돌려준다", async () => {
-    getMeetingRoomsMock.mockRejectedValue(new Error("network down"));
-
-    const result = await createRoomReservationAction({ errors: {} }, form([3, 4]));
-
-    expect(result.errors.roomId).toBeDefined();
-    expect(result.created).toBeUndefined();
-    expect(serverApiMock).not.toHaveBeenCalled();
-  });
-
-  /* ⚠️ 회귀 테스트다(2026-08-15, #556) — getMeetingRooms()와 같은 사고가 여기도 있었다. */
+  /* ⚠️ 회귀 테스트다(2026-08-15, #556) — 이전 `getMeetingRooms()`와 같은 사고가 여기도 있었다. */
   it("참석자 명부 조회가 실패해도 페이지를 죽이지 않고 폼 오류로 돌려준다", async () => {
     getReservableMembersMock.mockRejectedValue(new Error("network down"));
 
@@ -165,8 +140,6 @@ function roomForm(): FormData {
   const data = new FormData();
   data.append("name", "박애관 302호");
   data.append("location", "박애관 302호");
-  data.append("openTime", "00:00");
-  data.append("closeTime", "23:30");
   return data;
 }
 
@@ -199,8 +172,6 @@ describe("회의실 추가·수정·삭제 — 실서버 권한 판정", () => {
       meetingRoomId: 1,
       name: "박애관 302호",
       location: "박애관 302호",
-      availableFrom: "00:00",
-      availableTo: "23:30",
     });
     const data = roomForm();
     data.append("id", "1");

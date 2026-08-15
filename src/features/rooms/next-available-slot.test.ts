@@ -11,24 +11,9 @@ describe("getNextAvailableSlot", () => {
     expect(slot).toEqual(new Date("2026-08-11T10:30:00"));
   });
 
-  it("운영 시간 전이면 같은 날 09:00으로 당긴다", () => {
-    const slot = getNextAvailableSlot(new Date("2026-08-11T07:40:00"));
-    expect(slot).toEqual(new Date("2026-08-11T09:00:00"));
-  });
-
-  it("마감 30분을 못 채우면 다음 날 09:00으로 넘긴다", () => {
-    const slot = getNextAvailableSlot(new Date("2026-08-11T17:45:00"));
-    expect(slot).toEqual(new Date("2026-08-12T09:00:00"));
-  });
-
-  it("운영 종료 시각이면 다음 날로 넘긴다", () => {
-    const slot = getNextAvailableSlot(new Date("2026-08-11T18:00:00"));
-    expect(slot).toEqual(new Date("2026-08-12T09:00:00"));
-  });
-
-  /* 2026-08-14는 금요일 — 주말은 막지 않는다(2026-08-15 재확정), 다음 날은 그대로 토요일이다. */
-  it("금요일 마감 뒤엔 다음 날(토요일) 09:00으로 넘긴다", () => {
-    const slot = getNextAvailableSlot(new Date("2026-08-14T17:45:00"));
-    expect(slot).toEqual(new Date("2026-08-15T09:00:00"));
+  /* ⚠️ 회의실 운영시간 개념이 없어져서(2026-08-15, BE PR #523) 심야 시각도 그대로 반올림만 한다. */
+  it("운영 시간 밖(새벽)이어도 밀어내지 않고 그대로 30분 단위로 올린다", () => {
+    const slot = getNextAvailableSlot(new Date("2026-08-11T02:10:00"));
+    expect(slot).toEqual(new Date("2026-08-11T02:30:00"));
   });
 });
