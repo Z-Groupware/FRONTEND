@@ -22,6 +22,7 @@ import type {
   CompanyProfileErrors,
   DepartmentNode,
   Position,
+  SaveDepartmentsResult,
 } from "./types";
 import {
   findBlockedRoleChange,
@@ -163,7 +164,7 @@ export async function saveCompanyProfileAction(
  */
 export async function saveDepartmentsAction(
   departments: DepartmentNode[],
-): Promise<CompanyActionResult> {
+): Promise<SaveDepartmentsResult> {
   const denied = await denyReason();
   if (denied) return { isSuccess: false, message: denied };
 
@@ -321,9 +322,23 @@ export async function saveDepartmentsAction(
         ⚠️ **실패해도 화면을 다시 읽는다.** 한 건씩 부르므로 **중간까지는 이미 반영돼 있다** —
            그대로 두면 화면은 옛 트리를 들고 있고 서버는 반쯤 바뀐 상태라, 사람이 다시 저장을
            누르면 이미 만든 팀·역할을 또 만든다.
+        ⚠️⚠️ **화면의 편집 트리도 서버 진실로 되돌린다**(코드래빗 지적, 2026-08-14). 방금 만든
+           팀·역할은 이미 **진짜 id**를 받았는데 화면은 여전히 **임시 id**를 들고 있다 — 이대로
+           재시도하면 "임시 id는 서버에 없다"고 잘못 읽어 방금 만든 걸 지우고 임시 id로 또
+           만든다(중복 생성). 지금 서버에 있는 실제 트리를 실어 보내 화면이 그 값으로
+           돌아가게 한다 — 실패는 그대로 알리되(아래 `departments`가 채워지면 화면이 이 값으로
+           재동기화한다), 다음 시도가 이 함정을 다시 밟지 않는다.
+        ⚠️ **트리 조회 자체가 실패해도 액션 결과는 던지지 않는다.** `departments`가 없으면
+           화면은 그냥 방금 편집한 값을 그대로 들고 있는다(전과 같은 동작) — 아예 응답이 없는
+           것보다는 오류 문구라도 뜨는 편이 낫다.
       */
       revalidatePath(SETTING_PATH);
-      return { isSuccess: false, message: toUserMessage(error) };
+      const recovered = await getCompanySetting().catch(() => null);
+      return {
+        isSuccess: false,
+        message: toUserMessage(error),
+        departments: recovered?.departments,
+      };
     }
 
     revalidatePath(SETTING_PATH);

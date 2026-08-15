@@ -162,10 +162,28 @@ export function CompanyTeamCard({ initial, memberCounts, roleMemberCounts }: Com
       }
 
       if (!result.isSuccess) {
-        setFailed({
-          snapshot: JSON.stringify(next),
-          message: result.message ?? "팀 체계를 저장하지 못했습니다",
-        });
+        /*
+          ⚠️⚠️ **부분 실패면 화면 트리도 서버 진실로 되돌린다**(코드래빗 지적, 2026-08-14).
+             저장이 팀·역할을 한 건씩 부르다 중간에 실패하면, 이미 성공한 것들은 서버에
+             **진짜 id**로 남는데 화면은 여전히 **임시 id**를 들고 있다 — 그대로 다시 저장을
+             누르면 방금 만든 걸 "없다"고 읽어 지우고 임시 id로 또 만든다. `result.departments`가
+             오면(실서버 분기의 부분 실패) 그 값으로 트리를 되돌린다 — 실패 문구는 그대로 두되
+             `snapshot`도 **되돌린 트리**로 맞춰야 방금 뜬 문구가 리셋 직후 조용히 사라지지
+             않는다(아래 `error` 계산이 `tree.departments`와 `snapshot`을 비교한다).
+        */
+        if (result.departments) {
+          tree.reset(result.departments);
+          setSaved(result.departments);
+          setFailed({
+            snapshot: JSON.stringify(result.departments),
+            message: result.message ?? "팀 체계를 저장하지 못했습니다",
+          });
+        } else {
+          setFailed({
+            snapshot: JSON.stringify(next),
+            message: result.message ?? "팀 체계를 저장하지 못했습니다",
+          });
+        }
         return;
       }
       setFailed(null);

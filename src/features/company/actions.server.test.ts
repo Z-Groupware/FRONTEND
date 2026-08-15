@@ -260,4 +260,45 @@ describe("saveDepartmentsAction — 역할 저장(실서버)", () => {
       expect.anything(),
     );
   });
+
+  /*
+    ⚠️⚠️ **부분 실패 뒤 재시도가 중복을 만들던 자리**(코드래빗 지적, 2026-08-14). 한 건씩
+       부르다 중간(두 번째 역할)에서 실패하면, 첫 번째 역할은 이미 서버에 반영됐는데 화면은
+       그걸 모른 채 같은 트리로 재시도할 수 있다 — 실패 응답에 지금 서버의 실제 트리를 함께
+       담아, 화면이 그 값으로 되돌아가게 한다(`company-team-card.tsx`가 이 값으로 재동기화).
+  */
+  it("역할 저장 중간에 실패하면, 실패 응답에 지금 서버의 실제 트리를 함께 담는다", async () => {
+    stubServerApi({
+      "PATCH /api/teams/10/roles/102": () => {
+        throw new Error("BE 500");
+      },
+    });
+
+    const next: DepartmentNode[] = [
+      {
+        id: "10",
+        name: "개발팀",
+        children: [
+          { id: "101", name: "프론트", children: [] }, // 먼저 성공
+          { id: "102", name: "서버", children: [] }, // 이 PATCH가 실패
+        ],
+      },
+    ];
+
+    const result = await saveDepartmentsAction(next);
+
+    expect(result.isSuccess).toBe(false);
+    expect(result.message).toBe("BE 500");
+    // 실패해도 지금 서버 트리(진짜 id 포함)를 돌려준다 — 화면의 임시/절반 반영 트리가 아니다
+    expect(result.departments).toEqual([
+      {
+        id: "10",
+        name: "개발팀",
+        children: [
+          { id: "101", name: "프론트엔드", children: [] },
+          { id: "102", name: "백엔드", children: [] },
+        ],
+      },
+    ]);
+  });
 });
