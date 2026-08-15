@@ -73,6 +73,7 @@ const MEMBERS: RoomMember[] = [
 const EVENTS: RoomCalendarEvent[] = [
   {
     id: "res-a",
+    meetingId: "res-a",
     title: "A 회의",
     start: new Date("2026-08-10T10:00:00"),
     end: new Date("2026-08-10T10:30:00"),
@@ -89,6 +90,7 @@ function renderCalendar() {
       selectedRoomId="room-a"
       week="2026-08-10"
       onSelectSlot={jest.fn()}
+      onSelectMeeting={jest.fn()}
     />,
   );
 }

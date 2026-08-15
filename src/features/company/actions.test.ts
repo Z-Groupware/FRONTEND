@@ -37,14 +37,16 @@ const VALID_PROFILE: CompanyProfileDraft = {
 };
 
 /*
-  ⚠️ **사람이 있는 팀은 다 남겨 둔다.** 하나라도 빠지면 "사원이 남아 있습니다"로 막히는데,
-     그건 아래 전용 테스트가 볼 일이다 — 여기서는 정상 저장 경로를 봐야 한다.
-  ⚠️ 목의 팀은 `d1~d5`이고 사람이 없는 건 `d5`뿐이라, 그것만 빼고 그대로 둔다.
-     (역할 이름을 바꾸는 건 사람 수와 무관해서 통과한다.)
+  ⚠️ **사람이 있는 팀·역할은 다 남겨 둔다**(BE PR #528 이후로는 역할도 그렇다). 하나라도
+     빠지면 "N명이 쓰고 있습니다"로 막히는데, 그건 아래 전용 테스트가 볼 일이다 — 여기서는
+     정상 저장 경로를 봐야 한다.
+  ⚠️ 목의 팀은 `d1~d5`이고 사람이 없는 건 `d5`뿐이다. 역할은 `r1`(프론트엔드)·`r3`(브랜드)에
+     사람이 있어(`mock/company.ts`의 `roleMemberCounts`) 둘 다 남긴다 — 나머지 역할은
+     비어 있어 빼도 통과한다.
 */
 const VALID_TEAMS: DepartmentNode[] = [
   { id: "d1", name: "개발팀", children: [{ id: "r1", name: "프론트엔드", children: [] }] },
-  { id: "d2", name: "마케팅팀", children: [] },
+  { id: "d2", name: "마케팅팀", children: [{ id: "r3", name: "브랜드", children: [] }] },
   { id: "d3", name: "디자인팀", children: [] },
   { id: "d4", name: "전략기획팀", children: [] },
 ];

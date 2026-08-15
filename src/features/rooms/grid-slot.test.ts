@@ -4,7 +4,10 @@ import { findSlotStart, GRID_START_HOUR, SLOT_MINUTES } from "./grid-slot";
 const WEEK_START = new Date(2026, 7, 10);
 
 const DAY_COUNT = 5;
-/** 08:00~18:00을 30분으로 나눈 칸 수. */
+/**
+ * 격자 흉내를 위한 고정 칸 수 — 실제 그리드는 이제 24시간(48칸)이지만, 이 테스트는 클릭 좌표
+ * 계산 로직만 검증하면 되므로 임의로 20칸짜리 작은 격자로 흉내 낸다(칸 수 자체는 무관하다).
+ */
 const SLOT_COUNT = 20;
 /** 배율이 걸리기 **전**(레이아웃) 기준 칸 높이·격자 시작 y. 실제 화면 값과 무관한 임의 수다. */
 const SLOT_HEIGHT = 40;
@@ -115,8 +118,8 @@ describe("findSlotStart", () => {
       weekStart: WEEK_START,
     });
 
-    /* 2026-08-12(수) 09:30 */
-    expect(start).toEqual(new Date(2026, 7, 12, 9, 30));
+    /* 2026-08-12(수), GRID_START_HOUR + 4번째 칸(index 3) = +1시간30분 */
+    expect(start).toEqual(new Date(2026, 7, 12, GRID_START_HOUR + 1, 30));
     expect(start?.getHours()).toBe(GRID_START_HOUR + Math.floor((slotIndex * SLOT_MINUTES) / 60));
   });
 
@@ -127,12 +130,12 @@ describe("findSlotStart", () => {
 
     const start = findSlotStart({
       target: eventBar as Element,
-      /* 첫 칸(08:00) 한가운데 */
+      /* 첫 칸(GRID_START_HOUR:00) 한가운데 */
       clientY: clientYAt(GRID_TOP + SLOT_HEIGHT / 2, scale),
       weekStart: WEEK_START,
     });
 
-    expect(start).toEqual(new Date(2026, 7, 10, 8, 0));
+    expect(start).toEqual(new Date(2026, 7, 10, GRID_START_HOUR, 0));
   });
 
   it("시간 눈금 칸은 날짜 열이 아니라 아무 것도 고르지 않는다", () => {
@@ -163,7 +166,7 @@ describe("findSlotStart", () => {
     expect(start).toBeNull();
   });
 
-  it("마지막 열·마지막 칸은 금요일 17:30이다", () => {
+  it("마지막 열·마지막 칸은 금요일 GRID_START_HOUR+9:30이다", () => {
     const scale = 0.75;
     const { slotsByColumn } = buildGrid(scale);
     const lastSlot = SLOT_COUNT - 1;
@@ -174,6 +177,6 @@ describe("findSlotStart", () => {
       weekStart: WEEK_START,
     });
 
-    expect(start).toEqual(new Date(2026, 7, 14, 17, 30));
+    expect(start).toEqual(new Date(2026, 7, 14, GRID_START_HOUR + 9, 30));
   });
 });

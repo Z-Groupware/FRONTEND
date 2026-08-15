@@ -68,6 +68,12 @@ export function CompanyPositionCard({ initial }: { initial: Position[] }) {
     onEditingChange: list.setEditingId,
     draggingId,
     onDraggingChange: setDraggingId,
+    /*
+      ⚠️ **순서를 저장할 API가 없다**(§연동 검증). 직급 저장은 이름·권한만 비교해 보내서,
+         순서를 바꾸고 [저장]을 누르면 "저장했습니다"가 뜨지만 실제로는 조용히 사라진다
+         (2026-08-14 적발). `PositionRowHandlers.canReorder` 참고.
+    */
+    canReorder: false,
   };
 
   const isDirty = JSON.stringify(list.positions) !== JSON.stringify(saved);

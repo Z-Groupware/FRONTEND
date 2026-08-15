@@ -2,7 +2,7 @@ jest.mock("next/cache", () => ({ revalidatePath: jest.fn() }));
 jest.mock("@/mocks/config", () => ({ isMock: false }));
 jest.mock("@/features/auth/session", () => ({ requireAccessToken: jest.fn() }));
 jest.mock("@/features/shell/viewer", () => ({ getViewer: jest.fn() }));
-jest.mock("./server", () => ({ getReservableMembers: jest.fn() }));
+jest.mock("./server", () => ({ getReservableMembers: jest.fn(), getMeetingRooms: jest.fn() }));
 jest.mock("@/lib/api", () => ({
   ApiError: class ApiError extends Error {
     status: number;
@@ -27,7 +27,7 @@ import {
   deleteMeetingRoomAction,
   updateMeetingRoomAction,
 } from "./actions";
-import { getReservableMembers } from "./server";
+import { getMeetingRooms, getReservableMembers } from "./server";
 
 /**
  * 회의실 예약 생성 — **실서버 참석자 재검증**.
@@ -39,6 +39,7 @@ import { getReservableMembers } from "./server";
 const requireAccessTokenMock = requireAccessToken as unknown as jest.Mock;
 const getViewerMock = getViewer as unknown as jest.Mock;
 const getReservableMembersMock = getReservableMembers as unknown as jest.Mock;
+const getMeetingRoomsMock = getMeetingRooms as unknown as jest.Mock;
 const serverApiMock = serverApi as unknown as jest.Mock;
 
 const LEADER = { id: 2, name: "김서준", role: AUTHORITY.LEADER, teamName: "개발팀" };
@@ -74,6 +75,15 @@ beforeEach(() => {
   getReservableMembersMock.mockResolvedValue([
     { id: 3, name: "박도현", teamName: "개발팀", authority: AUTHORITY.MEMBER },
     { id: 4, name: "이서연", teamName: "개발팀", authority: AUTHORITY.MEMBER },
+  ]);
+  getMeetingRoomsMock.mockResolvedValue([
+    {
+      id: "room-small-b",
+      name: "소회의실 B",
+      location: "3층",
+      openTime: "09:00",
+      closeTime: "18:00",
+    },
   ]);
   serverApiMock.mockResolvedValue({
     meetingId: 10,

@@ -4,6 +4,7 @@ import {
   toCompanyProfile,
   toCompanyUpdateBody,
   toDepartmentNode,
+  toRoleMemberCounts,
   withoutSystemRoles,
 } from "./mapper";
 import type { CompanyProfileDraft } from "./types";
@@ -80,11 +81,17 @@ describe("toCompanyUpdateBody — 좌표 저장", () => {
     expect(body).not.toHaveProperty("longitude");
   });
 
-  /* ⚠️ 빈 주소는 BE `@Pattern`이 400으로 거절한다 — 필드째 생략한다(PR #423). 좌표도 따라간다 */
-  it("주소가 없으면 주소도 좌표도 생략한다 — place는 한 몸이다", () => {
+  /*
+    ⚠️ **2026-08-14, BE 실코드 재대조로 뒤집었다.** 예전엔 빈 주소를 `@Pattern`이 400으로
+       거절해서 필드째 생략했는데(PR #423), 지금 BE `UpdateCompanyRequest`는 주소만 그
+       규칙에서 빼고 **빈 문자열을 "지운다"는 신호로 읽는다** — 그래서 지금은 생략이 아니라
+       빈 문자열을 그대로 보낸다. 좌표는 여전히 생략한다(주소 없는 요청에 좌표만 실으면
+       반쪽 위치가 저장된다).
+  */
+  it("주소가 없으면 빈 문자열로 보낸다 — BE가 이걸 지우기 신호로 읽는다", () => {
     const body = toCompanyUpdateBody({ ...DRAFT, place: null });
 
-    expect(body).toEqual({ name: "새이름", businessNumber: "999-88-77777" });
+    expect(body).toEqual({ name: "새이름", businessNumber: "999-88-77777", address: "" });
   });
 });
 
@@ -95,8 +102,8 @@ const BE_TEAM: BeTeam = {
   leaderName: "김서준",
   memberCount: 3,
   roles: [
-    { roleId: 2, name: "없음" },
-    { roleId: 3, name: "프론트엔드" },
+    { roleId: 2, name: "없음", memberCount: 1 },
+    { roleId: 3, name: "프론트엔드", memberCount: 2 },
   ],
 };
 
@@ -147,8 +154,40 @@ describe("withoutSystemRoles — 팀 편집 화면 전용 필터", () => {
   });
 
   it("`없음`만 있던 팀은 편집 화면에서 역할이 빈 팀으로 보인다", () => {
-    const node = toDepartmentNode({ ...BE_TEAM, roles: [{ roleId: 2, name: "없음" }] });
+    const node = toDepartmentNode({
+      ...BE_TEAM,
+      roles: [{ roleId: 2, name: "없음", memberCount: 1 }],
+    });
 
     expect(withoutSystemRoles(node).children).toEqual([]);
+  });
+});
+
+/**
+ * 역할 삭제를 막는 판정에 쓰는 인원 수 — BE PR #528. 팀 인원 수(`toTeamMemberCounts`)와
+ * 같은 결이라 여러 팀에 걸쳐 평평하게 편다.
+ */
+describe("toRoleMemberCounts", () => {
+  it("여러 팀의 역할을 하나의 표로 편다", () => {
+    const other: BeTeam = {
+      teamId: 2,
+      name: "마케팅팀",
+      leaderMemberId: null,
+      leaderName: null,
+      memberCount: 1,
+      roles: [{ roleId: 4, name: "브랜드", memberCount: 0 }],
+    };
+
+    expect(toRoleMemberCounts([BE_TEAM, other])).toEqual({
+      "2": 1, // 없음(전사 미배정 수)
+      "3": 2, // 프론트엔드
+      "4": 0, // 브랜드
+    });
+  });
+
+  it("roles 필드가 없는 팀이 섞여도 죽지 않는다", () => {
+    const legacyTeam = { ...BE_TEAM, roles: undefined } as unknown as BeTeam;
+
+    expect(toRoleMemberCounts([legacyTeam])).toEqual({});
   });
 });

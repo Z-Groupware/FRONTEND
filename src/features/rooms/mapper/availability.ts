@@ -81,6 +81,7 @@ function toDayCalendarEvents(day: RoomDayAvailability, slotMinutes: number): Roo
     //    `toRoomCalendarEvents`에서 React key로 그대로 쓰이니 날짜까지 더해 겹칠 여지를 없앤다.
     events.push({
       id: `${current.meetingId}-${day.date}`,
+      meetingId: current.meetingId,
       title: current.title,
       start: current.start,
       end: current.end,

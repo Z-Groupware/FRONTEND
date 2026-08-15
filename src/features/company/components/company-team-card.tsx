@@ -35,9 +35,11 @@ interface CompanyTeamCardProps {
   initial: DepartmentNodeType[];
   /** 팀 id → 사원 수. 사람이 딸린 팀은 못 지운다 */
   memberCounts: Record<string, number>;
+  /** 역할 id → 그 역할을 쓰는 사원 수. 사람이 딸린 역할도 못 지운다(BE PR #528) */
+  roleMemberCounts: Record<string, number>;
 }
 
-export function CompanyTeamCard({ initial, memberCounts }: CompanyTeamCardProps) {
+export function CompanyTeamCard({ initial, memberCounts, roleMemberCounts }: CompanyTeamCardProps) {
   const router = useRouter();
   const tree = useDepartmentTree(initial);
   /*
@@ -106,6 +108,13 @@ export function CompanyTeamCard({ initial, memberCounts }: CompanyTeamCardProps)
     onEditingChange: tree.setEditingId,
     dragging,
     onDraggingChange: setDragging,
+    /*
+      ⚠️ **순서를 저장할 API가 없다**(§연동 검증). 손잡이를 그대로 두면 순서를 바꾸고
+         [저장]을 눌렀을 때 "저장했습니다"가 뜨지만 실제로는 조용히 사라진다(2026-08-14
+         적발) — 계층 변경(승격·강등)은 이미 "역할 안 저장" 안내로 막혀 있는데 순서만
+         그 경로를 안 타서 몰래 새고 있었다. `DepartmentNodeHandlers.canReorder` 참고.
+    */
+    canReorder: false,
   };
 
   /*
@@ -122,24 +131,23 @@ export function CompanyTeamCard({ initial, memberCounts }: CompanyTeamCardProps)
   const error =
     failed && JSON.stringify(tree.departments) === failed.snapshot ? failed.message : null;
 
-  /**
-   * 지우려는 팀에 남은 사원 수.
-   * ⚠️ 0이면 확인만 받고, 1명이라도 있으면 **막고 갈 곳을 알려 준다** — 팀은 인수인계·액션
-   *    귀속의 단위라 소속이 사라지면 그 사람을 아무도 관리할 수 없다(§validate).
-   */
-  /*
-    ⚠️ `hasMembers`와 **같은 판정을 쓴다.** 여기서 `memberCounts`를 직접 뒤지면, 역할 id가
-       그 표에 섞여 들어왔을 때 역할 삭제가 막히고 "이 팀에 속해 있습니다"라는 틀린 말을 한다 —
-       사원이 소속되는 건 팀뿐이다(§권한 ③).
-  */
-  const isBlocked = pendingTeam !== null && hasMembers(pendingTeam.id);
-  const pendingMembers = isBlocked ? (memberCounts[pendingTeam.id] ?? 0) : 0;
   /*
     ⚠️ 삭제 버튼은 **역할에도** 붙어 있다. 전부 "팀"이라 부르면 역할을 지울 때 "'프론트' 팀을
        지울까요?"가 되어 무엇을 지우는지 잘못 말한다(§권한 ③: 팀과 역할은 다른 단이다).
   */
   const isTeam = pendingTeam !== null && tree.departments.some((t) => t.id === pendingTeam.id);
   const unit = isTeam ? "팀" : "역할";
+
+  /**
+   * 지우려는 것에 남은 사원 수 — **팀이면 팀원 수, 역할이면 그 역할을 쓰는 사원 수**다.
+   * ⚠️ 0이면 확인만 받고, 1명이라도 있으면 **막고 갈 곳을 알려 준다** — 팀은 인수인계·액션
+   *    귀속의 단위라 소속이 사라지면 그 사람을 아무도 관리할 수 없고, 역할이 사라지면
+   *    되돌릴 명시적 재할당 없이 조용히 "역할 없음"이 된다(BE PR #528, §validate).
+   */
+  const pendingMembers = pendingTeam
+    ? (isTeam ? memberCounts : roleMemberCounts)[pendingTeam.id]
+    : undefined;
+  const isBlocked = (pendingMembers ?? 0) > 0;
 
   const handleSave = () => {
     const next = tree.departments;
@@ -161,10 +169,28 @@ export function CompanyTeamCard({ initial, memberCounts }: CompanyTeamCardProps)
       }
 
       if (!result.isSuccess) {
-        setFailed({
-          snapshot: JSON.stringify(next),
-          message: result.message ?? "팀 체계를 저장하지 못했습니다",
-        });
+        /*
+          ⚠️⚠️ **부분 실패면 화면 트리도 서버 진실로 되돌린다**(코드래빗 지적, 2026-08-14).
+             저장이 팀·역할을 한 건씩 부르다 중간에 실패하면, 이미 성공한 것들은 서버에
+             **진짜 id**로 남는데 화면은 여전히 **임시 id**를 들고 있다 — 그대로 다시 저장을
+             누르면 방금 만든 걸 "없다"고 읽어 지우고 임시 id로 또 만든다. `result.departments`가
+             오면(실서버 분기의 부분 실패) 그 값으로 트리를 되돌린다 — 실패 문구는 그대로 두되
+             `snapshot`도 **되돌린 트리**로 맞춰야 방금 뜬 문구가 리셋 직후 조용히 사라지지
+             않는다(아래 `error` 계산이 `tree.departments`와 `snapshot`을 비교한다).
+        */
+        if (result.departments) {
+          tree.reset(result.departments);
+          setSaved(result.departments);
+          setFailed({
+            snapshot: JSON.stringify(result.departments),
+            message: result.message ?? "팀 체계를 저장하지 못했습니다",
+          });
+        } else {
+          setFailed({
+            snapshot: JSON.stringify(next),
+            message: result.message ?? "팀 체계를 저장하지 못했습니다",
+          });
+        }
         return;
       }
       setFailed(null);
@@ -258,9 +284,10 @@ export function CompanyTeamCard({ initial, memberCounts }: CompanyTeamCardProps)
         ⚠️ **무엇을 잃는지**와 **언제 그렇게 되는지**를 같이 적는다. 여기서 [삭제]를 눌러도
            화면에서만 빠지고, 카드 밑 [저장]을 눌러야 서버에 간다 — 그 말을 빼면 이미
            지워진 줄 알고 저장 없이 나가서, 지운 팀이 그대로 남는다(§정직성).
-        ⚠️ 사람이 딸린 팀이면 **창이 하는 일이 달라진다** — 확인이 아니라 막는 안내다.
+        ⚠️ 사람이 딸린 팀·역할이면 **창이 하는 일이 달라진다** — 확인이 아니라 막는 안내다.
            워크플로우에서 사람이 빠질 때는 늘 명시적 재할당을 거치므로(휴직·오프보딩 →
-           인수인계 → 귀속), 팀 삭제만 조용히 소속을 지우게 두지 않는다.
+           인수인계 → 귀속), 삭제만 조용히 소속·역할을 지우게 두지 않는다(BE PR #528로
+           역할도 팀과 같은 원칙을 따른다).
       */}
       <ConfirmDialog
         isOpen={pendingTeam !== null}
@@ -273,9 +300,10 @@ export function CompanyTeamCard({ initial, memberCounts }: CompanyTeamCardProps)
         description={
           isBlocked ? (
             <>
-              사원 {pendingMembers}명이 이 팀에 속해 있습니다.
+              사원 {pendingMembers}명이{" "}
+              {isTeam ? "이 팀에 속해 있습니다" : "이 역할을 쓰고 있습니다"}.
               <br />
-              사원 관리에서 다른 팀으로 옮긴 뒤 지워 주세요.
+              사원 관리에서 {isTeam ? "다른 팀으로 옮긴" : "역할을 바꾼"} 뒤 지워 주세요.
               {isDirty && (
                 <>
                   <br />

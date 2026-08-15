@@ -22,8 +22,10 @@ import type {
   CompanyProfileErrors,
   DepartmentNode,
   Position,
+  SaveDepartmentsResult,
 } from "./types";
 import {
+  findBlockedRoleChange,
   findBlockedTeamChange,
   validateCompanyProfile,
   validateDepartments,
@@ -162,7 +164,7 @@ export async function saveCompanyProfileAction(
  */
 export async function saveDepartmentsAction(
   departments: DepartmentNode[],
-): Promise<CompanyActionResult> {
+): Promise<SaveDepartmentsResult> {
   const denied = await denyReason();
   if (denied) return { isSuccess: false, message: denied };
 
@@ -207,73 +209,136 @@ export async function saveDepartmentsAction(
     };
   }
 
+  /*
+    ⚠️ **역할도 팀과 같은 원칙이다**(BE PR #528, 2026-08-14). 사람이 딸린 역할을 지우면
+       그 사람은 조용히 "역할 없음"이 되는데, 되돌릴 명시적 재할당 절차가 없다 — 팀 삭제를
+       막는 것과 같은 이유로 저장 전에 막는다.
+  */
+  const blockedRole = findBlockedRoleChange(
+    current.departments,
+    departments,
+    current.roleMemberCounts,
+  );
+  if (blockedRole) {
+    return {
+      isSuccess: false,
+      message: `'${blockedRole.role}' 역할을 사원 ${blockedRole.count}명이 쓰고 있습니다. 사원 관리에서 역할을 바꾼 뒤 지워 주세요`,
+    };
+  }
+
   if (!isMock) {
     /*
-      ⚠️ **통째로 넣는 API가 없다.** BE는 팀을 한 건씩 다룬다(`POST` · `PATCH /{id}` ·
-         `DELETE /{id}`) — 화면은 트리를 통째로 저장하므로 여기서 **차이를 계산해** 나눠 부른다.
-      ⚠️ **지우기를 먼저 한다.** 처음엔 마지막에 뒀는데, 지운 팀의 이름을 다른 팀에 다시
-         쓰거나 두 팀 이름을 맞바꾸면 **같은 이름이 잠깐 둘**이 되어 서버가 막는다 —
-         지우고 나서 만들면 그 자리가 비어 있다.
-      ⚠️ 대신 **사람이 딸린 팀은 위에서 이미 걸렀다**(`findBlockedTeamChange`). 지우기가
-         먼저여도 사람이 붕 뜨지 않는다.
-      ⚠️ 새로 만든 팀은 화면에서 붙인 임시 id를 들고 온다. 서버 id가 아니므로
-         **숫자로 읽히지 않는 것**을 새 팀으로 본다.
+      ⚠️ **통째로 넣는 API가 없다.** BE는 팀·역할을 한 건씩 다룬다(`POST` · `PATCH /{id}` ·
+         `DELETE /{id}`, 역할은 PR #528) — 화면은 트리를 통째로 저장하므로 여기서 **차이를
+         계산해** 나눠 부른다.
+      ⚠️ **순서가 있다: 팀 삭제 → 팀 생성·이름변경 → 역할 삭제·생성·이름변경.**
+         - 팀 삭제가 먼저인 이유는 그대로다 — 지운 팀의 이름을 다른 팀에 다시 쓰거나 두 팀
+           이름을 맞바꾸면 같은 이름이 잠깐 둘이 되어 서버가 막는다(팀 삭제는 그 팀의 역할도
+           함께 지운다 — 역할을 따로 지울 필요가 없다).
+         - 역할 처리가 팀 생성·이름변경보다 **뒤인 이유**는 새 팀 밑에 역할을 만들려면 서버가
+           발급한 **진짜 팀 id**가 있어야 하기 때문이다 — 화면의 임시 id로는 어느 팀인지
+           가리킬 수 없다.
+      ⚠️ 새로 만든 팀·역할은 화면에서 붙인 임시 id를 들고 온다. 서버 id가 아니므로
+         **숫자로 읽히지 않는 것**을 새로 만든 것으로 본다.
+      ⚠️ **사람이 딸린 팀·역할은 위에서 이미 걸렀다**(`findBlockedTeamChange`·
+         `findBlockedRoleChange`). 삭제가 먼저여도 사람이 붕 뜨지 않는다.
     */
-    /*
-      ⚠️ **팀 안 '역할' 목록은 저장할 곳이 여전히 없다.** 구성원에게 역할을 **붙이는** 길은
-         생겼지만([확인] `UpdateMemberRoleRequest.roleLabel` 2026-08-13 develop `30952c10`,
-         §member/manage-actions), 역할 자체를 만들고 지우는 CRUD는 BE에 없다 — identity 밑
-         컨트롤러는 auth·company·member·position·team뿐이다. 팀만 저장하고 성공이라고 말하면
-         **역할을 고친 사람이 저장됐다고 믿는다**(§정직성). 바뀐 게 있으면 그 사실을 말하고 멈춘다.
-    */
-    /*
-      ⚠️ **이름 변경 여부와 무관하게 막는다.** 처음엔 "이름도 같이 바뀌었으면 통과"로 뒀는데,
-         보내는 본문은 `{ name }`뿐이라 그때도 역할은 안 저장된다 — 이름만 바뀌고 역할은
-         사라진 채 **성공**이라고 말하게 된다. 역할은 팀과 따로 세어야 한다.
-    */
-    const rolesOf = (nodes: DepartmentNode[]) =>
-      nodes
-        .map((node) => `${node.id}:${node.children.map((child) => child.name).join(",")}`)
-        .sort()
-        .join("|");
-    if (rolesOf(current.departments) !== rolesOf(departments)) {
-      return {
-        isSuccess: false,
-        message: "팀 안 역할은 아직 저장할 수 없습니다. 팀 이름만 바꿔 주세요",
-      };
-    }
-
-    const before = new Map(current.departments.map((node) => [node.id, node.name]));
-    const after = new Map(departments.map((node) => [node.id, node.name]));
+    const beforeTeams = new Map(current.departments.map((team) => [team.id, team]));
+    const afterTeams = new Map(departments.map((team) => [team.id, team]));
 
     try {
       const accessToken = await requireAccessToken();
 
-      for (const id of before.keys()) {
-        if (after.has(id)) continue;
+      for (const id of beforeTeams.keys()) {
+        if (afterTeams.has(id)) continue;
         await serverApi<unknown>(ep.team(Number(id)), { method: "DELETE", accessToken });
       }
 
-      for (const [id, name] of after) {
+      /*
+        ⚠️ **임시 id → 서버 id 표**를 만든다. 새 팀은 이 시점에야 진짜 id가 생기고, 바로
+           아래(역할 처리)에서 그 id 밑에 역할을 만들어야 한다.
+      */
+      const resolvedTeamId = new Map<string, number>();
+
+      for (const [id, team] of afterTeams) {
         const serverId = Number(id);
-        if (!Number.isInteger(serverId) || !before.has(id)) {
-          await serverApi<unknown>(ep.teams(), { method: "POST", accessToken, json: { name } });
-        } else if (before.get(id) !== name) {
+        if (!Number.isInteger(serverId) || !beforeTeams.has(id)) {
+          const created = await serverApi<{ teamId: number }>(ep.teams(), {
+            method: "POST",
+            accessToken,
+            json: { name: team.name },
+          });
+          resolvedTeamId.set(id, created.teamId);
+          continue;
+        }
+
+        resolvedTeamId.set(id, serverId);
+        if (beforeTeams.get(id)?.name !== team.name) {
           await serverApi<unknown>(ep.team(serverId), {
             method: "PATCH",
             accessToken,
-            json: { name },
+            json: { name: team.name },
           });
+        }
+      }
+
+      for (const [id, team] of afterTeams) {
+        const teamId = resolvedTeamId.get(id);
+        // 이론상 늘 있다 — 위 루프가 afterTeams의 모든 키를 채운다. 없으면 역할을 건너뛴다.
+        if (teamId === undefined) continue;
+
+        const beforeRoles = new Map(
+          (beforeTeams.get(id)?.children ?? []).map((role) => [role.id, role.name]),
+        );
+        const afterRoles = new Map(team.children.map((role) => [role.id, role.name]));
+
+        for (const roleId of beforeRoles.keys()) {
+          if (afterRoles.has(roleId)) continue;
+          await serverApi<unknown>(ep.teamRole(teamId, Number(roleId)), {
+            method: "DELETE",
+            accessToken,
+          });
+        }
+
+        for (const [roleId, roleName] of afterRoles) {
+          const serverRoleId = Number(roleId);
+          if (!Number.isInteger(serverRoleId) || !beforeRoles.has(roleId)) {
+            await serverApi<unknown>(ep.teamRoles(teamId), {
+              method: "POST",
+              accessToken,
+              json: { name: roleName },
+            });
+          } else if (beforeRoles.get(roleId) !== roleName) {
+            await serverApi<unknown>(ep.teamRole(teamId, serverRoleId), {
+              method: "PATCH",
+              accessToken,
+              json: { name: roleName },
+            });
+          }
         }
       }
     } catch (error) {
       /*
         ⚠️ **실패해도 화면을 다시 읽는다.** 한 건씩 부르므로 **중간까지는 이미 반영돼 있다** —
            그대로 두면 화면은 옛 트리를 들고 있고 서버는 반쯤 바뀐 상태라, 사람이 다시 저장을
-           누르면 이미 만든 팀을 또 만든다.
+           누르면 이미 만든 팀·역할을 또 만든다.
+        ⚠️⚠️ **화면의 편집 트리도 서버 진실로 되돌린다**(코드래빗 지적, 2026-08-14). 방금 만든
+           팀·역할은 이미 **진짜 id**를 받았는데 화면은 여전히 **임시 id**를 들고 있다 — 이대로
+           재시도하면 "임시 id는 서버에 없다"고 잘못 읽어 방금 만든 걸 지우고 임시 id로 또
+           만든다(중복 생성). 지금 서버에 있는 실제 트리를 실어 보내 화면이 그 값으로
+           돌아가게 한다 — 실패는 그대로 알리되(아래 `departments`가 채워지면 화면이 이 값으로
+           재동기화한다), 다음 시도가 이 함정을 다시 밟지 않는다.
+        ⚠️ **트리 조회 자체가 실패해도 액션 결과는 던지지 않는다.** `departments`가 없으면
+           화면은 그냥 방금 편집한 값을 그대로 들고 있는다(전과 같은 동작) — 아예 응답이 없는
+           것보다는 오류 문구라도 뜨는 편이 낫다.
       */
       revalidatePath(SETTING_PATH);
-      return { isSuccess: false, message: toUserMessage(error) };
+      const recovered = await getCompanySetting().catch(() => null);
+      return {
+        isSuccess: false,
+        message: toUserMessage(error),
+        departments: recovered?.departments,
+      };
     }
 
     revalidatePath(SETTING_PATH);

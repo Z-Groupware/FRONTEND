@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import { AUTHORITY, POSITION_AUTHORITIES } from "@/constants/domain";
-import { registerSchema } from "@/features/auth/register-draft";
+import { placeSchema, registerSchema } from "@/features/auth/register-draft";
 import { MAX_DEPARTMENT_DEPTH, MAX_ORG_NAME_LENGTH } from "@/features/onboarding/types";
 
 import type { CompanyProfileDraft, CompanyProfileErrors, DepartmentNode, Position } from "./types";
@@ -12,15 +12,19 @@ import type { CompanyProfileDraft, CompanyProfileErrors, DepartmentNode, Positio
  */
 
 /**
- * 기본 정보 규칙은 **기업 등록 신청과 같은 것**을 쓴다.
+ * 기본 정보 규칙은 **기업 등록 신청과 같은 것**을 쓴다 — 단, 위치는 다르다.
  *
  * ⚠️ 여기서 규칙을 새로 적으면 신청 때는 통과한 값이 설정에서 막히거나 그 반대가 된다 —
  *    같은 회사의 같은 값이다. 신청 스키마의 칸을 그대로 꺼내 쓴다(칸 이름만 우리 것).
+ * ⚠️ **`place`만 신청 스키마를 그대로 못 쓴다**(2026-08-14). 신청은 위치를 **반드시 골라야**
+ *    끝나는 자리라 `registerSchema.shape.place`가 `null`을 거절하는데, 설정은 **이미 고른
+ *    위치를 지울 수 있어야** 한다(BE `UpdateCompanyRequest` — 빈 주소로 지우기를 지원한다).
+ *    그래서 여기만 `refine` 없는 `placeSchema.nullable()`을 직접 쓴다.
  */
 const companyProfileSchema = z.object({
   name: registerSchema.shape.companyName,
   businessNumber: registerSchema.shape.businessNumber,
-  place: registerSchema.shape.place,
+  place: placeSchema.nullable(),
 });
 
 export function validateCompanyProfile(draft: CompanyProfileDraft): CompanyProfileErrors {
@@ -155,6 +159,46 @@ export function findBlockedTeamChange(
     if ((memberCounts[team.id] ?? 0) === 0) continue;
     if (!survivingIds.has(team.id)) return { team: team.name, kind: "removed" };
     if (!roots.has(team.id)) return { team: team.name, kind: "demoted" };
+  }
+
+  return null;
+}
+
+/** 사원이 딸린 역할을 지우려 했을 때 막는 이유 — 없으면 `null` */
+export interface BlockedRoleChange {
+  team: string;
+  role: string;
+  /** 이 역할을 쓰는 사원 수 — 화면 문구가 그대로 쓴다 */
+  count: number;
+}
+
+/**
+ * 사원이 딸린 **역할**을 지우려 했는지 본다 — 팀 삭제와 같은 원칙이다(BE PR #528).
+ *
+ * ⚠️ 팀이 사라지거나 강등된 경우는 여기서 안 본다 — `findBlockedTeamChange`가 이미 막는다.
+ *    같은 사람이 두 함수에 각각 걸리면 어느 쪽 문구가 먼저 뜨는지가 호출 순서에 좌우된다 —
+ *    한쪽 관심사만 본다(§단일 책임).
+ * ⚠️ **팀 간 역할 이동은 안 본다.** 기업 설정에서 그 조작 자체가 없다(2026-08-14, 드래그·
+ *    Alt+방향키를 없앴다 — `department-node.tsx`의 `canReorder`) — 한 팀의 자식 목록에서
+ *    역할이 사라졌으면 다른 팀으로 옮겨 간 게 아니라 그냥 지워진 것이다.
+ */
+export function findBlockedRoleChange(
+  previous: DepartmentNode[],
+  next: DepartmentNode[],
+  roleMemberCounts: Record<string, number>,
+): BlockedRoleChange | null {
+  const nextTeamById = new Map(next.map((team) => [team.id, team]));
+
+  for (const team of previous) {
+    const nextTeam = nextTeamById.get(team.id);
+    if (!nextTeam) continue;
+
+    const survivingRoleIds = new Set(nextTeam.children.map((role) => role.id));
+    for (const role of team.children) {
+      const count = roleMemberCounts[role.id] ?? 0;
+      if (count === 0) continue;
+      if (!survivingRoleIds.has(role.id)) return { team: team.name, role: role.name, count };
+    }
   }
 
   return null;

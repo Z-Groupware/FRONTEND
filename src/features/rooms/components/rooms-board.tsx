@@ -13,6 +13,7 @@ import type {
   RoomTeamActionOption,
 } from "../types";
 import { RoomListPanel } from "./room-list-panel";
+import { RoomMeetingDetailDialog } from "./room-meeting-detail-dialog";
 import { RoomReservationDialog } from "./room-reservation-dialog";
 import { WeeklyRoomCalendarLoader } from "./weekly-room-calendar-loader";
 
@@ -60,6 +61,7 @@ export function RoomsBoard({
 }: RoomsBoardProps) {
   const [events, setEvents] = useState(initialEvents);
   const [slotStart, setSlotStart] = useState<Date | null>(null);
+  const [viewingMeetingId, setViewingMeetingId] = useState<string | null>(null);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-6 lg:flex-row lg:items-stretch">
@@ -71,6 +73,7 @@ export function RoomsBoard({
           selectedRoomId={selectedRoomId}
           week={week}
           onSelectSlot={setSlotStart}
+          onSelectMeeting={setViewingMeetingId}
         />
       </div>
 
@@ -98,6 +101,16 @@ export function RoomsBoard({
           //    회의실의 예약을 이 화면에 섞으면 그 그리드가 거짓말을 하게 된다(§정직성).
           if (created.roomId !== selectedRoomId) return;
           setEvents((prev) => [...prev, toCalendarEventFromReservation(created)]);
+        }}
+      />
+
+      <RoomMeetingDetailDialog
+        meetingId={viewingMeetingId}
+        onOpenChange={(open) => !open && setViewingMeetingId(null)}
+        onTitleUpdated={(meetingId, title) => {
+          setEvents((prev) =>
+            prev.map((event) => (event.meetingId === meetingId ? { ...event, title } : event)),
+          );
         }}
       />
     </div>

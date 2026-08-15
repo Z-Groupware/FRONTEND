@@ -1,7 +1,8 @@
 import { addDays, addMinutes, startOfDay } from "date-fns";
 
 /**
- * 주간 그리드가 보여주는 시간대와 칸 크기 — 08:00~18:00, 30분 한 칸.
+ * 주간 그리드가 보여주는 시간대와 칸 크기 — 00:00~24:00, 30분 한 칸(2026-08-14, BE 회의실
+ * 24시간 운영 협의로 08:00~18:00에서 확장).
  *
  * ⚠️ **한 곳에서만 정한다.** 예전엔 `weekly-room-calendar.tsx`의 `min`/`max`/`step`과
  *    `calendar-height.ts`의 `START_HOUR`/`END_HOUR`가 8·18을 따로 들고 있었다 — 한쪽만 바꾸면
@@ -9,8 +10,8 @@ import { addDays, addMinutes, startOfDay } from "date-fns";
  * ⚠️ 30분은 임의값이 아니다. 회의 예약은 **30분 한 타임 고정**이다(CLAUDE.md §브라우저 API,
  *    팀 확정) — 연속 예약으로 늘리지 않는다.
  */
-export const GRID_START_HOUR = 8;
-export const GRID_END_HOUR = 18;
+export const GRID_START_HOUR = 0;
+export const GRID_END_HOUR = 24;
 export const SLOT_MINUTES = 30;
 
 /** 하루 한 열. `work_week` 뷰라 월~금 다섯 열이 `.rbc-time-content` 바로 밑에 선다. */

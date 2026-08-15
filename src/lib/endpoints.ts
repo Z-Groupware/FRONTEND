@@ -433,6 +433,13 @@ export const ep = {
    */
   teams: () => "/api/teams",
   team: (id: number) => `/api/teams/${id}`,
+  /**
+   * 팀 안 역할 CRUD — [확인] BE PR #528(2026-08-14). OWNER 전용, 팀과 같은 이유로
+   * 한 건씩 다룬다(`POST`·`PATCH /{roleId}`·`DELETE /{roleId}`).
+   * ⚠️ 조회(`GET /api/teams`)의 `roles[].memberCount`가 삭제 막는 판정에 쓰인다.
+   */
+  teamRoles: (teamId: number) => `/api/teams/${teamId}/roles`,
+  teamRole: (teamId: number, roleId: number) => `/api/teams/${teamId}/roles/${roleId}`,
   /** 직급 — [확인] identity/position/presentation/api/PositionController.java */
   jobPositions: () => "/api/job-positions",
   jobPosition: (id: number) => `/api/job-positions/${id}`,
