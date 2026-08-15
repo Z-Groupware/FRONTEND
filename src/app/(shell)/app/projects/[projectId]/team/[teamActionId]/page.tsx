@@ -9,7 +9,8 @@ import {
 } from "@/components/common/action-detail-info-card";
 import { AttachmentList } from "@/components/common/attachment-list";
 import { formatMeetingDate } from "@/components/common/dashboard-meeting-item";
-import { isDelayed } from "@/constants/domain";
+import { StatusDot } from "@/components/common/status-dot";
+import { ACTION_DELAYED_LABEL, ACTION_STATUS_LABEL, isDelayed } from "@/constants/domain";
 import type { TimelineActionInput } from "@/features/member/action-timeline";
 import { ActionTimeline, ActionTimelineLegend } from "@/features/member/components/action-timeline";
 import { getTeamActionAttachmentDownloadUrlAction } from "@/features/project/actions";
@@ -161,6 +162,16 @@ export default async function TeamActionDetailPage({
           </span>
           <span className="bg-muted text-muted-foreground shrink-0 rounded px-1.5 py-px text-[11px] leading-4 font-medium">
             {teamAction.team}
+          </span>
+          {/* ⚠️ 상태·마감(WORKFLOW.md §4) — BE가 이미 내려주는 값인데 매퍼가 빠뜨렸었다(2026-08-16 고침). */}
+          <StatusDot
+            tone={isDelayed(teamAction) ? "DELAYED" : teamAction.status}
+            label={
+              isDelayed(teamAction) ? ACTION_DELAYED_LABEL : ACTION_STATUS_LABEL[teamAction.status]
+            }
+          />
+          <span className="text-muted-foreground text-[12px] leading-4">
+            {formatMonthDayWeekday(teamAction.dueDate) ?? "-"}까지
           </span>
         </div>
 
