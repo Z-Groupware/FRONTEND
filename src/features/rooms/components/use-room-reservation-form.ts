@@ -1,5 +1,6 @@
 "use client";
 
+import { format } from "date-fns";
 import { useActionState, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -13,6 +14,10 @@ const EMPTY_TOPIC: MeetingTopicInput = { main: "", sub: "" };
 const EMPTY_FORM = {
   title: "",
   roomId: "",
+  /** "YYYY-MM-DD" — `slotStart`가 여는 값을 시작값 삼아 `DatePickerField`가 고친다. */
+  date: "",
+  /** "HH:mm" — 위와 같다, `TimePickerField`가 고친다. */
+  startTime: "",
   projectId: "",
   topics: [EMPTY_TOPIC] as MeetingTopicInput[],
   attendeeIds: [] as number[],
@@ -21,6 +26,16 @@ const EMPTY_FORM = {
 };
 
 export type RoomReservationFormValues = typeof EMPTY_FORM;
+
+/** `EMPTY_FORM`에 `slotStart`(초기 제안)의 날짜·시작 시각만 얹는다 — 없으면 그대로 빈 값이다. */
+function toInitialForm(slotStart: Date | null): RoomReservationFormValues {
+  if (!slotStart) return EMPTY_FORM;
+  return {
+    ...EMPTY_FORM,
+    date: format(slotStart, "yyyy-MM-dd"),
+    startTime: format(slotStart, "HH:mm"),
+  };
+}
 
 interface UseRoomReservationFormOptions {
   slotStart: Date | null;
@@ -42,8 +57,31 @@ export function useRoomReservationForm({
   onOpenChange,
 }: UseRoomReservationFormOptions) {
   const [state, formAction] = useActionState(createRoomReservationAction, INITIAL_STATE);
-  const [form, setForm] = useState<RoomReservationFormValues>(EMPTY_FORM);
+  const [form, setForm] = useState<RoomReservationFormValues>(() => toInitialForm(slotStart));
   const handledCreatedId = useRef<string | null>(null);
+
+  /*
+    ⚠️ **`slotStart`는 이제 "초기 제안"일 뿐이다**(2026-08-14 — 예전엔 이 값이 곧 제출값이라
+       모달에 날짜·시간을 고칠 자리가 없었다). 캘린더 빈 칸 클릭이든 [회의 추가] 버튼의
+       추측값(`getNextAvailableSlot`)이든, 모달을 여는 순간의 값으로 `form.date`·`form.startTime`을
+       한 번 채워 넣고(첫 마운트는 `useState`의 lazy initializer가, 이 창이 열린 채로
+       `slotStart`가 다시 바뀌는 드문 경우는 아래가 맡는다), 그 뒤로는 `DatePickerField`·
+       `TimePickerField`가 독립적으로 고친다.
+    ⚠️ **`useEffect`가 아니라 렌더 중에 갱신한다**(React "Adjusting state when a prop changes"
+       패턴) — 이펙트 안에서 곧장 `setState`를 부르면 린트가 막는다(react-hooks/set-state-in-effect,
+       불필요한 리렌더 한 번을 더 만든다). `prevSlotStart`로 "그새 바뀌었는지"만 렌더 중에 비교한다.
+  */
+  const [prevSlotStart, setPrevSlotStart] = useState(slotStart);
+  if (slotStart !== prevSlotStart) {
+    setPrevSlotStart(slotStart);
+    if (slotStart) {
+      setForm((prev) => ({
+        ...prev,
+        date: format(slotStart, "yyyy-MM-dd"),
+        startTime: format(slotStart, "HH:mm"),
+      }));
+    }
+  }
 
   useEffect(() => {
     if (state.created && state.created.id !== handledCreatedId.current) {

@@ -25,4 +25,10 @@ describe("getNextAvailableSlot", () => {
     const slot = getNextAvailableSlot(new Date("2026-08-11T18:00:00"));
     expect(slot).toEqual(new Date("2026-08-12T09:00:00"));
   });
+
+  /* 2026-08-14는 금요일 — 주말은 막지 않는다(2026-08-15 재확정), 다음 날은 그대로 토요일이다. */
+  it("금요일 마감 뒤엔 다음 날(토요일) 09:00으로 넘긴다", () => {
+    const slot = getNextAvailableSlot(new Date("2026-08-14T17:45:00"));
+    expect(slot).toEqual(new Date("2026-08-15T09:00:00"));
+  });
 });

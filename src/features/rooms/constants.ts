@@ -9,8 +9,13 @@
 export const RESERVATION_DURATION_MINUTES = 30;
 
 /**
- * 회의실 운영 시간(분 단위, 09:00~18:00) — `validate.ts`(서버·폼 검증)와 "예약하기" 버튼의
- * 기본 슬롯 계산(`next-available-slot.ts`)이 같은 값을 쓴다. 한쪽만 고치면 어긋난다.
+ * "회의 추가" 버튼이 여는 기본 슬롯 계산(`next-available-slot.ts`)만 쓰는 넉넉한 기본값
+ * (분 단위, 09:00~18:00) — 어느 회의실을 고를지 아직 모르는 시점이라 실제 제약이 아니라
+ * **그럴듯한 시작값**일 뿐이다.
+ * ⚠️ **실제 예약 가능 여부는 이 값이 안 막는다**(2026-08-14, BE 회의실 24시간 운영 협의 이후
+ *    정정 — 예전엔 이 상수가 모든 회의실의 실제 운영시간 제약이었다). 진짜 제약은
+ *    `validate.ts`가 고른 회의실의 `openTime`/`closeTime`으로 따로 본다 — 회의실마다
+ *    운영시간이 다를 수 있어 전역 상수로는 표현이 안 된다.
  */
 export const ROOM_OPERATING_START_MINUTES = 9 * 60;
 export const ROOM_OPERATING_END_MINUTES = 18 * 60;
