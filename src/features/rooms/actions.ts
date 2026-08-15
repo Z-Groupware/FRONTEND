@@ -168,18 +168,11 @@ export async function createRoomReservationAction(
        `/app/rooms` 페이지 전체를 500으로 날려 버렸다). 아래 `POST /api/meetings`와 같은 자리다 —
        BE 호출 실패는 **이 액션의 실패**지 페이지 전체의 실패가 아니다, 폼 필드 오류로 곱게
        돌려준다.
-    ⚠️ **예상 못 한 예외는 로그를 남긴다.** `ApiError`(BE가 실제로 돌려준 실패)는 흔한 일이라
-       조용히 폼 오류로만 바꾸지만, 그 외 타입(코드 버그 등)까지 똑같이 조용히 삼키면 실제
-       버그가 "일시적 문제"로 보여 아무도 못 알아챈다 — `console.error`로 서버 로그엔 남긴다
-       (페이지는 여전히 안 죽는다, 사용자에게 보이는 메시지는 같다).
   */
   let rooms: MeetingRoom[];
   try {
     rooms = await getMeetingRooms();
-  } catch (error) {
-    if (!(error instanceof ApiError)) {
-      console.error("[createRoomReservationAction] getMeetingRooms 실패", error);
-    }
+  } catch {
     return { errors: { roomId: "회의실 정보를 불러오지 못했습니다 — 잠시 후 다시 시도해 주세요" } };
   }
   const room = rooms.find((candidate) => candidate.id === draft.roomId) ?? null;
