@@ -63,9 +63,9 @@ interface SlotPickerProps {
 /**
  * 날짜·시작 시각 피커 — 예전엔 캘린더에서 클릭한 슬롯을 그대로 보여주기만 했지만(고정값),
  * 이제 [회의 추가] 버튼으로 열었을 때도 직접 고를 수 있어야 한다(2026-08-14 팀 확정).
- * ⚠️ **주말은 날짜 피커에서부터 막는다**(`disabledDayOfWeek`) — 서버(`validateRoomReservationDraft`)도
- *    같은 규칙으로 다시 막지만, 화면에서 아예 못 고르게 하는 편이 "제출해 보고서야 안다"보다 낫다
- *    (§권한: 화면 숨김은 UX일 뿐이라도, UX 자체는 여기서 챙긴다).
+ * ⚠️ 주말도 고를 수 있다(2026-08-15 재확정) — BE가 요일로 예약을 막는 로직이 없어(BE
+ *    `MeetingService.validateTime`/`validateMeetingRoomHours` 확인, 시간 범위·30분 그리드·
+ *    운영시간만 본다) 막을 이유가 없다.
  */
 function SlotPicker({
   date,
@@ -83,7 +83,6 @@ function SlotPicker({
           id="reservation-date"
           value={date}
           onChange={onDateChange}
-          disabledDayOfWeek={[0, 6]}
           aria-invalid={Boolean(dateError)}
         />
         <FieldError reserveSpace message={dateError} />

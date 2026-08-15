@@ -36,8 +36,6 @@ interface DatePickerFieldProps {
   min?: string;
   /** `YYYY-MM-DD` — 이 날짜 이후는 고를 수 없다. */
   max?: string;
-  /** 이 요일들은 아예 고를 수 없게 막는다(`Date.getDay()` 값, 0=일 ~ 6=토). */
-  disabledDayOfWeek?: number[];
   placeholder?: string;
   "aria-label"?: string;
   "aria-invalid"?: boolean;
@@ -61,7 +59,6 @@ export function DatePickerField({
   onChange,
   min,
   max,
-  disabledDayOfWeek,
   placeholder = "날짜 선택",
   "aria-label": ariaLabel,
   "aria-invalid": ariaInvalid,
@@ -106,11 +103,9 @@ export function DatePickerField({
           mode="single"
           locale={ko}
           selected={selected}
-          disabled={[
-            minDate && { before: minDate },
-            maxDate && { after: maxDate },
-            disabledDayOfWeek && { dayOfWeek: disabledDayOfWeek },
-          ].filter((matcher) => matcher !== undefined)}
+          disabled={[minDate && { before: minDate }, maxDate && { after: maxDate }].filter(
+            (matcher) => matcher !== undefined,
+          )}
           onSelect={(next) => {
             if (!next) return;
             onChange(format(next, VALUE_FORMAT));

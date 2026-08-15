@@ -50,22 +50,14 @@ describe("회의실 예약 검증", () => {
     expect(errors.date).toBe("올바른 날짜가 아니에요");
   });
 
-  it("주말은 막는다 — 2026-08-15는 토요일", () => {
+  /* 주말도 막지 않는다(2026-08-15 재확정) — BE에 요일 제약이 없어(§연동 검증) 막을 이유가 없다. */
+  it("주말도 통과한다 — 2026-08-15는 토요일", () => {
     const errors = validateRoomReservationDraft(
       { ...VALID_DRAFT, date: "2026-08-15" },
       OWNER_HOST,
       ROOM,
     );
-    expect(errors.date).toBe("평일에만 예약할 수 있어요");
-  });
-
-  it("일요일도 막는다 — 2026-08-16", () => {
-    const errors = validateRoomReservationDraft(
-      { ...VALID_DRAFT, date: "2026-08-16" },
-      OWNER_HOST,
-      ROOM,
-    );
-    expect(errors.date).toBe("평일에만 예약할 수 있어요");
+    expect(errors.date).toBeUndefined();
   });
 
   it("30분 단위가 아닌 시작 시각은 막는다", () => {
