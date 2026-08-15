@@ -13,7 +13,13 @@ import { isMock } from "@/mocks/config";
 
 import { canMoveCard, getBoardColumn } from "./lib";
 import { getMyActionBoard, getProjectBoard } from "./server";
-import { BOARD_COLUMN, type BoardChange, type BoardColumnId, type BoardType } from "./types";
+import {
+  BOARD_COLUMN,
+  type BoardCard,
+  type BoardChange,
+  type BoardColumnId,
+  type BoardType,
+} from "./types";
 
 const BOARD_PATH = "/app/board";
 
@@ -71,8 +77,18 @@ async function commitBoardChangesLive(
   changes: BoardChange[],
 ): Promise<{ appliedCount: number }> {
   const today = new Date();
-  const currentCards =
-    boardType === "project" ? await getProjectBoard() : await getMyActionBoard("");
+  /*
+    ⚠️ **현재 카드 조회 실패도 잡는다**(2026-08-15, `rooms/actions.ts`의 `getMeetingRooms()`와
+       같은 사고 — #553/#554/#556). 호출부(`board-view.tsx`)가 이미 이 액션이 던지는 경우를
+       잡아 토스트로 보여주지만(§정직성 주석), `appliedCount: 0`으로 곱게 돌려주면 호출부의
+       기존 "옮기지 못했습니다" 분기를 그대로 타서 새 처리를 안 만들어도 된다.
+  */
+  let currentCards: BoardCard[];
+  try {
+    currentCards = boardType === "project" ? await getProjectBoard() : await getMyActionBoard("");
+  } catch {
+    return { appliedCount: 0 };
+  }
 
   const validItems = changes
     .map((change) => {

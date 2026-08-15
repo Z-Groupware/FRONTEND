@@ -91,6 +91,18 @@ describe("completeTeamHandoverAction — 실서버 팀 스코프 권한 판정",
     expect(result.message).toBe("이 인수인계서를 승인할 권한이 없습니다");
     expect(serverApiMock).not.toHaveBeenCalled();
   });
+
+  /* ⚠️ 회귀 테스트다(2026-08-15, #558) — getTeamHandoverDetail() 실패로 페이지가 죽던 사고. */
+  it("인수인계서 조회가 실패해도 페이지를 죽이지 않고 오류로 돌려준다", async () => {
+    getViewerMock.mockResolvedValue(SAME_TEAM_LEADER);
+    getTeamHandoverDetailMock.mockRejectedValue(new Error("network down"));
+
+    const result = await completeTeamHandoverAction(55, [{ actionId: 101, assigneeId: 4 }]);
+
+    expect(result.isSuccess).toBe(false);
+    expect(result.message).toBeDefined();
+    expect(serverApiMock).not.toHaveBeenCalled();
+  });
 });
 
 describe("rejectTeamHandoverAction — 실서버 팀 스코프 권한 판정", () => {
@@ -111,6 +123,18 @@ describe("rejectTeamHandoverAction — 실서버 팀 스코프 권한 판정", (
 
     expect(result.isSuccess).toBe(false);
     expect(result.message).toBe("이 인수인계서를 반려할 권한이 없습니다");
+    expect(serverApiMock).not.toHaveBeenCalled();
+  });
+
+  /* ⚠️ 회귀 테스트다(2026-08-15, #558) — getTeamHandoverDetail() 실패로 페이지가 죽던 사고. */
+  it("인수인계서 조회가 실패해도 페이지를 죽이지 않고 오류로 돌려준다", async () => {
+    getViewerMock.mockResolvedValue(SAME_TEAM_LEADER);
+    getTeamHandoverDetailMock.mockRejectedValue(new Error("network down"));
+
+    const result = await rejectTeamHandoverAction(55, "기간이 부적절합니다");
+
+    expect(result.isSuccess).toBe(false);
+    expect(result.message).toBeDefined();
     expect(serverApiMock).not.toHaveBeenCalled();
   });
 });
