@@ -423,8 +423,11 @@ async function getLiveMeetingDetail(id: string, viewer: Actor): Promise<MeetingD
     ⚠️ **`pendingReason`이 있으면 발화 기록을 안 물어본다.** 화면이 그 칸을 안 그리는데
        (`meeting-detail-view.tsx` — 안내 카드만 뜬다) 조회부터 하면 헛수고다. 회의가 아직
        안 끝났으면 발화 자체가 없을 수도 있다.
+    ⚠️ **비대면 회의도 안 물어본다**(WORKFLOW.md §3-1-A — 실시간 캡처가 아니라 화자 귀속 근거인
+       자막 청크 자체가 없다, "온라인으로 진행된 회의입니다" 문구로 그 자리를 대신한다).
+       `detail.startAt`도 `null`이라 `toScriptChunks`의 기준 시각을 만들 수 없다.
   */
-  if (view.pendingReason !== null) {
+  if (view.pendingReason !== null || detail.startAt === null) {
     return { kind: "ok", detail: view };
   }
 

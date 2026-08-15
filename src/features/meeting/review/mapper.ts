@@ -215,7 +215,16 @@ export function toMeetingReviewInfo(params: {
     meetingTitle: detail.title,
     hostId: hostIdOf(detail),
     projectTag: detail.project.tag,
-    scheduleLabel: formatMeetingSchedule(new Date(detail.startAt), new Date(detail.endAt)),
+    /*
+     * ⚠️ **비대면 회의는 `startAt`·`endAt`이 `null`이다**(MEET-18, WORKFLOW.md §3-1-A — 시간대
+     *    예약 자체가 없는 회의라 저장하지 않는다). `new Date(null)`은 "Invalid Date"가 되어
+     *    `formatMeetingSchedule`이 깨진 문자열을 돌려주므로, 그 경우 WORKFLOW가 정한 문구로
+     *    대신한다("온라인으로 진행된 회의입니다").
+     */
+    scheduleLabel:
+      detail.startAt && detail.endAt
+        ? formatMeetingSchedule(new Date(detail.startAt), new Date(detail.endAt))
+        : "온라인으로 진행된 회의입니다",
     assigneeOptions: toAssigneeOptions(detail),
     /* ⚠️ Owner 개설 회의만 teamId가 null이다(PR #461/#472 대조) — 이 하나로 화면 모드가 갈린다 */
     isOwnerMeeting: detail.teamId === null,
