@@ -1,6 +1,6 @@
 import type { NextRequest } from "next/server";
 
-import { getAccessToken } from "@/features/auth/session";
+import { ensureAccessToken } from "@/features/auth/session";
 import { ep } from "@/lib/endpoints";
 
 /**
@@ -29,7 +29,13 @@ export const dynamic = "force-dynamic";
 const BASE_URL = process.env.BACKEND_API_URL ?? "http://localhost:8080";
 
 export async function GET(request: NextRequest) {
-  const accessToken = await getAccessToken();
+  /*
+    ⚠️ **`getAccessToken()`이 아니라 `ensureAccessToken()`이다.** 이 경로는 `proxy.ts`
+       매처에서 제외돼 있어(§matcher) 미들웨어의 자동 재발급을 못 받는다 — SSE는 페이지
+       이동 없이 30분 넘게 열려 있을 수 있어, 그냥 읽기만 하면 액세스 토큰 만료 후
+       재연결마다 401을 맞는다(2026-08-16 실제 장애).
+  */
+  const accessToken = await ensureAccessToken();
   if (!accessToken) {
     /*
       ⚠️ **401을 그대로 돌려준다.** 응답이 온 실패라 `EventSource`가 연결을 닫고, 훅은 그

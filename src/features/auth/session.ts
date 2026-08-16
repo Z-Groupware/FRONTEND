@@ -2,6 +2,8 @@ import "server-only";
 
 import { cookies, headers } from "next/headers";
 
+import { ep } from "@/lib/endpoints";
+
 import {
   ACCESS_TOKEN_COOKIE,
   ACCESS_TOKEN_MAX_AGE,
@@ -11,6 +13,8 @@ import {
   REFRESH_TOKEN_MAX_AGE,
   tokenCookieOptions,
 } from "./cookie";
+
+const BASE_URL = process.env.BACKEND_API_URL ?? "http://localhost:8080";
 
 /**
  * 세션 — **httpOnly 쿠키 한 곳**(CLAUDE.md §렌더링·데이터: `localStorage` 토큰 금지).
@@ -84,4 +88,65 @@ export async function requireAccessToken(): Promise<string> {
   const token = await getAccessToken();
   if (!token) throw new Error("로그인이 필요합니다.");
   return token;
+}
+
+/**
+ * 갱신표로 새 토큰 한 벌 — `proxy.ts`의 `reissue()`와 같은 호출이다.
+ *
+ * ⚠️ **`proxy.ts`와 코드를 공유하지 않는다.** `proxy.ts`는 Edge 미들웨어라 `server-only`인
+ *    이 파일을 import할 수 없다(파일 위 주석 참고) — 그래서 같은 호출을 각자 갖고 있다.
+ * ⚠️ 갱신표도 함께 교체된다(로테이션). 실패는 조용히 `null`이다.
+ */
+async function reissueTokens(
+  refreshToken: string,
+  keepSignedIn: boolean,
+): Promise<SessionTokens | null> {
+  try {
+    const response = await fetch(`${BASE_URL}${ep.refresh()}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ refreshToken, keepSignedIn }),
+      cache: "no-store",
+    });
+    if (!response.ok) return null;
+
+    const envelope: unknown = await response.json();
+    const data = (envelope as { data?: { accessToken?: unknown; refreshToken?: unknown } })?.data;
+    if (typeof data?.accessToken !== "string" || typeof data?.refreshToken !== "string")
+      return null;
+
+    return { accessToken: data.accessToken, refreshToken: data.refreshToken };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * 액세스 토큰을 꺼내되, 없으면 **여기서 한 번 재발급을 시도한다**.
+ *
+ * ⚠️ **Route Handler 전용이다.** `proxy.ts`(미들웨어)를 안 거치는 경로 — SSE 중계
+ *    (`/api/notifications/stream`·`/api/meetings/[id]/captions/stream`)가 이걸 써야 한다.
+ *    미들웨어 매처가 `/api/*`를 제외하고 있어(`proxy.ts` §matcher), 이 경로들은 액세스
+ *    쿠키가 30분 만에 사라져도 미들웨어의 자동 재발급을 못 받는다 — 페이지 이동 없이
+ *    오래 열려 있는 SSE 연결이 30분을 넘기면 재연결마다 401을 맞던 원인이 이것이다.
+ * ⚠️ 서버 컴포넌트에서는 쓰지 않는다 — `cookies().set()`은 Server Action·Route Handler·
+ *    미들웨어에서만 허용된다(Next 제약, 위 파일 주석 참고).
+ */
+export async function ensureAccessToken(): Promise<string | null> {
+  const existing = await getAccessToken();
+  if (existing) return existing;
+
+  const jar = await cookies();
+  const refreshToken = jar.get(REFRESH_TOKEN_COOKIE)?.value;
+  if (!refreshToken) return null;
+
+  const keepSignedIn = jar.get(KEEP_SIGNED_IN_COOKIE)?.value === "1";
+  const reissued = await reissueTokens(refreshToken, keepSignedIn);
+  if (!reissued) {
+    await clearSession();
+    return null;
+  }
+
+  await setSession(reissued, keepSignedIn);
+  return reissued.accessToken;
 }
