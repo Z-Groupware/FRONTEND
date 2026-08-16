@@ -59,7 +59,15 @@ export function sortProjects(list: ProjectListItem[], sort: ProjectSort): Projec
   }
 }
 
-/** 진척율(%) — 액션이 없으면 0. 파생값이라 저장하지 않고 계산한다. */
+/**
+ * 진척율(%) — 액션이 없으면 0. 파생값이라 저장하지 않고 계산한다.
+ * ⚠️ **여기가 진척율의 유일한 구현이다.** BE `ProjectSummaryResponse.progressPct`(소수)는 안
+ *    쓴다 — 표시 규칙(반올림·소수점 없음)이 FE 몫이고 목 경로에도 같은 숫자가 필요하다
+ *    (`project/mapper.ts`의 `toProjectListItem` 위 주석 참고).
+ * ⚠️ **분자·분모 모두 개인 액션(리프) 기준이다**(docs/WORKFLOW.md §1). BE-12 배포 전에는
+ *    분모가 팀 액션까지 세고 있어 진척율이 실제보다 낮게 나온다 — FE는 보정하지 않는다
+ *    (어떤 액션이 세어졌는지 FE는 모른다).
+ */
 export function getProgressPercent(done: number, total: number): number {
   if (total <= 0) return 0;
   return Math.round((done / total) * 100);

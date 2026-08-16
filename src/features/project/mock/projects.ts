@@ -6,6 +6,8 @@ import type { ProjectDraft, ProjectListItem } from "../types";
  * ⚠️ 목 데이터 — BE 연동 전(ERD·API 스펙 미확정, DECISIONS.md).
  * 워크플로우 문서의 대표 프로젝트 3개(GOODS·BRAND·COLLAB) 기준. 전부 Owner(박대표)가 개설했고
  * 현재 진행중이라 진척율은 착수 직후(0%)다. 마감 임박순 정렬은 서버가 얹는다.
+ * ⚠️ `actionTotal`·`actionDone`은 **개인 액션(리프)만** 센 값이다(docs/WORKFLOW.md §1) —
+ *    팀 액션을 섞어 세면 목만 보고 만든 화면이 연동 후 다른 숫자를 낸다(§정직한 목업).
  */
 export const TOP_LEVEL_PROJECTS: ProjectListItem[] = [
   {

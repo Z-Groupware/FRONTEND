@@ -9,6 +9,11 @@ import type { ProjectTeamAction } from "../types";
  *    `member/mock/dashboard.ts`와 같은 규칙). 진행중은 오늘을 가로질러도 된다.
  * ⚠️ 날짜는 **2026-08-11 기준**으로 잡았다. 목이라 값이 고정이므로 시간이 지나면 이 규칙이
  *    저절로 깨진다 — 화면에서 할 일 막대가 오늘선 왼쪽에 걸리면 여기 날짜를 뒤로 민다.
+ * ⚠️ **`isDelayed`는 확정 규칙대로 고정한다**(`IN_PROGRESS && dueDate < 오늘`) — 실서버
+ *    타임라인이 BE 판정을 그대로 옮기므로(§`toProjectTeamAction`) 목도 같은 판정 규칙을
+ *    따라야 목만 보고 만든 화면이 연동 후 다른 배지를 내지 않는다(§정직한 목업).
+ *    지금 값은 전부 `false`다 — 목 시점(2026-08-11)·BE-13 후 확정 규칙 기준으로 마감이
+ *    지난 진행중 항목이 없다. 시간이 지나 이 규칙이 저절로 참이 되면 값을 손으로 켠다.
  */
 export const PROJECT_TEAM_ACTIONS_MOCK: Record<string, ProjectTeamAction[]> = {
   GOODS: [
@@ -19,6 +24,7 @@ export const PROJECT_TEAM_ACTIONS_MOCK: Record<string, ProjectTeamAction[]> = {
       startDate: "2026-07-21",
       dueDate: "2026-08-29",
       status: ACTION_STATUS.IN_PROGRESS,
+      isDelayed: false,
     },
     {
       id: 2,
@@ -27,6 +33,7 @@ export const PROJECT_TEAM_ACTIONS_MOCK: Record<string, ProjectTeamAction[]> = {
       startDate: "2026-08-18",
       dueDate: "2026-09-12",
       status: ACTION_STATUS.TODO,
+      isDelayed: false,
     },
     {
       id: 3,
@@ -35,6 +42,7 @@ export const PROJECT_TEAM_ACTIONS_MOCK: Record<string, ProjectTeamAction[]> = {
       startDate: "2026-08-14",
       dueDate: "2026-08-22",
       status: ACTION_STATUS.TODO,
+      isDelayed: false,
     },
     {
       id: 4,
@@ -43,6 +51,7 @@ export const PROJECT_TEAM_ACTIONS_MOCK: Record<string, ProjectTeamAction[]> = {
       startDate: "2026-07-21",
       dueDate: "2026-08-22",
       status: ACTION_STATUS.IN_PROGRESS,
+      isDelayed: false,
     },
   ],
   BRAND: [
@@ -53,6 +62,7 @@ export const PROJECT_TEAM_ACTIONS_MOCK: Record<string, ProjectTeamAction[]> = {
       startDate: "2026-08-01",
       dueDate: "2026-08-20",
       status: ACTION_STATUS.IN_PROGRESS,
+      isDelayed: false,
     },
     {
       id: 6,
@@ -61,6 +71,7 @@ export const PROJECT_TEAM_ACTIONS_MOCK: Record<string, ProjectTeamAction[]> = {
       startDate: "2026-08-15",
       dueDate: "2026-09-12",
       status: ACTION_STATUS.TODO,
+      isDelayed: false,
     },
   ],
   COLLAB: [
@@ -71,6 +82,7 @@ export const PROJECT_TEAM_ACTIONS_MOCK: Record<string, ProjectTeamAction[]> = {
       startDate: "2026-07-25",
       dueDate: "2026-08-25",
       status: ACTION_STATUS.IN_PROGRESS,
+      isDelayed: false,
     },
     {
       id: 8,
@@ -79,6 +91,7 @@ export const PROJECT_TEAM_ACTIONS_MOCK: Record<string, ProjectTeamAction[]> = {
       startDate: "2026-08-17",
       dueDate: "2026-09-19",
       status: ACTION_STATUS.TODO,
+      isDelayed: false,
     },
   ],
 };

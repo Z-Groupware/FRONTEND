@@ -1,6 +1,11 @@
+import { isPastDue } from "@/constants/action";
+
 import { BOARD_COLUMN, type BoardCard, type BoardColumnId } from "./types";
 
-/** `YYYY-MM-DD`를 로컬 자정 기준 `Date`로 — 마감일 비교는 시각이 아니라 날짜다(§isDelayed와 동일). */
+/**
+ * `YYYY-MM-DD`를 로컬 자정 기준 `Date`로 — 마감일 비교는 시각이 아니라 날짜다(§isPastDue와 동일).
+ * ⚠️ `getBoardColumn`의 시작일 비교가 여기 쓴다 — 마감 경과 비교는 `isPastDue`로 공용화됐다.
+ */
 function toLocalMidnight(iso: string): Date {
   return new Date(`${iso}T00:00:00`);
 }
@@ -26,10 +31,18 @@ export function getBoardColumn(
     : BOARD_COLUMN.IN_PROGRESS;
 }
 
-/** 지연 배지 — 완료가 아니고 마감이 지났으면. 시작일은 안 본다(`isDelayed`와 같은 결). */
+/**
+ * 지연 배지 — 마감 경과 여부만 본다. **칸(진행중 한정) 판정은 호출부**가 한다.
+ *
+ * ⚠️ 여기서 `getBoardColumn`을 부르지 않는다 — 화면(`board-view.tsx`)이 드래그 중에 임시로
+ *    옮긴 칸(`overrides[card.id]`)까지 함께 봐야 하고, 그건 저장된 값(`isDone`)만 보는
+ *    `getBoardColumn`이 모른다. 여기서 칸을 판정하면 카드를 완료로 끌어다 놓아도 서버
+ *    저장 전까지 지연 배지가 남는다.
+ * ⚠️ 자정 계산은 `isPastDue` 하나뿐이다 — 여기 다시 쓰지 않는다.
+ */
 export function isCardDelayed(card: Pick<BoardCard, "isDone" | "dueDate">, today: Date): boolean {
   if (card.isDone) return false;
-  return toLocalMidnight(card.dueDate) < startOfToday(today);
+  return isPastDue(card.dueDate, today);
 }
 
 /**

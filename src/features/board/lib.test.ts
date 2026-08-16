@@ -39,12 +39,27 @@ describe("isCardDelayed", () => {
     expect(isCardDelayed(card({ isDone: true, dueDate: "2026-07-01" }), TODAY)).toBe(false);
   });
 
-  it("완료가 아니고 마감이 지났으면 지연이다", () => {
+  it("완료가 아니고 마감이 지났으면 지연이다 — 칸 판정은 호출부(`board-view.tsx`) 몫이다", () => {
+    /*
+      ⚠️ 시작일이 미래(할 일 칸)이든 과거(진행중 칸)이든 `isCardDelayed`는 마감 경과만 본다.
+         "진행중 칸 안의 배지"라는 확정 규칙은 호출부(`isDelayedInView`)가 `columnOf(card)`를
+         함께 봐서 지운다 — `getBoardColumn`을 여기서 부르면 드래그 override를 놓친다.
+    */
     expect(isCardDelayed(card({ dueDate: "2026-08-01" }), TODAY)).toBe(true);
+    expect(isCardDelayed(card({ startDate: "2026-08-07", dueDate: "2026-08-01" }), TODAY)).toBe(
+      true,
+    );
+    expect(isCardDelayed(card({ startDate: "2026-07-01", dueDate: "2026-08-01" }), TODAY)).toBe(
+      true,
+    );
   });
 
   it("마감이 안 지났으면 지연이 아니다", () => {
     expect(isCardDelayed(card({ dueDate: "2026-08-10" }), TODAY)).toBe(false);
+  });
+
+  it("오늘 마감은 지연이 아니다 — KST 자정 경계 회귀(공용 `isPastDue`)", () => {
+    expect(isCardDelayed(card({ dueDate: "2026-08-06" }), TODAY)).toBe(false);
   });
 });
 
