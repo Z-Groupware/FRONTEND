@@ -10,10 +10,12 @@ import {
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
+import { ListChecks } from "lucide-react";
 import { useMemo, useState, useTransition } from "react";
 import { toast } from "sonner";
 
 import { ConfirmDialog } from "@/components/common/confirm-dialog";
+import { EmptyState } from "@/components/common/empty-state";
 import { Button } from "@/components/ui/button";
 
 import { commitBoardChangesAction } from "../actions";
@@ -171,6 +173,27 @@ export function BoardView({ boardType, cards, todayIso }: BoardViewProps) {
         toast.error("옮기지 못했습니다");
       }
     });
+  }
+
+  /*
+    ⚠️ **하달된 카드 자체가 0건**이면 세 칸도 저장 줄도 뜻이 없다 — 옮길 게 없다.
+       이때는 페이지 레벨 `EmptyState`로 바꿔 다른 5화면(내 액션·팀 액션·마이페이지·캘린더·
+       프로젝트 타임라인)과 같은 톤으로 "아직 하달된 액션이 없습니다"만 말한다(§정직성).
+    ⚠️ 이 분기는 **정말 카드가 0건일 때만** 탄다 — 특정 칸만 비었을 때는 각 칸의
+       `BOARD_EMPTY_HINT`("여기로 옮겨 주세요.")가 여전히 유효한 안내라 그대로 둔다.
+    ⚠️ `BoardLeaveGuard`도 여기선 필요 없다 — 이동시킬 카드가 없으니 저장 안 한 변경도 없다.
+  */
+  if (cards.length === 0) {
+    return (
+      <div className="flex min-h-0 flex-1 flex-col">
+        <EmptyState
+          icon={ListChecks}
+          title="아직 하달된 액션이 없습니다."
+          description="액션이 하달되면 이 자리에 카드로 쌓이고, 드래그해서 칸을 옮길 수 있습니다."
+          className="flex-1"
+        />
+      </div>
+    );
   }
 
   return (
