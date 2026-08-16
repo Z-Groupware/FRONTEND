@@ -115,10 +115,14 @@ describe("비대면 회의 만들기(이슈 #473, MEET-18) — 실서버 분기(
     expect(serverApiMock).not.toHaveBeenCalled();
   });
 
-  it("PROJECT_NOT_FOUND는 projectId 칸 오류로 바뀐다(MEET-01의 PJ-001과 리터럴이 다르다)", async () => {
-    serverApiMock.mockRejectedValue(
-      new ApiError(404, "존재하지 않는 프로젝트", "PROJECT_NOT_FOUND"),
-    );
+  it("PJ-001은 projectId 칸 오류로 바뀐다", async () => {
+    /*
+      ⚠️ 2026-08-16 정정 — 예전 이 테스트는 리터럴이 `"PROJECT_NOT_FOUND"`이고 제목도
+         "MEET-01의 PJ-001과 리터럴이 다르다"였다. 그 전제(도메인 담당자 명세 2026-08-14)가
+         틀렸다: `ErrorResponse.of`(BE global/exception/ErrorResponse.java:23)가 **전 도메인**에서
+         `errorCode.getCode()`를 내리므로 이 엔드포인트도 실제로 오는 값은 `"PJ-001"`이다.
+    */
+    serverApiMock.mockRejectedValue(new ApiError(404, "존재하지 않는 프로젝트", "PJ-001"));
 
     const result = await createOnlineMeetingAction({ errors: {} }, VALID_FORM());
 
@@ -141,7 +145,7 @@ describe("비대면 회의 만들기(이슈 #473, MEET-18) — 실서버 분기(
     expect(result.errors.topics).toBe("안건 오류");
   });
 
-  it.each(["MT-016", "MT-017", "MT-018", "MT-019"])(
+  it.each(["MT-016", "MT-018", "MT-019"])(
     "%s는 parentTeamActionId 칸 오류로 바뀐다",
     async (code) => {
       serverApiMock.mockRejectedValue(new ApiError(400, "상위 팀 액션 오류", code));
@@ -151,6 +155,22 @@ describe("비대면 회의 만들기(이슈 #473, MEET-18) — 실서버 분기(
       expect(result.errors.parentTeamActionId).toBe("상위 팀 액션 오류");
     },
   );
+
+  it("MT-017은 attendeeIds 칸 오류로 바뀐다 — 상위 팀 액션 오류(016·018·019) 묶음과 다른 자리다", async () => {
+    /*
+      ⚠️ 2026-08-16 정정 — 예전엔 MT-017이 016 묶음에 섞여 `parentTeamActionId` 칸에 붙었지만,
+         뜻은 "개설자 외 참석자를 한 명 이상 선택해야 합니다"라 참석자 칸이 맞다.
+         MT-010(존재하지 않는 참석자)과 같은 칸을 쓰지만 문구가 달라 사용자가 구분할 수 있다.
+    */
+    serverApiMock.mockRejectedValue(
+      new ApiError(400, "개설자 외 참석자를 한 명 이상 선택해야 합니다", "MT-017"),
+    );
+
+    const result = await createOnlineMeetingAction({ errors: {} }, VALID_FORM());
+
+    expect(result.errors.attendeeIds).toBe("개설자 외 참석자를 한 명 이상 선택해야 합니다");
+    expect(result.errors.parentTeamActionId).toBeUndefined();
+  });
 
   it("목록에 없는 오류 코드는 title 칸으로 떨어진다(필드 슬롯이 없는 오류의 기본 자리)", async () => {
     serverApiMock.mockRejectedValue(new ApiError(400, "알 수 없는 오류", "MT-999"));

@@ -491,9 +491,11 @@ function readOnlineMeetingDraft(formData: FormData): OnlineMeetingDraft {
 /**
  * `POST /api/meetings/online`(MEET-18) 실패를 폼 필드 오류로 바꾼다.
  * ⚠️ `rooms/actions.ts`의 `toMeetingCreateFormErrors`(MEET-01)와 같은 자리 — 필드 슬롯이 없는
- *    오류(`PROJECT_NOT_FOUND` 등 프로젝트 슬롯이 있는 것 빼고)는 `title` 칸에 얹는다.
- * ⚠️ **`PROJECT_NOT_FOUND`가 이 엔드포인트만 리터럴이 다르다**(도메인 담당자 명세, 2026-08-14) —
- *    MEET-01은 `PJ-001`을 쓰지만 여기는 그대로 이 문자열이다. 어긋나 보여도 그게 명세다.
+ *    오류(`Z-001` 등 전용 슬롯이 있는 것 빼고)는 `title` 칸에 얹는다.
+ * ⚠️ **`PROJECT_NOT_FOUND` 리터럴은 오지 않는다**(2026-08-16 BE 실코드 대조로 정정 —
+ *    2026-08-14 도메인 담당자 명세가 틀렸다). `ErrorResponse.of`(BE global/exception/ErrorResponse.java:23)가
+ *    **전 도메인에서** `errorCode.getCode()`를 `errorCode` 필드로 내리므로 실제 값은 `"PJ-001"`이다.
+ *    이 엔드포인트만 예외를 두지 않는다.
  */
 function toOnlineMeetingCreateFormErrors(error: unknown): OnlineMeetingFormErrors {
   if (!(error instanceof ApiError)) throw error;
@@ -503,12 +505,15 @@ function toOnlineMeetingCreateFormErrors(error: unknown): OnlineMeetingFormError
       return { attendeeIds: "존재하지 않는 참석자가 있습니다" };
     case "MT-015":
       return { topics: error.message };
-    case "MT-016":
+    /* ⚠️ MT-017은 **참석자 부족**이다("개설자 외 참석자를 한 명 이상 선택해야 합니다") —
+       상위 팀 액션 오류(016·018·019)와 다른 칸이다. */
     case "MT-017":
+      return { attendeeIds: error.message };
+    case "MT-016":
     case "MT-018":
     case "MT-019":
       return { parentTeamActionId: error.message };
-    case "PROJECT_NOT_FOUND":
+    case "PJ-001":
       return { projectId: "존재하지 않는 프로젝트입니다" };
     // ⚠️ **여기 도착한 CAP-0XX는 "발급 뒤 상태가 바뀐" 경우다** — CAP-024(용량)·CAP-025(형식)는
     //    보통 업로드 URL 발급 단계(`getOnlineMeetingRecordingUploadUrlAction`)에서 먼저 걸리지만,

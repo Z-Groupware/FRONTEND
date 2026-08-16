@@ -10,8 +10,8 @@ import { paginate, type PaginatedResult } from "@/lib/paginate";
 import { isMock } from "@/mocks/config";
 
 import {
-  type BeActionDetail,
   type BeActionSummary,
+  parseActionDetail,
   toMyActionListItem,
   toPersonalActionDetail,
   toTeamActionListItem,
@@ -37,8 +37,13 @@ export async function getPersonalActionDetail(
 
   const accessToken = await requireAccessToken();
   try {
-    const detail = await serverApi<BeActionDetail>(ep.action(numericId), { accessToken });
-    return toPersonalActionDetail(detail);
+    /*
+      ⚠️ `serverApi<BeActionDetail>`는 **단언일 뿐 검사가 아니다.** 회의 상세와 같이 실런타임
+         검사(가드)를 세운다 — nullable 5필드가 정말 nullable로 오는데 non-null string으로
+         읽으면 화면이 조용히 이상해지거나 페이지가 통째로 죽는다.
+    */
+    const raw = await serverApi<unknown>(ep.action(numericId), { accessToken });
+    return toPersonalActionDetail(parseActionDetail(raw));
   } catch (error) {
     if (error instanceof ApiError && error.status === 404) return null;
     throw error;
@@ -78,10 +83,16 @@ export async function getMyActionsPage(
           id: item.id,
           title: item.title,
           description: detail.description,
-          team: detail.team,
+          /*
+            ⚠️ `PersonalActionDetail.team`·`projectTag`는 개인 액션이 팀·태그 참조를 못 가질 수
+               있어 optional이지만, 이 리스트 계약(`MyActionListItem`)은 여전히 non-null이다
+               (`toMyActionListItem`이 `?? "-"`·`?? ""`로 접는다). 실서버 매퍼와 같은 방어를
+               mock 분기에서도 그대로 쓴다 — 목이 실서버보다 관대해서는 안 된다(§정직한 목업).
+          */
+          team: detail.team ?? "-",
           projectId: detail.projectId,
           projectName: project.name,
-          projectTag: detail.projectTag,
+          projectTag: detail.projectTag ?? "",
           startDate: item.startDate,
           dueDate: item.dueDate,
           status: item.status,
