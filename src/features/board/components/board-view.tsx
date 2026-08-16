@@ -30,6 +30,7 @@ import {
 } from "../types";
 import { BoardCardOverlay } from "./board-card";
 import { BoardColumn } from "./board-column";
+import { BoardLeaveGuard } from "./board-leave-guard";
 
 interface BoardViewProps {
   boardType: BoardType;
@@ -170,6 +171,8 @@ export function BoardView({ boardType, cards, todayIso }: BoardViewProps) {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-4">
+      {/* ⚠️ 저장 안 한 드래그가 있으면 링크 클릭·뒤로 가기·탭 닫기를 확인창으로 막는다(WORKFLOW.md §8). */}
+      <BoardLeaveGuard hasUnsaved={changeCount > 0} />
       {/*
         ⚠️ **빈 줄에 안내를 둔다.** 버튼 하나만 오른쪽 끝에 떠 있어 그 줄이 통째로 비었고,
            무엇보다 **드래그가 곧 저장이 아니라는 것**을 화면이 말하지 않았다 — 옮겨 놓고

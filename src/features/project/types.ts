@@ -135,6 +135,9 @@ export interface TeamActionDetail {
   team: string;
   projectId: number;
   projectTag: string;
+  /** ⚠️ 지연은 여기 없다 — 파생값이라 화면이 `isDelayed({status, dueDate})`로 계산한다(§도메인 상수). */
+  status: ActionStatus;
+  dueDate: string;
   /** 팀장 공석이면 없음. */
   assigneeName?: string;
   /** `"{팀명}장"` 고정 포맷(BE가 조립) — 팀장 공석이면 없음. */
