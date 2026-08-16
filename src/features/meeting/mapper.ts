@@ -263,9 +263,13 @@ export interface BeMeetingListItem {
   title: string;
   /** `SCHEDULED` · `IN_PROGRESS` · `DONE` · `CANCELED` (BE `MeetingStatus`) */
   status: string;
-  /** `2026-08-14T10:00:00` — 오프셋이 없다(`BeMeetingDetail.startAt`의 경고가 그대로 적용된다) */
-  startAt: string;
-  endAt: string;
+  /**
+   * `2026-08-14T10:00:00` — 오프셋이 없다(`BeMeetingDetail.startAt`의 경고가 그대로 적용된다).
+   * ⚠️ **비대면 회의는 `null`이다**(MEET-18 — WORKFLOW.md §3-1-A: 사용자가 입력하지 않고
+   *    DB에도 저장하지 않는다). 상세(`BeMeetingDetail.startAt`)와 같은 계약이다.
+   */
+  startAt: string | null;
+  endAt: string | null;
   attendeeCount: number;
   /** 보는 사람이 이 회의의 개설자인가 — 탭을 가르는 값이다 */
   isHost: boolean;
@@ -278,7 +282,12 @@ export interface BeMeetingListItem {
   summaryStatus?: string | null;
   /** 안건 첫 줄 — 안건이 하나도 없는 회의는 `null`이다(BE `indexAgendaPreviews`) */
   agendaPreview?: { mainTopic: string | null; firstSubTopic: string | null } | null;
-  meetingRoom: { meetingRoomId: number; name: string };
+  /**
+   * ⚠️ **비대면 회의는 `null`이다**(MEET-18 — 회의실 예약 자체가 없다). 목록 카드가
+   *    온라인 회의인지 가르는 **유일한 신호**이기도 하다 — 응답에 `isOnline` 필드는 없다
+   *    (상세 `toMeetingDetailView`의 판정과 같은 방식).
+   */
+  meetingRoom: { meetingRoomId: number; name: string } | null;
   project: { projectId: number; tag: string };
 }
 
@@ -304,12 +313,13 @@ function isBeMeetingListItem(value: unknown): value is BeMeetingListItem {
   if (typeof value !== "object" || value === null) return false;
   const meeting = value as Partial<BeMeetingListItem>;
 
-  return (
+  const basicShape =
     typeof meeting.meetingId === "number" &&
     typeof meeting.title === "string" &&
     typeof meeting.status === "string" &&
-    typeof meeting.startAt === "string" &&
-    typeof meeting.endAt === "string" &&
+    /* ⚠️ 비대면 회의는 `null`이다(MEET-18, WORKFLOW.md §3-1-A) — 상세 가드와 같은 규칙 */
+    isOptionalNullableString(meeting.startAt) &&
+    isOptionalNullableString(meeting.endAt) &&
     typeof meeting.attendeeCount === "number" &&
     typeof meeting.isHost === "boolean" &&
     /*
@@ -320,9 +330,25 @@ function isBeMeetingListItem(value: unknown): value is BeMeetingListItem {
     isOptionalNullableNumber(meeting.teamId) &&
     isOptionalNullableString(meeting.summaryStatus) &&
     isOptionalAgendaPreview(meeting.agendaPreview) &&
-    typeof meeting.meetingRoom?.name === "string" &&
-    typeof meeting.project?.tag === "string"
-  );
+    /* ⚠️ 비대면 회의는 `null`이다(MEET-18) — 있는데 모양이 다른 것만 거른다 */
+    (meeting.meetingRoom === null || typeof meeting.meetingRoom?.name === "string") &&
+    typeof meeting.project?.tag === "string";
+
+  if (!basicShape) return false;
+
+  /*
+    ⚠️ **`startAt`·`endAt`·`meetingRoom` 세 필드는 함께 움직인다** — 대면이면 셋 다 채우고,
+       비대면이면 셋 다 `null`이다(MEET-01/18, WORKFLOW.md §3-1-A). mixed 조합(예: `startAt`은
+       있는데 `meetingRoom`은 `null`)이 오면 `toMeetingListItem`이 `isOnline`을 `meetingRoom`만
+       보고 잘못 판정해 대면 카드의 일시를 숨기거나 비대면 카드에 빈 일시를 그린다 —
+       BE 계약을 방어하는 유일한 자리라 여기서 거절한다(2026-08-16 회귀 방어).
+  */
+  const startNull = meeting.startAt === null || meeting.startAt === undefined;
+  const endNull = meeting.endAt === null || meeting.endAt === undefined;
+  const roomNull = meeting.meetingRoom === null || meeting.meetingRoom === undefined;
+  const allNull = startNull && endNull && roomNull;
+  const noneNull = !startNull && !endNull && !roomNull;
+  return allNull || noneNull;
 }
 
 function isOptionalNullableNumber(value: unknown): value is number | null | undefined {
@@ -369,11 +395,19 @@ export function toMeetingListItem(be: BeMeetingListItem): MeetingListItem {
     projectTag: be.project.tag,
     originLabel: originLabelFromTeamId(be.teamId),
     topicSummary: topicSummaryOf(be.agendaPreview),
-    schedule: formatMeetingSchedule(new Date(be.startAt), new Date(be.endAt)),
-    roomName: be.meetingRoom.name,
+    /*
+      ⚠️ **비대면 회의는 셋 다 없다**(WORKFLOW.md §3-1-A). 상세 매퍼(`toMeetingDetailView`)와
+         같은 규칙으로 접는다 — 카드가 `isOnline`을 보고 그 자리에 "온라인으로 진행된 회의입니다"
+         한 줄로 대체한다(`meeting-card.tsx`).
+    */
+    schedule:
+      be.startAt && be.endAt ? formatMeetingSchedule(new Date(be.startAt), new Date(be.endAt)) : "",
+    roomName: be.meetingRoom?.name ?? "",
     attendeeCount: be.attendeeCount,
     isHost: be.isHost,
     aiSummaryStatus: toAiSummaryStatus(be.summaryStatus),
+    /* ⚠️ 응답에 `isOnline` 필드는 없다 — 회의실이 없다는 것 자체가 신호다(상세와 같은 판정) */
+    isOnline: be.meetingRoom === null,
   };
 }
 

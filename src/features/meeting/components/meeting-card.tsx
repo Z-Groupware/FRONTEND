@@ -1,4 +1,4 @@
-import { CalendarClock, ChevronRight, MapPin, Mic, Sparkles, Users } from "lucide-react";
+import { CalendarClock, ChevronRight, MapPin, Mic, Sparkles, Users, Video } from "lucide-react";
 import Link from "next/link";
 
 import { ProjectTag } from "@/components/common/project-tag";
@@ -167,23 +167,33 @@ function CardFooter({
       */}
       <div className="flex min-w-0 flex-nowrap items-center gap-x-3">
         {/*
-          ⚠️ **비대면 회의는 이제 이 목록에 안 온다**(2026-08-14 팀 확정 — `server.ts`의
-             `getMeetingDirectory` 주석). 일시·장소는 항상 채워져 있다고 봐도 된다.
+          ⚠️ **확정된 비대면 회의는 목록에 뜬다**(2026-08-16 팀 확정, B안 — 2026-08-14의
+             "안 온다"를 뒤집었다). 이 경우 일시·회의실이 비어 있으니 두 칸 대신 안내 한 줄로
+             대체한다 — 빈 칸을 그대로 두면 카드가 고장 난 것처럼 보인다(§정직성).
+             상세(`meeting-detail-view.tsx`)와 같은 아이콘·같은 문구다.
+             참석자 수는 비대면에도 있으니 계속 그린다.
         */}
-        <span className="flex shrink-0 items-center gap-1.5 text-[13px] leading-5 font-medium">
-          <CalendarClock className="text-muted-foreground size-4 shrink-0" aria-hidden />
-          <span className="tabular-nums">{meeting.schedule}</span>
-        </span>
-        <span className="bg-border h-3 w-px shrink-0" aria-hidden />
-        <span className="text-muted-foreground flex min-w-0 items-center gap-x-3 text-[12px] leading-4">
-          <span className="flex min-w-0 items-center gap-1.5">
-            <MapPin className="size-3.5 shrink-0" aria-hidden />
-            <span className="truncate">{meeting.roomName}</span>
+        {meeting.isOnline ? (
+          <span className="flex shrink-0 items-center gap-1.5 text-[13px] leading-5 font-medium">
+            <Video className="text-muted-foreground size-4 shrink-0" aria-hidden />
+            <span>온라인으로 진행된 회의입니다</span>
           </span>
-          <span className="flex shrink-0 items-center gap-1.5">
-            <Users className="size-3.5 shrink-0" aria-hidden />
-            <span className="tabular-nums">{meeting.attendeeCount}명</span>
-          </span>
+        ) : (
+          <>
+            <span className="flex shrink-0 items-center gap-1.5 text-[13px] leading-5 font-medium">
+              <CalendarClock className="text-muted-foreground size-4 shrink-0" aria-hidden />
+              <span className="tabular-nums">{meeting.schedule}</span>
+            </span>
+            <span className="bg-border h-3 w-px shrink-0" aria-hidden />
+            <span className="text-muted-foreground flex min-w-0 items-center gap-1.5 text-[12px] leading-4">
+              <MapPin className="size-3.5 shrink-0" aria-hidden />
+              <span className="truncate">{meeting.roomName}</span>
+            </span>
+          </>
+        )}
+        <span className="text-muted-foreground flex shrink-0 items-center gap-1.5 text-[12px] leading-4">
+          <Users className="size-3.5 shrink-0" aria-hidden />
+          <span className="tabular-nums">{meeting.attendeeCount}명</span>
         </span>
       </div>
 

@@ -62,6 +62,14 @@ export function validateRecordingFileMeta(meta: {
   if (!RECORDING_FILE_ACCEPTED_EXTENSIONS.includes(extensionOf(meta.fileName))) {
     return `지원하지 않는 형식입니다 (${ACCEPTED_EXTENSIONS_LABEL}만 가능)`;
   }
+  /*
+    ⚠️ BE `RecordingFilePolicy.validate`가 0바이트도 막는다(413 CAP-024:
+       "녹음 파일은 0바이트보다 크고 5GiB 이하여야 합니다."). FE가 상한만 보면 빈 파일이 S3에
+       올라간 뒤에야 거절된다 — 파일 선택 시점에 잡는다.
+  */
+  if (meta.sizeBytes <= 0) {
+    return "빈 파일입니다";
+  }
   if (meta.sizeBytes > RECORDING_FILE_MAX_BYTES) {
     return "파일 용량이 5GiB를 넘었습니다";
   }

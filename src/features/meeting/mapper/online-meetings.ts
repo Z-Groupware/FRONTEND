@@ -1,7 +1,9 @@
 /**
  * 비대면 회의 생성(`POST /api/meetings/online`, MEET-18) BE shape → UI 계약(이슈 #473).
- * [확인] 도메인 담당자 문서(2026-08-14, 팀 확정) 기준 — BE 실코드는 아직 대조 전이다
- *   (§연동 검증: Swagger·구두 추측 금지, 문서와 코드가 다르면 코드가 맞다 — 구현 시 컨트롤러로 재확인).
+ * [확인] BE 실코드 대조 완료(2026-08-16) —
+ *   `OnlineMeetingController.java` · `OnlineRecordingUploadController.java` ·
+ *   `OnlineRecordingUploadUrlService.java` · `OnlineMeetingRecordingAdapter.java` ·
+ *   `RecordingFilePolicy.java`.
  * ⚠️ `rooms/mapper/meetings.ts`의 `toCreateMeetingPayload`/`toSentTopics`와 같은 자리 나눔이다 —
  *    회의실·시간 필드만 없을 뿐 안건 접기 규칙은 같다.
  */
@@ -9,19 +11,28 @@
 import type { MeetingTopicInput } from "../../rooms/types";
 import type { OnlineMeetingDraft } from "../types";
 
-/**
- * `POST /api/meetings/online/recordings/upload-url` 요청 본문·응답(이슈 #473, 2026-08-14 계약
- * 변경 — 도메인 담당자 문서 기준, BE 실코드는 아직 대조 전이다, §연동 검증).
- */
+/** `POST /api/meetings/online/recordings/upload-url` 요청 본문. */
 export interface BeRecordingUploadUrlRequest {
   fileName: string;
   contentType: string;
   sizeBytes: number;
 }
 
-/** ⚠️ `expiresInSeconds`는 화면에서 안 쓴다 — 만료 전에 바로 PUT하므로 카운트다운이 필요 없다. */
+/**
+ * `POST /api/meetings/online/recordings/upload-url` 응답.
+ *
+ * ⚠️ `expiresInSeconds`는 화면에서 안 쓴다 — 만료 전에 바로 PUT하므로 카운트다운이 필요 없다.
+ * ⚠️ **`fileName`은 원본이 아니라 BE가 정제한 저장용 이름이다**
+ *    ([확인] `OnlineRecordingUploadUrlService.java` — `RecordingFilePolicy.sanitizeForStorageName`이
+ *    영숫자·`.`·`-`·`_` 외 모든 글자를 `_`로 치환한다). `s3Key`가 이 이름으로 끝나고, MEET-18
+ *    확정 단계가 `s3Key.endsWith("/" + fileName)`을 검사한다
+ *    (`OnlineMeetingRecordingAdapter.java`) — 원본 이름을 그대로 보내면 한글·공백·괄호가 든 파일명이
+ *    **전부 400 CAP-015**로 튕긴다. MEET-18에는 이 응답의 `fileName`을 **그대로** 실어야 한다.
+ */
 export interface BeRecordingUploadUrlResponse {
   s3Key: string;
+  /** BE가 정제한 저장용 파일명 — MEET-18 `recording.fileName`에 이 값을 그대로 되돌려 싣는다. */
+  fileName: string;
   presignedUrl: string;
   expiresInSeconds: number;
 }

@@ -126,7 +126,13 @@ export function useOnlineMeetingForm({ onCreated }: UseOnlineMeetingFormOptions)
       }
 
       formData.set("recordingS3Key", issued.s3Key);
-      formData.set("recordingFileName", file.name);
+      /*
+        ⚠️ **원본 이름(`file.name`)이 아니라 발급 응답의 저장용 이름이다.** BE 확정 단계가
+           `s3Key.endsWith("/" + fileName)`을 검사한다(`OnlineMeetingRecordingAdapter.java`) —
+           원본을 그대로 보내면 한글·공백·괄호가 든 파일명이 전부 400 CAP-015로 튕긴다.
+           화면에 보여주는 이름은 `file.name` 그대로다(이 훅의 `file` 상태).
+      */
+      formData.set("recordingFileName", issued.storageFileName);
       formData.set("recordingContentType", issued.contentType);
       formData.set("recordingSizeBytes", String(file.size));
     }

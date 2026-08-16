@@ -250,7 +250,11 @@ export interface BePendingActionDistributionMeeting {
   meetingId: number;
   title: string;
   status: string;
-  startAt: string;
+  /**
+   * ⚠️ **비대면 회의는 `null`이다**(MEET-18, WORKFLOW.md §3-1-A). 이 위젯은 안 읽지만
+   *    선언이 거짓이면 다음 사람이 `new Date(startAt)`을 걸어 조용히 1970년을 그린다.
+   */
+  startAt: string | null;
   pendingActionCount: number;
   project: { projectId: number; tag: string; name: string };
 }
