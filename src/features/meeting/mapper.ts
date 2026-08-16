@@ -304,7 +304,7 @@ function isBeMeetingListItem(value: unknown): value is BeMeetingListItem {
   if (typeof value !== "object" || value === null) return false;
   const meeting = value as Partial<BeMeetingListItem>;
 
-  return (
+  const basicShape =
     typeof meeting.meetingId === "number" &&
     typeof meeting.title === "string" &&
     typeof meeting.status === "string" &&
@@ -323,8 +323,23 @@ function isBeMeetingListItem(value: unknown): value is BeMeetingListItem {
     isOptionalAgendaPreview(meeting.agendaPreview) &&
     /* ⚠️ 비대면 회의는 `null`이다(MEET-18) — 있는데 모양이 다른 것만 거른다 */
     (meeting.meetingRoom === null || typeof meeting.meetingRoom?.name === "string") &&
-    typeof meeting.project?.tag === "string"
-  );
+    typeof meeting.project?.tag === "string";
+
+  if (!basicShape) return false;
+
+  /*
+    ⚠️ **`startAt`·`endAt`·`meetingRoom` 세 필드는 함께 움직인다** — 대면이면 셋 다 채우고,
+       비대면이면 셋 다 `null`이다(MEET-01/18, WORKFLOW.md §3-1-A). mixed 조합(예: `startAt`은
+       있는데 `meetingRoom`은 `null`)이 오면 `toMeetingListItem`이 `isOnline`을 `meetingRoom`만
+       보고 잘못 판정해 대면 카드의 일시를 숨기거나 비대면 카드에 빈 일시를 그린다 —
+       BE 계약을 방어하는 유일한 자리라 여기서 거절한다(2026-08-16 회귀 방어).
+  */
+  const startNull = meeting.startAt === null || meeting.startAt === undefined;
+  const endNull = meeting.endAt === null || meeting.endAt === undefined;
+  const roomNull = meeting.meetingRoom === null || meeting.meetingRoom === undefined;
+  const allNull = startNull && endNull && roomNull;
+  const noneNull = !startNull && !endNull && !roomNull;
+  return allNull || noneNull;
 }
 
 function isOptionalNullableNumber(value: unknown): value is number | null | undefined {

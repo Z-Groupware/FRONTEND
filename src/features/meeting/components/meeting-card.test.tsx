@@ -121,15 +121,23 @@ describe("MeetingCard — 둘째 줄", () => {
      상세 화면(`meeting-detail-view.tsx`)과 같은 아이콘·같은 문구다.
 */
 describe("비대면 회의 카드", () => {
-  it("일시·회의실 대신 「온라인으로 진행된 회의입니다」 한 줄이 뜬다", () => {
+  /*
+    ⚠️ **`schedule`/`roomName`이 비어 있지 않아도** 온라인 안내로 대체돼야 한다(2026-08-16
+       CodeRabbit 회귀 방어). 예전 회귀 테스트가 두 값을 빈 문자열로 넘겨서, `isOnline`이 켜져도
+       실수로 대면 메타를 함께 렌더링하는 회귀가 통과할 수 있었다. 매퍼에서 mixed 조합을 거절
+       하도록 만들었지만 화면 계약도 여기서 못박아 둔다.
+  */
+  it("일시·회의실 값이 있어도 「온라인으로 진행된 회의입니다」로 대체되고 원값은 안 뜬다", () => {
     renderCard({
       status: MEETING_STATUS.DONE,
       isOnline: true,
-      schedule: "",
-      roomName: "",
+      schedule: "8월 14일(금) 10:00 – 10:30",
+      roomName: "대회의실",
     });
 
     expect(screen.getByText("온라인으로 진행된 회의입니다")).toBeInTheDocument();
+    expect(screen.queryByText("8월 14일(금) 10:00 – 10:30")).not.toBeInTheDocument();
+    expect(screen.queryByText("대회의실")).not.toBeInTheDocument();
   });
 
   it("비대면이라도 참석자 수는 계속 그린다", () => {

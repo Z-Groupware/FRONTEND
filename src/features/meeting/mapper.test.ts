@@ -198,6 +198,30 @@ describe("parseMeetingList", () => {
       "약속한 모양",
     );
   });
+
+  /*
+    ⚠️ **세 필드는 함께 움직인다** — 대면이면 셋 다 채우고 비대면이면 셋 다 `null`이다
+       (MEET-01/18). mixed 조합이 통과되면 `toMeetingListItem`이 `isOnline`을 `meetingRoom`만
+       보고 잘못 판정해 대면 카드의 일시가 사라지거나 비대면 카드에 빈 일시가 뜬다
+       (2026-08-16 CodeRabbit 회귀 방어).
+  */
+  it("startAt은 있는데 meetingRoom이 null인 mixed 조합은 거절한다", () => {
+    expect(() => parseMeetingList({ meetings: [{ ...LIST_ITEM, meetingRoom: null }] })).toThrow(
+      "약속한 모양",
+    );
+  });
+
+  it("meetingRoom은 있는데 startAt이 null인 mixed 조합도 거절한다", () => {
+    expect(() => parseMeetingList({ meetings: [{ ...LIST_ITEM, startAt: null }] })).toThrow(
+      "약속한 모양",
+    );
+  });
+
+  it("endAt만 null(다른 둘은 있음)인 mixed 조합도 거절한다", () => {
+    expect(() => parseMeetingList({ meetings: [{ ...LIST_ITEM, endAt: null }] })).toThrow(
+      "약속한 모양",
+    );
+  });
 });
 
 describe("toMeetingListItem", () => {
