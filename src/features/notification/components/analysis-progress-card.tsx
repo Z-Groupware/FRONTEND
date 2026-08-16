@@ -2,7 +2,7 @@
 
 import { Check, CircleAlert, Loader2, RotateCcw, X } from "lucide-react";
 import Link from "next/link";
-import type { ReactNode } from "react";
+import { type ReactNode, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 
@@ -49,7 +49,12 @@ function faceOf(state: AnalysisCardState): CardFace {
         /* ⚠️ 여기만 색을 쓴다 — DESIGN §5가 색을 허용한 유일한 자리가 에러다 */
         icon: <CircleAlert className="text-destructive size-4" aria-hidden />,
         title: "요약에 실패했습니다",
-        detail: "회의 상세에서 다시 분석할 수 있습니다",
+        /*
+          ⚠️ **"회의 상세에서"라고 안 쓴다**(2026-08-16 정정). 회의 상세 화면은 일부러 이
+             자리에 이동 수단을 안 둔다(meeting-detail-view.tsx 주석 참고) — 예전 문구는
+             갈 곳 없는 안내였다. 지금은 이 카드 자체가 [다시 분석] 버튼을 갖는다.
+        */
+        detail: "아래 버튼으로 다시 분석할 수 있습니다",
       };
     case ANALYSIS_CARD_STATE.UNAVAILABLE:
       return {
@@ -65,14 +70,28 @@ function faceOf(state: AnalysisCardState): CardFace {
 }
 
 export function AnalysisProgressCard() {
-  const { tracking, dismissAnalysis, retryAnalysis } = useNotificationCenter();
+  const { tracking, dismissAnalysis, retryAnalysis, retryFailedSummary } = useNotificationCenter();
+  /* ⚠️ 요청이 오가는 동안만 쓰는 로컬 상태다 — 트래킹 자체는 아직 안 바뀐다(응답 전엔
+     회의가 정말 다시 도는지 모른다). 버튼을 두 번 누르는 것만 막는다. */
+  const [isRetryingFailed, setIsRetryingFailed] = useState(false);
   if (!tracking) return null;
+
+  async function handleRetryFailed() {
+    setIsRetryingFailed(true);
+    try {
+      await retryFailedSummary();
+    } finally {
+      setIsRetryingFailed(false);
+    }
+  }
 
   return (
     <CardBody
       tracking={tracking}
       onClose={dismissAnalysis}
       onRetry={retryAnalysis}
+      onRetryFailed={handleRetryFailed}
+      isRetryingFailed={isRetryingFailed}
       face={faceOf(tracking.state)}
     />
   );
@@ -83,11 +102,15 @@ function CardBody({
   face,
   onClose,
   onRetry,
+  onRetryFailed,
+  isRetryingFailed,
 }: {
   tracking: AnalysisTracking;
   face: CardFace;
   onClose: () => void;
   onRetry: () => void;
+  onRetryFailed: () => void;
+  isRetryingFailed: boolean;
 }) {
   const isDone = tracking.state === ANALYSIS_CARD_STATE.DONE;
 
@@ -152,6 +175,19 @@ function CardBody({
           <Button variant="outline" size="sm" onClick={onRetry}>
             <RotateCcw aria-hidden />
             다시 시도
+          </Button>
+        </div>
+      ) : tracking.state === ANALYSIS_CARD_STATE.FAILED ? (
+        /*
+          ⚠️ **`onRetry`(상태 재조회)가 아니라 `onRetryFailed`(ANLZ-02 실제 재분석)다.**
+             이 버튼은 마이페이지 「요약이 중단된 회의」의 [다시 분석]과 같은 일을 한다 —
+             그 화면으로 보내는 대신 카드에서 바로 끝낸다(2026-08-16, 알림 카드 문구가
+             갈 곳 없는 "회의 상세에서" 안내였던 것을 대체).
+        */
+        <div className="px-4 pb-3.5">
+          <Button variant="outline" size="sm" onClick={onRetryFailed} disabled={isRetryingFailed}>
+            <RotateCcw aria-hidden className={isRetryingFailed ? "animate-spin" : undefined} />
+            {isRetryingFailed ? "요청 중…" : "다시 분석"}
           </Button>
         </div>
       ) : null}
