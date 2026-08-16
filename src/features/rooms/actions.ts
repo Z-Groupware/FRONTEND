@@ -71,8 +71,9 @@ const MANAGE_ROOMS_PATH = "/manage/rooms";
 
 /**
  * 회의 개설(`POST /api/meetings`, MEET-01) 실패를 폼 필드 오류로 바꾼다.
- * ⚠️ 필드 슬롯이 없는 오류(`PJ-001` 등)는 `title` 칸에 얹는다(회의실 도메인의 `toMeetingRoomFormErrors`
- *    와 같은 자리 — 이 폼도 "전체 오류"를 보여줄 별도 자리가 없다).
+ * ⚠️ 필드 슬롯이 없는 오류(`Z-001` 등)는 `title` 칸에 얹는다(회의실 도메인의 `toMeetingRoomFormErrors`
+ *    와 같은 자리 — 이 폼도 "전체 오류"를 보여줄 별도 자리가 없다). `PJ-001`은 아래에서 이미
+ *    `projectId` 슬롯으로 간다.
  */
 function toMeetingCreateFormErrors(error: unknown): RoomReservationFormErrors {
   if (!(error instanceof ApiError)) throw error;
@@ -80,8 +81,6 @@ function toMeetingCreateFormErrors(error: unknown): RoomReservationFormErrors {
   switch (error.code) {
     case "MT-002":
       return { roomId: "그 시간에는 이미 예약된 회의실입니다" };
-    case "MT-004":
-      return { startTime: "회의실 이용 가능 시간 안에서 선택해 주세요" };
     case "MT-005":
       return { startTime: "예약은 30분 단위로만 가능합니다" };
     case "MT-010":
@@ -90,10 +89,24 @@ function toMeetingCreateFormErrors(error: unknown): RoomReservationFormErrors {
       return { startTime: "지난 시간은 선택할 수 없습니다" };
     case "MT-003":
       return { startTime: error.message };
+    /* ⚠️ 아래 다섯은 비대면(MEET-18)과 **같은 칸·같은 문구**다 — 같은 계약을 쓰는 두 생성
+       경로가 다른 칸에 오류를 띄우면 안 된다(`meeting/actions.ts` toOnlineMeetingCreateFormErrors).
+       ⚠️ MT-017은 참석자 부족이라 `attendeeIds`, 나머지 016·018·019는 상위 팀 액션 오류라
+          `parentTeamActionId`다 — MT-017을 016 묶음에 넣지 않는다. */
+    case "MT-015":
+      return { topics: error.message };
+    case "MT-017":
+      return { attendeeIds: error.message };
+    case "MT-016":
+    case "MT-018":
+    case "MT-019":
+      return { parentTeamActionId: error.message };
     case "MR-001":
       return { roomId: "존재하지 않는 회의실입니다" };
     case "PJ-001":
       return { projectId: "존재하지 않는 프로젝트입니다" };
+    /* ⚠️ **MT-004는 BE에 없다** — 운영시간 개념이 BE PR #523에서 폐기되며 enum에서 사라졌다.
+       이 자리에 `case "MT-004"`가 남으면 죽은 분기다. */
     default:
       return { title: error.message };
   }

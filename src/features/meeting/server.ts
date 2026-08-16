@@ -242,7 +242,12 @@ function outputsOf(meeting: Meeting): { kindLabel: string; outputs: MeetingOutpu
     .map(({ ref, action }) => ({
       id: action.id,
       name: action.name,
-      assignee: action.assigneeName,
+      /*
+        ⚠️ `PersonalActionDetail.assigneeName`이 optional로 바뀌었다(개인 액션 담당자 미지정
+           가능) — `MeetingOutput.assignee`는 여전히 non-null string이라 화면 계약대로 정본
+           문구(WORKFLOW.md §3-1-A "담당자 미정")로 접는다.
+      */
+      assignee: action.assigneeName ?? "담당자 미정",
       status: ref.status,
       dueDate: ref.dueDate,
       href: `/app/actions/${action.id}`,
