@@ -60,7 +60,10 @@ function originLabelFromTeamId(teamId: number | null | undefined): string {
  *   보낸다. `PROCESSING`·`DONE`은 enum에 있지만 A가 구분값을 주기 전까지 미사용이다.
  *
  * - `NONE` → `null` — 화면 계약도 "안 끝난 회의는 `null`"이라 뜻이 같다(§view-types).
- * - `PROCESSING` → `SUMMARIZING`, `STALLED` → `FAILED` — 이름만 다르고 뜻이 같다.
+ * - `PROCESSING` → `SUMMARIZING`, `STALLED`·`FAILED` → `FAILED` — 이름만 다르고 뜻이 같다.
+ *   ⚠️ **`FAILED`는 목록에 지금 안 온다** — BE가 실패를 `STALLED`로 접어 보내기 때문이다.
+ *      그래도 `case`를 미리 두는 건 그 접기를 푸는 날 **조용히 갈리지 않게** 하려는 것이다
+ *      (상세(MEET-04)는 이미 `FAILED`를 그대로 보낸다).
  * - `DONE` → `REVIEWED` — 요약(초안)이 끝나 Host가 검토할 차례라는 뜻이 같다.
  *   ⚠️ BE `DONE`은 확정 전·후(`REVIEWED`/`DISTRIBUTED`)를 아직 안 가른다 — 구분값이
  *      생기면 여기서 갈라야 확정 끝난 회의에 [액션 검토]가 계속 뜨는 일을 막는다.
@@ -73,8 +76,14 @@ function toAiSummaryStatus(be: string | null | undefined): AiSummaryStatus | nul
     case "DONE":
       return AI_SUMMARY_STATUS.REVIEWED;
     case "STALLED":
+    case "FAILED":
       return AI_SUMMARY_STATUS.FAILED;
     default:
+      /*
+        ⚠️ `WAITING_TRANSCRIPT`도 여기로 떨어진다(의도). 받아쓰기가 아직 도는 중이라 분석
+           시작 전인 회의인데, 이 값을 무엇으로 보여줄지는 팀 결정 대기다. 지금 매핑을 바꿔도
+           화면은 안 바뀐다 — `meetingCardAffordanceOf`가 `REVIEWED`만 본다(status.ts).
+      */
       return null;
   }
 }
@@ -416,11 +425,16 @@ export interface BeMeetingDetail {
    */
   pendingActionCount: number;
   /**
-   * 요약 진행 신호(BE `MeetingSummaryStatus`) — `NONE` · `PROCESSING` · `DONE` · `STALLED`.
+   * 요약 진행 신호(BE `MeetingSummaryStatus`) — **6값이다**:
+   * `NONE` · `WAITING_TRANSCRIPT` · `PROCESSING` · `DONE` · `STALLED` · `FAILED`.
    *
-   * ⚠️ **`null`이 정상값이다.** 회의가 끝났고 중단도 아니면 BE도 `PROCESSING`인지 `DONE`인지
-   *    모른다(A가 아직 안 갈라 준다) — 추측해 내려보내지 않으려고 `null`을 준다(BE enum 주석).
-   *    우리도 그 `null`을 "다 됐다"로 읽지 않는다(`meetingPendingReasonOf` 참고).
+   * ⚠️ **상세(MEET-04)는 `null`을 안 준다**(2026-08-16 BE 실코드 대조 정정 — 예전 주석의
+   *    "`null`이 정상값"은 **목록(MEET-02) 이야기**였다). `MeetingDetailQueryService`가
+   *    끝나지 않은 회의는 `NONE`으로 확정하고, 끝난 회의는 A 응답을 `.orElse(NONE)`으로 닫는다.
+   * ⚠️ 그래도 `| null`을 남긴다 — 미배포 서버·부분 응답 방어다. `null`을 "다 됐다"로 읽지 않는다.
+   * ⚠️ **`STALLED`(중단)와 `FAILED`(실패)는 다른 값이다** — BE가 실패한 계층이 하나라도 있으면
+   *    `FAILED`, 멈추기만 했으면 `STALLED`로 가른다. 화면 문구는 같지만(둘 다 "요약 못 함")
+   *    안내가 다르다 — 중단은 다시 분석하면 대개 풀리고, 실패는 그렇지 않다(`isStalled` 참고).
    */
   summaryStatus: string | null;
   /**
@@ -454,9 +468,11 @@ export interface BeMeetingDetail {
 /** BE `MeetingSummaryStatus` — 화면 상수(`AI_SUMMARY_STATUS`)와 어휘가 달라 여기서만 쓴다. */
 const BE_SUMMARY_STATUS = {
   NONE: "NONE",
+  WAITING_TRANSCRIPT: "WAITING_TRANSCRIPT",
   PROCESSING: "PROCESSING",
   DONE: "DONE",
   STALLED: "STALLED",
+  FAILED: "FAILED",
 } as const;
 
 export interface BeMeetingAttendee {
@@ -632,17 +648,38 @@ export function meetingPendingReasonOf(
   if (detail.status === MEETING_STATUS.SCHEDULED) return "SCHEDULED";
   if (detail.status === MEETING_STATUS.IN_PROGRESS) return "IN_PROGRESS";
 
-  if (detail.summaryStatus === BE_SUMMARY_STATUS.STALLED) return "FAILED";
+  /*
+    ⚠️ **`STALLED`와 `FAILED`를 같이 본다**(2026-08-16). 둘은 원인이 다르지만(멈춤 vs 계층 실패)
+       "요약이 안 끝났고 기다려도 안 온다"는 화면에서 할 말이 같다. 예전엔 `STALLED`만 봐서
+       `FAILED`가 아래 마지막 줄로 떨어져 **끝나지 않는 「요약 중」**으로 보였다.
+       원인 구분은 `isStalled`가 따로 들고 간다(상세 화면이 그걸로 안내를 가른다).
+  */
+  if (
+    detail.summaryStatus === BE_SUMMARY_STATUS.STALLED ||
+    detail.summaryStatus === BE_SUMMARY_STATUS.FAILED
+  ) {
+    return "FAILED";
+  }
   /*
     ⚠️ **확정 대기 건수를 상태값보다 먼저 본다**(2026-08-13, 코드래빗 지적). 예전엔
        `summaryStatus === null`일 때만 이 규칙을 걸어서, 초안이 이미 나왔는데 상태가
        `PROCESSING`이면 화면이 검토 대기 대신 **"요약 중"**을 말했다 — 윗 주석대로 초안은
        요약이 끝났다는 증거라 어떤 상태값보다 강한 신호다.
-    ⚠️ 중단(`STALLED`)만 그 앞에 둔다 — 뒤 계층이 깨진 회의는 [다시 분석]부터 안내해야 한다.
+    ⚠️ 중단·실패(`STALLED`·`FAILED`)만 그 앞에 둔다 — 뒤 계층이 깨진 회의는 [다시 분석]부터
+       안내해야 한다.
   */
   if (detail.pendingActionCount > 0) return null;
   if (detail.summaryStatus === BE_SUMMARY_STATUS.DONE) return null;
-  /* ⚠️ 끝난 회의에 `NONE`이 오면 계약이 어긋난 것이다 — 완료로 읽지 말고 아직 안 된 쪽으로 둔다 */
+  /*
+    ⚠️ 여기 떨어지는 값은 `NONE`·`WAITING_TRANSCRIPT`, 그리고 모르는 값이다.
+       `NONE`은 **계약 위반이 아니라 정상**이다(2026-08-16 BE 실코드 대조 정정) — 자막이
+       0건이라 분석이 아예 안 돈 회의다(BE `MeetingSummaryQueryPort.SummaryStatus.NONE`
+       javadoc: "「실패」가 아니다"). `WAITING_TRANSCRIPT`는 받아쓰기가 아직 도는 중이라
+       분석 시작 전인 회의다.
+    ⚠️ **끝난 회의의 이 둘을 무엇이라 쓸지는 팀 결정 대기다.** 결정 전까지 둘 다 "요약 중"으로
+       둔다 — 「실패」로 쓰면 정상적으로 아무 일도 없었던 회의를 사고로 보여주고, 새 문구를
+       지어 넣으면 결정이 나는 날 `MeetingContentPending`·`PENDING_MESSAGE`를 다시 고쳐야 한다.
+  */
   return "SUMMARIZING";
 }
 
@@ -690,6 +727,12 @@ export function toMeetingDetailView(
     script: null,
     pendingReason: meetingPendingReasonOf(be),
     pendingActionCount: be.pendingActionCount,
+    /*
+      ⚠️ **`FAILED`를 여기 넣지 않는다**(2026-08-16). `pendingReason`은 둘을 함께 "FAILED"로
+         접지만(화면에서 할 말이 같아서), 이 값은 **원인을 가르는 자리**다 —
+         `STALLED`는 "서버 문제로 멈춤(다시 분석하면 대개 풀린다)"이고 `FAILED`는 "계층이
+         실제로 실패"다. 넓히면 실패한 회의에 "다시 분석하면 됩니다"라는 거짓 안내가 붙는다.
+    */
     isStalled: be.summaryStatus === BE_SUMMARY_STATUS.STALLED,
     isHost: options.isHost,
     /*
