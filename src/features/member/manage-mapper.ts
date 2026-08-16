@@ -166,10 +166,11 @@ export function toManagedMember(item: BeMemberListItem | BeMemberDetail): Manage
  * ⚠️ **이 카드가 쓰는 네 값만 옮긴다.** 응답엔 `projectTag`·`teamName`·`sourceMeetingTitle`·
  *    `parentActionTitle`까지 오지만, 카드는 `액션 · 상태 · 마감` 세 열뿐이다(§명세: 화면에
  *    없는 걸 새로 만들지 않는다). 안 쓰는 필드를 옮겨 두면 화면이 의존하는 값처럼 읽힌다.
- * ⚠️ **`isDelayed`를 안 가져온다.** BE도 저장값이 아니라 조회 시점에 계산해 주는 값인데
- *    (`ActionSummaryResponse` 주석), 우리 카드는 이미 `isDelayed(action)`으로 마감일에서
- *    계산한다(§도메인 상수: 파생값은 상태 필드에 안 넣는다). 두 벌이 되면 서버 시각과
- *    브라우저 시각이 갈리는 자정 무렵에 배지가 서로 다른 말을 한다.
+ * ⚠️ **`isDelayed`를 안 가져온다.** 판정 규칙이 BE(`ActionSummaryResponse` — `IN_PROGRESS &&
+ *    dueDate < today`)와 FE(`constants/action.ts` `isDelayed`)에서 같아졌으므로(진행중 && 마감
+ *    경과, 2026-08-16 팀 확정) 이 카드는 로컬 계산을 계속 쓴다 — 목(mock) 경로에도 같은
+ *    배지가 필요한데 거기엔 BE 값이 없다. **정본은 하나(확정 규칙)이고 구현이 둘인 상태**
+ *    이므로, 규칙이 바뀌면 두 곳을 함께 고쳐야 한다.
  * ⚠️ `id`를 문자열로 바꾼다 — 화면 계약(`ManagedMemberAction.id`)이 문자열이다.
  */
 export function toManagedMemberAction(be: BeCompanyAction): ManagedMemberAction {

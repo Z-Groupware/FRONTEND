@@ -22,9 +22,13 @@ export interface ProjectListItem {
   tag: string;
   /** 참여 부서명들 — 2개까지 노출 후 `+N` */
   departments: string[];
-  /** 이 태그가 달린 전체 액션 수 */
+  /**
+   * 이 프로젝트의 **개인 액션(리프)** 수 — 팀 액션은 세지 않는다(docs/WORKFLOW.md §1).
+   * ⚠️ 팀 액션을 함께 세면 같은 일이 두 번 세어져 진척율이 실제보다 낮게 나온다
+   *    (팀 액션 1건 + 그 하위 개인 액션 3건 = 4건이 아니라 3건이다).
+   */
   actionTotal: number;
-  /** 그중 완료 액션 수 — 진척율 = done/total */
+  /** 그중 완료(`DONE`)인 개인 액션 수 — 진척율 = `getProgressPercent(actionDone, actionTotal)`. */
   actionDone: number;
   /**
    * 시작일 `YYYY-MM-DD`. ⚠️ 화면엔 노출하지 않는다 — 상태(할 일/진행중/지연)·타임라인 계산용
@@ -118,6 +122,15 @@ export interface ProjectTeamAction {
   /** 마감일 `YYYY-MM-DD` */
   dueDate: string;
   status: ActionStatus;
+  /**
+   * 지연 배지 — **BE 판정을 그대로 쓴다**(`ProjectTimelineItemResponse.isDelayed`).
+   * ⚠️ 파생값이라 저장되지 않는다. 프로젝트 타임라인은 BE가 이미 계산해 보내므로 화면이
+   *    다시 계산하지 않는다 — 두 벌이면 서버·브라우저 시각이 갈리는 자정 무렵에 어긋난다.
+   * ⚠️ 지금(2026-08-16) BE 판정식은 `status != DONE && dueDate < today`라 확정 규칙(진행중 &&
+   *    마감 경과)과 다르다 — BE-13이 좁힌다. 그전에는 이 타임라인만 '할일 + 마감 경과'가
+   *    지연으로 뜬다(로컬 계산과 결과가 다르다는 점을 매퍼 주석에 남겼다).
+   */
+  isDelayed: boolean;
 }
 
 /**

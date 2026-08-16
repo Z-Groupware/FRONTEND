@@ -5,7 +5,6 @@ import { notFound } from "next/navigation";
 import { AttachmentList } from "@/components/common/attachment-list";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { isDelayed } from "@/constants/domain";
 import type { TimelineActionInput } from "@/features/member/action-timeline";
 import { ActionTimeline, ActionTimelineLegend } from "@/features/member/components/action-timeline";
 import { getProjectAttachmentDownloadUrlAction } from "@/features/project/actions";
@@ -59,7 +58,13 @@ export default async function ProjectDetailPage({ params, searchParams }: Projec
       tagTextColor: "var(--muted-foreground)",
       startDate: action.startDate,
       dueDate: action.dueDate,
-      tone: isDelayed(action) ? "DELAYED" : action.status,
+      /*
+        ⚠️ **BE 판정을 쓴다** — 프로젝트 타임라인만 BE가 이미 `isDelayed`를 계산해 보낸다
+           (`ProjectTimelineItemResponse`). 다른 화면(내 액션·팀 액션 목록 등)은 목 경로에도
+           같은 배지가 필요해 로컬 계산(`isDelayed`)을 그대로 쓴다 — 여기만 두 벌이 되는 것을
+           피한다(자정 경계 어긋남 방지).
+      */
+      tone: action.isDelayed ? "DELAYED" : action.status,
       // ⚠️ 식별자는 action.id(팀 액션 ID)를 쓴다 — action.team(팀명)으로 경로를 만들면
       //    같은 팀에 팀 액션이 여러 개일 때 서로 구분이 안 된다.
       href: `/app/projects/${project.id}/team/${action.id}`,
