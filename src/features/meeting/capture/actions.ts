@@ -5,7 +5,7 @@ import { serverApi, toUserMessage } from "@/lib/api";
 import { ep } from "@/lib/endpoints";
 import { isMock } from "@/mocks/config";
 
-import type { CaptionChunkInput, CapturePart, CaptureSession } from "./types";
+import type { ActiveCapture, CaptionChunkInput, CapturePart, CaptureSession } from "./types";
 
 /**
  * 캡처 창구 — 격리막(§Mock 격리막).
@@ -63,6 +63,60 @@ export async function startCaptureSessionAction(
       data: {
         captureSessionId: response.captureSessionId,
         startedAtEpochMs: response.startedAtEpochMs,
+      },
+    };
+  } catch (error) {
+    return { ok: false, error: toUserMessage(error) };
+  }
+}
+
+/* ────────────────────────── CAP-09 진행 중 캡처 조회(새로고침·크래시 복구) ────────────────────────── */
+
+/** [확인] BE `CaptureQueryController.active` — `ActiveCaptureResponse`, 진행 중 없으면 data:null */
+interface ActiveCaptureApiResponse {
+  meetingId: number;
+  captureSessionId: number | null;
+  segmentSeq: number;
+  lastSeq: number;
+  recorderPersonId: number | null;
+  canTakeover: boolean;
+  elapsedMs: number;
+}
+
+/**
+ * 진행 중 캡처 조회(CAP-09) — 새로고침·크래시 복구의 첫 단추.
+ *
+ * ⚠️ **`data: null`이 정상값이다**(진행 중 캡처 없음). 오류로 올리지 않는다 — 아무것도 없는
+ *    사용자의 첫 진입 때 오류 배너가 뜨면 오히려 고장으로 읽힌다.
+ * ⚠️ **파라미터가 없다.** 회의는 토큰의 memberId로 서버가 찾는다(남의 진행 캡처 열람 차단).
+ *    여기서 `meetingId`를 받아 검사하지 않는 이유는, 사용자가 A 회의 녹음 중 B 회의 캡처
+ *    화면을 열었을 때 이 액션이 A 회의 정보를 그대로 돌려주는 것이 **정상 동작**이기
+ *    때문이다("지금 다른 회의 녹음 중"을 알리는 데 쓴다). 이 화면과 무관한지 판정은
+ *    호출부(`use-capture`)가 `meetingId` 비교로 한다.
+ * ⚠️ 목 모드는 항상 `{ok:true, data:null}`이다 — 목엔 서버 상태가 없다(§정직한 목업).
+ */
+export async function getActiveCaptureAction(): Promise<CaptureActionResult<ActiveCapture | null>> {
+  if (isMock) return { ok: true, data: null };
+
+  try {
+    const accessToken = await requireAccessToken();
+    const response = await serverApi<ActiveCaptureApiResponse | null>(ep.capturesActive(), {
+      accessToken,
+    });
+    if (response === null) return { ok: true, data: null };
+    /*
+      ⚠️ `captureSessionId`는 화면 계약에서 뺀다 — 안 쓰는 값이다(BE 응답에도 null로 오는
+         경우가 있고, 이후 다른 액션이 이 값을 참조하지 않는다).
+    */
+    return {
+      ok: true,
+      data: {
+        meetingId: response.meetingId,
+        segmentSeq: response.segmentSeq,
+        lastSeq: response.lastSeq,
+        recorderPersonId: response.recorderPersonId,
+        canTakeover: response.canTakeover,
+        elapsedMs: response.elapsedMs,
       },
     };
   } catch (error) {

@@ -16,7 +16,7 @@ import { cn } from "@/lib/utils";
 
 import type { CaptureAttendee, MeetingCaptureInfo } from "../view-types";
 import { canSubmit, CAPTURE_PHASE, type CapturePhase, formatRecordedTime } from "./phase";
-import type { LiveCaption } from "./types";
+import type { ActiveCapture, LiveCaption } from "./types";
 import { useCapture } from "./use-capture";
 import { useLiveCaptions } from "./use-live-captions";
 
@@ -174,7 +174,12 @@ export function CaptureView({
       <LeaveGuard hasUnsaved={hasUnsaved} />
 
       {capture.phase === CAPTURE_PHASE.BEFORE_START ? (
-        <ReadyCard meeting={meeting} support={capture.support} onReady={capture.enter} />
+        <ReadyCard
+          meeting={meeting}
+          support={capture.support}
+          onReady={capture.enter}
+          activeCapture={capture.activeCapture}
+        />
       ) : (
         <div className="mx-auto flex min-h-0 w-full max-w-[1440px] flex-1 flex-col gap-7">
           {/*
@@ -223,8 +228,19 @@ export function CaptureView({
                   onClick={() => void capture.start()}
                 >
                   <Mic className="size-4" aria-hidden />
-                  {/* 아이콘 옆 한글은 1px 내린다(DESIGN §5) */}
-                  <span className="translate-y-[1px]">녹음 시작</span>
+                  {/*
+                    아이콘 옆 한글은 1px 내린다(DESIGN §5).
+                    ⚠️ **이 회의에 진행 중 캡처가 이미 있으면 [녹음 이어하기]**(2026-08-16, CAP-09).
+                       새로고침·크래시로 돌아온 사용자에게 "녹음 시작"이라 말하면 이미 있는 녹음이
+                       사라지는 것처럼 읽힌다 — 실제로 서버는 세션을 이어 준다. 다른 회의 정보
+                       (`meetingId` 다름)는 이 라벨을 안 바꾼다(그 안내는 아래 ReadyCard가 한다).
+                  */}
+                  <span className="translate-y-[1px]">
+                    {capture.activeCapture !== null &&
+                    String(capture.activeCapture.meetingId) === meeting.id
+                      ? "녹음 이어하기"
+                      : "녹음 시작"}
+                  </span>
                 </Button>
               ) : (
                 <Button
@@ -359,10 +375,23 @@ interface ReadyCardProps {
   /** 이 브라우저가 받쳐 주는가 — 하나라도 없으면 안내를 먼저 띄운다 */
   support: { stt: boolean; recording: boolean };
   onReady: () => void;
+  /**
+   * 새로고침·크래시로 잃은 진행 중 캡처(CAP-09).
+   *
+   * ⚠️ **`null`이 정상**이다(진행 중 없음). 값이 있고 이 회의라면 [이어하기] 안내를,
+   *    다른 회의라면 "지금 다른 회의 녹음 중" 안내를 붙인다 — 아무 말 없이 BEFORE_START로
+   *    두면 이미 녹음 중인 회의를 처음부터 다시 시작할 수 있다(§정직성).
+   */
+  activeCapture: ActiveCapture | null;
 }
 
-function ReadyCard({ meeting, support, onReady }: ReadyCardProps) {
+function ReadyCard({ meeting, support, onReady, activeCapture }: ReadyCardProps) {
   const unsupported = !support.stt || !support.recording;
+  /*
+    ⚠️ **다른 회의는 안내만 다르게**(같은 회의 이어하기와 뜻이 반대다) — 카드 안에 두 경우를
+       한 자리에 담고, 여기 판정은 두 경우 모두 `activeCapture !== null` 이면 켠다.
+  */
+  const isSameMeeting = activeCapture !== null && String(activeCapture.meetingId) === meeting.id;
 
   return (
     <div className="mx-auto flex w-full max-w-[560px] flex-col justify-center py-16">
@@ -391,6 +420,24 @@ function ReadyCard({ meeting, support, onReady }: ReadyCardProps) {
         </div>
 
         {unsupported && <UnsupportedNotice support={support} className="mt-6" />}
+
+        {activeCapture !== null && (
+          /*
+            ⚠️ **새로고침·크래시 복구 안내**(CAP-09). 두 경우가 문구만 다르다:
+               - 같은 회의: "이 회의는 이미 녹음 중입니다" + [준비 완료] → 다음 화면에서 [녹음 이어하기]
+               - 다른 회의: 이 화면에서 이어받을 수는 없다(회의별 화면 단위) — 사실만 알린다
+            ⚠️ 시각을 지어내지 않는다 — `elapsedMs`만 있고 인간 표기는 화면 회복 후에도 계속
+               갱신되어야 하므로 여기서는 "이미 진행 중"이라는 사실만 문구로 남긴다.
+          */
+          <p
+            role="status"
+            className="border-border bg-secondary/50 mt-6 rounded-lg border px-3.5 py-2.5 text-left text-[12px] leading-4"
+          >
+            {isSameMeeting
+              ? "이 회의는 이미 녹음 중입니다. [준비 완료] 후 [녹음 이어하기]를 눌러 주세요."
+              : "지금 다른 회의를 녹음 중입니다. 이 회의에서 새로 시작하면 그쪽 세션은 그대로 남습니다."}
+          </p>
+        )}
 
         <Button
           type="button"
