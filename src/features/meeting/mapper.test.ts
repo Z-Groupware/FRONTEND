@@ -180,6 +180,24 @@ describe("parseMeetingList", () => {
 
     expect(parseMeetingList({ meetings: [row] })).toEqual([row]);
   });
+
+  /*
+    ⚠️ **확정된 비대면 회의(2026-08-16, B안)** — startAt·endAt·meetingRoom이 모두 null이다.
+       예전 계약은 세 필드를 non-null 문자열로 강제해서, 이 행이 하나만 섞여도 배열 전체가
+       throw로 죽었다. 정상 행과 섞여도 파서가 통과해야 한다.
+  */
+  it("비대면 회의(startAt/endAt/meetingRoom 모두 null)가 섞여도 배열이 통과한다", () => {
+    const online = { ...LIST_ITEM, startAt: null, endAt: null, meetingRoom: null };
+
+    expect(parseMeetingList({ meetings: [LIST_ITEM, online] })).toEqual([LIST_ITEM, online]);
+  });
+
+  /* ⚠️ 계약을 넓힌 것이지 검사를 없앤 게 아니다 — 있는데 모양이 다른 회의실은 여전히 거절한다 */
+  it("meetingRoom이 있는데 모양이 다르면(빈 객체) 여전히 거절한다", () => {
+    expect(() => parseMeetingList({ meetings: [{ ...LIST_ITEM, meetingRoom: {} }] })).toThrow(
+      "약속한 모양",
+    );
+  });
 });
 
 describe("toMeetingListItem", () => {
@@ -210,6 +228,27 @@ describe("toMeetingListItem", () => {
     expect(item.aiSummaryStatus).toBeNull();
     expect(item.originLabel).toBe("");
     expect(item.topicSummary).toBe("");
+  });
+
+  /*
+    ⚠️ **비대면 회의**(2026-08-16, B안) — 상세 매퍼와 같은 규칙으로 세 필드를 접는다.
+       카드가 `isOnline`을 보고 그 자리에 "온라인으로 진행된 회의입니다"를 대신 그린다.
+  */
+  it("startAt/endAt/meetingRoom이 모두 null이면 schedule/roomName을 비우고 isOnline=true", () => {
+    const item = toMeetingListItem({
+      ...LIST_ITEM,
+      startAt: null,
+      endAt: null,
+      meetingRoom: null,
+    });
+
+    expect(item.schedule).toBe("");
+    expect(item.roomName).toBe("");
+    expect(item.isOnline).toBe(true);
+  });
+
+  it("대면 회의는 isOnline=false", () => {
+    expect(toMeetingListItem(LIST_ITEM).isOnline).toBe(false);
   });
 
   /* [확인] BE PR #461 `MeetingListQueryService.originLabel` — `teamId == null`이 Owner다 */

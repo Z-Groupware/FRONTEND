@@ -101,6 +101,12 @@ function toListItem(meeting: Meeting, viewerId: number, now: Date): MeetingListI
     attendeeCount: meeting.attendeeIds.length,
     isHost: meeting.hostId === viewerId,
     aiSummaryStatus: meeting.aiSummaryStatus,
+    /*
+      ⚠️ 새 필수 필드(2026-08-16). 여기 목 경로는 아래 122행에서 `!isOnline`으로 걸러
+         비대면 회의를 목록에 안 낸다 — 값이 항상 false다. 실서버(BE-18)가 확정된
+         비대면을 실어 주기 시작하면 목 데이터에도 "확정 시각"을 붙여 정리한다.
+    */
+    isOnline: meeting.isOnline,
   };
 }
 
@@ -160,6 +166,21 @@ function sortMeetingListItems(
     .sort((a, b) => {
       const rankGap = STATUS_RANK[a.item.status] - STATUS_RANK[b.item.status];
       if (rankGap !== 0) return rankGap;
+
+      /*
+        ⚠️ **시각 없는 회의(비대면)는 자기 상태 그룹 맨 뒤**로 보낸다.
+           `startMs`가 `NaN`이면 어느 비교도 false·NaN이라 `Array.prototype.sort`가 구현별로
+           흔들린다 — 여기서 명시하지 않으면 정렬이 조용히 뒤바뀐다.
+        ⚠️ 확인필요 — 목록 정렬 기준은 BE가 정한다(WORKFLOW.md §3-1-A). BE가 값을 정하면
+           그 값으로 이 자리를 바꾼다. 지금은 "완료 그룹 안 맨 뒤"가 안전한 임시값이다
+           (비대면 회의는 확정된 것만 오므로 status=DONE 그룹 안에서만 움직인다).
+      */
+      const aMissing = Number.isNaN(a.startMs);
+      const bMissing = Number.isNaN(b.startMs);
+      if (aMissing && bMissing) return 0;
+      if (aMissing) return 1;
+      if (bMissing) return -1;
+
       // 예정·진행중은 가까운 회의부터, 완료·취소는 최근 회의부터
       return a.item.status === MEETING_STATUS.SCHEDULED ||
         a.item.status === MEETING_STATUS.IN_PROGRESS
@@ -204,7 +225,13 @@ function toSortedListItems(meetings: BeMeetingListItem[]): MeetingListItem[] {
   return sortMeetingListItems(
     meetings.map((meeting) => ({
       item: toMeetingListItem(meeting),
-      startMs: new Date(meeting.startAt).getTime(),
+      /*
+        ⚠️ **비대면 회의는 `startAt`이 `null`이다**(MEET-18). `new Date(null).getTime()`은
+           `0(epoch, 1970-01-01)`이 되어 완료 그룹 최근순 정렬의 맨 뒤에 값이 있는 것처럼
+           박히지만, "시각이 없다"는 사실이 사라진다. `NaN`으로 명시해 `sortMeetingListItems`가
+           갈라 보게 한다(같은 함수의 `Number.isNaN` 분기 참고).
+      */
+      startMs: meeting.startAt === null ? Number.NaN : new Date(meeting.startAt).getTime(),
     })),
   );
 }

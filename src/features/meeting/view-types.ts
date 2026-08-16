@@ -11,9 +11,11 @@ import type { AiSummaryStatus, MeetingStatus } from "@/constants/meeting";
 
 /**
  * 목록 카드 한 장.
- * ⚠️ **비대면 회의(`isOnline`)는 여기 안 온다**(2026-08-14 팀 확정 — 실서버 목록·대시보드가
- *    서버에서부터 걸러 준다, `server.ts`의 `getMeetingDirectory` 주석). `isOnline` 필드가 없는
- *    이유다 — 상세(`MeetingDetail`)는 직접 링크로 계속 열리므로 거기는 남겨 둔다.
+ * ⚠️ **확정(하달)까지 끝난 비대면 회의는 목록에 뜬다**(2026-08-16 팀 확정, B안 — 2026-08-14의
+ *    "목록에 안 온다"를 뒤집었다). 확정 전 비대면 회의는 여전히 안 뜨고, 마이페이지
+ *    「미확정 액션」 위젯에서 검토한다. 거르는 일은 **BE 목록 쿼리**가 한다 — FE는 받은 것을 그린다.
+ * ⚠️ 그래서 `isOnline`이 필요하다. 비대면 회의는 `schedule`·`roomName`이 빈 문자열이라
+ *    그 자리에 "온라인으로 진행된 회의입니다"를 대신 그린다(WORKFLOW.md §3-1-A).
  */
 export interface MeetingListItem {
   id: string;
@@ -61,6 +63,11 @@ export interface MeetingListItem {
    *    요약이 어디까지 갔는지는 상세의 `pendingReason`이 말한다.
    */
   aiSummaryStatus: AiSummaryStatus | null;
+  /**
+   * 비대면(온라인) 회의인가 — 실서버는 `meetingRoom === null`로 판정한다(응답에 별도 필드가 없다).
+   * ⚠️ `true`면 `schedule`·`roomName`이 빈 문자열이다 — 카드가 그 자리에 안내 문구를 대신 그린다.
+   */
+  isOnline: boolean;
 }
 
 /** 목록 — 탭 두 개가 이 화면의 전부다(WORKFLOW §3-2) */
