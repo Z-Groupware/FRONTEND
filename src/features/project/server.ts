@@ -163,6 +163,9 @@ export async function getProjectDetail(id: string): Promise<ProjectDetail | null
     return {
       id: project.id,
       tag: project.tag,
+      /* ⚠️ 목 상세는 목 목록에서 파생한다 — 목록의 `tagColor`(폼이 저장한 값)를 그대로 옮긴다.
+         해시로 다시 배정하면 목록과 상세의 색이 어긋난다(§정직한 목업). */
+      tagColor: project.tagColor,
       name: project.name,
       description: project.description,
       dueDate: project.dueDate,

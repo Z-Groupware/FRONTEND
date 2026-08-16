@@ -16,7 +16,7 @@ import {
 } from "@/features/project/lib";
 import { getProjectDetail, getProjectTeamActions } from "@/features/project/server";
 import { formatMonthDayWeekday } from "@/lib/date";
-import { pickPaletteColor } from "@/lib/palette";
+import { paletteColorByName } from "@/lib/palette";
 import { cn } from "@/lib/utils";
 
 interface ProjectDetailPageProps {
@@ -36,7 +36,8 @@ export default async function ProjectDetailPage({ params, searchParams }: Projec
   if (!project) notFound();
 
   const activeTab = parseProjectDetailTab((await searchParams).tab);
-  const tagColor = pickPaletteColor(project.tag);
+  /* ⚠️ 사용자가 저장한 색을 그대로 쓴다 — 태그 이름 해시가 아니다(§palette). */
+  const tagColor = paletteColorByName(project.tagColor);
   const due = formatMonthDayWeekday(project.dueDate);
   const { visible: visibleTeamNames, overflow: teamOverflow } = splitDepartments(project.teamNames);
   const visibleTeamBadges = visibleTeamNames.map((team) => (

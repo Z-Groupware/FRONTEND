@@ -59,4 +59,19 @@ describe("유료 하나뿐 — 무료가 남아 있지 않다", () => {
   it("무제한 항목은 셋이고 서로 다르다", () => {
     expect(new Set(PLAN_UNLIMITED).size).toBe(PLAN_UNLIMITED.length);
   });
+
+  /*
+    ⚠️ '프로젝트 자동 매칭'은 팀 확정으로 **없는 기능**이다(2026-08-16, CLAUDE.md §AI 기능).
+       카드가 셋(랜딩·결제·구독 재개)에서 같은 배열을 쓰므로 여기서 걸리면 3화면 모두 오문구다.
+    ⚠️ 개수를 8로 못박는다 — 헤더 문구 `기능 8가지가 모두 들어 있습니다`가 `features.length`를
+       읽는다. 개수가 흔들리면 그 문구도 흔들린다.
+  */
+  it("'프로젝트 자동 매칭' 문구가 되살아나지 않는다 (팀 확정: 그런 기능은 없다)", () => {
+    expect(CURRENT_PLAN.features.join(" ")).not.toMatch(/자동 ?매칭/);
+  });
+
+  it("기능은 8개이고 중복이 없다", () => {
+    expect(CURRENT_PLAN.features).toHaveLength(8);
+    expect(new Set(CURRENT_PLAN.features).size).toBe(8);
+  });
 });
