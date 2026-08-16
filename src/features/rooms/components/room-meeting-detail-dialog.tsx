@@ -14,8 +14,9 @@ import {
   updateMeetingAction,
   type UpdateMeetingState,
 } from "@/features/meeting/actions";
+import { MeetingCancelDialog } from "@/features/meeting/components/meeting-cancel-dialog";
 import { MEETING_TITLE_MAX_LENGTH } from "@/features/meeting/lib";
-import { canEditMeeting } from "@/features/meeting/status";
+import { canCancelMeeting, canEditMeeting } from "@/features/meeting/status";
 
 const INITIAL_STATE: UpdateMeetingState = { error: null, saved: null };
 
@@ -32,6 +33,8 @@ interface RoomMeetingDetailDialogProps {
   onOpenChange: (open: boolean) => void;
   /** 제목 수정이 저장되면 캘린더 막대도 같이 바꾸라고 올려보낸다(재조회 없이 비관적 갱신). */
   onTitleUpdated: (meetingId: string, title: string) => void;
+  /** 회의 취소가 성공하면 캘린더 막대를 지우라고 올려보낸다(§최적화: action 리턴값으로 화면 반영). */
+  onCancelled: (meetingId: string) => void;
 }
 
 /**
@@ -53,6 +56,7 @@ export function RoomMeetingDetailDialog({
   meetingId,
   onOpenChange,
   onTitleUpdated,
+  onCancelled,
 }: RoomMeetingDetailDialogProps) {
   return (
     <Dialog open={meetingId !== null} onOpenChange={(next) => !next && onOpenChange(false)}>
@@ -67,6 +71,7 @@ export function RoomMeetingDetailDialog({
             meetingId={meetingId}
             onClose={() => onOpenChange(false)}
             onTitleUpdated={onTitleUpdated}
+            onCancelled={onCancelled}
           />
         )}
       </DialogContent>
@@ -78,9 +83,15 @@ interface MeetingSummaryPanelProps {
   meetingId: string;
   onClose: () => void;
   onTitleUpdated: (meetingId: string, title: string) => void;
+  onCancelled: (meetingId: string) => void;
 }
 
-function MeetingSummaryPanel({ meetingId, onClose, onTitleUpdated }: MeetingSummaryPanelProps) {
+function MeetingSummaryPanel({
+  meetingId,
+  onClose,
+  onTitleUpdated,
+  onCancelled,
+}: MeetingSummaryPanelProps) {
   const [load, setLoad] = useState<LoadState>({ status: "loading" });
   const [editing, setEditing] = useState(false);
   const [state, formAction, isPending] = useActionState(updateMeetingAction, INITIAL_STATE);
@@ -230,6 +241,18 @@ function MeetingSummaryPanel({ meetingId, onClose, onTitleUpdated }: MeetingSumm
       </div>
 
       <div className="border-border flex items-center justify-end gap-2 border-t px-6 py-4">
+        {canCancelMeeting({
+          isHost: load.summary.isHost,
+          pendingReason: load.summary.pendingReason,
+        }) && (
+          <MeetingCancelDialog
+            meetingId={meetingId}
+            onCancelled={() => {
+              onCancelled(meetingId);
+              onClose();
+            }}
+          />
+        )}
         {canEditMeeting({
           isHost: load.summary.isHost,
           pendingReason: load.summary.pendingReason,

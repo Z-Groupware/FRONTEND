@@ -1,6 +1,6 @@
 import type { NextRequest } from "next/server";
 
-import { getAccessToken } from "@/features/auth/session";
+import { ensureAccessToken } from "@/features/auth/session";
 import { ep } from "@/lib/endpoints";
 
 /**
@@ -27,7 +27,12 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ meetingId: string }> },
 ) {
-  const accessToken = await getAccessToken();
+  /*
+    ⚠️ **`getAccessToken()`이 아니라 `ensureAccessToken()`이다.** 이 경로는 `proxy.ts`
+       매처에서 제외돼 있어 미들웨어의 자동 재발급을 못 받는다 — 회의가 30분 넘게 길어지면
+       재연결마다 401을 맞는다(알림 스트림과 같은 원인, `session.ts` 주석 참고).
+  */
+  const accessToken = await ensureAccessToken();
   if (!accessToken) {
     return new Response("인증이 필요합니다.", { status: 401 });
   }

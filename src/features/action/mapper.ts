@@ -320,6 +320,8 @@ export function toTeamActionDetail(be: BeTeamActionDetail): TeamActionDetail {
     team: be.teamName,
     projectId: be.projectId,
     projectTag: be.projectTag,
+    status: be.status,
+    dueDate: be.dueDate,
     assigneeName: be.assigneeName ?? undefined,
     assigneeRoleLabel: be.assigneeRoleLabel ?? undefined,
     sourceMeeting:
