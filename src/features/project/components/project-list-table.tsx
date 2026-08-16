@@ -5,7 +5,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { getProgressPercent, splitDepartments } from "@/features/project/lib";
 import type { ProjectListItem as ProjectListItemModel } from "@/features/project/types";
 import { formatMonthDayWeekday } from "@/lib/date";
-import { pickPaletteColor } from "@/lib/palette";
+import { paletteColorByName } from "@/lib/palette";
 
 /**
  * 프로젝트 목록 — **표다**(2026-08-10 전환).
@@ -88,7 +88,8 @@ function Row({ project }: { project: ProjectListItemModel }) {
   const percent = getProgressPercent(project.actionDone, project.actionTotal);
   const { visible, overflow } = splitDepartments(project.departments);
   const due = formatMonthDayWeekday(project.dueDate);
-  const tagColor = pickPaletteColor(project.tag);
+  /* ⚠️ 사용자가 저장한 색을 그대로 쓴다 — 태그 이름 해시가 아니다(§palette). */
+  const tagColor = paletteColorByName(project.tagColor);
 
   const visibleTeamBadges = visible.map((team) => (
     <Badge key={team} variant="outline" className="shrink-0">

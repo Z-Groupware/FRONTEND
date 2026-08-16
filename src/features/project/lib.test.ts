@@ -23,6 +23,7 @@ function project(overrides: Partial<ProjectListItem>): ProjectListItem {
     name: "프로젝트",
     description: "",
     tag: "TAG",
+    tagColor: "slate",
     departments: [],
     actionTotal: 0,
     actionDone: 0,

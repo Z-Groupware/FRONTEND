@@ -1,5 +1,5 @@
 import type { ProjectStatus } from "@/constants/domain";
-import { hexFromTagName } from "@/lib/palette";
+import { hexFromTagName, tagNameFromHex } from "@/lib/palette";
 
 import type {
   ProjectAttachment,
@@ -112,6 +112,14 @@ export function toProjectListItem(be: BeProjectSummary): ProjectListItem {
     // ⚠️ 2026-08-11 해결 — ProjectSummaryResponse에 description 추가됨(이홍근 요청).
     description: be.description,
     tag: be.tag,
+    /*
+      ⚠️ **BE 저장 HEX → 팔레트 이름**으로 되돌린다. BE는 팔레트 키가 아니라 HEX 문자열
+         그대로를 저장·반환하지만, 화면 계약은 라이트/다크 짝을 알기 위해 팔레트 이름을 쓴다.
+      ⚠️ `be.color ?? ""`로 방어한다 — `tagNameFromHex`가 `hex.toUpperCase()`를 바로 부르므로
+         `undefined`가 오면 TypeError를 던진다. 타입상 필수라 계약대로는 안 오지만, 서버
+         컴포넌트 렌더가 그 자리에서 통째로 죽는 결과가 부담스러워 접어 둔다(§정직성).
+    */
+    tagColor: tagNameFromHex(be.color ?? ""),
     departments: be.teamNames,
     actionTotal: be.actionCount,
     actionDone: be.completedActionCount,
@@ -130,6 +138,8 @@ export function toProjectDetail(be: BeProjectDetail, teamNames: string[]): Proje
   return {
     id: be.id,
     tag: be.tag,
+    /* ⚠️ 목록과 같은 이유·같은 방어(위 `toProjectListItem` 주석). */
+    tagColor: tagNameFromHex(be.color ?? ""),
     name: be.name,
     description: be.description,
     dueDate: be.dueDate,
