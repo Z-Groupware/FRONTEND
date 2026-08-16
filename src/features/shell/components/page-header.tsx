@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 
 import { BackLink } from "@/components/common/back-link";
 import { ThemeToggle } from "@/components/common/theme-toggle";
+import { NotificationBell } from "@/features/notification/components/notification-bell";
 
 interface PageHeaderProps {
   /** 화면 제목. 페이지마다 `h1`은 하나뿐이다(CLAUDE.md §SEO·a11y) */
@@ -35,9 +36,6 @@ interface PageHeaderProps {
  * ⚠️ 탭은 여기에 넣지 않는다. 탭이 필요한 화면은 이 아래에 따로 둔다.
  * ⚠️ 높이(56px)는 **사이드바 로고 줄과 같은 값**이다. 한쪽만 고치면 두 경계선이 어긋나
  *    화면 왼쪽 위에 계단이 생긴다 — 바꿀 때 `role-sidebar`·`system-sidebar`를 같이 본다.
- *    ⚠️ **이 56px가 배너 오버레이의 기준선이기도 하다**(2026-08-15, #540). 셸이
- *    `NotificationBanner`·`PasswordChangeBanner`를 `top-[56px]` 오버레이로 얹는데, 여기서
- *    이 값을 바꾸면 그쪽도 같이 바꿔야 한다(`(shell)/layout.tsx`).
  */
 export function PageHeader({ title, icon: Icon, meta, backTo, action }: PageHeaderProps) {
   return (
@@ -95,7 +93,11 @@ export function PageHeader({ title, icon: Icon, meta, backTo, action }: PageHead
 
         {action && <div className="flex shrink-0 items-center gap-2">{action}</div>}
 
-        {/* 테마 전환은 화면마다 두지 않고 여기 한 자리에 고정한다 — 다른 서비스들이 그렇듯 오른쪽 위 */}
+        {/*
+          종·테마 전환은 화면마다 두지 않고 여기 한 자리에 고정한다 — 다른 서비스들이 그렇듯
+          오른쪽 위, 테마 전환 바로 왼쪽에 종을 둔다(2026-08-16, #602 후속).
+        */}
+        <NotificationBell />
         <ThemeToggle />
       </div>
     </header>

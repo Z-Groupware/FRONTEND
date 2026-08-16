@@ -19,12 +19,7 @@ import {
   toCreateNoticePayload,
   toNotice,
 } from "./mapper";
-import {
-  addMockNotice,
-  deleteMockNotice,
-  markMockNoticeRead,
-  updateMockNotice,
-} from "./mock/notices";
+import { addMockNotice, deleteMockNotice, updateMockNotice } from "./mock/notices";
 import type { Notice, NoticeDraft, NoticeFormErrors } from "./types";
 import { validateNoticeDraft } from "./validate";
 
@@ -47,24 +42,6 @@ function toNoticeFormErrors(error: unknown): NoticeFormErrors {
 }
 
 const LIST_PATH = "/app/notice";
-
-/**
- * 공지 읽음 처리 — 격리막(CLAUDE.md §Mock 격리막).
- * ⚠️ 상세를 열면 그 화면의 잎사귀가 이 액션을 부른다(부수효과 없는 조회와 분리). 끝나면
- *    `revalidatePath`로 목록 미읽음 점·사이드바 표시를 갱신한다.
- * ⚠️ 지금은 목이라 **전역** 읽음이다 — 세션이 붙으면 "이 사용자" 기준으로 바뀐다(§정직성).
- */
-export async function markNoticeReadAction(formData: FormData): Promise<void> {
-  if (!isMock) {
-    // ⚠️ 미구현 — API 스펙 확정 후 BFF 경로로 읽음 처리 요청을 보낸다.
-    throw new Error("공지 읽음 처리 API가 아직 연결되지 않았습니다.");
-  }
-
-  const id = String(formData.get("id") ?? "");
-  markMockNoticeRead(id);
-  // 목록 경로만 무효화한다 — 상세(현재 경로)는 건드리지 않아 재검증→재제출 루프가 안 생긴다.
-  revalidatePath(LIST_PATH);
-}
 
 /**
  * 작성·수정 폼 결과 — `useActionState`가 그대로 들고 있는 모양.

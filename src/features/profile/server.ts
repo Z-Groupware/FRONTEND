@@ -7,10 +7,11 @@ import { MY_PROFILE_MOCK } from "./mock/profile";
 import type { MyProfile } from "./types";
 
 /**
- * "발급받은 비밀번호를 아직 쓰는가" — 로그인 뒤 배너(`PasswordChangeBanner`)를 띄울지 판정.
+ * "발급받은 비밀번호를 아직 쓰는가" — 종 목록(`NotificationBell`)에 임시 비밀번호 안내를
+ * 끼워 넣을지 판정(`(shell)/layout.tsx` → `NotificationProvider`의 `showPasswordChangeNotice`).
  *
  * ⚠️ 목에는 이 값을 낼 세션이 없다(`getMe()`가 늘 `null`) — **꺼진 채로 데모한다**(정직한
- *    목업: 되는 척 안 한다). 배너 자체를 보려면 실연동 모드에서 `passwordChanged: false`인
+ *    목업: 되는 척 안 한다). 안내 자체를 보려면 실연동 모드에서 `passwordChanged: false`인
  *    계정으로 확인한다.
  */
 export async function shouldShowPasswordChangeBanner(): Promise<boolean> {
