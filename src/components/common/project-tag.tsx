@@ -1,4 +1,4 @@
-import { pickPaletteColor } from "@/lib/palette";
+import { paletteColorByName, pickPaletteColor, type TagColorName } from "@/lib/palette";
 import { cn } from "@/lib/utils";
 
 /**
@@ -7,8 +7,9 @@ import { cn } from "@/lib/utils";
  * ⚠️ 전에는 같은 마크업(`rounded px-1.5 py-px text-[11px]` + 인라인 색)이 **열일곱 파일**에
  *    흩어져 있었다. 한 군데를 다듬으면 나머지가 그대로 남아, 같은 태그가 화면마다 다른
  *    모양으로 떴다 — 칩은 프로젝트를 알아보는 표식이라 모양이 흔들리면 표식 노릇을 못 한다.
- * ⚠️ **색은 이름에서 나온다**(`pickPaletteColor`). 같은 이름이면 어느 화면에서든 같은 색이다 —
- *    그 규칙은 그대로 두고 여기서는 **입는 옷만** 정한다.
+ * ⚠️ **색은 저장된 팔레트 이름**(`color` prop)이 정하고, 없으면 태그 이름 해시로 떨어진다
+ *    (`pickPaletteColor`). 프로젝트 목록·상세는 BE가 저장한 색을 매퍼가 옮기니 `color`를
+ *    넘긴다 — 회의·액션 응답에는 프로젝트 색이 없어 그 자리에서만 해시로 배정한다.
  * ⚠️ 색은 **구분용이지 알림용이 아니다**(§palette). 그래서 테두리를 진하게 두르거나 그림자를
  *    얹지 않는다 — 상태 배지처럼 보이면 뜻이 있는 것처럼 읽힌다.
  */
@@ -27,12 +28,19 @@ const SIZE_CLASS: Record<ProjectTagSize, string> = {
 
 interface ProjectTagProps {
   tag: string;
+  /**
+   * 저장된 팔레트 이름 — 있으면 이걸 쓰고, 없으면 태그 이름 해시로 떨어진다.
+   * ⚠️ 색을 안 주는 경로가 아직 남아 있다(회의·액션 응답에는 프로젝트 색이 없다).
+   *    그때는 해시로 배정해 같은 태그가 같은 색을 얻는다(같은 프로젝트가 화면마다 다른
+   *    표식으로 보이는 것보다 낫다).
+   */
+  color?: TagColorName;
   size?: ProjectTagSize;
   className?: string;
 }
 
-export function ProjectTag({ tag, size = "sm", className }: ProjectTagProps) {
-  const color = pickPaletteColor(tag);
+export function ProjectTag({ tag, color: colorName, size = "sm", className }: ProjectTagProps) {
+  const color = colorName ? paletteColorByName(colorName) : pickPaletteColor(tag);
 
   return (
     <span

@@ -1,3 +1,4 @@
+import { ACTION_STATUS } from "@/constants/action";
 import type { ActionStatus } from "@/constants/domain";
 import type { MemberAction } from "@/features/member/types";
 import { type BeAttachment, toProjectAttachment } from "@/features/project/mapper";
@@ -233,17 +234,30 @@ export interface BeActionDetail {
   id: number;
   projectId: number;
   title: string;
-  description: string;
+  /**
+   * BE `action.description`은 `TEXT NULL`(V1__init_schema.sql:173)이고 `CreateActionRequest`에
+   * `@NotBlank`가 없다 — 수동 추가 액션은 `null`로 저장된다.
+   */
+  description: string | null;
   status: ActionStatus;
   startDate: string | null;
   dueDate: string;
   needsReview: boolean;
-  assigneeName: string;
+  /** 담당자 미지정이면 `null`(BE `ActionService.getActionDetail`:258 `assignee == null ? null : assignee.name()`). */
+  assigneeName: string | null;
   /** 역할(sub_team) 미지정이면 `null`. */
   assigneeRoleLabel: string | null;
-  projectTag: string;
-  projectName: string;
-  teamName: string;
+  /** 프로젝트 참조 조회 실패면 `null`(BE `ActionService`:288 `project == null ? null : project.tag()`). */
+  projectTag: string | null;
+  /** 프로젝트 참조 조회 실패면 `null`(BE `ActionService`:289 `project == null ? null : project.name()`). */
+  projectName: string | null;
+  /**
+   * ⚠️ **개인 액션은 항상 `null`이다.** `ActionTypeShapePolicy.checkTeamShape`
+   *    (ActionTypeShapePolicy.java:52-53)가 "PERSONAL 액션은 팀을 가질 수 없다"를 강제해
+   *    `teamId`가 늘 null이고, BE는 `teamId == null ? null : ...`(ActionService:267-269)로
+   *    이름을 만든다.
+   */
+  teamName: string | null;
   parentActionId: number | null;
   parentActionTitle: string | null;
   parentActionTeamName: string | null;
@@ -254,15 +268,65 @@ export interface BeActionDetail {
   sourceMeetingScheduledAt: string | null;
 }
 
+function isNullableString(value: unknown): value is string | null {
+  return value === null || typeof value === "string";
+}
+
+/**
+ * 응답이 우리가 읽는 모양인가 — `serverApi<BeActionDetail>`는 **단언일 뿐 검사가 아니다**
+ * (회의 상세 `isBeMeetingDetail`과 같은 이유·같은 범위: 화면이 읽는 필드만 본다).
+ *
+ * ⚠️ nullable 5필드(`description`·`assigneeName`·`projectTag`·`projectName`·`teamName`)는
+ *    `null`을 통과시킨다 — BE record가 항상 키를 내려보내므로 확장 필드가 아니라 필수 필드다.
+ */
+function isBeActionDetail(value: unknown): value is BeActionDetail {
+  if (typeof value !== "object" || value === null) return false;
+  const detail = value as Partial<BeActionDetail>;
+
+  return (
+    typeof detail.id === "number" &&
+    typeof detail.projectId === "number" &&
+    typeof detail.title === "string" &&
+    isNullableString(detail.description) &&
+    typeof detail.status === "string" &&
+    (Object.values(ACTION_STATUS) as string[]).includes(detail.status) &&
+    (detail.startDate === null || typeof detail.startDate === "string") &&
+    typeof detail.dueDate === "string" &&
+    typeof detail.needsReview === "boolean" &&
+    isNullableString(detail.assigneeName) &&
+    isNullableString(detail.assigneeRoleLabel) &&
+    isNullableString(detail.projectTag) &&
+    isNullableString(detail.projectName) &&
+    isNullableString(detail.teamName) &&
+    (detail.parentActionId === null || typeof detail.parentActionId === "number") &&
+    isNullableString(detail.parentActionTitle) &&
+    isNullableString(detail.parentActionTeamName) &&
+    isNullableString(detail.parentActionDueDate) &&
+    (detail.sourceMeetingId === null || typeof detail.sourceMeetingId === "number") &&
+    isNullableString(detail.sourceMeetingTitle) &&
+    isNullableString(detail.sourceMeetingScheduledAt)
+  );
+}
+
+export function parseActionDetail(raw: unknown): BeActionDetail {
+  if (!isBeActionDetail(raw)) {
+    throw new Error("액션 상세 응답이 약속한 모양이 아닙니다.");
+  }
+  return raw;
+}
+
 export function toPersonalActionDetail(be: BeActionDetail): PersonalActionDetail {
   return {
     id: be.id,
     name: be.title,
-    description: be.description,
-    team: be.teamName,
+    /* description은 TEXT NULL이라 없을 수 있다 — 화면 계약(non-null string)에 맞춰 빈 문자열로 접는다. */
+    description: be.description ?? "",
+    /* ⚠️ 개인 액션은 팀이 없다(ActionTypeShapePolicy) — 없으면 칩 자체를 안 그린다 */
+    team: be.teamName ?? undefined,
     projectId: be.projectId,
-    projectTag: be.projectTag,
-    assigneeName: be.assigneeName,
+    /* ⚠️ `null`을 그대로 넘기면 `pickPaletteColor`가 `null.length`에서 던진다(palette.ts:105) */
+    projectTag: be.projectTag ?? undefined,
+    assigneeName: be.assigneeName ?? undefined,
     assigneeRoleLabel: be.assigneeRoleLabel ?? undefined,
     sourceMeeting:
       be.sourceMeetingId !== null && be.sourceMeetingTitle && be.sourceMeetingScheduledAt

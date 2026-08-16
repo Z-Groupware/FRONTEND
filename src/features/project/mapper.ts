@@ -1,5 +1,5 @@
 import type { ProjectStatus } from "@/constants/domain";
-import { hexFromTagName } from "@/lib/palette";
+import { hexFromTagName, tagNameFromHex } from "@/lib/palette";
 
 import type {
   ProjectAttachment,
@@ -31,6 +31,11 @@ export interface BeProjectSummary {
   actionCount: number;
   completedActionCount: number;
   meetingCount: number;
+  /**
+   * ⚠️ **FE는 안 쓴다**(소수 값이다). 진척율 표시는 `getProgressPercent(actionDone, actionTotal)`가
+   *    만든다 — 반올림·소수점 없음 규칙이 FE 몫이라 두 벌로 두지 않는다(`toProjectListItem`
+   *    위 주석 참고).
+   */
   progressPct: number;
   /** 생성·수정 응답에서는 항상 빈 배열 — 실제 값은 목록 조회에서만 온다. */
   teamNames: string[];
@@ -91,6 +96,15 @@ function fallbackStartDate(startDate: string | null): string {
   return startDate ?? new Date().toISOString().slice(0, 10);
 }
 
+/**
+ * ⚠️ **`be.progressPct`는 안 옮긴다 — 쓰지 않는 필드다.** 진척율의 표시 규칙(소수점 없이
+ *    반올림)이 FE 몫이라(`lib.ts` `getProgressPercent`, `project-list-table.tsx`가 `%`만 쓴다)
+ *    같은 숫자를 두 벌로 만들지 않으려면 한쪽을 버려야 한다. `actionCount`·`completedActionCount`
+ *    두 숫자만 받아 화면이 계산하는 쪽을 정본으로 둔다 — BE 값을 표시하려면 반올림 규칙까지
+ *    BE로 옮겨야 하고, 그러면 목(mock) 경로가 진척율을 못 만든다.
+ * ⚠️ `actionCount`·`completedActionCount`는 **개인 액션(리프)만** 센다(docs/WORKFLOW.md §1,
+ *    BE-12). 팀 액션을 함께 세면 같은 일이 두 번 세어져 진척율이 실제보다 낮게 나온다.
+ */
 export function toProjectListItem(be: BeProjectSummary): ProjectListItem {
   return {
     id: be.id,
@@ -98,6 +112,14 @@ export function toProjectListItem(be: BeProjectSummary): ProjectListItem {
     // ⚠️ 2026-08-11 해결 — ProjectSummaryResponse에 description 추가됨(이홍근 요청).
     description: be.description,
     tag: be.tag,
+    /*
+      ⚠️ **BE 저장 HEX → 팔레트 이름**으로 되돌린다. BE는 팔레트 키가 아니라 HEX 문자열
+         그대로를 저장·반환하지만, 화면 계약은 라이트/다크 짝을 알기 위해 팔레트 이름을 쓴다.
+      ⚠️ `be.color ?? ""`로 방어한다 — `tagNameFromHex`가 `hex.toUpperCase()`를 바로 부르므로
+         `undefined`가 오면 TypeError를 던진다. 타입상 필수라 계약대로는 안 오지만, 서버
+         컴포넌트 렌더가 그 자리에서 통째로 죽는 결과가 부담스러워 접어 둔다(§정직성).
+    */
+    tagColor: tagNameFromHex(be.color ?? ""),
     departments: be.teamNames,
     actionTotal: be.actionCount,
     actionDone: be.completedActionCount,
@@ -116,6 +138,8 @@ export function toProjectDetail(be: BeProjectDetail, teamNames: string[]): Proje
   return {
     id: be.id,
     tag: be.tag,
+    /* ⚠️ 목록과 같은 이유·같은 방어(위 `toProjectListItem` 주석). */
+    tagColor: tagNameFromHex(be.color ?? ""),
     name: be.name,
     description: be.description,
     dueDate: be.dueDate,
@@ -137,6 +161,15 @@ export function toProjectTeamAction(be: BeProjectTimelineItem): ProjectTeamActio
     startDate: be.dueDate,
     dueDate: be.dueDate,
     status: be.status,
+    /*
+      ⚠️ **BE 판정을 그대로 옮긴다** — 프로젝트 타임라인은 BE `ProjectService.getTimeline`이
+         이미 계산해 보낸다(같은 파일 71행에 `isDelayed`가 선언돼 있는데 지금까지 조용히
+         버려지고 있었다). 두 벌이면 서버·브라우저 시각이 갈리는 자정에 어긋난다.
+      ⚠️ 지금 BE 판정식은 `status != DONE && dueDate < today`라 FE 확정 규칙(진행중 && 마감
+         경과)과 다르다 — BE-13이 좁힌다. 그전까지 이 타임라인만 '할일 + 마감 경과'가
+         지연으로 뜬다(다른 화면은 FE 로컬 계산이라 이번 변경으로 사라진다).
+    */
+    isDelayed: be.isDelayed,
   };
 }
 

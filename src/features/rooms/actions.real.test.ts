@@ -19,7 +19,7 @@ jest.mock("@/lib/api", () => ({
 import { AUTHORITY } from "@/constants/authority";
 import { requireAccessToken } from "@/features/auth/session";
 import { getViewer } from "@/features/shell/viewer";
-import { serverApi } from "@/lib/api";
+import { ApiError, serverApi } from "@/lib/api";
 
 import {
   createMeetingRoomAction,
@@ -126,6 +126,62 @@ describe("createRoomReservationAction — 실서버 참석자 재검증", () => 
     expect(result.errors.attendeeIds).toBeDefined();
     expect(result.created).toBeUndefined();
     expect(serverApiMock).not.toHaveBeenCalled();
+  });
+});
+
+/**
+ * MEET-01 오류코드 → 폼 필드 매핑(2026-08-16 정정).
+ *
+ * ⚠️ 지키는 것 셋:
+ *   ① MT-015·MT-016·MT-017·MT-018·MT-019 — 예전엔 매핑이 없어 전부 `title`로 떨어졌다.
+ *      MEET-18(비대면)과 **같은 칸·같은 문구**를 쓴다.
+ *   ② MT-017은 참석자 부족이라 `attendeeIds`(016·018·019 묶음과 다른 칸이다).
+ *   ③ **MT-004는 BE에 없다**(운영시간 개념이 BE PR #523에서 폐기됐다) — `case`를 지웠다.
+ */
+async function createWithApiError(
+  code: string,
+  message = "BE 오류",
+): Promise<Record<string, string>> {
+  serverApiMock.mockRejectedValue(new ApiError(400, message, code));
+
+  const result = await createRoomReservationAction({ errors: {} }, form([3, 4]));
+
+  return result.errors as Record<string, string>;
+}
+
+describe("createRoomReservationAction — MEET-01 오류코드 매핑", () => {
+  it("MT-015는 topics 칸 오류로 바뀐다", async () => {
+    const errors = await createWithApiError("MT-015", "안건이 유효하지 않습니다");
+    expect(errors.topics).toBe("안건이 유효하지 않습니다");
+    expect(errors.title).toBeUndefined();
+  });
+
+  it("MT-017은 attendeeIds 칸 오류로 바뀐다 — 016·018·019 묶음과 다른 자리다", async () => {
+    const errors = await createWithApiError(
+      "MT-017",
+      "개설자 외 참석자를 한 명 이상 선택해야 합니다",
+    );
+    expect(errors.attendeeIds).toBe("개설자 외 참석자를 한 명 이상 선택해야 합니다");
+    expect(errors.parentTeamActionId).toBeUndefined();
+  });
+
+  it.each(["MT-016", "MT-018", "MT-019"])(
+    "%s는 parentTeamActionId 칸 오류로 바뀐다",
+    async (code) => {
+      const errors = await createWithApiError(code, "상위 팀 액션 오류");
+      expect(errors.parentTeamActionId).toBe("상위 팀 액션 오류");
+    },
+  );
+
+  /*
+    ⚠️ MT-004 매핑이 남아 있던 시절엔 이 코드가 `startTime`으로 갔지만, 지금은 BE가 절대
+       던지지 않는 값이라 `default`(title)로 떨어지는 것이 정상이다. 굳이 온다면 그것이
+       계약 위반이므로 사용자가 볼 수 있는 자리(title)에 얹는다.
+  */
+  it("MT-004(BE에 없는 코드)가 어쩌다 오면 default(title)로 떨어진다", async () => {
+    const errors = await createWithApiError("MT-004", "폐기된 오류");
+    expect(errors.title).toBe("폐기된 오류");
+    expect(errors.startTime).toBeUndefined();
   });
 });
 

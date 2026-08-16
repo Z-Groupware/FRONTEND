@@ -11,7 +11,7 @@ import type { BillingConfig } from "../types";
  * 플랜 한 장 — **파는 물건을 설명하는 카드.** 값은 전부 `BillingConfig`에서 읽는다.
  *
  * ⚠️ 결제 화면(`SubscribeCard`)과 요금제 소개(`/plans`)가 **같은 것을 쓴다.**
- *    전에는 `/plans`가 따로 그린 카드 + 기능 표를 얹고 있었는데, 같은 아홉 개를 두 번 늘어놓아
+ *    전에는 `/plans`가 따로 그린 카드 + 기능 표를 얹고 있었는데, 같은 여덟 개를 두 번 늘어놓아
  *    두 목록이 갈라지고(표에 두 개가 빠져 있었다) 카드와 표의 폭도 어긋났다.
  *    파는 물건은 한 장으로 끝낸다 — 랜딩에서 본 카드와 결제 직전에 보는 카드가 같아야 한다.
  * ⚠️ 읽는 순서가 **포함량 → 무제한 → 기능**이다. 돈이 더 나가는지 아닌지를 가르는 값이
@@ -112,7 +112,7 @@ export function PlanSummaryCard({ config }: { config: BillingConfig }) {
           ⚠️ 넓이는 `gap-x` 하나로 조절한다. 가운데 열은 제자리에 있고 **양쪽 열만** 바깥으로
              밀려나므로, 덩어리 중심이 카드 중심에서 흔들리지 않는다.
           ⚠️ 표식은 **전부 같은 체크**다. 기능마다 다른 아이콘을 붙여 봤지만,
-             아홉 개가 제각각이면 표식끼리 시끄러워 글자가 뒤로 밀린다.
+             여덟 개가 제각각이면 표식끼리 시끄러워 글자가 뒤로 밀린다.
         */}
         <div className="flex pt-5 sm:justify-center">
           <ul className="grid w-fit gap-x-14 gap-y-4 sm:[grid-template-columns:repeat(3,max-content)]">

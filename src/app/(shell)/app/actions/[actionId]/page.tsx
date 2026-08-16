@@ -53,10 +53,12 @@ export default async function PersonalActionDetailPage({ params }: PersonalActio
       key: "assignee",
       icon: User,
       label: "담당자",
-      // ⚠️ 역할 미지정이면 이름만 보여준다 — 없는 역할을 지어내지 않는다(§정직성).
-      content: action.assigneeRoleLabel
-        ? `${action.assigneeName}(${action.assigneeRoleLabel})`
-        : action.assigneeName,
+      // ⚠️ 역할 미지정이면 이름만, 담당자 자체가 없으면 "담당자 미정"(WORKFLOW.md §3-1-A) — 빈 칸으로 두지 않는다.
+      content: action.assigneeName
+        ? action.assigneeRoleLabel
+          ? `${action.assigneeName}(${action.assigneeRoleLabel})`
+          : action.assigneeName
+        : "담당자 미정",
     },
     ...(action.sourceMeeting
       ? [
@@ -68,7 +70,7 @@ export default async function PersonalActionDetailPage({ params }: PersonalActio
               <>
                 <div className="flex items-center gap-1.5">
                   <p className="truncate">{action.sourceMeeting.title}</p>
-                  <ProjectTag tag={action.projectTag} />
+                  {action.projectTag ? <ProjectTag tag={action.projectTag} /> : null}
                 </div>
                 <p className="text-muted-foreground text-[11px] leading-4">
                   {formatMeetingDate(action.sourceMeeting.scheduledAt)}
@@ -89,7 +91,7 @@ export default async function PersonalActionDetailPage({ params }: PersonalActio
               <>
                 <div className="flex items-center gap-1.5">
                   <p className="truncate">{action.parentTeamAction.name}</p>
-                  <ProjectTag tag={action.projectTag} />
+                  {action.projectTag ? <ProjectTag tag={action.projectTag} /> : null}
                   <TeamChip team={action.parentTeamAction.team} />
                 </div>
                 <p className="text-muted-foreground text-[11px] leading-4">
@@ -134,8 +136,12 @@ export default async function PersonalActionDetailPage({ params }: PersonalActio
           <h2 className="text-foreground text-[22px] leading-[30px] font-semibold tracking-[-0.4px]">
             {action.name}
           </h2>
-          <ProjectTag tag={action.projectTag} />
-          <TeamChip team={action.team} />
+          {action.projectTag ? <ProjectTag tag={action.projectTag} /> : null}
+          {/*
+            ⚠️ **개인 액션은 팀이 없다**(BE `ActionTypeShapePolicy`) — 없으면 칩 자체를 안 그린다.
+               전에는 빈 회색 칩이 매번 그려졌다.
+          */}
+          {action.team ? <TeamChip team={action.team} /> : null}
         </div>
 
         {/*

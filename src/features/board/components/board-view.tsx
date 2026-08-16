@@ -88,13 +88,17 @@ export function BoardView({ boardType, cards, todayIso }: BoardViewProps) {
   const activeCard = cards.find((card) => card.id === activeId) ?? null;
 
   /**
-   * 지연 배지 — **지금 서 있는 칸**으로 판정한다(저장된 `isDone`이 아니라).
+   * 지연 배지 — **지금 서 있는 칸**(드래그 override 포함)이 진행중일 때만 단다.
    *
    * ⚠️ 칸과 드래그 사본이 **같은 함수**를 쓴다. 따로 적어 두면 한쪽만 고쳐져 같은 카드가
    *    자리에 따라 다른 배지를 단다(2026-08-11 코드래빗 지적).
+   * ⚠️ **칸 판정은 여기서 한다** — `isCardDelayed`는 저장된 `isDone`만 보는 `getBoardColumn`을
+   *    부르지 않는다(드래그 override를 모른다). 확정 규칙(WORKFLOW.md §7 "진행중 칸 안의
+   *    배지")대로 `IN_PROGRESS`일 때만 단다 — 할일 칸(마감 데이터 오류로 dueDate < startDate)이
+   *    나 완료 칸에는 안 뜬다.
    */
   function isDelayedInView(card: BoardCard): boolean {
-    return columnOf(card) !== BOARD_COLUMN.DONE && isCardDelayed(card, today);
+    return columnOf(card) === BOARD_COLUMN.IN_PROGRESS && isCardDelayed(card, today);
   }
 
   function handleDragStart(event: DragStartEvent) {

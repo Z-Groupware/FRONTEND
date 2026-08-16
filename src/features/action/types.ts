@@ -11,10 +11,13 @@ export interface PersonalActionDetail {
   id: number;
   name: string;
   description: string;
-  team: string;
+  /** 소속 팀 — **개인 액션은 없다**(BE `ActionTypeShapePolicy` — PERSONAL은 팀을 못 가짐). 없으면 화면이 칩을 안 그린다. */
+  team?: string;
   projectId: number;
-  projectTag: string;
-  assigneeName: string;
+  /** 프로젝트 태그 — 참조 조회 실패 시 없다. 없으면 태그 칩을 안 그린다(빈 칩 금지). */
+  projectTag?: string;
+  /** 담당자 이름 — 미지정이면 없다. 화면은 그때 "담당자 미정"이라 적는다(WORKFLOW.md §3-1-A). */
+  assigneeName?: string;
   /** 본인 역할 — "프론트엔드"·"백엔드" 등. Leader면 "팀장". 역할 미지정이면 없음. */
   assigneeRoleLabel?: string;
   /**

@@ -14,17 +14,25 @@ export interface ProjectListItem {
    * ⚠️ 목록 카드에는 요약이 아니라 원문을 그대로 내려보내고, 자르기는 화면이 `line-clamp`로 한다.
    */
   description: string;
-  /**
-   * 프로젝트 태그(프로젝트당 1개 고정). 태그 칩·스트립 색은 이 값으로 고정 팔레트에서 뽑는다
-   * (`lib/palette` → `globals.css --tag-*`). 별도 색 필드를 두지 않는다 — 자유 HEX는 다크모드에
-   * 안 맞고, BE에 색 필드가 없어 프론트가 이름으로 일관되게 배정한다.
-   */
+  /** 프로젝트 태그(프로젝트당 1개 고정) — 칩에 찍히는 글자다. 색은 `tagColor`가 정한다. */
   tag: string;
+  /**
+   * 사용자가 프로젝트 생성 때 고른 색 — **팔레트 이름**이다(HEX가 아니다).
+   *
+   * ⚠️ **HEX를 계약에 담지 않는다.** 팔레트 값은 라이트·다크가 다른 CSS 변수라
+   *    (`globals.css --tag-*`) hex를 들고 있으면 테마를 못 따라간다. BE가 저장하는 HEX는
+   *    매퍼(`toProjectListItem`)가 `tagNameFromHex`로 되돌린다.
+   */
+  tagColor: TagColorName;
   /** 참여 부서명들 — 2개까지 노출 후 `+N` */
   departments: string[];
-  /** 이 태그가 달린 전체 액션 수 */
+  /**
+   * 이 프로젝트의 **개인 액션(리프)** 수 — 팀 액션은 세지 않는다(docs/WORKFLOW.md §1).
+   * ⚠️ 팀 액션을 함께 세면 같은 일이 두 번 세어져 진척율이 실제보다 낮게 나온다
+   *    (팀 액션 1건 + 그 하위 개인 액션 3건 = 4건이 아니라 3건이다).
+   */
   actionTotal: number;
-  /** 그중 완료 액션 수 — 진척율 = done/total */
+  /** 그중 완료(`DONE`)인 개인 액션 수 — 진척율 = `getProgressPercent(actionDone, actionTotal)`. */
   actionDone: number;
   /**
    * 시작일 `YYYY-MM-DD`. ⚠️ 화면엔 노출하지 않는다 — 상태(할 일/진행중/지연)·타임라인 계산용
@@ -94,7 +102,13 @@ export interface ProjectAttachment {
 export interface ProjectDetail {
   /** BE 자동증가 정수 PK — `ProjectListItem.id`와 같은 값. */
   id: number;
+  /** 프로젝트 태그 — 칩에 찍히는 글자다. 색은 `tagColor`가 정한다. */
   tag: string;
+  /**
+   * 사용자가 프로젝트 생성 때 고른 색 — **팔레트 이름**이다(HEX가 아니다).
+   * ⚠️ HEX를 계약에 담지 않는다(같은 이유는 `ProjectListItem.tagColor` 주석 참고).
+   */
+  tagColor: TagColorName;
   name: string;
   description: string;
   dueDate: string;
@@ -118,6 +132,15 @@ export interface ProjectTeamAction {
   /** 마감일 `YYYY-MM-DD` */
   dueDate: string;
   status: ActionStatus;
+  /**
+   * 지연 배지 — **BE 판정을 그대로 쓴다**(`ProjectTimelineItemResponse.isDelayed`).
+   * ⚠️ 파생값이라 저장되지 않는다. 프로젝트 타임라인은 BE가 이미 계산해 보내므로 화면이
+   *    다시 계산하지 않는다 — 두 벌이면 서버·브라우저 시각이 갈리는 자정 무렵에 어긋난다.
+   * ⚠️ 지금(2026-08-16) BE 판정식은 `status != DONE && dueDate < today`라 확정 규칙(진행중 &&
+   *    마감 경과)과 다르다 — BE-13이 좁힌다. 그전에는 이 타임라인만 '할일 + 마감 경과'가
+   *    지연으로 뜬다(로컬 계산과 결과가 다르다는 점을 매퍼 주석에 남겼다).
+   */
+  isDelayed: boolean;
 }
 
 /**

@@ -180,6 +180,48 @@ describe("parseMeetingList", () => {
 
     expect(parseMeetingList({ meetings: [row] })).toEqual([row]);
   });
+
+  /*
+    ⚠️ **확정된 비대면 회의(2026-08-16, B안)** — startAt·endAt·meetingRoom이 모두 null이다.
+       예전 계약은 세 필드를 non-null 문자열로 강제해서, 이 행이 하나만 섞여도 배열 전체가
+       throw로 죽었다. 정상 행과 섞여도 파서가 통과해야 한다.
+  */
+  it("비대면 회의(startAt/endAt/meetingRoom 모두 null)가 섞여도 배열이 통과한다", () => {
+    const online = { ...LIST_ITEM, startAt: null, endAt: null, meetingRoom: null };
+
+    expect(parseMeetingList({ meetings: [LIST_ITEM, online] })).toEqual([LIST_ITEM, online]);
+  });
+
+  /* ⚠️ 계약을 넓힌 것이지 검사를 없앤 게 아니다 — 있는데 모양이 다른 회의실은 여전히 거절한다 */
+  it("meetingRoom이 있는데 모양이 다르면(빈 객체) 여전히 거절한다", () => {
+    expect(() => parseMeetingList({ meetings: [{ ...LIST_ITEM, meetingRoom: {} }] })).toThrow(
+      "약속한 모양",
+    );
+  });
+
+  /*
+    ⚠️ **세 필드는 함께 움직인다** — 대면이면 셋 다 채우고 비대면이면 셋 다 `null`이다
+       (MEET-01/18). mixed 조합이 통과되면 `toMeetingListItem`이 `isOnline`을 `meetingRoom`만
+       보고 잘못 판정해 대면 카드의 일시가 사라지거나 비대면 카드에 빈 일시가 뜬다
+       (2026-08-16 CodeRabbit 회귀 방어).
+  */
+  it("startAt은 있는데 meetingRoom이 null인 mixed 조합은 거절한다", () => {
+    expect(() => parseMeetingList({ meetings: [{ ...LIST_ITEM, meetingRoom: null }] })).toThrow(
+      "약속한 모양",
+    );
+  });
+
+  it("meetingRoom은 있는데 startAt이 null인 mixed 조합도 거절한다", () => {
+    expect(() => parseMeetingList({ meetings: [{ ...LIST_ITEM, startAt: null }] })).toThrow(
+      "약속한 모양",
+    );
+  });
+
+  it("endAt만 null(다른 둘은 있음)인 mixed 조합도 거절한다", () => {
+    expect(() => parseMeetingList({ meetings: [{ ...LIST_ITEM, endAt: null }] })).toThrow(
+      "약속한 모양",
+    );
+  });
 });
 
 describe("toMeetingListItem", () => {
@@ -212,6 +254,27 @@ describe("toMeetingListItem", () => {
     expect(item.topicSummary).toBe("");
   });
 
+  /*
+    ⚠️ **비대면 회의**(2026-08-16, B안) — 상세 매퍼와 같은 규칙으로 세 필드를 접는다.
+       카드가 `isOnline`을 보고 그 자리에 "온라인으로 진행된 회의입니다"를 대신 그린다.
+  */
+  it("startAt/endAt/meetingRoom이 모두 null이면 schedule/roomName을 비우고 isOnline=true", () => {
+    const item = toMeetingListItem({
+      ...LIST_ITEM,
+      startAt: null,
+      endAt: null,
+      meetingRoom: null,
+    });
+
+    expect(item.schedule).toBe("");
+    expect(item.roomName).toBe("");
+    expect(item.isOnline).toBe(true);
+  });
+
+  it("대면 회의는 isOnline=false", () => {
+    expect(toMeetingListItem(LIST_ITEM).isOnline).toBe(false);
+  });
+
   /* [확인] BE PR #461 `MeetingListQueryService.originLabel` — `teamId == null`이 Owner다 */
   it("소속 팀이 null이면 Owner 개설, 숫자면 팀 액션 회의로 읽는다", () => {
     expect(toMeetingListItem({ ...LIST_ITEM, teamId: null }).originLabel).toBe("Owner 개설");
@@ -242,8 +305,12 @@ describe("toMeetingListItem", () => {
   it.each([
     ["NONE", null],
     ["STALLED", AI_SUMMARY_STATUS.FAILED],
+    /* ⚠️ 목록엔 아직 안 온다(BE가 STALLED로 접는다) — 접기를 푸는 날 조용히 갈리지 않게 잠근다 */
+    ["FAILED", AI_SUMMARY_STATUS.FAILED],
     ["PROCESSING", AI_SUMMARY_STATUS.SUMMARIZING],
     ["DONE", AI_SUMMARY_STATUS.REVIEWED],
+    /* ⚠️ 분석 시작 전이라 화면에 쓸 말이 아직 없다 — 문구는 팀 결정 대기다 */
+    ["WAITING_TRANSCRIPT", null],
     ["WHAT", null],
   ])("요약 상태 %s를 화면 어휘로 옮긴다", (summaryStatus, expected) => {
     expect(toMeetingListItem({ ...LIST_ITEM, summaryStatus }).aiSummaryStatus).toBe(expected);
@@ -273,6 +340,32 @@ describe("meetingPendingReasonOf", () => {
   it("중단은 실패로, 완료는 다 찬 것으로 읽는다", () => {
     expect(meetingPendingReasonOf({ ...done, summaryStatus: "STALLED" })).toBe("FAILED");
     expect(meetingPendingReasonOf({ ...done, summaryStatus: "DONE" })).toBeNull();
+  });
+
+  /*
+    ⚠️ 이걸 놓쳐서 **요약 실패가 끝나지 않는 「요약 중」으로 보였다**(2026-08-16 고침).
+       `FAILED`가 어느 분기에도 안 걸려 마지막 줄로 떨어졌었다.
+  */
+  it("실패(FAILED)도 중단과 같은 자리에서 걸러 «요약 중»으로 흘리지 않는다", () => {
+    expect(meetingPendingReasonOf({ ...done, summaryStatus: "FAILED" })).toBe("FAILED");
+  });
+
+  /* ⚠️ 초안이 있어도 실패가 먼저다 — 뒤 계층이 깨진 회의는 [다시 분석]부터 안내해야 한다 */
+  it("초안이 있어도 실패를 먼저 말한다", () => {
+    expect(
+      meetingPendingReasonOf({ ...done, summaryStatus: "FAILED", pendingActionCount: 3 }),
+    ).toBe("FAILED");
+  });
+
+  /*
+    ⚠️ **팀 결정 대기 중인 현행을 못박는다.** 끝난 회의의 `NONE`(자막 0건이라 분석이 안 돎)과
+       `WAITING_TRANSCRIPT`(받아쓰기 도는 중)를 무엇이라 쓸지 정해지면 **이 테스트도 같이 고친다.**
+  */
+  it("[현행·팀결정대기] 끝난 회의의 NONE·WAITING_TRANSCRIPT는 아직 «요약 중»이다", () => {
+    expect(meetingPendingReasonOf({ ...done, summaryStatus: "NONE" })).toBe("SUMMARIZING");
+    expect(meetingPendingReasonOf({ ...done, summaryStatus: "WAITING_TRANSCRIPT" })).toBe(
+      "SUMMARIZING",
+    );
   });
 
   /*
@@ -329,6 +422,20 @@ describe("toMeetingDetailView", () => {
     expect(
       toMeetingDetailView({ ...DONE_DETAIL, summaryStatus: "STALLED" }, { isHost: true }).isStalled,
     ).toBe(true);
+  });
+
+  /*
+    ⚠️ **중단(STALLED)과 실패(FAILED)를 뭉개지 않는다.** 못 보여주는 이유(`pendingReason`)는
+       둘 다 "FAILED"로 같지만, `isStalled`는 **원인을 가르는 값**이라 STALLED만 true다 —
+       넓히면 실패한 회의에 "다시 분석하면 됩니다"라는 거짓 안내가 붙는다.
+  */
+  it("실패(FAILED)는 중단이 아니다 — 못 보여주는 이유는 같아도 원인은 가른다", () => {
+    const failed = toMeetingDetailView(
+      { ...DONE_DETAIL, summaryStatus: "FAILED", pendingActionCount: 0 },
+      { isHost: true },
+    );
+    expect(failed.pendingReason).toBe("FAILED");
+    expect(failed.isStalled).toBe(false);
   });
 
   /*

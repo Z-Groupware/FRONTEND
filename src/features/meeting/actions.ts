@@ -491,9 +491,11 @@ function readOnlineMeetingDraft(formData: FormData): OnlineMeetingDraft {
 /**
  * `POST /api/meetings/online`(MEET-18) 실패를 폼 필드 오류로 바꾼다.
  * ⚠️ `rooms/actions.ts`의 `toMeetingCreateFormErrors`(MEET-01)와 같은 자리 — 필드 슬롯이 없는
- *    오류(`PROJECT_NOT_FOUND` 등 프로젝트 슬롯이 있는 것 빼고)는 `title` 칸에 얹는다.
- * ⚠️ **`PROJECT_NOT_FOUND`가 이 엔드포인트만 리터럴이 다르다**(도메인 담당자 명세, 2026-08-14) —
- *    MEET-01은 `PJ-001`을 쓰지만 여기는 그대로 이 문자열이다. 어긋나 보여도 그게 명세다.
+ *    오류(`Z-001` 등 전용 슬롯이 있는 것 빼고)는 `title` 칸에 얹는다.
+ * ⚠️ **`PROJECT_NOT_FOUND` 리터럴은 오지 않는다**(2026-08-16 BE 실코드 대조로 정정 —
+ *    2026-08-14 도메인 담당자 명세가 틀렸다). `ErrorResponse.of`(BE global/exception/ErrorResponse.java:23)가
+ *    **전 도메인에서** `errorCode.getCode()`를 `errorCode` 필드로 내리므로 실제 값은 `"PJ-001"`이다.
+ *    이 엔드포인트만 예외를 두지 않는다.
  */
 function toOnlineMeetingCreateFormErrors(error: unknown): OnlineMeetingFormErrors {
   if (!(error instanceof ApiError)) throw error;
@@ -503,12 +505,15 @@ function toOnlineMeetingCreateFormErrors(error: unknown): OnlineMeetingFormError
       return { attendeeIds: "존재하지 않는 참석자가 있습니다" };
     case "MT-015":
       return { topics: error.message };
-    case "MT-016":
+    /* ⚠️ MT-017은 **참석자 부족**이다("개설자 외 참석자를 한 명 이상 선택해야 합니다") —
+       상위 팀 액션 오류(016·018·019)와 다른 칸이다. */
     case "MT-017":
+      return { attendeeIds: error.message };
+    case "MT-016":
     case "MT-018":
     case "MT-019":
       return { parentTeamActionId: error.message };
-    case "PROJECT_NOT_FOUND":
+    case "PJ-001":
       return { projectId: "존재하지 않는 프로젝트입니다" };
     // ⚠️ **여기 도착한 CAP-0XX는 "발급 뒤 상태가 바뀐" 경우다** — CAP-024(용량)·CAP-025(형식)는
     //    보통 업로드 URL 발급 단계(`getOnlineMeetingRecordingUploadUrlAction`)에서 먼저 걸리지만,
@@ -535,6 +540,13 @@ export type RecordingUploadUrlResult =
   | {
       ok: true;
       s3Key: string;
+      /**
+       * BE가 정제한 저장용 파일명 — MEET-18 `recording.fileName`에 **이 값을 그대로** 싣는다.
+       * ⚠️ 화면에 보여줄 이름이 아니다. 표시는 사용자가 고른 원본(`File.name`)을 쓴다.
+       * ⚠️ `s3Key`가 이 이름으로 끝나고 확정 단계가 `s3Key.endsWith("/" + fileName)`을 검사한다 —
+       *    원본 이름을 보내면 한글·공백 파일명이 전부 400 CAP-015로 튕긴다.
+       */
+      storageFileName: string;
       /** `null`이면 목 모드다 — 실제 S3가 없어 클라이언트가 PUT 단계를 건너뛴다. */
       presignedUrl: string | null;
       contentType: string;
@@ -567,6 +579,7 @@ export async function getOnlineMeetingRecordingUploadUrlAction(input: {
       return {
         ok: true,
         s3Key: response.s3Key,
+        storageFileName: response.fileName,
         presignedUrl: response.presignedUrl,
         contentType: input.contentType,
       };
@@ -578,10 +591,16 @@ export async function getOnlineMeetingRecordingUploadUrlAction(input: {
   /*
     ⚠️ 목은 실제 S3가 없다 — `presignedUrl: null`로 돌려 클라이언트가 2단계(S3 PUT)를 건너뛰게
        한다(§정직한 목업, `project`의 `AttachmentUploadTicket.uploadUrl: string | null`과 같은 규칙).
+    ⚠️ **파일명은 실서버와 같은 규칙**(BE `RecordingFilePolicy.sanitizeForStorageName` —
+       영숫자·`.`·`-`·`_` 외 전부 `_`)으로 정제해 s3Key에 박고, 같은 값을 `storageFileName`으로
+       돌려준다. 규칙을 두 벌로 두는 게 아니라 **목 스텁**이다(실서버 경로는 응답의 `fileName`을
+       그대로 쓴다). 이 정제가 없으면 목이 실서버보다 관대해져 한글 파일명 버그가 목에서 안 잡힌다.
   */
+  const storageFileName = input.fileName.replace(/[^A-Za-z0-9.\-_]/g, "_");
   return {
     ok: true,
-    s3Key: `recordings/mock/online-pending/${input.fileName}`,
+    s3Key: `recordings/mock/online-pending/${storageFileName}`,
+    storageFileName,
     presignedUrl: null,
     contentType: input.contentType,
   };
