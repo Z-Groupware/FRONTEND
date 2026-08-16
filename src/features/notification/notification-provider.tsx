@@ -2,6 +2,9 @@
 
 import type { ReactNode } from "react";
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
+import { toast } from "sonner";
+
+import { retryMeetingSummaryAction } from "@/features/meeting/summary/actions";
 
 import { fetchAnalysisStatusAction } from "./actions";
 import {
@@ -16,7 +19,7 @@ import {
   startTracking,
 } from "./analysis";
 import { type NotificationEnvelope, toAnalysisSignal, toBannerNotification } from "./event";
-import type { AnalysisTracking, BannerNotification } from "./types";
+import { ANALYSIS_CARD_STATE, type AnalysisTracking, type BannerNotification } from "./types";
 import { useNotificationStream } from "./use-notification-stream";
 
 /**
@@ -41,6 +44,11 @@ interface NotificationContextValue {
   trackAnalysis: (meetingId: string, title: string) => void;
   dismissAnalysis: () => void;
   retryAnalysis: () => void;
+  /**
+   * 진짜 재분석(ANLZ-02) — `FAILED` 카드 전용. `retryAnalysis`(상태 재조회)와 다른 일이다 —
+   * 이건 서버에 "실패한 계층부터 다시 돌려라"를 실제로 요청한다.
+   */
+  retryFailedSummary: () => Promise<void>;
 }
 
 const NotificationContext = createContext<NotificationContextValue | null>(null);
@@ -138,6 +146,35 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   }, []);
 
   /*
+    ⚠️ **`retryAnalysis`와 다른 함수다.** 저건 상태 조회를 다시 하는 것뿐이고(`UNAVAILABLE` 전용),
+       이건 실제로 BE에 "실패한 계층부터 다시 돌려라"를 요청한다(ANLZ-02, `retryMeetingSummaryAction`
+       — 마이페이지 「요약이 중단된 회의」의 [다시 분석]과 같은 액션). 성공하면 트래킹을
+       `RUNNING`으로 되돌려 기존 폴링이 다시 진행 상황을 쫓게 한다.
+    ⚠️ **`tracking`을 의존성에 둔다.** 요청 시점의 `meetingId`가 최신이어야 한다 — 그 사이
+       다른 회의를 쫓기 시작했는데 옛 회의로 재분석을 걸면 안 된다.
+  */
+  const retryFailedSummary = useCallback(async () => {
+    if (!tracking || tracking.state !== ANALYSIS_CARD_STATE.FAILED) return;
+    const meetingId = tracking.meetingId;
+    const result = await retryMeetingSummaryAction(meetingId);
+
+    if (result.error) {
+      toast.error(
+        result.needsFullRerun
+          ? "재개할 수 있는 지점이 없습니다. 회의를 다시 캡처해야 합니다."
+          : result.error,
+      );
+      return;
+    }
+
+    if (result.pendingNote) toast(result.pendingNote);
+
+    setTracking((prev) =>
+      prev && prev.meetingId === meetingId ? restart(prev, Date.now()) : prev,
+    );
+  }, [tracking]);
+
+  /*
     ⚠️ **의존성이 `tracking` 통째다.** 한 번 물어볼 때마다 `attempt`가 올라 새 객체가 되고,
        그때마다 이 효과가 다시 돌며 다음 한 번을 예약한다 — `setInterval` 하나로 돌리면
        응답이 늦을 때 요청이 겹쳐 쌓인다.
@@ -216,6 +253,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
         trackAnalysis,
         dismissAnalysis,
         retryAnalysis,
+        retryFailedSummary,
       }}
     >
       {children}
