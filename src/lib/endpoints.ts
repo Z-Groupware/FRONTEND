@@ -248,8 +248,11 @@ export const ep = {
    *    경로는 이제 `SCHEDULED → IN_PROGRESS` 전이와 캡처 세션 생성을 한 트랜잭션으로 한다.
    *    ⚠️ **아직 `status: spec`이다**(D도메인 명세 기준 미구현) — 흡수된 흐름에 맞춘 호출부
    *    (`capture/actions.ts`) 재설계는 별도 이슈다.
-   * ⚠️ **CAP-09(이어받기)·CAP-10(세션 단독 조회)은 폐기됐다**(2026-08-12) — host 장애는
-   *    참석자 이어받기가 아니라 host 본인 재접속으로 복구한다.
+   * ⚠️ **CAP-10(세션 단독 조회)은 폐기됐다**(2026-08-12) — host 장애는 참석자 이어받기가
+   *    아니라 host 본인 재접속으로 복구한다.
+   *    ⚠️ **CAP-09(진행 중 캡처 조회)는 살아 있다**(2026-08-16 실코드 대조 정정 — 예전 이
+   *    자리에 "폐기됐다"고 잘못 적혀 있었다). BE `CaptureQueryController` 참고 — 새로고침
+   *    복구의 첫 단추라 상수는 아래 `capturesActive`에 별도로 뒀다.
    */
   captureSession: (meetingId: number) => `/api/meetings/${meetingId}/capture-session`,
   captureSessionPause: (meetingId: number) => `/api/meetings/${meetingId}/capture-session/pause`,
@@ -274,6 +277,16 @@ export const ep = {
     `/api/meetings/${meetingId}/parts/${seq}/complete`,
   /** 어디까지 올라갔는지(CAP-08) — 새로고침·크래시 뒤 이어 올리기 */
   partsStatus: (meetingId: number) => `/api/meetings/${meetingId}/parts/status`,
+  /**
+   * 진행 중 캡처 조회(CAP-09) — 새로고침·크래시 복구의 첫 단추.
+   * [확인] BE `cap/presentation/api/CaptureQueryController.java` (2026-08-16).
+   *
+   * ⚠️ **파라미터가 없다.** 회의는 토큰의 memberId로 서버가 찾는다(남의 진행 캡처 열람 차단).
+   * ⚠️ **진행 중인 캡처가 없으면 200 + `data: null`이다** — 404가 아니다.
+   * ⚠️ 응답 `canTakeover`가 true여도 캡처 화면은 Host 전용이라(`getMeetingCapture`가 참석자를
+   *    막는다) 이 값은 안내 문구로만 쓰고 참석자용 진입로를 새로 만들지 않는다.
+   */
+  capturesActive: () => "/api/captures/active",
   /** AI 처리 상태(CAP-06) — 종료 뒤 폴링 */
   processingStatus: (meetingId: number) => `/api/meetings/${meetingId}/processing-status`,
   /**

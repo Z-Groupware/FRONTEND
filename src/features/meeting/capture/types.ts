@@ -82,3 +82,30 @@ export interface LiveCaption {
    */
   seq?: number;
 }
+
+/**
+ * 새로고침·크래시 뒤 되돌아왔을 때 화면이 아는 것 — CAP-09가 채운다.
+ *
+ * ⚠️ **화면 계약이지 BE shape이 아니다** — `captureSessionId` 같은 안 쓰는 값은 여기 없다.
+ *    BE 응답에서 `actions.ts`가 여기로 옮긴다(§Mock 격리막).
+ * ⚠️ 이 값이 `null`이 아닌 채 도착하면 캡처 화면은 "돌아왔다"는 사실을 사용자에게 알려야 한다 —
+ *    아무 말 없이 BEFORE_START로 두면 이미 녹음 중인 회의를 처음부터 다시 시작할 수 있다.
+ */
+export interface ActiveCapture {
+  meetingId: number;
+  /** 현재 세그먼트 번호(10분 단위로 하나) */
+  segmentSeq: number;
+  /** 서버가 기록한 이 세그먼트의 마지막 조각 순번 — 0이면 아직 한 조각도 안 올라갔다 */
+  lastSeq: number;
+  /** 지금 녹음자 memberId — 다른 세션이 잡고 있으면 이 값으로 안다 */
+  recorderPersonId: number | null;
+  /**
+   * 녹음자 하트비트가 30초 이상 끊겼는가.
+   *
+   * ⚠️ 캡처 화면은 Host 전용이라 참석자 이어받기 진입로는 만들지 않는다 —
+   *    이 값은 안내 문구를 가르는 용도로만 쓴다.
+   */
+  canTakeover: boolean;
+  /** 캡처 시작(첫 presign) 이후 경과 ms — 복구 화면 타이머의 기준점 */
+  elapsedMs: number;
+}

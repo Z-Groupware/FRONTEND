@@ -6,6 +6,7 @@ import { CAPTURE_FAILURE_MESSAGE } from "@/constants/meeting";
 
 import {
   completeMeetingAction,
+  getActiveCaptureAction,
   pauseCaptureSessionAction,
   resumeCaptureSessionAction,
   startCaptureSessionAction,
@@ -24,7 +25,7 @@ import {
 } from "./phase";
 import { type CaptureRecorder, createCaptureRecorder, isRecordingSupported } from "./recorder";
 import { createSttEngine, isSttSupported, type SttEngine, type TranscriptChunk } from "./stt";
-import type { CaptionChunkInput } from "./types";
+import type { ActiveCapture, CaptionChunkInput } from "./types";
 import { createSliceUploader, type SliceUploader } from "./upload";
 
 /**
@@ -68,6 +69,16 @@ export interface UseCaptureResult {
    *    모르는데 사람은 다 끝난 줄 안다(§정직성).
    */
   end(): Promise<{ ok: boolean; error?: string }>;
+  /**
+   * 새로고침·크래시로 잃은 진행 중 캡처(CAP-09) — 없으면 `null`.
+   *
+   * ⚠️ **이 훅이 화면 흐름을 자동으로 바꾸지 않는다** — 값만 노출한다. 실제 안내(복구 카드·
+   *    버튼 라벨)는 `capture-view`가 이 값과 `phase`를 보고 그린다. 훅에서 `phase`를 자동으로
+   *    돌리면 사용자가 [녹음 시작]을 눌러 명시적으로 이어받는 흐름이 사라진다(§정직성).
+   * ⚠️ 다른 회의 정보가 실려 올 수 있다 — 화면이 `String(meetingId) !== capture.meetingId`로
+   *    거른 뒤 안내 문구를 정한다.
+   */
+  activeCapture: ActiveCapture | null;
 }
 
 /** 1초마다 다시 그린다 — 경과 시간이 흘러야 녹음 중인 게 보인다 */
@@ -96,6 +107,13 @@ export function useCapture(meetingId: string, initialSeq = 0): UseCaptureResult 
   const [partial, setPartial] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [now, setNow] = useState(() => Date.now());
+  /*
+    ⚠️ **CAP-09 결과 — 새로고침·크래시 복구용**(2026-08-16 신규).
+       마운트 시 한 번만 부른다(진행 중 캡처의 정본은 서버라 폴링 불필요). 결과는 값으로만
+       노출하고 흐름은 화면이 정한다 — 훅이 자동으로 phase를 바꾸면 사용자의 [녹음 시작]
+       클릭이 사라져 이어받기 의사표시가 없어진다(§정직성).
+  */
+  const [activeCapture, setActiveCapture] = useState<ActiveCapture | null>(null);
 
   /*
     ⚠️ 지원 여부는 **첫 렌더에 한 번만** 본다(`useState` 지연 초기화). 캡처 화면은
@@ -349,6 +367,26 @@ export function useCapture(meetingId: string, initialSeq = 0): UseCaptureResult 
   const enter = useCallback(() => setPhase(CAPTURE_PHASE.READY), []);
 
   /*
+    ⚠️ **CAP-09 새로고침·크래시 복구 조회**(2026-08-16 신규).
+       마운트 시 한 번만 부른다 — 이 값의 정본은 서버라 폴링이 필요 없고, 캡처 화면은
+       `next/dynamic(ssr:false)`로만 들어오므로 이 효과는 항상 브라우저에서 돈다.
+    ⚠️ `alive` 플래그로 언마운트 경합을 막는다 — 응답이 늦게 오면 언마운트된 뒤 setState가
+       된다.
+    ⚠️ 실패는 조용히 무시한다 — 복구 안내가 없더라도 캡처 화면의 나머지 흐름은 돌아야 한다.
+       (오류 배너를 여기서 띄우면 진짜 캡처 오류와 섞여 시끄러워진다.)
+  */
+  useEffect(() => {
+    let alive = true;
+    void getActiveCaptureAction().then((result) => {
+      if (!alive) return;
+      if (result.ok && result.data) setActiveCapture(result.data);
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  /*
     ⚠️ **마이크가 열린 뒤에 "녹음 중"으로 넘어간다.** 먼저 넘어가 두면 권한이 막힌 브라우저에서
        배지는 `녹음 중`, 타이머는 도는데 담기는 건 아무것도 없다 — 화면이 거짓말을 한다
        (§정직성). 실패하면 `READY`에 머물고 이유만 남긴다.
@@ -575,5 +613,18 @@ export function useCapture(meetingId: string, initialSeq = 0): UseCaptureResult 
     }
   }, [drainCaptions, meetingId]);
 
-  return { phase, support, recordedMs, chunks, partial, error, enter, start, pause, resume, end };
+  return {
+    phase,
+    support,
+    recordedMs,
+    chunks,
+    partial,
+    error,
+    enter,
+    start,
+    pause,
+    resume,
+    end,
+    activeCapture,
+  };
 }
