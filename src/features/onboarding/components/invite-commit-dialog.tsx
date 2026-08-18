@@ -1,5 +1,7 @@
 "use client";
 
+import { Loader2 } from "lucide-react";
+
 import { ConfirmDialog } from "@/components/common/confirm-dialog";
 
 interface InviteCommitDialogProps {
@@ -68,39 +70,62 @@ export function InviteCommitDialog({
       pendingLabel="등록 중"
       error={error}
     >
-      {/*
-        ⚠️ 칸을 나눠 상자 세 개로 그리지 않는다. 가운데 정렬 창 안에서 테두리 상자가 더 생기면
-           표식·제목·설명·상자·버튼이 다섯 덩어리로 쌓여 눈이 어디를 봐야 할지 흩어진다.
-           **알약 하나**에 담으면 덩어리가 하나로 줄고, 창 높이도 낮아진다.
-      */}
-      <div className="flex justify-center">
-        <dl className="bg-secondary/60 inline-flex items-center gap-3.5 rounded-full px-4 py-2">
-          <Item label="팀" value={departmentCount} />
-          <Divider />
-          <Item label="직급" value={positionCount} />
-          <Divider />
-          <Item label="초대" value={writtenCount} />
-        </dl>
-      </div>
+      {isPending ? (
+        /*
+          ⚠️ **제출 중엔 알약·경고 대신 진행 안내로 바꾼다**(2026-08-18, 타임아웃 60초로
+             늘리며 같이 손봄). 팀·직급 수나 "몇 줄 빠집니다" 경고는 제출 전에만 의미가
+             있다 — 이미 넘어간 뒤에도 그대로 떠 있으면 "지금 뭐가 되고 있는지"와 무관한
+             정보만 보여서 창이 멈춘 것처럼 읽힌다(§정직성). 버튼 글자(`pendingLabel`)만
+             바뀌는 걸로는 최대 1분을 버티기엔 신호가 약하다 — 회전 아이콘 + 얼마나
+             걸릴지까지 적어서 "지금 일하고 있다"를 분명히 한다.
+        */
+        <div
+          className="flex flex-col items-center gap-2 pt-1 text-center"
+          role="status"
+          aria-live="polite"
+        >
+          <Loader2 className="text-muted-foreground size-5 animate-spin" aria-hidden />
+          <p className="text-muted-foreground text-[12px] leading-[18px] break-keep">
+            계정 발급과 초대 메일 발송에 최대 1분 정도 걸립니다. 창을 닫지 말고 기다려 주세요.
+          </p>
+        </div>
+      ) : (
+        <>
+          {/*
+            ⚠️ 칸을 나눠 상자 세 개로 그리지 않는다. 가운데 정렬 창 안에서 테두리 상자가 더 생기면
+               표식·제목·설명·상자·버튼이 다섯 덩어리로 쌓여 눈이 어디를 봐야 할지 흩어진다.
+               **알약 하나**에 담으면 덩어리가 하나로 줄고, 창 높이도 낮아진다.
+          */}
+          <div className="flex justify-center">
+            <dl className="bg-secondary/60 inline-flex items-center gap-3.5 rounded-full px-4 py-2">
+              <Item label="팀" value={departmentCount} />
+              <Divider />
+              <Item label="직급" value={positionCount} />
+              <Divider />
+              <Item label="초대" value={writtenCount} />
+            </dl>
+          </div>
 
-      {/*
-        ⚠️ 빠지는 줄을 **여기서** 알린다. 줄마다 경고를 붙이는 대신 넘어가기 직전에 한 번 말한다 —
-           조용히 빼면 보낸 줄 알고 넘어간다(§정직성).
-      */}
-      {/*
-        ⚠️ **이유를 갈라서 말한다.** 전에는 `목록에서 표시된 줄을 확인해 주세요` 한 문장이었는데,
-           가장 흔한 사유인 **아직 안 고른 줄에는 목록에 표시가 없다** — 안 고른 건 "틀렸다"가
-           아니라 "아직"이라 줄에 빨간 글씨를 안 띄우기 때문이다(`InviteRow`).
-           없는 표시를 가리키면 사용자는 찾다가 못 찾는다(적대적 검토 #163).
-        ⚠️ 표시가 있는 줄(주소 형식·주소 중복·리더 중복)만 `표시가 뜬`이라고 부른다.
-      */}
-      {unfilledCount + flaggedCount > 0 && (
-        <p className="text-muted-foreground pt-3 text-[12px] leading-[18px] break-keep">
-          {unfilledCount > 0 && `팀·역할·직급을 고르지 않은 ${unfilledCount}줄`}
-          {unfilledCount > 0 && flaggedCount > 0 && "과 "}
-          {flaggedCount > 0 && `목록에 표시가 뜬 ${flaggedCount}줄`}
-          {"은 이번 발송에서 빠집니다. 취소하고 고치거나, 나중에 기업 설정에서 초대해 주세요."}
-        </p>
+          {/*
+            ⚠️ 빠지는 줄을 **여기서** 알린다. 줄마다 경고를 붙이는 대신 넘어가기 직전에 한 번 말한다 —
+               조용히 빼면 보낸 줄 알고 넘어간다(§정직성).
+          */}
+          {/*
+            ⚠️ **이유를 갈라서 말한다.** 전에는 `목록에서 표시된 줄을 확인해 주세요` 한 문장이었는데,
+               가장 흔한 사유인 **아직 안 고른 줄에는 목록에 표시가 없다** — 안 고른 건 "틀렸다"가
+               아니라 "아직"이라 줄에 빨간 글씨를 안 띄우기 때문이다(`InviteRow`).
+               없는 표시를 가리키면 사용자는 찾다가 못 찾는다(적대적 검토 #163).
+            ⚠️ 표시가 있는 줄(주소 형식·주소 중복·리더 중복)만 `표시가 뜬`이라고 부른다.
+          */}
+          {unfilledCount + flaggedCount > 0 && (
+            <p className="text-muted-foreground pt-3 text-[12px] leading-[18px] break-keep">
+              {unfilledCount > 0 && `팀·역할·직급을 고르지 않은 ${unfilledCount}줄`}
+              {unfilledCount > 0 && flaggedCount > 0 && "과 "}
+              {flaggedCount > 0 && `목록에 표시가 뜬 ${flaggedCount}줄`}
+              {"은 이번 발송에서 빠집니다. 취소하고 고치거나, 나중에 기업 설정에서 초대해 주세요."}
+            </p>
+          )}
+        </>
       )}
     </ConfirmDialog>
   );
