@@ -120,6 +120,8 @@ export interface MeetingAgenda {
 export interface MeetingAttendee {
   id: number;
   name: string;
+  /** 지금은 퇴사한 사람인가 — 과거 회의 기록의 참석자 표시용(CLAUDE.md §도메인 상수) */
+  isResigned: boolean;
 }
 
 /**

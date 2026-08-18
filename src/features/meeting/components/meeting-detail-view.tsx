@@ -17,7 +17,9 @@ import { EmptyState } from "@/components/common/empty-state";
 import { ProfileAvatar } from "@/components/common/profile-avatar";
 import { ProjectTag } from "@/components/common/project-tag";
 import { StatusDot } from "@/components/common/status-dot";
+import { Badge } from "@/components/ui/badge";
 import { ACTION_STATUS_LABEL } from "@/constants/action";
+import { MEMBER_STATUS_BADGE_CLASS, MEMBER_STATUS_LABEL } from "@/constants/member";
 import type { AttendeeScopeViewer } from "@/features/rooms/attendee-scope";
 import type { RoomMember } from "@/features/rooms/types";
 import { formatDate } from "@/lib/date";
@@ -333,6 +335,16 @@ export function MeetingDetailView({ detail, members, viewer }: MeetingDetailView
                 >
                   <ProfileAvatar userId={attendee.id} size={24} />
                   <span className="text-[13px] leading-5">{attendee.name}</span>
+                  {/*
+                    ⚠️ 이 회의가 열렸던 시점의 참석자 스냅샷이다 — 지금 명부에서 빠졌어도
+                       "퇴사" 표시만 붙이고 이름·기록은 그대로 남긴다(CLAUDE.md §도메인 상수,
+                       FE 감사 #13). 배지 생김새는 사원 상태 배지를 그대로 쓴다(새로 안 만든다).
+                  */}
+                  {attendee.isResigned && (
+                    <Badge variant="outline" className={MEMBER_STATUS_BADGE_CLASS.RESIGNED}>
+                      {MEMBER_STATUS_LABEL.RESIGNED}
+                    </Badge>
+                  )}
                 </li>
               ))}
             </ul>

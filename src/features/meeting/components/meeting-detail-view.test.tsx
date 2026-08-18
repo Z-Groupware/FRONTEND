@@ -28,7 +28,7 @@ const BASE: MeetingDetail = {
   agenda: { main: "프로젝트", subs: ["킥오프"] },
   schedule: "8월 14일(금) 10:00 – 10:30",
   roomName: "대회의실",
-  attendees: [{ id: 1, name: "박대표" }],
+  attendees: [{ id: 1, name: "박대표", isResigned: false }],
   outputKindLabel: "팀 액션",
   outputs: [],
   script: [],

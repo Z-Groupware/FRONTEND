@@ -287,8 +287,10 @@ let store: MockManagedMemberEntry[] = clone(INITIAL);
 /**
  * 화면에 내보낼 사원들.
  *
- * ⚠️ **지워진 사람은 뺀다**(`isVisibleMemberStatus`). 퇴사자는 남고(기록의 출처라서),
- *    탈퇴 처리된 사람만 목록에서 사라진다(§도메인 상수).
+ * ⚠️ **지워진 사람은 뺀다**(`isVisibleMemberStatus`). 퇴사자도 여기 포함된다(2026-08-15
+ *    정정 — "퇴사자는 남는다"였던 이전 정책이 뒤집혔다) — `approveMockHandover`가 오프보딩
+ *    최종 승인 즉시 `DELETED_MEMBER_STATUS`로 보내 실서버(즉시 소프트 딜리트)와 같은
+ *    동작을 흉내낸다(§도메인 상수). 남는 건 그 사람이 남긴 회의·액션 **기록**뿐이다.
  * ⚠️ 대기 중인 신청의 종류를 **행에 실어 준다** — 목록이 상세를 사람 수만큼 훑지 않게.
  */
 export function listMockManagedMembers(): ManagedMember[] {

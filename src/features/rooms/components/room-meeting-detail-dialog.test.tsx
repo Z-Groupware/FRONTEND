@@ -21,7 +21,7 @@ const SUMMARY: MeetingSummary = {
   title: "주간 스크럼",
   schedule: "8월 15일(토) 10:00~10:30",
   roomName: "대회의실",
-  attendees: [{ id: 1, name: "김서준" }],
+  attendees: [{ id: 1, name: "김서준", isResigned: false }],
   agenda: null,
   isHost: true,
   pendingReason: "SCHEDULED",

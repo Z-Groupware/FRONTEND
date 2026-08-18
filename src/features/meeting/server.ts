@@ -369,6 +369,8 @@ export async function getMeetingDetail(id: string, viewer: Actor): Promise<Meeti
       attendees: meeting.attendeeIds.map((attendeeId) => ({
         id: attendeeId,
         name: roster.get(attendeeId) ?? "알 수 없음",
+        // 목 명부는 퇴사자를 안 담는다(§도메인 상수) — 이 화면에서 퇴사 시나리오를 만들 수 없다.
+        isResigned: false,
       })),
       outputKindLabel: kindLabel,
       outputs,
@@ -516,6 +518,8 @@ export async function getMeetingCapture(id: string, viewer: Actor): Promise<Meet
         return {
           id: attendeeId,
           name: member?.name ?? "알 수 없음",
+          // 목 명부는 퇴사자를 안 담는다(§도메인 상수) — 이 화면에서 퇴사 시나리오를 만들 수 없다.
+          isResigned: false,
           // 팀이 없는 사람(대표)은 직급만 — 빈 가운뎃점을 남기지 않는다
           subtitle: [member?.teamName, member?.position].filter(Boolean).join(" · "),
           isHost: attendeeId === meeting.hostId,

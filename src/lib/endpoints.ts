@@ -183,8 +183,10 @@ export const ep = {
    * ⚠️ PATCH 본문은 **보낸 키만** 바뀐다(BE가 `@JsonSetter`로 미전달과 명시적 null을 가른다) —
    *    `title`·`projectId`·`meetingRoomId`·`startAt`·`endAt`·`recordingConsent` 6개가 대상이고,
    *    보낸 키에 `null`을 실으면 400이다(필수 컬럼을 지우는 요청으로 본다).
-   * ⚠️ 시간·회의실을 바꾸면 예약 규칙을 다시 탄다 — 30분 그리드(400 `MT-005`)·회의실 운영시간
-   *    (400 `MT-004`)·과거 시각(400 `MT-012`)·중복 예약(409 `MT-002`).
+   * ⚠️ 시간·회의실을 바꾸면 예약 규칙을 다시 탄다 — 30분 그리드(400 `MT-005`)·과거 시각
+   *    (400 `MT-012`)·중복 예약(409 `MT-002`). **`MT-004`(회의실 운영시간)는 없다**(2026-08-18
+   *    재확인 — 운영시간 개념이 BE PR #523에서 폐기되며 enum에서 사라졌다, `rooms/actions.ts`의
+   *    같은 정정 참고).
    *
    * [확인] `meeting/presentation/api/{MeetingUpdateController,request/UpdateMeetingRequest}.java` ·
    *   `application/service/MeetingUpdateService.java`(2026-08-13).
