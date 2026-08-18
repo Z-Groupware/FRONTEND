@@ -173,7 +173,16 @@ export function InviteSetup({ departments, positions }: InviteSetupProps) {
 
       <InviteCommitDialog
         isOpen={isConfirmOpen}
-        onOpenChange={setConfirmOpen}
+        onOpenChange={(next) => {
+          /*
+            ⚠️ **보내는 동안엔 Esc·바깥 클릭으로도 못 닫는다**(2026-08-18, 타임아웃을
+               60초로 늘리며 같이 손봄). 계정 발급 + 메일 발송이 최대 1분 걸리는데, 그동안
+               창을 닫아버리면 요청은 그대로 진행 중인데 사용자는 아무 결과도 못 보고
+               "안 됐나" 하고 다시 열어 또 누르게 된다 — 두 벌 커밋 위험(§정직성).
+          */
+          if (!next && isCommitting) return;
+          setConfirmOpen(next);
+        }}
         departmentCount={departmentOptions.length}
         positionCount={positionOptions.length}
         writtenCount={writtenCount}
