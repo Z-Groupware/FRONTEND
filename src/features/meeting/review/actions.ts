@@ -244,10 +244,32 @@ export async function confirmActionDistributionAction(
       if (error.status === 404) return { status: "notFound", createdCount: 0, createdManuals };
       /* 확인되지 않은 STT 구간·미검토가 남았다 — 사람이 알고 강행할지 정한다(§정직성) */
       if (error.status === 409)
-        return { status: "blocked", message: error.message, createdManuals };
+        return { status: "blocked", message: composeConfirmFailureMessage(error), createdManuals };
     }
-    return { status: "failed", message: toUserMessage(error), createdManuals };
+    return { status: "failed", message: composeConfirmFailureMessage(error), createdManuals };
   }
+}
+
+/**
+ * 확정 실패 문구 — BE가 표준 에러 포맷(`details: [{field, reason}]`)에 사유 코드를 담아 준다
+ * (2026-08-18 BE 협의). 한글 라벨만 갈아 끼워 **"어느 단계가 성공했다"는 티는 안 낸다** —
+ * 판정·추가는 트랜잭션이 별개라 일부가 이미 커밋됐어도 재조회에서 이미 반영됨 상태로 다시
+ * 얹혀 나오므로, 사용자에게는 남은 원인만 보여 준다(§정직성).
+ */
+const CONFIRM_FAILURE_LABEL: Record<string, string> = {
+  STILL_PENDING: "미검토 액션",
+  UNRESOLVED_GAP: "미확인 발화 구간",
+};
+
+function composeConfirmFailureMessage(error: unknown): string {
+  if (!(error instanceof ApiError) || !error.details || error.details.length === 0) {
+    return toUserMessage(error);
+  }
+  const parts = error.details.map((detail) => {
+    const label = CONFIRM_FAILURE_LABEL[detail.field] ?? detail.field;
+    return detail.reason ? `${label} ${detail.reason}` : label;
+  });
+  return `분배를 처리하던 중 문제가 발생했습니다. 사유: ${parts.join(", ")}`;
 }
 
 /** 목 — 기존 흐름 그대로. 권한 재검사까지 목 경로에서도 같은 함수로 한다(§권한). */

@@ -99,6 +99,21 @@ export function MeetingReviewView({ review }: MeetingReviewViewProps) {
   const hasUnassigned = review.isOwnerMeeting
     ? activeDrafts.some((draft) => draft.teamId === null)
     : activeDrafts.some((draft) => draft.assigneeId === null);
+  /*
+    ⚠️ **필수 입력값(제목·세부내용·마감일) 누락 검사**(#622). BE는 입력 스키마 위반을
+       422로 튕기는데, 확정 다이얼로그가 뜬 뒤에 그걸 마주치면 사용자는 "다이얼로그까지
+       왔는데 왜 실패?"로 인지 불일치가 생긴다. 다이얼로그 진입 전이 아니라 다이얼로그
+       안에서 안내한다 — 확정 대상은 이 시점에 확정된 값(`activeDrafts`)이라 여기서 검사가
+       가장 정확하다.
+    ⚠️ **`title`·`description`은 `trim()`으로 본다** — 공백만 있는 값은 BE도 빈 값 취급.
+    ⚠️ **반려된 항목은 검사 대상이 아니다** — `activeDrafts`가 이미 걸렀다.
+  */
+  const hasMissingRequired = activeDrafts.some(
+    (draft) =>
+      draft.title.trim().length === 0 ||
+      draft.description.trim().length === 0 ||
+      draft.dueDate.length === 0,
+  );
   function updateDraft(id: string, patch: Partial<AiActionDraft>) {
     setDrafts((prev) => prev.map((draft) => (draft.id === id ? { ...draft, ...patch } : draft)));
   }
@@ -424,15 +439,23 @@ export function MeetingReviewView({ review }: MeetingReviewViewProps) {
       </ActionReviewGroup>
 
       <div className="flex items-center justify-end gap-3">
-        {/* 왜 잠겼는지 버튼 옆에서 말한다 — 눌리지 않는 버튼만 두면 고장으로 읽힌다(§정직성) */}
-        {hasUnassigned && (
+        {/*
+          왜 잠겼는지 버튼 옆에서 말한다 — 눌리지 않는 버튼만 두면 고장으로 읽힌다(§정직성).
+          ⚠️ 필수 입력 누락이 우선순위가 더 높다(제목·설명·마감은 담당자보다 먼저 채워야 하는
+             기본 필드) — 두 안내가 동시에 뜰 수는 있지만 하나만 뜰 상황에선 이쪽을 앞세운다.
+        */}
+        {hasMissingRequired ? (
+          <p className="text-muted-foreground text-[12px] leading-4">
+            제목·세부 내용·마감일이 비어 있는 액션이 있습니다. 채운 뒤 다시 시도해 주세요.
+          </p>
+        ) : hasUnassigned ? (
           <p className="text-muted-foreground text-[12px] leading-4">
             {assignmentTargetLabel} 미정인 액션이 있습니다. {assignmentTargetLabel}를 지정해 주세요.
           </p>
-        )}
+        ) : null}
         <Button
           type="button"
-          disabled={activeDrafts.length === 0 || hasUnassigned}
+          disabled={activeDrafts.length === 0 || hasUnassigned || hasMissingRequired}
           className="bg-foreground text-background hover:bg-foreground/90"
           onClick={() => setConfirmOpen(true)}
         >
