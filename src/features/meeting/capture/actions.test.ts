@@ -173,12 +173,19 @@ describe("startCaptureSessionAction — CAP-01, PAUSED 재접속(#605)", () => {
     serverApiMock
       .mockRejectedValueOnce(new ApiError(409, "이미 진행 중인 캡처가 있습니다", "CS-002"))
       .mockResolvedValueOnce(undefined); // 재개(CAP-03) 응답
+    // ⚠️ `startedAtEpochMs`는 재개 응답에 없어 `Date.now()`로 채운다(actions.ts 주석 참고) —
+    //    고정해 두지 않으면 그 대체값이 없어지거나 undefined가 돼도 `ok`만 보는 이 테스트는
+    //    통과한다(코드래빗 지적, PR #638). 다른 테스트에 새는 걸 막으려 끝나면 되돌린다.
+    const dateNowSpy = jest.spyOn(Date, "now").mockReturnValue(1_700_000_000_000);
 
     const result = await startCaptureSessionAction(3);
 
     expect(result.ok).toBe(true);
+    expect(result.data?.startedAtEpochMs).toBe(1_700_000_000_000);
     expect(serverApiMock).toHaveBeenCalledTimes(2);
     expect(serverApiMock.mock.calls[1][0]).toBe("/api/meetings/3/capture-session/resume");
+
+    dateNowSpy.mockRestore();
   });
 
   it("CS-002 뒤 재개마저 실패하면 그 실패 사유를 그대로 전달한다", async () => {
