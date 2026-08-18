@@ -41,6 +41,8 @@ describe("BoardView — 페이지 레벨 empty state", () => {
     render(<BoardView boardType="my-action" cards={[]} todayIso={TODAY} />);
 
     expect(screen.getByText("아직 하달된 액션이 없습니다.")).toBeInTheDocument();
+    expect(screen.getByText("액션이 하달되면 이 자리에 카드로 쌓입니다.")).toBeInTheDocument();
+    expect(screen.queryByText(/드래그해서 칸을 옮길 수 있습니다/)).not.toBeInTheDocument();
 
     /*
       ⚠️ 세 칸·저장 버튼이 나타나면 회귀다 — 예전 렌더가 되돌아온 것이다. 칸 라벨(할 일·
