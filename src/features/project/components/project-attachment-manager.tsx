@@ -49,16 +49,24 @@ export function ProjectAttachmentManager({
     setIsDeleting(true);
     setDeleteError(null);
 
-    const result = await deleteProjectAttachmentAction(projectId, pendingDelete.id);
-    setIsDeleting(false);
+    /*
+      ⚠️ **`finally`에서 푼다**(CodeRabbit 지적). 서버 액션 호출 자체가 거절되면(세션 만료 등)
+         `isDeleting`을 못 풀고 다이얼로그가 영원히 "삭제 중"에 갇힌다.
+    */
+    try {
+      const result = await deleteProjectAttachmentAction(projectId, pendingDelete.id);
+      if (!result.ok) {
+        setDeleteError(result.message);
+        return;
+      }
 
-    if (!result.ok) {
-      setDeleteError(result.message);
-      return;
+      setPendingDelete(null);
+      router.refresh();
+    } catch {
+      setDeleteError("첨부파일을 지우지 못했습니다. 다시 시도해 주세요.");
+    } finally {
+      setIsDeleting(false);
     }
-
-    setPendingDelete(null);
-    router.refresh();
   }
 
   function handlePickFile() {
@@ -176,12 +184,23 @@ function DownloadLink({
   attachment: ProjectAttachment;
 }) {
   async function handleClick() {
+    /*
+      ⚠️ **클릭의 동기 구간에서 먼저 연다**(CodeRabbit 지적). URL 발급은 서버를 한 번 더
+         타는 비동기 작업이라, `await` 뒤에 `window.open`을 부르면 사용자 동작(user gesture)
+         유효 구간을 벗어나 팝업 차단에 걸릴 수 있다 — 빈 창을 먼저 띄워 자리를 잡고,
+         URL이 오면 그 창을 옮긴다. `noopener`는 여기서 못 쓴다(그러면 참조가 `null`이라
+         옮길 수 없다) — 대신 연 뒤 바로 `opener`를 끊어 같은 효과를 낸다.
+    */
+    const popup = window.open("", "_blank");
+    if (popup) popup.opener = null;
+
     const url = await getProjectAttachmentDownloadUrlAction(projectId, attachment.id);
     if (!url) {
+      popup?.close();
       toast("다운로드는 아직 연동되지 않았습니다");
       return;
     }
-    window.open(url, "_blank", "noopener,noreferrer");
+    if (popup) popup.location.href = url;
   }
 
   return (
