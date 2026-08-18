@@ -1,14 +1,10 @@
 import type { ReactNode } from "react";
 
-import { getUnreadNoticeCount } from "@/features/notice/server";
 import { AnalysisProgressCard } from "@/features/notification/components/analysis-progress-card";
-import { NotificationBanner } from "@/features/notification/components/notification-banner";
 import { NotificationProvider } from "@/features/notification/notification-provider";
 import { guardWorkspaceEntry } from "@/features/onboarding/guard";
-import { PasswordChangeBanner } from "@/features/profile/components/password-change-banner";
 import { shouldShowPasswordChangeBanner } from "@/features/profile/server";
 import { RoleSidebar } from "@/features/shell/components/role-sidebar";
-import type { NavSection } from "@/features/shell/nav";
 import { dashboardFor, navFor } from "@/features/shell/nav-config";
 import { getViewer } from "@/features/shell/viewer";
 
@@ -18,21 +14,6 @@ import { getViewer } from "@/features/shell/viewer";
      두는 것과 같은 이유). 이 그룹 하위 전체가 이 한 줄로 덮인다 — 페이지마다 따로 안 붙인다.
 */
 export const dynamic = "force-dynamic";
-
-/**
- * 공지 미읽음이 있으면 사이드바 "공지" 항목에 빨간 점을 끼워 넣는다.
- * ⚠️ 정적 `OWNER_NAV`를 그대로 두고 **여기서 서버 상태(미읽음 수)만 얹는다** — 구성과 상태를
- *    한 파일에 섞지 않는다. 읽음 처리(`markNoticeReadAction`)가 `revalidatePath`로 이 셸을 다시 그린다.
- */
-function withNoticeDot(sections: NavSection[], hasUnread: boolean): NavSection[] {
-  if (!hasUnread) return sections;
-  return sections.map((section) => ({
-    ...section,
-    items: section.items.map((item) =>
-      item.href === "/app/notice" ? { ...item, dot: true } : item,
-    ),
-  }));
-}
 
 /**
  * 로그인 뒤 화면이 모두 쓰는 셸 — **사이드바는 여기 한 번만** 그린다.
@@ -48,8 +29,6 @@ export default async function ShellLayout({ children }: { children: ReactNode })
     ⚠️ 둘을 **같이 기다린다.** 앞뒤로 세우면 사이드바 하나 그리는 데 두 번 기다린다.
     ⚠️ 사용자는 `getViewer()`가 준다 — 전에는 여기에 `{ name: "대표 계정", role: OWNER }`를
        손으로 적고 있었다. 로그인이 붙으면 그 파일 하나만 바뀐다(#67).
-    ⚠️ **공지 수는 실패해도 셸을 죽이지 않는다.** 빨간 점 하나 때문에 로그인 뒤 화면 전체가
-       안 뜨면 안 된다 — 못 읽으면 0으로 본다(점만 안 붙는다).
        반대로 **사용자를 못 읽으면 그건 터뜨린다.** 누군지 모르는 채로 그린 사이드바는
        메뉴·권한이 틀린 화면이라, 조용히 넘기면 더 나쁘다.
   */
@@ -61,16 +40,18 @@ export default async function ShellLayout({ children }: { children: ReactNode })
   */
   await guardWorkspaceEntry();
 
-  const [viewer, unreadNoticeCount, showPasswordChangeBanner] = await Promise.all([
+  const [viewer, showPasswordChangeBanner] = await Promise.all([
     getViewer(),
-    getUnreadNoticeCount().catch(() => 0),
     shouldShowPasswordChangeBanner(),
   ]);
   /*
     ⚠️ **역할이 목록을 정한다.** 전에는 `OWNER_NAV` 하나를 모두에게 줘서, 팀장·사원으로
        로그인해도 대표 메뉴가 그대로 떴다. `is_admin` 겸직도 아무 표시가 없었다.
+    ⚠️ **"공지" 항목 점은 여기서 안 켠다**(2026-08-16, #602 후속). 예전엔 `getUnreadNoticeCount()`
+       (실서버 미구현이라 늘 0)로 이 자리에서 계산했는데, 이제 `RoleSidebar`가 종 드롭다운의
+       안 읽은 알림으로 직접 켠다(`role-sidebar.tsx`) — `sections`는 정적 구성 그대로 넘긴다.
   */
-  const sections = withNoticeDot(navFor(viewer), unreadNoticeCount > 0);
+  const sections = navFor(viewer);
 
   return (
     // ⚠️ `h-screen-z` — 화면 배율이 걸려도 셸이 아래에서 안 잘린다(DECISIONS §화면 배율)
@@ -84,36 +65,38 @@ export default async function ShellLayout({ children }: { children: ReactNode })
          import하지 않고 `children`으로 받는다). 안쪽 화면은 그대로 서버 컴포넌트다.
     */
     <div className="app-shell bg-background h-screen-z flex overflow-hidden">
-      <RoleSidebar sections={sections} home={dashboardFor(viewer.role)} user={viewer} />
-
       {/*
-        상단바는 여기서 그리지 않는다 — 제목·액션이 도메인마다 달라서
-        각 도메인의 `layout.tsx`가 `PageHeader`를 그린다.
-        ⚠️ **점 그리드를 깔지 않는다**(2026-08-05 변경). 로그인 뒤 일하는 화면이라 바탕이
-           조용해야 표·카드가 먼저 읽힌다 — 온보딩·결제·랜딩은 처음 만나는 화면이라 그대로 둔다.
-        ⚠️ 대신 **사이드바·상단바·본문을 `bg-background` 한 색으로 묶고 카드만 띄운다.**
-           라이트에서 `--background`와 `--card`가 둘 다 흰색이라, 바탕을 안 내리면 카드와
-           바탕을 나누는 게 보더선 하나뿐이라 화면이 통째로 하얗게 뜬다.
-           ⚠️ **본문만 내리면 안 된다.** 그러면 껍데기와 본문이 서로 다른 색이 되어
-           화면이 셋으로 조각나 보인다(DECISIONS §셸 표면에 적힌 첫 실패). 넷을 한 색으로
-           두고, 나누는 건 **선 하나**(사이드바 오른쪽·상단바 아래)에 맡긴다.
+        ⚠️ **사이드바도 이 안으로 들어왔다**(2026-08-16, #602 후속). "내 회의"·"공지" 점을
+           `RoleSidebar`가 종 드롭다운의 안 읽은 알림에서 직접 읽으려면 그 컨텍스트
+           안에 있어야 한다 — `NotificationProvider`는 컨텍스트·쿼리 클라이언트만 얹을 뿐
+           DOM 래퍼가 없어서, 감싸는 자리를 옮겨도 flex 레이아웃은 그대로다.
       */}
-      <NotificationProvider>
+      <NotificationProvider
+        memberId={viewer.id}
+        showPasswordChangeNotice={showPasswordChangeBanner}
+      >
+        <RoleSidebar sections={sections} home={dashboardFor(viewer.role)} user={viewer} />
+
+        {/*
+          상단바는 여기서 그리지 않는다 — 제목·액션이 도메인마다 달라서
+          각 도메인의 `layout.tsx`가 `PageHeader`를 그린다.
+          ⚠️ **점 그리드를 깔지 않는다**(2026-08-05 변경). 로그인 뒤 일하는 화면이라 바탕이
+             조용해야 표·카드가 먼저 읽힌다 — 온보딩·결제·랜딩은 처음 만나는 화면이라 그대로 둔다.
+          ⚠️ 대신 **사이드바·상단바·본문을 `bg-background` 한 색으로 묶고 카드만 띄운다.**
+             라이트에서 `--background`와 `--card`가 둘 다 흰색이라, 바탕을 안 내리면 카드와
+             바탕을 나누는 게 보더선 하나뿐이라 화면이 통째로 하얗게 뜬다.
+             ⚠️ **본문만 내리면 안 된다.** 그러면 껍데기와 본문이 서로 다른 색이 되어
+             화면이 셋으로 조각나 보인다(DECISIONS §셸 표면에 적힌 첫 실패). 넷을 한 색으로
+             두고, 나누는 건 **선 하나**(사이드바 오른쪽·상단바 아래)에 맡긴다.
+        */}
+        {/*
+          ⚠️ **본문을 덮던 오버레이가 없어졌다**(2026-08-16, #602 후속). 회의 개설·리마인더·
+             취소·공지는 `PageHeader`의 종(`NotificationBell`) 드롭다운으로, 발급받은 비밀번호
+             안내도 그 목록 안 항목 하나(`showPasswordChangeNotice`)로 옮겼다 — 흐름 밖
+             오버레이 div 자체가 더는 필요 없다.
+        */}
         <div className="bg-background relative flex min-w-0 flex-1 flex-col overflow-hidden">
           {children}
-          {/*
-            ⚠️ **흐름 밖 오버레이다, `PageHeader` 포털이 아니다**(2026-08-15, #540 — 이전
-               포털 방식은 도메인 `layout.tsx`가 바뀔 때마다 앵커가 다시 마운트돼 배너가
-               잠깐씩 사라졌고, 흐름 안에 있어 본문을 밀어냈다). 셸 최상위에 한 번만 마운트해
-               두면 도메인을 오가도 이 자리는 그대로다 — `top-[56px]`는 `PageHeader` 높이
-               고정값과 같다(그 파일 주석 참고). `absolute`라 본문을 밀어내지 않고 그 위에 얹힌다.
-          */}
-          <div className="absolute inset-x-0 top-[56px] z-20">
-            {/* 회의 개설·리마인더·취소·공지 */}
-            <NotificationBanner />
-            {/* 발급받은 비밀번호 안내 — 강제 아님(`mustChangePassword` 아님), 닫으면 그만이다 */}
-            {showPasswordChangeBanner && <PasswordChangeBanner memberId={viewer.id} />}
-          </div>
         </div>
         {/* 요약 진행 — 우하단 고정이라 어느 화면에 있든 같은 자리에 남는다 */}
         <AnalysisProgressCard />

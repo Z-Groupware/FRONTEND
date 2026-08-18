@@ -39,7 +39,10 @@ export interface NavItem {
   badge?: number;
   /**
    * 미읽음 등 "안 본 게 있음"을 알리는 빨간 점. 숫자(`badge`)와 달리 개수는 안 보여준다.
-   * ⚠️ 정적 구성이 아니라 **레이아웃이 서버에서 계산해 끼워 넣는다**(예: 공지 미읽음 수 > 0).
+   * ⚠️ **정적 구성엔 안 적는다.** "내 회의"·"공지"는 `RoleSidebar`가 종 드롭다운의 안 읽은
+   *    알림 목적지(`unreadDestinations`, `notification-provider.tsx`)와 `item.href`를
+   *    맞춰 보고 켠다 — 여기 `true`를 미리 적어 두는 건 그 자리뿐이던 값이 하나 더 생겨
+   *    두 값이 어긋날 수 있는 자리를 만든다.
    */
   dot?: boolean;
 }

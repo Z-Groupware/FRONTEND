@@ -27,7 +27,7 @@ jest.mock("@/lib/api", () => ({
 import { requireAccessToken } from "@/features/auth/session";
 import { ApiError, serverApi } from "@/lib/api";
 
-import { getActiveCaptureAction } from "./actions";
+import { completeCaptureUploadAction, getActiveCaptureAction } from "./actions";
 
 const serverApiMock = serverApi as unknown as jest.Mock;
 const requireAccessTokenMock = requireAccessToken as unknown as jest.Mock;
@@ -108,5 +108,38 @@ describe("getActiveCaptureAction — CAP-09", () => {
 
     expect(result.ok).toBe(false);
     expect(result.error).toBe("이 회의 참석자가 아닙니다");
+  });
+});
+
+/*
+  ⚠️ 회귀 방지(#616) — 이미 등록된 조각(409 CAP-005)을 실패로 돌려주면 `upload.ts`가 같은
+     조각을 3회 재시도해 `Duplicate entry` 소음을 남겼다. 멱등이라 성공으로 흘려보내야 한다.
+*/
+describe("completeCaptureUploadAction — CAP-07 멱등 처리", () => {
+  const body = { segmentSeq: 0, s3Key: "recordings/x", sizeBytes: 100 };
+
+  it("정상 완료면 ok:true", async () => {
+    serverApiMock.mockResolvedValueOnce(undefined);
+
+    const result = await completeCaptureUploadAction(1, 18, body);
+
+    expect(result).toEqual({ ok: true });
+  });
+
+  it("이미 등록됨(409 CAP-005)은 실패가 아니라 성공으로 취급한다 — 재시도 금지", async () => {
+    serverApiMock.mockRejectedValueOnce(new ApiError(409, "이미 등록된 조각입니다", "CAP-005"));
+
+    const result = await completeCaptureUploadAction(1, 18, body);
+
+    expect(result).toEqual({ ok: true });
+  });
+
+  it("그 외 에러는 {ok:false}로 감싼다", async () => {
+    serverApiMock.mockRejectedValueOnce(new ApiError(500, "서버 오류"));
+
+    const result = await completeCaptureUploadAction(1, 18, body);
+
+    expect(result.ok).toBe(false);
+    expect(result.error).toBe("서버 오류");
   });
 });
