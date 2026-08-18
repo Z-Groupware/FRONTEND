@@ -27,9 +27,9 @@ function extensionOf(fileName: string): string {
 }
 
 /**
- * 확장자 → S3 업로드 요청·PUT에 실을 Content-Type. [가정값·미검증] 도메인 담당자 문서(2026-08-14)엔
- * `webm` → `audio/webm` 예시 하나뿐이라, 나머지 7종은 IANA 표준값으로 채웠다(§연동 검증 —
- * BE 실코드 대조 전). 값이 어긋나면 발급·업로드가 `CAP-025`(지원하지 않는 형식)로 막힐 것이다.
+ * 확장자 → S3 업로드 요청·PUT에 실을 Content-Type. [확인] BE `RecordingFilePolicy
+ * .ALLOWED_CONTENT_TYPES`(2026-08-18 실코드 대조) — BE는 확장자마다 여러 값(구형 브라우저
+ * MIME·`application/octet-stream` 포함)을 받아 주는데, 여기 8종 전부 그 허용 집합 안에 든다.
  */
 const RECORDING_CONTENT_TYPE_BY_EXTENSION: Record<string, string> = {
   wav: "audio/wav",

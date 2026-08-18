@@ -1,4 +1,4 @@
-import type { ProjectStatus } from "@/constants/domain";
+import type { ActionStatus, ProjectStatus } from "@/constants/domain";
 import { hexFromTagName, tagNameFromHex } from "@/lib/palette";
 
 import type {
@@ -65,13 +65,19 @@ export interface BeProjectDetail {
   attachments: BeAttachment[];
 }
 
-/** [확인] `ProjectTimelineItemResponse` */
+/**
+ * [확인] `ProjectTimelineItemResponse` — **`status`는 프로젝트가 아니라 action 도메인
+ * enum이다**(BE `ActionStatus`, 2026-08-18 실코드 대조). `ProjectStatus`로 잘못 선언돼 있었다 —
+ * 지금은 문자열 값이 우연히 같아(`TODO`·`IN_PROGRESS`·`DONE`) TS도 조용히 통과했지만,
+ * `constants/project.ts`가 "액션과 값이 같다고 재사용하지 않는다"고 못박은 그 이유 그대로
+ * 이 자리도 한쪽만 값이 늘면 조용히 갈린다.
+ */
 export interface BeProjectTimelineItem {
   actionId: number;
   title: string;
   teamId: number;
   teamName: string;
-  status: ProjectStatus;
+  status: ActionStatus;
   dueDate: string;
   isDelayed: boolean;
 }

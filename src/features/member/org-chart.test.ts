@@ -94,16 +94,11 @@ describe("buildOrgChart", () => {
   });
 
   /*
-    ⚠️ 나간 사람은 목록에 남는다(CLAUDE.md §도메인 상수). 남긴 회의·액션의 출처라
-       이름이 사라지면 추적이 끊긴다 — 화면이 `퇴사` 뱃지로 알린다.
+    ⚠️ **`RESIGNED`는 이 함수에 안 온다**(2026-08-15 정정 — "퇴사자도 남긴다"였던 이전
+       케이스가 여기 있었다). BE가 오프보딩 최종 승인 즉시 명부 조회에서 그 사람을 빼므로
+       `buildOrgChart`가 받는 배열엔 애초에 퇴사자가 안 실린다 — 이 함수가 상태별로
+       거를 일이 없다. 퇴사자 이름은 회의·액션 기록(스냅샷)에만 남는다.
   */
-  it("퇴사자도 조직도에 남긴다", () => {
-    const resigned = member({ id: 9, name: "나간사람", status: MEMBER_STATUS.RESIGNED });
-    const chart = buildOrgChart([LEADER, resigned]);
-
-    expect(chart.teams[0]?.members.map((m) => m.name)).toContain("나간사람");
-    expect(chart.totalCount).toBe(2);
-  });
 
   /*
     ⚠️ 팀이 없는 건 원래 대표뿐이다. 여기 사람이 담기면 명부가 이상한 것인데, 안 그리면

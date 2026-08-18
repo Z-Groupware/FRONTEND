@@ -80,7 +80,8 @@ export async function getOwnerDashboardOverview(): Promise<OwnerDashboardOvervie
     dueSoonProjectCount: projectSummary.dueSoonProjectCount,
     activeMemberCount: memberSummary.totalMemberCount,
     onLeaveMemberCount: memberSummary.onLeaveMemberCount,
-    // ⚠️ 소프트 딜리트는 상태가 아니라 목록에서 빠지는 일이다 — 퇴사자는 남기고 그것만 거른다.
+    // ⚠️ 퇴사자는 이미 BE 응답에 안 온다(2026-08-15 정정) — `isVisibleMemberStatus`는
+    //    모르는 상태값이 오면 거르는 안전망일 뿐, 퇴사자를 걸러내는 자리가 아니다.
     leaderRows: leaders
       .filter((leader) => isVisibleMemberStatus(leader.status))
       .map(toOwnerDashboardLeaderRow),

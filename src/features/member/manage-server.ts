@@ -113,8 +113,12 @@ async function findPendingHandoverForMember(
  * ⚠️ 컴포넌트는 반환 타입만 본다. 연동되면 여기 `isMock` 분기만 실서버 호출로 바꾸고
  *    매퍼가 shape을 흡수한다 — 화면은 안 바뀐다.
  * ⚠️ 회사는 세션(`companyId`)으로 정해진다 — 인자로 받지 않는다(§라우트 그룹).
- * ⚠️ 소프트 딜리트된 사람은 **매퍼가 거른다**(`isVisibleMemberStatus`) — 퇴사자는 남고
- *    지워진 사람만 빠진다(§도메인 상수).
+ * ⚠️ **퇴사자는 여기 안 온다**(2026-08-15 정정 — `RESIGNED`가 명부에 남는다던 이전 정책이
+ *    뒤집혔다). BE `offboard()`가 오프보딩 최종 승인 시점에 바로 `deleted_at`을 찍어 그 사람은
+ *    이후 모든 명부 조회에서 완전히 빠진다(§도메인 상수) — FE가 거를 대상 자체가 안 내려온다.
+ *    `isVisibleMemberStatus`는 **모르는 상태값이 오면 거르는 안전망**일 뿐, 퇴사자를 걸러내는
+ *    자리가 아니다. "퇴사" 표시는 그 사람이 남긴 회의·액션 **기록**(스냅샷)에만 붙는다 —
+ *    이 명부 화면과는 다른 자리다.
  */
 export async function listManagedMembers(): Promise<ManagedMember[]> {
   if (isMock) return listMockManagedMembers();
@@ -171,8 +175,9 @@ interface BeOrgChartMember {
  * 조직도(`getPeopleDirectory`)가 쓰는 명부 전체 — BE 조직도 전용 응답 하나로 받는다.
  *
  * ⚠️ **더 이상 `GET /api/members`를 페이지 순회하지 않는다**(2026-08-14, 프로덕션 장애
- *    수정). 그 API는 `size`가 `@Max(100)`인 데다 `hasAnyRole('OWNER','ADMIN')` 전용이라,
- *    `/app/people`(전 구성원이 쓰는 화면)에서 Leader·Member 계정이 열면 403이 났다.
+ *    수정). 그 API는 `size`가 `@Max(100)`인 데다 `hasAnyRole('OWNER','ADMIN','LEADER')`
+ *    전용이라(2026-08-18 실코드 재대조 — PO 결정으로 Leader까지는 열려 있다),
+ *    `/app/people`(전 구성원이 쓰는 화면)에서 **Member 계정이 열면 403**이 났다.
  *    BE가 조직도 전용 응답(`GET /api/members/org-chart`)을 이미 열어 두고 있어 — 페이지
  *    단위가 아니라 명부 전체를 한 번에 주고, 권한도 전 구성원에게 열려 있다 — 그걸 그대로
  *    쓴다.

@@ -1,7 +1,8 @@
 /**
  * 회의실 예약 = 회의 개설(`POST /api/meetings`, MEET-01) BE shape → UI 계약.
- * [확인] 회의실 도메인 문서(ROOM-01~05, 2026-08-12) 기준 — BE 실코드는 아직 대조 전이다
- *   (§연동 검증: Swagger·구두 추측 금지, 문서와 코드가 다르면 코드가 맞다 — 구현 시 컨트롤러로 재확인).
+ * [확인] BE `meeting/presentation/api/request/CreateMeetingRequest.java`(2026-08-18 실코드
+ *   대조) — 필드 10개(`title`·`projectId`·`meetingRoomId`·`startAt`·`endAt`·`recordingConsent`·
+ *   `relatedActionId`·`attendeeMemberIds`·`mainTopic`·`subTopics`) 전부 이름·타입 일치.
  */
 
 import type {

@@ -609,8 +609,8 @@ export async function getOnlineMeetingRecordingUploadUrlAction(input: {
 /**
  * 비대면 회의 만들기(이슈 #473) — `/app/rooms` 회의실 패널의 [비대면 회의] 버튼이 부른다.
  *
- * ⚠️ **BE API가 확정됐다**(MEET-18, 2026-08-14 도메인 담당자 문서) — 더는 "아직 준비 중"이
- *    아니다. 다만 BE 실코드 대조 전이라 매퍼·엔드포인트 주석에 그 사실을 남겨 뒀다(§연동 검증).
+ * ⚠️ **BE 실코드 대조 완료**(MEET-18, 2026-08-16 — `mapper/online-meetings.ts` 헤더 주석
+ *    참고). 더는 "아직 준비 중"도 "대조 전"도 아니다.
  * ⚠️ **`recordingConsent`를 안 보낸다** — 서버가 항상 `true`로 고정한다(팀 확정, 매퍼 주석).
  * ⚠️ **제출하면 그 자리에서 완료 처리된다** — 회의실 예약(`createRoomReservationAction`)과
  *    달리 캡처 화면으로 안 넘어간다(팀 명세). 그래서 회의실·시간을 아예 안 받는다.
