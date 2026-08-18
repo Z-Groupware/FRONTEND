@@ -4,7 +4,7 @@ jest.mock("./actions", () => ({
 }));
 
 import { completeCaptureUploadAction, presignCaptureUploadAction } from "./actions";
-import { createSliceUploader } from "./upload";
+import { createSliceUploader, describeUploadedParts } from "./upload";
 
 /**
  * 오디오 조각 업로더 — presign 배치 소진·S3 키 파싱·연속 실패 알림만 확인한다.
@@ -137,4 +137,29 @@ it("순서대로, 하나씩 올린다 — 동시에 여러 조각을 PUT하지 �
   await uploader.flush();
 
   expect(maxInFlight).toBe(1);
+});
+
+describe("describeUploadedParts — CAP-08 복구 안내 문장", () => {
+  it("올라간 것이 없으면 0개(약 00:00)가 아니라 '없다'고 말한다", () => {
+    expect(describeUploadedParts({ lastSeq: 0, missingCount: 0 })).toBe(
+      "아직 서버에 올라간 녹음 조각은 없습니다.",
+    );
+  });
+
+  it("조각 수 × 15초를 근사 분량으로 병기한다 — 4개면 약 1분", () => {
+    expect(describeUploadedParts({ lastSeq: 4, missingCount: 0 })).toBe(
+      "지금까지 녹음 조각 4개(약 1분)가 서버에 올라가 있습니다.",
+    );
+  });
+
+  it("1분 미만은 초로, 분·초가 섞이면 둘 다 적는다", () => {
+    expect(describeUploadedParts({ lastSeq: 2, missingCount: 0 })).toContain("약 30초");
+    expect(describeUploadedParts({ lastSeq: 5, missingCount: 0 })).toContain("약 1분 15초");
+  });
+
+  it("유실 구간은 숨기지 않는다 — 복구되지 않는다는 사실까지 말한다(§정직성)", () => {
+    expect(describeUploadedParts({ lastSeq: 8, missingCount: 2 })).toBe(
+      "지금까지 녹음 조각 8개(약 2분)가 서버에 올라가 있습니다. 이 중 2개 구간은 전송되지 못해 복구되지 않습니다.",
+    );
+  });
 });

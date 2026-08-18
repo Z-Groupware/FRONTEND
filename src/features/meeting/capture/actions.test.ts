@@ -27,7 +27,11 @@ jest.mock("@/lib/api", () => ({
 import { requireAccessToken } from "@/features/auth/session";
 import { ApiError, serverApi } from "@/lib/api";
 
-import { completeCaptureUploadAction, getActiveCaptureAction } from "./actions";
+import {
+  completeCaptureUploadAction,
+  getActiveCaptureAction,
+  getPartsUploadStatusAction,
+} from "./actions";
 
 const serverApiMock = serverApi as unknown as jest.Mock;
 const requireAccessTokenMock = requireAccessToken as unknown as jest.Mock;
@@ -141,5 +145,36 @@ describe("completeCaptureUploadAction — CAP-07 멱등 처리", () => {
 
     expect(result.ok).toBe(false);
     expect(result.error).toBe("서버 오류");
+  });
+});
+
+describe("getPartsUploadStatusAction — CAP-08", () => {
+  it("BE 6필드 응답을 화면 계약 2필드(lastSeq·missingCount)로 접는다", async () => {
+    // [확인] BE PartUploadStatusResponse — segmentSeq·lastSeq·missingSeqs·blocksFormed·resumeFromSeq·gapMs
+    serverApiMock.mockResolvedValueOnce({
+      segmentSeq: 1,
+      lastSeq: 8,
+      missingSeqs: [3, 5],
+      blocksFormed: 2,
+      resumeFromSeq: 9,
+      gapMs: 0,
+    });
+
+    const result = await getPartsUploadStatusAction(42);
+
+    // resumeFromSeq 등 안 쓰는 필드가 계약에 새면 화면이 재개 로직을 만들고 싶어진다 — 계약은 안내용 2필드뿐
+    expect(result).toEqual({ ok: true, data: { lastSeq: 8, missingCount: 2 } });
+    expect(serverApiMock).toHaveBeenCalledWith(
+      "/api/meetings/42/parts/status",
+      expect.objectContaining({ accessToken: "token" }),
+    );
+  });
+
+  it("예외(녹음자 아님 등)는 던지지 않고 {ok:false}로 감싼다 — 복구 안내가 얇아질 뿐 화면은 산다", async () => {
+    serverApiMock.mockRejectedValueOnce(new Error("현재 녹음자가 아닙니다"));
+
+    const result = await getPartsUploadStatusAction(42);
+
+    expect(result).toEqual({ ok: false, error: "현재 녹음자가 아닙니다" });
   });
 });

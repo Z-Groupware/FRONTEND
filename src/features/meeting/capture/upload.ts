@@ -14,6 +14,7 @@
  */
 
 import { completeCaptureUploadAction, presignCaptureUploadAction } from "./actions";
+import { SLICE_MS } from "./recorder";
 import type { CapturePart } from "./types";
 
 /** 15초 × 20 = 5분치 — 한 배치의 크기 */
@@ -181,4 +182,29 @@ export function createSliceUploader(meetingId: number, handlers: UploadHandlers)
       return chain;
     },
   };
+}
+
+/**
+ * 복구 안내 한 줄 — CAP-08 결과를 사람이 읽을 문장으로 옮긴다(2026-08-19, #650).
+ *
+ * ⚠️ 분량은 `조각 수 × SLICE_MS`(15초)로 **계산한 근사치**다 — 마지막 조각이 15초를 다
+ *    못 채웠을 수 있어 "약"을 뗄 수 없다. 서버는 조각 길이를 라이브로 안 알려준다
+ *    (BE `gapMs`는 라이브 조회에서 항상 0).
+ * ⚠️ `missingCount`는 재전송 목록이 아니라 **비어 있는 구간의 개수**다 — 크래시로 로컬
+ *    원본이 사라져 되살릴 수 없으므로, 사실을 숨기지 않고 문장에 남긴다(§정직성).
+ * ⚠️ `lastSeq === 0`이면 올라간 것이 없다고 말한다 — 0개(약 00:00)라고 쓰면 계산은 맞지만
+ *    읽는 사람이 "뭔가 올라가긴 했나"를 한 번 더 물어야 한다.
+ */
+export function describeUploadedParts(status: { lastSeq: number; missingCount: number }): string {
+  if (status.lastSeq <= 0) return "아직 서버에 올라간 녹음 조각은 없습니다.";
+
+  const total = Math.floor((status.lastSeq * SLICE_MS) / 1000);
+  const minutes = Math.floor(total / 60);
+  const seconds = total % 60;
+  const length =
+    minutes > 0 ? `약 ${minutes}분${seconds > 0 ? ` ${seconds}초` : ""}` : `약 ${seconds}초`;
+
+  const base = `지금까지 녹음 조각 ${status.lastSeq}개(${length})가 서버에 올라가 있습니다.`;
+  if (status.missingCount === 0) return base;
+  return `${base} 이 중 ${status.missingCount}개 구간은 전송되지 못해 복구되지 않습니다.`;
 }

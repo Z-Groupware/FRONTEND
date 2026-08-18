@@ -7,6 +7,8 @@ import { CAPTURE_FAILURE_MESSAGE } from "@/constants/meeting";
 import {
   completeMeetingAction,
   getActiveCaptureAction,
+  getPartsUploadStatusAction,
+  type PartsUploadStatus,
   pauseCaptureSessionAction,
   resumeCaptureSessionAction,
   startCaptureSessionAction,
@@ -79,6 +81,13 @@ export interface UseCaptureResult {
    *    거른 뒤 안내 문구를 정한다.
    */
   activeCapture: ActiveCapture | null;
+  /**
+   * 복구할 캡처의 서버 업로드 상태(CAP-08) — **같은 회의의 진행 캡처가 있을 때만** 채워진다.
+   *
+   * ⚠️ 안내 전용 값이다 — 재개는 presign(CAP-04)이 서버 `lastSeq + 1`부터 이어 발급해서
+   *    이 값 없이도 성립한다(`getPartsUploadStatusAction` 주석).
+   */
+  uploadStatus: PartsUploadStatus | null;
 }
 
 /** 1초마다 다시 그린다 — 경과 시간이 흘러야 녹음 중인 게 보인다 */
@@ -114,6 +123,8 @@ export function useCapture(meetingId: string, initialSeq = 0): UseCaptureResult 
        클릭이 사라져 이어받기 의사표시가 없어진다(§정직성).
   */
   const [activeCapture, setActiveCapture] = useState<ActiveCapture | null>(null);
+  /** CAP-08 — 같은 회의 복구일 때만 채워지는 업로드 상태(안내 전용, 아래 복구 효과 참조) */
+  const [uploadStatus, setUploadStatus] = useState<PartsUploadStatus | null>(null);
 
   /*
     ⚠️ 지원 여부는 **첫 렌더에 한 번만** 본다(`useState` 지연 초기화). 캡처 화면은
@@ -379,12 +390,24 @@ export function useCapture(meetingId: string, initialSeq = 0): UseCaptureResult 
     let alive = true;
     void getActiveCaptureAction().then((result) => {
       if (!alive) return;
-      if (result.ok && result.data) setActiveCapture(result.data);
+      if (!result.ok || !result.data) return;
+      setActiveCapture(result.data);
+      /*
+        ⚠️ **CAP-08은 같은 회의일 때만 이어 부른다**(2026-08-19). BE가 "현재 녹음자"만
+           허용하는 조회라, 다른 회의 안내(그쪽 세션은 그대로라는 문구)에는 쓸 일도 권한도
+           없다. 실패는 CAP-09와 같은 이유로 조용히 넘긴다 — 안내가 조금 얇아질 뿐,
+           복구 흐름 자체는 presign이 이어 발급해서 성립한다.
+      */
+      if (String(result.data.meetingId) !== meetingId) return;
+      void getPartsUploadStatusAction(result.data.meetingId).then((status) => {
+        if (!alive) return;
+        if (status.ok && status.data) setUploadStatus(status.data);
+      });
     });
     return () => {
       alive = false;
     };
-  }, []);
+  }, [meetingId]);
 
   /*
     ⚠️ **마이크가 열린 뒤에 "녹음 중"으로 넘어간다.** 먼저 넘어가 두면 권한이 막힌 브라우저에서
@@ -626,5 +649,6 @@ export function useCapture(meetingId: string, initialSeq = 0): UseCaptureResult 
     resume,
     end,
     activeCapture,
+    uploadStatus,
   };
 }

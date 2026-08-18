@@ -17,8 +17,10 @@ import { pickPaletteColor } from "@/lib/palette";
 import { cn } from "@/lib/utils";
 
 import type { CaptureAttendee, MeetingCaptureInfo } from "../view-types";
+import type { PartsUploadStatus } from "./actions";
 import { canSubmit, CAPTURE_PHASE, type CapturePhase, formatRecordedTime } from "./phase";
 import type { ActiveCapture, LiveCaption } from "./types";
+import { describeUploadedParts } from "./upload";
 import { useCapture } from "./use-capture";
 import { useLiveCaptions } from "./use-live-captions";
 
@@ -181,6 +183,7 @@ export function CaptureView({
           support={capture.support}
           onReady={capture.enter}
           activeCapture={capture.activeCapture}
+          uploadStatus={capture.uploadStatus}
         />
       ) : (
         <div className="mx-auto flex min-h-0 w-full max-w-[1440px] flex-1 flex-col gap-7">
@@ -385,9 +388,11 @@ interface ReadyCardProps {
    *    두면 이미 녹음 중인 회의를 처음부터 다시 시작할 수 있다(§정직성).
    */
   activeCapture: ActiveCapture | null;
+  /** CAP-08 — 같은 회의 복구일 때만 값이 온다(안내 전용, `use-capture` 주석) */
+  uploadStatus: PartsUploadStatus | null;
 }
 
-function ReadyCard({ meeting, support, onReady, activeCapture }: ReadyCardProps) {
+function ReadyCard({ meeting, support, onReady, activeCapture, uploadStatus }: ReadyCardProps) {
   const unsupported = !support.stt || !support.recording;
   /*
     ⚠️ **다른 회의는 안내만 다르게**(같은 회의 이어하기와 뜻이 반대다) — 카드 안에 두 경우를
@@ -436,7 +441,14 @@ function ReadyCard({ meeting, support, onReady, activeCapture }: ReadyCardProps)
             className="border-border bg-secondary/50 mt-6 rounded-lg border px-3.5 py-2.5 text-left text-[12px] leading-4"
           >
             {isSameMeeting
-              ? "이 회의는 이미 녹음 중입니다. [준비 완료] 후 [녹음 이어하기]를 눌러 주세요."
+              ? /*
+                  ⚠️ 업로드 상태(CAP-08)는 **있을 때만 병기한다** — 조회가 실패해도 복구 안내
+                     자체는 성립한다(재개는 presign이 이어 발급). 분량은 근사치라 "약"을 뗄 수
+                     없고, 유실 구간은 되살릴 수 없다는 사실까지 말한다(§정직성).
+                */
+                `이 회의는 이미 녹음 중입니다. [준비 완료] 후 [녹음 이어하기]를 눌러 주세요.${
+                  uploadStatus !== null ? ` ${describeUploadedParts(uploadStatus)}` : ""
+                }`
               : "지금 다른 회의를 녹음 중입니다. 이 회의에서 새로 시작하면 그쪽 세션은 그대로 남습니다."}
           </p>
         )}
