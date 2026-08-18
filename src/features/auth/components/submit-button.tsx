@@ -16,13 +16,21 @@ import { Button } from "@/components/ui/button";
  * ⚠️ 보내는 동안에도 **버튼 이름이 남아 있어야 한다.** 회전만 그리고 글자를 빼 버리면
  *    스크린 리더에는 이름 없는 버튼이 된다 — 눈에서만 감추고(`sr-only`) 이름은 남긴다(§a11y).
  */
-export function SubmitButton({ children }: { children: ReactNode }) {
+export function SubmitButton({
+  children,
+  disabled = false,
+}: {
+  children: ReactNode;
+  /** 폼 자체 판단으로 추가로 잠글 때만 넘긴다(예: 재요청 쿨다운) — 기본은 `pending`만 본다 */
+  disabled?: boolean;
+}) {
   const { pending } = useFormStatus();
+  const isDisabled = pending || disabled;
 
   return (
     <Button
       type="submit"
-      disabled={pending}
+      disabled={isDisabled}
       aria-busy={pending}
       className="bg-foreground text-background hover:bg-foreground/90 h-12 gap-1.5 text-[15px]"
     >

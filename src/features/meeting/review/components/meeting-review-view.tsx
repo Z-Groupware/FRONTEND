@@ -32,8 +32,10 @@ interface MeetingReviewViewProps {
 
 /**
  * AI 액션 분배 리뷰 — 화면(`/app/meeting/:id/review`)의 클라이언트 오케스트레이션.
- * ⚠️ 확정 전까지는 전부 **로컬 상태**다. [액션 분배 확정]을 눌러야 서버에 반영된다
- *    (WORKFLOW.md §3-4 "자동 반영 완료 로직 폐기").
+ * ⚠️ **로컬 상태인 건 [액션 직접 추가]로 방금 만든 초안뿐이다.** AI가 뽑은 행은 회의 종료
+ *    직후 분석 단계에서 이미 서버에 만들어져 있다 — 확정 전이라 담당자 화면에 안 나타날
+ *    뿐이다(WORKFLOW.md §3-4 "정본은 `actionsConfirmed` 하나뿐"). [액션 분배 확정]이 하는
+ *    일은 그 행을 **내보내는 것**이지 새로 만드는 게 아니다.
  */
 export function MeetingReviewView({ review }: MeetingReviewViewProps) {
   const [drafts, setDrafts] = useState<AiActionDraft[]>(review.drafts);
@@ -484,7 +486,7 @@ export function MeetingReviewView({ review }: MeetingReviewViewProps) {
         description={
           <>
             총 {activeDrafts.length}건의 액션이 지금 화면에 보이는 {assignmentTargetLabel}·일정
-            그대로 생성됩니다.
+            그대로 하달됩니다.
             <br />
             확정 뒤에는 이 화면을 다시 열 수 없습니다.
           </>
