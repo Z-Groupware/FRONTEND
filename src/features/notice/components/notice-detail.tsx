@@ -2,7 +2,6 @@ import { MarkdownContent } from "@/components/common/markdown-content";
 import { formatDate } from "@/lib/date";
 
 import type { Notice } from "../types";
-import { MarkNoticeRead } from "./mark-notice-read";
 import { NoticeDeleteButton } from "./notice-delete-button";
 import { NoticeEditDialog } from "./notice-edit-dialog";
 
@@ -24,9 +23,6 @@ export function NoticeDetail({ notice, canManage }: { notice: Notice; canManage:
          카드가 아니라 글이다.
     */
     <article className="border-border bg-card flex min-h-[560px] w-full flex-col overflow-hidden rounded-2xl border">
-      {/* 열람하면 읽음 처리 — 화면엔 아무것도 안 그린다 */}
-      <MarkNoticeRead id={notice.id} />
-
       {/*
         ⚠️ **가운데 정렬이다**(`items-center`). 위에 붙여 뒀더니 11px짜리 날짜가 28px 버튼
            옆에서 혼자 천장에 매달려 보였다 — 한 줄에 선 것들은 가운데를 맞춘다.

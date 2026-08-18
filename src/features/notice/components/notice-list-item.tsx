@@ -24,17 +24,6 @@ export function NoticeListItem({ notice, isActive = false }: NoticeListItemProps
       )}
     >
       {/*
-        미읽음 점 — 읽었으면 자리는 남기고 숨긴다(줄이 밀리지 않게).
-        `--destructive`(에러 전용)는 쓰지 않는다 — 안 읽음은 에러가 아니다(DESIGN §5).
-        색만으로 알리지 않도록 안 읽음일 때 스크린리더용 텍스트를 함께 둔다(CLAUDE.md §a11y).
-      */}
-      <span
-        aria-hidden
-        className={cn("bg-foreground size-2 shrink-0 rounded-full", notice.isRead && "invisible")}
-      />
-      {!notice.isRead && <span className="sr-only">안 읽음</span>}
-
-      {/*
         ⚠️ **제목을 제목답게 세운다.** 굵기로 세운다 — 다른 목록의 첫 열과 같은 13px을 쓰되
            반굵게(semibold)라 옆의 날짜(12px 흐림)와 무게가 갈린다. 크기까지 올리면 화면마다
            목록 줄 높이가 달라져 사이드바로 옮겨 다닐 때 리듬이 흔들린다(§DESIGN: 새 숫자 금지).

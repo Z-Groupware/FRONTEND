@@ -1,4 +1,5 @@
 import { AUTHORITY, type Authority, AUTHORITY_LABEL } from "@/constants/authority";
+import { NotificationProvider } from "@/features/notification/notification-provider";
 
 import { dashboardFor, navFor } from "../nav-config";
 import type { Viewer } from "../viewer";
@@ -112,12 +113,20 @@ function PreviewColumn({ item }: { item: PreviewCase }) {
         ⚠️ 사이드바 안의 `nav`는 `flex-1 overflow-y-auto`라, 높이를 안 주면 내용만큼 늘어나
            스크롤이 안 생긴다. 열마다 높이가 달라지는 건 의도다 — 그 차이가 곧 정보다.
       */}
+      {/*
+        ⚠️ **자기만의 `NotificationProvider`로 감싼다.** `RoleSidebar`가 이제 종 드롭다운의
+           안 읽은 알림을 읽는다(`role-sidebar.tsx`) — 실제 셸 밖인 이 개발용 화면에서
+           프로바이더 없이 그리면 `useNotificationCenter`가 곧바로 던진다. 넷 다 알림이
+           없어 점은 안 뜨지만, 그래도 배치는 실제 사이드바와 똑같이 나온다.
+      */}
       <div className="border-border overflow-hidden rounded-xl border">
-        <RoleSidebar
-          sections={navFor(item.viewer)}
-          home={dashboardFor(item.viewer.role)}
-          user={item.viewer}
-        />
+        <NotificationProvider>
+          <RoleSidebar
+            sections={navFor(item.viewer)}
+            home={dashboardFor(item.viewer.role)}
+            user={item.viewer}
+          />
+        </NotificationProvider>
       </div>
     </section>
   );

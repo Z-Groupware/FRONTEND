@@ -1,7 +1,8 @@
 "use client";
 
+import { QueryClient, QueryClientProvider, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ReactNode } from "react";
-import { createContext, useCallback, useContext, useEffect, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { retryMeetingSummaryAction } from "@/features/meeting/summary/actions";
@@ -18,8 +19,19 @@ import {
   shouldPoll,
   startTracking,
 } from "./analysis";
+import { NOTIFICATION_DESTINATION } from "./destinations";
 import { type NotificationEnvelope, toAnalysisSignal, toBannerNotification } from "./event";
-import { ANALYSIS_CARD_STATE, type AnalysisTracking, type BannerNotification } from "./types";
+import {
+  dismissPasswordNotice,
+  isPasswordNoticeDismissed,
+  passwordNoticeId,
+} from "./password-notice";
+import {
+  ANALYSIS_CARD_STATE,
+  type AnalysisTracking,
+  LOCAL_NOTIFICATION_KIND,
+  type NotificationItem,
+} from "./types";
 import { useNotificationStream } from "./use-notification-stream";
 
 /**
@@ -33,8 +45,20 @@ import { useNotificationStream } from "./use-notification-stream";
  */
 
 interface NotificationContextValue {
-  banners: BannerNotification[];
-  dismissBanner: (id: string) => void;
+  /** 종 드롭다운에 뜨는 목록 — 최신순 */
+  notifications: NotificationItem[];
+  /** 읽지 않은 개수 — 종 오른쪽 위 빨간 점을 이 값으로 켠다 */
+  unreadCount: number;
+  /**
+   * 안 읽은 알림이 가리키는 목적지 집합 — 사이드바 "내 회의"·"공지" 점을 이 값으로 켠다
+   * (`role-sidebar.tsx`). `NOTIFICATION_DESTINATION`과 같은 맵으로 구한다 — 종 목록이
+   * 가는 곳과 사이드바가 켜지는 조건이 다른 맵이면 둘이 어긋난다.
+   */
+  unreadDestinations: Set<string>;
+  /** 읽음 처리는 서버 API가 없다 — 리액트 쿼리 캐시에서만 뒤집는다 */
+  markNotificationRead: (id: string) => void;
+  /** 목록에서 지운다 — 서버에 삭제 API가 없다, 캐시에서 줄만 뺀다 */
+  removeNotification: (id: string) => void;
   tracking: AnalysisTracking | null;
   /**
    * 회의 종료 직후 캡처 화면이 부른다 — 이 순간부터 카드가 뜬다.
@@ -63,14 +87,118 @@ export function useNotificationCenter(): NotificationContextValue {
   return value;
 }
 
-/** 배너를 쌓아 두는 최대 줄 수 — 넘으면 오래된 것부터 밀려난다 */
-const MAX_BANNERS = 3;
+/** 종 목록에 쌓아 두는 최대 줄 수 — 넘으면 오래된 것부터 밀려난다 */
+const MAX_NOTIFICATIONS = 20;
 
 /** ⚠️ 탭을 닫으면 같이 사라져야 한다 — `sessionStorage`인 이유는 `analysis.ts` 주석 참고 */
 const TRACKING_STORAGE_KEY = "z:analysis-tracking";
 
-export function NotificationProvider({ children }: { children: ReactNode }) {
-  const [banners, setBanners] = useState<BannerNotification[]>([]);
+/** 종 목록 캐시 키 — `NotificationBell`도 같은 프로바이더 트리 안이라 이 키를 다시 구독할 일이 없다 */
+const NOTIFICATION_LIST_QUERY_KEY = ["notification-center", "list"] as const;
+
+interface NotificationCenterProviderProps {
+  children: ReactNode;
+  /** 임시 비밀번호 항목의 종 목록 id·`localStorage` 키를 만드는 데 쓴다 */
+  memberId: number | null;
+  /** `/me`의 `passwordChanged: false` — 예전 `PasswordChangeBanner`가 켜지던 조건 그대로 */
+  showPasswordChangeNotice: boolean;
+}
+
+function NotificationCenterProvider({
+  children,
+  memberId,
+  showPasswordChangeNotice,
+}: NotificationCenterProviderProps) {
+  const queryClient = useQueryClient();
+  /*
+    ⚠️ **BE에 알림 목록 조회 API가 없다** — SSE로 들어오는 대로 이 캐시에 쌓기만 한다.
+       그래서 `queryFn`은 절대 다시 안 불려야 한다(다시 불리면 쌓아 둔 목록이 빈 배열로
+       덮인다) — `refetchOn*`을 전부 끈다. `staleTime`은 "그룹웨어라 몇 분은 봐도 되는
+       화면"이라는 감으로 5분을 준다(실제로 재조회를 안 하니 상한이라기보다 의도 표시에
+       가깝다), `gcTime`은 탭을 잠깐 벗어나도(다른 화면 이동) 쌓아 둔 목록이 안 날아가게
+       30분으로 넉넉히 둔다.
+  */
+  const { data: notifications = [] } = useQuery<NotificationItem[]>({
+    queryKey: NOTIFICATION_LIST_QUERY_KEY,
+    queryFn: () => [],
+    initialData: [],
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+  });
+
+  const addNotification = useCallback(
+    (notification: NotificationItem) => {
+      queryClient.setQueryData<NotificationItem[]>(NOTIFICATION_LIST_QUERY_KEY, (prev = []) => {
+        /* 재연결로 같은 알림이 다시 오면 한 줄로 접는다(§목록 — id로 중복을 거른다) */
+        if (prev.some((item) => item.id === notification.id)) return prev;
+        return [notification, ...prev].slice(0, MAX_NOTIFICATIONS);
+      });
+    },
+    [queryClient],
+  );
+
+  const markNotificationRead = useCallback(
+    (id: string) => {
+      queryClient.setQueryData<NotificationItem[]>(NOTIFICATION_LIST_QUERY_KEY, (prev = []) =>
+        prev.map((item) => (item.id === id ? { ...item, read: true } : item)),
+      );
+    },
+    [queryClient],
+  );
+
+  const removeNotification = useCallback(
+    (id: string) => {
+      queryClient.setQueryData<NotificationItem[]>(NOTIFICATION_LIST_QUERY_KEY, (prev = []) =>
+        prev.filter((item) => item.id !== id),
+      );
+      /*
+        ⚠️ **임시 비밀번호 항목만 지운 기록을 남긴다.** 서버가 `passwordChanged: false`를
+           계속 주는 한 이 프로바이더는 마운트마다 같은 항목을 다시 만들어 넣는다 — 캐시에서만
+           빼면 새로고침 한 번에 되살아난다(예전 `PasswordChangeBanner`와 같은 이유로
+           `localStorage`에 남긴다).
+      */
+      if (memberId !== null && id === passwordNoticeId(memberId)) {
+        dismissPasswordNotice(memberId);
+      }
+    },
+    [queryClient, memberId],
+  );
+
+  /*
+    ⚠️ **BE 알림이 아니라 여기서 합성해 넣는다** — SSE에는 이 값이 안 온다(`/me`의
+       `passwordChanged`). 이미 지운 적 있으면(`localStorage`) 다시 안 넣는다.
+    ⚠️ **`addNotification`이 중복을 막아 준다** — 같은 id가 이미 있으면 그대로 두므로,
+       리렌더마다 이 효과가 다시 돌아도 목록에 두 번 안 쌓인다.
+  */
+  useEffect(() => {
+    if (!showPasswordChangeNotice || memberId === null) return;
+    if (isPasswordNoticeDismissed(memberId)) return;
+
+    addNotification({
+      id: passwordNoticeId(memberId),
+      type: LOCAL_NOTIFICATION_KIND.PASSWORD_TEMP,
+      message: "지금 쓰는 비밀번호는 발급받은 비밀번호예요. 마이페이지에서 바꿔 주세요.",
+      href: "/app/me",
+      read: false,
+      receivedAt: Date.now(),
+    });
+  }, [showPasswordChangeNotice, memberId, addNotification]);
+
+  const unreadCount = notifications.filter((item) => !item.read).length;
+
+  const unreadDestinations = useMemo(() => {
+    const destinations = new Set<string>();
+    for (const item of notifications) {
+      if (item.read) continue;
+      const destination = NOTIFICATION_DESTINATION[item.type];
+      if (destination) destinations.add(destination);
+    }
+    return destinations;
+  }, [notifications]);
+
   const [tracking, setTracking] = useState<AnalysisTracking | null>(null);
 
   /*
@@ -101,31 +229,30 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
 
   /* ─────────────────────────────── 스트림 ─────────────────────────────── */
 
-  const handleEvent = useCallback((envelope: NotificationEnvelope) => {
-    /*
+  const handleEvent = useCallback(
+    (envelope: NotificationEnvelope) => {
+      /*
       ⚠️ **여기가 소스 교체의 이음매였다.** `event.ts`의 `ANALYSIS_EVENT_STATE`가 채워지면서
          (2026-08-13, BE #460) `toAnalysisSignal`이 이제 실제 신호를 낸다 — 스트림이 카드를
          직접 움직이고, 폴링(`use-analysis-tracker`)은 스트림이 놓친 걸 늦게 잡는 보조가
          됐다. **카드·배너 컴포넌트는 한 줄도 안 바뀌었다.**
     */
-    const signal = toAnalysisSignal(envelope);
-    if (signal) {
-      setTracking((prev) =>
-        prev && prev.meetingId === signal.meetingId
-          ? advance(prev, { ok: true, status: signal.status })
-          : prev,
-      );
-      return;
-    }
+      const signal = toAnalysisSignal(envelope);
+      if (signal) {
+        setTracking((prev) =>
+          prev && prev.meetingId === signal.meetingId
+            ? advance(prev, { ok: true, status: signal.status })
+            : prev,
+        );
+        return;
+      }
 
-    const banner = toBannerNotification(envelope);
-    if (!banner) return;
-    setBanners((prev) => {
-      /* 재연결로 같은 알림이 다시 오면 한 줄로 접는다(§목록 — id로 중복을 거른다) */
-      if (prev.some((item) => item.id === banner.id)) return prev;
-      return [...prev, banner].slice(-MAX_BANNERS);
-    });
-  }, []);
+      const banner = toBannerNotification(envelope);
+      if (!banner) return;
+      addNotification({ ...banner, read: false, receivedAt: Date.now() });
+    },
+    [addNotification],
+  );
 
   useNotificationStream(handleEvent);
 
@@ -240,15 +367,14 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     };
   }, [tracking]);
 
-  const dismissBanner = useCallback((id: string) => {
-    setBanners((prev) => prev.filter((banner) => banner.id !== id));
-  }, []);
-
   return (
     <NotificationContext.Provider
       value={{
-        banners,
-        dismissBanner,
+        notifications,
+        unreadCount,
+        unreadDestinations,
+        markNotificationRead,
+        removeNotification,
         tracking,
         trackAnalysis,
         dismissAnalysis,
@@ -258,5 +384,40 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     >
       {children}
     </NotificationContext.Provider>
+  );
+}
+
+interface NotificationProviderProps {
+  children: ReactNode;
+  /**
+   * 임시 비밀번호 안내를 넣으려면 필요하다 — 안 넘기면(테스트 등) 그 항목은 그냥 안 뜬다.
+   * ⚠️ **기본값을 둔다.** 이 프로바이더를 직접 렌더하는 테스트가 이미 있어서(`.test.tsx`),
+   *    필수로 만들면 그 테스트마다 값을 채워야 한다.
+   */
+  memberId?: number | null;
+  showPasswordChangeNotice?: boolean;
+}
+
+/**
+ * ⚠️ **쿼리 클라이언트는 이 프로바이더 안에서 만든다**(전역에 두지 않는다). 종 목록
+ *    캐시가 여기서만 쓰이는 로컬 상태라 — 앱 전체 쿼리 클라이언트가 따로 필요해지면
+ *    그때 루트로 올린다.
+ */
+export function NotificationProvider({
+  children,
+  memberId = null,
+  showPasswordChangeNotice = false,
+}: NotificationProviderProps) {
+  const [queryClient] = useState(() => new QueryClient());
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <NotificationCenterProvider
+        memberId={memberId}
+        showPasswordChangeNotice={showPasswordChangeNotice}
+      >
+        {children}
+      </NotificationCenterProvider>
+    </QueryClientProvider>
   );
 }

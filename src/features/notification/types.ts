@@ -30,6 +30,35 @@ export interface BannerNotification {
 }
 
 /**
+ * BE 알림이 아니라 **프론트가 직접 합성해 종 목록에 끼워 넣는** 항목의 종류.
+ *
+ * ⚠️ **`constants/notification.ts`의 `NOTIFICATION_TYPE`에 안 넣는다.** 그건 "BE
+ *    `NotificationType` enum 그대로"가 규칙이라(그 파일 주석) — 임시 비밀번호 안내는 SSE로
+ *    오지 않고 `/me` 조회값(`passwordChanged`)에서 프론트가 만들어 낸다. 종류가 다르니
+ *    상수도 따로 둔다.
+ */
+export const LOCAL_NOTIFICATION_KIND = {
+  PASSWORD_TEMP: "PASSWORD_TEMP",
+} as const;
+export type LocalNotificationKind =
+  (typeof LOCAL_NOTIFICATION_KIND)[keyof typeof LOCAL_NOTIFICATION_KIND];
+
+/**
+ * 종 드롭다운 목록 한 줄 — `BannerNotification` + 읽음 여부.
+ *
+ * ⚠️ **읽음 처리는 서버 API가 없다.** 클릭하면 이 자리(리액트 쿼리 캐시)에서만 뒤집힌다 —
+ *    새로고침하면 다시 안 읽음으로 보인다. BE에 읽음 엔드포인트가 생기면 그때 매핑한다.
+ * ⚠️ **삭제도 서버 API가 없다.** 지우면 캐시에서만 빠진다 — 임시 비밀번호 항목만
+ *    예외로, 지운 기록을 `localStorage`에 남긴다(`use-password-notice.ts`).
+ */
+export interface NotificationItem extends Omit<BannerNotification, "type"> {
+  type: NotificationType | LocalNotificationKind;
+  read: boolean;
+  /** 받은 시각(epoch ms) — 목록의 "n분 전" 표시용, 브라우저에서 찍는다(BE가 안 준다) */
+  receivedAt: number;
+}
+
+/**
  * 우측 하단 지속형 카드의 상태.
  *
  * ⚠️ **`NOT_STARTED`가 여기 없다.** BE의 CAP-06 값은 4개지만 사람이 봐야 하는 사실은

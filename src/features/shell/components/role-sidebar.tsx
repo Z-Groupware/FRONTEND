@@ -6,6 +6,7 @@ import { toast } from "sonner";
 
 import { ZLogo } from "@/components/icons/z-logo";
 import { AUTHORITY_BADGE_CLASS, AUTHORITY_LABEL } from "@/constants/authority";
+import { useNotificationCenter } from "@/features/notification/notification-provider";
 import { useProfileAvatar } from "@/hooks/use-profile-avatar";
 import { topicParticle } from "@/lib/korean";
 import { cn } from "@/lib/utils";
@@ -61,6 +62,14 @@ function findActiveHref(sections: NavSection[], pathname: string): string | unde
 export function RoleSidebar({ sections, home, user }: RoleSidebarProps) {
   const pathname = usePathname();
   const activeHref = findActiveHref(sections, pathname);
+  /*
+    ⚠️ **"내 회의"·"공지" 점은 여기서 켠다**(2026-08-16, #602 후속 — 예전엔 셸 레이아웃이
+       서버에서 `getUnreadNoticeCount()`로 미리 계산해 `item.dot`에 끼워 넣었다). 그 API는
+       실서버에 없어 늘 0으로 죽어 있던 값이라, 종 드롭다운(`NotificationBell`)이 이미
+       들고 있는 안 읽은 알림의 목적지 집합(`unreadDestinations`)을 그대로 재사용한다 —
+       종 목록에서 안 읽은 게 사라지면(읽음 처리·삭제) 이 점도 같이 꺼진다.
+  */
+  const { unreadDestinations } = useNotificationCenter();
 
   return (
     /*
@@ -93,7 +102,10 @@ export function RoleSidebar({ sections, home, user }: RoleSidebarProps) {
             <ul className="flex flex-col gap-[1.75px]">
               {section.items.map((item) => (
                 <li key={item.href}>
-                  <SidebarItem item={item} isCurrent={item.href === activeHref} />
+                  <SidebarItem
+                    item={{ ...item, dot: item.dot || unreadDestinations.has(item.href) }}
+                    isCurrent={item.href === activeHref}
+                  />
                 </li>
               ))}
             </ul>
