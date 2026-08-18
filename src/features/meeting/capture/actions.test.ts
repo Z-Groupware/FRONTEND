@@ -27,7 +27,11 @@ jest.mock("@/lib/api", () => ({
 import { requireAccessToken } from "@/features/auth/session";
 import { ApiError, serverApi } from "@/lib/api";
 
-import { completeCaptureUploadAction, getActiveCaptureAction } from "./actions";
+import {
+  completeCaptureUploadAction,
+  getActiveCaptureAction,
+  startCaptureSessionAction,
+} from "./actions";
 
 const serverApiMock = serverApi as unknown as jest.Mock;
 const requireAccessTokenMock = requireAccessToken as unknown as jest.Mock;
@@ -141,5 +145,58 @@ describe("completeCaptureUploadAction — CAP-07 멱등 처리", () => {
 
     expect(result.ok).toBe(false);
     expect(result.error).toBe("서버 오류");
+  });
+});
+
+/*
+  ⚠️ **PAUSED 세션 재접속(CS-002)은 CAP-03으로 넘긴다**(#605 회귀 방지). [녹음 이어하기]가
+     늘 CAP-01(start)만 불러 새로고침 후 일시정지 세션을 못 살리던 버그다.
+*/
+describe("startCaptureSessionAction — CAP-01, PAUSED 재접속(#605)", () => {
+  it("정상 시작이면 그대로 성공한다", async () => {
+    serverApiMock.mockResolvedValueOnce({
+      captureSessionId: 5,
+      status: "ACTIVE",
+      isPaused: false,
+      startedBy: 1,
+      startedAtEpochMs: 1000,
+      roster: [],
+    });
+
+    const result = await startCaptureSessionAction(3);
+
+    expect(result.ok).toBe(true);
+    expect(serverApiMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("CS-002(이미 있음)면 CAP-03(재개)으로 넘어가고, 성공하면 ok:true다", async () => {
+    serverApiMock
+      .mockRejectedValueOnce(new ApiError(409, "이미 진행 중인 캡처가 있습니다", "CS-002"))
+      .mockResolvedValueOnce(undefined); // 재개(CAP-03) 응답
+
+    const result = await startCaptureSessionAction(3);
+
+    expect(result.ok).toBe(true);
+    expect(serverApiMock).toHaveBeenCalledTimes(2);
+    expect(serverApiMock.mock.calls[1][0]).toBe("/api/meetings/3/capture-session/resume");
+  });
+
+  it("CS-002 뒤 재개마저 실패하면 그 실패 사유를 그대로 전달한다", async () => {
+    serverApiMock
+      .mockRejectedValueOnce(new ApiError(409, "이미 진행 중인 캡처가 있습니다", "CS-002"))
+      .mockRejectedValueOnce(new ApiError(500, "재개에 실패했습니다"));
+
+    const result = await startCaptureSessionAction(3);
+
+    expect(result).toEqual({ ok: false, error: "재개에 실패했습니다" });
+  });
+
+  it("CS-002가 아닌 다른 에러는 재개를 시도하지 않는다", async () => {
+    serverApiMock.mockRejectedValueOnce(new ApiError(403, "권한이 없습니다"));
+
+    const result = await startCaptureSessionAction(3);
+
+    expect(result).toEqual({ ok: false, error: "권한이 없습니다" });
+    expect(serverApiMock).toHaveBeenCalledTimes(1);
   });
 });
