@@ -181,31 +181,21 @@ export function toAssigneeOptions(detail: BeMeetingDetail): AssigneeOption[] {
  *    `attendee-scope.ts`가 참석자 지정에서 host를 빼는 것과 같은 이유(host는 고르는 사람이지
  *    배정 후보가 아니다).
  * ⚠️ **`teamId` 기준으로 dedupe한다** — `teamName`은 같은 이름이 둘일 수 있어 키로 못 쓴다.
- * ⚠️ **`leaderMemberId`를 함께 뽑는다**(2026-08-18, #622). 오너 회의는 참석자 정책상 팀별
- *    팀장 한 명씩만 지정되므로, 참석자의 `memberId`가 그대로 그 팀의 팀장이다 — 별도 조회
- *    없이 여기서 짝지어 두면 확정 요청 시 부서와 함께 팀장 assignee를 실을 수 있다.
  */
 export function toTeamOptions(detail: BeMeetingDetail): TeamOption[] {
   const hostMemberId = hostIdOf(detail);
-  const seen = new Map<number, { teamName: string; leaderMemberId: number }>();
+  const seen = new Map<number, string>();
 
   for (const attendee of detail.attendees) {
     if (attendee.memberId === hostMemberId) continue;
     /* ⚠️ `teamId`가 `undefined`인 것(#472 배포 전)도 여기서 같이 거른다 — 없는 팀을 옵션으로 못 만든다 */
     if (attendee.teamId == null || attendee.teamName === null) continue;
     if (!seen.has(attendee.teamId)) {
-      seen.set(attendee.teamId, {
-        teamName: attendee.teamName,
-        leaderMemberId: attendee.memberId,
-      });
+      seen.set(attendee.teamId, attendee.teamName);
     }
   }
 
-  return Array.from(seen, ([teamId, value]) => ({
-    teamId,
-    teamName: value.teamName,
-    leaderMemberId: value.leaderMemberId,
-  }));
+  return Array.from(seen, ([teamId, teamName]) => ({ teamId, teamName }));
 }
 
 /**
