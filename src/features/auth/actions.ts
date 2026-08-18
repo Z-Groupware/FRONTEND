@@ -398,7 +398,7 @@ function toFindPasswordError(error: unknown): string {
     case "AU-007":
       return `${error.message} 내일 다시 시도해 주세요.`;
     case "AU-050":
-      return `${error.message} 기존 비밀번호는 그대로 사용할 수 있어요.`;
+      return `${error.message} 기존 비밀번호는 그대로 사용할 수 있습니다.`;
     case "AU-049":
       return "요청을 처리하지 못했습니다. 기업 코드와 이메일을 다시 확인해 주세요.";
     default:
