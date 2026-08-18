@@ -1,11 +1,22 @@
 "use server";
 
 import { requireAccessToken } from "@/features/auth/session";
-import { serverApi, toUserMessage } from "@/lib/api";
+import { ApiError, serverApi, toUserMessage } from "@/lib/api";
 import { ep } from "@/lib/endpoints";
 import { isMock } from "@/mocks/config";
 
 import type { ActiveCapture, CaptionChunkInput, CapturePart, CaptureSession } from "./types";
+
+/**
+ * 조각이 **이미 등록됨**을 뜻하는 BE 에러코드(CAP-07, 409). `completeCaptureUploadAction`이
+ * 이걸 실패가 아니라 성공으로 흘려보낸다 — 아래 주석 참고.
+ *
+ * ⚠️ **상태코드(409)가 아니라 이 코드로 가른다** — 409가 다른 충돌에도 쓰일 수 있다.
+ *    값은 enum 이름(`CAP_PART_ALREADY_REGISTERED`)이 아니라 **짧은 코드 문자열**이다
+ *    (BE `CapErrorCode`에서 그 enum이 `"CAP-005"`로 매핑됨 — `api.ts`의 "HO-016 등"과 같은 형식).
+ *    BE가 값을 바꾸면 여기 한 곳만 고친다.
+ */
+const CAP_PART_ALREADY_REGISTERED_CODE = "CAP-005";
 
 /**
  * 캡처 창구 — 격리막(§Mock 격리막).
@@ -181,6 +192,16 @@ export async function completeCaptureUploadAction(
     });
     return { ok: true };
   } catch (error) {
+    /*
+      ⚠️ **이미 등록된 조각은 실패가 아니라 성공이다**(#616). 재연결·중복 enqueue로 같은 seq가
+         두 번 도달하면 BE가 409(`CAP-005`)를 준다 — 멱등이라 다시 보내도 결과가 같은데,
+         이걸 실패로 돌려주면 `upload.ts`의 `uploadOne`이 같은 조각을 3회 재시도해
+         로그에 `Duplicate entry` 소음만 남긴다. 이미 서버에 있으니 성공으로 흘려보내
+         다음 seq로 진행하게 한다(프로젝트 첨부의 confirm 멱등 처리와 같은 취지).
+    */
+    if (error instanceof ApiError && error.code === CAP_PART_ALREADY_REGISTERED_CODE) {
+      return { ok: true };
+    }
     return { ok: false, error: toUserMessage(error) };
   }
 }
