@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/select";
 import { REVIEW_ASSIGNMENT_TARGET_LABEL } from "@/constants/meeting";
 
-import { formatAssigneeLabel } from "../lib";
+import { formatAssigneeLabel, reviewStartDateMin } from "../lib";
 import type { AssigneeOption, ManualDraftInput, TeamOption } from "../types";
 
 interface ManualDraftFormProps {
@@ -129,6 +129,7 @@ export function ManualDraftForm({
         <DatePickerField
           aria-label="시작일"
           value={startDate}
+          min={reviewStartDateMin()}
           max={dueDate || undefined}
           onChange={setStartDate}
           className="w-full sm:w-[180px]"

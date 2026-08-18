@@ -67,18 +67,23 @@ beforeEach(() => {
 
 describe("getMeetingDetail — 실서버, 발화 기록 조회", () => {
   it("끝난 회의는 발화 기록을 조회해 시각순으로 채운다", async () => {
-    serverApiMock.mockResolvedValueOnce(meetingDetail()).mockResolvedValueOnce({
-      utterances: [utterance({ transcriptId: 1, seq: 0, startOffsetMs: 0, content: "시작합니다" })],
-      nextCursor: null,
-    });
+    serverApiMock
+      .mockResolvedValueOnce(meetingDetail())
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce({
+        utterances: [
+          utterance({ transcriptId: 1, seq: 0, startOffsetMs: 0, content: "시작합니다" }),
+        ],
+        nextCursor: null,
+      });
 
     const result = await getMeetingDetail("100", HOST);
 
     expect(result.kind).toBe("ok");
     if (result.kind !== "ok") return;
     expect(result.detail.script).toEqual([{ at: "10:00", text: "시작합니다" }]);
-    // GET 회의 상세 1회 + GET 발화 1페이지 = 2회
-    expect(serverApiMock).toHaveBeenCalledTimes(2);
+    // GET 회의 상세 1회 + GET 산출물 1회 + GET 발화 1페이지 = 3회
+    expect(serverApiMock).toHaveBeenCalledTimes(3);
   });
 
   /*
@@ -88,6 +93,7 @@ describe("getMeetingDetail — 실서버, 발화 기록 조회", () => {
   it("nextCursor가 있으면 다음 페이지를 이어 받는다", async () => {
     serverApiMock
       .mockResolvedValueOnce(meetingDetail())
+      .mockResolvedValueOnce([])
       .mockResolvedValueOnce({
         utterances: [
           utterance({ transcriptId: 1, seq: 0, startOffsetMs: 0, content: "첫 페이지" }),
@@ -109,9 +115,9 @@ describe("getMeetingDetail — 실서버, 발화 기록 조회", () => {
       { at: "10:00", text: "첫 페이지" },
       { at: "10:01", text: "둘째 페이지" },
     ]);
-    expect(serverApiMock).toHaveBeenCalledTimes(3);
+    expect(serverApiMock).toHaveBeenCalledTimes(4);
     // 두 번째 발화 호출은 첫 페이지가 준 커서를 그대로 되돌려줘야 한다
-    expect(serverApiMock.mock.calls[2]![0]).toContain("cursor=page2");
+    expect(serverApiMock.mock.calls[3]![0]).toContain("cursor=page2");
   });
 
   /*
@@ -136,6 +142,7 @@ describe("getMeetingDetail — 실서버, 발화 기록 조회", () => {
   it("페이지 경계에서 transcriptId가 겹치면 중복을 거른다", async () => {
     serverApiMock
       .mockResolvedValueOnce(meetingDetail())
+      .mockResolvedValueOnce([])
       .mockResolvedValueOnce({
         utterances: [
           utterance({ transcriptId: 1, seq: 0, startOffsetMs: 0, content: "첫 페이지" }),
@@ -165,7 +172,7 @@ describe("getMeetingDetail — 실서버, 발화 기록 조회", () => {
 
   /* ⚠️ 커서가 끝없이 이어지는 BE 결함이 나도 화면이 영원히 안 끝나면 안 된다 */
   it("커서가 안 끊기면 상한에서 멈춘다", async () => {
-    serverApiMock.mockResolvedValueOnce(meetingDetail());
+    serverApiMock.mockResolvedValueOnce(meetingDetail()).mockResolvedValueOnce([]);
     // 이후 모든 호출은 nextCursor가 있는 페이지를 계속 준다
     serverApiMock.mockResolvedValue({ utterances: [utterance()], nextCursor: "again" });
 
@@ -173,8 +180,8 @@ describe("getMeetingDetail — 실서버, 발화 기록 조회", () => {
 
     expect(result.kind).toBe("ok");
     if (result.kind !== "ok") return;
-    // 회의 상세 1 + 최대 50페이지 = 51회를 넘지 않는다
-    expect(serverApiMock.mock.calls.length).toBeLessThanOrEqual(51);
+    // 회의 상세 1 + GET 산출물 1 + 최대 50페이지 = 52회를 넘지 않는다
+    expect(serverApiMock.mock.calls.length).toBeLessThanOrEqual(52);
     expect(result.detail.script!.length).toBeGreaterThan(0);
   });
 });

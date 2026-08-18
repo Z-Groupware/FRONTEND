@@ -153,15 +153,25 @@ export async function confirmActionDistributionAction(
     }
 
     /* ② 판정 — 고친 칸만 MODIFY, 그대로면 CONFIRM(값 실으면 422라 changes로 가른다) */
+    /*
+      ⚠️ **시작일이 비거나 오늘 이하면 내일로 클램프한다**(2026-08-18 FE 방어, #637).
+         BE `Action.applyHumanReview`가 `plannedStartDate`를 "익일부터 프로젝트 마감일 사이"로
+         강제해서(Action.java:285-293) 오늘 이하 값이 실려 나가면 확정이 400으로 튕긴다.
+         AI가 회의 당시 기준으로 뽑아 둔 값이 그대로 남아 있으면 오늘 기준으로는 과거 값이라
+         그 케이스가 실제로 잡혔다(#637 발견). 프로젝트 마감일은 여기서 모르므로 상한은 못
+         씌운다 — 상한 초과분은 BE 예외 문구가 사용자에게 보인다.
+    */
+    const plannedStartFallback = tomorrowIsoDate();
     for (const draft of payload.reviewed) {
       const changes = draft.changes ?? {};
+      const plannedStartDate = clampToTomorrowOrLater(draft.plannedStartDate, plannedStartFallback);
       const value = {
         ...(changes.assigneeId !== undefined ? { assigneeMemberId: changes.assigneeId } : {}),
         ...(changes.teamId !== undefined ? { teamId: changes.teamId } : {}),
         ...(changes.dueDate !== undefined ? { dueDate: changes.dueDate } : {}),
         ...(changes.title !== undefined ? { title: changes.title } : {}),
         ...(changes.description !== undefined ? { detail: changes.description } : {}),
-        ...(draft.plannedStartDate ? { plannedStartDate: draft.plannedStartDate } : {}),
+        plannedStartDate,
       };
       const isModify = Object.keys(changes).length > 0;
 
@@ -170,12 +180,7 @@ export async function confirmActionDistributionAction(
         accessToken,
         json: isModify
           ? { decision: "MODIFY", value }
-          : {
-              decision: "CONFIRM",
-              ...(draft.plannedStartDate
-                ? { value: { plannedStartDate: draft.plannedStartDate } }
-                : {}),
-            },
+          : { decision: "CONFIRM", value: { plannedStartDate } },
       });
     }
 
@@ -201,13 +206,13 @@ export async function confirmActionDistributionAction(
       /* ⚠️ **만들자마자 적는다.** 뒤 호출이 실패해도 "이건 이미 만들어졌다"가 남아야 한다 */
       createdManuals.push({ localId: manual.localId, actionId: added.actionId });
 
-      if (manual.startDate) {
-        await serverApi(ep.meetingReviewDecision(id, added.actionId), {
-          method: "PATCH",
-          accessToken,
-          json: { decision: "MODIFY", value: { plannedStartDate: manual.startDate } },
-        });
-      }
+      /* 시작일도 ② 판정 쪽 클램프와 같은 규칙 — 오늘 이하면 내일로 채운다(#637). */
+      const plannedStartDate = clampToTomorrowOrLater(manual.startDate, plannedStartFallback);
+      await serverApi(ep.meetingReviewDecision(id, added.actionId), {
+        method: "PATCH",
+        accessToken,
+        json: { decision: "MODIFY", value: { plannedStartDate } },
+      });
     }
 
     /* ④ 확정 — 여기서부터 액션이 각자의 보드로 나간다. Host 아니면 BE가 403으로 막는다. */
@@ -260,6 +265,22 @@ const CONFIRM_FAILURE_LABEL: Record<string, string> = {
   STILL_PENDING: "미검토 액션",
   UNRESOLVED_GAP: "미확인 발화 구간",
 };
+
+/** YYYY-MM-DD의 "내일" — 조회 폴백(`action/mapper.ts`)과 방향이 같다(§할일 칸으로 떨어지게). */
+function tomorrowIsoDate(): string {
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  return tomorrow.toISOString().slice(0, 10);
+}
+
+/**
+ * 시작일이 비어 있거나 오늘 이하면 내일(`fallback`)로 밀어 준다.
+ * ISO YYYY-MM-DD는 문자열 비교가 곧 시각 비교라 `Date` 파싱 없이 그대로 가른다.
+ */
+function clampToTomorrowOrLater(value: string | undefined, fallback: string): string {
+  if (!value) return fallback;
+  return value < fallback ? fallback : value;
+}
 
 function composeConfirmFailureMessage(error: unknown): string {
   if (!(error instanceof ApiError) || !error.details || error.details.length === 0) {

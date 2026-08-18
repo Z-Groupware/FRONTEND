@@ -19,7 +19,7 @@ import {
 } from "@/constants/meeting";
 import { cn } from "@/lib/utils";
 
-import { formatAssigneeLabel } from "../lib";
+import { formatAssigneeLabel, reviewStartDateMin } from "../lib";
 import type { AiActionDraft, AssigneeOption, TeamOption } from "../types";
 import { InlineEditableField } from "./inline-editable-field";
 
@@ -260,6 +260,7 @@ export function ActionReviewRow({
             <DatePickerField
               aria-label="시작일"
               value={draft.startDate}
+              min={reviewStartDateMin()}
               max={draft.dueDate}
               onChange={onStartDateChange}
               className="w-[140px]"
