@@ -6,6 +6,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { NavHistoryTracker } from "@/components/common/nav-history";
 import { ThemeProvider } from "@/components/common/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
+import { AppScaleScope } from "@/features/appearance/components/app-scale-scope";
 import { SCALE_BOOT_SCRIPT } from "@/features/appearance/scale";
 
 const geistSans = Geist({
@@ -79,6 +80,11 @@ export default function RootLayout({
             화면에는 아무것도 안 그린다(`components/common/nav-history`).
           */}
           <NavHistoryTracker />
+          {/*
+            배율을 로그인 이후 화면에만 붙였다 뗀다 — 부트 스크립트는 문서 로드 때 한 번뿐이라
+            클라이언트 내비게이션(로그인 → 워크스페이스, 워크스페이스 → 랜딩)은 이게 맡는다.
+          */}
+          <AppScaleScope />
         </ThemeProvider>
       </body>
     </html>

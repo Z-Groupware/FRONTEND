@@ -6,6 +6,7 @@ import {
   type DragOverEvent,
   DragOverlay,
   type DragStartEvent,
+  type Modifier,
   PointerSensor,
   useSensor,
   useSensors,
@@ -17,9 +18,10 @@ import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/common/confirm-dialog";
 import { EmptyState } from "@/components/common/empty-state";
 import { Button } from "@/components/ui/button";
+import { getAppScale } from "@/features/appearance/scale";
 
 import { commitBoardChangesAction } from "../actions";
-import { canMoveCard, getBoardColumn, isCardDelayed } from "../lib";
+import { canMoveCard, compensateOverlayForScale, getBoardColumn, isCardDelayed } from "../lib";
 import {
   BOARD_COLUMN,
   BOARD_COLUMN_LABEL,
@@ -33,6 +35,14 @@ import {
 import { BoardCardOverlay } from "./board-card";
 import { BoardColumn } from "./board-column";
 import { BoardLeaveGuard } from "./board-leave-guard";
+
+/**
+ * 화면 배율이 걸렸을 때 `DragOverlay`가 커서를 따라오게 하는 보정(§lib
+ * `compensateOverlayForScale`). ⚠️ `DndContext`가 아니라 **여기(그리기)에만** 건다 —
+ * 칸 판정은 화면 px끼리라 이미 맞고, 같이 보정하면 반대로 어긋난다.
+ */
+const appScaleOverlayModifier: Modifier = ({ transform, activeNodeRect }) =>
+  compensateOverlayForScale(transform, activeNodeRect, getAppScale());
 
 interface BoardViewProps {
   boardType: BoardType;
@@ -256,7 +266,7 @@ export function BoardView({ boardType, cards, todayIso }: BoardViewProps) {
         </div>
 
         {/* ⚠️ 포털로 최상단에 그린다 — 칼럼의 overflow-y-auto에 안 잘린다(2026-08-09 디자인 리뷰). */}
-        <DragOverlay>
+        <DragOverlay modifiers={[appScaleOverlayModifier]}>
           {activeCard && (
             <div style={{ width: activeWidth ?? undefined }}>
               {/* ⚠️ 손에 든 사본도 **칸 기준**으로 판정한다 — 아니면 `완료`로 끌고 가는
