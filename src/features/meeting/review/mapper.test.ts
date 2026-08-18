@@ -65,6 +65,7 @@ function makeReview(overrides?: Partial<BeActionReview>): BeActionReview {
             dueDateDefaulted: false,
             isManual: false,
             reviewStatus: "PENDING",
+            rejectReason: null,
             evidence: {
               transcriptId: 100,
               speakerName: "김서준",
@@ -89,6 +90,7 @@ function makeReview(overrides?: Partial<BeActionReview>): BeActionReview {
             dueDateDefaulted: true,
             isManual: false,
             reviewStatus: "PENDING",
+            rejectReason: null,
             evidence: {
               transcriptId: 101,
               speakerName: null,
@@ -106,6 +108,7 @@ function makeReview(overrides?: Partial<BeActionReview>): BeActionReview {
             dueDateDefaulted: false,
             isManual: false,
             reviewStatus: "REJECTED",
+            rejectReason: "DUPLICATE",
             evidence: null,
             gate: { autoConfirmed: false, signals: {} },
           },
@@ -195,9 +198,35 @@ describe("toMeetingReviewInfo", () => {
     });
   });
 
-  it("REJECTED는 거른다 — 지난 확정 시도에서 반려해 둔 항목이 되살아나면 안 된다", () => {
+  /*
+    ⚠️ 정책 뒤집힘(2026-08-18, #622) — 이전엔 REJECTED를 매퍼에서 걸렀지만, 반려·수정 API가
+       확정과 별개 트랜잭션이라 부분 커밋이 남는 상황에서 그걸 숨기면 사용자가 재접속 시
+       "내가 뭘 잘못 눌렀나?" 하는 인지 불일치가 생겼다. 지금은 서버가 준 항목을 전부 목록에
+       실어 `serverReviewStatus`로 UI가 잠금 처리한다.
+  */
+  it("서버가 준 항목은 전부 목록에 싣는다 — REJECTED·HUMAN_CONFIRMED도 화면에 노출(#622)", () => {
     const info = toMeetingReviewInfo({ detail: DETAIL, review: makeReview() });
-    expect(info.drafts.map((draft) => draft.id)).toEqual(["11", "12"]);
+    expect(info.drafts.map((draft) => draft.id)).toEqual(["11", "12", "13"]);
+  });
+
+  it("서버가 준 reviewStatus를 `serverReviewStatus`로 옮긴다 — 화면 잠금 판정의 근거다(#622)", () => {
+    const info = toMeetingReviewInfo({ detail: DETAIL, review: makeReview() });
+    const byId = new Map(info.drafts.map((draft) => [draft.id, draft]));
+    expect(byId.get("11")?.serverReviewStatus).toBe("PENDING");
+    expect(byId.get("12")?.serverReviewStatus).toBe("PENDING");
+    expect(byId.get("13")?.serverReviewStatus).toBe("REJECTED");
+  });
+
+  it("REJECTED 항목의 사유는 화면 표시용으로 함께 옮긴다 — 사용자가 '왜 반려됐나'를 알 수 있다(#622)", () => {
+    const info = toMeetingReviewInfo({ detail: DETAIL, review: makeReview() });
+    const rejected = info.drafts.find((draft) => draft.id === "13");
+    expect(rejected?.serverRejectReason).toBe("DUPLICATE");
+  });
+
+  it("PENDING 항목은 `serverRejectReason`이 null이다 — 사유 있으면 잠금 판정이 흐려진다(#622)", () => {
+    const info = toMeetingReviewInfo({ detail: DETAIL, review: makeReview() });
+    const pending = info.drafts.find((draft) => draft.id === "11");
+    expect(pending?.serverRejectReason).toBeNull();
   });
 
   it("dispatchedAt이 있으면 이미 확정된 회의다", () => {

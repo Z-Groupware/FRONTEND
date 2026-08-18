@@ -1,4 +1,4 @@
-import { AI_CONFIDENCE } from "@/constants/meeting";
+import { ACTION_REJECT_REASON, type ActionRejectReason, AI_CONFIDENCE } from "@/constants/meeting";
 
 import { formatMeetingSchedule } from "../lib";
 import { type BeMeetingDetail, hostIdOf } from "../mapper";
@@ -52,6 +52,12 @@ export interface BeReviewAction {
   isManual: boolean;
   /** `PENDING` · `HUMAN_CONFIRMED` · `REJECTED` */
   reviewStatus: string;
+  /**
+   * 반려된 경우 그 사유 코드(BE `ActionRejectReason.name()`). 판정 전이면 null이다.
+   * ⚠️ **화면이 이 값을 읽는다**(#622) — 재조회로 돌아온 서버 반려는 사유까지 표시해야
+   *    사용자가 "이건 반려된 항목이구나"를 알 수 있다.
+   */
+  rejectReason: string | null;
   evidence: BeReviewEvidence | null;
   /** 수동 추가 건은 게이트를 안 지나 통째로 null이다 */
   gate: BeReviewGate | null;
@@ -123,7 +129,24 @@ export function toClock(startOffsetMs: number | null): string {
   return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
 }
 
+/**
+ * 서버 값 → 화면 상수(#622). 모르는 값은 안전하게 `PENDING`으로 떨어뜨린다 — "이미 반영됨"
+ * 잠금은 확실할 때만 걸어야 화면이 조용히 편집을 막지 않는다(§정직성).
+ */
+function toServerReviewStatus(value: string): AiActionDraft["serverReviewStatus"] {
+  if (value === "HUMAN_CONFIRMED" || value === "REJECTED") return value;
+  return "PENDING";
+}
+
+/** BE 사유 코드가 화면 상수(`ACTION_REJECT_REASON`)에 있는 값인지 확인해 좁힌다. */
+function toRejectReason(value: string | null): ActionRejectReason | null {
+  if (value === null) return null;
+  const reasons = Object.values(ACTION_REJECT_REASON) as string[];
+  return reasons.includes(value) ? (value as ActionRejectReason) : null;
+}
+
 function toDraft(action: BeReviewAction, needsReviewIds: ReadonlySet<number>): AiActionDraft {
+  const serverReviewStatus = toServerReviewStatus(action.reviewStatus);
   return {
     id: String(action.actionId),
     title: action.title,
@@ -159,6 +182,10 @@ function toDraft(action: BeReviewAction, needsReviewIds: ReadonlySet<number>): A
         }
       : null,
     isManual: action.isManual,
+    serverReviewStatus,
+    /* REJECTED가 아닌 상태에서 사유를 담아 두면 UI 잠금 판정이 흐려진다 — 조건에 맞을 때만 옮긴다 */
+    serverRejectReason:
+      serverReviewStatus === "REJECTED" ? toRejectReason(action.rejectReason) : null,
   };
 }
 
@@ -199,9 +226,12 @@ export function toTeamOptions(detail: BeMeetingDetail): TeamOption[] {
 /**
  * 회의 상세(MEET-04) + 검토(RVW-01) → 화면 한 판.
  *
- * ⚠️ **`REJECTED`는 거른다.** 지난 확정 시도가 중간에 끊긴 회의를 다시 열면 반려해 둔
- *    항목이 서버에 남아 있는데, 그걸 다시 편집 가능한 행으로 그리면 같은 판정을 두 번 한다.
- *    확정(RVW-05)도 그 항목들은 `skipped`로 거른다 — 화면과 서버가 같은 편이다.
+ * ⚠️ **`REJECTED`·`HUMAN_CONFIRMED`도 목록에 남긴다**(2026-08-18 정정, #622). 반려·수정 API가
+ *    확정과 별개 트랜잭션이라 확정이 실패하면 반려·수정만 서버에 커밋되어 남는데(BE 담당자
+ *    회신, "반려는 독립적 결정"), 그 항목을 매퍼에서 감추면 사용자가 재접속 시 "내가 뭘
+ *    잘못 눌렀나?" 하는 인지 불일치가 생긴다. 회색·잠금 상태로 목록에 노출해 "이미 반영됨"
+ *    이라는 사실을 시각적으로 알린다(`AiActionDraft.serverReviewStatus` 주석 참고).
+ *    이번 확정 요청에서도 화면이 이 값을 보고 제외한다(BE가 이미 처리한 것이라 다시 보낼 게 없음).
  */
 export function toMeetingReviewInfo(params: {
   detail: BeMeetingDetail;
@@ -233,7 +263,6 @@ export function toMeetingReviewInfo(params: {
     teamOptions: detail.teamId === null ? toTeamOptions(detail) : [],
     drafts: review.actionsByPerson
       .flatMap((person) => person.actions)
-      .filter((action) => action.reviewStatus !== "REJECTED")
       .map((action) => toDraft(action, needsReviewIds)),
     actionsConfirmed: review.dispatchedAt !== null,
   };

@@ -5,7 +5,7 @@
  *    [액션 분배 확정]을 눌러야 생긴다(CLAUDE.md §브라우저 API). 반려(✕)한 항목은 안 생긴다.
  */
 
-import type { AiConfidence } from "@/constants/meeting";
+import type { ActionRejectReason, AiConfidence } from "@/constants/meeting";
 
 /**
  * 담당자 드롭다운 선택지 — 화면엔 "이름 직급/팀"으로 합쳐 보여준다(스크린샷 기준).
@@ -81,6 +81,21 @@ export interface AiActionDraft {
   isDueDateDefaulted?: boolean;
   evidence: DraftEvidence | null;
   isManual: boolean;
+  /**
+   * 서버가 알려주는 이 초안의 반영 상태(2026-08-18, #622 — 부분 커밋 대응).
+   *
+   * ⚠️ **`PENDING`은 아직 손댈 수 있는 것.** 정상 편집·반려·확정 대상이다.
+   * ⚠️ **`HUMAN_CONFIRMED`·`REJECTED`는 이전 확정 시도에서 이미 서버에 반영된 것.**
+   *    반려·확정 API가 각각 별개 트랜잭션이라 확정이 실패해도 반려·수정은 커밋되어 남는데
+   *    (BE 담당자 회신, 2026-08-18), 재조회 시 이 값이 `PENDING`이 아니면 회색 "이미 반영됨"
+   *    으로 잠근다 — 사용자가 이미 서버에 남은 판정을 다시 손대려다 뭔가 이상하게 만드는 걸
+   *    막는다. 이번 확정 요청에서도 제외한다(BE가 이미 처리한 것이라 다시 보낼 게 없다).
+   * ⚠️ **REJECTED는 사유(`rejectReason`)를 함께 표시**해야 사용자가 "이건 반려된 거구나"를
+   *    알 수 있다 — BE가 `rejectReason`도 응답에 담아 준다(RVW-01 `ActionResponse`).
+   */
+  serverReviewStatus: "PENDING" | "HUMAN_CONFIRMED" | "REJECTED";
+  /** REJECTED일 때 서버가 함께 준 반려 사유 — 화면 하단 빨간 텍스트로 읽기 전용 표시. */
+  serverRejectReason?: ActionRejectReason | null;
 }
 
 /** 리뷰 화면이 받는 조회 결과 한 판. */

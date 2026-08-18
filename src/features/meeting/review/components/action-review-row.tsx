@@ -70,20 +70,36 @@ export function ActionReviewRow({
 }: ActionReviewRowProps) {
   /* ⚠️ 모드는 이 prop 하나로 정해진다 — 부모(`MeetingReviewView`)가 회의 전체 기준으로 내려준다 */
   const isTeamMode = teamOptions !== undefined;
-  const isRejected = rejectReason != null;
+  /*
+    ⚠️ **세 가지 상태를 가른다**(#622):
+    - `isServerReflected`: 이전 확정 시도에서 서버에 이미 반영된 항목(HUMAN_CONFIRMED·REJECTED).
+      회색·완전 잠금·되돌릴 수단 없음. "이미 반영됨 · {구분}" 라벨.
+    - `isPendingReject`: 이번 세션에서 반려 표시한 것(PENDING인데 로컬에서 반려). 흐리게·잠금·
+      "반려 예정" 라벨·빨간 사유·[반려 취소] 버튼으로 되돌릴 수 있음.
+    - 그 외: 정상 편집 가능.
+    ⚠️ 서버 반영이 우선이다. 서버가 이미 반영한 항목은 이번 세션 반려로 덧씌울 수 없다
+       (부모가 `openRejectDialog`에서 걸러 여기까지 오지 않지만, 방어적으로 여기서도 우선순위를 준다).
+  */
+  const isServerReflected = draft.serverReviewStatus !== "PENDING";
+  const isPendingReject = !isServerReflected && rejectReason != null;
+  const isLocked = isServerReflected || isPendingReject;
   return (
     <div
       className={cn(
         "border-border px-7 py-4 transition-colors not-first:border-t",
-        isRejected
-          ? /* ⚠️ 반려된 행은 흐리게 두고 배경도 옅게 — 살아있는 다른 행과 시각적으로 갈린다.
-               hover도 죽여 "만질 것 없음"을 모양으로 말한다(§정직성).
-             ⚠️ 조작(편집·셀렉트·날짜)은 아래에서 `pointer-events-none`으로 잠근다 —
-               반려 취소 버튼만 살려 사람이 되돌릴 길을 준다. */
-            "bg-muted/20"
-          : "hover:bg-foreground/[0.015]",
+        isServerReflected
+          ? /* ⚠️ 서버가 이미 반영한 행은 더 진한 회색으로 — 되돌릴 수 없다는 걸 시각으로 알린다.
+               이번 세션 반려(연한 회색)와 갈리게 두 층으로 나눈다. */
+            "bg-muted/40"
+          : isPendingReject
+            ? /* ⚠️ 이번 세션 반려 예정 — 연한 회색. 확정 전에는 [반려 취소]로 되돌릴 수 있어
+                 서버 반영보다 덜 무겁게 표시한다. */
+              "bg-muted/20"
+            : "hover:bg-foreground/[0.015]",
       )}
-      aria-label={isRejected ? "반려된 액션" : undefined}
+      aria-label={
+        isServerReflected ? "이미 반영된 액션" : isPendingReject ? "반려 예정 액션" : undefined
+      }
     >
       {/*
         ⚠️ **두 열이다**(2026-08-11). 왼쪽은 읽는 것(이름·설명·근거), 오른쪽은 고치는 것
@@ -98,7 +114,11 @@ export function ActionReviewRow({
             /* ⚠️ 반려된 초안은 편집을 잠근다(#622) — pointer-events로 클릭·포커스도 막고,
                opacity로 취소선 대신 감춰진 느낌을 준다. 취소선을 그으면 반려 사유의 빨간
                텍스트와 시각이 두 겹으로 겹쳐 지저분해진다. */
-            isRejected && "pointer-events-none opacity-60",
+            /* ⚠️ 서버 반영은 되돌릴 수 없어 더 세게 흐리게(40%), 이번 세션 반려는 되돌릴
+               여지 있어 조금만 흐리게(60%) — 무게가 다르다는 걸 명도로도 알린다. */
+            isServerReflected
+              ? "pointer-events-none opacity-40"
+              : isPendingReject && "pointer-events-none opacity-60",
           )}
         >
           <InlineEditableField value={draft.title} onChange={onTitleChange} ariaLabel="액션명" />
@@ -164,7 +184,11 @@ export function ActionReviewRow({
           <div
             className={cn(
               "flex flex-wrap items-center gap-2",
-              isRejected && "pointer-events-none opacity-60",
+              /* ⚠️ 서버 반영은 되돌릴 수 없어 더 세게 흐리게(40%), 이번 세션 반려는 되돌릴
+               여지 있어 조금만 흐리게(60%) — 무게가 다르다는 걸 명도로도 알린다. */
+              isServerReflected
+                ? "pointer-events-none opacity-40"
+                : isPendingReject && "pointer-events-none opacity-60",
             )}
           >
             {isTeamMode ? (
@@ -274,11 +298,13 @@ export function ActionReviewRow({
           </div>
 
           {/*
-            ⚠️ **반려 상태에 따라 버튼이 갈린다**(#622). 활성 상태에서는 ✕(반려 다이얼로그
-               열기), 반려 상태에서는 [반려 취소]로 되돌린다. 아이콘·라벨을 통째로 바꿔
-               같은 자리에서 다른 조작임을 분명히 한다(색은 안 쓴다 — DESIGN §5, 색은 에러 자리).
+            ⚠️ **상태에 따라 오른쪽 버튼이 세 갈래로 갈린다**(#622).
+              - 서버 반영: 되돌릴 API가 없다 — 버튼 자체를 안 그린다.
+              - 이번 세션 반려 예정: [반려 취소]로 로컬 상태를 되돌린다.
+              - 정상: ✕로 반려 다이얼로그를 연다.
+            ⚠️ 색을 쓰지 않는다(DESIGN §5, 색은 에러 자리) — 아이콘·라벨로 갈린다.
           */}
-          {isRejected ? (
+          {isServerReflected ? null : isPendingReject ? (
             <Button
               type="button"
               variant="outline"
@@ -304,17 +330,35 @@ export function ActionReviewRow({
       </div>
 
       {/*
-        ⚠️ **반려 사유는 행 하단에 빨간 텍스트로**(#622). 색을 쓸 수 있는 자리는 에러뿐이라
-           (DESIGN §5) `--destructive`를 그대로 쓴다. 아이콘 하나로 "이유가 붙어 있음"을
-           모양으로도 알린다 — 스크린리더도 `role="status"`로 상태 변화를 읽는다.
+        ⚠️ **하단 상태 텍스트**(#622). 세 갈래로 갈린다:
+          - 서버 반영: `이미 반영됨 · 확정` / `이미 반영됨 · 반려 · {사유}` — 회색 텍스트.
+              사실 안내이지 이번 세션 조작이 아니라 색을 안 쓴다(DESIGN §5).
+          - 이번 세션 반려 예정: `반려 예정 · {사유}` — 빨간 텍스트. 확정 전 사용자 결정이라
+              시선을 끌어야 되돌릴지 다시 생각하게 한다.
+          - 정상: 표시 없음.
       */}
-      {isRejected && (
+      {isServerReflected && (
+        <div
+          role="status"
+          className="text-muted-foreground mt-3 flex items-center gap-1.5 pl-[6px] text-[12px] leading-4"
+        >
+          <CircleAlert className="size-3.5 shrink-0" aria-hidden />
+          <span className="min-w-0">
+            {draft.serverReviewStatus === "REJECTED"
+              ? draft.serverRejectReason
+                ? `이미 반영됨 · 반려 · ${ACTION_REJECT_REASON_LABEL[draft.serverRejectReason]}`
+                : "이미 반영됨 · 반려"
+              : "이미 반영됨 · 확정"}
+          </span>
+        </div>
+      )}
+      {isPendingReject && (
         <div
           role="status"
           className="text-destructive mt-3 flex items-center gap-1.5 pl-[6px] text-[12px] leading-4"
         >
           <CircleAlert className="size-3.5 shrink-0" aria-hidden />
-          <span className="min-w-0">반려됨 · {ACTION_REJECT_REASON_LABEL[rejectReason]}</span>
+          <span className="min-w-0">반려 예정 · {ACTION_REJECT_REASON_LABEL[rejectReason!]}</span>
         </div>
       )}
     </div>

@@ -61,15 +61,24 @@ export function MeetingReviewView({ review }: MeetingReviewViewProps) {
   const [isPending, startTransition] = useTransition();
 
   /*
-    ⚠️ **반려된 것도 목록에 남긴다**(2026-08-18, #622). 이전엔 filter로 아예 뺐는데, 사람이
-       무엇을 반려했는지·왜 반려했는지가 화면에서 사라져 다시 훑는 사람이 이유를 못 찾았다.
-       분배 확정 대상만 골라내는 자리(대상 카운트·확정 잠금·서버 요청)는 아래 `activeDrafts`가
-       담당한다 — 화면에는 전부 남긴다.
+    ⚠️ **반려된 것·이미 반영된 것도 목록에 남긴다**(2026-08-18, #622). 이전엔 filter로 아예
+       뺐는데, 사람이 무엇을 반려했는지·왜 반려했는지가 화면에서 사라져 다시 훑는 사람이
+       이유를 못 찾았다. 분배 확정 대상만 골라내는 자리(대상 카운트·확정 잠금·서버 요청)는
+       아래 `activeDrafts`가 담당한다 — 화면에는 전부 남긴다.
+    ⚠️ **서버가 이미 반영한 것도 목록에 노출한다** — 이전 확정 시도에서 반려·수정이 커밋된
+       뒤 확정만 실패한 회의를 다시 열면 그것들이 서버에 남아 있다. 회색·잠금으로 보이게
+       하면 사용자가 "왜 이건 못 만지지?"를 즉시 알 수 있다(§정직성). 이번 확정 요청에서는
+       제외 대상 — BE가 이미 처리했기 때문(BE 담당자 회신 방향, "반려는 독립적 결정").
   */
   const highConfidence = drafts.filter((d) => d.confidence === AI_CONFIDENCE.HIGH);
   const needsReview = drafts.filter((d) => d.confidence === AI_CONFIDENCE.NEEDS_REVIEW);
-  /** 반려 안 된 초안 — 확정 대상·미정 검사·요청 페이로드는 전부 이 기준. */
-  const activeDrafts = drafts.filter((draft) => !(draft.id in rejectedReasons));
+  /**
+   * 이번 세션에서 확정 요청에 포함될 초안 — 로컬 반려도 아니고, 서버가 이미 반영한
+   * 상태(`HUMAN_CONFIRMED`·`REJECTED`)도 아닌 것들.
+   */
+  const activeDrafts = drafts.filter(
+    (draft) => !(draft.id in rejectedReasons) && draft.serverReviewStatus === "PENDING",
+  );
   /* ⚠️ 이 화면이 "부서"·"담당자" 중 뭐라고 부를지는 이 한 곳에서만 고른다(CodeRabbit 지적) */
   const assignmentTargetLabel = review.isOwnerMeeting
     ? REVIEW_ASSIGNMENT_TARGET_LABEL.TEAM
@@ -107,8 +116,12 @@ export function MeetingReviewView({ review }: MeetingReviewViewProps) {
   }
 
   function openRejectDialog(id: string) {
+    const target = drafts.find((d) => d.id === id);
+    /* ⚠️ 서버가 이미 반영한 항목은 반려 다이얼로그 자체를 안 연다(#622) — 화면에서
+       반려 버튼도 안 뜨지만, 방어적으로 한 번 더 거른다. */
+    if (!target || target.serverReviewStatus !== "PENDING") return;
     setRejectTargetId(id);
-    setRejectTitle(drafts.find((d) => d.id === id)?.title ?? "");
+    setRejectTitle(target.title);
     setPendingReason(null);
     setIsRejectOpen(true);
   }
@@ -135,6 +148,8 @@ export function MeetingReviewView({ review }: MeetingReviewViewProps) {
         dueDate: input.dueDate,
         evidence: null,
         isManual: true,
+        /* 로컬에서 방금 만든 초안이라 서버 반영일 리가 없다 — PENDING으로 시작한다 */
+        serverReviewStatus: "PENDING",
       },
     ]);
     setIsAddingManual(false);

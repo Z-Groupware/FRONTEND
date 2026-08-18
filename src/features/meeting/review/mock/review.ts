@@ -1,4 +1,4 @@
-import { AI_CONFIDENCE } from "@/constants/meeting";
+import { ACTION_REJECT_REASON, AI_CONFIDENCE } from "@/constants/meeting";
 
 import type { AiActionDraft, AssigneeOption, MeetingReviewInfo, TeamOption } from "../types";
 
@@ -53,6 +53,7 @@ function seedReview(meetingId: string): MeetingReviewInfo {
         timestamp: "18:42",
       },
       isManual: false,
+      serverReviewStatus: "PENDING",
     },
     {
       id: `${meetingId}-draft-2`,
@@ -70,6 +71,7 @@ function seedReview(meetingId: string): MeetingReviewInfo {
         timestamp: "20:08",
       },
       isManual: false,
+      serverReviewStatus: "PENDING",
     },
     {
       id: `${meetingId}-draft-3`,
@@ -87,8 +89,14 @@ function seedReview(meetingId: string): MeetingReviewInfo {
         timestamp: "24:16",
       },
       isManual: false,
+      serverReviewStatus: "PENDING",
     },
     {
+      /*
+        ⚠️ **데모용 서버 반영(HUMAN_CONFIRMED) 케이스**(#622) — 이전 확정 시도에서 수정만
+           커밋되고 확정이 실패한 상황을 재현한다. 화면에서 회색·잠금·"이미 반영됨 · 확정"
+           라벨이 뜨는지 눈으로 확인할 자리다. 실 연동에선 BE가 자연스럽게 이 상태를 준다.
+      */
       id: `${meetingId}-draft-4`,
       title: "A/B 테스트 도구 비교 문서 작성",
       description:
@@ -104,8 +112,14 @@ function seedReview(meetingId: string): MeetingReviewInfo {
         timestamp: "21:24",
       },
       isManual: false,
+      serverReviewStatus: "HUMAN_CONFIRMED",
     },
     {
+      /*
+        ⚠️ **데모용 서버 반영(REJECTED) 케이스**(#622) — 이전 확정 시도에서 반려는 커밋되고
+           확정이 실패한 상황. 회색·잠금·"이미 반영됨 · 반려 · 다른 액션과 중복" 라벨과
+           사유 표시를 눈으로 확인할 자리다.
+      */
       id: `${meetingId}-draft-5`,
       title: "모바일 반응형 재작업 착수 보고",
       description: "반응형 재작업이 필요한 화면 범위와 예상 일정을 정리해 착수 전 공유한다.",
@@ -120,6 +134,8 @@ function seedReview(meetingId: string): MeetingReviewInfo {
         timestamp: "16:37",
       },
       isManual: false,
+      serverReviewStatus: "REJECTED",
+      serverRejectReason: ACTION_REJECT_REASON.DUPLICATE,
     },
   ];
 
