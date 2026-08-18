@@ -19,6 +19,7 @@ import type {
   MeetingContentPending,
   MeetingDetail,
   MeetingListItem,
+  MeetingOutput,
   ScriptChunk,
 } from "./view-types";
 
@@ -799,6 +800,41 @@ export function toMeetingDetailView(
 function outputKindLabelOf(teamId: number | null | undefined): string {
   if (teamId === undefined) return "액션";
   return teamId === null ? "팀 액션" : "개인 액션";
+}
+
+/**
+ * 회의별 액션 조회(FR-AC-09, `GET /api/meetings/{id}/actions`) 한 줄 → 산출물 카드 한 줄.
+ *
+ * ⚠️ **BE `MeetingActionItem` 경로는 회의 상세 화면 내부 조회라 `projectTag`·`projectName`·
+ *    `sourceMeetingTitle`을 일부러 비워 준다**(BE `ActionSummaryResponse` 주석). 우리 화면도
+ *    회의 안이라 그 값이 없어도 산출물 카드 그리기에 지장이 없다.
+ * ⚠️ TEAM 액션은 `assigneeName`이 null · PERSONAL 액션은 `teamName`이 null로 온다 —
+ *    화면 계약(`MeetingOutput.assignee`)은 non-null 문자열이라 정본 문구로 접는다
+ *    (§정직성 · 목 경로 `outputsOf`의 "담당자 미정"과 같은 자리).
+ * ⚠️ **`href`는 BE `actionType`으로 가른다.** TEAM은 팀 액션 상세(프로젝트 하위), PERSONAL은
+ *    개인 액션 상세로 가는 게 목 경로와 같다.
+ */
+type BeMeetingActionSummary = {
+  id: number;
+  actionType: "TEAM" | "PERSONAL";
+  title: string;
+  status: MeetingOutput["status"];
+  dueDate: string;
+  assigneeName: string | null;
+  teamName: string | null;
+  projectId: number;
+};
+
+export function toMeetingOutput(be: BeMeetingActionSummary): MeetingOutput {
+  const isTeam = be.actionType === "TEAM";
+  return {
+    id: be.id,
+    name: be.title,
+    assignee: isTeam ? (be.teamName ?? "부서 미정") : (be.assigneeName ?? "담당자 미정"),
+    status: be.status,
+    dueDate: be.dueDate,
+    href: isTeam ? `/app/projects/${be.projectId}/team/${be.id}` : `/app/actions/${be.id}`,
+  };
 }
 
 /** BE 안건 → 화면 계약 — 이름만 옮긴다. `null`(안건 없음·미배포)은 그대로 `null`이다. */

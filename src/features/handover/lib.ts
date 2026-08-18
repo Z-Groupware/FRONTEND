@@ -36,6 +36,17 @@ export type SubmitHandoverPayload =
  *    그런 필드가 없다. 생성 뒤 건별 `PATCH .../items/{actionId}/reassign`으로 따로 보내야
  *    한다(§4 재배정 오케스트레이션, 아직 미구현 — 별도 작업).
  */
+/**
+ * 신청 화면 달력의 최소 선택값 — 내일 이후만 허용한다(#637).
+ * 휴직 시작 · 오프보딩 마지막 근무일 두 곳에서 쓴다. 종료일은 별도로 시작일 이후만
+ * 허용해 상한이 자연히 이어지게 한다(WORKFLOW §7).
+ */
+export function handoverDateMin(): string {
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  return tomorrow.toISOString().slice(0, 10);
+}
+
 export function toHandoverCreateRequestBody(payload: SubmitHandoverPayload) {
   if (payload.type === HANDOVER_TYPE.VACATION) {
     return {
