@@ -210,6 +210,15 @@ export function canCreateProject(actor: Actor): boolean {
   return actor.role === AUTHORITY.OWNER;
 }
 
+/**
+ * 프로젝트 기획 수정·첨부 교체 — OWNER 전용(WORKFLOW.md §1 "수정·첨부파일 교체는 Owner만").
+ * ⚠️ Admin은 안 된다 — BE `ProjectAttachmentController.delete`도 `hasRole('OWNER')`뿐이다
+ *    (첨부 업로드·확정은 `OWNER,ADMIN`이지만 삭제는 더 좁다, 2026-08-18 실코드 대조).
+ */
+export function canEditProjectPlan(actor: Actor): boolean {
+  return actor.role === AUTHORITY.OWNER;
+}
+
 /** 회의실 관리 — Admin 겸직자 전용 */
 export function canManageRooms(actor: Actor): boolean {
   return isAdmin(actor);

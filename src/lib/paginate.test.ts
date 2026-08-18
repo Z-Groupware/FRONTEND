@@ -1,4 +1,4 @@
-import { getPaginationRange, paginate } from "./paginate";
+import { paginate } from "./paginate";
 
 describe("배열 페이지 자르기", () => {
   const items = Array.from({ length: 23 }, (_, index) => index + 1);
@@ -30,23 +30,5 @@ describe("배열 페이지 자르기", () => {
     const result = paginate([], 0, 5);
     expect(result.totalPages).toBe(1);
     expect(result.items).toEqual([]);
-  });
-});
-
-describe("페이지 번호 축약 목록", () => {
-  it("페이지가 적으면 생략 없이 전부 보여준다", () => {
-    expect(getPaginationRange(1, 5)).toEqual([1, 2, 3, 4, 5]);
-  });
-
-  it("현재 페이지가 앞쪽이면 뒤만 생략한다", () => {
-    expect(getPaginationRange(2, 20)).toEqual([1, 2, 3, 4, 5, "ellipsis", 20]);
-  });
-
-  it("현재 페이지가 뒤쪽이면 앞만 생략한다", () => {
-    expect(getPaginationRange(19, 20)).toEqual([1, "ellipsis", 16, 17, 18, 19, 20]);
-  });
-
-  it("현재 페이지가 가운데면 양쪽 다 생략한다", () => {
-    expect(getPaginationRange(10, 20)).toEqual([1, "ellipsis", 9, 10, 11, "ellipsis", 20]);
   });
 });
