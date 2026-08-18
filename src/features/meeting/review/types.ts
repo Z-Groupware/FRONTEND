@@ -26,17 +26,14 @@ export interface AssigneeOption {
  *    참석자 목록 자체가 팀별 대표 목록이다 — 그래서 옵션도 참석자에서 만든다(별도 팀 조회 API 없음).
  * ⚠️ 담당자(사람)가 아니라 **부서**가 확정 대상이다 — 팀장 이름은 화면에 안 보여준다
  *    (팀장이 바뀌어도 팀 액션은 그대로이므로, 담당 팀장은 팀 액션 화면에서 그때그때 조회한다).
- * ⚠️ **`leaderMemberId`는 확정 요청에 실린다**(2026-08-18, #622). BE `ConfirmDistributionService`가
- *    오너 회의여도 `assigneeMemberId == null`인 액션은 `NO_ASSIGNEE`로 걸어내기 때문에,
- *    사용자가 부서를 고르면 그 팀의 팀장 memberId를 `draft.assigneeId`에도 함께 세팅해
- *    확정 요청 `changes`에 실어 보내야 한다. 오너 회의의 참석자 = 팀장이라는 정책
- *    (`Owner 회의는 팀장만 받는다`)이 근거다 — 매퍼가 참석자 `memberId`를 그대로 옮긴다.
+ * ⚠️ **`teamId`만 서버로 보낸다**(2026-08-18 원복). 이전엔 팀장 memberId를 함께 실어 보내려 했으나,
+ *    BE 정책상 `TEAM ↔ assignee`는 상호 배타(`REVIEW_ASSIGNEE_TEAM_CONFLICT`, 422)이고 오너
+ *    회의 액션은 AI 분석 단계에서 `PERSONAL`로 저장된 뒤 `teamId` 지정 시 `TEAM`으로 전환되는
+ *    구조라, FE는 `changes.teamId`만 전송하면 된다.
  */
 export interface TeamOption {
   teamId: number;
   teamName: string;
-  /** 이 팀의 팀장 memberId — 오너 회의 참석자 정책상 `attendee.memberId`가 곧 그 팀 팀장. */
-  leaderMemberId: number;
 }
 
 /** 근거 발화 — 수정 판단의 근거이므로 AI가 뽑은 항목엔 반드시 있다(WORKFLOW.md §3-4). */
