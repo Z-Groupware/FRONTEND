@@ -79,7 +79,8 @@ export function VacationForm({ context }: VacationFormProps) {
   }
 
   const selectedActions = sorted.filter((action) => selectedIds.has(action.id));
-  const canProceed = Boolean(startDate) && Boolean(endDate) && selectedActions.length > 0;
+  /* ⚠️ 넘길 액션이 없어도 신청은 열려 있다(#637, offboarding-form.tsx와 같은 정책) */
+  const canProceed = Boolean(startDate) && Boolean(endDate);
   const canAssignSubmit = selectedActions.every((action) => assignments[action.id]);
 
   function handleConfirm() {
