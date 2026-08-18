@@ -112,19 +112,15 @@ export function MeetingReviewView({ review }: MeetingReviewViewProps) {
   }
 
   /*
-    ⚠️ **부서를 고르면 그 팀 팀장 memberId를 `assigneeId`에도 함께 세팅한다**(#622).
-       BE `ConfirmDistributionService.skipReasonOf`는 `actionType != TEAM`인데 `assigneeMemberId`가
-       null이면 `NO_ASSIGNEE`로 걸어낸다 — 오너 회의라도 확정 요청에는 assignee가 실려야 한다.
-       오너 회의 참석자 정책상 그 팀의 팀장 = 참석자 memberId라(actions.test.ts "Owner가 개설하는
-       회의에는 팀장만 참석자로 지정할 수 있습니다"), 옵션에 미리 짝지어 둔 `leaderMemberId`를
-       그대로 옮긴다.
+    ⚠️ **부서만 세팅하고 `assigneeId`는 손대지 않는다**(2026-08-18 원복, #631).
+       BE 검사(`ApplyReviewDecisionService#requireDecisionShape`)가 요청 body에 assignee·teamId가
+       둘 다 있으면 무조건 `REVIEW_ASSIGNEE_TEAM_CONFLICT` 422로 막는다 — 전에 팀장 memberId를
+       assignee에 함께 세팅했더니 항상 여기서 걸렸다. BE는 MODIFY + teamId만 오면
+       `Action.convertToTeam`이 기존 assigneeMemberId를 알아서 null로 비우고 `ActionType=TEAM`으로
+       바꾼다(BE 정본 확인 2026-08-18).
   */
   function handleTeamChange(draftId: string, teamId: number) {
-    const option = review.teamOptions.find((candidate) => candidate.teamId === teamId);
-    updateDraft(draftId, {
-      teamId,
-      assigneeId: option?.leaderMemberId ?? null,
-    });
+    updateDraft(draftId, { teamId, assigneeId: null });
   }
 
   /**
@@ -204,18 +200,17 @@ export function MeetingReviewView({ review }: MeetingReviewViewProps) {
                     ? { description: draft.description }
                     : {}),
                   /*
-                    ⚠️ **오너 회의는 `teamId`와 `assigneeId`를 함께 보낸다**(2026-08-18, #622).
-                       BE `ConfirmDistributionService.skipReasonOf`가 오너 회의여도 assignee가
-                       비어 있으면 `NO_ASSIGNEE`로 걸어내기 때문 — 예전에는 `teamId`만 보내
-                       확정이 항상 실패했다. 오너 회의 참석자 정책상 그 팀의 팀장이 곧
-                       assignee라, `handleTeamChange`가 부서 선택 시 `draft.assigneeId`에도
-                       팀장 memberId를 세팅해 두면 여기서 함께 실린다.
+                    ⚠️ **오너 회의는 `teamId`만 보낸다**(2026-08-18 원복, #631). BE 검사
+                       (`ApplyReviewDecisionService#requireDecisionShape`)가 body에 둘 다 있으면
+                       무조건 `REVIEW_ASSIGNEE_TEAM_CONFLICT` 422로 막고, MODIFY + teamId만
+                       오면 `Action.convertToTeam`이 기존 assigneeMemberId를 자동으로 null 처리
+                       하며 `ActionType`을 TEAM으로 전환한다(BE 정본).
                     ⚠️ 그 외(팀 회의)는 그대로 `assigneeId`만 보낸다 — 사용자가 담당자를
                        바꿨을 때만 실어 서버가 "사람이 고쳤다" 라벨을 정확히 남기게 한다.
                   */
                   ...(review.isOwnerMeeting
-                    ? draft.teamId !== null && draft.assigneeId !== null
-                      ? { teamId: draft.teamId, assigneeId: draft.assigneeId }
+                    ? draft.teamId !== null
+                      ? { teamId: draft.teamId }
                       : {}
                     : initial &&
                         draft.assigneeId !== initial.assigneeId &&
