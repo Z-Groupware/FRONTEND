@@ -17,6 +17,7 @@ import {
 import { MeetingCancelDialog } from "@/features/meeting/components/meeting-cancel-dialog";
 import { MEETING_TITLE_MAX_LENGTH } from "@/features/meeting/lib";
 import { canCancelMeeting, canEditMeeting } from "@/features/meeting/status";
+import { cn } from "@/lib/utils";
 
 const INITIAL_STATE: UpdateMeetingState = { error: null, saved: null };
 
@@ -39,16 +40,25 @@ interface RoomMeetingDetailDialogProps {
 
 /**
  * 회의실 캘린더에서 **이미 있는 예약**을 클릭했을 때 뜨는 모달 — 조회가 기본이고, 개설자면
- * [수정] 버튼으로 같은 모달 안에서 인풋으로 바뀐다(2026-08-14 팀 확정).
+ * [수정]·[회의 취소] 버튼으로 바뀐다(2026-08-18, 예약 모달과 같은 골격으로 다시 맞춤).
  *
+ * ⚠️ **`RoomReservationDialog`(회의실 예약 모달)와 같은 뼈대를 쓴다** — 창 폭(720)·머리·
+ *    좌(정보) 우(참석자 260px) 2열 grid·발치 버튼 줄까지 전부 그 모달을 그대로 베낀다.
+ *    같은 회의실 캘린더에서 여닫는 두 모달인데 하나는 좁은 420폭 목록형이고 하나는 넓은
+ *    2열 폼형이면 같은 기능의 두 창처럼 안 읽힌다(팀 지적).
+ * ⚠️ **조회 모드는 아무것도 고를 게 없다.** `RoomReservationFields`·`RoomAttendeePicker`
+ *    (입력용 Select·검색·체크박스)를 그대로 재사용하지 않고, 값만 박힌 `ReadOnlyField`로
+ *    새로 그린다 — 골라야 할 게 없는 자리에 고르는 UI를 두면 "여기서 뭘 바꿀 수 있나" 하고
+ *    누르게 된다(§정직성: 안 되는 조작을 되는 것처럼 보이면 안 된다).
  * ⚠️ **예전엔 이 자리에 예약 생성 모달이 그대로 떴다** — 이미 있는 회의를 클릭해도 "새로
  *    예약하기" 폼이 열려 값이 비어 있었다(예외처리 누락, 별도 버그로 확인). `WeeklyRoomCalendar`가
  *    이제 `onSelectEvent`로 이 모달을 열고, 빈 칸 클릭(`onSelectSlot`)과 갈라 둔다.
  * ⚠️ **고칠 수 있는 건 제목뿐이다**(`MeetingEditDialog`와 같은 BE 제약, MEET-05). 시간·회의실을
  *    바꾸는 인풋은 없다 — 조회해 온 나머지 값(일정·회의실·참석자)은 수정 모드에서도 그대로
- *    텍스트로만 보여준다, 없는 기능을 감추지 않는다(§정직성).
+ *    읽기전용으로 보여준다, 없는 기능을 감추지 않는다(§정직성).
  * ⚠️ `canEditMeeting`(host && SCHEDULED)이 아니면 [수정] 버튼 자체가 없다 — 화면 숨김은 UX일
- *    뿐이고, 실제 방어는 `updateMeetingAction`(서버)이 다시 한다(§권한).
+ *    뿐이고, 실제 방어는 `updateMeetingAction`(서버)이 다시 한다(§권한). `canCancelMeeting`도
+ *    같은 조건이라 [회의 취소] 역시 개설자에게만 뜬다.
  * ⚠️ 조회·수정 상태는 `MeetingSummaryPanel`을 `key={meetingId}`로 물려 초기화한다 — 이펙트
  *    안에서 직접 `setState`로 되돌리지 않는다(react-hooks/set-state-in-effect, §린트).
  */
@@ -60,7 +70,7 @@ export function RoomMeetingDetailDialog({
 }: RoomMeetingDetailDialogProps) {
   return (
     <Dialog open={meetingId !== null} onOpenChange={(next) => !next && onOpenChange(false)}>
-      <DialogContent className="gap-0 overflow-hidden p-0 sm:max-w-[420px]">
+      <DialogContent className="gap-0 overflow-hidden p-0 sm:max-w-[720px]">
         <DialogHeader className="border-border border-b px-6 py-4">
           <DialogTitle>회의 상세</DialogTitle>
         </DialogHeader>
@@ -84,6 +94,35 @@ interface MeetingSummaryPanelProps {
   onClose: () => void;
   onTitleUpdated: (meetingId: string, title: string) => void;
   onCancelled: (meetingId: string) => void;
+}
+
+/**
+ * 값만 박힌 칸 — `Input`과 같은 테두리·높이·글자 크기를 쓰되 `<input>`이 아니라 `<div>`다.
+ * ⚠️ 포커스도 안 받고 값도 못 바꾼다 — 예약 모달의 실제 입력칸과 **생김새만** 맞춘다.
+ */
+function ReadOnlyField({
+  label,
+  value,
+  htmlFor,
+}: {
+  label: string;
+  value: string;
+  htmlFor?: string;
+}) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <Label htmlFor={htmlFor}>{label}</Label>
+      <div
+        id={htmlFor}
+        className={cn(
+          "border-input bg-muted/40 flex h-8 w-full min-w-0 items-center rounded-lg border px-2.5",
+          "text-foreground truncate text-[13px]",
+        )}
+      >
+        {value}
+      </div>
+    </div>
+  );
 }
 
 function MeetingSummaryPanel({
@@ -164,31 +203,44 @@ function MeetingSummaryPanel({
     );
   }
 
+  const { summary } = load;
+  const isHost = summary.isHost;
+  const canEdit = canEditMeeting({ isHost, pendingReason: summary.pendingReason });
+  const canCancel = canCancelMeeting({ isHost, pendingReason: summary.pendingReason });
+
   if (editing) {
     return (
       <form action={formAction}>
         <input type="hidden" name="meetingId" value={meetingId} />
 
-        <div className="flex flex-col gap-2 px-6 py-5">
-          <Label htmlFor="room-meeting-title">회의 제목</Label>
-          <Input
-            key={load.summary.title}
-            id="room-meeting-title"
-            name="title"
-            defaultValue={load.summary.title}
-            maxLength={MEETING_TITLE_MAX_LENGTH}
-            required
-            aria-describedby={state.error ? "room-meeting-title-error" : undefined}
-            aria-invalid={state.error ? true : undefined}
-          />
-          {state.error && (
-            <p id="room-meeting-title-error" className="text-destructive text-[12px] leading-4">
-              {state.error}
+        {/* ⚠️ 예약 모달과 같은 스크롤 상자 폭(70vh) — 모드를 바꿔도 창 크기가 안 흔들린다. */}
+        <div className="flex max-h-[70vh] flex-col gap-4 overflow-y-auto px-6 py-4">
+          <div className="flex flex-wrap items-start gap-4">
+            <ReadOnlyField label="일정" value={summary.schedule} />
+            <ReadOnlyField label="회의실" value={summary.roomName} />
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="room-meeting-title">회의 제목</Label>
+            <Input
+              key={summary.title}
+              id="room-meeting-title"
+              name="title"
+              defaultValue={summary.title}
+              maxLength={MEETING_TITLE_MAX_LENGTH}
+              required
+              aria-describedby={state.error ? "room-meeting-title-error" : undefined}
+              aria-invalid={state.error ? true : undefined}
+            />
+            {state.error && (
+              <p id="room-meeting-title-error" className="text-destructive text-[12px] leading-4">
+                {state.error}
+              </p>
+            )}
+            <p className="text-muted-foreground text-[12px] leading-4">
+              시간·회의실을 바꾸려면 회의를 취소하고 다시 예약해 주세요.
             </p>
-          )}
-          <p className="text-muted-foreground text-[12px] leading-4">
-            시간·회의실을 바꾸려면 회의를 취소하고 다시 예약해 주세요.
-          </p>
+          </div>
         </div>
 
         <div className="border-border flex items-center justify-end gap-2 border-t px-6 py-4">
@@ -210,41 +262,57 @@ function MeetingSummaryPanel({
 
   return (
     <>
-      <div className="flex flex-col gap-3 px-6 py-5">
-        <div>
-          <p className="text-muted-foreground text-[12px] leading-4">제목</p>
-          <p className="text-[14px] leading-5">{load.summary.title}</p>
+      {/*
+        ⚠️ **`RoomReservationDialog`와 같은 구조다** — 위에 일정 줄, 아래 좌(정보)·우(참석자
+           260px) 2열. 회의실 예약 모달을 열었다 닫고 상세 모달을 열어도 같은 창처럼 읽힌다.
+      */}
+      <div className="flex max-h-[70vh] flex-col gap-4 overflow-y-auto px-6 py-4">
+        <div className="flex flex-wrap items-start gap-4">
+          <ReadOnlyField label="일정" value={summary.schedule} />
+          <ReadOnlyField label="회의실" value={summary.roomName} />
         </div>
-        <div>
-          <p className="text-muted-foreground text-[12px] leading-4">일정</p>
-          <p className="text-[14px] leading-5">{load.summary.schedule}</p>
-        </div>
-        <div>
-          <p className="text-muted-foreground text-[12px] leading-4">회의실</p>
-          <p className="text-[14px] leading-5">{load.summary.roomName}</p>
-        </div>
-        {load.summary.agenda && (
-          <div>
-            <p className="text-muted-foreground text-[12px] leading-4">안건</p>
-            <p className="text-[14px] leading-5">
-              {load.summary.agenda.main}
-              {load.summary.agenda.subs.length > 0 && ` · ${load.summary.agenda.subs.join(", ")}`}
-            </p>
+
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-[1fr_260px]">
+          <div className="flex flex-col gap-4">
+            <ReadOnlyField label="회의 제목" value={summary.title} />
+            {summary.agenda && (
+              <ReadOnlyField
+                label="안건"
+                value={
+                  summary.agenda.subs.length > 0
+                    ? `${summary.agenda.main} · ${summary.agenda.subs.join(", ")}`
+                    : summary.agenda.main
+                }
+              />
+            )}
           </div>
-        )}
-        <div>
-          <p className="text-muted-foreground text-[12px] leading-4">참석자</p>
-          <p className="text-[14px] leading-5">
-            {load.summary.attendees.map((attendee) => attendee.name).join(", ")}
-          </p>
+
+          <div className="flex flex-col gap-2">
+            <Label>참석자</Label>
+            {/* ⚠️ `RoomAttendeePicker`와 같은 테두리 상자 — 체크박스·검색만 뺀다(고를 게 없다). */}
+            <div className="border-border min-h-0 flex-1 overflow-y-auto rounded-lg border">
+              {summary.attendees.length === 0 ? (
+                <p className="text-muted-foreground px-3 py-3 text-[12px] leading-4">
+                  참석자가 없습니다
+                </p>
+              ) : (
+                summary.attendees.map((attendee) => (
+                  <div
+                    key={attendee.id}
+                    className="flex items-center gap-2.5 px-3 py-2 text-[13px] leading-5"
+                  >
+                    <span className="truncate">{attendee.name}</span>
+                  </div>
+                ))
+              )}
+            </div>
+            <p className="text-muted-foreground text-[11px]">참석 {summary.attendees.length}명</p>
+          </div>
         </div>
       </div>
 
       <div className="border-border flex items-center justify-end gap-2 border-t px-6 py-4">
-        {canCancelMeeting({
-          isHost: load.summary.isHost,
-          pendingReason: load.summary.pendingReason,
-        }) && (
+        {canCancel && (
           <MeetingCancelDialog
             meetingId={meetingId}
             onCancelled={() => {
@@ -253,10 +321,7 @@ function MeetingSummaryPanel({
             }}
           />
         )}
-        {canEditMeeting({
-          isHost: load.summary.isHost,
-          pendingReason: load.summary.pendingReason,
-        }) && (
+        {canEdit && (
           <Button type="button" variant="outline" onClick={() => setEditing(true)}>
             수정
           </Button>
