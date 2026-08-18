@@ -1,5 +1,6 @@
 "use client";
 
+import { Eye, EyeOff } from "lucide-react";
 import { type FormEvent, useActionState, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -39,6 +40,14 @@ export function ChangePasswordDialog() {
   const [state, formAction, isPending] = useActionState(changePasswordAction, INITIAL_STATE);
   const [draft, setDraft] = useState<PasswordDraft>(EMPTY_DRAFT);
   const shownAttempt = useRef(0);
+  /*
+    ⚠️ **세 칸을 따로 토글한다.** 하나로 묶으면 현재 비밀번호를 확인하려고 켰을 뿐인데
+       새 비밀번호 두 칸까지 같이 드러난다 — 로그인 화면(`LoginForm`)과 같은 눈 아이콘
+       패턴이되, 칸마다 독립된 상태를 갖는다.
+  */
+  const [isCurrentShown, setCurrentShown] = useState(false);
+  const [isNewShown, setNewShown] = useState(false);
+  const [isConfirmShown, setConfirmShown] = useState(false);
 
   // 닫는 경로(취소·ESC·바깥 클릭) 전부 여기로 모은다 — 한 곳만 고치면 전부 반영된다.
   const handleClose = () => {
@@ -96,21 +105,28 @@ export function ChangePasswordDialog() {
             <div className="flex flex-col gap-4 px-6 py-5">
               <div className="flex flex-col gap-2">
                 <Label htmlFor="current-password">현재 비밀번호</Label>
-                <Input
-                  id="current-password"
-                  name="currentPassword"
-                  type="password"
-                  autoComplete="current-password"
-                  required
-                  value={draft.currentPassword}
-                  onChange={(event) =>
-                    setDraft((prev) => ({ ...prev, currentPassword: event.target.value }))
-                  }
-                  aria-describedby={
-                    state.errors.currentPassword ? "current-password-error" : undefined
-                  }
-                  aria-invalid={state.errors.currentPassword ? true : undefined}
-                />
+                <div className="relative">
+                  <Input
+                    id="current-password"
+                    name="currentPassword"
+                    type={isCurrentShown ? "text" : "password"}
+                    autoComplete="current-password"
+                    required
+                    className="pr-10"
+                    value={draft.currentPassword}
+                    onChange={(event) =>
+                      setDraft((prev) => ({ ...prev, currentPassword: event.target.value }))
+                    }
+                    aria-describedby={
+                      state.errors.currentPassword ? "current-password-error" : undefined
+                    }
+                    aria-invalid={state.errors.currentPassword ? true : undefined}
+                  />
+                  <PasswordVisibilityToggle
+                    isShown={isCurrentShown}
+                    onToggle={() => setCurrentShown((shown) => !shown)}
+                  />
+                </div>
                 {state.errors.currentPassword && (
                   <p id="current-password-error" className="text-destructive text-[12px] leading-4">
                     {state.errors.currentPassword}
@@ -120,20 +136,27 @@ export function ChangePasswordDialog() {
 
               <div className="flex flex-col gap-2">
                 <Label htmlFor="new-password">새 비밀번호</Label>
-                <Input
-                  id="new-password"
-                  name="newPassword"
-                  type="password"
-                  autoComplete="new-password"
-                  maxLength={16}
-                  required
-                  value={draft.newPassword}
-                  onChange={(event) =>
-                    setDraft((prev) => ({ ...prev, newPassword: event.target.value }))
-                  }
-                  aria-describedby="new-password-hints"
-                  aria-invalid={state.errors.newPassword ? true : undefined}
-                />
+                <div className="relative">
+                  <Input
+                    id="new-password"
+                    name="newPassword"
+                    type={isNewShown ? "text" : "password"}
+                    autoComplete="new-password"
+                    maxLength={16}
+                    required
+                    className="pr-10"
+                    value={draft.newPassword}
+                    onChange={(event) =>
+                      setDraft((prev) => ({ ...prev, newPassword: event.target.value }))
+                    }
+                    aria-describedby="new-password-hints"
+                    aria-invalid={state.errors.newPassword ? true : undefined}
+                  />
+                  <PasswordVisibilityToggle
+                    isShown={isNewShown}
+                    onToggle={() => setNewShown((shown) => !shown)}
+                  />
+                </div>
                 {state.errors.newPassword && (
                   <p className="text-destructive text-[12px] leading-4">
                     {state.errors.newPassword}
@@ -148,22 +171,29 @@ export function ChangePasswordDialog() {
 
               <div className="flex flex-col gap-2">
                 <Label htmlFor="new-password-confirm">새 비밀번호 확인</Label>
-                <Input
-                  id="new-password-confirm"
-                  name="newPasswordConfirm"
-                  type="password"
-                  autoComplete="new-password"
-                  maxLength={16}
-                  required
-                  value={draft.newPasswordConfirm}
-                  onChange={(event) =>
-                    setDraft((prev) => ({ ...prev, newPasswordConfirm: event.target.value }))
-                  }
-                  aria-describedby="new-password-confirm-hint"
-                  aria-invalid={
-                    state.errors.newPasswordConfirm || confirmMatch === false ? true : undefined
-                  }
-                />
+                <div className="relative">
+                  <Input
+                    id="new-password-confirm"
+                    name="newPasswordConfirm"
+                    type={isConfirmShown ? "text" : "password"}
+                    autoComplete="new-password"
+                    maxLength={16}
+                    required
+                    className="pr-10"
+                    value={draft.newPasswordConfirm}
+                    onChange={(event) =>
+                      setDraft((prev) => ({ ...prev, newPasswordConfirm: event.target.value }))
+                    }
+                    aria-describedby="new-password-confirm-hint"
+                    aria-invalid={
+                      state.errors.newPasswordConfirm || confirmMatch === false ? true : undefined
+                    }
+                  />
+                  <PasswordVisibilityToggle
+                    isShown={isConfirmShown}
+                    onToggle={() => setConfirmShown((shown) => !shown)}
+                  />
+                </div>
                 {/*
                   ⚠️ **서버 오류가 우선이다.** 방금 제출해서 돌아온 문구가 있으면 그걸 보여주고,
                      없으면 타이핑 중 실시간 판정을 보여준다 — 같은 뜻의 줄이 두 개 뜨지 않는다.
@@ -205,5 +235,25 @@ export function ChangePasswordDialog() {
         </DialogContent>
       </Dialog>
     </>
+  );
+}
+
+/** 눈 아이콘 토글 — `LoginForm`의 비밀번호 칸과 같은 자리·같은 문구다(일관성). */
+function PasswordVisibilityToggle({
+  isShown,
+  onToggle,
+}: {
+  isShown: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-label={isShown ? "비밀번호 숨기기" : "비밀번호 보기"}
+      className="text-muted-foreground hover:text-foreground focus-visible:ring-ring absolute top-1/2 right-2 -translate-y-1/2 rounded p-1 focus-visible:ring-2 focus-visible:outline-hidden"
+    >
+      {isShown ? <EyeOff className="size-4" aria-hidden /> : <Eye className="size-4" aria-hidden />}
+    </button>
   );
 }
