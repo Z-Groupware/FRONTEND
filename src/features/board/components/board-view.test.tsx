@@ -15,7 +15,8 @@ jest.mock("./board-leave-guard", () => ({
   BoardLeaveGuard: () => null,
 }));
 
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 
 import type { BoardCard } from "../types";
 import { BoardView } from "./board-view";
@@ -63,5 +64,65 @@ describe("BoardView — 페이지 레벨 empty state", () => {
     expect(screen.getByText("할 일")).toBeInTheDocument();
     expect(screen.getByText("진행중")).toBeInTheDocument();
     expect(screen.getByText("완료")).toBeInTheDocument();
+  });
+});
+
+/*
+  ⚠️ 회귀 방지(#609) — DnD 보드가 `PointerSensor`만 걸려 있어 키보드·스크린리더로는 카드를
+     옮길 방법이 없었다(CLAUDE.md §a11y "DnD 보드는 키보드 대체 경로 필수" 위반). 카드마다
+     [옮기기] 버튼을 대체 경로로 붙였다 — 드래그와 같은 `canMoveCard` 규칙을 타므로, 버튼도
+     드래그와 똑같이 저장 전 미리보기(override)로만 반영되고 [저장하기]를 눌러야 확정된다.
+*/
+/** 카드는 옮겨지면 다른 칸(다른 부모)으로 리마운트된다 — 매번 다시 찾아야 한다. */
+function findCard(title: string): HTMLElement {
+  return screen.getByText(title).closest('[class*="rounded-[20px]"]') as HTMLElement;
+}
+
+describe("BoardCard — 키보드 대체 경로 [옮기기] 버튼(#609)", () => {
+  it("할 일 카드는 [진행중으로 옮기기] 버튼만 있고, 누르면 진행중으로 옮겨져 저장 대기가 잡힌다", async () => {
+    const user = userEvent.setup();
+    const todoCard = card({ title: "예정 작업", startDate: "2026-08-20" });
+    render(<BoardView boardType="my-action" cards={[todoCard]} todayIso={TODAY} />);
+
+    expect(
+      within(findCard("예정 작업")).getByRole("button", { name: "진행중으로 옮기기" }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "저장하기" })).toBeDisabled();
+
+    await user.click(
+      within(findCard("예정 작업")).getByRole("button", { name: "진행중으로 옮기기" }),
+    );
+
+    expect(screen.getByRole("button", { name: "저장하기 (1)" })).toBeInTheDocument();
+    expect(
+      within(findCard("예정 작업")).getByRole("button", { name: "할 일로 옮기기" }),
+    ).toBeInTheDocument();
+  });
+
+  it("버튼으로 옮긴 뒤 되돌리기 버튼을 누르면 override가 지워지고 저장 대기가 풀린다", async () => {
+    const user = userEvent.setup();
+    const todoCard = card({ title: "예정 작업", startDate: "2026-08-20" });
+    render(<BoardView boardType="my-action" cards={[todoCard]} todayIso={TODAY} />);
+
+    await user.click(
+      within(findCard("예정 작업")).getByRole("button", { name: "진행중으로 옮기기" }),
+    );
+    await user.click(within(findCard("예정 작업")).getByRole("button", { name: "할 일로 옮기기" }));
+
+    expect(screen.getByRole("button", { name: "저장하기" })).toBeDisabled();
+    expect(
+      within(findCard("예정 작업")).getByRole("button", { name: "진행중으로 옮기기" }),
+    ).toBeInTheDocument();
+  });
+
+  it("완료 카드는 [진행중으로 옮기기] 버튼만 있다 — 할 일로는 못 간다", () => {
+    const doneCard = card({ title: "끝난 작업", isDone: true });
+    render(<BoardView boardType="my-action" cards={[doneCard]} todayIso={TODAY} />);
+
+    const cardEl = findCard("끝난 작업");
+    expect(within(cardEl).getByRole("button", { name: "진행중으로 옮기기" })).toBeInTheDocument();
+    expect(
+      within(cardEl).queryByRole("button", { name: "할 일로 옮기기" }),
+    ).not.toBeInTheDocument();
   });
 });

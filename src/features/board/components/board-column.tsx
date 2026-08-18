@@ -20,6 +20,9 @@ interface BoardColumnProps {
   isDelayed: (card: BoardCardModel) => boolean;
   /** 지금 드래그 중인 카드가 여기로 못 오면(§canMoveCard) 놓는 순간 시각적으로도 알린다. */
   isInvalidTarget: boolean;
+  /** 카드별 키보드 대체 경로(§canMoveCard) — 갈 수 있는 칸이 없으면 null(#609). */
+  moveTargetOf: (card: BoardCardModel) => BoardColumnId | null;
+  onMoveCard: (card: BoardCardModel, to: BoardColumnId) => void;
 }
 
 /**
@@ -55,7 +58,15 @@ const COLUMN_TONE: Record<
   },
 };
 
-export function BoardColumn({ id, label, cards, isDelayed, isInvalidTarget }: BoardColumnProps) {
+export function BoardColumn({
+  id,
+  label,
+  cards,
+  isDelayed,
+  isInvalidTarget,
+  moveTargetOf,
+  onMoveCard,
+}: BoardColumnProps) {
   const { setNodeRef, isOver } = useDroppable({ id });
   const tone = COLUMN_TONE[id];
   const isBlocked = isOver && isInvalidTarget;
@@ -150,7 +161,18 @@ export function BoardColumn({ id, label, cards, isDelayed, isInvalidTarget }: Bo
             {isBlocked ? BOARD_BLOCKED_HINT : BOARD_EMPTY_HINT}
           </p>
         ) : (
-          cards.map((card) => <BoardCard key={card.id} card={card} isDelayed={isDelayed(card)} />)
+          cards.map((card) => {
+            const moveTarget = moveTargetOf(card);
+            return (
+              <BoardCard
+                key={card.id}
+                card={card}
+                isDelayed={isDelayed(card)}
+                moveTarget={moveTarget}
+                onMove={() => moveTarget && onMoveCard(card, moveTarget)}
+              />
+            );
+          })
         )}
       </div>
     </div>

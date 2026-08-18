@@ -1,23 +1,31 @@
 "use client";
 
 import { useDraggable } from "@dnd-kit/core";
+import { ArrowRight } from "lucide-react";
+import type { ReactNode } from "react";
 
 import { ProjectTag } from "@/components/common/project-tag";
 import { StatusDot } from "@/components/common/status-dot";
+import { Button } from "@/components/ui/button";
 import { ACTION_DELAYED_LABEL } from "@/constants/action";
 import { formatMonthDayWeekday } from "@/lib/date";
+import { directionParticle } from "@/lib/korean";
 import { pickPaletteColor } from "@/lib/palette";
 import { cn } from "@/lib/utils";
 
-import type { BoardCard as BoardCardModel } from "../types";
+import { BOARD_COLUMN_LABEL, type BoardCard as BoardCardModel, type BoardColumnId } from "../types";
 
 interface BoardCardProps {
   card: BoardCardModel;
   isDelayed: boolean;
 }
 
+interface BoardCardBodyProps extends BoardCardProps {
+  actions?: ReactNode;
+}
+
 /** 카드 내용 — 실제 카드와 드래그 중 떠다니는 사본(`BoardCardOverlay`)이 같이 쓴다. */
-function BoardCardBody({ card, isDelayed }: BoardCardProps) {
+function BoardCardBody({ card, isDelayed, actions }: BoardCardBodyProps) {
   const due = formatMonthDayWeekday(card.dueDate);
   return (
     <>
@@ -71,6 +79,8 @@ function BoardCardBody({ card, isDelayed }: BoardCardProps) {
             </span>
           )}
         </div>
+
+        {actions}
       </div>
     </>
   );
@@ -141,6 +151,12 @@ function ColorEdge({ tag }: { tag: string }) {
   );
 }
 
+interface BoardCardMoveProps {
+  /** 지금 이 카드가 옮겨 갈 수 있는 유일한 칸(§canMoveCard) — 없으면 버튼을 안 그린다. */
+  moveTarget: BoardColumnId | null;
+  onMove: () => void;
+}
+
 /**
  * 보드 카드 한 장 — 드래그 핸들은 카드 전체(클릭해서 상세로 이동하는 화면이 아니라 옮기는 화면).
  * ⚠️ **드래그 중엔 내용을 비운 빈 자리만 남긴다** — 실제로 손에 들려 움직이는 모습은
@@ -148,10 +164,21 @@ function ColorEdge({ tag }: { tag: string }) {
  *    두고 `transform`까지 얹었더니, 사본과 원본이 같이 움직여 겹쳐 보이는 "반사"처럼
  *    보였다(2026-08-09 디자인 리뷰) — 원본은 **제자리에 고정된 빈 칸**으로만 남기고
  *    (transform 제거, 내용 숨김), 움직이는 건 사본 하나뿐이어야 한다.
+ * ⚠️ **`tabIndex: -1`로 dnd-kit의 기본 포커스를 끈다**(#609). `useDraggable`은 등록된
+ *    센서와 무관하게 이 div에 `role="button" tabIndex=0`을 항상 붙이는데, 이 보드엔
+ *    `PointerSensor`만 있어 Tab으로 여기 와서 Enter를 눌러도 아무 일도 안 났다 — 누르면
+ *    반응해야 하는데 안 하는 가짜 버튼이었다. 진짜 키보드 경로는 아래 [옮기기] 버튼이다
+ *    (CLAUDE.md §a11y "DnD 보드는 키보드 대체 경로 필수").
  */
-export function BoardCard({ card, isDelayed }: BoardCardProps) {
+export function BoardCard({
+  card,
+  isDelayed,
+  moveTarget,
+  onMove,
+}: BoardCardProps & BoardCardMoveProps) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: card.id,
+    attributes: { tabIndex: -1 },
   });
 
   return (
@@ -173,7 +200,32 @@ export function BoardCard({ card, isDelayed }: BoardCardProps) {
         isDragging && "opacity-40 [&>*]:invisible",
       )}
     >
-      <BoardCardBody card={card} isDelayed={isDelayed} />
+      <BoardCardBody
+        card={card}
+        isDelayed={isDelayed}
+        actions={
+          moveTarget && (
+            <Button
+              variant="ghost"
+              size="xs"
+              className="text-muted-foreground hover:text-foreground self-end"
+              /*
+                ⚠️ 드래그 핸들(이 카드 전체)의 pointerdown이 먼저 안 채가게 막는다 — 안 그러면
+                   버튼을 눌러도 dnd-kit이 드래그 시작으로 먼저 잡아챈다.
+              */
+              onPointerDown={(event) => event.stopPropagation()}
+              onClick={(event) => {
+                event.stopPropagation();
+                onMove();
+              }}
+            >
+              {BOARD_COLUMN_LABEL[moveTarget]}
+              {directionParticle(BOARD_COLUMN_LABEL[moveTarget])} 옮기기
+              <ArrowRight />
+            </Button>
+          )
+        }
+      />
     </div>
   );
 }
