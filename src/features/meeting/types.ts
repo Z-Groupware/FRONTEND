@@ -112,6 +112,13 @@ export type Meeting = MeetingDraft & {
    * ⚠️ 안 끝난 회의는 `null`이다 — 시작도 안 한 일에 대기라고 적으면 상태가 하나 늘어난다.
    */
   aiSummaryStatus: AiSummaryStatus | null;
+  /**
+   * 녹음 동의(MEET-05) — 개설 시점엔 이 값을 받는 입력이 없어 항상 `false`로 만들어진다
+   * (`addMockMeeting`·`addMockOnlineMeeting`) — 회의 수정 다이얼로그(#436)가 유일하게
+   * 이 값을 바꾼다(`updateMockMeeting`). `MeetingDraft`가 아니라 여기 두는 이유도 같다 —
+   * 만들 때는 아무도 이 값을 넣어 보내지 않는다.
+   */
+  recordingConsent: boolean;
 };
 
 /**

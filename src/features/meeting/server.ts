@@ -397,9 +397,9 @@ export async function getMeetingDetail(id: string, viewer: Actor): Promise<Meeti
       isStalled,
       isHost: canOperateMeeting(viewer, { ownerId: meeting.hostId }),
       isOnline: meeting.isOnline,
-      // ⚠️ 예약 화면엔 이 값을 받는 입력이 없다 — 항상 `false`로 만들어진다(실서버와 같은 값,
-      //    `rooms/mapper/meetings.ts`의 `toCreateMeetingPayload` 참고).
-      recordingConsent: false,
+      // ⚠️ 개설 때는 항상 `false`(§types `Meeting.recordingConsent`)지만, 회의 수정
+      //    다이얼로그(#436)가 고치면 그 값이 스토어에 남는다 — 여기서 저장된 값을 그대로 읽는다.
+      recordingConsent: meeting.recordingConsent,
       editableSlot: toMockEditableSlot(meeting),
     },
   };

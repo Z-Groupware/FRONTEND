@@ -14,7 +14,7 @@ import {
   updateMeetingAttendeesAction,
   updateMeetingScheduleAction,
 } from "./actions";
-import { addMockMeeting } from "./mock/meetings";
+import { addMockMeeting, findMockMeeting } from "./mock/meetings";
 import type { MeetingDraft } from "./types";
 
 const INITIAL = { error: null, attendeeIds: null } as const;
@@ -283,6 +283,23 @@ describe("회의 시간·회의실·프로젝트·녹음 동의 수정(#436) —
 
     expect(result.errors).toEqual({});
     expect(result.saved).toEqual({ title: "스프린트 계획 수정" });
+    // 성공 응답만 보고 끝내지 않는다 — 실제로 스토어에 반영됐는지 다시 읽어 확인한다.
+    expect(findMockMeeting(meeting.id)?.recordingConsent).toBe(true);
+  });
+
+  it("녹음 동의를 다시 끄면 꺼진 값이 저장된다", async () => {
+    const meeting = seedMeeting({ hostAuthority: "OWNER" });
+    await updateMeetingScheduleAction(
+      SCHEDULE_INITIAL,
+      scheduleForm({ meetingId: meeting.id, recordingConsent: true }),
+    );
+
+    await updateMeetingScheduleAction(
+      SCHEDULE_INITIAL,
+      scheduleForm({ meetingId: meeting.id, recordingConsent: false }),
+    );
+
+    expect(findMockMeeting(meeting.id)?.recordingConsent).toBe(false);
   });
 
   it("시작한 회의는 수정할 수 없다", async () => {

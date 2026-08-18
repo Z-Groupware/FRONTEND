@@ -564,6 +564,7 @@ export async function updateMeetingScheduleAction(
       projectTag: project.tag,
       start,
       end,
+      recordingConsent: draft.recordingConsent,
     });
     // ⚠️ 회의실 예약도 같이 고친다 — 안 그러면 회의실 주간 캘린더가 옛 슬롯을 계속 막아 둔다
     //    (`updateMockReservation` 주석 참고). 회의실 예약 없이 만든 회의는 없다(WORKFLOW §3-1)

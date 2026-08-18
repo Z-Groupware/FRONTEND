@@ -44,6 +44,8 @@ export function addMockMeeting(draft: MeetingDraft): Meeting {
     canceledAt: null,
     // 안 끝난 회의엔 분석이 없다(§types)
     aiSummaryStatus: null,
+    // 예약 화면엔 이 값을 받는 입력이 없다 — 항상 `false`로 만들어진다(§types `recordingConsent`)
+    recordingConsent: false,
   };
   store.meetings = [...store.meetings, meeting];
   return meeting;
@@ -75,6 +77,8 @@ export function addMockOnlineMeeting(draft: MeetingDraft): Meeting {
     endedAt: now.toISOString(),
     canceledAt: null,
     aiSummaryStatus: AI_SUMMARY_STATUS.PENDING,
+    // 비대면 회의 등록에도 이 값을 받는 입력이 없다 — `addMockMeeting`과 같은 이유.
+    recordingConsent: false,
   };
   store.meetings = [...store.meetings, meeting];
   return meeting;
@@ -149,7 +153,17 @@ export function updateMockMeetingAttendees(id: string, attendeeIds: number[]): M
 export function updateMockMeeting(
   id: string,
   patch: Partial<
-    Pick<Meeting, "title" | "roomId" | "roomName" | "projectId" | "projectTag" | "start" | "end">
+    Pick<
+      Meeting,
+      | "title"
+      | "roomId"
+      | "roomName"
+      | "projectId"
+      | "projectTag"
+      | "start"
+      | "end"
+      | "recordingConsent"
+    >
   >,
 ): Meeting | null {
   const found = findMockMeeting(id);
