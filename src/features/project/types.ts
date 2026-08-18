@@ -87,6 +87,9 @@ export type AttachmentIssueResult =
 /** 확정 액션 결과 — 발급 쪽과 같은 규약, 돌려줄 값만 없다. */
 export type AttachmentConfirmResult = { ok: true } | { ok: false; message: string };
 
+/** 삭제 액션 결과 — 확정 쪽과 같은 규약. */
+export type AttachmentDeleteResult = { ok: true } | { ok: false; message: string };
+
 /** 프로젝트 첨부파일 한 건 — 다운로드는 클릭 시점에 별도로 URL을 발급받아 연다(5분 만료). */
 export interface ProjectAttachment {
   id: number;

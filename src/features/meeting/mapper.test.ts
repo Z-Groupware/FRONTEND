@@ -411,8 +411,26 @@ describe("toMeetingDetailView", () => {
     expect(detail.projectId).toBe(3);
     expect(detail.roomName).toBe("대회의실");
     expect(detail.attendees).toEqual([
-      { id: 1, name: "대표 계정" },
-      { id: 2, name: "김서준" },
+      { id: 1, name: "대표 계정", isResigned: false },
+      { id: 2, name: "김서준", isResigned: false },
+    ]);
+  });
+
+  it("퇴사한 참석자는 isResigned를 그대로 옮기고, 없으면(옛 응답) 재직으로 본다(FE 감사 #13)", () => {
+    const detail = toMeetingDetailView(
+      {
+        ...BASE,
+        attendees: [
+          { memberId: 1, name: "대표 계정", teamName: null, jobPosition: "대표", isResigned: true },
+          { memberId: 2, name: "김서준", teamName: "개발팀", jobPosition: "팀장" },
+        ],
+      },
+      { isHost: true },
+    );
+
+    expect(detail.attendees).toEqual([
+      { id: 1, name: "대표 계정", isResigned: true },
+      { id: 2, name: "김서준", isResigned: false },
     ]);
   });
 

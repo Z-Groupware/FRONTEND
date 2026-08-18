@@ -93,7 +93,8 @@ interface BeTeamMember {
  * ⚠️ `GET /api/team/members`는 **호출자 토큰의 팀만** 돌려주는 LEADER 전용 엔드포인트다
  *    (`team-handover/server.ts`와 동일 근거) — 그래서 이 화면에서 신청자가 실제로 LEADER일
  *    때만 부른다, MEMBER면 호출 자체를 안 한다(403을 미리 피한다).
- * ⚠️ 퇴사자는 거르고 그 외 상태는 남긴다(`isVisibleMemberStatus`) — 소프트 딜리트만 빠진다.
+ * ⚠️ 퇴사자는 여기 안 온다(2026-08-15 정정) — BE가 오프보딩 최종 승인 즉시 명부 조회에서
+ *    뺀다. `isVisibleMemberStatus`는 모르는 상태값이 오면 거르는 안전망일 뿐이다.
  */
 async function fetchTeammatesForSelfReassign(
   accessToken: string,

@@ -8,8 +8,10 @@ import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/common/confirm-dialog";
 import { LeaveGuard } from "@/components/common/leave-guard";
 import { ProfileAvatar } from "@/components/common/profile-avatar";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CAPTURE_FAILURE_MESSAGE } from "@/constants/meeting";
+import { MEMBER_STATUS_BADGE_CLASS, MEMBER_STATUS_LABEL } from "@/constants/member";
 import { useNotificationCenter } from "@/features/notification/notification-provider";
 import { pickPaletteColor } from "@/lib/palette";
 import { cn } from "@/lib/utils";
@@ -629,6 +631,15 @@ function AttendeeCard({ attendees }: { attendees: CaptureAttendee[] }) {
                 </span>
               )}
             </span>
+            {/* 회의 당시 참석자 스냅샷 — 지금 명부에서 빠졌어도 "퇴사" 표시만 붙인다(FE 감사 #13) */}
+            {attendee.isResigned && (
+              <Badge
+                variant="outline"
+                className={cn("shrink-0", MEMBER_STATUS_BADGE_CLASS.RESIGNED)}
+              >
+                {MEMBER_STATUS_LABEL.RESIGNED}
+              </Badge>
+            )}
             {attendee.isHost && (
               <span className="border-border text-muted-foreground shrink-0 rounded border px-1.5 py-0.5 text-[11px] leading-4">
                 진행

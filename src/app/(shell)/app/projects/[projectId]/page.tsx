@@ -2,12 +2,11 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { AttachmentList } from "@/components/common/attachment-list";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type { TimelineActionInput } from "@/features/member/action-timeline";
 import { ActionTimeline, ActionTimelineLegend } from "@/features/member/components/action-timeline";
-import { getProjectAttachmentDownloadUrlAction } from "@/features/project/actions";
+import { ProjectAttachmentManager } from "@/features/project/components/project-attachment-manager";
 import {
   parseProjectDetailTab,
   PROJECT_DETAIL_TABS,
@@ -15,8 +14,10 @@ import {
   splitDepartments,
 } from "@/features/project/lib";
 import { getProjectDetail, getProjectTeamActions } from "@/features/project/server";
+import { getViewer } from "@/features/shell/viewer";
 import { formatMonthDayWeekday } from "@/lib/date";
 import { paletteColorByName } from "@/lib/palette";
+import { canEditProjectPlan } from "@/lib/permission";
 import { cn } from "@/lib/utils";
 
 interface ProjectDetailPageProps {
@@ -32,7 +33,7 @@ export async function generateMetadata({ params }: ProjectDetailPageProps): Prom
 
 export default async function ProjectDetailPage({ params, searchParams }: ProjectDetailPageProps) {
   const { projectId } = await params;
-  const project = await getProjectDetail(projectId);
+  const [project, viewer] = await Promise.all([getProjectDetail(projectId), getViewer()]);
   if (!project) notFound();
 
   const activeTab = parseProjectDetailTab((await searchParams).tab);
@@ -165,9 +166,10 @@ export default async function ProjectDetailPage({ params, searchParams }: Projec
             <p className="text-muted-foreground border-border border-t pt-5 text-[13px] leading-[22px] whitespace-pre-wrap">
               {project.description}
             </p>
-            <AttachmentList
+            <ProjectAttachmentManager
+              projectId={project.id}
               attachments={project.attachments}
-              fetchDownloadUrl={getProjectAttachmentDownloadUrlAction.bind(null, project.id)}
+              canEdit={canEditProjectPlan(viewer)}
             />
           </section>
         ) : (

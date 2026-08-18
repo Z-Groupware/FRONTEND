@@ -513,6 +513,15 @@ export interface BeMeetingAttendee {
   memberId: number;
   name: string;
   /**
+   * 지금은 퇴사한 사람인가(BE MEET-04, 2026-08-17 대조) — **과거 기록의 참석자 표시용**이다.
+   * 명부 조회에선 퇴사자가 완전히 빠지지만(CLAUDE.md §도메인 상수), 이 회의를 실제로 들었던
+   * 사람이라는 사실은 기록으로 남아야 해서 스냅샷과 함께 "퇴사" 표시만 붙인다.
+   * ⚠️ 선택(`?`)이다 — 이 필드가 배포되기 전 응답에는 없다(§461 확장 필드와 같은 패턴,
+   *    `meeting/mapper.ts:306` 참고). 없으면 재직으로 본다(안전한 기본값 — 없는 걸 퇴사로
+   *    단정하지 않는다).
+   */
+  isResigned?: boolean;
+  /**
    * 이 **참석자**가 어느 팀 소속인가 — 팀 없는 대표는 `null`(PR #472, 2026-08-13 대조).
    * ⚠️ 선택(`?`)이다 — 회의 자체의 `teamId`(위 `BeMeetingDetail.teamId`)와 같은 이유로,
    *    BE #472 배포 전 응답에는 이 필드가 없다.
@@ -659,6 +668,7 @@ function toCaptureAttendee(attendee: BeMeetingAttendee, hostMemberId: number): C
   return {
     id: attendee.memberId,
     name: attendee.name,
+    isResigned: attendee.isResigned ?? false,
     subtitle: [attendee.teamName, attendee.jobPosition].filter(Boolean).join(" · "),
     isHost: attendee.memberId === hostMemberId,
   };
@@ -755,7 +765,11 @@ export function toMeetingDetailView(
     schedule:
       be.startAt && be.endAt ? formatMeetingSchedule(new Date(be.startAt), new Date(be.endAt)) : "",
     roomName: be.meetingRoom?.name ?? "",
-    attendees: be.attendees.map((attendee) => ({ id: attendee.memberId, name: attendee.name })),
+    attendees: be.attendees.map((attendee) => ({
+      id: attendee.memberId,
+      name: attendee.name,
+      isResigned: attendee.isResigned ?? false,
+    })),
     outputKindLabel: outputKindLabelOf(be.teamId),
     outputs: null,
     script: null,

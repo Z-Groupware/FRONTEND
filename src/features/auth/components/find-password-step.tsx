@@ -1,13 +1,14 @@
 "use client";
 
 import { AlertCircle, ArrowLeft, Building2, Mail, MailCheck } from "lucide-react";
-import { useActionState } from "react";
+import { useActionState, useEffect, useRef } from "react";
 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 import { findPasswordAction, type FindPasswordState } from "../actions";
 import type { Company } from "../types";
+import { markPasswordResetAttempt, usePasswordResetCooldown } from "../use-password-reset-cooldown";
 import { AuthCard } from "./auth-card";
 import { SubmitButton } from "./submit-button";
 
@@ -30,6 +31,22 @@ const INITIAL: FindPasswordState = { errors: {}, done: false, attempt: 0 };
  */
 export function FindPasswordStep({ company, onBack }: FindPasswordStepProps) {
   const [state, formAction] = useActionState(findPasswordAction, INITIAL);
+  const cooldownSeconds = usePasswordResetCooldown();
+
+  /*
+    ⚠️ **검증 실패(형식 오류)는 쿨다운을 안 쓴다.** `state.attempt`는 클라이언트 검증만
+       걸려도 늘어나는데, 그건 서버까지 안 갔다 — 이메일 오타를 고치는 사람에게까지
+       60초를 물리면 안 된다. `errors`가 비어 있어야(=서버 액션이 실제로 돌았어야) 마킹한다.
+    ⚠️ `attempt > 0`으로 처음 렌더(마운트)를 건너뛴다 — 안 그러면 화면을 열기만 해도
+       쿨다운이 시작된다.
+  */
+  const lastMarkedAttempt = useRef(0);
+  useEffect(() => {
+    if (state.attempt === 0 || state.attempt === lastMarkedAttempt.current) return;
+    if (Object.keys(state.errors).length > 0) return;
+    markPasswordResetAttempt();
+    lastMarkedAttempt.current = state.attempt;
+  }, [state.attempt, state.errors]);
 
   if (state.done) {
     return (
@@ -104,7 +121,9 @@ export function FindPasswordStep({ company, onBack }: FindPasswordStepProps) {
           </p>
         </div>
 
-        <SubmitButton>새 비밀번호 받기</SubmitButton>
+        <SubmitButton disabled={cooldownSeconds > 0}>
+          {cooldownSeconds > 0 ? `${cooldownSeconds}초 후 다시 시도` : "새 비밀번호 받기"}
+        </SubmitButton>
 
         {state.error && (
           <p

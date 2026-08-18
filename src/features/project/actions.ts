@@ -9,7 +9,7 @@ import { getViewer } from "@/features/shell/viewer";
 import { ApiError, serverApi, toUserMessage } from "@/lib/api";
 import { ep } from "@/lib/endpoints";
 import type { PaginatedResult } from "@/lib/paginate";
-import { canCreateProject } from "@/lib/permission";
+import { canCreateProject, canEditProjectPlan } from "@/lib/permission";
 import { isMock } from "@/mocks/config";
 
 import type { BeIssuedUploadUrl, BeProjectSummary, ConfirmAttachmentRequestBody } from "./mapper";
@@ -18,6 +18,7 @@ import { addMockProject } from "./mock/projects";
 import { getProjectsPage, type ProjectListQuery, resolveTeamIds } from "./server";
 import type {
   AttachmentConfirmResult,
+  AttachmentDeleteResult,
   AttachmentIssueResult,
   ProjectDraft,
   ProjectFormErrors,
@@ -192,6 +193,38 @@ export async function confirmProjectAttachmentAction(
   }
 
   // 확정돼야 상세(기획 탭)의 첨부 목록에 나타난다 — 그 화면의 캐시를 지운다.
+  revalidatePath(`/app/projects/${projectId}`);
+  return { ok: true };
+}
+
+/**
+ * 프로젝트 첨부파일 삭제(교체의 첫 단계) — 화면은 [삭제] 확인 다이얼로그를 거쳐 부른다.
+ * ⚠️ **OWNER 전용이다**(`canEditProjectPlan`) — BE `ProjectAttachmentController.delete`도
+ *    `hasRole('OWNER')`뿐이라 업로드·확정(OWNER‖admin)보다 좁다. 화면 숨김은 UX일 뿐이라
+ *    여기서 다시 검사한다(§권한).
+ * ⚠️ **되돌릴 수 없다** — 화면이 파괴적 작업 확인 다이얼로그(`ConfirmDialog`)를 반드시 거친다.
+ */
+export async function deleteProjectAttachmentAction(
+  projectId: number,
+  attachmentId: number,
+): Promise<AttachmentDeleteResult> {
+  const viewer = await getViewer();
+  if (!canEditProjectPlan(viewer)) return { ok: false, message: "첨부파일을 지울 권한이 없습니다" };
+
+  // 목 단계 — 지울 실제 파일이 없다. 성공만 흉내낸다(업로드·확정과 같은 패턴).
+  if (isMock) return { ok: true };
+
+  try {
+    const accessToken = await requireAccessToken();
+    // `ApiResponse<Void>` — 다른 봉투 있는 삭제 액션과 같은 규약(구독 해지 등).
+    await serverApi<void>(ep.projectAttachment(projectId, attachmentId), {
+      method: "DELETE",
+      accessToken,
+    });
+  } catch (error) {
+    return { ok: false, message: toUserMessage(error) };
+  }
+
   revalidatePath(`/app/projects/${projectId}`);
   return { ok: true };
 }

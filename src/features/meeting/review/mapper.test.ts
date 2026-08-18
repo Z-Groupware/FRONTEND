@@ -166,11 +166,9 @@ describe("toMeetingReviewInfo", () => {
       ⚠️ 호스트(대표 계정, teamId null)는 제외 · teamId 기준 dedupe(같은 팀 팀장이 둘 잡히면
          하나만) · teamName이 null인 항목은 애초에 옵션이 될 수 없다(호스트 케이스와 같은 이유).
     */
-    /* ⚠️ `leaderMemberId`는 첫 등장한 팀장 참석자의 memberId다(#622) — 오너 회의 참석자
-       정책상 팀당 한 명만 잡히지만, 목 데이터의 중복 dedupe는 먼저 만난 사람이 이긴다. */
     expect(info.teamOptions).toEqual([
-      { teamId: 3, teamName: "개발팀", leaderMemberId: 2 },
-      { teamId: 4, teamName: "디자인팀", leaderMemberId: 9 },
+      { teamId: 3, teamName: "개발팀" },
+      { teamId: 4, teamName: "디자인팀" },
     ]);
   });
 

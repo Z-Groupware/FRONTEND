@@ -31,10 +31,8 @@ const ASSIGNEE_OPTIONS: AssigneeOption[] = [
  * ⚠️ 실 연동에서는 참석자에서 만들지만(타입 주석 참고), 목은 데모 시나리오 고정이라 직접 둔다.
  */
 const TEAM_OPTIONS: TeamOption[] = [
-  /* ⚠️ `leaderMemberId`는 오너 회의 참석자 정책상 그 팀의 팀장 memberId다(#622, 타입 주석).
-     목에서는 위 `ASSIGNEES`의 팀장에 해당하는 id를 그대로 짝지어 둔다. */
-  { teamId: 10, teamName: "개발팀", leaderMemberId: 2 },
-  { teamId: 11, teamName: "디자인팀", leaderMemberId: 1 },
+  { teamId: 10, teamName: "개발팀" },
+  { teamId: 11, teamName: "디자인팀" },
 ];
 
 function seedReview(meetingId: string): MeetingReviewInfo {

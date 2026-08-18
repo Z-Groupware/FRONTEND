@@ -1,4 +1,4 @@
-import { isPastDue } from "@/constants/action";
+import { ACTION_STATUS, isDelayed } from "@/constants/action";
 
 import { BOARD_COLUMN, type BoardCard, type BoardColumnId } from "./types";
 
@@ -38,11 +38,16 @@ export function getBoardColumn(
  *    옮긴 칸(`overrides[card.id]`)까지 함께 봐야 하고, 그건 저장된 값(`isDone`)만 보는
  *    `getBoardColumn`이 모른다. 여기서 칸을 판정하면 카드를 완료로 끌어다 놓아도 서버
  *    저장 전까지 지연 배지가 남는다.
- * ⚠️ 자정 계산은 `isPastDue` 하나뿐이다 — 여기 다시 쓰지 않는다.
+ * ⚠️ **판정 자체는 `isDelayed` 하나뿐이다**(2026-08-18 정정 — 전엔 `isPastDue`를 여기서
+ *    한 번 더 조합해 같은 규칙이 두 벌이었다). 보드 카드는 `ActionStatus`가 아니라
+ *    `isDone`만 들고 있어 입력 모양만 맞춰 준다 — `isDone`이면 완료로, 아니면 진행중으로
+ *    본다(칸 판정은 위에서 이미 걸러졌으므로 할일 칸일 가능성은 여기 안 온다).
  */
 export function isCardDelayed(card: Pick<BoardCard, "isDone" | "dueDate">, today: Date): boolean {
-  if (card.isDone) return false;
-  return isPastDue(card.dueDate, today);
+  return isDelayed(
+    { status: card.isDone ? ACTION_STATUS.DONE : ACTION_STATUS.IN_PROGRESS, dueDate: card.dueDate },
+    today,
+  );
 }
 
 /**
