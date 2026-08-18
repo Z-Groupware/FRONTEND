@@ -207,6 +207,17 @@ function MeetingSummaryPanel({
   const isHost = summary.isHost;
   const canEdit = canEditMeeting({ isHost, pendingReason: summary.pendingReason });
   const canCancel = canCancelMeeting({ isHost, pendingReason: summary.pendingReason });
+  /*
+    ⚠️ **`agenda.main`은 `null`일 수 있다**(안건이 소주제로만 남은 회의, `view-types.ts`
+       참고) — `ReadOnlyField`의 `value`는 `string`만 받으므로, 대주제·소주제 중 있는
+       것만 모아 하나의 문자열로 만든다. 안건 자체가 아예 없으면(`summary.agenda`가
+       `null`) 이 칸을 그리지 않는다.
+  */
+  const agendaText = summary.agenda
+    ? [summary.agenda.main, summary.agenda.subs.length > 0 ? summary.agenda.subs.join(", ") : null]
+        .filter((part): part is string => Boolean(part))
+        .join(" · ") || null
+    : null;
 
   if (editing) {
     return (
@@ -275,16 +286,7 @@ function MeetingSummaryPanel({
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-[1fr_260px]">
           <div className="flex flex-col gap-4">
             <ReadOnlyField label="회의 제목" value={summary.title} />
-            {summary.agenda && (
-              <ReadOnlyField
-                label="안건"
-                value={
-                  summary.agenda.subs.length > 0
-                    ? `${summary.agenda.main} · ${summary.agenda.subs.join(", ")}`
-                    : summary.agenda.main
-                }
-              />
-            )}
+            {agendaText && <ReadOnlyField label="안건" value={agendaText} />}
           </div>
 
           <div className="flex flex-col gap-2">
