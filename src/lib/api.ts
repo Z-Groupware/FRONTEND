@@ -31,6 +31,19 @@ interface ApiEnvelope<T> {
  * BE가 돌려준 실패.
  * ⚠️ `message`를 그대로 화면에 쓴다. `code`는 흐름을 가를 때만 본다(예: `ALREADY_ONBOARDED`).
  */
+/**
+ * BE 실패 봉투의 `details` 한 원소 — 필드 검증 에러 표준 포맷.
+ *
+ * ⚠️ **회의 검토 확정(MEETING_409_5)이 이 배열을 재사용해 사유별 건수를 실어 보낸다**
+ *    (BE 담당자 협의, 2026-08-18) — `{field: "STILL_PENDING", reason: "3"}`처럼 사유 코드에
+ *    건수를 담아 준다. 원래 필드 검증(입력 스키마 위반) 자리에 쓰던 포맷이지만, "필드 이름
+ *    자리에 사유 코드를 담는다"는 재사용이라 화면이 확정 실패 문구 조립에도 그대로 활용한다.
+ */
+export interface ApiErrorDetail {
+  field: string;
+  reason: string;
+}
+
 export class ApiError extends Error {
   constructor(
     readonly status: number,
@@ -44,6 +57,12 @@ export class ApiError extends Error {
      *    Server Action은 브라우저 네트워크 탭에도 안 잡혀서 더욱 그렇다(2026-08-12).
      */
     readonly traceId?: string,
+    /**
+     * BE가 실어 준 세부 정보 — 필드 검증 에러 포맷(`[{field, reason}]`). 원래는 입력 스키마
+     * 위반 자리에 쓰지만, 회의 검토 확정(MEETING_409_5)이 사유별 건수 요약에도 재사용한다
+     * (BE 담당자 협의, 2026-08-18). 있을 때만 담긴다.
+     */
+    readonly details?: ApiErrorDetail[],
   ) {
     super(message);
     this.name = "ApiError";
@@ -165,7 +184,12 @@ function toApiError(status: number, raw: unknown): ApiError {
     return new ApiError(status, "요청을 처리하지 못했습니다. 잠시 후 다시 시도해 주세요.");
   }
 
-  const envelope = raw as { message?: unknown; errorCode?: unknown; traceId?: unknown };
+  const envelope = raw as {
+    message?: unknown;
+    errorCode?: unknown;
+    traceId?: unknown;
+    details?: unknown;
+  };
   const message =
     typeof envelope.message === "string" && envelope.message.trim().length > 0
       ? envelope.message
@@ -173,8 +197,25 @@ function toApiError(status: number, raw: unknown): ApiError {
 
   const code = typeof envelope.errorCode === "string" ? envelope.errorCode : undefined;
   const traceId = typeof envelope.traceId === "string" ? envelope.traceId : undefined;
+  const details = toApiErrorDetails(envelope.details);
 
-  return new ApiError(status, message, code, traceId);
+  return new ApiError(status, message, code, traceId, details);
+}
+
+/**
+ * `details` 배열 정규화 — BE가 안 보내는 경우가 정상이라 없으면 `undefined`로 둔다(빈 배열
+ * 아님). "필드 이름 자리"라도 검토 확정에서는 사유 코드가 들어와서, 값 검증은 필드명 규칙이
+ * 아니라 **모양(문자열 두 개)**만 본다.
+ */
+function toApiErrorDetails(value: unknown): ApiErrorDetail[] | undefined {
+  if (!Array.isArray(value)) return undefined;
+  const items = value.flatMap((entry): ApiErrorDetail[] => {
+    if (typeof entry !== "object" || entry === null) return [];
+    const { field, reason } = entry as { field?: unknown; reason?: unknown };
+    if (typeof field !== "string" || typeof reason !== "string") return [];
+    return [{ field, reason }];
+  });
+  return items.length > 0 ? items : undefined;
 }
 
 /**
