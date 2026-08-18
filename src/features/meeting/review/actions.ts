@@ -153,15 +153,22 @@ export async function confirmActionDistributionAction(
     }
 
     /* ② 판정 — 고친 칸만 MODIFY, 그대로면 CONFIRM(값 실으면 422라 changes로 가른다) */
+    /*
+      ⚠️ **시작일이 비면 내일로 채운다**(2026-08-18 FE 방어). BE는 `plannedStartDate`가 null이어도
+         저장하지만, 저장값이 null로 남으면 조회·통계가 계속 폴백에 의존한다 — 확정 시점에 값을
+         정해서 남긴다(§할일 칸으로 떨어지게, `action/mapper.ts` 폴백과 방향 동일).
+    */
+    const plannedStartFallback = tomorrowIsoDate();
     for (const draft of payload.reviewed) {
       const changes = draft.changes ?? {};
+      const plannedStartDate = draft.plannedStartDate ?? plannedStartFallback;
       const value = {
         ...(changes.assigneeId !== undefined ? { assigneeMemberId: changes.assigneeId } : {}),
         ...(changes.teamId !== undefined ? { teamId: changes.teamId } : {}),
         ...(changes.dueDate !== undefined ? { dueDate: changes.dueDate } : {}),
         ...(changes.title !== undefined ? { title: changes.title } : {}),
         ...(changes.description !== undefined ? { detail: changes.description } : {}),
-        ...(draft.plannedStartDate ? { plannedStartDate: draft.plannedStartDate } : {}),
+        plannedStartDate,
       };
       const isModify = Object.keys(changes).length > 0;
 
@@ -170,12 +177,7 @@ export async function confirmActionDistributionAction(
         accessToken,
         json: isModify
           ? { decision: "MODIFY", value }
-          : {
-              decision: "CONFIRM",
-              ...(draft.plannedStartDate
-                ? { value: { plannedStartDate: draft.plannedStartDate } }
-                : {}),
-            },
+          : { decision: "CONFIRM", value: { plannedStartDate } },
       });
     }
 
@@ -201,13 +203,13 @@ export async function confirmActionDistributionAction(
       /* ⚠️ **만들자마자 적는다.** 뒤 호출이 실패해도 "이건 이미 만들어졌다"가 남아야 한다 */
       createdManuals.push({ localId: manual.localId, actionId: added.actionId });
 
-      if (manual.startDate) {
-        await serverApi(ep.meetingReviewDecision(id, added.actionId), {
-          method: "PATCH",
-          accessToken,
-          json: { decision: "MODIFY", value: { plannedStartDate: manual.startDate } },
-        });
-      }
+      /* 시작일이 비면 내일로 채운다 — ② 판정 쪽 폴백과 같은 이유(저장값이 null로 안 남게) */
+      const plannedStartDate = manual.startDate ?? plannedStartFallback;
+      await serverApi(ep.meetingReviewDecision(id, added.actionId), {
+        method: "PATCH",
+        accessToken,
+        json: { decision: "MODIFY", value: { plannedStartDate } },
+      });
     }
 
     /* ④ 확정 — 여기서부터 액션이 각자의 보드로 나간다. Host 아니면 BE가 403으로 막는다. */
@@ -260,6 +262,13 @@ const CONFIRM_FAILURE_LABEL: Record<string, string> = {
   STILL_PENDING: "미검토 액션",
   UNRESOLVED_GAP: "미확인 발화 구간",
 };
+
+/** YYYY-MM-DD의 "내일" — `action/mapper.ts`의 조회 폴백과 방향이 같다(§할일 칸으로 떨어지게) */
+function tomorrowIsoDate(): string {
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  return tomorrow.toISOString().slice(0, 10);
+}
 
 function composeConfirmFailureMessage(error: unknown): string {
   if (!(error instanceof ApiError) || !error.details || error.details.length === 0) {
