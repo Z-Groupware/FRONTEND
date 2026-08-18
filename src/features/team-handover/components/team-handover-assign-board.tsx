@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/common/confirm-dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { HANDOVER_TYPE } from "@/constants/domain";
 import { ActionTimeline } from "@/features/member/components/action-timeline";
 import { cn } from "@/lib/utils";
@@ -255,7 +256,7 @@ export function TeamHandoverAssignBoard({ handover, todayIso }: TeamHandoverAssi
             반려 사유
           </Label>
 
-          <textarea
+          <Textarea
             ref={reasonRef}
             id="team-handover-reject-reason"
             value={reason}
@@ -269,7 +270,7 @@ export function TeamHandoverAssignBoard({ handover, todayIso }: TeamHandoverAssi
             aria-describedby={reasonError ? "team-handover-reject-reason-error" : undefined}
             placeholder="예) 인계 대상 액션이 빠졌습니다. 다시 올려 주세요."
             className={cn(
-              "placeholder:text-muted-foreground/70 focus-visible:ring-ring/50 bg-card w-full resize-none rounded-lg border px-3 py-2.5 text-[13px] leading-5 transition-colors outline-none focus-visible:ring-3",
+              "bg-card px-3 py-2.5",
               reasonError
                 ? "border-destructive focus-visible:border-destructive"
                 : "border-input focus-visible:border-ring",
