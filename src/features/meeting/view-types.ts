@@ -188,6 +188,17 @@ export interface MeetingDetail {
   isStalled: boolean;
   /** 보는 사람이 이 회의 개설자인가 — 재분석·검토 이동은 Host에게만 보여준다(§권한 ②축) */
   isHost: boolean;
+  /** 녹음 동의(MEET-05 수정 대상) — 회의실 예약 화면엔 이 값을 받는 입력이 없어 항상 `false`로 만들어진다. */
+  recordingConsent: boolean;
+  /**
+   * 회의 수정 다이얼로그가 슬롯 피커·회의실 피커 초기값으로 쓰는 원본 값 — `schedule`처럼
+   * 이미 포맷된 문자열이 아니라 `DatePickerField`·`TimePickerField`·`RoomPickerList`가
+   * 그대로 받는 형식이다(§rooms `SlotPicker`와 같은 모양). 비대면 회의(`isOnline`)는 잡을
+   * 시간·회의실 자체가 없어 `null`이다 — 다만 수정 다이얼로그는 `isHost && SCHEDULED`일
+   * 때만 뜨고 비대면 회의는 만들어지는 순간 `DONE`이라 실제로는 이 값이 필요한 자리에
+   * `null`이 오는 일이 없다(방어값일 뿐이다).
+   */
+  editableSlot: { date: string; startTime: string; meetingRoomId: string } | null;
 }
 
 /**

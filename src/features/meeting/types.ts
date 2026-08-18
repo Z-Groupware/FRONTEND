@@ -149,3 +149,24 @@ export interface OnlineMeetingDraft {
 }
 
 export type OnlineMeetingFormErrors = Partial<Record<keyof OnlineMeetingDraft, string>>;
+
+/**
+ * 회의 수정(MEET-05) 폼 입력(#436) — `RoomReservationDraft`와 닮았지만 **참석자·안건·상위
+ * 팀 액션이 없다.** BE가 수정으로 받는 6필드(`title`·`projectId`·`meetingRoomId`·`startAt`·
+ * `endAt`·`recordingConsent`) 중 시간·회의실은 예약과 같은 슬롯 피커로 고치므로 `date`·
+ * `startTime`·`roomId` 모양을 그대로 따른다(`rooms/types.ts`의 `RoomReservationDraft`와 같은 이름).
+ */
+export interface MeetingEditDraft {
+  title: string;
+  roomId: string;
+  /** "YYYY-MM-DD" */
+  date: string;
+  /** "HH:mm" — 30분 단위 슬롯의 시작 시각 */
+  startTime: string;
+  projectId: string;
+  recordingConsent: boolean;
+}
+
+export type MeetingEditFormErrors = Partial<
+  Record<Exclude<keyof MeetingEditDraft, "recordingConsent">, string>
+>;

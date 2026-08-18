@@ -37,10 +37,20 @@ const BASE: MeetingDetail = {
   isStalled: false,
   isHost: true,
   isOnline: false,
+  recordingConsent: false,
+  editableSlot: null,
 };
 
 function renderDetail(patch: Partial<MeetingDetail> = {}) {
-  render(<MeetingDetailView detail={{ ...BASE, ...patch }} members={MEMBERS} viewer={VIEWER} />);
+  render(
+    <MeetingDetailView
+      detail={{ ...BASE, ...patch }}
+      members={MEMBERS}
+      viewer={VIEWER}
+      rooms={[]}
+      projects={[]}
+    />,
+  );
 }
 
 describe("MeetingDetailView — 비대면 회의(isOnline)", () => {
