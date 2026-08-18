@@ -88,41 +88,61 @@ describe("getReservableMembers — 실서버", () => {
  * 예약 폼의 "프로젝트" select — 2026-08-14 프로덕션에서 무조건 throw하던 것을 고쳤다.
  * `getProjectsPage`(project 도메인, 이미 실연동)를 그대로 재사용하는지 확인한다.
  */
+function projectFixture(overrides: { id: number; tag: string; name: string; status: string }) {
+  return {
+    ...overrides,
+    color: "blue",
+    description: "",
+    startDate: null,
+    dueDate: "2026-12-31",
+    teamCount: 1,
+    actionCount: 0,
+    completedActionCount: 0,
+    meetingCount: 0,
+    progressPct: 0,
+    teamNames: [],
+  };
+}
+
 describe("getReservableProjects — 실서버", () => {
-  it("getProjectsPage를 재사용해 select 모양으로 줄인다 — 새 경로를 만들지 않는다", async () => {
-    serverApiMock.mockResolvedValue({
-      content: [
-        {
-          id: 12,
-          tag: "product-v2",
-          color: "blue",
-          name: "제품 v2.0",
-          description: "",
-          status: "IN_PROGRESS",
-          startDate: null,
-          dueDate: "2026-12-31",
-          teamCount: 1,
-          actionCount: 0,
-          completedActionCount: 0,
-          meetingCount: 0,
-          progressPct: 0,
-          teamNames: [],
-        },
-      ],
-      page: 0,
-      size: 200,
-      totalElements: 1,
-      totalPages: 1,
-      hasNext: false,
+  it("getProjectsPage를 재사용해 select 모양으로 줄인다 — TODO·IN_PROGRESS 둘 다 불러 합친다", async () => {
+    serverApiMock.mockImplementation(async (path: string) => {
+      const isTodo = path.includes("status=TODO");
+      return {
+        content: [
+          isTodo
+            ? projectFixture({ id: 13, tag: "product-v3", name: "제품 v3.0", status: "TODO" })
+            : projectFixture({
+                id: 12,
+                tag: "product-v2",
+                name: "제품 v2.0",
+                status: "IN_PROGRESS",
+              }),
+        ],
+        page: 0,
+        size: 200,
+        totalElements: 1,
+        totalPages: 1,
+        hasNext: false,
+      };
     });
 
     const projects = await getReservableProjects();
 
-    expect(projects).toEqual([{ id: "12", name: "제품 v2.0", tag: "product-v2" }]);
+    // ⚠️ 순서까지 확인한다 — IN_PROGRESS를 먼저, TODO를 뒤에 붙인다(진행중 항목이 우선).
+    expect(projects).toEqual([
+      { id: "12", name: "제품 v2.0", tag: "product-v2" },
+      { id: "13", name: "제품 v3.0", tag: "product-v3" },
+    ]);
     expect(serverApiMock).toHaveBeenCalledWith(
       expect.stringContaining("status=IN_PROGRESS"),
       expect.objectContaining({ accessToken: "token" }),
     );
+    expect(serverApiMock).toHaveBeenCalledWith(
+      expect.stringContaining("status=TODO"),
+      expect.objectContaining({ accessToken: "token" }),
+    );
+    expect(serverApiMock).toHaveBeenCalledTimes(2);
     // ⚠️ page·size도 확인한다 — 기본 페이지 크기(20)로 조용히 바뀌어도 status만 보면 통과했다(코드래빗 지적)
     const requestUrl = serverApiMock.mock.calls[0][0] as string;
     expect(requestUrl).toContain("page=0");
@@ -134,7 +154,7 @@ describe("getReservableProjects — 실서버", () => {
        조용히 자르지 않는다. `totalPages`가 1보다 크면 뒤 페이지 프로젝트는 select에서
        영원히 안 보인다(§정직성).
   */
-  it("진행중 프로젝트가 200건 상한을 넘으면(totalPages>1) 잘린 목록을 정상으로 돌려주지 않는다", async () => {
+  it("어느 한 상태의 프로젝트가 200건 상한을 넘으면(totalPages>1) 잘린 목록을 정상으로 돌려주지 않는다", async () => {
     serverApiMock.mockResolvedValue({
       content: [],
       page: 0,
@@ -161,48 +181,62 @@ describe("getReservableTeamActions — 실서버", () => {
     expect(serverApiMock).not.toHaveBeenCalled();
   });
 
-  it("Leader·Member는 GET /api/team/actions를 IN_PROGRESS로만 불러 select 모양으로 줄인다", async () => {
-    serverApiMock.mockResolvedValue({
-      content: [
-        {
-          id: 7,
-          actionType: "TEAM",
-          title: "3분기 마케팅 캠페인 기획",
-          description: "",
-          status: "IN_PROGRESS",
-          startDate: null,
-          plannedStartDate: null,
-          dueDate: "2026-09-30",
-          needsReview: false,
-          isDelayed: false,
-          assigneeName: null,
-          projectId: 3,
-          projectTag: "marketing-q3",
-          projectName: "마케팅 캠페인 Q3",
-          teamName: "개발팀",
-          sourceMeetingTitle: null,
-          parentActionId: null,
-          parentActionTitle: null,
-          childDoneCount: 2,
-          childTotalCount: 5,
-        },
-      ],
-      page: 0,
-      size: 200,
-      totalElements: 1,
-      totalPages: 1,
-      hasNext: false,
+  it("Leader·Member는 GET /api/team/actions를 TODO·IN_PROGRESS 둘 다 불러 합친다", async () => {
+    function actionFixture(overrides: { id: number; title: string; status: string }) {
+      return {
+        ...overrides,
+        actionType: "TEAM",
+        description: "",
+        startDate: null,
+        plannedStartDate: null,
+        dueDate: "2026-09-30",
+        needsReview: false,
+        isDelayed: false,
+        assigneeName: null,
+        projectId: 3,
+        projectTag: "marketing-q3",
+        projectName: "마케팅 캠페인 Q3",
+        teamName: "개발팀",
+        sourceMeetingTitle: null,
+        parentActionId: null,
+        parentActionTitle: null,
+        childDoneCount: 2,
+        childTotalCount: 5,
+      };
+    }
+
+    serverApiMock.mockImplementation(async (path: string) => {
+      const isTodo = path.includes("status=TODO");
+      return {
+        content: [
+          isTodo
+            ? actionFixture({ id: 8, title: "4분기 캠페인 초안", status: "TODO" })
+            : actionFixture({ id: 7, title: "3분기 마케팅 캠페인 기획", status: "IN_PROGRESS" }),
+        ],
+        page: 0,
+        size: 200,
+        totalElements: 1,
+        totalPages: 1,
+        hasNext: false,
+      };
     });
 
     const teamActions = await getReservableTeamActions(LEADER);
 
+    // ⚠️ 순서까지 확인한다 — IN_PROGRESS를 먼저, TODO를 뒤에 붙인다(진행중 항목이 우선).
     expect(teamActions).toEqual([
       { id: 7, name: "3분기 마케팅 캠페인 기획", projectTag: "marketing-q3" },
+      { id: 8, name: "4분기 캠페인 초안", projectTag: "marketing-q3" },
     ]);
     expect(serverApiMock).toHaveBeenCalledWith(
       ep.teamActions({ status: "IN_PROGRESS", page: 0, size: 200 }),
       expect.objectContaining({ accessToken: "token" }),
     );
+    expect(serverApiMock).toHaveBeenCalledWith(
+      ep.teamActions({ status: "TODO", page: 0, size: 200 }),
+      expect.objectContaining({ accessToken: "token" }),
+    );
+    expect(serverApiMock).toHaveBeenCalledTimes(2);
   });
 
   /*

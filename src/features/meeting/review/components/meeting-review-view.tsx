@@ -60,9 +60,16 @@ export function MeetingReviewView({ review }: MeetingReviewViewProps) {
   const [isConfirmed, setIsConfirmed] = useState(false);
   const [isPending, startTransition] = useTransition();
 
-  const visibleDrafts = drafts.filter((draft) => !(draft.id in rejectedReasons));
-  const highConfidence = visibleDrafts.filter((d) => d.confidence === AI_CONFIDENCE.HIGH);
-  const needsReview = visibleDrafts.filter((d) => d.confidence === AI_CONFIDENCE.NEEDS_REVIEW);
+  /*
+    ⚠️ **반려된 것도 목록에 남긴다**(2026-08-18, #622). 이전엔 filter로 아예 뺐는데, 사람이
+       무엇을 반려했는지·왜 반려했는지가 화면에서 사라져 다시 훑는 사람이 이유를 못 찾았다.
+       분배 확정 대상만 골라내는 자리(대상 카운트·확정 잠금·서버 요청)는 아래 `activeDrafts`가
+       담당한다 — 화면에는 전부 남긴다.
+  */
+  const highConfidence = drafts.filter((d) => d.confidence === AI_CONFIDENCE.HIGH);
+  const needsReview = drafts.filter((d) => d.confidence === AI_CONFIDENCE.NEEDS_REVIEW);
+  /** 반려 안 된 초안 — 확정 대상·미정 검사·요청 페이로드는 전부 이 기준. */
+  const activeDrafts = drafts.filter((draft) => !(draft.id in rejectedReasons));
   /* ⚠️ 이 화면이 "부서"·"담당자" 중 뭐라고 부를지는 이 한 곳에서만 고른다(CodeRabbit 지적) */
   const assignmentTargetLabel = review.isOwnerMeeting
     ? REVIEW_ASSIGNMENT_TARGET_LABEL.TEAM
@@ -76,12 +83,43 @@ export function MeetingReviewView({ review }: MeetingReviewViewProps) {
     ⚠️ **Owner 회의는 `teamId`가 미정 기준이다**(2026-08-13). 그 외엔 그대로 `assigneeId` —
        회의 하나가 두 모드를 섞지 않으므로 검사도 회의 전체 기준(`review.isOwnerMeeting`)으로
        한 번만 가른다.
+    ⚠️ **반려된 초안은 검사 대상이 아니다**(#622) — 반려는 사람이 이미 판단을 끝낸 것이라
+       담당자가 없어도 확정을 막을 이유가 없다(BE `ConfirmDistributionService`도 반려를
+       담당자 검사보다 먼저 걸러낸다 — `skipReasonOf` 주석).
   */
   const hasUnassigned = review.isOwnerMeeting
-    ? visibleDrafts.some((draft) => draft.teamId === null)
-    : visibleDrafts.some((draft) => draft.assigneeId === null);
+    ? activeDrafts.some((draft) => draft.teamId === null)
+    : activeDrafts.some((draft) => draft.assigneeId === null);
   function updateDraft(id: string, patch: Partial<AiActionDraft>) {
     setDrafts((prev) => prev.map((draft) => (draft.id === id ? { ...draft, ...patch } : draft)));
+  }
+
+  /*
+    ⚠️ **부서를 고르면 그 팀 팀장 memberId를 `assigneeId`에도 함께 세팅한다**(#622).
+       BE `ConfirmDistributionService.skipReasonOf`는 `actionType != TEAM`인데 `assigneeMemberId`가
+       null이면 `NO_ASSIGNEE`로 걸어낸다 — 오너 회의라도 확정 요청에는 assignee가 실려야 한다.
+       오너 회의 참석자 정책상 그 팀의 팀장 = 참석자 memberId라(actions.test.ts "Owner가 개설하는
+       회의에는 팀장만 참석자로 지정할 수 있습니다"), 옵션에 미리 짝지어 둔 `leaderMemberId`를
+       그대로 옮긴다.
+  */
+  function handleTeamChange(draftId: string, teamId: number) {
+    const option = review.teamOptions.find((candidate) => candidate.teamId === teamId);
+    updateDraft(draftId, {
+      teamId,
+      assigneeId: option?.leaderMemberId ?? null,
+    });
+  }
+
+  /**
+   * 반려 취소 — 목록에 남아 있던 반려 아이템을 다시 활성 상태로 되돌린다(#622).
+   * ⚠️ 반려 사유만 지운다. 초안의 내용·담당자·일정은 반려 전 값이 그대로 유지된다.
+   */
+  function unrejectDraft(id: string) {
+    setRejectedReasons((prev) => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
   }
 
   function openRejectDialog(id: string) {
@@ -139,7 +177,7 @@ export function MeetingReviewView({ review }: MeetingReviewViewProps) {
         const result = await confirmActionDistributionAction(
           review.meetingId,
           {
-            reviewed: visibleDrafts
+            reviewed: activeDrafts
               .filter((draft) => !isLocalManual(draft.id))
               .map((draft) => {
                 const initial = initialById.get(draft.id);
@@ -149,13 +187,18 @@ export function MeetingReviewView({ review }: MeetingReviewViewProps) {
                     ? { description: draft.description }
                     : {}),
                   /*
-                    ⚠️ **`teamId`와 `assigneeId`는 상호 배타다**(BE `REVIEW_ASSIGNEE_TEAM_CONFLICT`
-                       422, 2026-08-13). Owner 회의는 부서만, 그 외엔 담당자만 보낸다 — 화면이
-                       둘 다 채운 상태를 만들 수 없게 모드로 갈라 둔다.
+                    ⚠️ **오너 회의는 `teamId`와 `assigneeId`를 함께 보낸다**(2026-08-18, #622).
+                       BE `ConfirmDistributionService.skipReasonOf`가 오너 회의여도 assignee가
+                       비어 있으면 `NO_ASSIGNEE`로 걸어내기 때문 — 예전에는 `teamId`만 보내
+                       확정이 항상 실패했다. 오너 회의 참석자 정책상 그 팀의 팀장이 곧
+                       assignee라, `handleTeamChange`가 부서 선택 시 `draft.assigneeId`에도
+                       팀장 memberId를 세팅해 두면 여기서 함께 실린다.
+                    ⚠️ 그 외(팀 회의)는 그대로 `assigneeId`만 보낸다 — 사용자가 담당자를
+                       바꿨을 때만 실어 서버가 "사람이 고쳤다" 라벨을 정확히 남기게 한다.
                   */
                   ...(review.isOwnerMeeting
-                    ? draft.teamId !== null
-                      ? { teamId: draft.teamId }
+                    ? draft.teamId !== null && draft.assigneeId !== null
+                      ? { teamId: draft.teamId, assigneeId: draft.assigneeId }
                       : {}
                     : initial &&
                         draft.assigneeId !== initial.assigneeId &&
@@ -330,7 +373,9 @@ export function MeetingReviewView({ review }: MeetingReviewViewProps) {
             onDueDateChange={(dueDate) => updateDraft(draft.id, { dueDate })}
             onReject={() => openRejectDialog(draft.id)}
             teamOptions={review.isOwnerMeeting ? review.teamOptions : undefined}
-            onTeamChange={(teamId) => updateDraft(draft.id, { teamId })}
+            onTeamChange={(teamId) => handleTeamChange(draft.id, teamId)}
+            rejectReason={rejectedReasons[draft.id] ?? null}
+            onUnreject={() => unrejectDraft(draft.id)}
           />
         ))}
       </ActionReviewGroup>
@@ -348,7 +393,9 @@ export function MeetingReviewView({ review }: MeetingReviewViewProps) {
             onDueDateChange={(dueDate) => updateDraft(draft.id, { dueDate })}
             onReject={() => openRejectDialog(draft.id)}
             teamOptions={review.isOwnerMeeting ? review.teamOptions : undefined}
-            onTeamChange={(teamId) => updateDraft(draft.id, { teamId })}
+            onTeamChange={(teamId) => handleTeamChange(draft.id, teamId)}
+            rejectReason={rejectedReasons[draft.id] ?? null}
+            onUnreject={() => unrejectDraft(draft.id)}
           />
         ))}
 
@@ -384,7 +431,7 @@ export function MeetingReviewView({ review }: MeetingReviewViewProps) {
         )}
         <Button
           type="button"
-          disabled={visibleDrafts.length === 0 || hasUnassigned}
+          disabled={activeDrafts.length === 0 || hasUnassigned}
           className="bg-foreground text-background hover:bg-foreground/90"
           onClick={() => setConfirmOpen(true)}
         >
@@ -413,7 +460,7 @@ export function MeetingReviewView({ review }: MeetingReviewViewProps) {
         title="액션 분배를 확정할까요?"
         description={
           <>
-            총 {visibleDrafts.length}건의 액션이 지금 화면에 보이는 {assignmentTargetLabel}·일정
+            총 {activeDrafts.length}건의 액션이 지금 화면에 보이는 {assignmentTargetLabel}·일정
             그대로 생성됩니다.
             <br />
             확정 뒤에는 이 화면을 다시 열 수 없습니다.

@@ -10,10 +10,12 @@ import {
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
+import { ListChecks } from "lucide-react";
 import { useMemo, useState, useTransition } from "react";
 import { toast } from "sonner";
 
 import { ConfirmDialog } from "@/components/common/confirm-dialog";
+import { EmptyState } from "@/components/common/empty-state";
 import { Button } from "@/components/ui/button";
 
 import { commitBoardChangesAction } from "../actions";
@@ -171,6 +173,34 @@ export function BoardView({ boardType, cards, todayIso }: BoardViewProps) {
         toast.error("옮기지 못했습니다");
       }
     });
+  }
+
+  /*
+    ⚠️ **하달된 카드 자체가 0건**이면 세 칸도 저장 줄도 뜻이 없다 — 옮길 게 없다.
+       이때는 페이지 레벨 `EmptyState`로 바꿔 다른 5화면(내 액션·팀 액션·마이페이지·캘린더·
+       프로젝트 타임라인)과 같은 톤으로 "아직 하달된 액션이 없습니다"만 말한다(§정직성).
+    ⚠️ 이 분기는 **정말 카드가 0건일 때만** 탄다 — 특정 칸만 비었을 때는 각 칸의
+       `BOARD_EMPTY_HINT`("여기로 옮겨 주세요.")가 여전히 유효한 안내라 그대로 둔다.
+    ⚠️ `BoardLeaveGuard`도 여기선 필요 없다 — 이동시킬 카드가 없으니 저장 안 한 변경도 없다.
+  */
+  if (cards.length === 0) {
+    /*
+      ⚠️ description은 **조작 중립**이다("드래그" 같은 특정 입력 방식 안내 금지) — CLAUDE.md
+         §a11y "DnD 보드는 키보드 대체 경로 필수". 지금 보드는 `PointerSensor`만 걸려 있고
+         `KeyboardSensor`·카드 이동 버튼 같은 대체 경로가 없어(오래된 규약 위반, 별건 이슈로
+         분리) 스크린리더·키보드 사용자에게 "드래그해서 옮길 수 있다"고 미리 알리면 카드가
+         도착한 뒤 그 지시를 따르지 못한다. 대체 경로가 붙기 전에는 조작 안내를 아예 안 한다.
+    */
+    return (
+      <div className="flex min-h-0 flex-1 flex-col">
+        <EmptyState
+          icon={ListChecks}
+          title="아직 하달된 액션이 없습니다."
+          description="액션이 하달되면 이 자리에 카드로 쌓입니다."
+          className="flex-1"
+        />
+      </div>
+    );
   }
 
   return (

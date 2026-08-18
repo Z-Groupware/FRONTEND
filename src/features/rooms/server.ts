@@ -200,9 +200,12 @@ const RESERVABLE_PROJECTS_PAGE_SIZE = 200;
  * ⚠️ **`getProjectsPage`를 재사용한다.** 프로젝트 목록 API가 이미 실서버에 연동돼 있으므로
  *    (`features/project/server.ts`) 여기서 새 경로를 만들지 않는다(§환각 API 방지) — 같은
  *    회사의 프로젝트가 두 곳에서 다르게 보이면 안 된다.
- * ⚠️ select는 **한 화면에 다 보여줄 목록**이라 페이지네이션이 안 맞는다. 진행중 프로젝트만
- *    대상으로 좁히고(완료된 프로젝트에 새 회의를 묶을 일이 없다) 큰 페이지 하나로 받는다 —
- *    회사 프로젝트가 이 상한을 넘으면 그때 BE에 전용 select 응답을 요청한다.
+ * ⚠️ select는 **한 화면에 다 보여줄 목록**이라 페이지네이션이 안 맞는다. 아직 안 끝난
+ *    프로젝트(`TODO`·`IN_PROGRESS`)만 대상으로 좁히고(완료된 프로젝트에 새 회의를 묶을
+ *    일이 없다) 큰 페이지 하나로 받는다 — 회사 프로젝트가 이 상한을 넘으면 그때 BE에
+ *    전용 select 응답을 요청한다.
+ * ⚠️ **`status`는 BE가 한 번에 하나만 받는다**(`ListPageParams.status`, `lib/endpoints.ts`)
+ *    — `TODO`·`IN_PROGRESS` 둘 다 보여주려면 상태별로 따로 불러 합친다.
  */
 export async function getReservableProjects(): Promise<RoomProjectOption[]> {
   if (isMock) {
@@ -213,22 +216,27 @@ export async function getReservableProjects(): Promise<RoomProjectOption[]> {
     }));
   }
 
-  const { items, totalPages } = await getProjectsPage(
-    { status: PROJECT_STATUS.IN_PROGRESS, keyword: "" },
-    0,
-    RESERVABLE_PROJECTS_PAGE_SIZE,
-  );
-  /*
-    ⚠️ **200개를 조용히 자르지 않는다**(코드래빗이 팀 액션 select에서 잡은 것과 같은
-       결함을 여기서도 먼저 막는다). 진행중 프로젝트가 상한을 넘으면 BE 전용 select
-       응답이 필요한 신호로 던진다(조직도 `manage-server.ts`와 같은 정책).
-  */
-  if (totalPages > 1) {
-    throw new Error(
-      `이 회사의 진행중 프로젝트가 ${RESERVABLE_PROJECTS_PAGE_SIZE}건 상한을 넘어 select를 전부 채우지 못했습니다 — BE 전용 응답이 필요합니다.`,
+  const statuses = [PROJECT_STATUS.IN_PROGRESS, PROJECT_STATUS.TODO] as const;
+  const projects = [];
+  for (const status of statuses) {
+    const { items, totalPages } = await getProjectsPage(
+      { status, keyword: "" },
+      0,
+      RESERVABLE_PROJECTS_PAGE_SIZE,
     );
+    /*
+      ⚠️ **200개를 조용히 자르지 않는다**(코드래빗이 팀 액션 select에서 잡은 것과 같은
+         결함을 여기서도 먼저 막는다). 이 상태의 프로젝트가 상한을 넘으면 BE 전용 select
+         응답이 필요한 신호로 던진다(조직도 `manage-server.ts`와 같은 정책).
+    */
+    if (totalPages > 1) {
+      throw new Error(
+        `이 회사의 ${status} 프로젝트가 ${RESERVABLE_PROJECTS_PAGE_SIZE}건 상한을 넘어 select를 전부 채우지 못했습니다 — BE 전용 응답이 필요합니다.`,
+      );
+    }
+    projects.push(...items);
   }
-  return items.map((project) => ({
+  return projects.map((project) => ({
     id: String(project.id),
     name: project.name,
     tag: project.tag,
@@ -248,8 +256,10 @@ const RESERVABLE_TEAM_ACTIONS_PAGE_SIZE = 200;
  *    분기에는 `actor.teamName` 필터가 필요 없다(항상 자기 팀만 온다). BE 주석에도 이
  *    API를 "회의 개설 모달의 상위 팀 액션 드롭다운"용으로 이미 열어 뒀다고 적혀 있다
  *    (이슈 #389, MEMBER도 호출 가능하게 완화).
- * ⚠️ 완료된 팀 액션은 상위로 고를 이유가 없어 `IN_PROGRESS`만 받는다(진행중 항목이 새
- *    회의를 낳을 수 있다는 게 이 필드의 뜻이다).
+ * ⚠️ 완료된 팀 액션은 상위로 고를 이유가 없어 `TODO`·`IN_PROGRESS`만 받는다(아직 안 끝난
+ *    항목이 새 회의를 낳을 수 있다는 게 이 필드의 뜻이다).
+ * ⚠️ **`status`는 BE가 한 번에 하나만 받는다**(`ep.teamActions`) — 두 상태를 다 보여주려면
+ *    상태별로 따로 불러 합친다.
  */
 export async function getReservableTeamActions(actor: Actor): Promise<RoomTeamActionOption[]> {
   if (!requiresParentTeamAction(actor)) return [];
@@ -274,26 +284,27 @@ export async function getReservableTeamActions(actor: Actor): Promise<RoomTeamAc
   }
 
   const accessToken = await requireAccessToken();
-  const response = await serverApi<BePageResponse<BeActionSummary>>(
-    ep.teamActions({
-      status: ACTION_STATUS.IN_PROGRESS,
-      page: 0,
-      size: RESERVABLE_TEAM_ACTIONS_PAGE_SIZE,
-    }),
-    { accessToken },
-  );
-  /*
-    ⚠️ **200개를 조용히 자르지 않는다**(코드래빗 지적, 2026-08-14). `hasNext`가 참인데
-       첫 페이지만 돌려주면 뒤 페이지 항목은 select에서 영원히 안 보인다 — 회사 안 한
-       팀에 진행중 팀 액션이 그렇게 많을 일은 드물지만, 조용히 자르는 건 §정직성 위반이다.
-       BE 전용 select 응답이 필요한 신호로 던진다(조직도 `manage-server.ts`와 같은 정책).
-  */
-  if (response.hasNext) {
-    throw new Error(
-      `이 팀의 진행중 팀 액션이 ${RESERVABLE_TEAM_ACTIONS_PAGE_SIZE}건 상한을 넘어 select를 전부 채우지 못했습니다 — BE 전용 응답이 필요합니다.`,
+  const statuses = [ACTION_STATUS.IN_PROGRESS, ACTION_STATUS.TODO] as const;
+  const teamActions = [];
+  for (const status of statuses) {
+    const response = await serverApi<BePageResponse<BeActionSummary>>(
+      ep.teamActions({ status, page: 0, size: RESERVABLE_TEAM_ACTIONS_PAGE_SIZE }),
+      { accessToken },
     );
+    /*
+      ⚠️ **200개를 조용히 자르지 않는다**(코드래빗 지적, 2026-08-14). `hasNext`가 참인데
+         첫 페이지만 돌려주면 뒤 페이지 항목은 select에서 영원히 안 보인다 — 회사 안 한
+         팀에 이 상태 팀 액션이 그렇게 많을 일은 드물지만, 조용히 자르는 건 §정직성 위반이다.
+         BE 전용 select 응답이 필요한 신호로 던진다(조직도 `manage-server.ts`와 같은 정책).
+    */
+    if (response.hasNext) {
+      throw new Error(
+        `이 팀의 ${status} 팀 액션이 ${RESERVABLE_TEAM_ACTIONS_PAGE_SIZE}건 상한을 넘어 select를 전부 채우지 못했습니다 — BE 전용 응답이 필요합니다.`,
+      );
+    }
+    teamActions.push(...response.content);
   }
-  return response.content
+  return teamActions
     .filter((item) => item.projectTag !== null)
     .map((item) => ({ id: item.id, name: item.title, projectTag: item.projectTag! }));
 }

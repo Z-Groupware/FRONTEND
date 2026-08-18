@@ -99,6 +99,15 @@ export async function commitOnboardingAction(input: {
       method: "POST",
       json: payload,
       accessToken: token,
+      /*
+        ⚠️ **기본 15초로는 부족하다**(`lib/api.ts`의 `DEFAULT_TIMEOUT_MS` 주석이 말하는
+           "더 걸리는 호출"이 바로 이거다). 이 요청 하나가 부서·직급 생성뿐 아니라 초대
+           인원수만큼 계정 발급 + 메일 발송까지 **동기로** 끝내고 응답한다 — 인원이 많으면
+           BE는 정상적으로 계속 처리 중인데 Next 쪽에서 먼저 타임아웃으로 끊어 화면에
+           실패로 뜨는 사고가 실제로 있었다. 그 직후 재시도가 `AU-035`(이미 온보딩됨)로
+           떨어지는 게 그 증거다 — BE는 이미 성공했는데 응답만 못 받은 것.
+      */
+      timeoutMs: 60_000,
     });
 
     /*
