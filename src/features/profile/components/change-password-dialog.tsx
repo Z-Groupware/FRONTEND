@@ -108,8 +108,15 @@ export function ChangePasswordDialog({ open, onOpenChange }: ChangePasswordDialo
 
   /** 고치는 순간 그 칸의 서버 오류는 감춘다 — 다 고칠 때까지 빨간 글씨를 남겨 둘 이유가 없다 */
   const markFixed = (field: string) => setFixed((prev) => new Set(prev).add(field));
+  /*
+    ⚠️ **`dismissedAttempt`도 함께 본다.** `fixed`만 보면 다이얼로그를 닫았다 다시 열 때
+       (`useEffect`가 `fixed`를 빈 Set으로 되돌리는 순간) "고쳐서 가려진" 상태가 아니라
+       "아직 아무 것도 안 가린" 상태가 되어, 지난 제출의 `state.errors`가 그대로 다시
+       보인다 — 지금 열려 있는 시도(`state.attempt`)가 지웠던 시도(`dismissedAttempt`)보다
+       새것이 아니면, 그건 이번 열림 전에 있었던 오류라 `fixed`와 무관하게 감춘다.
+  */
   const errorOf = (field: keyof ChangePasswordState["errors"]) =>
-    fixed.has(field) ? undefined : state.errors[field];
+    fixed.has(field) || state.attempt <= dismissedAttempt ? undefined : state.errors[field];
 
   /*
     ⚠️ **확인칸이 비었으면 아무 말도 안 한다** — 아직 아무것도 안 적은 사람에게 "일치하지
