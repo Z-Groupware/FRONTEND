@@ -557,7 +557,10 @@ export const ep = {
    *    태그·기간 조건이 아예 없다). 보내도 결과가 안 좁혀진다, SR-2 대기(§연동 검증).
    */
   search: () => "/api/v1/search",
-  searchRecentQueries: () => "/api/v1/search/recent-queries",
+  /*
+    ⚠️ **최근 검색어용 엔드포인트는 없다.** 로컬 저장소로 대체했다(`search/lib/recent-search-storage.ts`,
+       2026-08-18) — BE에 기록·조회 API가 생겨도 여기 새로 추가할 계약이지 되살릴 상수가 아니다.
+  */
   searchRecentViews: () => "/api/v1/search/recent-views",
 
   /* 시스템 운영자 */

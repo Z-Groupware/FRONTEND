@@ -18,7 +18,7 @@ import {
 import { AUTHORITY, HANDOVER_TYPE } from "@/constants/domain";
 
 import { submitHandoverAction } from "../actions";
-import { sortActionsForVacation } from "../lib";
+import { handoverDateMin, sortActionsForVacation } from "../lib";
 import type { HandoverContext } from "../types";
 import { HandoverActionListCard } from "./handover-action-list-card";
 
@@ -121,6 +121,7 @@ export function VacationForm({ context }: VacationFormProps) {
                 <DatePickerField
                   id="vacation-start"
                   value={startDate}
+                  min={handoverDateMin()}
                   max={endDate || undefined}
                   onChange={(next) => handleDateChange({ startDate: next })}
                   className="w-full"
@@ -133,7 +134,7 @@ export function VacationForm({ context }: VacationFormProps) {
                 <DatePickerField
                   id="vacation-end"
                   value={endDate}
-                  min={startDate || undefined}
+                  min={startDate || handoverDateMin()}
                   onChange={(next) => handleDateChange({ endDate: next })}
                   className="w-full"
                 />

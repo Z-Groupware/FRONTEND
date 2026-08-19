@@ -1,4 +1,6 @@
 import { COMPANY_STATUS, PAYMENT_STATUS } from "@/constants/domain";
+import { calculatePrice } from "@/features/billing/pricing";
+import { MOCK_CONFIG } from "@/features/billing/server";
 
 import { MOCK_BILLING_OVERVIEW } from "./billing";
 import { listMockCompanies } from "./companies";
@@ -34,12 +36,21 @@ describe("구독 목록은 기업 관리 데이터에서 파생한다", () => {
     }
   });
 
-  // ⚠️ 요금제가 하나뿐이라 0원짜리 구독은 없다(CLAUDE.md §요금제) — 한 건이라도 0원이면
-  //    없앤 무료 요금제가 어딘가에서 되살아난 것이다.
-  it("모든 기업이 인원×단가로 결제된다 — 0원도 결제일 없는 건도 없다", () => {
+  /*
+    ⚠️ **좌석 과금이 아니다**(2026-08-04 팀 확정, FE 감사 #243). 인원은 금액과 무관하고
+       모든 기업이 같은 기본료를 낸다 — `BillingConfig`(정본, `billing/server.ts`)에서
+       파생한 값과 같아야 한다. 회사마다 인원이 달라도 금액은 전부 같다.
+  */
+  it("모든 기업이 인원과 무관하게 같은 기본료로 결제된다 — 0원도 결제일 없는 건도 없다", () => {
+    const expectedAmount = calculatePrice(MOCK_CONFIG).total;
+
     for (const record of subscriptions) {
-      expect(record.amount).toBe(record.memberCount * 9_900);
+      expect(record.amount).toBe(expectedAmount);
       expect(record.billingDate).not.toBeNull();
     }
+
+    // 인원이 서로 다른데도 금액이 같다는 사실 자체를 확인한다 — 좌석 과금이 아니라는 증거.
+    const memberCounts = new Set(subscriptions.map((record) => record.memberCount));
+    expect(memberCounts.size).toBeGreaterThan(1);
   });
 });

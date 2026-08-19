@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { HANDOVER_TYPE } from "@/constants/domain";
 
 import { submitHandoverAction } from "../actions";
+import { handoverDateMin } from "../lib";
 import type { HandoverContext } from "../types";
 import { HandoverActionListCard } from "./handover-action-list-card";
 
@@ -35,7 +36,13 @@ export function OffboardingForm({ context }: OffboardingFormProps) {
   const [resultOpen, setResultOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
 
-  const canSubmit = description.trim().length > 0 && Boolean(lastWorkingDay) && actions.length > 0;
+  /*
+    ⚠️ **넘길 액션이 없어도 신청은 열려 있다**(#637). WORKFLOW §7 · 아래 목록 카드
+       (`HandoverActionListCard`)의 "넘길 액션이 없어도 인수인계서는 신청할 수 있습니다"
+       문구와 정책이 같다 — 담당하고 있던 액션이 실제로 하나도 없는 팀장 오프보딩도
+       인수인계서는 남긴다(설명·마지막 근무일이 인수인계 기록의 본체).
+  */
+  const canSubmit = description.trim().length > 0 && Boolean(lastWorkingDay);
 
   function handleConfirm() {
     setConfirmError(null);
@@ -75,6 +82,7 @@ export function OffboardingForm({ context }: OffboardingFormProps) {
           <DatePickerField
             id="offboarding-last-working-day"
             value={lastWorkingDay}
+            min={handoverDateMin()}
             onChange={setLastWorkingDay}
             /* ⚠️ 상한이지 고정폭이 아니다 — 좁은 화면에서 224를 못 박으면 카드 밖으로 나간다 */
             className="w-full max-w-56"

@@ -1,5 +1,7 @@
 import "server-only";
 
+import { format } from "date-fns";
+
 import { AI_SUMMARY_STATUS, MEETING_STATUS } from "@/constants/meeting";
 import { PERSONAL_ACTION_DETAIL_MOCK } from "@/features/action/mock/action-detail";
 import { requireAccessToken } from "@/features/auth/session";
@@ -27,6 +29,7 @@ import {
   toMeetingCaptureInfo,
   toMeetingDetailView,
   toMeetingListItem,
+  toMeetingOutput,
   toScriptChunks,
 } from "./mapper";
 import { findMockMeeting, listMockMeetings } from "./mock/meetings";
@@ -38,6 +41,7 @@ import type {
   MeetingAgenda,
   MeetingCaptureResult,
   MeetingContentPending,
+  MeetingDetail,
   MeetingDetailResult,
   MeetingDirectory,
   MeetingListItem,
@@ -84,6 +88,19 @@ function originLabelOf(meeting: Meeting): string {
  */
 function toMockAgenda(topics: Meeting["topics"]): MeetingAgenda {
   return { main: topics[0].main, subs: topics.map((topic) => topic.sub) };
+}
+
+/**
+ * 회의 수정 다이얼로그의 슬롯 피커 초기값(#436) — 실서버 매퍼의 `toEditableSlot`과 같은
+ * 모양이다. 비대면 회의는 회의실·시간이 없어 `null`이다.
+ */
+function toMockEditableSlot(meeting: Meeting): MeetingDetail["editableSlot"] {
+  if (meeting.isOnline || !meeting.roomId) return null;
+  return {
+    date: format(meeting.start, "yyyy-MM-dd"),
+    startTime: format(meeting.start, "HH:mm"),
+    meetingRoomId: meeting.roomId,
+  };
 }
 
 function toListItem(meeting: Meeting, viewerId: number, now: Date): MeetingListItem {
@@ -380,6 +397,10 @@ export async function getMeetingDetail(id: string, viewer: Actor): Promise<Meeti
       isStalled,
       isHost: canOperateMeeting(viewer, { ownerId: meeting.hostId }),
       isOnline: meeting.isOnline,
+      // ⚠️ 개설 때는 항상 `false`(§types `Meeting.recordingConsent`)지만, 회의 수정
+      //    다이얼로그(#436)가 고치면 그 값이 스토어에 남는다 — 여기서 저장된 값을 그대로 읽는다.
+      recordingConsent: meeting.recordingConsent,
+      editableSlot: toMockEditableSlot(meeting),
     },
   };
 }
@@ -454,22 +475,68 @@ async function getLiveMeetingDetail(id: string, viewer: Actor): Promise<MeetingD
   });
 
   /*
-    ⚠️ **`pendingReason`이 있으면 발화 기록을 안 물어본다.** 화면이 그 칸을 안 그리는데
+    ⚠️ **`pendingReason`이 있으면 산출물·발화 기록을 안 물어본다.** 화면이 그 칸을 안 그리는데
        (`meeting-detail-view.tsx` — 안내 카드만 뜬다) 조회부터 하면 헛수고다. 회의가 아직
-       안 끝났으면 발화 자체가 없을 수도 있다.
-    ⚠️ **비대면 회의도 안 물어본다**(WORKFLOW.md §3-1-A — 실시간 캡처가 아니라 화자 귀속 근거인
-       자막 청크 자체가 없다, "온라인으로 진행된 회의입니다" 문구로 그 자리를 대신한다).
-       `detail.startAt`도 `null`이라 `toScriptChunks`의 기준 시각을 만들 수 없다.
+       안 끝났으면 하달·발화 자체가 없다.
+    ⚠️ 산출물 조회(#637 연동)는 발화 기록(`startAt` 필요)과 조건이 갈린다 — 발화는 비대면
+       회의(startAt=null)에서 못 부르지만 산출물은 회의 종료·확정이 된 이상 부를 수 있다.
+       그래서 산출물부터 채운 뒤, `startAt`이 있을 때만 발화 기록을 이어 붙인다.
   */
-  if (view.pendingReason !== null || detail.startAt === null) {
+  if (view.pendingReason !== null) {
     return { kind: "ok", detail: view };
+  }
+
+  const outputs = await fetchMeetingOutputs(Number(id), accessToken);
+  const withOutputs = { ...view, outputs };
+
+  if (detail.startAt === null) {
+    return { kind: "ok", detail: withOutputs };
   }
 
   const utterances = await fetchAllTranscripts(Number(id), accessToken);
   return {
     kind: "ok",
-    detail: { ...view, script: toScriptChunks(new Date(detail.startAt), utterances) },
+    detail: {
+      ...withOutputs,
+      script: toScriptChunks(new Date(detail.startAt), utterances),
+    },
   };
+}
+
+/**
+ * 회의별 하달 액션 조회(FR-AC-09, #637 연동).
+ *
+ * ⚠️ **실패해도 화면을 세우지 않는다.** 상단(제목·안건·참석자)은 이미 온전한 상태고,
+ *    산출물 칸만 못 그리면 매퍼가 준 `null`(=미연동과 같은 자리)로 그대로 두면 된다 —
+ *    "다른 칸까지 통째로 에러 화면"은 정보 손실이 크다(§정직성 · script 조회와 같은 결).
+ * ⚠️ **응답이 `null`(BE 결함)이거나 배열이 아니면 미연동과 같은 자리에 두지 않고 빈 배열로
+ *    돌린다** — 여기까지 왔으면 회의 요약이 끝난 상태라 "물어봤는데 실제로 0건"이 나올
+ *    수 있고, 그 자리는 화면이 "하달된 게 없습니다"로 정직하게 답할 자리다.
+ */
+async function fetchMeetingOutputs(
+  meetingId: number,
+  accessToken: string,
+): Promise<MeetingOutput[] | null> {
+  try {
+    const raw = await serverApi<unknown>(ep.meetingActions(meetingId), { accessToken });
+    if (!Array.isArray(raw)) return [];
+    return raw
+      .filter((item): item is Parameters<typeof toMeetingOutput>[0] => {
+        if (typeof item !== "object" || item === null) return false;
+        const summary = item as Record<string, unknown>;
+        return (
+          typeof summary.id === "number" &&
+          (summary.actionType === "TEAM" || summary.actionType === "PERSONAL") &&
+          typeof summary.title === "string" &&
+          typeof summary.status === "string" &&
+          typeof summary.dueDate === "string" &&
+          typeof summary.projectId === "number"
+        );
+      })
+      .map(toMeetingOutput);
+  } catch {
+    return null;
+  }
 }
 
 /**

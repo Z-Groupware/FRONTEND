@@ -114,6 +114,31 @@ export function findMockReservation(id: string): RoomReservation | null {
 }
 
 /**
+ * 예약 수정 — 회의 수정(MEET-05, #436)이 시간·회의실·프로젝트를 바꿀 때 **예약도 같이**
+ * 고친다("회의실 예약 = 회의 개설"이 한 동작이듯, 고치는 것도 한 동작이다 — 여기만 고치고
+ * `meeting/mock/meetings.ts`의 회의 레코드를 안 맞추면, 또는 반대로 회의만 고치고 여기를
+ * 안 맞추면 회의실 주간 캘린더(`getRoomWeekAvailability`, 이 파일의 `listMockReservationsByRoom`
+ * 를 본다)가 옛 슬롯을 계속 "예약됨"으로 보여준다). 참조 무결성은 호출부(`meeting/actions.ts`)
+ * 가 이미 확인한 뒤에만 이 함수를 부른다.
+ */
+export function updateMockReservation(
+  id: string,
+  patch: Pick<
+    RoomReservation,
+    "title" | "roomId" | "roomName" | "projectId" | "projectTag" | "start" | "end"
+  >,
+): RoomReservation | null {
+  const found = findMockReservation(id);
+  if (!found) return null;
+
+  const updated: RoomReservation = { ...found, ...patch };
+  store.reservations = store.reservations.map((reservation) =>
+    reservation.id === id ? updated : reservation,
+  );
+  return updated;
+}
+
+/**
  * 예약 생성 — 시작 시각 + 고정 30분으로 종료 시각을 계산하고, roomId/projectId를 표시용
  * 이름·태그로 채워 넣는다(컴포넌트는 코드값을 모른다, §Mock 격리막).
  * ⚠️ **회의(Meeting)도 같이 만든다**(WORKFLOW.md §3-1: "회의실 예약 = 회의 개설"은 한 동작) —

@@ -36,8 +36,6 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   if (query.period !== "all") baseParams.set("period", query.period);
 
   let content: ReactNode;
-  /* 최근 검색어는 입력 바로 아래에 서므로 페이지가 들고 있는다 — 검색 중일 때는 안 띄운다 */
-  let recentSearches: string[] = [];
   if (keyword) {
     const [results, projects] = await Promise.all([getSearchResults(query), getSearchProjects()]);
     content = (
@@ -50,7 +48,6 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     );
   } else {
     const home = await getSearchHome();
-    recentSearches = home.recentSearches;
     content = <SearchLanding home={home} />;
   }
 
@@ -83,7 +80,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                하는데 따로 떨어져 있으면 최근 검색어가 "목록 중 하나"로 보인다.
           */}
           <div className="mx-auto w-full max-w-[720px] pt-4 pb-2">
-            <SearchInput keyword={query.keyword} recentSearches={recentSearches} />
+            <SearchInput keyword={query.keyword} />
           </div>
           {content}
         </div>
