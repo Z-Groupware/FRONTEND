@@ -29,6 +29,16 @@ export function findMockMeeting(id: string): Meeting | null {
 }
 
 /**
+ * 예약 id → 회의 id 역참조. **회의의 `id`는 예약의 `id`와 다른 시퀀스**다(예약 스토어와
+ * 회의 스토어가 각자 따로 증가한다) — 회의실 캘린더(`rooms/server.ts`·`rooms/mapper`)가
+ * 막대를 클릭해 상세를 열 때는 예약 id밖에 모르므로, `roomReservationId`로 실제 회의를
+ * 찾아 그 회의의 `id`를 돌려준다.
+ */
+export function findMockMeetingByReservationId(reservationId: string): Meeting | null {
+  return store.meetings.find((meeting) => meeting.roomReservationId === reservationId) ?? null;
+}
+
+/**
  * 회의 생성 — 회의실 예약과 짝지어 항상 같이 만들어진다(WORKFLOW.md §3-1).
  * ⚠️ 여기서 참조 무결성(roomId·projectId·attendeeIds 존재 여부)을 다시 보지 않는다 —
  *    호출부(`rooms/actions.ts`)가 예약을 검증할 때 이미 확인했다.

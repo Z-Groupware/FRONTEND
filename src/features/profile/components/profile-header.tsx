@@ -1,12 +1,11 @@
 "use client";
 
 import { AUTHORITY, AUTHORITY_BADGE_CLASS, AUTHORITY_LABEL } from "@/constants/authority";
-import { LogoutButton } from "@/features/auth/components/logout-button";
 import { useProfileAvatar } from "@/hooks/use-profile-avatar";
 import { cn } from "@/lib/utils";
 
 import type { MyProfile } from "../types";
-import { ChangePasswordDialog } from "./change-password-dialog";
+import { ProfileActionsMenu } from "./profile-actions-menu";
 
 interface ProfileHeaderProps {
   profile: MyProfile;
@@ -64,10 +63,10 @@ export function ProfileHeader({ profile }: ProfileHeaderProps) {
       {/*
         ⚠️ **나갈 문은 여기 하나뿐이다.** 사이드바 계정 줄(49px)에 끼우면 이름이 밀려 잘리고,
            로그아웃은 하루에 한 번 쓰는 일이라 늘 보이는 자리를 차지할 만큼 잦지 않다.
+        ⚠️ **버튼 둘이 아니라 "⋯" 메뉴 하나다**(2026-08-19 — §profile-actions-menu 주석).
       */}
       <div className="flex shrink-0 items-center gap-2">
-        <ChangePasswordDialog />
-        <LogoutButton />
+        <ProfileActionsMenu />
       </div>
     </div>
   );

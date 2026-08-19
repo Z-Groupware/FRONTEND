@@ -13,7 +13,13 @@ import { directionParticle } from "@/lib/korean";
 import { pickPaletteColor } from "@/lib/palette";
 import { cn } from "@/lib/utils";
 
-import { BOARD_COLUMN_LABEL, type BoardCard as BoardCardModel, type BoardColumnId } from "../types";
+import {
+  BOARD_COLUMN_LABEL,
+  BOARD_NEXT_STEP_LABEL,
+  BOARD_REVERT_LABEL,
+  type BoardCard as BoardCardModel,
+  type BoardColumnId,
+} from "../types";
 
 interface BoardCardProps {
   card: BoardCardModel;
@@ -49,24 +55,26 @@ function BoardCardBody({ card, isDelayed, actions }: BoardCardBodyProps) {
            테두리에만 색이 보이게 하는 방법이다.
       */}
       <ColorEdge tag={card.tagLabel} />
-      <div className="flex min-w-0 flex-1 flex-col gap-3">
-        {/*
-        ⚠️ **제목이 먼저다.** 칩·제목·날짜를 세 층으로 쌓아 두니 카드가 필요 이상으로 길고,
-           셋 다 왼쪽 끝에 붙어 오른쪽이 통째로 비었다 — 카드에서 읽는 건 **무슨 일인가**이고
-           태그·마감은 그 곁 정보다.
+      {/*
+        ⚠️ **두 세로줄이다**(2026-08-19 재수정 — "날짜가 지금 옮기기 자리에, 그 밑에
+           옮기기, 제목·칩은 위로"라는 지적). 왼쪽 줄은 무슨 일인가(제목)·어느 프로젝트인가
+           (칩), 오른쪽 줄은 언제까지·다음 걸음(옮기기) — 같은 줄끼리 세로로 쌓이고, 두
+           줄은 위아래 같은 높이에서 나란히 간다.
         ⚠️ 글자는 다섯 크기다(DESIGN §4). `text-[13px]`(14px)·`text-[12px] leading-4`(12px)는 규격 밖이라
            13px·12px로 맞춘다.
       */}
-        <p className="text-foreground text-[13px] leading-5 font-medium break-keep">{card.title}</p>
+      <div className="flex min-w-0 flex-1 items-start justify-between gap-2">
+        <div className="flex min-w-0 flex-col gap-2">
+          <p className="text-foreground text-[13px] leading-5 font-medium break-keep">
+            {card.title}
+          </p>
 
-        {/*
-        ⚠️ **곁 정보는 한 줄에 좌우로 벌린다.** 왼쪽은 어느 프로젝트인지, 오른쪽은 언제까지인지 —
-           축을 가르면(DESIGN §3) 카드가 한 층 짧아지고 폭도 다 쓴다.
-        ⚠️ 공용 칩을 쓴다(`components/common/project-tag`). 여기만 손으로 그린 칩이라 같은
-           프로젝트가 회의·검색·보드에서 저마다 다른 모양으로 떴다.
-      */}
-        <div className="flex items-center justify-between gap-2">
+          {/* ⚠️ 공용 칩을 쓴다(`components/common/project-tag`). 여기만 손으로 그린 칩이라 같은
+             프로젝트가 회의·검색·보드에서 저마다 다른 모양으로 떴다. */}
           <ProjectTag tag={card.tagLabel} />
+        </div>
+
+        <div className="flex shrink-0 flex-col items-end gap-2">
           {isDelayed ? (
             <StatusDot
               tone="DELAYED"
@@ -78,9 +86,8 @@ function BoardCardBody({ card, isDelayed, actions }: BoardCardBodyProps) {
               {due ? `${due}까지` : "-"}
             </span>
           )}
+          {actions}
         </div>
-
-        {actions}
       </div>
     </>
   );
@@ -91,10 +98,11 @@ function BoardCardBody({ card, isDelayed, actions }: BoardCardBodyProps) {
  *
  * ⚠️ 라운드는 **20px**이다. 규격(`lg` 10 · `xl` 14 · `2xl` 18)보다 큰 값을 쓰는 이유는 왼쪽
  *    색 막대 때문이다 — 곡선이 커야 얇은 막대(6px) 끝이 둥글게 깎인다(§ColorEdge).
- * ⚠️ 세로 여백을 넉넉히 준다(`py-6`). **띠 길이는 결국 카드 높이다** — 띠만 손봐서는 길어지지
- *    않는다. 두 줄 사이 간격도 함께 벌려 늘어난 높이가 한쪽 여백에만 쏠리지 않게 한다.
+ * ⚠️ 세로 여백은 `py-4`다(2026-08-19 재조정 — `py-6`(원본, 헐렁) → `py-3`(사용자
+ *    지적, 지금은 너무 작다) → `py-4`(가운데). 두 세로줄 레이아웃이라 안쪽 내용이
+ *    두 줄로 짧아졌으니 여백이 조금 더 필요하다).
  */
-const CARD_SHAPE = "border-border bg-card relative flex rounded-[20px] border py-6 pr-4 pl-4";
+const CARD_SHAPE = "border-border bg-card relative flex rounded-[20px] border py-4 pr-4 pl-4";
 
 /** 카드 모서리 반지름(px) — 색 띠가 얇아지기 시작하는 지점이기도 하다 */
 const CARD_RADIUS = 20;
@@ -152,8 +160,15 @@ function ColorEdge({ tag }: { tag: string }) {
 }
 
 interface BoardCardMoveProps {
+  /** 카드가 지금 있는 칸(§`BOARD_NEXT_STEP_LABEL` — 다음-단계 워딩을 뽑는다) */
+  sourceColumn: BoardColumnId;
   /** 지금 이 카드가 옮겨 갈 수 있는 유일한 칸(§canMoveCard) — 없으면 버튼을 안 그린다. */
   moveTarget: BoardColumnId | null;
+  /**
+   * 이 이동이 원본 자리로 **되돌리기**인가 — 저장 전 미리보기 취소.
+   * `moveTarget`이 원본과 같으면 true이고, 워딩이 다음-단계가 아닌 `BOARD_REVERT_LABEL`이 된다.
+   */
+  isRevert: boolean;
   onMove: () => void;
 }
 
@@ -173,7 +188,9 @@ interface BoardCardMoveProps {
 export function BoardCard({
   card,
   isDelayed,
+  sourceColumn,
   moveTarget,
+  isRevert,
   onMove,
 }: BoardCardProps & BoardCardMoveProps) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
@@ -208,7 +225,20 @@ export function BoardCard({
             <Button
               variant="ghost"
               size="xs"
-              className="text-muted-foreground hover:text-foreground self-end"
+              /*
+                ⚠️ **워딩은 목표 칸이 아니라 일 자체다**(2026-08-19, "옮기기 말고 좀 이쁜
+                   워딩 없나"라는 지적). `BOARD_MOVE_LABEL`이 목표 칸에 맞춰 시작하기·
+                   완료하기·다시 열기를 준다 — "진행중으로 옮기기"보다 사람 말에 가깝고,
+                   4자로 맞춰 뒀으니 카드마다 버튼 폭이 흔들리지 않는다.
+                ⚠️ `aria-label`은 여전히 어디로 가는지 그대로 말한다 — 스크린리더는 목표
+                   칸을 눈으로 못 보므로 `시작하기`만 들리면 어디로인지 알 수 없다.
+                ⚠️ **`-mr-2`** — 버튼의 오른쪽 `px-2`(=8px)를 카드 안쪽으로 흡수시킨다.
+                   그러면 버튼의 **글자 오른쪽 끝**이 날짜의 오른쪽 끝과 정확히 같은 세로선에
+                   붙는다(호버 배경만 8px 더 오른쪽으로 늘어난 채, 카드 안쪽 여백을 잠식하지
+                   않는다).
+              */
+              className="text-muted-foreground hover:text-foreground -mr-2"
+              aria-label={`${BOARD_COLUMN_LABEL[moveTarget]}${directionParticle(BOARD_COLUMN_LABEL[moveTarget])} 옮기기`}
               /*
                 ⚠️ 드래그 핸들(이 카드 전체)의 pointerdown이 먼저 안 채가게 막는다 — 안 그러면
                    버튼을 눌러도 dnd-kit이 드래그 시작으로 먼저 잡아챈다.
@@ -219,8 +249,7 @@ export function BoardCard({
                 onMove();
               }}
             >
-              {BOARD_COLUMN_LABEL[moveTarget]}
-              {directionParticle(BOARD_COLUMN_LABEL[moveTarget])} 옮기기
+              {isRevert ? BOARD_REVERT_LABEL : BOARD_NEXT_STEP_LABEL[sourceColumn]}
               <ArrowRight />
             </Button>
           )

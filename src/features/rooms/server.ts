@@ -7,6 +7,7 @@ import { AUTHORITY } from "@/constants/authority";
 import { PROJECT_STATUS } from "@/constants/domain";
 import type { BeActionSummary } from "@/features/action/mapper";
 import { requireAccessToken } from "@/features/auth/session";
+import { findMockMeetingByReservationId } from "@/features/meeting/mock/meetings";
 import { getTeamLeaders } from "@/features/member/manage-server";
 import type { BePageResponse } from "@/features/project/mapper";
 import { TOP_LEVEL_PROJECTS } from "@/features/project/mock/projects";
@@ -71,10 +72,15 @@ function buildMockDaySlots(date: Date, room: MeetingRoom): RoomDayAvailability {
       (reservation) => reservation.start < slotEnd && reservation.end > slotStart,
     );
 
+    // ⚠️ **회의의 `id`는 예약의 `id`와 다른 시퀀스다**(스토어가 따로 증가한다) — 캘린더
+    //    막대가 클릭돼 상세를 열 때 쓰는 건 회의 쪽 id라, `roomReservationId`로 역참조한다.
+    //    예약 id를 그대로 넘기면 상세 모달이 항상 "회의를 찾을 수 없습니다"로 뜬다.
+    //    시드 예약처럼 짝지어진 회의 자체가 없을 때만 예약 id로 되돌아간다(기존 동작 유지).
+    const meeting = overlapping ? findMockMeetingByReservationId(overlapping.id) : null;
     slots.push({
       startTime,
       status: overlapping ? "RESERVED" : "AVAILABLE",
-      meetingId: overlapping?.id ?? null,
+      meetingId: meeting?.id ?? overlapping?.id ?? null,
       title: overlapping?.title ?? null,
     });
   }

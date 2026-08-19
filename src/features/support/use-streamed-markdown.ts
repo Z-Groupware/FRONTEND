@@ -4,7 +4,17 @@ import { useMediaQuery } from "@/hooks/use-media-query";
 
 import { tokenizeForStreaming } from "./tokenize-for-streaming";
 
-const CHUNK_INTERVAL_MS = 45;
+/**
+ * 흐르는 속도 — **초당 조각 수**다(조각 하나 = 한 글자, `tokenize-for-streaming`).
+ *
+ * ⚠️ **간격(ms)이 아니라 속도로 잡는다.** 옛 `setInterval(45ms)`은 프레임 주기(60Hz=16.7ms)의
+ *    배수가 아니라서 조각이 프레임에 고르게 안 떨어졌다 — 한 프레임에 두 조각이 몰리고 다음
+ *    프레임엔 하나도 안 오는 식으로 덜컹거렸다. 흘러간 시간 × 속도로 계산하면 프레임마다
+ *    갈 만큼만 나아가서, 화면 주사율이 얼마든 같은 시간에 같은 만큼 흐른다.
+ * ⚠️ 60Hz에서 프레임당 약 한 글자다. 옛 낱말 속도(초당 22낱말 ≒ 55자)와 총 시간은 같게 뒀다 —
+ *    바뀐 건 매끄러움이지 빠르기가 아니다.
+ */
+const CHUNKS_PER_SECOND = 55;
 
 /**
  * 답이 서버에서 흘러오는 것처럼 청크 단위로 흘려 보여준다.
@@ -24,14 +34,27 @@ export function useStreamedMarkdown(content: string) {
   useEffect(() => {
     if (reduceMotion) return;
 
-    let count = 0;
-    const id = window.setInterval(() => {
-      count += 1;
-      setRevealed(count);
-      if (count >= chunks.length) window.clearInterval(id);
-    }, CHUNK_INTERVAL_MS);
+    /*
+      ⚠️ **`requestAnimationFrame`으로 흘린다.** 타이머로 밀면 조각이 도착하는 시점과 브라우저가
+         다시 그리는 시점이 어긋나 글이 덜컹거린다 — rAF는 "이 프레임을 그리기 직전"에 불리므로
+         지금 계산한 만큼이 그 프레임에 그대로 나간다.
+      ⚠️ 갈 곳은 **누적이 아니라 절대 위치**로 잡는다(`시작 후 흐른 시간 × 속도`). 프레임을
+         한 번 건너뛰어도 다음 프레임이 제자리를 찾아가서, 탭을 잠깐 가렸다 돌아와도 밀리지 않는다.
+    */
+    let frame = 0;
+    let startedAt: number | null = null;
 
-    return () => window.clearInterval(id);
+    const step = (now: number) => {
+      startedAt ??= now;
+      const elapsedSeconds = (now - startedAt) / 1000;
+      const next = Math.min(chunks.length, Math.floor(elapsedSeconds * CHUNKS_PER_SECOND));
+      setRevealed(next);
+      if (next < chunks.length) frame = requestAnimationFrame(step);
+    };
+
+    frame = requestAnimationFrame(step);
+
+    return () => cancelAnimationFrame(frame);
   }, [chunks, reduceMotion]);
 
   /* 모션을 줄여 달라는 사람 · 아직 안 흐른 첫 틱에는 다 보여준 값으로 대체한다 */

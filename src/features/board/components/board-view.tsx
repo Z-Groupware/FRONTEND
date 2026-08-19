@@ -281,6 +281,12 @@ export function BoardView({ boardType, cards, todayIso }: BoardViewProps) {
               isDelayed={isDelayedInView}
               isInvalidTarget={activeInvalidTarget === columnId}
               moveTargetOf={moveTargetFor}
+              /*
+                ⚠️ **되돌리기 워딩용 힌트**(§types `BOARD_REVERT_LABEL`). override가 있으면
+                   이 이동은 원본 자리로 돌아가는 취소다 — `moveTargetFor`가 원본을 돌려주는
+                   경로가 곧 이 경우다.
+              */
+              isRevertOf={(card) => columnOf(card) !== originalColumnOf(card)}
               onMoveCard={moveCard}
             />
           ))}
