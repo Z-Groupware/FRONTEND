@@ -3,6 +3,8 @@
  * [확인] D도메인 REST API 명세(2026-08-12) 대조.
  */
 
+import { format } from "date-fns";
+
 import type { DashboardMeeting } from "@/components/common/dashboard-meeting-item";
 import {
   AI_SUMMARY_STATUS,
@@ -431,9 +433,10 @@ function topicSummaryOf(preview: BeMeetingListItem["agendaPreview"]): string {
 /**
  * `GET /api/meetings/{meetingId}` 응답(MEET-04).
  *
- * ⚠️ **캡처 화면이 실제로 쓰는 필드만 적는다.** 응답에는 `recordingConsent`·`createdAt`·
- *    `project.name`·`project.color`·`meetingRoom.location`도 오지만, 안 쓰는 필드를 적어 두면
- *    그것도 화면이 의존하는 값처럼 읽힌다.
+ * ⚠️ **화면이 실제로 쓰는 필드만 적는다.** 응답에는 `createdAt`·`project.name`·`project.color`·
+ *    `meetingRoom.location`도 오지만, 안 쓰는 필드를 적어 두면 그것도 화면이 의존하는 값처럼
+ *    읽힌다. `recordingConsent`는 예전엔 안 쓰는 값이었지만 회의 수정 다이얼로그(#436)가
+ *    수정 대상으로 받으면서 이제 실제로 읽는 필드가 됐다 — 그래서 아래로 옮겨 적었다.
  * ⚠️ **중첩이다.** 태그·회의실·개설자가 전부 객체 안에 있다 — 평평한 `projectTag`·`roomName`·
  *    `hostId`가 아니다(연동 전 우리가 가정했던 모양이 이랬다).
  */
@@ -498,6 +501,12 @@ export interface BeMeetingDetail {
   meetingRoom: { meetingRoomId: number; name: string } | null;
   host: { memberId: number; name: string };
   attendees: BeMeetingAttendee[];
+  /**
+   * 녹음 동의 — 회의 수정(MEET-05)이 받는 6필드 중 하나(#436). 예약 화면엔 이 값을 받는
+   * 입력이 없어(`rooms/mapper/meetings.ts` `toCreateMeetingPayload`) 항상 `false`로
+   * 만들어지지만, 수정 다이얼로그는 지금 값을 보여주고 고칠 수 있어야 해서 여기서부터 읽는다.
+   */
+  recordingConsent: boolean;
 }
 
 /** BE `MeetingSummaryStatus` — 화면 상수(`AI_SUMMARY_STATUS`)와 어휘가 달라 여기서만 쓴다. */
@@ -567,7 +576,8 @@ function isBeMeetingDetail(value: unknown): value is BeMeetingDetail {
     (detail.meetingRoom === null || typeof detail.meetingRoom?.name === "string") &&
     typeof detail.host?.memberId === "number" &&
     Array.isArray(detail.attendees) &&
-    detail.attendees.every(isBeMeetingAttendee)
+    detail.attendees.every(isBeMeetingAttendee) &&
+    typeof detail.recordingConsent === "boolean"
   );
 }
 
@@ -790,6 +800,25 @@ export function toMeetingDetailView(
      *    (`BeMeetingDetail.meetingRoom` 주석) 이 값 하나로 가른다.
      */
     isOnline: be.meetingRoom === null,
+    recordingConsent: be.recordingConsent,
+    editableSlot: toEditableSlot(be),
+  };
+}
+
+/**
+ * 회의 수정 다이얼로그의 슬롯 피커 초기값(#436) — `startAt`·`meetingRoom`을 피커가 그대로
+ * 받는 형식(`YYYY-MM-DD`·`HH:mm`·문자열 id)으로 바꾼다. 둘 중 하나라도 없으면(비대면 회의)
+ * `null`이다 — `MeetingDetail.editableSlot` 주석 참고.
+ */
+function toEditableSlot(
+  be: Pick<BeMeetingDetail, "startAt" | "meetingRoom">,
+): MeetingDetail["editableSlot"] {
+  if (!be.startAt || !be.meetingRoom) return null;
+  const start = new Date(be.startAt);
+  return {
+    date: format(start, "yyyy-MM-dd"),
+    startTime: format(start, "HH:mm"),
+    meetingRoomId: String(be.meetingRoom.meetingRoomId),
   };
 }
 
