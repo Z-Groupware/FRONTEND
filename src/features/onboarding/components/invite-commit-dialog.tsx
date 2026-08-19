@@ -86,7 +86,9 @@ export function InviteCommitDialog({
         >
           <Loader2 className="text-muted-foreground size-5 animate-spin" aria-hidden />
           <p className="text-muted-foreground text-[12px] leading-[18px] break-keep">
-            계정 발급과 초대 메일 발송에 최대 1분 정도 걸립니다. 창을 닫지 말고 기다려 주세요.
+            {/* 두 문장을 줄로 가른다 — 한 덩어리면 사실(소요 시간)과 지시(창 유지)가 안 갈린다 */}
+            <span className="block">계정 발급과 초대 메일 발송에 최대 1분 정도 걸립니다.</span>
+            <span className="block">창을 닫지 말고 기다려 주세요.</span>
           </p>
         </div>
       ) : (
