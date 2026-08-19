@@ -1,12 +1,15 @@
 "use client";
 
+import { LogOut } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useFormStatus } from "react-dom";
 
 import { ZLogo } from "@/components/icons/z-logo";
 import { AUTHORITY, AUTHORITY_MARK_CLASS } from "@/constants/authority";
 import { SidebarItem } from "@/features/shell/components/sidebar-item";
 import type { NavSection } from "@/features/shell/nav";
+import { systemLogoutAction } from "@/features/system-auth/actions";
 import { cn } from "@/lib/utils";
 
 interface SystemSidebarProps {
@@ -104,7 +107,26 @@ export function SystemSidebar({ sections, account }: SystemSidebarProps) {
             {account.email}
           </p>
         </div>
+        {/* ⚠️ 나갈 문이 없으면 안 된다 — 세션이 4시간짜리라 만료 전에 직접 끊을 수 있어야 한다 */}
+        <form action={systemLogoutAction}>
+          <LogoutIconButton />
+        </form>
       </div>
     </aside>
+  );
+}
+
+function LogoutIconButton() {
+  const { pending } = useFormStatus();
+
+  return (
+    <button
+      type="submit"
+      disabled={pending}
+      aria-label={pending ? "로그아웃 중" : "로그아웃"}
+      className="text-muted-foreground hover:text-foreground hover:bg-foreground/5 focus-visible:ring-ring flex size-7 shrink-0 items-center justify-center rounded-md transition-colors focus-visible:ring-2 focus-visible:outline-hidden disabled:opacity-60"
+    >
+      <LogOut className="size-3.5" aria-hidden />
+    </button>
   );
 }

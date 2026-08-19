@@ -5,6 +5,8 @@ import { ScopedThemeProvider } from "@/components/common/scoped-theme";
 import { SystemSidebar } from "@/features/system/components/system-sidebar";
 import { SYSTEM_NAV } from "@/features/system/nav";
 import { SYSTEM_THEME_COOKIE } from "@/features/system/theme";
+import { SystemLoginForm } from "@/features/system-auth/components/system-login-form";
+import { hasSystemSession } from "@/features/system-auth/session";
 
 /*
   ⚠️ 아래 `cookies()` 호출 때문에 사실상 이미 동적이지만, 그 사실에 암묵적으로 의존하지 않고
@@ -29,12 +31,27 @@ export const dynamic = "force-dynamic";
  *    상자에 `.dark`만 붙이면 변수는 바뀌어도 글자색은 상속된 먹색 그대로라 어두운 바탕에
  *    어두운 글자가 된다. 실제로 제목과 큰 숫자가 통째로 안 보였다.
  *
- * ⚠️ 지금은 목업(더미) 단계다 — 로그인이 붙기 전까지 계정 정보는 고정값이다.
+ * ⚠️ **로그인이 붙었다**(2026-08-19). `/system/*`은 URL을 직접 두드리면 누구나 들어올 수 있던
+ *    자리라, 진입 즉시 여기서 세션을 확인한다 — 회사 로그인과는 다른 축이라 별도 쿠키
+ *    (`features/system-auth`)로 가른다. 세션이 없으면 사이드바 없이 로그인 폼만 그린다.
  */
 export default async function SystemLayout({ children }: { children: ReactNode }) {
   const store = await cookies();
   // 고른 적이 없으면 다크다 — `light`를 명시적으로 골랐을 때만 밝게 연다
   const initialDark = store.get(SYSTEM_THEME_COOKIE)?.value !== "light";
+  const authorized = await hasSystemSession();
+
+  if (!authorized) {
+    return (
+      <ScopedThemeProvider
+        initialDark={initialDark}
+        cookieName={SYSTEM_THEME_COOKIE}
+        className="app-shell bg-background text-foreground h-screen-z flex items-center justify-center overflow-hidden"
+      >
+        <SystemLoginForm />
+      </ScopedThemeProvider>
+    );
+  }
 
   return (
     <ScopedThemeProvider
@@ -42,7 +59,10 @@ export default async function SystemLayout({ children }: { children: ReactNode }
       cookieName={SYSTEM_THEME_COOKIE}
       className="app-shell bg-background text-foreground h-screen-z flex overflow-hidden"
     >
-      <SystemSidebar sections={SYSTEM_NAV} account={{ email: "admin@getz.kr" }} />
+      <SystemSidebar
+        sections={SYSTEM_NAV}
+        account={{ email: process.env.SYSTEM_ADMIN_ID ?? "admin" }}
+      />
       <div className="bg-background flex min-w-0 flex-1 flex-col overflow-hidden">{children}</div>
     </ScopedThemeProvider>
   );
