@@ -7,7 +7,7 @@ import { PageHeader } from "@/features/shell/components/page-header";
 export default function SystemDashboardLayout({ children }: { children: ReactNode }) {
   return (
     <>
-      <PageHeader title="대시보드" icon={LayoutDashboard} />
+      <PageHeader title="대시보드" icon={LayoutDashboard} showNotifications={false} />
       {children}
     </>
   );

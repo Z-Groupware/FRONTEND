@@ -19,6 +19,18 @@ interface PageHeaderProps {
   backTo?: { href: string; label: string };
   /** 오른쪽 액션 — 버튼 하나 또는 몇 개. 없으면 비워둔다 */
   action?: ReactNode;
+  /**
+   * 종(`NotificationBell`) 표시 여부 — 기본 `true`.
+   *
+   * ⚠️ **`(system)` 화면은 반드시 `false`를 넘긴다.** 이 헤더는 `(shell)` 전용이라
+   *    문서에 그렇게 적혀 있지만, 사이드바·상단바 높이를 맞추려고 `(system)` 레이아웃
+   *    6곳이 그대로 가져다 썼다 — `NotificationBell`은 `(shell)`의 `NotificationProvider`
+   *    (회의 알림·SSE, `memberId` 기준)가 있어야만 동작해서, 그 프로바이더가 없는
+   *    `(system)` 트리에서 그대로 그리면 "NotificationProvider 안에서만 쓸 수 있습니다"
+   *    런타임 에러로 죽는다. `(system)` 운영자는 애초에 워크스페이스 회원이 아니라
+   *    이 알림과 무관하다(§라우트 그룹: `(system)`은 완전히 별도 셸).
+   */
+  showNotifications?: boolean;
 }
 
 /**
@@ -37,7 +49,14 @@ interface PageHeaderProps {
  * ⚠️ 높이(56px)는 **사이드바 로고 줄과 같은 값**이다. 한쪽만 고치면 두 경계선이 어긋나
  *    화면 왼쪽 위에 계단이 생긴다 — 바꿀 때 `role-sidebar`·`system-sidebar`를 같이 본다.
  */
-export function PageHeader({ title, icon: Icon, meta, backTo, action }: PageHeaderProps) {
+export function PageHeader({
+  title,
+  icon: Icon,
+  meta,
+  backTo,
+  action,
+  showNotifications = true,
+}: PageHeaderProps) {
   return (
     <header className="border-border bg-background flex h-[56px] shrink-0 items-center border-b px-8">
       {/*
@@ -97,7 +116,7 @@ export function PageHeader({ title, icon: Icon, meta, backTo, action }: PageHead
           종·테마 전환은 화면마다 두지 않고 여기 한 자리에 고정한다 — 다른 서비스들이 그렇듯
           오른쪽 위, 테마 전환 바로 왼쪽에 종을 둔다(2026-08-16, #602 후속).
         */}
-        <NotificationBell />
+        {showNotifications && <NotificationBell />}
         <ThemeToggle />
       </div>
     </header>
