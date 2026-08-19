@@ -112,6 +112,13 @@ export type Meeting = MeetingDraft & {
    * ⚠️ 안 끝난 회의는 `null`이다 — 시작도 안 한 일에 대기라고 적으면 상태가 하나 늘어난다.
    */
   aiSummaryStatus: AiSummaryStatus | null;
+  /**
+   * 녹음 동의(MEET-05) — 개설 시점엔 이 값을 받는 입력이 없어 항상 `false`로 만들어진다
+   * (`addMockMeeting`·`addMockOnlineMeeting`) — 회의 수정 다이얼로그(#436)가 유일하게
+   * 이 값을 바꾼다(`updateMockMeeting`). `MeetingDraft`가 아니라 여기 두는 이유도 같다 —
+   * 만들 때는 아무도 이 값을 넣어 보내지 않는다.
+   */
+  recordingConsent: boolean;
 };
 
 /**
@@ -149,3 +156,24 @@ export interface OnlineMeetingDraft {
 }
 
 export type OnlineMeetingFormErrors = Partial<Record<keyof OnlineMeetingDraft, string>>;
+
+/**
+ * 회의 수정(MEET-05) 폼 입력(#436) — `RoomReservationDraft`와 닮았지만 **참석자·안건·상위
+ * 팀 액션이 없다.** BE가 수정으로 받는 6필드(`title`·`projectId`·`meetingRoomId`·`startAt`·
+ * `endAt`·`recordingConsent`) 중 시간·회의실은 예약과 같은 슬롯 피커로 고치므로 `date`·
+ * `startTime`·`roomId` 모양을 그대로 따른다(`rooms/types.ts`의 `RoomReservationDraft`와 같은 이름).
+ */
+export interface MeetingEditDraft {
+  title: string;
+  roomId: string;
+  /** "YYYY-MM-DD" */
+  date: string;
+  /** "HH:mm" — 30분 단위 슬롯의 시작 시각 */
+  startTime: string;
+  projectId: string;
+  recordingConsent: boolean;
+}
+
+export type MeetingEditFormErrors = Partial<
+  Record<Exclude<keyof MeetingEditDraft, "recordingConsent">, string>
+>;

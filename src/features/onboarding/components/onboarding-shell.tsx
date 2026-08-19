@@ -4,6 +4,7 @@ import { Check } from "lucide-react";
 import { type ReactNode, useState } from "react";
 
 import { BrandBar } from "@/components/common/brand-bar";
+import { ThemeToggle } from "@/components/common/theme-toggle";
 import { cn } from "@/lib/utils";
 
 import { ONBOARDING_STEP_LABEL, ONBOARDING_TOTAL_STEPS, type OnboardingStep } from "../types";
@@ -35,13 +36,21 @@ export function OnboardingShell({ step, isDone = false, children }: OnboardingSh
     <div className="bg-background bg-dot-grid h-screen-z flex flex-col overflow-hidden overscroll-none">
       <BrandBar
         right={
-          isDone ? (
-            <span className="text-foreground text-[12px] leading-[18px]">완료</span>
-          ) : (
-            <span className="text-muted-foreground/70 text-[12px] leading-[18px] tabular-nums">
-              단계 <span className="text-foreground">{step}</span> / {ONBOARDING_TOTAL_STEPS}
-            </span>
-          )
+          /*
+            ⚠️ 테마 토글을 여기 둔다(2026-08-19) — 온보딩은 셸(사이드바) 밖이라 마이페이지의
+               테마 설정에 닿을 수 없는데, 처음 여는 화면이 눈부시면 바꿀 방법이 없었다.
+               전역 테마(next-themes)를 그대로 바꾸므로 워크스페이스에 들어가도 이어진다.
+          */
+          <span className="flex items-center gap-2">
+            <ThemeToggle />
+            {isDone ? (
+              <span className="text-foreground text-[12px] leading-[18px]">완료</span>
+            ) : (
+              <span className="text-muted-foreground/70 text-[12px] leading-[18px] tabular-nums">
+                단계 <span className="text-foreground">{step}</span> / {ONBOARDING_TOTAL_STEPS}
+              </span>
+            )}
+          </span>
         }
       />
 

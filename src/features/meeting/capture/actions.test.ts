@@ -27,7 +27,12 @@ jest.mock("@/lib/api", () => ({
 import { requireAccessToken } from "@/features/auth/session";
 import { ApiError, serverApi } from "@/lib/api";
 
-import { completeCaptureUploadAction, getActiveCaptureAction } from "./actions";
+import {
+  completeCaptureUploadAction,
+  getActiveCaptureAction,
+  getPartsUploadStatusAction,
+  startCaptureSessionAction,
+} from "./actions";
 
 const serverApiMock = serverApi as unknown as jest.Mock;
 const requireAccessTokenMock = requireAccessToken as unknown as jest.Mock;
@@ -141,5 +146,96 @@ describe("completeCaptureUploadAction — CAP-07 멱등 처리", () => {
 
     expect(result.ok).toBe(false);
     expect(result.error).toBe("서버 오류");
+  });
+});
+
+describe("getPartsUploadStatusAction — CAP-08", () => {
+  it("BE 6필드 응답을 화면 계약 2필드(lastSeq·missingCount)로 접는다", async () => {
+    // [확인] BE PartUploadStatusResponse — segmentSeq·lastSeq·missingSeqs·blocksFormed·resumeFromSeq·gapMs
+    serverApiMock.mockResolvedValueOnce({
+      segmentSeq: 1,
+      lastSeq: 8,
+      missingSeqs: [3, 5],
+      blocksFormed: 2,
+      resumeFromSeq: 9,
+      gapMs: 0,
+    });
+
+    const result = await getPartsUploadStatusAction(42);
+
+    // resumeFromSeq 등 안 쓰는 필드가 계약에 새면 화면이 재개 로직을 만들고 싶어진다 — 계약은 안내용 2필드뿐
+    expect(result).toEqual({ ok: true, data: { lastSeq: 8, missingCount: 2 } });
+    expect(serverApiMock).toHaveBeenCalledWith(
+      "/api/meetings/42/parts/status",
+      expect.objectContaining({ accessToken: "token" }),
+    );
+  });
+
+  it("예외(녹음자 아님 등)는 던지지 않고 {ok:false}로 감싼다 — 복구 안내가 얇아질 뿐 화면은 산다", async () => {
+    serverApiMock.mockRejectedValueOnce(new Error("현재 녹음자가 아닙니다"));
+
+    const result = await getPartsUploadStatusAction(42);
+
+    expect(result).toEqual({ ok: false, error: "현재 녹음자가 아닙니다" });
+  });
+});
+
+/*
+  ⚠️ **PAUSED 세션 재접속(CS-002)은 CAP-03으로 넘긴다**(#605 회귀 방지). [녹음 이어하기]가
+     늘 CAP-01(start)만 불러 새로고침 후 일시정지 세션을 못 살리던 버그다.
+*/
+describe("startCaptureSessionAction — CAP-01, PAUSED 재접속(#605)", () => {
+  it("정상 시작이면 그대로 성공한다", async () => {
+    serverApiMock.mockResolvedValueOnce({
+      captureSessionId: 5,
+      status: "ACTIVE",
+      isPaused: false,
+      startedBy: 1,
+      startedAtEpochMs: 1000,
+      roster: [],
+    });
+
+    const result = await startCaptureSessionAction(3);
+
+    expect(result.ok).toBe(true);
+    expect(serverApiMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("CS-002(이미 있음)면 CAP-03(재개)으로 넘어가고, 성공하면 ok:true다", async () => {
+    serverApiMock
+      .mockRejectedValueOnce(new ApiError(409, "이미 진행 중인 캡처가 있습니다", "CS-002"))
+      .mockResolvedValueOnce(undefined); // 재개(CAP-03) 응답
+    // ⚠️ `startedAtEpochMs`는 재개 응답에 없어 `Date.now()`로 채운다(actions.ts 주석 참고) —
+    //    고정해 두지 않으면 그 대체값이 없어지거나 undefined가 돼도 `ok`만 보는 이 테스트는
+    //    통과한다(코드래빗 지적, PR #638). 다른 테스트에 새는 걸 막으려 끝나면 되돌린다.
+    const dateNowSpy = jest.spyOn(Date, "now").mockReturnValue(1_700_000_000_000);
+
+    const result = await startCaptureSessionAction(3);
+
+    expect(result.ok).toBe(true);
+    expect(result.data?.startedAtEpochMs).toBe(1_700_000_000_000);
+    expect(serverApiMock).toHaveBeenCalledTimes(2);
+    expect(serverApiMock.mock.calls[1][0]).toBe("/api/meetings/3/capture-session/resume");
+
+    dateNowSpy.mockRestore();
+  });
+
+  it("CS-002 뒤 재개마저 실패하면 그 실패 사유를 그대로 전달한다", async () => {
+    serverApiMock
+      .mockRejectedValueOnce(new ApiError(409, "이미 진행 중인 캡처가 있습니다", "CS-002"))
+      .mockRejectedValueOnce(new ApiError(500, "재개에 실패했습니다"));
+
+    const result = await startCaptureSessionAction(3);
+
+    expect(result).toEqual({ ok: false, error: "재개에 실패했습니다" });
+  });
+
+  it("CS-002가 아닌 다른 에러는 재개를 시도하지 않는다", async () => {
+    serverApiMock.mockRejectedValueOnce(new ApiError(403, "권한이 없습니다"));
+
+    const result = await startCaptureSessionAction(3);
+
+    expect(result).toEqual({ ok: false, error: "권한이 없습니다" });
+    expect(serverApiMock).toHaveBeenCalledTimes(1);
   });
 });

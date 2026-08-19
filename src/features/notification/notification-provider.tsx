@@ -180,7 +180,7 @@ function NotificationCenterProvider({
     addNotification({
       id: passwordNoticeId(memberId),
       type: LOCAL_NOTIFICATION_KIND.PASSWORD_TEMP,
-      message: "지금 쓰는 비밀번호는 발급받은 비밀번호예요. 마이페이지에서 바꿔 주세요.",
+      message: "지금 쓰는 비밀번호는 발급받은 비밀번호입니다. 마이페이지에서 바꿔 주세요.",
       href: "/app/me",
       read: false,
       receivedAt: Date.now(),

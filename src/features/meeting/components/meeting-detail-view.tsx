@@ -21,7 +21,7 @@ import { Badge } from "@/components/ui/badge";
 import { ACTION_STATUS_LABEL } from "@/constants/action";
 import { MEMBER_STATUS_BADGE_CLASS, MEMBER_STATUS_LABEL } from "@/constants/member";
 import type { AttendeeScopeViewer } from "@/features/rooms/attendee-scope";
-import type { RoomMember } from "@/features/rooms/types";
+import type { MeetingRoom, RoomMember, RoomProjectOption } from "@/features/rooms/types";
 import { formatDate } from "@/lib/date";
 
 import { canCancelMeeting, canEditMeeting, canEditMeetingAttendees } from "../status";
@@ -251,9 +251,19 @@ interface MeetingDetailViewProps {
   /** 참석자 범위(Owner=팀장만 / Leader·Member=자기 팀만) 기준 — `RoomAttendeePicker`로
    *  그대로 흘려보낸다(`attendee-scope.ts`, 2026-08-13 확정). */
   viewer: AttendeeScopeViewer;
+  /** 회의 수정(MEET-05, #436) 다이얼로그의 회의실 피커·프로젝트 select가 고를 목록 — `members`와
+   *  같은 이유로 `canEdit`가 아니면 페이지가 빈 배열을 내려준다(헛수고 조회를 피한다). */
+  rooms: MeetingRoom[];
+  projects: RoomProjectOption[];
 }
 
-export function MeetingDetailView({ detail, members, viewer }: MeetingDetailViewProps) {
+export function MeetingDetailView({
+  detail,
+  members,
+  viewer,
+  rooms,
+  projects,
+}: MeetingDetailViewProps) {
   const actionsState = actionsSectionStateOf(detail);
   const canEditAttendees = canEditMeetingAttendees(detail);
   const canCancel = canCancelMeeting(detail);
@@ -298,7 +308,17 @@ export function MeetingDetailView({ detail, members, viewer }: MeetingDetailView
             */}
             {(canEdit || canCancel) && (
               <div className="flex shrink-0 items-center gap-2">
-                {canEdit && <MeetingEditDialog meetingId={detail.id} currentTitle={detail.title} />}
+                {canEdit && detail.editableSlot && (
+                  <MeetingEditDialog
+                    meetingId={detail.id}
+                    currentTitle={detail.title}
+                    editableSlot={detail.editableSlot}
+                    currentProjectId={detail.projectId}
+                    currentRecordingConsent={detail.recordingConsent}
+                    rooms={rooms}
+                    projects={projects}
+                  />
+                )}
                 {canCancel && <MeetingCancelDialog meetingId={detail.id} />}
               </div>
             )}

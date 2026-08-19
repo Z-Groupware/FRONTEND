@@ -6,6 +6,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { NavHistoryTracker } from "@/components/common/nav-history";
 import { ThemeProvider } from "@/components/common/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
+import { AppScaleScope } from "@/features/appearance/components/app-scale-scope";
 import { SCALE_BOOT_SCRIPT } from "@/features/appearance/scale";
 
 const geistSans = Geist({
@@ -32,7 +33,26 @@ const LANDING_THEME_KEY = "z:landing-theme";
 */
 const LANDING_THEME_BOOT = `try{var d=localStorage.getItem("${LANDING_THEME_KEY}")!=="light";document.documentElement.classList.add(d?"landing-night":"landing-day")}catch(e){document.documentElement.classList.add("landing-night")}`;
 
+/**
+ * ⚠️ **OG 이미지 절대경로를 만들려고만 둔다** — SEO 대상은 여전히 아니다(§SEO,
+ *    `robots.ts`는 그대로 noindex). 링크 미리보기(카톡·슬랙 unfurl)는 검색 노출과 다른
+ *    기능이라 별개로 켠다. 랜딩(`/`) 한 곳만 이미지를 붙였고(`(public)/page.tsx`), 로그인
+ *    뒤 화면은 여기 붙는 게 없어 여전히 이미지 없이 공유된다.
+ * ⚠️ 배포 도메인은 `https://www.z-groupware.site`다(2026-08-19 확인). 로컬 개발에서는
+ *    `NEXT_PUBLIC_SITE_URL`이 없으면 localhost로 떨어진다 — 배포 빌드에서 env를 안 심어도
+ *    이 기본값이 실제 도메인이라 안전하다(`NODE_ENV`로 가른다).
+ * ⚠️ **`??`가 아니라 `||`다**(적대적 검증에서 발견). env가 빈 문자열(`""`)로 잘못 심기면
+ *    `??`는 그걸 "값이 있다"로 보고 안 걸러 `new URL("")`이 던져 앱 전체가 죽는다 —
+ *    이 값은 URL이라 빈 문자열이 유효한 값일 수 없으므로 `||`로 같이 걸러도 안전하다.
+ */
+const SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL ||
+  (process.env.NODE_ENV === "production"
+    ? "https://www.z-groupware.site"
+    : "http://localhost:3000");
+
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   // 각 화면은 자기 이름만 쓴다 — 탭 제목에 브랜드를 뒤에 붙이지 않는다
   title: {
     default: "Z — 회의 기반 지식관리",
@@ -79,6 +99,11 @@ export default function RootLayout({
             화면에는 아무것도 안 그린다(`components/common/nav-history`).
           */}
           <NavHistoryTracker />
+          {/*
+            배율을 로그인 이후 화면에만 붙였다 뗀다 — 부트 스크립트는 문서 로드 때 한 번뿐이라
+            클라이언트 내비게이션(로그인 → 워크스페이스, 워크스페이스 → 랜딩)은 이게 맡는다.
+          */}
+          <AppScaleScope />
         </ThemeProvider>
       </body>
     </html>

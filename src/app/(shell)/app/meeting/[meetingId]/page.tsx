@@ -5,8 +5,12 @@ import type { ReactNode } from "react";
 
 import { MeetingDetailView } from "@/features/meeting/components/meeting-detail-view";
 import { getMeetingDetail } from "@/features/meeting/server";
-import { canEditMeetingAttendees } from "@/features/meeting/status";
-import { getReservableMembers } from "@/features/rooms/server";
+import { canEditMeeting, canEditMeetingAttendees } from "@/features/meeting/status";
+import {
+  getMeetingRooms,
+  getReservableMembers,
+  getReservableProjects,
+} from "@/features/rooms/server";
 import { getViewer } from "@/features/shell/viewer";
 
 export const dynamic = "force-dynamic";
@@ -95,6 +99,16 @@ export default async function MeetingDetailPage({
   const canEditAttendees = canEditMeetingAttendees(result.detail);
   const members = canEditAttendees ? await getReservableMembers(viewer) : [];
 
+  /*
+    ⚠️ 회의 수정(MEET-05, #436)의 회의실 피커·프로젝트 select도 **host이고 시작 전인 회의일
+       때만** 가져온다(`members`와 같은 판단) — 그 외엔 다이얼로그 자체가 안 뜨는데 목록만
+       미리 불러오면 헛수고다.
+  */
+  const canEdit = canEditMeeting(result.detail);
+  const [rooms, projects] = canEdit
+    ? await Promise.all([getMeetingRooms(), getReservableProjects()])
+    : [[], []];
+
   return (
     <main className="min-h-0 flex-1 overflow-y-auto px-8 py-7">
       <MeetingDetailView
@@ -103,6 +117,8 @@ export default async function MeetingDetailPage({
         /* ⚠️ 참석자 교체(MEET-09)도 개설과 **같은 범위 규칙**을 받는다(2026-08-13) — 개설만
            막고 교체를 열어 두면 나중에 규칙을 깨서 넣을 수 있다(`attendee-scope.ts`). */
         viewer={{ id: viewer.id, role: viewer.role, teamName: viewer.teamName ?? null }}
+        rooms={rooms}
+        projects={projects}
       />
     </main>
   );

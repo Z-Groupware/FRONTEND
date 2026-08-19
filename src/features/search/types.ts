@@ -168,24 +168,24 @@ export interface SearchRecentViewItem {
 /**
  * 랜딩의 칸 — **비어 있는 것과 못 받은 것을 가르려고** 이름을 붙여 둔다.
  * (`features/meeting/view-types.ts`의 `MeetingContentPending`과 같은 결: 왜 비었는지를 값으로 준다)
+ *
+ * ⚠️ **최근 검색어는 여기 없다.** 서버가 채우는 칸이 아니라 브라우저 로컬 저장소에서 바로
+ *    나오는 값이라(`lib/recent-search-storage.ts`) "서버가 못 준다"는 뜻의 `unavailable`
+ *    대상이 될 수 없다 — 검색 입력이 직접 들고 있는다(`search-input.tsx`).
  */
 export const SEARCH_HOME_SECTION = {
-  RECENT_SEARCHES: "RECENT_SEARCHES",
   RECENTLY_VIEWED: "RECENTLY_VIEWED",
   PEOPLE: "PEOPLE",
 } as const;
 export type SearchHomeSection = (typeof SEARCH_HOME_SECTION)[keyof typeof SEARCH_HOME_SECTION];
 
 export const SEARCH_HOME_SECTION_LABEL: Record<SearchHomeSection, string> = {
-  RECENT_SEARCHES: "최근 검색어",
   RECENTLY_VIEWED: "최근 본 항목",
   PEOPLE: "사람으로 찾기",
 };
 
 /** 검색어가 없을 때(랜딩) 보여줄 것 */
 export interface SearchHome {
-  /** 최신순 — 최대 10개 */
-  recentSearches: string[];
   recentlyViewed: SearchRecentViewItem[];
   projects: ProjectBrowseItem[];
   people: PersonBrowseItem[];

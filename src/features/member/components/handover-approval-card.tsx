@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/common/confirm-dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { AUTHORITY, type Authority } from "@/constants/authority";
 import {
   HANDOVER_APPLICANT_TYPE_LABEL,
@@ -368,7 +369,7 @@ export function HandoverApprovalCard({
             반려 사유
           </Label>
 
-          <textarea
+          <Textarea
             ref={reasonRef}
             id="reject-reason"
             value={reason}
@@ -383,7 +384,14 @@ export function HandoverApprovalCard({
             aria-describedby={reasonError ? "reject-reason-error" : undefined}
             placeholder="예) 인계 대상 액션이 빠졌습니다. 다시 올려 주세요."
             className={cn(
-              "placeholder:text-muted-foreground/70 focus-visible:ring-ring/50 bg-card w-full resize-none rounded-lg border px-3 py-2.5 text-[13px] leading-5 transition-colors outline-none focus-visible:ring-3",
+              /*
+                ⚠️ **`dark:bg-card`를 같이 준다**(2026-08-19, 적대적 검증에서 발견). 공용
+                   `Textarea`의 기본값 `dark:bg-input/30`과 `bg-card`는 tailwind-merge가
+                   서로 다른 슬롯(변형자가 다름)으로 봐서 **둘 다 살아남고**, 다크에서는
+                   `dark:` 선택자가 명시도로 이겨 카드 배경이 사라졌다. 같은 변형자
+                   (`dark:`)로 맞춰 줘야 merge가 올바르게 나중 값(`dark:bg-card`)으로 덮는다.
+              */
+              "bg-card dark:bg-card px-3 py-2.5",
               reasonError
                 ? "border-destructive focus-visible:border-destructive"
                 : "border-input focus-visible:border-ring",

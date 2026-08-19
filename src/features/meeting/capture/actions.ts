@@ -19,6 +19,15 @@ import type { ActiveCapture, CaptionChunkInput, CapturePart, CaptureSession } fr
 const CAP_PART_ALREADY_REGISTERED_CODE = "CAP-005";
 
 /**
+ * 캡처 세션이 이미 있다는 뜻의 BE 에러코드(CS-002, 409) — **PAUSED 재접속 신호로 쓴다**(#605).
+ * BE `CaptureSessionCreationService.create()`는 ACTIVE 세션만 CAP-01에서 멱등 반환하고,
+ * PAUSED 세션은 이 에러를 던진다(주석: "PAUSED 세션은 CAP-03으로 재개해야 하므로 CAP-01
+ * 멱등 반환 대상에서 제외한다") — 즉 이 에러 자체가 "그 세션은 지금 일시정지 상태다"라는
+ * 뜻이라, 별도 `isPaused` 필드 없이도 이 코드 하나로 갈래를 정할 수 있다.
+ */
+const CAPTURE_SESSION_ALREADY_EXISTS_CODE = "CS-002";
+
+/**
  * 캡처 창구 — 격리막(§Mock 격리막).
  *
  * 화면(`use-capture.ts`)은 이 파일의 모양만 안다. BE shape은 전부 여기서 흡수한다.
@@ -77,6 +86,20 @@ export async function startCaptureSessionAction(
       },
     };
   } catch (error) {
+    /*
+      ⚠️ **PAUSED 세션 재접속(CS-002)은 CAP-03(재개)으로 넘긴다**(#605). 새로고침·크래시로
+         돌아온 사용자가 [녹음 이어하기]를 누르면 이 화면은 늘 CAP-01을 부르는데, 일시정지
+         상태였던 세션은 CAP-01이 거절한다 — 실패로 끝내지 않고 재개를 대신 시도한다.
+         `startedAtEpochMs`는 재개 응답에 없다(원래 시작 시각이라 다시 안 준다) — 지금
+         이 값을 읽는 곳이 없어(전부 로컬 시계로 계산한다) `Date.now()`로 채워도 해가 없다.
+    */
+    if (error instanceof ApiError && error.code === CAPTURE_SESSION_ALREADY_EXISTS_CODE) {
+      const resumed = await resumeCaptureSessionAction(meetingId);
+      if (!resumed.ok) {
+        return { ok: false, error: resumed.error ?? "재개를 서버에 알리지 못했습니다." };
+      }
+      return { ok: true, data: { captureSessionId: 0, startedAtEpochMs: Date.now() } };
+    }
     return { ok: false, error: toUserMessage(error) };
   }
 }
@@ -128,6 +151,60 @@ export async function getActiveCaptureAction(): Promise<CaptureActionResult<Acti
         recorderPersonId: response.recorderPersonId,
         canTakeover: response.canTakeover,
         elapsedMs: response.elapsedMs,
+      },
+    };
+  } catch (error) {
+    return { ok: false, error: toUserMessage(error) };
+  }
+}
+
+/** [확인] BE `CaptureUploadController.status` — `PartUploadStatusResponse` (2026-08-19) */
+interface PartUploadStatusApiResponse {
+  segmentSeq: number;
+  lastSeq: number;
+  missingSeqs: number[];
+  blocksFormed: number;
+  resumeFromSeq: number;
+  gapMs: number;
+}
+
+/** 복구 안내가 쓰는 업로드 상태 — 화면 계약(§Mock→Live 격리막) */
+export interface PartsUploadStatus {
+  /** 지금까지 업로드가 확인된 마지막 조각 순번 — 0이면 아직 아무것도 안 올라감 */
+  lastSeq: number;
+  /** 업로드 기록이 없는 구간 수 — 크래시로 원본이 사라져 재전송이 불가능한 조각들 */
+  missingCount: number;
+}
+
+/**
+ * 어디까지 올라갔는지 조회(CAP-08) — 새로고침·크래시 복구 안내의 두 번째 단추.
+ *
+ * ⚠️ **재개 로직에는 안 쓴다.** presign(CAP-04)이 서버 `lastSeq + 1`부터 이어 발급하므로
+ *    이어 올리기는 이 조회 없이 성립한다(BE `CaptureUploadService` 실코드 확인, 2026-08-19).
+ *    이 값의 용도는 **안내**다 — 얼마나 올라가 있고, 유실 구간이 있는지 사용자에게 말한다.
+ * ⚠️ `missingSeqs`는 **재전송 목록이 아니다.** 크래시로 로컬 조각이 사라졌으면 다시 보낼
+ *    원본이 없다 — 그 구간 오디오가 비게 된다는 사실을 숨기지 않는 것까지가 FE 몫이다(§정직성).
+ * ⚠️ **현재 녹음자만 조회할 수 있다**(BE `CapturePartStatusService` 검증) — 같은 회의의
+ *    복구 상황에서만 부른다. 다른 회의 안내(CAP-09의 다른 회의 케이스)에는 안 붙인다.
+ * ⚠️ 화면 계약은 `lastSeq`·`missingCount`만 — `resumeFromSeq`(재개는 presign 몫)·
+ *    `blocksFormed`·`gapMs`(라이브 조회에선 항상 0, BE 주석)는 안 쓰므로 계약에서 뺀다.
+ * ⚠️ 목 모드는 `{ok:true, data:null}` — 목엔 서버 업로드 상태가 없다(§정직한 목업).
+ */
+export async function getPartsUploadStatusAction(
+  meetingId: number,
+): Promise<CaptureActionResult<PartsUploadStatus | null>> {
+  if (isMock) return { ok: true, data: null };
+
+  try {
+    const accessToken = await requireAccessToken();
+    const response = await serverApi<PartUploadStatusApiResponse>(ep.partsStatus(meetingId), {
+      accessToken,
+    });
+    return {
+      ok: true,
+      data: {
+        lastSeq: response.lastSeq,
+        missingCount: response.missingSeqs.length,
       },
     };
   } catch (error) {

@@ -6,6 +6,7 @@ import {
   type DragOverEvent,
   DragOverlay,
   type DragStartEvent,
+  type Modifier,
   PointerSensor,
   useSensor,
   useSensors,
@@ -17,9 +18,10 @@ import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/common/confirm-dialog";
 import { EmptyState } from "@/components/common/empty-state";
 import { Button } from "@/components/ui/button";
+import { getAppScale } from "@/features/appearance/scale";
 
 import { commitBoardChangesAction } from "../actions";
-import { canMoveCard, getBoardColumn, isCardDelayed } from "../lib";
+import { canMoveCard, compensateOverlayForScale, getBoardColumn, isCardDelayed } from "../lib";
 import {
   BOARD_COLUMN,
   BOARD_COLUMN_LABEL,
@@ -33,6 +35,14 @@ import {
 import { BoardCardOverlay } from "./board-card";
 import { BoardColumn } from "./board-column";
 import { BoardLeaveGuard } from "./board-leave-guard";
+
+/**
+ * 화면 배율이 걸렸을 때 `DragOverlay`가 커서를 따라오게 하는 보정(§lib
+ * `compensateOverlayForScale`). ⚠️ `DndContext`가 아니라 **여기(그리기)에만** 건다 —
+ * 칸 판정은 화면 px끼리라 이미 맞고, 같이 보정하면 반대로 어긋난다.
+ */
+const appScaleOverlayModifier: Modifier = ({ transform, activeNodeRect }) =>
+  compensateOverlayForScale(transform, activeNodeRect, getAppScale());
 
 interface BoardViewProps {
   boardType: BoardType;
@@ -119,14 +129,11 @@ export function BoardView({ boardType, cards, todayIso }: BoardViewProps) {
     setActiveInvalidTarget(canMoveCard(originalColumnOf(card), targetColumn) ? null : targetColumn);
   }
 
-  function handleDragEnd(event: DragEndEvent) {
-    setActiveInvalidTarget(null);
-    setActiveId(null);
-    setActiveWidth(null);
-    if (!event.over) return;
-    const card = cards.find((c) => c.id === event.active.id);
-    if (!card) return;
-    const to = event.over.id as BoardColumnId;
+  /**
+   * 카드를 `to` 칸으로 옮긴다 — 드래그 드롭과 키보드 대체 경로(§BoardCard [옮기기] 버튼,
+   * #609)가 **같은 함수**를 쓴다. 따로 적어 두면 한쪽만 규칙이 바뀌었을 때 어긋난다.
+   */
+  function moveCard(card: BoardCard, to: BoardColumnId) {
     if (columnOf(card) === to) return; // 화면에 이미 보이는 칸으로 또 놓은 것 — 아무것도 안 한다.
 
     const originalColumn = originalColumnOf(card);
@@ -144,6 +151,30 @@ export function BoardView({ boardType, cards, todayIso }: BoardViewProps) {
       return;
     }
     setOverrides((prev) => ({ ...prev, [card.id]: to }));
+  }
+
+  /**
+   * 카드가 지금 옮겨 갈 수 있는 **유일한** 칸(§canMoveCard) — 없으면 null.
+   * `canMoveCard`가 각 칸에서 자기 자신 말고 갈 수 있는 칸을 하나만 허용하므로(할 일→진행중·
+   * 진행중→완료·완료→진행중), 원래 칸에 있으면 그 하나뿐인 목적지를, 이미 override로 옮겨져
+   * 있으면 원래 칸으로 되돌리는 쪽을 돌려준다 — 규칙은 `canMoveCard` 하나에서만 가져온다.
+   */
+  function moveTargetFor(card: BoardCard): BoardColumnId | null {
+    const original = originalColumnOf(card);
+    if (columnOf(card) !== original) return original;
+    return (
+      BOARD_COLUMNS.find((column) => column !== original && canMoveCard(original, column)) ?? null
+    );
+  }
+
+  function handleDragEnd(event: DragEndEvent) {
+    setActiveInvalidTarget(null);
+    setActiveId(null);
+    setActiveWidth(null);
+    if (!event.over) return;
+    const card = cards.find((c) => c.id === event.active.id);
+    if (!card) return;
+    moveCard(card, event.over.id as BoardColumnId);
   }
 
   function handleConfirm() {
@@ -185,11 +216,9 @@ export function BoardView({ boardType, cards, todayIso }: BoardViewProps) {
   */
   if (cards.length === 0) {
     /*
-      ⚠️ description은 **조작 중립**이다("드래그" 같은 특정 입력 방식 안내 금지) — CLAUDE.md
-         §a11y "DnD 보드는 키보드 대체 경로 필수". 지금 보드는 `PointerSensor`만 걸려 있고
-         `KeyboardSensor`·카드 이동 버튼 같은 대체 경로가 없어(오래된 규약 위반, 별건 이슈로
-         분리) 스크린리더·키보드 사용자에게 "드래그해서 옮길 수 있다"고 미리 알리면 카드가
-         도착한 뒤 그 지시를 따르지 못한다. 대체 경로가 붙기 전에는 조작 안내를 아예 안 한다.
+      ⚠️ description은 **조작 중립**이다("드래그" 같은 특정 입력 방식 안내 금지) — 카드가
+         0건이라 옮길 대상 자체가 없다. 조작 방법(드래그든 [옮기기] 버튼이든)을 적어도
+         뜻이 없는 자리라 아예 안 적는다.
     */
     return (
       <div className="flex min-h-0 flex-1 flex-col">
@@ -251,12 +280,14 @@ export function BoardView({ boardType, cards, todayIso }: BoardViewProps) {
               */
               isDelayed={isDelayedInView}
               isInvalidTarget={activeInvalidTarget === columnId}
+              moveTargetOf={moveTargetFor}
+              onMoveCard={moveCard}
             />
           ))}
         </div>
 
         {/* ⚠️ 포털로 최상단에 그린다 — 칼럼의 overflow-y-auto에 안 잘린다(2026-08-09 디자인 리뷰). */}
-        <DragOverlay>
+        <DragOverlay modifiers={[appScaleOverlayModifier]}>
           {activeCard && (
             <div style={{ width: activeWidth ?? undefined }}>
               {/* ⚠️ 손에 든 사본도 **칸 기준**으로 판정한다 — 아니면 `완료`로 끌고 가는

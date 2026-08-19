@@ -13,6 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { REVIEW_ASSIGNMENT_TARGET_LABEL } from "@/constants/meeting";
 
 import { formatAssigneeLabel, reviewStartDateMin } from "../lib";
@@ -56,13 +57,13 @@ export function ManualDraftForm({
             placeholder="액션명을 입력해 주세요"
             aria-label="액션명"
           />
-          <textarea
+          <Textarea
             value={description}
             onChange={(event) => setDescription(event.target.value)}
             placeholder="세부 내용(선택)"
             aria-label="세부 내용"
             rows={1}
-            className="border-input placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 w-full resize-none rounded-lg border bg-transparent px-2.5 py-1.5 text-[12px] leading-4 outline-none focus-visible:ring-3"
+            className="px-2.5 py-1.5 text-[12px] leading-4"
           />
         </div>
         {isTeamMode ? (

@@ -17,7 +17,6 @@ import {
   SEARCH_MOCK_PROJECTS,
   SEARCH_MOCK_RECENTLY_VIEWED,
 } from "./mock/data";
-import { listMockRecentSearches } from "./mock/recent-searches";
 import type {
   MockSearchRecord,
   ProjectBrowseItem,
@@ -62,11 +61,12 @@ async function fetchProjectOptions(accessToken: string): Promise<ProjectBrowseIt
 }
 
 /**
- * 검색어가 없을 때(랜딩)의 화면 — 최근 검색어·최근 본 항목·둘러보기 목록.
+ * 검색어가 없을 때(랜딩)의 화면 — 최근 본 항목·둘러보기 목록.
+ * ⚠️ 최근 검색어는 이 조회에 없다 — 브라우저 로컬 저장소에서 나온다(`types.ts` 참고).
  *
  * ⚠️ **실서버에서 채울 수 있는 칸은 프로젝트뿐이다**(2026-08-13, #422).
- *    - 최근 검색어·최근 본 항목: `GET /api/v1/search/overview`가 **BE에 없다** — 예전엔 그걸
- *      불러서 랜딩이 **404로 통째로 죽었다.** 검색어를 치기도 전에 에러 화면이었다.
+ *    - 최근 본 항목: `GET /api/v1/search/overview`가 **BE에 없다** — 예전엔 그걸 불러서
+ *      랜딩이 **404로 통째로 죽었다.** 검색어를 치기도 전에 에러 화면이었다.
  *    - 사람: 회사 명부(`GET /api/members`)는 **OWNER·ADMIN 전용**이라(§권한 ①축) 사원·팀장이
  *      부르면 403이다. 권한 없는 사람의 화면을 살리려고 부를 수 있는 API가 아니다.
  *    못 채우는 칸은 **빈 배열이 아니라 `unavailable`로 알린다** — 빈 화면은 "본 게 없다"는
@@ -75,7 +75,6 @@ async function fetchProjectOptions(accessToken: string): Promise<ProjectBrowseIt
 export async function getSearchHome(): Promise<SearchHome> {
   if (isMock) {
     return {
-      recentSearches: listMockRecentSearches(),
       recentlyViewed: SEARCH_MOCK_RECENTLY_VIEWED,
       projects: mapProjectsForBrowse(),
       people: SEARCH_MOCK_PEOPLE.map((person) => ({
@@ -91,12 +90,11 @@ export async function getSearchHome(): Promise<SearchHome> {
   const projects = await fetchProjectOptions(accessToken);
 
   const unavailable: SearchHomeSection[] = [
-    SEARCH_HOME_SECTION.RECENT_SEARCHES,
     SEARCH_HOME_SECTION.RECENTLY_VIEWED,
     SEARCH_HOME_SECTION.PEOPLE,
   ];
 
-  return { recentSearches: [], recentlyViewed: [], projects, people: [], unavailable };
+  return { recentlyViewed: [], projects, people: [], unavailable };
 }
 
 /**

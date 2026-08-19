@@ -44,6 +44,8 @@ export function addMockMeeting(draft: MeetingDraft): Meeting {
     canceledAt: null,
     // 안 끝난 회의엔 분석이 없다(§types)
     aiSummaryStatus: null,
+    // 예약 화면엔 이 값을 받는 입력이 없다 — 항상 `false`로 만들어진다(§types `recordingConsent`)
+    recordingConsent: false,
   };
   store.meetings = [...store.meetings, meeting];
   return meeting;
@@ -75,6 +77,8 @@ export function addMockOnlineMeeting(draft: MeetingDraft): Meeting {
     endedAt: now.toISOString(),
     canceledAt: null,
     aiSummaryStatus: AI_SUMMARY_STATUS.PENDING,
+    // 비대면 회의 등록에도 이 값을 받는 입력이 없다 — `addMockMeeting`과 같은 이유.
+    recordingConsent: false,
   };
   store.meetings = [...store.meetings, meeting];
   return meeting;
@@ -139,17 +143,33 @@ export function updateMockMeetingAttendees(id: string, attendeeIds: number[]): M
 /**
  * 회의 정보 수정(MEET-05) — **보낸 값만 갈아 끼운다**(부분 수정).
  *
- * ⚠️ 지금 화면이 보내는 건 제목뿐이다. BE는 프로젝트·회의실·시간·녹음 동의도 받지만
- *    (`UpdateMeetingRequest`) 그쪽은 예약 슬롯을 다시 잡는 일이라 회의실 예약 화면의
- *    슬롯 피커가 있어야 한다 — **안 붙인 필드를 받는 척하지 않는다**(§정직성).
+ * ⚠️ 시간·회의실·프로젝트도 받는다(#436, `updateMeetingScheduleAction`이 부른다) — 표시용
+ *    사본(`roomName`·`projectTag`)까지 같이 넘겨야 한다. `addMockReservation`이 id로
+ *    이름·태그를 찾아 채우는 것과 같은 원칙이라 호출부가 그 조회를 끝낸 뒤에만 이 함수를
+ *    부른다(참조 무결성은 여기서 다시 안 본다).
  * ⚠️ 상태 판정(`meetingStatusOf`)은 호출부(`actions.ts`)가 이미 하고 온다 —
  *    `cancelMockMeeting`·`updateMockMeetingAttendees`와 같은 자리 나눔이다.
  */
-export function updateMockMeeting(id: string, patch: { title: string }): Meeting | null {
+export function updateMockMeeting(
+  id: string,
+  patch: Partial<
+    Pick<
+      Meeting,
+      | "title"
+      | "roomId"
+      | "roomName"
+      | "projectId"
+      | "projectTag"
+      | "start"
+      | "end"
+      | "recordingConsent"
+    >
+  >,
+): Meeting | null {
   const found = findMockMeeting(id);
   if (!found) return null;
 
-  const updated: Meeting = { ...found, title: patch.title };
+  const updated: Meeting = { ...found, ...patch };
   store.meetings = store.meetings.map((meeting) => (meeting.id === id ? updated : meeting));
   return updated;
 }

@@ -12,8 +12,9 @@ import {
   createOnlineMeetingAction,
   getOnlineMeetingRecordingUploadUrlAction,
   updateMeetingAttendeesAction,
+  updateMeetingScheduleAction,
 } from "./actions";
-import { addMockMeeting } from "./mock/meetings";
+import { addMockMeeting, findMockMeeting } from "./mock/meetings";
 import type { MeetingDraft } from "./types";
 
 const INITIAL = { error: null, attendeeIds: null } as const;
@@ -240,5 +241,161 @@ describe("비대면 회의 녹음 업로드 URL 발급 — mock 분기", () => {
 
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.message).toBe("파일 용량이 5GiB를 넘었습니다");
+  });
+});
+
+const scheduleForm = (entries: {
+  meetingId: string;
+  title?: string;
+  roomId?: string;
+  date?: string;
+  startTime?: string;
+  projectId?: string;
+  recordingConsent?: boolean;
+}) => {
+  const data = new FormData();
+  data.append("meetingId", entries.meetingId);
+  data.append("title", entries.title ?? "스프린트 계획 수정");
+  data.append("roomId", entries.roomId ?? "room-large");
+  // ⚠️ 목의 5개 시드 예약(2026-08-03~06)과 안 겹치는 먼 미래 날짜를 기본값으로 쓴다.
+  data.append("date", entries.date ?? "2027-03-01");
+  data.append("startTime", entries.startTime ?? "09:00");
+  data.append("projectId", entries.projectId ?? "1");
+  if (entries.recordingConsent) data.append("recordingConsent", "on");
+  return data;
+};
+
+const SCHEDULE_INITIAL = { errors: {}, saved: null } as const;
+
+/**
+ * 회의 시간·회의실·프로젝트·녹음 동의 수정(MEET-05, #436) — mock 분기.
+ * ⚠️ 제목만 고치는 `updateMeetingAction`과 **다른 액션**이다 — 슬롯 피커가 있는 다이얼로그만
+ *    이 액션을 쓴다(액션을 나눈 이유는 `actions.ts`의 함수 주석 참고).
+ */
+describe("회의 시간·회의실·프로젝트·녹음 동의 수정(#436) — mock 분기", () => {
+  it("성공하면 회의·예약 레코드가 같이 바뀌고 저장 표식을 돌려준다", async () => {
+    const meeting = seedMeeting({ hostAuthority: "OWNER" });
+
+    const result = await updateMeetingScheduleAction(
+      SCHEDULE_INITIAL,
+      scheduleForm({ meetingId: meeting.id, recordingConsent: true }),
+    );
+
+    expect(result.errors).toEqual({});
+    expect(result.saved).toEqual({ title: "스프린트 계획 수정" });
+    // 성공 응답만 보고 끝내지 않는다 — 실제로 스토어에 반영됐는지 다시 읽어 확인한다.
+    expect(findMockMeeting(meeting.id)?.recordingConsent).toBe(true);
+  });
+
+  it("녹음 동의를 다시 끄면 꺼진 값이 저장된다", async () => {
+    const meeting = seedMeeting({ hostAuthority: "OWNER" });
+    await updateMeetingScheduleAction(
+      SCHEDULE_INITIAL,
+      scheduleForm({ meetingId: meeting.id, recordingConsent: true }),
+    );
+
+    await updateMeetingScheduleAction(
+      SCHEDULE_INITIAL,
+      scheduleForm({ meetingId: meeting.id, recordingConsent: false }),
+    );
+
+    expect(findMockMeeting(meeting.id)?.recordingConsent).toBe(false);
+  });
+
+  it("시작한 회의는 수정할 수 없다", async () => {
+    const meeting = addMockMeeting({
+      ...BASE,
+      start: new Date(Date.now() - 60 * 60_000),
+      end: new Date(Date.now() - 30 * 60_000),
+      hostId: 1,
+      attendeeIds: [1],
+      hostAuthority: "OWNER",
+      isOnline: false,
+      recordingFileName: null,
+    } as MeetingDraft);
+
+    const result = await updateMeetingScheduleAction(
+      SCHEDULE_INITIAL,
+      scheduleForm({ meetingId: meeting.id }),
+    );
+
+    expect(result.errors.title).toBe("이미 시작된 회의는 수정할 수 없습니다");
+  });
+
+  it("존재하지 않는 회의실이면 폼 조작 방어로 막는다", async () => {
+    const meeting = seedMeeting({ hostAuthority: "OWNER" });
+
+    const result = await updateMeetingScheduleAction(
+      SCHEDULE_INITIAL,
+      scheduleForm({ meetingId: meeting.id, roomId: "room-없음" }),
+    );
+
+    expect(result.errors.roomId).toBe("존재하지 않는 회의실입니다");
+  });
+
+  it("존재하지 않는 프로젝트면 폼 조작 방어로 막는다", async () => {
+    const meeting = seedMeeting({ hostAuthority: "OWNER" });
+
+    const result = await updateMeetingScheduleAction(
+      SCHEDULE_INITIAL,
+      scheduleForm({ meetingId: meeting.id, projectId: "999" }),
+    );
+
+    expect(result.errors.projectId).toBe("존재하지 않는 프로젝트입니다");
+  });
+
+  it("이미 다른 회의가 예약된 회의실·시간이면 막는다(시드 예약-2와 겹침)", async () => {
+    const meeting = seedMeeting({ hostAuthority: "OWNER" });
+
+    const result = await updateMeetingScheduleAction(
+      SCHEDULE_INITIAL,
+      // 시드 reservation-2: room-large, 2026-08-03 10:00–10:30
+      scheduleForm({
+        meetingId: meeting.id,
+        roomId: "room-large",
+        date: "2026-08-03",
+        startTime: "10:00",
+      }),
+    );
+
+    expect(result.errors.roomId).toBe("그 시간에는 이미 예약된 회의실입니다");
+  });
+
+  it("시간을 안 바꾸고 그대로 저장해도(자기 자신과의 겹침) 막히지 않는다", async () => {
+    const meeting = seedMeeting({ hostAuthority: "OWNER" });
+    // 자기 자신의 지금 슬롯으로 한 번 옮겨 둔다 — 실제 예약 레코드가 그 슬롯을 갖게 만든다.
+    await updateMeetingScheduleAction(
+      SCHEDULE_INITIAL,
+      scheduleForm({
+        meetingId: meeting.id,
+        roomId: "room-video",
+        date: "2027-05-10",
+        startTime: "11:00",
+      }),
+    );
+
+    // 같은 값으로 다시 저장 — 자기 자신과 겹치는 것뿐이라 통과해야 한다.
+    const result = await updateMeetingScheduleAction(
+      SCHEDULE_INITIAL,
+      scheduleForm({
+        meetingId: meeting.id,
+        roomId: "room-video",
+        date: "2027-05-10",
+        startTime: "11:00",
+      }),
+    );
+
+    expect(result.errors).toEqual({});
+  });
+
+  it("형식이 어긋난 폼은 목 조회보다 먼저 막힌다", async () => {
+    const meeting = seedMeeting({ hostAuthority: "OWNER" });
+
+    const result = await updateMeetingScheduleAction(
+      SCHEDULE_INITIAL,
+      scheduleForm({ meetingId: meeting.id, startTime: "10:15" }),
+    );
+
+    expect(result.errors.startTime).toBe("수정은 30분 단위로만 가능합니다");
   });
 });
