@@ -1,6 +1,11 @@
 import { ProfileAvatar } from "@/components/common/profile-avatar";
 import { AUTHORITY, AUTHORITY_LABEL } from "@/constants/authority";
-import { MEMBER_STATUS, MEMBER_STATUS_BADGE_CLASS, MEMBER_STATUS_LABEL } from "@/constants/member";
+import {
+  MEMBER_STATUS,
+  MEMBER_STATUS_BADGE_CLASS,
+  MEMBER_STATUS_LABEL,
+  ROLE_NONE_LABEL,
+} from "@/constants/member";
 import { cn } from "@/lib/utils";
 
 import type { OrgMember } from "../org-types";
@@ -90,24 +95,24 @@ export function OrgMemberNode({ member, keyword }: { member: OrgMember; keyword:
         </div>
 
         {/*
-          ⚠️ **역할을 빠뜨리지 않는다.** 사원 관리 목록이 이미 컬럼으로 갖고 있는 값이라
-             (WORKFLOW §9) 여기만 없으면 같은 사람이 화면마다 다르게 보인다.
-          ⚠️ 안 붙인 사람은 **`없음`**이라고 적는다 — 사원 관리와 같은 말을 쓴다. 한때 직급만
-             적었는데(`팀장 · 없음`이 어색해서), 그러면 이 화면만 다른 말을 하고 "역할이 빠졌다"는
-             처음 문제로 돌아간다. 값은 매퍼가 이미 맞춰 준다(§org-types).
-          ⚠️ **직급이 없으면 가운뎃점도 안 붙인다**(2026-08-19). Owner는 직급 자체가 없어
-             `member.position`이 빈 문자열이다 — 그냥 이어 붙이면 `· 없음`처럼 점이 맨 앞에
-             떠서 아무것도 안 가르는 점이 된다. 가운뎃점은 **가를 둘이 있을 때만** 의미가 있다.
+          ⚠️ **`없음`은 화면에 안 그린다**(2026-08-19 재변경, 사용자 판단). 예전엔 직급만
+             적었다가("팀장 · 없음"이 어색해서) "역할이 안 뜬 화면처럼 보인다"는 이유로 도로
+             붙였는데, 다시 보니 이 카드형 자리에서는(표의 한 칸이 아니라 이름 바로 아래
+             두 번째 줄) "없음"이 카드 대부분에 반복돼 오히려 더 거슬렸다. 값 자체는
+             매퍼가 여전히 "없음"으로 채워 준다(§org-types) — 여기서 **그 값을 숨길 뿐**이고,
+             검색(`search`가 "없음"을 훑는 것)도 그대로 동작한다.
+          ⚠️ **가를 게 하나도 없으면 줄 자체를 안 그린다.** 직급도 없고(Owner) 역할도 `없음`이면
+             빈 문단만 남아 카드 안에 의미 없는 빈 줄이 뜬다.
         */}
-        <p className="text-muted-foreground truncate text-[12px] leading-4">
-          {member.position && (
-            <>
-              <MatchText text={member.position} keyword={keyword} />
-              {" · "}
-            </>
-          )}
-          <MatchText text={member.roleLabel} keyword={keyword} />
-        </p>
+        {(member.position || member.roleLabel !== ROLE_NONE_LABEL) && (
+          <p className="text-muted-foreground truncate text-[12px] leading-4">
+            {member.position && <MatchText text={member.position} keyword={keyword} />}
+            {member.position && member.roleLabel !== ROLE_NONE_LABEL && " · "}
+            {member.roleLabel !== ROLE_NONE_LABEL && (
+              <MatchText text={member.roleLabel} keyword={keyword} />
+            )}
+          </p>
+        )}
       </div>
     </div>
   );
