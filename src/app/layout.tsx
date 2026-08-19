@@ -33,7 +33,23 @@ const LANDING_THEME_KEY = "z:landing-theme";
 */
 const LANDING_THEME_BOOT = `try{var d=localStorage.getItem("${LANDING_THEME_KEY}")!=="light";document.documentElement.classList.add(d?"landing-night":"landing-day")}catch(e){document.documentElement.classList.add("landing-night")}`;
 
+/**
+ * ⚠️ **OG 이미지 절대경로를 만들려고만 둔다** — SEO 대상은 여전히 아니다(§SEO,
+ *    `robots.ts`는 그대로 noindex). 링크 미리보기(카톡·슬랙 unfurl)는 검색 노출과 다른
+ *    기능이라 별개로 켠다. 랜딩(`/`) 한 곳만 이미지를 붙였고(`(public)/page.tsx`), 로그인
+ *    뒤 화면은 여기 붙는 게 없어 여전히 이미지 없이 공유된다.
+ * ⚠️ 배포 도메인은 `https://www.z-groupware.site`다(2026-08-19 확인). 로컬 개발에서는
+ *    `NEXT_PUBLIC_SITE_URL`이 없으면 localhost로 떨어진다 — 배포 빌드에서 env를 안 심어도
+ *    이 기본값이 실제 도메인이라 안전하다(`NODE_ENV`로 가른다, `.env.example` 참고).
+ */
+const SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL ??
+  (process.env.NODE_ENV === "production"
+    ? "https://www.z-groupware.site"
+    : "http://localhost:3000");
+
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   // 각 화면은 자기 이름만 쓴다 — 탭 제목에 브랜드를 뒤에 붙이지 않는다
   title: {
     default: "Z — 회의 기반 지식관리",

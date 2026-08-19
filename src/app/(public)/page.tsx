@@ -12,10 +12,33 @@ import { LandingShell } from "@/features/landing/components/landing-shell";
 import { ClosingSection } from "@/features/landing/components/pricing-section";
 import { RoleSection } from "@/features/landing/components/role-section";
 
+/*
+  ⚠️ **OG·트위터 카드는 이 화면(랜딩)에만 붙인다.** 로그인 뒤 화면·`(public)`의 다른
+     화면(로그인·가입·요금제 등)은 이 필드가 없어 공유해도 이미지 없이 나간다 — 파일
+     컨벤션(`opengraph-image.tsx`)을 쓰면 세그먼트 상속 여부가 애매해지므로, 이 페이지의
+     메타데이터 객체에 명시적으로만 건다(§SEO: 나머지는 여전히 대상 아님).
+  ⚠️ 이미지는 `public/og-landing.png` 정적 파일이다 — 랜딩 카피가 안 바뀌는 한 다시 만들
+     필요 없다. 카피가 바뀌면 이 이미지도 같이 바꾼다(따로 놀면 미리보기가 옛 문구를 보여준다).
+*/
 export const metadata: Metadata = {
   title: "Z — 회의를 하면, 조직의 기억이 된다",
   description:
     "회의가 끝나면 결정과 할 일이 담당자에게 배정됩니다. 사람이 바뀌어도 맥락은 남습니다.",
+  openGraph: {
+    title: "Z — 회의를 하면, 조직의 기억이 된다",
+    description:
+      "회의가 끝나면 결정과 할 일이 담당자에게 배정됩니다. 사람이 바뀌어도 맥락은 남습니다.",
+    images: [{ url: "/og-landing.png", width: 1200, height: 630 }],
+    locale: "ko_KR",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Z — 회의를 하면, 조직의 기억이 된다",
+    description:
+      "회의가 끝나면 결정과 할 일이 담당자에게 배정됩니다. 사람이 바뀌어도 맥락은 남습니다.",
+    images: ["/og-landing.png"],
+  },
 };
 
 /**
