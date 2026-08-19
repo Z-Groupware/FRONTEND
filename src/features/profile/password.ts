@@ -12,8 +12,8 @@ const PASSWORD_PATTERN = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z0-9])[!-~]{8,16}$/
 export const PASSWORD_POLICY_HINTS = [
   "비밀번호는 8자 이상 16자 이하로 입력해 주세요.",
   "영문, 숫자, 특수문자를 모두 포함해 주세요.",
-  "공백은 사용할 수 없어요.",
-  "이전에 사용한 비밀번호는 다시 사용할 수 없어요.",
+  "공백은 사용할 수 없습니다.",
+  "이전에 사용한 비밀번호는 다시 사용할 수 없습니다.",
 ] as const;
 
 export const changePasswordSchema = z

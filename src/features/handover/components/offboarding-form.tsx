@@ -7,6 +7,7 @@ import { DatePickerField } from "@/components/common/date-picker-field";
 import { ResultDialog } from "@/components/common/result-dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { HANDOVER_TYPE } from "@/constants/domain";
 
 import { submitHandoverAction } from "../actions";
@@ -94,7 +95,7 @@ export function OffboardingForm({ context }: OffboardingFormProps) {
           <Label htmlFor="offboarding-description">
             담당 업무 및 인수인계 상세 설명 <span className="text-destructive">*</span>
           </Label>
-          <textarea
+          <Textarea
             id="offboarding-description"
             rows={4}
             value={description}
@@ -103,7 +104,6 @@ export function OffboardingForm({ context }: OffboardingFormProps) {
             }
             placeholder="담당했던 업무, 진행 맥락, 인수받을 사람이 알아야 할 사항을 작성해 주세요. PDF에도 함께 포함됩니다."
             maxLength={DESCRIPTION_MAX_LENGTH}
-            className="border-input placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 w-full resize-none rounded-lg border bg-transparent px-2.5 py-2 text-[13px] leading-5 transition-colors outline-none focus-visible:ring-3"
           />
           <p className="text-muted-foreground text-right text-[12px] leading-4 tabular-nums">
             {description.length}/{DESCRIPTION_MAX_LENGTH}

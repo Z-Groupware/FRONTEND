@@ -20,6 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { FLASH_TOAST_PARAM } from "@/constants/flash-toast";
 import { PROJECT_DESCRIPTION_MAX_LENGTH, PROJECT_TAG_MAX_LENGTH } from "@/constants/project";
 import { paletteColorByName, TAG_NAME_LABEL, TAG_NAMES, type TagColorName } from "@/lib/palette";
@@ -208,7 +209,7 @@ export function ProjectForm({ action, teamOptions, cancelHref }: ProjectFormProp
                 {description.length}/{PROJECT_DESCRIPTION_MAX_LENGTH}
               </span>
             </div>
-            <textarea
+            <Textarea
               id="project-description"
               name="description"
               /* ⚠️ 곁 칸(태그·색·기간·첨부)과 키를 맞춘다 — 4줄이면 왼쪽 아래가 통째로 비었다 */
@@ -220,7 +221,6 @@ export function ProjectForm({ action, teamOptions, cancelHref }: ProjectFormProp
               placeholder="예: 아티스트 공식 굿즈를 판매하는 온라인 커머스 웹을 신규 구축합니다."
               maxLength={PROJECT_DESCRIPTION_MAX_LENGTH}
               aria-invalid={Boolean(state.errors.description)}
-              className="border-input placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:border-destructive dark:bg-input/30 w-full resize-none rounded-lg border bg-transparent px-2.5 py-2 text-[13px] leading-5 transition-colors outline-none focus-visible:ring-3"
             />
             <FieldError message={state.errors.description} />
           </div>

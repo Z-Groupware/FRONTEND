@@ -15,6 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { NOTICE_TARGET, NOTICE_TARGET_LABEL, type NoticeTarget } from "@/constants/domain";
 
 import { publishNoticeAction } from "../actions";
@@ -96,13 +97,13 @@ export function NoticeComposeCard({ companies }: { companies: NoticeTargetCompan
 
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="notice-content">내용</Label>
-          <textarea
+          <Textarea
             id="notice-content"
             value={content}
             onChange={(event) => setContent(event.target.value)}
             placeholder="공지 내용을 입력하세요"
             rows={5}
-            className="border-input placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 min-h-[120px] w-full resize-none rounded-lg border bg-transparent px-2.5 py-2 text-[13px] leading-5 transition-colors outline-none focus-visible:ring-3"
+            className="min-h-[120px]"
           />
         </div>
 

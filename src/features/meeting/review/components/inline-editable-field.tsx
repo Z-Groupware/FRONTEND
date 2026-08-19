@@ -3,6 +3,7 @@
 import { Pencil } from "lucide-react";
 import { useState } from "react";
 
+import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 
 interface InlineEditableFieldProps {
@@ -54,7 +55,7 @@ export function InlineEditableField({
   if (isEditing) {
     if (multiline) {
       return (
-        <textarea
+        <Textarea
           autoFocus
           aria-label={ariaLabel}
           value={draft}
@@ -62,10 +63,7 @@ export function InlineEditableField({
           onBlur={commit}
           onKeyDown={(event) => event.key === "Escape" && cancel()}
           rows={3}
-          className={cn(
-            "border-input focus-visible:border-ring focus-visible:ring-ring/50 w-full resize-none rounded-lg border bg-transparent px-2.5 py-1.5 text-[12px] leading-4 outline-none focus-visible:ring-3",
-            className,
-          )}
+          className={cn("px-2.5 py-1.5 text-[12px] leading-4", className)}
         />
       );
     }
