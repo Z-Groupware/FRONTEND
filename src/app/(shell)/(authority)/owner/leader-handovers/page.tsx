@@ -121,7 +121,7 @@ export default async function LeaderHandoversPage({ searchParams }: LeaderHandov
               <EmptyState
                 icon={ClipboardList}
                 title="해당하는 인수인계서가 없습니다."
-                description="팀장이 오프보딩을 신청하면 이 자리에 올라옵니다."
+                description="팀장 오프보딩을 오너가 최종 승인하면 이 자리에 올라옵니다."
               />
             ) : (
               <ul>
