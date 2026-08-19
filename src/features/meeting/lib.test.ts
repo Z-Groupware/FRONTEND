@@ -3,7 +3,9 @@ import {
   formatMeetingSchedule,
   MEETING_TITLE_MAX_LENGTH,
   meetingListRange,
+  validateMeetingEditDraft,
 } from "./lib";
+import type { MeetingEditDraft } from "./types";
 
 describe("formatMeetingSchedule", () => {
   it("우리 날짜 표기와 시각 범위를 한 줄로 잇는다", () => {
@@ -80,5 +82,56 @@ describe("checkMeetingTitle", () => {
   /* ⚠️ 자르고 나서 재야 한다 — 공백 포함 201자인데 실제 저장은 200자인 값을 막으면 안 된다 */
   it("공백을 뗀 뒤의 길이로 잰다", () => {
     expect(checkMeetingTitle(` ${"가".repeat(MEETING_TITLE_MAX_LENGTH)} `).ok).toBe(true);
+  });
+});
+
+/** 회의 수정(MEET-05, #436) 폼 검증 — 회의실 예약 개설(`validateRoomReservationDraft`)과 같은 형식 규칙. */
+describe("validateMeetingEditDraft", () => {
+  function draft(overrides: Partial<MeetingEditDraft> = {}): MeetingEditDraft {
+    return {
+      title: "스프린트 계획",
+      roomId: "room-large",
+      date: "2026-08-20",
+      startTime: "10:00",
+      projectId: "1",
+      recordingConsent: false,
+      ...overrides,
+    };
+  }
+
+  it("다 채우면 통과한다", () => {
+    expect(validateMeetingEditDraft(draft())).toEqual({});
+  });
+
+  it("제목이 비면 checkMeetingTitle과 같은 문구로 막는다", () => {
+    expect(validateMeetingEditDraft(draft({ title: "  " })).title).toBe(
+      "회의 제목을 입력해 주세요.",
+    );
+  });
+
+  it("회의실을 안 고르면 막는다", () => {
+    expect(validateMeetingEditDraft(draft({ roomId: "" })).roomId).toBe("회의실을 선택해 주세요");
+  });
+
+  it("날짜가 비거나 형식이 어긋나면 막는다", () => {
+    expect(validateMeetingEditDraft(draft({ date: "" })).date).toBe("날짜를 선택해 주세요");
+    expect(validateMeetingEditDraft(draft({ date: "2026-13-40" })).date).toBe(
+      "올바른 날짜가 아니에요",
+    );
+  });
+
+  it("시작 시간이 30분 단위가 아니면 막는다", () => {
+    expect(validateMeetingEditDraft(draft({ startTime: "" })).startTime).toBe(
+      "시작 시간을 선택해 주세요",
+    );
+    expect(validateMeetingEditDraft(draft({ startTime: "10:15" })).startTime).toBe(
+      "수정은 30분 단위로만 가능합니다",
+    );
+  });
+
+  it("프로젝트를 안 고르면 막는다", () => {
+    expect(validateMeetingEditDraft(draft({ projectId: "" })).projectId).toBe(
+      "프로젝트를 선택해 주세요",
+    );
   });
 });

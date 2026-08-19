@@ -1,5 +1,7 @@
 import "server-only";
 
+import { format } from "date-fns";
+
 import { AI_SUMMARY_STATUS, MEETING_STATUS } from "@/constants/meeting";
 import { PERSONAL_ACTION_DETAIL_MOCK } from "@/features/action/mock/action-detail";
 import { requireAccessToken } from "@/features/auth/session";
@@ -39,6 +41,7 @@ import type {
   MeetingAgenda,
   MeetingCaptureResult,
   MeetingContentPending,
+  MeetingDetail,
   MeetingDetailResult,
   MeetingDirectory,
   MeetingListItem,
@@ -85,6 +88,19 @@ function originLabelOf(meeting: Meeting): string {
  */
 function toMockAgenda(topics: Meeting["topics"]): MeetingAgenda {
   return { main: topics[0].main, subs: topics.map((topic) => topic.sub) };
+}
+
+/**
+ * 회의 수정 다이얼로그의 슬롯 피커 초기값(#436) — 실서버 매퍼의 `toEditableSlot`과 같은
+ * 모양이다. 비대면 회의는 회의실·시간이 없어 `null`이다.
+ */
+function toMockEditableSlot(meeting: Meeting): MeetingDetail["editableSlot"] {
+  if (meeting.isOnline || !meeting.roomId) return null;
+  return {
+    date: format(meeting.start, "yyyy-MM-dd"),
+    startTime: format(meeting.start, "HH:mm"),
+    meetingRoomId: meeting.roomId,
+  };
 }
 
 function toListItem(meeting: Meeting, viewerId: number, now: Date): MeetingListItem {
@@ -381,6 +397,10 @@ export async function getMeetingDetail(id: string, viewer: Actor): Promise<Meeti
       isStalled,
       isHost: canOperateMeeting(viewer, { ownerId: meeting.hostId }),
       isOnline: meeting.isOnline,
+      // ⚠️ 개설 때는 항상 `false`(§types `Meeting.recordingConsent`)지만, 회의 수정
+      //    다이얼로그(#436)가 고치면 그 값이 스토어에 남는다 — 여기서 저장된 값을 그대로 읽는다.
+      recordingConsent: meeting.recordingConsent,
+      editableSlot: toMockEditableSlot(meeting),
     },
   };
 }

@@ -33,6 +33,7 @@ const DETAIL: BeMeetingDetail = {
     { memberId: 2, name: "김서준", teamId: 3, teamName: "개발팀", jobPosition: "팀장" },
     { memberId: 5, name: "박지호", teamId: null, teamName: null, jobPosition: null },
   ],
+  recordingConsent: false,
 };
 
 /** 오너 개설 회의 — 참석자 전원 팀장, `teamId`는 회의·참석자 모두 각자 소속 팀을 가리킨다 */

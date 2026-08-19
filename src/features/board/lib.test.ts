@@ -1,4 +1,10 @@
-import { canMoveCard, getBoardColumn, groupCardsByColumn, isCardDelayed } from "./lib";
+import {
+  canMoveCard,
+  compensateOverlayForScale,
+  getBoardColumn,
+  groupCardsByColumn,
+  isCardDelayed,
+} from "./lib";
 import type { BoardCard } from "./types";
 
 const TODAY = new Date("2026-08-06T09:00:00");
@@ -94,5 +100,34 @@ describe("groupCardsByColumn", () => {
     expect(groups.TODO.map((c) => c.id)).toEqual([1]);
     expect(groups.IN_PROGRESS.map((c) => c.id)).toEqual([2]);
     expect(groups.DONE.map((c) => c.id)).toEqual([3]);
+  });
+});
+
+describe("compensateOverlayForScale — 배율 좌표 보정", () => {
+  const rect = { top: 200, left: 400 };
+
+  it("배율 1이면 원본 그대로다 — 배율 없는 화면은 영향이 없어야 한다", () => {
+    const transform = { x: 120, y: 80, scaleX: 1, scaleY: 1 };
+    expect(compensateOverlayForScale(transform, rect, 1)).toBe(transform);
+  });
+
+  it("80%에서 그려지는 자리 s×(rect+t)가 화면 기대치 rect+Δ와 일치한다", () => {
+    const scale = 0.8;
+    const delta = { x: 500, y: 300, scaleX: 1, scaleY: 1 };
+    const t = compensateOverlayForScale(delta, rect, scale);
+    // 검산: 브라우저가 실제로 그리는 자리(레이아웃 × s)가 커서 기대 자리와 같은가
+    expect(scale * (rect.left + t.x)).toBeCloseTo(rect.left + delta.x);
+    expect(scale * (rect.top + t.y)).toBeCloseTo(rect.top + delta.y);
+  });
+
+  it("이동량 0이어도 초기 위치 몫은 보정된다 — 집자마자 카드가 어긋나던 원인", () => {
+    const t = compensateOverlayForScale({ x: 0, y: 0, scaleX: 1, scaleY: 1 }, rect, 0.75);
+    expect(0.75 * (rect.left + t.x)).toBeCloseTo(rect.left);
+    expect(0.75 * (rect.top + t.y)).toBeCloseTo(rect.top);
+  });
+
+  it("rect가 없으면(측정 전) 원본 그대로다 — 없는 값으로 지어내 보정하지 않는다", () => {
+    const transform = { x: 10, y: 10, scaleX: 1, scaleY: 1 };
+    expect(compensateOverlayForScale(transform, null, 0.8)).toBe(transform);
   });
 });

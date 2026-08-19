@@ -51,6 +51,7 @@ function meetingDetail(overrides: Partial<Record<string, unknown>> = {}) {
     meetingRoom: { meetingRoomId: 1, name: "소회의실 B" },
     host: { memberId: HOST_LEADER.id, name: "김서준" },
     attendees: [],
+    recordingConsent: false,
     ...overrides,
   };
 }

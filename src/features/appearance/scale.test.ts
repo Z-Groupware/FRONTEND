@@ -1,9 +1,11 @@
 import {
   DEFAULT_SCALE,
+  isScaledPath,
   nextScaleByKey,
   parseScale,
   recommendScale,
   SCALE_BOOT_SCRIPT,
+  SCALED_PATH_PREFIXES,
   SCREEN_SCALES,
   suggestScale,
 } from "./scale";
@@ -95,6 +97,9 @@ describe("SCALE_BOOT_SCRIPT", () => {
   const scaleVar = () => document.documentElement.style.getPropertyValue("--app-scale");
 
   it("100%는 아무것도 세우지 않는다 — 기본값 `1`로 둔다", () => {
+    // ⚠️ 앱 경로에서 돌아야 이 테스트가 "100% 건너뛰기"를 검증한다 — 공개 경로면
+    //    경로 게이트에 막혀 어떤 값이든 안 세워지므로, 통과해도 아무것도 증명 못 한다
+    window.history.pushState({}, "", "/app/board");
     localStorage.setItem("z:screen-scale", "100");
     document.documentElement.style.removeProperty("--app-scale");
 
@@ -103,7 +108,9 @@ describe("SCALE_BOOT_SCRIPT", () => {
     expect(scaleVar()).toBe("");
   });
 
-  it("고른 배율을 `--app-scale`로 세운다", () => {
+  it("고른 배율을 `--app-scale`로 세운다 — 로그인 이후 경로에서", () => {
+    // ⚠️ 부트 스크립트는 경로를 본다(2026-08-19) — 앱 경로가 아니면 안 건다
+    window.history.pushState({}, "", "/app/board");
     localStorage.setItem("z:screen-scale", "90");
 
     new Function(SCALE_BOOT_SCRIPT)();
@@ -111,11 +118,24 @@ describe("SCALE_BOOT_SCRIPT", () => {
     expect(scaleVar()).toBe("0.9");
   });
 
+  it("공개 화면(랜딩·로그인)에서는 저장된 배율이 있어도 안 건다", () => {
+    localStorage.setItem("z:screen-scale", "75");
+    for (const path of ["/", "/login"]) {
+      window.history.pushState({}, "", path);
+      document.documentElement.style.removeProperty("--app-scale");
+
+      new Function(SCALE_BOOT_SCRIPT)();
+
+      expect(scaleVar()).toBe("");
+    }
+  });
+
   /*
     ⚠️ 목록 **첫 자리**의 값이다. 전에는 `indexOf(s) > 0`으로 걸러서 100%를 건너뛰었는데,
        줄이는 배율이 앞에 붙자 75%가 통째로 무시됐다 — 목록이 바뀌어도 안 깨지는지 본다.
   */
   it("목록 첫 값(75%)도 걸린다", () => {
+    window.history.pushState({}, "", "/app/board");
     localStorage.setItem("z:screen-scale", "75");
 
     new Function(SCALE_BOOT_SCRIPT)();
@@ -189,5 +209,32 @@ describe("nextScaleByKey", () => {
   it("방향키가 아니면 null — 부르는 쪽이 기본 동작을 막지 않게", () => {
     expect(nextScaleByKey(100, "Enter")).toBeNull();
     expect(nextScaleByKey(100, "a")).toBeNull();
+  });
+});
+
+describe("isScaledPath — 배율은 로그인 이후 화면만", () => {
+  it.each([
+    "/app/board",
+    "/app",
+    "/manage/members/3",
+    "/onboarding/2",
+    "/my",
+    "/team/action",
+    "/subscription",
+  ])("%s → 적용", (path) => {
+    expect(isScaledPath(path)).toBe(true);
+  });
+
+  it.each(["/", "/login", "/register", "/plans", "/terms", "/privacy", "/mypage"])(
+    "%s → 미적용 (공개 화면·접두사 오인)",
+    (path) => {
+      expect(isScaledPath(path)).toBe(false);
+    },
+  );
+
+  it("부트 스크립트도 같은 경로 목록을 쓴다 — 두 판정이 어긋나면 첫 페인트만 배율이 새거나 빠진다", () => {
+    for (const prefix of SCALED_PATH_PREFIXES) {
+      expect(SCALE_BOOT_SCRIPT).toContain(`"${prefix}"`);
+    }
   });
 });

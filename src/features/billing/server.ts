@@ -121,8 +121,11 @@ const MOCK_PENDING: Subscription = {
  * 요금 설정 — **BE가 내려주는 값**이다(팀 확정: 하드코딩 금지).
  *
  * ⚠️ 아래 숫자는 **실측 전 v0 가정값**이다. 실측이 나오면 이 값만 바꾼다.
+ * ⚠️ **export한다** — SYSTEM 대시보드의 구독 목 데이터(`system/mock/billing.ts`)도 같은
+ *    값을 써야 한다(CLAUDE.md §요금제: "금액·포함량·단가의 정본은 BillingConfig 하나").
+ *    거기서 따로 단가를 만들면 두 화면이 같은 회사를 다른 금액으로 보여준다.
  */
-const MOCK_CONFIG: BillingConfig = {
+export const MOCK_CONFIG: BillingConfig = {
   baseFee: 150_000,
   includedTokens: 1_500_000,
   includedStorageGb: 50,

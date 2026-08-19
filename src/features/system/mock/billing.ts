@@ -1,14 +1,9 @@
 import { COMPANY_STATUS, PAYMENT_STATUS } from "@/constants/domain";
+import { calculatePrice } from "@/features/billing/pricing";
+import { MOCK_CONFIG } from "@/features/billing/server";
 
 import type { BillingOverview, ManagedCompany, SubscriptionRecord } from "../types";
 import { listMockCompanies } from "./companies";
-
-/**
- * 1인당 월 단가 — `features/billing/plans.ts`의 시안값과 맞춘다(₩9,900).
- * ⚠️ **목이다.** 금액의 정본은 BE가 주는 `BillingConfig`이고, 좌석 과금 여부도 확정 전이다
- *    (CLAUDE.md §요금제). 확정되면 여기가 아니라 그 값을 읽는다.
- */
-const UNIT_PRICE = 9_900;
 
 /** 화면에 보여줄 구독 목록 수 — 화면 명세: 미납 우선, 모자라면 최신 가입순으로 채운다. */
 const SUBSCRIPTION_DISPLAY_COUNT = 5;
@@ -48,6 +43,14 @@ function countMockUnpaidCompanies(): number {
  * ⚠️ 화면 명세: **항상 5건만** — 미납 기업을 먼저 채우고, 모자라면 `joinedAt` 최신순으로 채운다.
  */
 function buildMockSubscriptions(): SubscriptionRecord[] {
+  /*
+    ⚠️ **좌석 과금이 아니다**(2026-08-04 팀 확정, `billing/pricing.ts`와 같은 규칙). 인원은
+       금액과 무관하고, 모든 회사가 같은 기본료를 낸다 — 이 목엔 회사별 AI 토큰·스토리지
+       사용량이 없어(그 화면 것과 다른, 운영자용 요약 목이라) 초과분은 계산하지 않는다.
+       실제로도 초과분은 회사별로 다른데, 이건 그 사실을 지어내지 않고 기본료까지만 보여준다.
+  */
+  const baseAmount = calculatePrice(MOCK_CONFIG).total;
+
   const toRecord = (company: ManagedCompany): SubscriptionRecord => ({
     companyId: company.id,
     companyName: company.name,
@@ -57,7 +60,7 @@ function buildMockSubscriptions(): SubscriptionRecord[] {
          (CLAUDE.md §요금제). 예전엔 `plan === TEAM`이 아니면 0원·결제일 없음으로 쳤는데,
          그건 없는 무료 요금제를 전제한 계산이었다.
     */
-    amount: company.memberCount * UNIT_PRICE,
+    amount: baseAmount,
     billingDate: "2025-07-01",
     paymentStatus:
       company.status === COMPANY_STATUS.SUSPENDED

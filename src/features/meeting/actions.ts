@@ -12,7 +12,14 @@ import {
   type AttendeeScopeViewer,
   findAttendeeScopeViolation,
 } from "@/features/rooms/attendee-scope";
+import { RESERVATION_DURATION_MINUTES } from "@/features/rooms/constants";
+import { toLocalDateTime } from "@/features/rooms/mapper/meetings";
 import { findMockMember } from "@/features/rooms/mock/members";
+import {
+  listMockReservationsByRoom,
+  updateMockReservation,
+} from "@/features/rooms/mock/reservations";
+import { findMockRoom } from "@/features/rooms/mock/rooms";
 import { getReservableMembers } from "@/features/rooms/server";
 import { getViewer } from "@/features/shell/viewer";
 import { ApiError, serverApi } from "@/lib/api";
@@ -21,7 +28,7 @@ import { getMockActor } from "@/lib/mock-actor";
 import { type Actor, canManageMeeting, requiresParentTeamAction } from "@/lib/permission";
 import { isMock } from "@/mocks/config";
 
-import { checkMeetingTitle } from "./lib";
+import { checkMeetingTitle, validateMeetingEditDraft } from "./lib";
 import {
   attendeeIdsFrom,
   type BeMeetingDetail,
@@ -47,6 +54,8 @@ import { getMeetingDetail } from "./server";
 import { meetingStatusOf } from "./status";
 import type {
   MeetingDraft,
+  MeetingEditDraft,
+  MeetingEditFormErrors,
   MeetingTopic,
   OnlineMeetingDraft,
   OnlineMeetingFormErrors,
@@ -439,6 +448,165 @@ export async function updateMeetingAction(
     return { error: null, saved: { title: checked.title } };
   } catch (error) {
     return { error: toUpdateErrorMessage(error), saved: null };
+  }
+}
+
+/** 회의 시간·회의실·프로젝트·녹음 동의 수정(MEET-05, #436) 폼 결과. */
+export interface UpdateMeetingScheduleState {
+  errors: MeetingEditFormErrors;
+  /** 성공한 저장의 표식 — `UpdateMeetingState.saved`와 같은 이유로 매번 새 객체를 만든다. */
+  saved: { title: string } | null;
+}
+
+function readMeetingEditDraft(formData: FormData): MeetingEditDraft {
+  return {
+    title: String(formData.get("title") ?? ""),
+    roomId: String(formData.get("roomId") ?? ""),
+    date: String(formData.get("date") ?? ""),
+    startTime: String(formData.get("startTime") ?? ""),
+    projectId: String(formData.get("projectId") ?? ""),
+    recordingConsent: formData.get("recordingConsent") === "on",
+  };
+}
+
+function toEditedRange(draft: MeetingEditDraft): { start: Date; end: Date } {
+  const start = new Date(`${draft.date}T${draft.startTime}:00`);
+  const end = new Date(start.getTime() + RESERVATION_DURATION_MINUTES * 60_000);
+  return { start, end };
+}
+
+/**
+ * `PATCH /api/meetings/{meetingId}`(MEET-05, 시간·회의실·프로젝트·녹음 동의 묶음) 실패를
+ * 필드 오류로 바꾼다 — `rooms/actions.ts`의 `toMeetingCreateFormErrors`(개설)와 같은 코드를
+ * 같은 필드로 매핑한다(둘 다 예약 슬롯 규칙을 탄다). 슬롯 없는 오류(`MT-014` 등)는 `title`
+ * 칸에 얹는다(그 두 함수와 같은 자리 — 이 폼도 "전체 오류"를 보여줄 별도 자리가 없다).
+ */
+function toUpdateMeetingScheduleFormErrors(error: unknown): MeetingEditFormErrors {
+  if (!(error instanceof ApiError)) throw error;
+
+  switch (error.code) {
+    case "MT-002":
+      return { roomId: "그 시간에는 이미 예약된 회의실입니다" };
+    case "MT-005":
+      return { startTime: "수정은 30분 단위로만 가능합니다" };
+    case "MT-012":
+      return { startTime: "지난 시간은 선택할 수 없습니다" };
+    case "MT-003":
+      return { startTime: error.message };
+    case "MR-001":
+      return { roomId: "존재하지 않는 회의실입니다" };
+    case "PJ-001":
+      return { projectId: "존재하지 않는 프로젝트입니다" };
+    default:
+      return { title: error.message };
+  }
+}
+
+/**
+ * 회의 시간·회의실·프로젝트·녹음 동의 수정(MEET-05) — **시작 전 회의만**. 제목만 고치는
+ * `updateMeetingAction`과 **다른 액션이다**(#436). 두 화면(`MeetingEditDialog`·회의실
+ * 캘린더의 `RoomMeetingDetailDialog`)이 같은 액션·같은 폼 계약을 쓰면, 슬롯 피커가 없는
+ * `RoomMeetingDetailDialog`가 갑자기 `roomId`·`date`·`startTime`·`projectId` 없이 제출해
+ * 필수 필드 오류부터 뜬다 — 그래서 아예 나눈다(둘 다 결국 같은 PATCH를 부른다).
+ * ⚠️ **항상 6필드를 전부 보낸다.** "보낸 키만 바뀐다"는 부분 수정 능력이지 매번 최소한만
+ *    보내야 한다는 뜻이 아니다 — 다이얼로그가 6필드를 한 폼에서 같이 받으므로 안 바뀐 값도
+ *    자기 값으로 다시 보내는 것이 diff를 추적하는 것보다 단순하고 안전하다(그 자체로 no-op).
+ * ⚠️ **회의실·시간을 바꾸면 예약 규칙을 다시 탄다** — 30분 그리드(`MT-005`)·과거 시각
+ *    (`MT-012`)·중복 예약(`MT-002`)은 회의실 예약 개설(`rooms/actions.ts`)과 같은 규칙이다.
+ * ⚠️ 권한·상태 관문은 `updateMeetingAction`과 같다(host·OWNER·ADMIN, `SCHEDULED`만).
+ */
+export async function updateMeetingScheduleAction(
+  _prev: UpdateMeetingScheduleState,
+  formData: FormData,
+): Promise<UpdateMeetingScheduleState> {
+  const meetingId = String(formData.get("meetingId") ?? "");
+  const draft = readMeetingEditDraft(formData);
+  const errors = validateMeetingEditDraft(draft);
+  if (Object.keys(errors).length > 0) return { errors, saved: null };
+
+  const actor = getMockActor();
+  const title = draft.title.trim();
+
+  if (isMock) {
+    const meeting = findMockMeeting(meetingId);
+    if (!meeting) return { errors: { title: "회의를 찾을 수 없습니다" }, saved: null };
+    if (!canManageMeeting(actor, { hostId: meeting.hostId })) {
+      return { errors: { title: "회의를 수정할 권한이 없습니다" }, saved: null };
+    }
+    if (meetingStatusOf(meeting, new Date()) !== MEETING_STATUS.SCHEDULED) {
+      return { errors: { title: "이미 시작된 회의는 수정할 수 없습니다" }, saved: null };
+    }
+
+    // ⚠️ 화면 select·피커가 이미 실제 목록에서만 고르게 해도, 폼은 조작될 수 있다(§권한).
+    const room = findMockRoom(draft.roomId);
+    if (!room) return { errors: { roomId: "존재하지 않는 회의실입니다" }, saved: null };
+    const project = TOP_LEVEL_PROJECTS.find((item) => String(item.id) === draft.projectId);
+    if (!project) return { errors: { projectId: "존재하지 않는 프로젝트입니다" }, saved: null };
+
+    const { start, end } = toEditedRange(draft);
+    // ⚠️ 자기 자신의 지금 슬롯은 겹침 검사에서 뺀다 — 안 그러면 시간을 안 바꾸고 저장만 눌러도
+    //    "이미 예약됨"에 걸린다.
+    const overlapping = listMockReservationsByRoom(draft.roomId).some(
+      (reservation) =>
+        reservation.id !== meeting.roomReservationId &&
+        reservation.start < end &&
+        reservation.end > start,
+    );
+    if (overlapping) {
+      return { errors: { roomId: "그 시간에는 이미 예약된 회의실입니다" }, saved: null };
+    }
+
+    updateMockMeeting(meetingId, {
+      title,
+      roomId: room.id,
+      roomName: room.name,
+      projectId: project.id,
+      projectTag: project.tag,
+      start,
+      end,
+      recordingConsent: draft.recordingConsent,
+    });
+    // ⚠️ 회의실 예약도 같이 고친다 — 안 그러면 회의실 주간 캘린더가 옛 슬롯을 계속 막아 둔다
+    //    (`updateMockReservation` 주석 참고). 회의실 예약 없이 만든 회의는 없다(WORKFLOW §3-1)
+    //    이므로 `roomReservationId`는 항상 있다 — 그래도 값으로 방어한다.
+    if (meeting.roomReservationId) {
+      updateMockReservation(meeting.roomReservationId, {
+        title,
+        roomId: room.id,
+        roomName: room.name,
+        projectId: draft.projectId,
+        projectTag: project.tag,
+        start,
+        end,
+      });
+    }
+
+    revalidatePath(`/app/meeting/${meetingId}`);
+    revalidatePath(MEETING_LIST_PATH);
+    return { errors: {}, saved: { title } };
+  }
+
+  const accessToken = await requireAccessToken();
+  try {
+    const { start, end } = toEditedRange(draft);
+    /* ⚠️ 응답을 안 읽는다 — `updateMeetingAction`과 같은 이유(§주석), `revalidatePath`로 다시 읽는다. */
+    await serverApi<unknown>(ep.meeting(Number(meetingId)), {
+      method: "PATCH",
+      accessToken,
+      json: {
+        title,
+        projectId: Number(draft.projectId),
+        meetingRoomId: Number(draft.roomId),
+        startAt: toLocalDateTime(start),
+        endAt: toLocalDateTime(end),
+        recordingConsent: draft.recordingConsent,
+      },
+    });
+    revalidatePath(`/app/meeting/${meetingId}`);
+    revalidatePath(MEETING_LIST_PATH);
+    return { errors: {}, saved: { title } };
+  } catch (error) {
+    return { errors: toUpdateMeetingScheduleFormErrors(error), saved: null };
   }
 }
 

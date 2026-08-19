@@ -19,6 +19,15 @@ import type { ActiveCapture, CaptionChunkInput, CapturePart, CaptureSession } fr
 const CAP_PART_ALREADY_REGISTERED_CODE = "CAP-005";
 
 /**
+ * 캡처 세션이 이미 있다는 뜻의 BE 에러코드(CS-002, 409) — **PAUSED 재접속 신호로 쓴다**(#605).
+ * BE `CaptureSessionCreationService.create()`는 ACTIVE 세션만 CAP-01에서 멱등 반환하고,
+ * PAUSED 세션은 이 에러를 던진다(주석: "PAUSED 세션은 CAP-03으로 재개해야 하므로 CAP-01
+ * 멱등 반환 대상에서 제외한다") — 즉 이 에러 자체가 "그 세션은 지금 일시정지 상태다"라는
+ * 뜻이라, 별도 `isPaused` 필드 없이도 이 코드 하나로 갈래를 정할 수 있다.
+ */
+const CAPTURE_SESSION_ALREADY_EXISTS_CODE = "CS-002";
+
+/**
  * 캡처 창구 — 격리막(§Mock 격리막).
  *
  * 화면(`use-capture.ts`)은 이 파일의 모양만 안다. BE shape은 전부 여기서 흡수한다.
@@ -77,6 +86,20 @@ export async function startCaptureSessionAction(
       },
     };
   } catch (error) {
+    /*
+      ⚠️ **PAUSED 세션 재접속(CS-002)은 CAP-03(재개)으로 넘긴다**(#605). 새로고침·크래시로
+         돌아온 사용자가 [녹음 이어하기]를 누르면 이 화면은 늘 CAP-01을 부르는데, 일시정지
+         상태였던 세션은 CAP-01이 거절한다 — 실패로 끝내지 않고 재개를 대신 시도한다.
+         `startedAtEpochMs`는 재개 응답에 없다(원래 시작 시각이라 다시 안 준다) — 지금
+         이 값을 읽는 곳이 없어(전부 로컬 시계로 계산한다) `Date.now()`로 채워도 해가 없다.
+    */
+    if (error instanceof ApiError && error.code === CAPTURE_SESSION_ALREADY_EXISTS_CODE) {
+      const resumed = await resumeCaptureSessionAction(meetingId);
+      if (!resumed.ok) {
+        return { ok: false, error: resumed.error ?? "재개를 서버에 알리지 못했습니다." };
+      }
+      return { ok: true, data: { captureSessionId: 0, startedAtEpochMs: Date.now() } };
+    }
     return { ok: false, error: toUserMessage(error) };
   }
 }

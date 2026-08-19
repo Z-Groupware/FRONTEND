@@ -38,6 +38,7 @@ const BASE: BeMeetingDetail = {
     { memberId: 1, name: "대표 계정", teamId: null, teamName: null, jobPosition: "대표" },
     { memberId: 2, name: "김서준", teamId: 5, teamName: "개발팀", jobPosition: "팀장" },
   ],
+  recordingConsent: false,
 };
 
 describe("toMeetingCaptureInfo", () => {
@@ -414,6 +415,26 @@ describe("toMeetingDetailView", () => {
       { id: 1, name: "대표 계정", isResigned: false },
       { id: 2, name: "김서준", isResigned: false },
     ]);
+  });
+
+  it("녹음 동의를 그대로 옮기고, 시작 시각·회의실을 슬롯 피커 초기값으로 바꾼다(#436)", () => {
+    const detail = toMeetingDetailView({ ...BASE, recordingConsent: true }, { isHost: true });
+
+    expect(detail.recordingConsent).toBe(true);
+    expect(detail.editableSlot).toEqual({
+      date: "2026-08-14",
+      startTime: "10:00",
+      meetingRoomId: "2",
+    });
+  });
+
+  it("비대면 회의(시작 시각·회의실이 없다)는 editableSlot이 null이다", () => {
+    const detail = toMeetingDetailView(
+      { ...BASE, startAt: null, endAt: null, meetingRoom: null },
+      { isHost: true },
+    );
+
+    expect(detail.editableSlot).toBeNull();
   });
 
   it("퇴사한 참석자는 isResigned를 그대로 옮기고, 없으면(옛 응답) 재직으로 본다(FE 감사 #13)", () => {

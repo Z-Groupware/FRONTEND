@@ -7,15 +7,13 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { Input } from "@/components/ui/input";
 
-import { recordSearchAction } from "../actions";
+import { addRecentSearch, getRecentSearches } from "../lib/recent-search-storage";
 
 /** 적기를 멈춘 뒤 이만큼 지나면 보낸다 — 짧으면 요청이 줄줄이 나가고 길면 굼떠 보인다 */
 const SEARCH_DEBOUNCE_MS = 300;
 
 interface SearchInputProps {
   keyword: string;
-  /** 입력을 눌렀을 때 아래로 펼칠 최근 검색어 — 최신순 */
-  recentSearches?: string[];
 }
 
 /**
@@ -25,8 +23,11 @@ interface SearchInputProps {
  *    조건이 날아가고, 찾은 결과를 남에게 링크로 보낼 수도 없다(`people-search.tsx`와 같은 규칙).
  * ⚠️ **적는 동안 기록하지 않는다.** 한 글자마다 최근 검색어를 남기면 "ㅈ"·"제"·"제품"이
  *    전부 기록된다 — 잠깐 멈추면 그때 주소를 바꾸고, 그때 딱 한 번만 기록한다.
+ * ⚠️ **최근 검색어는 서버가 아니라 로컬 저장소에서 나온다**(BE에 기록·조회 API가 없다, #422).
+ *    기기·브라우저 국한이라는 한계는 있지만, 없는 API를 기다리며 화면을 비워 두는 것보다는
+ *    이 브라우저에서라도 되는 게 낫다는 판단이다.
  */
-export function SearchInput({ keyword, recentSearches = [] }: SearchInputProps) {
+export function SearchInput({ keyword }: SearchInputProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -34,6 +35,12 @@ export function SearchInput({ keyword, recentSearches = [] }: SearchInputProps) 
   /* 마지막으로 `value`를 맞춘 주소값 — 아래 렌더 중 동기화가 한 번만 일어나게 지키는 표시다 */
   const [syncedKeyword, setSyncedKeyword] = useState(keyword);
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /*
+    ⚠️ **지연 초기화로 읽는다(이펙트가 아니다).** 서버 렌더 패스에서는 `window`가 없어
+       `getRecentSearches()`가 빈 배열을 준다 — 첫 렌더는 `isOpen`이 항상 `false`라 이 값이
+       화면에 그려지지 않으므로, 하이드레이션 시 실제 값으로 다시 계산돼도 어긋나지 않는다.
+  */
+  const [recentSearches, setRecentSearches] = useState<string[]>(() => getRecentSearches());
   /*
     입력을 눌렀을 때 아래로 펴는 최근 검색어.
     ⚠️ **적기 시작하면 닫는다.** 글자를 치는 중에도 떠 있으면 결과를 가린다 — 이 목록은
@@ -52,7 +59,7 @@ export function SearchInput({ keyword, recentSearches = [] }: SearchInputProps) 
       else params.delete("q");
 
       router.replace(`/app/search${params.size > 0 ? `?${params}` : ""}`, { scroll: false });
-      if (trimmed) void recordSearchAction(trimmed);
+      if (trimmed) setRecentSearches(addRecentSearch(trimmed));
     },
     [router, searchParams],
   );

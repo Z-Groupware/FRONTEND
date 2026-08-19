@@ -41,7 +41,8 @@ export interface BeCreateMeetingPayload {
   subTopics: string[];
 }
 
-function toLocalDateTime(date: Date): string {
+/** BE가 받는 오프셋 없는 로컬 시각 문자열(`2026-08-14T10:00:00`) — 회의 개설·수정(#436)이 같이 쓴다. */
+export function toLocalDateTime(date: Date): string {
   const pad = (value: number) => String(value).padStart(2, "0");
   return (
     `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}` +
