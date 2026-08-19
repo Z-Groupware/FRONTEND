@@ -95,10 +95,17 @@ export function OrgMemberNode({ member, keyword }: { member: OrgMember; keyword:
           ⚠️ 안 붙인 사람은 **`없음`**이라고 적는다 — 사원 관리와 같은 말을 쓴다. 한때 직급만
              적었는데(`팀장 · 없음`이 어색해서), 그러면 이 화면만 다른 말을 하고 "역할이 빠졌다"는
              처음 문제로 돌아간다. 값은 매퍼가 이미 맞춰 준다(§org-types).
+          ⚠️ **직급이 없으면 가운뎃점도 안 붙인다**(2026-08-19). Owner는 직급 자체가 없어
+             `member.position`이 빈 문자열이다 — 그냥 이어 붙이면 `· 없음`처럼 점이 맨 앞에
+             떠서 아무것도 안 가르는 점이 된다. 가운뎃점은 **가를 둘이 있을 때만** 의미가 있다.
         */}
         <p className="text-muted-foreground truncate text-[12px] leading-4">
-          <MatchText text={member.position} keyword={keyword} />
-          {" · "}
+          {member.position && (
+            <>
+              <MatchText text={member.position} keyword={keyword} />
+              {" · "}
+            </>
+          )}
           <MatchText text={member.roleLabel} keyword={keyword} />
         </p>
       </div>
