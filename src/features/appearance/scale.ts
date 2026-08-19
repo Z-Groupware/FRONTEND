@@ -119,6 +119,56 @@ export function suggestScale(input: { viewportWidth: number; hasChosen: boolean 
 }
 
 /**
+ * 배율이 적용되는 경로 — **로그인 이후 화면만**(2026-08-19).
+ *
+ * 배율은 "1440 기준으로 짠 워크스페이스를 내 기기에 맞추는" 설정이라, 랜딩·로그인 같은
+ * 공개 화면까지 줄이면 처음 온 사람의 첫 화면이 이유 없이 작아 보인다 — 마이페이지에서
+ * 75%를 고르면 랜딩까지 75%로 굳던 문제의 원인이 이것이다(값이 `localStorage`라
+ * 화면 구분 없이 전역으로 읽혔다).
+ *
+ * ⚠️ 접두사는 **정확히 그 경로이거나 `접두사/`로 시작**해야 맞는다 — `/my`가 `/mypage`를
+ *    잡아먹지 않게 한다(`isScaledPath`).
+ * ⚠️ 라우트 그룹이 늘면 여기에 추가한다 — 부트 스크립트와 `AppScaleScope`가 같은 목록을 쓴다.
+ */
+export const SCALED_PATH_PREFIXES = [
+  "/app",
+  "/owner",
+  "/manage",
+  "/team",
+  "/my",
+  "/onboarding",
+  "/subscription",
+  "/system",
+] as const;
+
+/** 이 경로에서 배율을 적용하나 — 로그인 이후 화면(§SCALED_PATH_PREFIXES)만 true. */
+export function isScaledPath(pathname: string): boolean {
+  return SCALED_PATH_PREFIXES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+  );
+}
+
+/**
+ * 지금 걸려 있는 배율 값 — **좌표를 직접 다루는 코드가 나눠 쓰는 자리.**
+ *
+ * `transform: scale()`은 그리기만 줄이고 레이아웃 좌표는 그대로 둔다. 그래서
+ * 포인터 좌표(화면 px)를 레이아웃 좌표(px)로 바꿔 쓰는 코드는 이 값으로 나눠야 한다 —
+ * 대표적으로 dnd-kit `DragOverlay`(보드)가 그렇다(§scaleCompensation).
+ *
+ * ⚠️ **rect끼리만 비교하는 코드는 이 값이 필요 없다.** `clientY`와 `getBoundingClientRect()`는
+ *    둘 다 배율이 적용된 값이라 포함 여부 판정에서는 배율이 약분된다(§rooms/grid-slot).
+ *    이 함수를 부르기 전에, 정말 좌표계가 섞이는 자리인지부터 확인한다.
+ * ⚠️ 서버·테스트(jsdom)처럼 `document`가 없거나 변수가 안 읽히면 1이다 — 배율 보정이
+ *    빠질 뿐 좌표 자체는 성립한다.
+ */
+export function getAppScale(): number {
+  if (typeof document === "undefined") return 1;
+  const raw = getComputedStyle(document.documentElement).getPropertyValue("--app-scale");
+  const value = Number.parseFloat(raw);
+  return Number.isFinite(value) && value > 0 ? value : 1;
+}
+
+/**
  * 첫 페인트 전에 도는 부트 스크립트.
  *
  * ⚠️ **하이드레이션까지 기다리면 안 된다.** 새로고침마다 100%로 한 번 그려졌다가 확대되면서
@@ -133,5 +183,8 @@ export function suggestScale(input: { viewportWidth: number; hasChosen: boolean 
  * ⚠️ **`zoom`이 아니라 `--app-scale` 변수 하나만 세운다**(2026-08-06 전환). 실제로 줄이는 일은
  *    `globals.css`의 `body`가 `transform: scale()`로 한다 — `zoom`은 배율을 레이아웃에 섞어
  *    좌표를 다루는 코드를 전부 어긋나게 했다(DECISIONS §화면 배율).
+ * ⚠️ **로그인 이후 경로에서만 건다**(§SCALED_PATH_PREFIXES). 첫 페인트 몫은 여기,
+ *    클라이언트 내비게이션 몫은 `AppScaleScope`가 맡는다 — 판정 로직은 한쪽(`isScaledPath`)이고
+ *    이 스크립트는 같은 목록을 직렬화해서 쓴다.
  */
-export const SCALE_BOOT_SCRIPT = `try{var s=Number(localStorage.getItem("${SCALE_STORAGE_KEY}"));if(s!==${DEFAULT_SCALE}&&[${SCREEN_SCALES.join(",")}].indexOf(s)>=0){document.documentElement.style.setProperty("--app-scale",String(s/100))}}catch(e){}`;
+export const SCALE_BOOT_SCRIPT = `try{var p=location.pathname;var pre=${JSON.stringify(SCALED_PATH_PREFIXES)};var ok=false;for(var i=0;i<pre.length;i++){if(p===pre[i]||p.indexOf(pre[i]+"/")===0){ok=true;break}}if(ok){var s=Number(localStorage.getItem("${SCALE_STORAGE_KEY}"));if(s!==${DEFAULT_SCALE}&&[${SCREEN_SCALES.join(",")}].indexOf(s)>=0){document.documentElement.style.setProperty("--app-scale",String(s/100))}}}catch(e){}`;

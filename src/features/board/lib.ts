@@ -77,3 +77,34 @@ export function groupCardsByColumn(
   }
   return groups;
 }
+
+/**
+ * `DragOverlay` 좌표를 화면 배율만큼 보정한다(§appearance/scale `getAppScale`).
+ *
+ * `body`에 `transform: scale(--app-scale)`(origin `0 0`)이 걸려 있고, 오버레이는
+ * 포털로 그 `body` 안에 그려진다. dnd-kit은 오버레이의 초기 위치(`activeNodeRect`)와
+ * 이동량(`transform`)을 **화면 px**로 재는데, 그려지는 쪽은 **레이아웃 px**라
+ * 배율(s)이 걸리면 초기 위치·이동량이 전부 s배로 눌려 카드가 커서를 못 따라온다
+ * (2026-08-19 보고 — 커서와 카드가 점점 벌어지는 문제).
+ *
+ * 원하는 것: 화면에서 `rect + Δ` 자리에 보이는 것.
+ * 그려지는 자리: `s × (rect + t)` (t = 우리가 넘길 transform).
+ * 풀면 `t = Δ/s + rect × (1/s − 1)` — 초기 위치 몫과 이동량 몫이 둘 다 들어간다.
+ *
+ * ⚠️ **충돌 판정은 건드리면 안 된다.** 칸 판정(rect 교차)은 전부 화면 px끼리라 이미 맞다 —
+ *    그래서 `DndContext`가 아니라 **`DragOverlay`의 `modifiers`에만** 건다(그리기 전용).
+ * ⚠️ 배율 1이면 원본 그대로 돌려준다 — 보정이 항등이어야 배율 없는 화면이 영향을 안 받는다.
+ */
+export function compensateOverlayForScale<T extends { x: number; y: number }>(
+  transform: T,
+  activeNodeRect: { top: number; left: number } | null,
+  scale: number,
+): T {
+  if (scale === 1 || scale <= 0 || !activeNodeRect) return transform;
+  const stretch = 1 / scale - 1;
+  return {
+    ...transform,
+    x: transform.x / scale + activeNodeRect.left * stretch,
+    y: transform.y / scale + activeNodeRect.top * stretch,
+  };
+}
