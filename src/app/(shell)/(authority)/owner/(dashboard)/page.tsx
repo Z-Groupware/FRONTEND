@@ -154,7 +154,14 @@ export default async function OwnerDashboardPage() {
         {/* ⚠️ 여기도 높이를 고정하지 않는다 — 다섯 건이 하드 캡이라 자라 봐야 다섯 줄이다.
             고정했을 때는 머리 줄 높이를 20px 적게 잡아 **마지막 줄이 잘려** 나갔다. */}
         <section className="border-border bg-card flex flex-col overflow-hidden rounded-2xl border">
-          <div className="border-border flex shrink-0 items-baseline justify-between gap-3 border-b px-7 pt-6 pb-3">
+          {/*
+            ⚠️ **제목 줄에 선을 안 긋는다**(2026-08-19, 위 "팀장 현황"과 통일). 이 카드만 보면
+               `border-b`가 있어도 이상하지 않지만, 같은 화면 바로 위 카드는 표 머리띠가
+               구분선 역할을 대신해서 `border-b`가 없다 — 한 화면 안에서 제목 줄 하나는 선이
+               있고 하나는 없으면, 글자 크기·굵기가 완전히 같아도 "제목이 서로 다르게
+               생겼다"로 읽힌다. 목록 쪽엔 띠가 없어 대신 여백(`pb-3`)만으로 가른다.
+          */}
+          <div className="flex shrink-0 items-baseline justify-between gap-3 px-7 pt-6 pb-3">
             <h2 className="text-[17px] leading-7 font-semibold tracking-[-0.3px]">
               최근 프로젝트 회의
             </h2>
