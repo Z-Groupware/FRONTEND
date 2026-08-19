@@ -113,10 +113,14 @@ function ReadOnlyField({
   htmlFor?: string;
 }) {
   return (
-    <div className="flex flex-col gap-1.5">
+    // ⚠️ **`min-w-0`을 여기서도 준다** — flex/grid 자식은 기본 `min-width: auto`라 내용 폭만큼
+    //    안 줄어든다. 안쪽 값 칸에 `truncate`를 걸어도, 이 바깥 칸이 안 줄어들면 줄임표가
+    //    안 먹히고 긴 글자가 옆 칸(참석자)을 밀어낸다(회의 제목·안건이 길 때 재현됨).
+    <div className="flex min-w-0 flex-col gap-1.5">
       <Label htmlFor={htmlFor}>{label}</Label>
       <div
         id={htmlFor}
+        title={value}
         className={cn(
           "border-input bg-muted/40 flex h-8 w-full min-w-0 items-center rounded-lg border px-2.5",
           "text-foreground truncate text-[13px]",
@@ -287,7 +291,8 @@ function MeetingSummaryPanel({
         </div>
 
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-[1fr_260px]">
-          <div className="flex flex-col gap-4">
+          {/* ⚠️ 그리드 칸도 `min-w-0` — 안 주면 이 칸 자체가 안 줄어들어 참석자(260px) 칸을 밀어낸다. */}
+          <div className="flex min-w-0 flex-col gap-4">
             <ReadOnlyField label="회의 제목" value={summary.title} />
             {agendaText && <ReadOnlyField label="안건" value={agendaText} />}
           </div>

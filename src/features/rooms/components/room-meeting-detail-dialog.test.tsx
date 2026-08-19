@@ -77,4 +77,29 @@ describe("RoomMeetingDetailDialog", () => {
     await screen.findByText(SUMMARY.title);
     expect(screen.queryByRole("button", { name: "회의 취소" })).not.toBeInTheDocument();
   });
+
+  // ⚠️ 회귀 방지 — 제목·안건이 길면 `truncate`가 안 먹혀 참석자(260px) 칸을 밀어내던 버그.
+  //    부모(그리드 칸·ReadOnlyField 래퍼)에 `min-w-0`이 없으면 flex/grid 기본값(`min-width: auto`)
+  //    때문에 안쪽 `truncate`가 무력화된다 — 그 min-w-0이 계속 붙어 있는지를 잠근다.
+  it("회의 제목·안건이 길어도 잘리고, 참석자 칸을 밀어내지 않게 min-w-0을 유지한다", async () => {
+    const longTitle =
+      "Q3 런칭 준비 중간 진척 상황 점검 및 개발팀 API 진척과 다음 마일스톤, 마케팅 캠페인 소재 진행 상황 공유 회의입니다";
+    jest.mocked(getMeetingSummaryAction).mockResolvedValue({
+      kind: "ok",
+      summary: { ...SUMMARY, title: longTitle },
+    });
+
+    render(
+      <RoomMeetingDetailDialog
+        meetingId="meeting-1"
+        onOpenChange={jest.fn()}
+        onTitleUpdated={jest.fn()}
+        onCancelled={jest.fn()}
+      />,
+    );
+
+    const valueBox = await screen.findByTitle(longTitle);
+    expect(valueBox).toHaveClass("truncate");
+    expect(valueBox.parentElement).toHaveClass("min-w-0");
+  });
 });
