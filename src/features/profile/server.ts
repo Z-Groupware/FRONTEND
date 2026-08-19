@@ -10,12 +10,14 @@ import type { MyProfile } from "./types";
  * "발급받은 비밀번호를 아직 쓰는가" — 종 목록(`NotificationBell`)에 임시 비밀번호 안내를
  * 끼워 넣을지 판정(`(shell)/layout.tsx` → `NotificationProvider`의 `showPasswordChangeNotice`).
  *
- * ⚠️ 목에는 이 값을 낼 세션이 없다(`getMe()`가 늘 `null`) — **꺼진 채로 데모한다**(정직한
- *    목업: 되는 척 안 한다). 안내 자체를 보려면 실연동 모드에서 `passwordChanged: false`인
- *    계정으로 확인한다.
+ * ⚠️ 목에서는 **켜 둔 채로 데모한다**(2026-08-19 변경 — 이전엔 `getMe()`가 늘 `null`이라
+ *    꺼진 채로 뒀는데, 그러면 이 화면이 실제로 어떻게 뜨는지 목에서 아예 볼 수가 없었다).
+ *    임시 비밀번호를 아직 안 바꾼 계정의 **success 예시 하나**를 그대로 보여 주는 것뿐이라
+ *    정직한 목업 원칙에 어긋나지 않는다 — 실제 판정(`me.passwordChanged`)은 여전히
+ *    실연동 모드에서만 값을 낸다.
  */
 export async function shouldShowPasswordChangeBanner(): Promise<boolean> {
-  if (isMock) return false;
+  if (isMock) return true;
 
   const me = await getMe();
   return me !== null && !me.passwordChanged;
