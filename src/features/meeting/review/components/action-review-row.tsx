@@ -46,6 +46,12 @@ interface ActionReviewRowProps {
    */
   rejectReason?: ActionRejectReason | null;
   onUnreject?: () => void;
+  /**
+   * 확정 시도 후 필수 필드 강조 여부. 부모(`MeetingReviewView`)가 [확정] 버튼을 눌러 검증
+   * 실패한 상태를 내려 주면 이 행 안의 제목·세부 내용·마감일 필드가 비어 있을 때 빨간
+   * 테두리로 승격한다. 최초 진입에서는 회색 placeholder만 두고 확정 시도 뒤에야 강조한다.
+   */
+  hasAttemptedConfirm?: boolean;
 }
 
 /**
@@ -67,10 +73,19 @@ export function ActionReviewRow({
   onTeamChange,
   rejectReason,
   onUnreject,
+  hasAttemptedConfirm,
 }: ActionReviewRowProps) {
   /* ⚠️ 모드는 이 prop 하나로 정해진다 — 부모(`MeetingReviewView`)가 회의 전체 기준으로 내려준다 */
   const isTeamMode = teamOptions !== undefined;
   const isRejected = rejectReason != null;
+  /*
+    ⚠️ **반려된 행은 강조 대상이 아니다**(반려는 이미 사람이 판단한 것이라 미완성 필드도
+       확정 요청에 안 실린다) — `hasAttemptedConfirm`이 켜져 있어도 반려된 행은 검증에서 뺀다.
+  */
+  const showInvalid = Boolean(hasAttemptedConfirm) && !isRejected;
+  const invalidTitle = showInvalid && draft.title.trim().length === 0;
+  const invalidDescription = showInvalid && draft.description.trim().length === 0;
+  const invalidDueDate = showInvalid && draft.dueDate.length === 0;
   return (
     <div
       className={cn(
@@ -101,7 +116,13 @@ export function ActionReviewRow({
             isRejected && "pointer-events-none opacity-60",
           )}
         >
-          <InlineEditableField value={draft.title} onChange={onTitleChange} ariaLabel="액션명" />
+          <InlineEditableField
+            value={draft.title}
+            onChange={onTitleChange}
+            ariaLabel="액션명"
+            placeholder="액션명을 입력해 주세요"
+            isInvalid={invalidTitle}
+          />
 
           {/* ⚠️ 설명과 근거는 **한 덩이**다(gap-1) — 근거는 그 설명의 출처라 사이를 벌리지 않는다 */}
           <div className="flex min-w-0 flex-col gap-1">
@@ -112,6 +133,7 @@ export function ActionReviewRow({
               placeholder="세부 내용을 입력해 주세요"
               multiline
               allowEmpty
+              isInvalid={invalidDescription}
             />
 
             {/*
@@ -270,7 +292,13 @@ export function ActionReviewRow({
               value={draft.dueDate}
               min={draft.startDate}
               onChange={onDueDateChange}
-              className="w-[140px]"
+              aria-invalid={invalidDueDate || undefined}
+              className={cn(
+                "w-[140px]",
+                // ⚠️ 확정 시도 후 비어 있으면 빨간 테두리로 승격 — 다른 필수 필드(제목·세부)와
+                //    같은 시각으로 잡아야 사용자가 어디를 채워야 하는지 한눈에 짚는다.
+                invalidDueDate && "border-destructive text-destructive",
+              )}
             />
           </div>
 

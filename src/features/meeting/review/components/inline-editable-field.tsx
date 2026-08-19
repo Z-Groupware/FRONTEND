@@ -16,6 +16,12 @@ interface InlineEditableFieldProps {
   ariaLabel: string;
   placeholder?: string;
   className?: string;
+  /**
+   * 확정 시도 후 비어 있는 필수 필드 강조 — 빨간 테두리·빨간 placeholder로 눈에 잡히게 한다.
+   * ⚠️ 부모(`meeting-review-view`)가 확정 버튼 눌렀는데 값이 비어 있을 때만 true로 넘긴다 —
+   *    최초 진입에서는 회색 placeholder만 두고 확정 시도 뒤에야 강조로 승격한다.
+   */
+  isInvalid?: boolean;
 }
 
 /**
@@ -32,6 +38,7 @@ export function InlineEditableField({
   ariaLabel,
   placeholder,
   className,
+  isInvalid,
 }: InlineEditableFieldProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState(value);
@@ -58,12 +65,18 @@ export function InlineEditableField({
         <Textarea
           autoFocus
           aria-label={ariaLabel}
+          aria-invalid={isInvalid || undefined}
           value={draft}
           onChange={(event) => setDraft(event.target.value)}
           onBlur={commit}
           onKeyDown={(event) => event.key === "Escape" && cancel()}
           rows={3}
-          className={cn("px-2.5 py-1.5 text-[12px] leading-4", className)}
+          className={cn(
+            "px-2.5 py-1.5 text-[12px] leading-4",
+            isInvalid &&
+              "border-destructive focus-visible:border-destructive focus-visible:ring-destructive/30",
+            className,
+          )}
         />
       );
     }
@@ -71,6 +84,7 @@ export function InlineEditableField({
       <input
         autoFocus
         aria-label={ariaLabel}
+        aria-invalid={isInvalid || undefined}
         value={draft}
         onChange={(event) => setDraft(event.target.value)}
         onBlur={commit}
@@ -79,7 +93,10 @@ export function InlineEditableField({
           if (event.key === "Escape") cancel();
         }}
         className={cn(
-          "border-input focus-visible:border-ring focus-visible:ring-ring/50 w-full rounded-lg border bg-transparent px-2.5 py-1 text-[13px] leading-5 font-medium outline-none focus-visible:ring-3",
+          "focus-visible:ring-ring/50 w-full rounded-lg border bg-transparent px-2.5 py-1 text-[13px] leading-5 font-medium outline-none focus-visible:ring-3",
+          isInvalid
+            ? "border-destructive focus-visible:border-destructive focus-visible:ring-destructive/30"
+            : "border-input focus-visible:border-ring",
           className,
         )}
       />
@@ -91,10 +108,14 @@ export function InlineEditableField({
       type="button"
       onClick={startEditing}
       aria-label={`${ariaLabel} 수정`}
+      aria-invalid={isInvalid || undefined}
       // ⚠️ `inline-flex`(아니라 `flex`)라서 글자 길이만큼만 넓어진다 — 연필이 칸 오른쪽 끝이
       //    아니라 글자 바로 옆에 붙는다. 넘치면 `max-w-full`이 잘라 `truncate`가 말줄임한다.
       className={cn(
-        "group inline-flex max-w-full cursor-pointer items-start gap-1 text-left",
+        "group inline-flex max-w-full cursor-pointer items-start gap-1 rounded-md border text-left transition-colors",
+        // ⚠️ 확정 시도 전엔 테두리 자체가 없다 — placeholder를 회색 텍스트만으로 표시하다,
+        //    확정 시도 후 비어 있으면 빨간 테두리·빨간 안내 텍스트로 승격한다.
+        isInvalid ? "border-destructive bg-destructive/5 px-2 py-1" : "border-transparent",
         className,
       )}
     >
@@ -109,7 +130,8 @@ export function InlineEditableField({
           multiline
             ? "text-muted-foreground text-[12px] leading-[18px]"
             : "text-[13px] leading-5 font-semibold",
-          !value && "text-muted-foreground/60",
+          !value && !isInvalid && "text-muted-foreground/60",
+          !value && isInvalid && "text-destructive font-semibold",
         )}
       >
         {value || placeholder}
