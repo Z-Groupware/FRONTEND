@@ -3,6 +3,8 @@
 import { LogOut } from "lucide-react";
 import { useFormStatus } from "react-dom";
 
+import { Button } from "@/components/ui/button";
+
 import { logoutAction } from "../actions";
 
 /**
@@ -22,18 +24,19 @@ export function LogoutButton() {
   );
 }
 
+/*
+  ⚠️ **공용 `Button`을 쓴다**(2026-08-19 — "옆의 [비밀번호 변경]이랑 너무 다르다"는 지적).
+     손으로 그린 버튼이라 모서리(`rounded-md` vs `rounded-lg`)·안쪽 여백(`px-3` vs
+     `px-2.5`)·글자 크기(`text-[12px]` vs `text-sm`)가 미묘하게 달라 나란히 두면 서로
+     다른 버튼 계열처럼 보였다 — `variant="outline"`으로 옆 버튼과 같은 값을 쓴다.
+*/
 function SubmitButton() {
   const { pending } = useFormStatus();
 
   return (
-    <button
-      type="submit"
-      disabled={pending}
-      className="border-border text-muted-foreground hover:text-foreground hover:bg-secondary focus-visible:ring-ring flex h-8 items-center gap-1.5 rounded-md border px-3 text-[12px] leading-4 transition-colors focus-visible:ring-2 focus-visible:outline-hidden disabled:opacity-60"
-    >
-      <LogOut className="size-3.5" aria-hidden />
-      {/* ⚠️ 라벨에 1px 보정을 넣지 않는다 — `items-center`가 이미 맞춘다(2026-08-09 실측) */}
+    <Button type="submit" variant="outline" disabled={pending}>
+      <LogOut aria-hidden />
       {pending ? "로그아웃 중" : "로그아웃"}
-    </button>
+    </Button>
   );
 }
