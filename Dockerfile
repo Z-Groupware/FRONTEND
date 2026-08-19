@@ -28,6 +28,10 @@ RUN addgroup --system --gid 1001 nodejs \
 
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+# ⚠️ standalone 빌드는 서버 코드만 담는다 — public/(favicon·정적 이미지 등)은
+#    Next.js가 번들에 안 넣어서 여기서 따로 복사해야 한다(공식 문서 명시 사항).
+#    빠지면 존재하지 않는 게 아니라 전부 404로 죽는다(#663 — og-landing.png 재현).
+COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 
 USER nextjs
 EXPOSE 3000
