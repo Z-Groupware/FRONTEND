@@ -158,6 +158,60 @@ export async function getActiveCaptureAction(): Promise<CaptureActionResult<Acti
   }
 }
 
+/** [확인] BE `CaptureUploadController.status` — `PartUploadStatusResponse` (2026-08-19) */
+interface PartUploadStatusApiResponse {
+  segmentSeq: number;
+  lastSeq: number;
+  missingSeqs: number[];
+  blocksFormed: number;
+  resumeFromSeq: number;
+  gapMs: number;
+}
+
+/** 복구 안내가 쓰는 업로드 상태 — 화면 계약(§Mock→Live 격리막) */
+export interface PartsUploadStatus {
+  /** 지금까지 업로드가 확인된 마지막 조각 순번 — 0이면 아직 아무것도 안 올라감 */
+  lastSeq: number;
+  /** 업로드 기록이 없는 구간 수 — 크래시로 원본이 사라져 재전송이 불가능한 조각들 */
+  missingCount: number;
+}
+
+/**
+ * 어디까지 올라갔는지 조회(CAP-08) — 새로고침·크래시 복구 안내의 두 번째 단추.
+ *
+ * ⚠️ **재개 로직에는 안 쓴다.** presign(CAP-04)이 서버 `lastSeq + 1`부터 이어 발급하므로
+ *    이어 올리기는 이 조회 없이 성립한다(BE `CaptureUploadService` 실코드 확인, 2026-08-19).
+ *    이 값의 용도는 **안내**다 — 얼마나 올라가 있고, 유실 구간이 있는지 사용자에게 말한다.
+ * ⚠️ `missingSeqs`는 **재전송 목록이 아니다.** 크래시로 로컬 조각이 사라졌으면 다시 보낼
+ *    원본이 없다 — 그 구간 오디오가 비게 된다는 사실을 숨기지 않는 것까지가 FE 몫이다(§정직성).
+ * ⚠️ **현재 녹음자만 조회할 수 있다**(BE `CapturePartStatusService` 검증) — 같은 회의의
+ *    복구 상황에서만 부른다. 다른 회의 안내(CAP-09의 다른 회의 케이스)에는 안 붙인다.
+ * ⚠️ 화면 계약은 `lastSeq`·`missingCount`만 — `resumeFromSeq`(재개는 presign 몫)·
+ *    `blocksFormed`·`gapMs`(라이브 조회에선 항상 0, BE 주석)는 안 쓰므로 계약에서 뺀다.
+ * ⚠️ 목 모드는 `{ok:true, data:null}` — 목엔 서버 업로드 상태가 없다(§정직한 목업).
+ */
+export async function getPartsUploadStatusAction(
+  meetingId: number,
+): Promise<CaptureActionResult<PartsUploadStatus | null>> {
+  if (isMock) return { ok: true, data: null };
+
+  try {
+    const accessToken = await requireAccessToken();
+    const response = await serverApi<PartUploadStatusApiResponse>(ep.partsStatus(meetingId), {
+      accessToken,
+    });
+    return {
+      ok: true,
+      data: {
+        lastSeq: response.lastSeq,
+        missingCount: response.missingSeqs.length,
+      },
+    };
+  } catch (error) {
+    return { ok: false, error: toUserMessage(error) };
+  }
+}
+
 /* ────────────────────────── CAP-04 · 07 오디오 조각 업로드 ────────────────────────── */
 
 /** [확인] BE `CaptureUploadController.presign` — `PresignedPartsResponse` */
