@@ -109,8 +109,12 @@ export function MeetingListView({ directory, tab }: MeetingListViewProps) {
             count={directory.invited.length}
           />
         </div>
-        {/* 회의 개설(대면·비대면)은 회의 예약 화면 하나로 모였다 — 여기는 이동 링크만 둔다 */}
-        <Link href="/app/rooms" className={cn(buttonVariants({ variant: "outline" }))}>
+        {/*
+          ⚠️ **이 화면에서 유일한 실행 동작이라 `ink`(주 버튼)를 쓴다**(2026-08-19, "너무
+             밋밋하다"는 지적). `outline`은 곁다리 버튼용이다(§components/ui/button) — 탭
+             옆에 다른 버튼이 없으니 이게 이 헤더의 주된 다음 걸음이다.
+        */}
+        <Link href="/app/rooms" className={cn(buttonVariants({ variant: "ink" }))}>
           <CalendarPlus aria-hidden />
           회의 예약으로 이동
         </Link>
