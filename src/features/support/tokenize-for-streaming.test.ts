@@ -34,4 +34,25 @@ describe("tokenizeForStreaming", () => {
     expect(chunks).toContain("`foo`");
     expect(chunks).toContain("```js\na\n```");
   });
+
+  /*
+    ⚠️ 평문은 **한 글자씩** 나와야 한다(2026-08-19). 낱말째로 흘리면 한글 낱말이 2~4자라
+       글이 덩어리로 튀어 "띠디딕"거린다 — 낱말 단위로 되돌아가는 회귀를 잠근다.
+  */
+  it("평문은 한 글자씩 쪼갠다", () => {
+    expect(tokenizeForStreaming("가나 다")).toEqual(["가", "나", " ", "다"]);
+  });
+
+  /*
+    ⚠️ 문단 나눔은 쪼개면 안 된다 — `\n` 하나만 먼저 도착하면 한 문단이던 글이 다음
+       프레임에 두 문단으로 갈리며 아래 글이 통째로 밀려 내려간다(가장 크게 튀는 자리).
+  */
+  it("문단 나눔은 한 조각으로 유지된다", () => {
+    expect(tokenizeForStreaming("가\n\n나")).toEqual(["가", "\n\n", "나"]);
+  });
+
+  /* ⚠️ 이모지는 서로게이트 쌍이라 반으로 자르면 깨진 글자가 한 프레임 보인다 */
+  it("이모지를 반으로 자르지 않는다", () => {
+    expect(tokenizeForStreaming("가🎉나")).toEqual(["가", "🎉", "나"]);
+  });
 });

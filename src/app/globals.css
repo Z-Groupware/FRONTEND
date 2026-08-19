@@ -1306,6 +1306,42 @@
   }
 
   /*
+   * 답이 흐르는 동안 글 끝에 서는 캐럿(`features/support/use-streamed-markdown`).
+   *
+   * ⚠️ **글자가 아니라 CSS다**(2026-08-19 변경). 전엔 본문 끝에 `▌`(U+258C, 반칸 블록)를
+   *    글자로 이어 붙였는데 ① 폰트가 정하는 크기라 슬래브가 제멋대로 컸고 ② 스크린리더가
+   *    그 블록을 글자로 읽었고 ③ 마크다운 본문에 섞여 파서를 거쳤다. `::after`로 그리면
+   *    세 가지가 함께 없어진다.
+   * ⚠️ **마지막 자식의 뒤**에 인라인으로 붙인다 — 컨테이너에 붙이면 글 아래로 떨어져
+   *    한 줄을 더 먹는다. 첫 글자가 오기 전(`:empty`)에는 캐럿만 선다.
+   * ⚠️ 색은 `currentColor`다. 깜빡임도 **하드 블링크가 아니라 숨 쉬듯** 옅어진다 —
+   *    글이 한 글자씩 흐르는 결에 맞춘다(§DESIGN: 색으로 알리는 건 에러뿐).
+   */
+  @keyframes streaming-caret {
+    0%,
+    100% {
+      opacity: 1;
+    }
+
+    50% {
+      opacity: 0.2;
+    }
+  }
+
+  .streaming-caret > *:last-child::after,
+  .streaming-caret:empty::after {
+    content: "";
+    display: inline-block;
+    width: 2px;
+    height: 1em;
+    margin-left: 2px;
+    border-radius: 1px;
+    background: currentColor;
+    vertical-align: -0.15em;
+    animation: streaming-caret 1.1s ease-in-out infinite;
+  }
+
+  /*
    * Z 조각 맞추기 — 로고의 세 조각(윗줄·사선·아랫줄)이 사방에서 날아와 딱 붙는다.
    * 영화관 오프닝 문법. **로딩 화면 전용**이다 — 본문에 두면 어색하다(팀 확인).
    * 한 바퀴: 날아와 붙고(0–25%) → 잠시 완성된 채 멈췄다가(–82%) → 옅어지며 다시 시작.
