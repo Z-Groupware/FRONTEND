@@ -71,6 +71,9 @@ jobs:
             SYSTEM_ADMIN_ID=$SYSTEM_ADMIN_ID
             SYSTEM_ADMIN_PASSWORD=$SYSTEM_ADMIN_PASSWORD
             EOF
+            # ⚠️ 기본 umask로 만들어지면 644(다른 로컬 계정도 읽을 수 있다) — 관리자 비밀번호가
+            #    평문으로 든 파일이라 소유자만 읽고 쓰게 좁힌다.
+            chmod 600 /home/ubuntu/zebra/.env
 
             docker stop zebra-fe || true
             docker rm zebra-fe || true

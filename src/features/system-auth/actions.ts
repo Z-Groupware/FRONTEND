@@ -20,7 +20,10 @@ export async function systemLoginAction(
   prevState: SystemLoginState,
   formData: FormData,
 ): Promise<SystemLoginState> {
-  const adminId = String(formData.get("adminId") ?? "");
+  // ⚠️ 아이디는 여기서 한 번만 trim한다. zod 스키마도 trim하지만 검증에만 쓰이고 값은 안
+  //    돌려주므로, 안 그러면 "admin "처럼 앞뒤 공백 있는 입력이 검증은 통과하고 실제 대조
+  //    (`verifySystemCredentials`)에서는 원본 그대로 걸려 안 틀린 값이 틀렸다고 나온다.
+  const adminId = String(formData.get("adminId") ?? "").trim();
   const password = String(formData.get("password") ?? "");
 
   const keep = (state: Omit<SystemLoginState, "adminId" | "attempt">): SystemLoginState => ({
