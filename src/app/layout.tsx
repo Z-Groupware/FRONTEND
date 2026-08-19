@@ -40,10 +40,13 @@ const LANDING_THEME_BOOT = `try{var d=localStorage.getItem("${LANDING_THEME_KEY}
  *    뒤 화면은 여기 붙는 게 없어 여전히 이미지 없이 공유된다.
  * ⚠️ 배포 도메인은 `https://www.z-groupware.site`다(2026-08-19 확인). 로컬 개발에서는
  *    `NEXT_PUBLIC_SITE_URL`이 없으면 localhost로 떨어진다 — 배포 빌드에서 env를 안 심어도
- *    이 기본값이 실제 도메인이라 안전하다(`NODE_ENV`로 가른다, `.env.example` 참고).
+ *    이 기본값이 실제 도메인이라 안전하다(`NODE_ENV`로 가른다).
+ * ⚠️ **`??`가 아니라 `||`다**(적대적 검증에서 발견). env가 빈 문자열(`""`)로 잘못 심기면
+ *    `??`는 그걸 "값이 있다"로 보고 안 걸러 `new URL("")`이 던져 앱 전체가 죽는다 —
+ *    이 값은 URL이라 빈 문자열이 유효한 값일 수 없으므로 `||`로 같이 걸러도 안전하다.
  */
 const SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL ??
+  process.env.NEXT_PUBLIC_SITE_URL ||
   (process.env.NODE_ENV === "production"
     ? "https://www.z-groupware.site"
     : "http://localhost:3000");
