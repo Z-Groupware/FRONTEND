@@ -2,7 +2,6 @@
 
 import { HardDrive } from "lucide-react";
 import { Trash2 } from "lucide-react";
-import Link from "next/link";
 
 import { EmptyState } from "@/components/common/empty-state";
 import { StatusDot } from "@/components/common/status-dot";
@@ -246,24 +245,17 @@ function Row({
           style={{ backgroundColor: tagColor.solidColor }}
         />
         {/*
-          ⚠️ 이름은 **프로젝트로 가는 링크**다. 지울지 판단하려면 무슨 프로젝트였는지 봐야 하는데,
-             이름만 있으면 검색으로 다시 찾아 들어가야 한다.
-          ⚠️ `inline-block`이라야 밑줄과 포커스 링이 **글자 폭에만** 걸린다. `block`이면 칸
-             전체가 링크로 보여서, 빈 자리를 눌러도 눌리는 것처럼 읽힌다.
-        */}
-        {/*
+          ⚠️ **이름은 링크가 아니다**(2026-08-19 변경 — 이전엔 프로젝트 상세로 가는 링크였다).
+             이 표는 지울 프로젝트를 고르는 자리이지 프로젝트로 이동하는 자리가 아니다 —
+             이동을 없애 클릭이 삭제 버튼 하나로만 향하게 한다.
           ⚠️ **영문 태그 칩(`#product-v2`)을 붙이지 않는다.** 한글 이름 옆에 영문 슬러그가
              나란히 서면 같은 것을 두 번 말하는 데다, 표에서 눈이 먼저 닿는 열이 영어로 시작한다.
-             태그는 **줄 왼쪽 색 띠**가 대신 말하고, 이동은 이름 링크가 같은 곳으로 데려간다.
+             태그는 **줄 왼쪽 색 띠**가 대신 말한다.
         */}
         <span className="flex min-w-0 items-center gap-2">
-          <Link
-            href={`/app/projects/${project.tag}`}
-            title={project.name}
-            className="focus-visible:ring-ring min-w-0 truncate rounded hover:underline focus-visible:ring-2 focus-visible:outline-hidden"
-          >
+          <span title={project.name} className="min-w-0 truncate">
             {project.name}
-          </Link>
+          </span>
         </span>
       </td>
       <td className="px-7 py-3.5">
