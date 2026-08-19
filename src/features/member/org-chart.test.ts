@@ -126,6 +126,37 @@ describe("buildOrgChart", () => {
     expect(chart.totalCount).toBe(2);
   });
 
+  /*
+    ⚠️ 실제 BE 데이터는 Owner 직급을 빈 문자열로 준다(`manage-server.ts`의
+       `positionName ?? ""`) — 그대로 두면 카드에 `· 없음`만 남거나 둘째 줄이 통째로
+       빈다. 이 서비스에서 Owner는 늘 대표라 그 값으로 채운다(2026-08-19).
+  */
+  it("Owner 직급이 비어 있으면 '대표'로 채운다 — BE가 안 줘도 지어낸 값이 아니다", () => {
+    const ownerWithoutPosition = member({
+      id: 9,
+      name: "빈직급대표",
+      teamName: null,
+      position: "",
+      authority: AUTHORITY.OWNER,
+    });
+    const chart = buildOrgChart([ownerWithoutPosition]);
+
+    expect(chart.owner?.position).toBe("대표");
+  });
+
+  it("Owner 직급을 BE가 주면 그 값을 그대로 쓴다 — '대표'로 덮어쓰지 않는다", () => {
+    const ownerWithPosition = member({
+      id: 10,
+      name: "CEO대표",
+      teamName: null,
+      position: "CEO",
+      authority: AUTHORITY.OWNER,
+    });
+    const chart = buildOrgChart([ownerWithPosition]);
+
+    expect(chart.owner?.position).toBe("CEO");
+  });
+
   it("대표가 없어도 팀만 그린다 — 없는 사람을 지어내지 않는다", () => {
     const chart = buildOrgChart([LEADER]);
 

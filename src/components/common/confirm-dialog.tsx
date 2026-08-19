@@ -153,35 +153,41 @@ export function ConfirmDialog({
              것을 같은 크기로 쓴다 — 빨간 글자만 두면 앞뒤 회색 문장에 묻힌다.
           ⚠️ 아이콘은 **줄 높이만 한 상자**에 담아 세운다. 그냥 나란히 두면 글자보다
              살짝 떠 보인다(§아이콘 옆 한글 정렬).
+          ⚠️ **자리를 늘 갖고 있는다**(2026-08-19 재수정 — "에러 메시지 때문에 모달이
+             커지는 게 싫다"는 지적). 한 번은 상자(테두리+배경)를 둘렀다가 되돌렸다 —
+             `{failure && (...)}`로 통째로 넣고 빼면 뜨는 순간 창 높이가 훌쩍 뛰었다.
+             `company-code-step.tsx`와 같은 값(`min-h`)으로 이 자리를 항상 잡아 두고,
+             내용만 있고 없고를 가른다 — 오류가 없을 땐 그냥 빈 줄이다.
+          ⚠️ **`role="alert"`는 이 자리에 늘 건다.** 스크린리더의 알림 영역(live region)은
+             DOM에 계속 있어야 **내용이 바뀔 때** 그걸 알아챈다 — 오류가 뜨는 순간 요소째로
+             새로 나타나면 오히려 못 읽는 경우가 있다.
         */}
-        {failure && (
-          /*
-            ⚠️ **문장과 꼬리표를 갈라 그린다**(2026-08-12). 한 덩이로 두면 빨간 문장 안에
-               `(Z-003 · 271d9bab)`가 끼어들어, 정작 읽어야 할 말보다 코드가 먼저 눈에 걸린다 —
-               꼬리표는 원인을 찾을 사람만 읽는 값이다.
-            ⚠️ 가르는 일은 화면이 한다(`splitErrorTag`). 붙이는 일은 서버(`toUserMessage`)
-               한 곳이라 화면마다 배선할 것이 없다.
-          */
-          /*
-            ⚠️ **`role="alert"`는 바깥 상자에 건다**(적대적 리뷰 2026-08-12). 문장에만 걸면
-               스크린 리더가 알릴 때 꼬리표를 빼고 읽는다 — 사람이 소리 내어 전달해야 하는
-               유일한 단서가 그 코드인데, 문장만 읽히면 그걸 놓친다.
-          */
-          <div role="alert" className="mt-4 flex flex-col items-center gap-1">
-            <p className="text-destructive flex items-start justify-center gap-1.5 text-[13px] leading-5 break-keep">
-              <span className="flex h-5 shrink-0 items-center">
-                <CircleAlert className="size-3.5" aria-hidden />
+        <div role="alert" className="mt-4 flex min-h-[18px] items-start justify-center gap-1.5">
+          {failure && (
+            <>
+              {/*
+                ⚠️ **문장과 꼬리표를 갈라 그린다**(2026-08-12). 한 덩이로 두면 빨간 문장 안에
+                   `(Z-003 · 271d9bab)`가 끼어들어, 정작 읽어야 할 말보다 코드가 먼저 눈에
+                   걸린다 — 꼬리표는 원인을 찾을 사람만 읽는 값이다.
+                ⚠️ 가르는 일은 화면이 한다(`splitErrorTag`). 붙이는 일은 서버(`toUserMessage`)
+                   한 곳이라 화면마다 배선할 것이 없다.
+              */}
+              <span className="flex h-[18px] shrink-0 items-center">
+                <CircleAlert className="text-destructive size-3.5" aria-hidden />
               </span>
-              <span>{failure.text}</span>
-            </p>
-
-            {failure.tag && (
-              <p className="text-muted-foreground text-[11px] leading-4 tabular-nums">
-                오류 코드 {failure.tag}
-              </p>
-            )}
-          </div>
-        )}
+              <span className="flex flex-col items-center gap-0.5">
+                <span className="text-destructive text-[12px] leading-[18px] break-keep">
+                  {failure.text}
+                </span>
+                {failure.tag && (
+                  <span className="text-muted-foreground text-[11px] leading-4 tabular-nums">
+                    오류 코드 {failure.tag}
+                  </span>
+                )}
+              </span>
+            </>
+          )}
+        </div>
 
         {/*
           두 버튼이 같은 폭이다 — 한쪽이 넓으면 그쪽을 권하는 것처럼 보인다.

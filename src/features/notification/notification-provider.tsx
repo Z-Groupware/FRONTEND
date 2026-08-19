@@ -180,7 +180,15 @@ function NotificationCenterProvider({
     addNotification({
       id: passwordNoticeId(memberId),
       type: LOCAL_NOTIFICATION_KIND.PASSWORD_TEMP,
-      message: "지금 쓰는 비밀번호는 발급받은 비밀번호입니다. 마이페이지에서 바꿔 주세요.",
+      /*
+        ⚠️ **문장 사이에 줄바꿈을 직접 심는다**(2026-08-19, 가독성 지적). 팝오버 폭(320px)에서
+           그냥 흘려보내면 어절 중간에서 꺾여 읽기 나쁘다 — 렌더링 쪽(`notification-bell.tsx`)의
+           `whitespace-pre-line`이 이 줄바꿈을 그대로 살린다.
+        ⚠️ **문장 자체도 줄였다**(같은 날 후속 — 원래 문구는 줄바꿈을 심어도 첫 문장이 혼자
+           228px 폭을 넘어 3줄까지 늘어졌다). 뜻은 그대로 두고 "지금 쓰는 비밀번호는 발급받은
+           비밀번호입니다" → "지금은 임시 비밀번호입니다"로 줄여 두 줄에 맞춘다.
+      */
+      message: "지금은 임시 비밀번호입니다.\n마이페이지에서 바꿔 주세요.",
       href: "/app/me",
       read: false,
       receivedAt: Date.now(),

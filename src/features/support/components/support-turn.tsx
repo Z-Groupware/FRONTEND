@@ -4,6 +4,7 @@ import { ArrowUpRight, Mail, MessageCircleQuestion } from "lucide-react";
 import Link from "next/link";
 
 import { MarkdownContent } from "@/components/common/markdown-content";
+import { cn } from "@/lib/utils";
 
 import {
   FAQ_CATEGORY,
@@ -68,15 +69,20 @@ export function SupportTurn({ turn, isOpening, onPickCategory, onPickEntry }: Su
            XSS 방어는 `rehype-sanitize`가 맡는다). 우리가 미리 써 둔 답이라 안전하지만,
            같은 컴포넌트를 쓰는 게 방어를 두 벌로 안 만든다.
         ⚠️ **서버에서 오는 척 조각조각 흘린다**(`useStreamedMarkdown`) — 답은 이미
-           번들 안에 있지만, 한 번에 툭 뜨지 않고 흘러오는 느낌을 낸다. 흐르는 동안
-           끝에 커서(▌)를 붙인다 — 다음 조각이 오면 그대로 갈린다.
+           번들 안에 있지만, 한 번에 툭 뜨지 않고 흘러오는 느낌을 낸다.
+        ⚠️ 흐르는 동안 글 끝에 캐럿이 선다 — **본문에 글자를 이어 붙이지 않고**
+           `.streaming-caret`이 `::after`로 그린다(옛 `▌`는 폰트가 크기를 정해 슬래브처럼
+           컸고 스크린리더가 글자로 읽었다, §globals.css).
         ⚠️ 되묻는 말(갈래·질문 목록 위 안내 문구)은 짧은 고정 문구라 그대로 평문 +
            `whitespace-pre-line`을 쓴다 — 빈 줄이 그대로 문단이 된다.
       */}
       {turn.kind === "answer" ? (
         <MarkdownContent
-          content={isStreaming ? `${streamedAnswer}▌` : streamedAnswer}
-          className="text-popover-foreground max-w-none text-[12px] leading-[20px] break-keep"
+          content={streamedAnswer}
+          className={cn(
+            "text-popover-foreground max-w-none text-[12px] leading-[20px] break-keep",
+            isStreaming && "streaming-caret",
+          )}
         />
       ) : (
         <p className="text-popover-foreground text-[12px] leading-[20px] break-keep whitespace-pre-line">

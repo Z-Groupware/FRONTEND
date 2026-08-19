@@ -25,7 +25,13 @@ import { PATHNAME_HEADER } from "@/lib/pathname-header";
  * ⚠️ 목으로 돌 때는 아무것도 안 한다 — 로그인시킬 서버가 없는데 막으면 화면 확인이 불가능하다.
  */
 
-/** 로그인해야 들어갈 수 있는 자리. 괄호 라우트 그룹은 URL에 안 붙으므로 실제 주소로 적는다. */
+/**
+ * 로그인해야 들어갈 수 있는 자리. 괄호 라우트 그룹은 URL에 안 붙으므로 실제 주소로 적는다.
+ *
+ * ⚠️ **`/system`은 여기 없다.** 시스템 관리자는 기업 계정과 다른 축(`features/system-auth`,
+ *    env var 단일 계정)이라 이 목록의 회사 세션 쿠키(`ACCESS_TOKEN_COOKIE`)로 판단하면
+ *    안 된다 — `(system)/layout.tsx`가 자기 쿠키로 직접 가드한다.
+ */
 const PROTECTED_PREFIXES = [
   "/owner",
   "/team",
@@ -34,7 +40,6 @@ const PROTECTED_PREFIXES = [
   "/app",
   "/onboarding",
   "/subscription",
-  "/system",
 ];
 
 const isMock = process.env.NEXT_PUBLIC_USE_MOCK !== "false";

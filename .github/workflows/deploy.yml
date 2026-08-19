@@ -47,6 +47,10 @@ jobs:
     env:
       SHA: ${{ github.sha }}
       BACKEND_API_URL: ${{ secrets.BACKEND_API_URL }}
+      # ⚠️ NEXT_PUBLIC_ 없는 서버 전용 값이라 빌드 시점에 굽지 않는다(BACKEND_API_URL과 같은 이유) —
+      #    배포 때마다 이 컨테이너 실행 시점의 .env로만 주입한다.
+      SYSTEM_ADMIN_ID: ${{ secrets.SYSTEM_ADMIN_ID }}
+      SYSTEM_ADMIN_PASSWORD: ${{ secrets.SYSTEM_ADMIN_PASSWORD }}
 
     steps:
       - name: Deploy via SSH (pull → restart container)
@@ -56,13 +60,20 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           port: 22
-          envs: IMAGE,SHA,BACKEND_API_URL
+          envs: IMAGE,SHA,BACKEND_API_URL,SYSTEM_ADMIN_ID,SYSTEM_ADMIN_PASSWORD
           script: |
             set -e
 
             docker pull $IMAGE:$SHA
 
-            echo "BACKEND_API_URL=$BACKEND_API_URL" > /home/ubuntu/zebra/.env
+            cat <<EOF > /home/ubuntu/zebra/.env
+            BACKEND_API_URL=$BACKEND_API_URL
+            SYSTEM_ADMIN_ID=$SYSTEM_ADMIN_ID
+            SYSTEM_ADMIN_PASSWORD=$SYSTEM_ADMIN_PASSWORD
+            EOF
+            # ⚠️ 기본 umask로 만들어지면 644(다른 로컬 계정도 읽을 수 있다) — 관리자 비밀번호가
+            #    평문으로 든 파일이라 소유자만 읽고 쓰게 좁힌다.
+            chmod 600 /home/ubuntu/zebra/.env
 
             docker stop zebra-fe || true
             docker rm zebra-fe || true
