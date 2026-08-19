@@ -48,6 +48,15 @@ export const AUTHORITY_LABEL: Record<Authority, string> = {
   SYSTEM: "System",
 };
 
+/**
+ * Owner 직급이 비어 있을 때 채우는 값 — **BE가 Owner 직급을 안 준다**(직급은 사원 발급
+ * 화면에서 고르는 값인데 Owner는 그 화면을 거치지 않는다). 위 `POSITION_AUTHORITIES` 주석이
+ * 이미 "대표에게 메일로 보낸다"고 부르듯, 이 서비스에서 Owner는 늘 대표다 — 조직도에서
+ * `· 없음`으로 비거나 통째로 빈 줄이 뜨는 대신 이 값으로 채운다(`org-chart.ts`의
+ * `toOrgMember`, 2026-08-19).
+ */
+export const OWNER_POSITION_FALLBACK_LABEL = "대표";
+
 /** 권한 범위를 한 줄로 설명한 것. 직급·권한 매핑 화면의 범례에 쓴다. */
 export const AUTHORITY_SCOPE_LABEL: Record<Authority, string> = {
   OWNER: "기업 전체 관리",

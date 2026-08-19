@@ -1,4 +1,4 @@
-import { AUTHORITY } from "@/constants/authority";
+import { AUTHORITY, OWNER_POSITION_FALLBACK_LABEL } from "@/constants/authority";
 import { MEMBER_STATUS, ROLE_NONE_LABEL } from "@/constants/member";
 
 import {
@@ -56,7 +56,10 @@ function toOrgMember(member: OrgRosterMember): OrgMember {
   return {
     id: member.id,
     name: member.name,
-    position: member.position,
+    // BE는 Owner 직급을 안 준다(빈 문자열) — 그 자리는 `대표`로 채운다(§constants/authority)
+    position:
+      member.position ||
+      (member.authority === AUTHORITY.OWNER ? OWNER_POSITION_FALLBACK_LABEL : member.position),
     // 없으면 `없음` — 화면이 정하지 않게 여기서 맞춘다(§org-types)
     roleLabel: member.roleLabel ?? ROLE_NONE_LABEL,
     authority: member.authority,
