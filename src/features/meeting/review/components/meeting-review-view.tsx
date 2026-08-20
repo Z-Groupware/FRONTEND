@@ -61,6 +61,12 @@ export function MeetingReviewView({ review }: MeetingReviewViewProps) {
   const [isBlocked, setIsBlocked] = useState(false);
   const [isConfirmed, setIsConfirmed] = useState(false);
   const [isPending, startTransition] = useTransition();
+  /*
+    ⚠️ **확정 시도 뒤에만 필수 필드를 빨갛게 강조한다.** 최초 진입에서는 회색 placeholder만
+       뒀다가, [액션 분배 확정]을 눌렀는데 값이 비어 있으면 이 플래그가 켜져 각 행이
+       비어 있는 제목·세부·마감을 빨간 테두리로 승격한다(§DESIGN 5 — 색은 에러 자리).
+  */
+  const [hasAttemptedConfirm, setHasAttemptedConfirm] = useState(false);
 
   /*
     ⚠️ **반려된 것도 목록에 남긴다**(2026-08-18, #622). 이전엔 filter로 아예 뺐는데, 사람이
@@ -388,6 +394,7 @@ export function MeetingReviewView({ review }: MeetingReviewViewProps) {
             onTeamChange={(teamId) => handleTeamChange(draft.id, teamId)}
             rejectReason={rejectedReasons[draft.id] ?? null}
             onUnreject={() => unrejectDraft(draft.id)}
+            hasAttemptedConfirm={hasAttemptedConfirm}
           />
         ))}
       </ActionReviewGroup>
@@ -408,6 +415,7 @@ export function MeetingReviewView({ review }: MeetingReviewViewProps) {
             onTeamChange={(teamId) => handleTeamChange(draft.id, teamId)}
             rejectReason={rejectedReasons[draft.id] ?? null}
             onUnreject={() => unrejectDraft(draft.id)}
+            hasAttemptedConfirm={hasAttemptedConfirm}
           />
         ))}
 
@@ -439,10 +447,13 @@ export function MeetingReviewView({ review }: MeetingReviewViewProps) {
           왜 잠겼는지 버튼 옆에서 말한다 — 눌리지 않는 버튼만 두면 고장으로 읽힌다(§정직성).
           ⚠️ 필수 입력 누락이 우선순위가 더 높다(제목·설명·마감은 담당자보다 먼저 채워야 하는
              기본 필드) — 두 안내가 동시에 뜰 수는 있지만 하나만 뜰 상황에선 이쪽을 앞세운다.
+          ⚠️ **버튼은 잠그지 않는다**(2026-08-20). 잠기면 "왜 안 눌리지" 하고 뭘 채워야 할지
+             찾아 헤매게 된다 — 눌러 보면 비어 있는 필드가 즉시 빨갛게 강조되도록 승격한다.
+             안내 문구는 그때 함께 붉게 뜬다(§정직성 · §DESIGN 5).
         */}
-        {hasMissingRequired ? (
-          <p className="text-muted-foreground text-[12px] leading-4">
-            제목·세부 내용·마감일이 비어 있는 액션이 있습니다. 채운 뒤 다시 시도해 주세요.
+        {hasAttemptedConfirm && hasMissingRequired ? (
+          <p className="text-destructive text-[12px] leading-4">
+            제목·세부 내용·마감일이 비어 있는 액션이 있습니다. 빨갛게 표시된 자리를 채워 주세요.
           </p>
         ) : hasUnassigned ? (
           <p className="text-muted-foreground text-[12px] leading-4">
@@ -451,9 +462,19 @@ export function MeetingReviewView({ review }: MeetingReviewViewProps) {
         ) : null}
         <Button
           type="button"
-          disabled={activeDrafts.length === 0 || hasUnassigned || hasMissingRequired}
+          disabled={activeDrafts.length === 0 || hasUnassigned}
           className="bg-foreground text-background hover:bg-foreground/90"
-          onClick={() => setConfirmOpen(true)}
+          onClick={() => {
+            /*
+              ⚠️ 필수 필드가 비어 있으면 모달을 열지 않고 그 자리에서 빨간 강조로 안내한다 —
+                 모달까지 열었다가 튕기면 사용자는 "왜 실패?"에 답을 못 찾는다(§정직성).
+            */
+            if (hasMissingRequired) {
+              setHasAttemptedConfirm(true);
+              return;
+            }
+            setConfirmOpen(true);
+          }}
         >
           액션 분배 확정
         </Button>
